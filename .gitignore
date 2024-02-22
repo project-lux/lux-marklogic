@@ -1,0 +1,11 @@
+.DS_Store
+.gradle
+
+.tmp
+.settings
+build
+gradle-*.properties
+
+src/main/ml-modules/base/root/runDuringDeployment/dataConstants/pipelineDataConstants.json
+
+src/main/ml-modules/base/root/config/contentDatabaseConfGenerated.mjs

@@ -1,0 +1,229 @@
+# Changelog
+
+All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## Unreleased
+
+### Added
+- Added LICENSE.txt and NOTICE.txt ([#60](https://git.yale.edu/lux-its/lux-project/issues/60)).
+
+### Changed
+- Changed search estimate endpoint to accept scope as a query parameter ([#1161](https://git.yale.edu/lux-its/marklogic/issues/1161)).
+- Changed Context link returned in Activity Streams endpoints to be correct (https://linked.art/ns/v1/search.json) ([#1120](https://git.yale.edu/lux-its/marklogic/issues/1120)).
+- Changed facets and related list endpoints to use Activity Streams format ([#1164](https://git.yale.edu/lux-its/marklogic/issues/1164)).
+- Cleaned up code for release to public repo ([#1095](https://git.yale.edu/lux-its/marklogic/issues/1095)).
+- Updated documentation on setting up a local Marklogic envrionment ([#1071](https://git.yale.edu/lux-its/marklogic/issues/1071)).
+### Removed
+- Removed search estimates endpoint. It is replaced by multiple requests to the search estimate (singular) endpoint. ([#1118](https://git.yale.edu/lux-its/marklogic/issues/1118)).
+
+### Fixed
+
+### Security
+
+## v1.9.0 - 2024-02-05
+
+### Added
+- Added a new data constant for visitor statements ([#1143](https://git.yale.edu/lux-its/marklogic/issues/1143)).
+
+### Changed
+- Updated data constants for 1/25 dataset ([#1150](https://git.yale.edu/lux-its/marklogic/issues/1150)).
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.8.0 - 2024-01-19
+
+### Added
+
+### Changed
+- Updated data constants for 1/13 dataset ([#1137](https://git.yale.edu/lux-its/marklogic/issues/1137)).
+
+### Removed
+- Removed cluster-formation directory and cluster-formation documentation, as it is migrating to a new repository ([#1130](https://git.yale.edu/lux-its/marklogic/issues/1130)).
+
+### Fixed
+
+### Security
+
+## v1.7.1 - 2024-01-11
+
+### Added
+
+### Changed
+- Reverted date search change ([#1032](https://git.yale.edu/lux-its/marklogic/issues/1032)).
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.7.0 - 2024-01-09
+
+### Added
+
+### Changed
+- Changed date search to use new JSON format ([#1032](https://git.yale.edu/lux-its/marklogic/issues/1032)).
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.6.0 - 2023-12-11
+
+### Added
+- Added Search Estimate Endpoint (single estimate) which uses Activity Streams ([#1104](https://git.yale.edu/lux-its/marklogic/issues/1104)).
+- Added Events To Agents Related List (agent relatedToEvent search term) ([#899](https://git.yale.edu/lux-its/marklogic/issues/899)).
+
+### Changed
+ - Changed Search Endpoint to use Activity Streams ([#1103](https://git.yale.edu/lux-its/marklogic/issues/1103)).
+ - Changed Search Estimates Endpoint to to use Activity Streams ([#1105](https://git.yale.edu/lux-its/marklogic/issues/1105)).
+
+### Removed
+
+### Fixed
+- fix typo in pagination error ([#1106](https://git.yale.edu/lux-its/marklogic/issues/1106)).
+
+### Security
+
+## v1.5.0 - 2023-11-13
+
+### Added
+
+### Changed
+- Updated documentation to make navigation easier ([#1071](https://git.yale.edu/lux-its/marklogic/issues/1071)).
+### Removed
+
+### Fixed
+- fix typo in pagination error ([#1106](https://git.yale.edu/lux-its/marklogic/issues/1106)).
+
+### Security
+
+## v1.4.0 - 2023-08-30
+
+### Added
+
+### Changed
+- Changed advanced search labels to all use plural verbs - e.g. 'Have Digital Image' instead of 'Has Digital Image'  ([#1085](https://git.yale.edu/lux-its/marklogic/issues/1085)).
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.3.0 - 2023-07-24
+
+### Added
+- Add New Data Constants For Copyright Licensing Statements, First, and Specimens ([#1064](https://git.yale.edu/lux-its/marklogic/issues/1064)).
+
+### Changed
+
+### Removed
+ - Delete indexes associated to the deleted depictedBy and depicted[Scope] search terms ([#934](https://git.yale.edu/lux-its/marklogic/issues/934)).
+ - Drop the any search terms and the *AnyId indexing configuration ([#812](https://git.yale.edu/lux-its/marklogic/issues/812)).
+ - Drop event 'hasDigitalImage' search terms and indexing configuration ([#777](https://git.yale.edu/lux-its/marklogic/issues/777)).
+
+### Fixed
+
+### Security
+
+## v1.2.0 - 2023-07-10
+
+### Added
+
+ - Enable faceting by agent record type (Person vs Group) ([#1011](https://git.yale.edu/lux-its/marklogic/issues/1011)).
+ - Add new item profile 'rights' for getting rights information from works ([#1059](https://git.yale.edu/lux-its/marklogic/issues/1059)).
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.1.0 - 2023-06-28
+
+### Added
+
+### Changed
+ - Increased the maximum page length from 20 to 100 for search, while keeping the default at 20 ([#1035](https://git.yale.edu/lux-its/marklogic/issues/1035)).
+
+### Removed
+- Removed event's hasDigitalImage facet as events never have digital images ([#1037](https://git.yale.edu/lux-its/marklogic/issues/1037)).
+
+### Fixed
+
+### Security
+
+## v1.0.2 - 2023-06-14
+
+### Added
+
+- Added the search request ID to the request log ([#997](https://git.yale.edu/lux-its/marklogic/issues/997)).
+
+### Changed
+
+- Changed the default request timeout from 59 seconds to 20 seconds.
+- Changed simple search to no longer treat `NEAR` as a search operator ([#974](https://git.yale.edu/lux-its/marklogic/issues/974)).
+- Changed the database index configuration generation script to no longer include field-level properties when those values match the database-level defaults ([#904](https://git.yale.edu/lux-its/marklogic/issues/904)).
+
+### Removed
+
+- Removed obsolete IRI code from the facets library ([#1012](https://git.yale.edu/lux-its/marklogic/issues/1012)).
+
+### Fixed
+
+- Fixed search parsing error messages that were being suppressed ([#1016](https://git.yale.edu/lux-its/marklogic/issues/1016)).
+
+### Security
+
+## Mid-Release Configuration Change - 2023-06-02
+
+Increased the default request timeout from 20 seconds to 59 seconds.
+
+## Mid-Release Configuration Change - 2023-05-26
+
+Reduced the maximum number of concurrent threads on the `lux` application server (port 8003) from 32 to 24 ([#920](https://git.yale.edu/lux-its/marklogic/issues/920)).
+
+## v1.0.1 - 2023-05-22
+
+### Added
+
+- Added visual items to the work about indexes ([#961](https://git.yale.edu/lux-its/marklogic/issues/961)).
+- Added a sort binding for sorting by relevance ([#960](https://git.yale.edu/lux-its/marklogic/issues/960)).
+
+### Changed
+
+- Changed the URI of several examples within the advanced search help text ([#1004](https://git.yale.edu/lux-its/marklogic/issues/1004)).
+- Changed the advanced search term labels from being singular to plural ([#975](https://git.yale.edu/lux-its/marklogic/issues/975)).
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.0.0 - 2023-05-10
+
+### Added
+
+### Changed
+
+- Changed the search endpoint to only estimate the requested search scope ([#953](https://git.yale.edu/lux-its/marklogic/issues/953)).
+- Changed facet calculation to by faster by using `.toArray` ([#952](https://git.yale.edu/lux-its/marklogic/issues/952)).
+- Changed search to use `cts.falseQuery` for ignored criteria ([#950](https://git.yale.edu/lux-its/marklogic/issues/950)).
+- Changed advanced search help text to indicate `has All of`, `has Any of`, and `has None of` are the advanced search equivalents of simple search's `AND`, `OR`, and `-` operators ([#946](https://git.yale.edu/lux-its/marklogic/issues/946)).
+
+### Removed
+
+### Fixed
+
+### Security
+
+---
+
+_For changes that predate v1.0.0 or for non-runtime tickets, please search for closed tickets with or without a version label. For example, there were over two dozen  [Backend v1.0.1 tickets](https://git.yale.edu/lux-its/marklogic/issues?q=is%3Aissue+label%3Av1.0.1+is%3Aclosed)._

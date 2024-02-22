@@ -1,0 +1,36 @@
+{
+  "functionName": "relatedList",
+  "params": [
+    {
+      "name": "scope",
+      "datatype": "string"
+    },
+    {
+      "name": "name",
+      "datatype": "string"
+    },
+    {
+      "name": "uri",
+      "datatype": "string"
+    },
+    {
+      "name": "page",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "pageLength",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "relationshipsPerRelation",
+      "datatype": "int",
+      "nullable": true
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

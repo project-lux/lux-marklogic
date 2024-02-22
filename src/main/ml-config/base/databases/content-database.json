@@ -1,0 +1,40 @@
+{
+  "database-name": "%%DATABASE%%",
+  "schema-database": "Schemas",
+  "database-backup": [
+    {
+      "backup-enabled": true,
+      "backup-directory": "%%backupBasePath%%/%%DATABASE%%",
+      "backup-type": "daily",
+      "backup-period": 1,
+      "backup-start-time": "05:00:00",
+      "max-backups": 1,
+      "backup-security-database": true,
+      "backup-schemas-database": true,
+      "backup-triggers-database": true,
+      "include-replicas": false,
+      "incremental-backup": true,
+      "journal-archiving": false,
+      "journal-archive-path": "",
+      "journal-archive-lag-limit": 15
+    },
+    {
+      "backup-enabled": true,
+      "backup-directory": "%%backupBasePath%%/%%DATABASE%%",
+      "backup-type": "weekly",
+      "backup-period": 1,
+      "backup-day": ["sunday"],
+      "backup-start-time": "02:00:00",
+      "max-backups": 3,
+      "backup-security-database": true,
+      "backup-schemas-database": true,
+      "backup-triggers-database": true,
+      "include-replicas": false,
+      "incremental-backup": false,
+      "journal-archiving": false,
+      "journal-archive-path": "",
+      "journal-archive-lag-limit": 15
+    }
+  ],
+  @@contentDatabaseConfGenerated@@
+}

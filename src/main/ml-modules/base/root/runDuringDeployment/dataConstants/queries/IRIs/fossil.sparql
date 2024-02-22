@@ -1,0 +1,4 @@
+SELECT DISTINCT ?objectIri WHERE {
+  ?objectIri a crm:E55_Type ;
+      la:equivalent <http://vocab.getty.edu/aat/300247919> .
+}

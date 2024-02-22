@@ -1,0 +1,38 @@
+{
+  "editor.tabSize": 2,
+  "editor.hover.delay": 1500,
+  "editor.semanticTokenColorCustomizations": null,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.defaultFormatter": "vscode.css-language-features",
+  "prettier.singleQuote": true,
+  "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+  "files.associations": {
+    "*.sjs": "javascript",
+    "*.mjs": "javascript",
+    "*.api": "json"
+  },
+  "docthis.includeDateTag": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/bin": true
+  },
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "cSpell.words": [
+    "corb",
+    "dedup",
+    "proxied",
+    "qconsole",
+    "queryplan",
+    "SPARQL",
+    "unfaceted",
+    "wildcarded",
+    "xdmp"
+  ],
+  }

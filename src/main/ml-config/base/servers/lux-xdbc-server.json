@@ -1,0 +1,11 @@
+{
+  "server-name": "%%NAME%%-xdbc",
+  "group-name": "Default",
+  "server-type": "xdbc",
+  "root": "/",
+  "port": %%mlXdbcPort%%,
+  "content-database": "%%DATABASE%%",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "authentication": "%%mlXdbcAuthentication%%",
+  "internal-security": "true"
+}

@@ -1,0 +1,57 @@
+{
+  "functionName": "autoComplete",
+  "params": [
+    {
+      "name": "text",
+      "datatype": "string"
+    },
+    {
+      "name": "context",
+      "datatype": "string"
+    },
+    {
+      "name": "fullyHonorContext",
+      "datatype": "boolean",
+      "nullable": true
+    },
+    {
+      "name": "onlyMatchOnPrimaryNames",
+      "datatype": "boolean",
+      "nullable": true
+    },
+    {
+      "name": "onlyReturnPrimaryNames",
+      "datatype": "boolean",
+      "nullable": true
+    },
+    {
+      "name": "page",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "pageLength",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "filterIndex",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "previouslyFiltered",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "timeoutInMilliseconds",
+      "datatype": "int",
+      "nullable": true
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

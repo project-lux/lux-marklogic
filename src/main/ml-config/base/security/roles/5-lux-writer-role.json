@@ -1,0 +1,22 @@
+{
+  "role-name": "lux-writer",
+  "description": "Those with this role have the ability to update documents in LUX's content and modules databases, while also being able to do everything offered by the lux-qconsole-user role.",
+  "role": [
+    "hadoop-user-read",
+    "hadoop-user-write",
+    "lux-qconsole-user",
+    "rest-writer"
+  ],
+  "privilege": [
+    {
+      "privilege-name": "any-uri",
+      "action": "http://marklogic.com/xdmp/privileges/any-uri",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "unprotected-collections",
+      "action": "http://marklogic.com/xdmp/privileges/unprotected-collections",
+      "kind": "execute"
+    }
+  ]
+}

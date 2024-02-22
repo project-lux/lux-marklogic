@@ -1,0 +1,6 @@
+{
+  "type": "mjs",
+  "namePrefix": "lang",
+  "nameKey": "langCode",
+  "valueKey": "langIri"
+}

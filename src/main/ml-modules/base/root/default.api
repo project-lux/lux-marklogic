@@ -1,0 +1,15 @@
+{
+  "monitoring": {
+    "general": {
+      "enabled": true
+    },
+    "thresholds": {
+      "elapsedTime": {
+        "gt": 0
+      }
+    },
+    "custom": true,
+    "fragments": 10,
+    "hosts": 5
+  }
+}

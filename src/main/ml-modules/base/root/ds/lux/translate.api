@@ -1,0 +1,17 @@
+{
+  "functionName": "translate",
+  "params": [
+    {
+      "name": "q",
+      "datatype": "string"
+    },
+    {
+      "name": "scope",
+      "datatype": "string"
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

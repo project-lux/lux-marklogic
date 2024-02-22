@@ -1,0 +1,544 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.marklogic:ml-gradle:${mlGradleVersion}"
+
+    classpath "org.json:json:${orgJsonVersion}"
+  }
+}
+
+plugins {
+  id 'net.saliman.properties' version "${netSalimonPropertiesVersion}"
+  id 'nu.studer.credentials' version "${nuStuderCredentialsVersion}"
+}
+
+apply plugin: "com.marklogic.ml-gradle"
+
+repositories {
+  mavenCentral()
+}
+
+configurations {
+  mlcp
+}
+
+dependencies {
+  mlcp "com.marklogic:mlcp:${mlcpVersion}"
+  mlcp "org.apache.commons:commons-csv:${orgApacheCommonsCsvVersion}"
+  mlcp files("lib")
+}
+tasks.withType(JavaExec) {
+    jvmArgs = ['-Xmx1g']
+}
+
+ext.lineSep = System.getProperty("line.separator")
+
+ext.getFirstPropertyOrDefault = { propertyNames, defaultValue ->
+  def propertyValue = null
+  for (String propertyName in propertyNames) {
+    println "Looking for the $propertyName property..."
+    if (project.hasProperty(propertyName)) {
+      println "FOUND the $propertyName property"
+      propertyValue = project.property(propertyName)
+      break
+    }
+  }
+  if (propertyValue == null) {
+    println "Requested property(ies) not defined. Returning the provided default value."
+    propertyValue = defaultValue
+  }
+  return propertyValue
+}
+
+// Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
+// Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
+// literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
+// one should not expect this function to resolve those references.  Use the JSP like syntax instead.
+ext.applyTemplate = { templatePath, templateBindings ->
+  // Read template file into memory
+  def text = file(templatePath).text
+
+  // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
+  // '$1' and '${paramName}'.
+  text = text.replaceAll(/\$/, 'DOLLAR_SIGN')
+
+  // When a template variable reference immediately follows a JavaScript single line comment marker, remove the comment marker,
+  // thereby allowing the template's variable value to be uncommented code.
+  text = text.replaceAll(/\/\/\s*(?<templateVarRef><%[^>]*>)/, '${templateVarRef}')
+
+  // Resolve all template variable references: <%...%>
+  def engine = new groovy.text.SimpleTemplateEngine()
+  text = engine.createTemplate(text).make(templateBindings).toString()
+
+  // Change DOLLAR_SIGN back to the actual dollar sign symbol, such that JavaScript recognizes them.
+  text = text.replaceAll(/DOLLAR_SIGN/, '\\$')
+
+  return text
+}
+
+ext.writeToFile = { outputPath, content ->
+  new File("$outputPath").withWriter { out ->
+    out.println content
+  }
+}
+
+// This project's implementation of its custom token feature.
+//
+// This task needs to run before any ML Gradle task that references ML Gradle configuration files does.  Rather than
+// list all the related ML Gradle tasks, we're defining it as the first custom task and allow it to always run.
+//
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task preprocessMarkLogicConfigurationFiles() {
+  def names = []
+  def texts = []
+  def text
+
+  // For each name, pull in the content of its file and remove the outer brackets.  Departed from JSON when we picked
+  // up some double-quoted values that contained escaped double quotes --the escape character was being dropped.  
+  // We now need to double-escape such double quotes *and* read it in as text.  We have also started to use single
+  // quotes in the configuration files, but keeping this as a backup.
+  //
+  // Note: .push() adds the new item to the beginning of the array thus multiple .get(0) calls.
+  names.push('contentDatabaseConfGenerated')
+  text = file('./config/' + names.get(0) + '.json').text.trim()
+  texts.push(text.substring(1, text.length() - 1))
+
+  println ''
+  println 'Resolving custom token(s): ' + names.join(", ")
+  println ''
+
+  // Clear target directory first, as there could be obsolete files therein.
+  delete './build/main'
+
+  // Copy src/main/ml-config into build directory
+  copy {
+    from './src/main'
+    into './build/main'
+    include 'ml-config/**'
+    filter { line -> {
+      for (def i = 0; i < names.size(); i++) {
+        line = line.replaceAll('@@' + names[i] + '@@', texts[i])
+      }
+      return line
+    }}
+  }
+}
+
+task preprocessBuildSupportScripts() {
+  // Resolve property references while copying into the build dir.
+  copy {
+    from './scripts/buildSupport'
+    into './build/buildSupport'
+    include '**'
+    filter { line -> {
+      // What's an existing/standard/better way to do this?
+      for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
+        line = line.replaceAll('%%' +entry.getKey() + '%%', entry.getValue().toString())
+      }
+      return line
+    }}
+  }
+}
+
+task copyContentDatabaseConfGenerated(){
+  def text = file('./config/contentDatabaseConfGenerated.json').text
+  copy{
+    from './src/main/templates'
+    into './src/main/ml-modules/base/root/config'
+    include 'contentDatabaseConfGenerated.mjs'
+    filter{ line -> {
+      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
+    }}
+  }
+
+}
+mlLoadModules.dependsOn copyContentDatabaseConfGenerated
+
+// Developer convenience to copy a database, including from DEV to one's local environment.
+// More info in /docs/lux-backend-build-tool-and-tasks.md.
+//
+// Should this task automatically clear the database first, like importDataFull does?
+task copyDatabase(type: com.marklogic.gradle.task.MlcpTask) {
+  //check if SSL is enabled and use the properties value
+  def useSsl = true
+  if (project.hasProperty("mlAppServicesSimpleSsl")) {
+    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
+  }
+
+  classpath = configurations.mlcp
+  command = "COPY"
+
+  input_host = project.property("copyDatabaseInputHost")
+  input_port = project.property("copyDatabaseInputPort").toInteger()
+  input_username = project.property("copyDatabaseInputUsername")
+  input_password = credentials.forKey('copyDatabaseInputPassword')
+  input_database = project.property("copyDatabaseInputDatabase")
+
+  output_host = project.property("copyDatabaseOutputHost")
+  output_port = project.property("copyDatabaseOutputPort").toInteger()
+  output_username = project.property("copyDatabaseOutputUsername")
+  output_password = credentials.forKey('copyDatabaseOutputPassword')
+  output_database = project.property("copyDatabaseOutputDatabase")
+
+  copy_permissions=true
+  copy_collections=true
+  copy_metadata=true
+  copy_properties=true
+  copy_quality=true
+
+  fastload=true
+  batch_size = project.getProperties().getOrDefault("copyDatabaseBatchSize", "100").toInteger()
+  thread_count = project.getProperties().getOrDefault("copyDatabaseThreadCount", "4").toInteger()
+
+  ssl = useSsl
+  args = ["-ssl_protocol", "tlsv1.2"]
+}
+
+// Import data running in full mode.
+//    Database *is* cleared first.
+//    MLCP *does* run in fast load mode --therefore it is *not* safe to update documents.
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+//
+// At least on Windows, this task can start to fail once the Gradle cache has enough entries
+// to make the generated command too long.  Perhaps we can provide a shorter classpath.
+task importDataFull(type: com.marklogic.gradle.task.MlcpTask) {
+  //check if SSL is enabled and use the properties value
+  def useSsl = true
+  if (project.hasProperty("mlAppServicesSimpleSsl")) {
+    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
+  }
+  
+  classpath = configurations.mlcp
+  command = "IMPORT"
+  host = project.property("importDataHost")
+  port = project.property("importDataPort").toInteger()
+  username = project.property("importDataUsername")
+  password = credentials.forKey('importDataPassword')
+  database = getFirstPropertyOrDefault(["database"], "NO_DATABASE_SPECIFIED")
+  fastload = true // Database cleared for full loads
+  input_file_path = project.property("importDataFilePath")
+  input_file_type = "delimited_json"
+  input_compressed = project.property("importDataFileIsCompressed")
+  input_compression_codec = "gzip"
+  output_permissions = project.property("mlDataPermissions")
+  output_uri_replace = "https://lux.collections.yale.edu/data/,''"
+  uri_id = "id"
+  ssl = useSsl
+  args = ["-ssl_protocol", "tlsv1.2"]
+
+  dependsOn {
+    mlClearDatabase
+  }
+}
+
+// Import data running in incremental mode:
+//    Database is *not* cleared first.
+//    MLCP does *not* run in fast load mode --therefore it is safe to update documents.
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+//
+// At least on Windows, this task can start to fail once the Gradle cache has enough entries
+// to make the generated command too long.  Perhaps we can provide a shorter classpath.
+task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
+  //check if SSL is enabled and use the properties value
+  def useSsl = true
+  if (project.hasProperty("mlAppServicesSimpleSsl")) {
+    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
+  }
+
+  classpath = configurations.mlcp
+  command = "IMPORT"
+
+  host = project.property("importDataHost")
+  port = project.property("importDataPort").toInteger()
+  username = project.property("importDataUsername")
+  password = credentials.forKey('importDataPassword')
+  database = getFirstPropertyOrDefault(["database"], "NO_DATABASE_SPECIFIED")
+  fastload = false // Database not cleared for incremental loads
+  input_file_path = project.property("importDataFilePath")
+  input_file_type = "delimited_json"
+  input_compressed = project.property("importDataFileIsCompressed")
+  input_compression_codec = "gzip"
+  output_permissions = project.property("mlDataPermissions")
+  output_uri_replace = "https://lux.collections.yale.edu/data/,''"
+  uri_id = "id"
+  ssl = useSsl
+  args = ["-ssl_protocol", "tlsv1.2"]
+}
+
+task copyPipelineDataConstants (type: Copy) {
+  from('scripts/generateIndexConf') {
+    include 'pipelineDataConstants.json'
+  }
+  into 'src/main/ml-modules/base/root/runDuringDeployment/dataConstants'
+}
+mlLoadModules.dependsOn copyPipelineDataConstants
+
+// Runs the data constants generator
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task generateDataConstants (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Generating the data constants..."
+    println ""
+
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def script = new File('./build/buildSupport/generateDataConstants.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+    println result
+
+    println ""
+    println "Data constants generator done."
+    println ""
+  }
+}
+mlDeploy.finalizedBy generateDataConstants
+mlLoadModules.finalizedBy generateDataConstants
+copyDatabase.finalizedBy generateDataConstants
+
+// Runs the remaining search terms generator
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Generating the remaining search terms..."
+    println ""
+
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def script = new File('./build/buildSupport/generateRemainingSearchTerms.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+generateDataConstants.finalizedBy generateRemainingSearchTerms
+
+// Runs the related lists configuration generator
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task generateRelatedListsConfig (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Generating the related lists configuration..."
+    println ""
+
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def script = new File('./build/buildSupport/generateRelatedListsConfig.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+generateRemainingSearchTerms.finalizedBy generateRelatedListsConfig
+
+// Runs the advanced search configuration generator
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Generating the advanced search configuration..."
+    println ""
+
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def script = new File('./build/buildSupport/generateAdvancedSearchConfig.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+generateRemainingSearchTerms.finalizedBy generateAdvancedSearchConfig
+
+// Admin required to run this; thus piggybacking mlDeploySecurity.
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task setBanner(type: com.marklogic.gradle.task.ServerEvalTask) {
+  client = mlAppConfig.newAppServicesDatabaseClient("Documents")
+  javascript = new File('./build/buildSupport/setBanner.sjs').getText('UTF-8')
+}
+mlDeploySecurity.finalizedBy setBanner
+
+task showAppServerCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
+  xquery = new File('./build/buildSupport/showAppServerCiphers.xqy').getText('UTF-8')
+}
+
+task showDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
+  xquery = new File('./build/buildSupport/showDeprecatedSSLProtocols.xqy').getText('UTF-8')
+}
+
+task disableDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
+  xquery = new File('./build/buildSupport/disableDeprecatedSSLProtocols.xqy').getText('UTF-8')
+}
+mlDeployServers.finalizedBy disableDeprecatedSSLProtocols
+
+task updateSSLCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
+  xquery = new File('./build/buildSupport/updateSSLCiphers.xqy').getText('UTF-8')
+}
+mlDeployServers.finalizedBy updateSSLCiphers
+
+// This is a convenience task intended for one with the lux-deployer role to deploy most of the backend.
+// Purposely excluded:
+//
+//    mlDeploySecurity: insufficient permissions
+//    mlLoadData: takes a while and not always needed
+//    mlReloadModules: too likely to take the modules database offline; do it manually before this task.
+//
+task performBaseDeployment() {
+  doFirst {
+    println ""
+    println "Starting Base Deployment"
+    println ""
+  }
+  dependsOn mlDeployGroups, mlDeployDatabases, mlDeployRestApis, mlDeployServers, mlLoadModules
+  doLast {
+    println ""
+    println "Base Deployment Done"
+    println ""
+  }
+}
+// It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
+// could result in an error as the lux-modules database didn't exist in time.
+performBaseDeployment.finalizedBy mlDeployForestReplicas, generateDataConstants
+
+// Enables SSL on the builtin servers
+// And create the certificate intended for the non-builtin servers
+task enableSSL(type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    def manageConfig = getProject().property("mlManageConfig")
+    manageConfig.setScheme("http")
+    manageConfig.setConfigureSimpleSsl(false)
+    //manageConfig.setAdminScheme("http")
+    //manageConfig.setAdminConfigureSimpleSsl(false)
+
+    def adminConfig = getProject().property("mlAdminConfig")
+    adminConfig.setScheme("http")
+    adminConfig.setConfigureSimpleSsl(false)
+
+    def manageClient = new com.marklogic.mgmt.ManageClient(manageConfig)
+    def adminManager = new com.marklogic.mgmt.admin.AdminManager(adminConfig)
+
+    def certManager = new com.marklogic.mgmt.resource.security.CertificateTemplateManager(manageClient)
+    certManager.save(builtInAppCert())
+    certManager.save(luxAppCert())
+
+    def gtcc = new com.marklogic.appdeployer.command.security.GenerateTemporaryCertificateCommand();
+    gtcc.setTemplateIdOrName("built-in-app-cert");
+    gtcc.setCommonName("localhost");
+    gtcc.execute(new com.marklogic.appdeployer.command.CommandContext(getAppConfig(), manageClient, adminManager));
+    gtcc.setTemplateIdOrName("lux-app-cert");
+    gtcc.setCommonName("localhost");
+    gtcc.execute(new com.marklogic.appdeployer.command.CommandContext(getAppConfig(), manageClient, adminManager));
+
+    adminConfig = getProject().property("mlAdminConfig")
+    adminConfig.setScheme("https")
+    adminConfig.setConfigureSimpleSsl(true)
+    adminManager = new com.marklogic.mgmt.admin.AdminManager(adminConfig)
+
+    manageClient.putJson("/manage/v2/servers/Admin/properties?group-id=Default", '{"ssl-certificate-template": "built-in-app-cert"}')
+    adminManager.waitForRestart()
+    manageClient.putJson("/manage/v2/servers/App-Services/properties?group-id=Default", '{"ssl-certificate-template": "built-in-app-cert"}')
+    adminManager.waitForRestart()
+    manageClient.putJson("/manage/v2/servers/Manage/properties?group-id=Default", '{"ssl-certificate-template": "built-in-app-cert"}')
+    adminManager.waitForRestart()
+  }
+}
+
+// Disables SSL on the builtin servers
+task disableSSL(type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    def manageClient = getManageClient()
+    manageClient.putJson("/manage/v2/servers/Admin/properties?group-id=Default", '{"ssl-certificate-template": ""}')
+    manageClient.putJson("/manage/v2/servers/App-Services/properties?group-id=Default", '{"ssl-certificate-template": ""}')
+    manageClient.putJson("/manage/v2/servers/Manage/properties?group-id=Default", '{"ssl-certificate-template": ""}')
+
+    def adminConfig = getProject().property("mlAdminConfig")
+    adminConfig.setScheme("http")
+    adminConfig.setConfigureSimpleSsl(false)
+    def adminManager = new com.marklogic.mgmt.admin.AdminManager(adminConfig)
+    adminManager.waitForRestart()
+
+    // def manageConfig = getProject().property("mlManageConfig")
+    // manageConfig.setScheme("http")
+    // manageConfig.setConfigureSimpleSsl(false)
+    // def mgClient = new com.marklogic.mgmt.ManageClient(manageConfig)
+
+    // def certManager = new com.marklogic.mgmt.resource.security.CertificateTemplateManager(mgClient)
+    // certManager.delete(builtInAppCert())
+    // certManager.delete(luxAppCert())
+  }
+}
+
+// Returns a certificate request for use on the built-in appservers
+def builtInAppCert() {
+    return """
+    <certificate-template-properties xmlns="http://marklogic.com/manage">
+      <template-name>built-in-app-cert</template-name>
+      <template-description>Built-In App Servers Certificate Template</template-description>
+      <key-type>rsa</key-type>
+      <key-options />
+      <req>
+        <version>0</version>
+        <subject>
+          <countryName>US</countryName>
+          <stateOrProvinceName>CT</stateOrProvinceName>
+          <localityName>New Haven</localityName>
+          <organizationName>Yale University</organizationName>
+          <organizationalUnitName>ITS</organizationalUnitName>
+          <emailAddress>xinjian.guo@yale.edu</emailAddress>
+        </subject>
+      </req>
+    </certificate-template-properties>
+    """
+}
+
+// Returns a certificate request for use on the LUX appservers
+def luxAppCert() {
+    return """
+    <certificate-template-properties xmlns="http://marklogic.com/manage">
+      <template-name>lux-app-cert</template-name>
+      <template-description>LUX App Servers Certificate Template</template-description>
+      <key-type>rsa</key-type>
+      <key-options />
+      <req>
+        <version>0</version>
+        <subject>
+          <countryName>US</countryName>
+          <stateOrProvinceName>CT</stateOrProvinceName>
+          <localityName>New Haven</localityName>
+          <organizationName>Yale University</organizationName>
+          <organizationalUnitName>ITS</organizationalUnitName>
+          <emailAddress>xinjian.guo@yale.edu</emailAddress>
+        </subject>
+      </req>
+    </certificate-template-properties>
+    """
+}
+
+task printCredentials {
+  doFirst {
+    // Most important ones
+    println "mlPassword: " + credentials.forKey('mlPassword')
+
+    // Only required by specific, infrequently-used tasks
+    println "copyDatabaseInputPassword: " + credentials.forKey('copyDatabaseInputPassword')
+    println "copyDatabaseOutputPassword: " + credentials.forKey('copyDatabaseOutputPassword')
+    println "importDataPassword: " + credentials.forKey('importDataPassword')
+  }
+}
+
+ext {
+  // Configure properties based on encrypted credentials
+  mlManageConfig.password = credentials.forKey('mlPassword')
+  //mlManageConfig.securityPassword = credentials.forKey('mlPassword')  only needed if setting mlSecurityUsername
+  mlAdminConfig.password = credentials.forKey('mlPassword')
+  mlAppConfig.restAdminPassword =  credentials.forKey('mlPassword')
+  mlAppConfig.appServicesPassword = credentials.forKey('mlPassword')
+
+  // Re-initialize the connections to the Admin and Manage servers
+  mlManageClient.manageConfig = mlManageConfig
+  mlAdminManager.adminConfig = mlAdminConfig
+}

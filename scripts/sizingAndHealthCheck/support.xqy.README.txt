@@ -1,0 +1,23 @@
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Setup:
+
+1. Deploy support.xqy to a modules database.
+
+Usage:
+
+1. Invoke http://[ml-host]:[port]/[modules-path/]support.xqy?filename=[absolute-path-to-support-dump-file]
+
+2. [port] needs to align with the modules database the support.xqy was deployed within.
+
+3. If support.xqy wasn't deployed in the module database's root, replace [modules-path/] with the path; else, the delete placeholder.
+
+4. Replace [absolute-path-to-support-dump-file] with the absolute path to the support dump file that the ML node can reach.
+
+If the dump includes log files, you may have to manually remove the access log entries from the support dump for one or more nodes in the cluster.

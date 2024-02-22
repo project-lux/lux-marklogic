@@ -1,0 +1,15 @@
+{
+  "server-name": "query-plan-viewer",
+  "server-type": "http",
+  "root": "/query-plan-viewer",
+  "port": %%mlQueryPlanViewerPort%%,
+  "content-database": "Documents",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "compute-content-length": false,
+  "log-errors": false,
+  "default-error-format": "json",
+  "error-handler": "/MarkLogic/rest-api/error-handler.xqy",
+  "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
+  "rewrite-resolves-globally": true,
+  "authentication": "%%mlQueryPlanViewerAuthentication%%"
+}

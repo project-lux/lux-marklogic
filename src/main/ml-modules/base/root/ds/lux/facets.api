@@ -1,0 +1,22 @@
+{
+  "functionName": "facets",
+  "params": [
+    {
+      "name": "name",
+      "datatype": "string"
+    },
+    {
+      "name": "q",
+      "datatype": "string"
+    },
+    {
+      "name": "scope",
+      "datatype": "string",
+      "nullable": true
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

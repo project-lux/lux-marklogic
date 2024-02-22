@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "configurations": [
+    {
+      "request": "launch",
+      "type": "ml-jsdebugger",
+      "name": "Evaluate Current JavaScript Module"
+    },
+    {
+      "request": "attach",
+      "type": "ml-jsdebugger",
+      "name": "Attach to Debug Request",
+      "root": "${workspaceFolder}/src/main/ml-modules/base/root",
+      "debugServerName": "lux"
+    },
+    {
+      "request": "launch",
+      "type": "xquery-ml",
+      "name": "Launch XQY Debug Request",
+      "program": "",
+      "root": "${workspaceFolder}/src/main/ml-modules/base/root"
+    },
+    {
+      "request": "attach",
+      "type": "xquery-ml",
+      "name": "Attach to XQY Debug request",
+      "root": "${workspaceFolder}/plugins"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+	"id": "05195cfc-14a2-47ba-a70d-4c9036e3a9ef",
+	"name": "01 - Local",
+	"values": [
+		{
+			"key": "mlProtocol",
+			"value": "http",
+			"enabled": true
+		},
+		{
+			"key": "mlHost",
+			"value": "localhost",
+			"enabled": true
+		},
+		{
+			"key": "mlManagePort",
+			"value": "8002",
+			"enabled": true
+		},
+		{
+			"key": "mlManageUsername",
+			"value": "[yourManageUsername]",
+			"enabled": true
+		},
+		{
+			"key": "mlManagePassword",
+			"value": "[yourManagePassword]",
+			"enabled": true
+		},
+		{
+			"key": "mlAppPort",
+			"value": "8003",
+			"enabled": true
+		},
+		{
+			"key": "mlAppUsername",
+			"value": "[yourAppUsername]",
+			"enabled": true
+		},
+		{
+			"key": "mlAppPassword",
+			"value": "[yourAppPassword]",
+			"enabled": true
+		},
+		{
+			"key": "middleTierUrl",
+			"value": "http://localhost:9005",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2024-02-21T01:17:47.425Z",
+	"_postman_exported_using": "Postman/10.23.1"
+}

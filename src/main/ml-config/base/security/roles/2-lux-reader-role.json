@@ -1,0 +1,5 @@
+{
+  "role-name": "lux-reader",
+  "description": "A role that is not relied upon yet and may offer no value; see the lux-endpoint-consumer role instead.",
+  "role": ["lux-nobody", "rest-reader"]
+}

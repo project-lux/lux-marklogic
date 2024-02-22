@@ -1,0 +1,844 @@
+<!--
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
+<export><workspace name="Health Check"><query name="Full OS Report" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">xquery version "1.0-ml";
+declare namespace hc = "http://marklogic.com/health-check";
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
+declare function local:get-section-row($label, $section-name, $os-dump) {
+  &lt;tr&gt;
+    &lt;td&gt;{ $label }&lt;/td&gt;
+    &lt;td&gt;{$os-dump/hc:section[hc:name eq $section-name]/hc:output/fn:normalize-space(.)}&lt;/td&gt;
+  &lt;/tr&gt;
+
+};
+
+let $os-dump := xdmp:document-get("/Users/jkerr/dev/projects/smartlogic/HC/ml-hc-ml001-2017-02-24-102336.xml")/hc:health-check
+
+let $report := 
+&lt;html&gt;
+  &lt;style&gt;
+  {
+'
+div {
+  font-family: arial, sans-serif;
+}
+
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    border: 1px solid #cccccc;
+    text-align: left;
+    vertical-align: top;
+    padding: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+'    
+  }
+  &lt;/style&gt;
+  &lt;body&gt;
+  &lt;div&gt;
+    &lt;h3&gt;OS Settings&lt;/h3&gt;
+    &lt;table&gt;
+      &lt;tr&gt;
+	      &lt;th&gt;Setting&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;
+      &lt;/tr&gt;
+      {
+        for $i in $os-dump/hc:section
+        return
+          &lt;tr&gt;
+            &lt;td&gt;{ fn:string($i/hc:name) }&lt;/td&gt;
+            &lt;td&gt;&lt;pre&gt;{ fn:string($i/hc:output) }&lt;/pre&gt;&lt;/td&gt;
+          &lt;/tr&gt;
+      }
+    &lt;/table&gt;
+  &lt;/div&gt;
+  
+  &lt;/body&gt;
+&lt;/html&gt;
+
+return (
+  $report
+)
+</query><query name="Parse support dump" focus="true" active="true" content-source="as:10692312538026359959:" mode="xquery">declare namespace server = "http://marklogic.com/xdmp/status/server";
+declare namespace forest = "http://marklogic.com/xdmp/status/forest";
+declare namespace support = "http://marklogic.com/support";
+
+declare variable $percent-div := "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%";
+declare variable $pound-div   := "###########################################################################";
+declare variable $equal-div   := "===========================================================================";
+
+declare variable $dumps-collection := "support-dumps";
+
+declare function local:parse-report-header($section) {
+  element support:report {
+    for $line in fn:tokenize($section, "&amp;#10;")[. ne ""]
+    let $key := fn:substring-before($line, ":")
+    let $value := fn:normalize-space(fn:substring-after($line, ":"))
+    let $local-name := fn:translate(fn:lower-case($key), " ", "-")
+    return
+      element { xs:QName("support:" || $local-name) } { $value }
+  }
+};
+
+declare function local:parse-host-header($section) {
+  element support:host {
+    for $line in fn:tokenize($section, "&amp;#10;")[. ne ""]
+    let $key := fn:substring-before($line, ":")
+    let $value := fn:normalize-space(fn:substring-after($line, ":"))
+    let $local-name := fn:translate(fn:lower-case($key), " ", "-")
+    return
+      element { xs:QName("support:" || $local-name) } { $value }
+  }
+};
+
+declare function local:handle-host-section($header-section, $section, $output-dir, $output-collections) {
+  let $header := local:parse-host-header($header-section)
+  let $output-dir := $output-dir || "/hosts/" || $header/support:hostname
+  
+  let $sub-sections := fn:tokenize($section, $pound-div)[fn:normalize-space(.) ne ""]
+  
+  (: Sub sections are: Host Status, Configuration, Log Files and Data Directory in that order :)
+  
+  return (
+    local:handle-host-status-section($sub-sections[1], $output-dir, $output-collections),
+    local:handle-configuration-section($sub-sections[2], $output-dir, $output-collections),
+    local:handle-log-files-section($sub-sections[3], $output-dir, $output-collections),
+    local:handle-data-directory-section($sub-sections[4], $output-dir, $output-collections)
+  )
+};
+
+declare function local:handle-host-status-section($section, $output-dir, $output-collections) {
+  let $sub-sections := fn:tokenize($section, $equal-div)[fn:normalize-space(.) ne ""]
+  
+  (: The first sub section is the header and the second part is the host-status XML :)
+
+  let $host-status := xdmp:unquote($sub-sections[2])
+  return
+    xdmp:document-insert(
+      $output-dir || "/status.xml", 
+      $host-status, 
+      xdmp:default-permissions(),
+      (xdmp:default-collections(), $output-collections)
+    )
+  
+};
+
+declare function local:handle-configuration-section($section, $output-dir, $output-collections) {
+  let $sub-sections := fn:tokenize($section, $equal-div)[fn:normalize-space(.) ne ""]
+  
+  (: The first sub section is the Configuration header :)
+  let $sub-sections := fn:subsequence($sub-sections, 2)
+  
+  (: Sequence alternates: filename, Validation results (optional), file :)
+  let $filename := ()
+  for $i in $sub-sections
+  return
+    if ($filename) then
+      if (fn:contains($i, "Validation results:")) then
+        (: ignore :)
+        () 
+      else
+        (: must be the file :)
+        let $file := xdmp:unquote($i)
+        return (
+          xdmp:document-insert(
+            $output-dir || "/" || $filename, 
+            $file, 
+            xdmp:default-permissions(),
+            (xdmp:default-collections(), $output-collections)
+          ),
+          
+          (: clear the file name :)
+          xdmp:set($filename, ())
+        )
+    else
+        if (fn:contains($i, "Configuration file ")) then
+          (: file doesn't exist so ignore :)
+          ()
+        else
+          (: must be the file name :)
+          xdmp:set($filename, fn:normalize-space($i))
+};
+
+declare function local:handle-log-files-section($section, $output-dir, $output-collections) {
+  let $sub-sections := fn:tokenize($section, $equal-div)[fn:normalize-space(.) ne ""]
+  return ()
+  
+  (: Should create a new doc for each log file and put in the "logs" directory for the host :)
+  
+  (:
+  for $i in $sub-sections
+  return fn:substring($i, 1, 100)
+  :)
+};
+
+declare function local:handle-data-directory-section($section, $output-dir, $output-collections) {
+  let $sub-sections := fn:tokenize($section, $equal-div)[fn:normalize-space(.) ne ""]
+
+  let $doc := text { fn:string-join($sub-sections, "") }
+  return
+    xdmp:document-insert(
+      $output-dir || "/data-directory.txt", 
+      $doc, 
+      xdmp:default-permissions(),
+      (xdmp:default-collections(), $output-collections)
+    )
+  
+};
+
+declare function local:handle-status-section($section, $output-dir, $output-collections) {
+  let $sub-sections := fn:tokenize($section, $equal-div)[fn:normalize-space(.) ne ""]
+
+  (: this could be a lot more efficient! :)
+  (: also needs to be updated to handle triggers, CFP, SQL and schemas :)
+  
+  let $app-servers-start-index := 1
+  let $topology-start-index := fn:index-of($sub-sections, "&amp;#10;Database Topology&amp;#10;")
+  let $forest-status-start-index := fn:index-of($sub-sections, "&amp;#10;Forest Status&amp;#10;")
+  let $triggers-start-index := fn:index-of($sub-sections, "&amp;#10;Trigger Definitions&amp;#10;")
+  let $cpf-domains-start-index := fn:index-of($sub-sections, "&amp;#10;CPF Domains&amp;#10;")
+  let $cpf-pipelines-start-index := fn:index-of($sub-sections, "&amp;#10;CPF Pipelines&amp;#10;")
+  let $sql-schemas-start-index := fn:index-of($sub-sections, "&amp;#10;SQL Schemas&amp;#10;")
+  let $sql-views-start-index := fn:index-of($sub-sections, "&amp;#10;SQL Views&amp;#10;")
+  let $xml-schemas-start-index := fn:index-of($sub-sections, "&amp;#10;XML Schemas&amp;#10;")
+  return (    
+    local:handle-app-server-status-section(
+      fn:subsequence($sub-sections, $app-servers-start-index + 1, ($topology-start-index - $app-servers-start-index - 1)),
+      $output-dir, 
+      $output-collections
+    ),
+    local:handle-topology-status-section(
+      fn:subsequence($sub-sections, $topology-start-index + 1, ($forest-status-start-index - $topology-start-index - 1)),
+      $output-dir, 
+      $output-collections
+    ),
+    local:handle-forest-status-section(
+      fn:subsequence($sub-sections, $forest-status-start-index + 1, ($triggers-start-index - $forest-status-start-index - 1)),
+      $output-dir, 
+      $output-collections
+    )    
+  )
+};
+
+declare function local:handle-app-server-status-section($sub-sections, $output-dir, $output-collections) {
+  for $i in $sub-sections
+  return 
+    if (fn:starts-with($i, "&amp;#10;Group: ")) then
+      let $group-line := (fn:tokenize($i, "&amp;#10;")[. ne ""])[1]
+      let $parts := fn:tokenize($group-line, ", ")
+      let $group := fn:substring-after($parts[1], ": ")
+      let $app-server := fn:substring-after($parts[2], ": ")
+      let $host := fn:substring-after($parts[3], ": ")
+      let $server-status := xdmp:unquote(fn:substring-after($i, $group-line))
+      return
+        (: app-servers/group/host/app-server name/status.xml :)
+        xdmp:document-insert(
+          $output-dir || "/app-servers/" || $group || "/" || $host || "/" || $app-server || "/status.xml", 
+          $server-status, 
+          xdmp:default-permissions(),
+          (xdmp:default-collections(), $output-collections)
+        )
+    else
+      ()
+};
+
+declare function local:handle-topology-status-section($sub-sections, $output-dir, $output-collections) {
+  (: I'm not sure what to do with these sections right now so just dump to a single doc :)
+  let $topology := text { fn:string-join($sub-sections, "") }
+  return
+    xdmp:document-insert(
+      $output-dir || "/topology.txt", 
+      $topology, 
+      xdmp:default-permissions(),
+      (xdmp:default-collections(), $output-collections)
+    )
+};
+
+declare function local:handle-forest-status-section($sub-sections, $output-dir, $output-collections) {
+  for $i in $sub-sections
+  return 
+    let $forest-name := (fn:tokenize($i, "&amp;#10;")[. ne ""])[1]
+    let $forest-xml := xdmp:unquote("&lt;x&gt;" || fn:substring-after($i, $forest-name) || "&lt;/x&gt;")/x
+    let $forest-status := $forest-xml/forest:forest-status
+    let $forest-counts := $forest-xml/forest:forest-counts
+    return (
+      xdmp:document-insert(
+        $output-dir || "/forests/" || $forest-name || "/status.xml", 
+        $forest-status, 
+        xdmp:default-permissions(),
+        (xdmp:default-collections(), $output-collections)
+      ),
+      xdmp:document-insert(
+        $output-dir || "/forests/" || $forest-name || "/counts.xml", 
+        $forest-counts, 
+        xdmp:default-permissions(),
+        (xdmp:default-collections(), $output-collections)
+      )
+    )
+};
+
+declare function local:process-suport-dump($project-name, $dump-filename) {
+  let $dump := xdmp:filesystem-file($dump-filename)
+
+  (: The main sections start with the report with app server statuses and then one section per host :)
+  let $main-sections := fn:tokenize($dump, $percent-div)[. ne ""]
+  let $host-count := (fn:count($main-sections) - 2) div 2
+
+  (: The first section is report header, the second is the status and then there is a section per host :)
+  let $report-section := $main-sections[1]
+  let $status-section := $main-sections[2]
+  
+  let $report-header := local:parse-report-header($report-section)
+  let $dir := "/support-dumps/" || $project-name || "/" || $report-header/support:report-time
+  let $collections := (
+    $dumps-collection, 
+    $dumps-collection || ":" || $project-name
+  )
+
+  return (
+    local:handle-status-section($status-section, $dir, $collections),
+    
+    for $i in 1 to $host-count
+    let $index := 2 + $i * 2
+    let $header := $main-sections[$index - 1]
+    let $section := $main-sections[$index]
+    return local:handle-host-section($header, $section, $dir, $collections),
+    
+    $dir
+  )
+};
+
+(: outputs parts of the support dump into the "/support-dumps/" || $project-name || "/" directory :)
+(: run this in a database you are ok adding these documents to :)
+
+(: Name of the customer project :)
+let $project-name := "Smartlogic"
+
+(: Name of customer support dump file :)
+let $dump-filename := "/Users/jkerr/dev/projects/smartlogic/HC/production_cluster_support_dump_080317.txt"
+return local:process-suport-dump($project-name, $dump-filename)
+</query><query name="Database report" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">xquery version "1.0-ml";
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
+declare namespace server = "http://marklogic.com/xdmp/status/server";
+declare namespace forest = "http://marklogic.com/xdmp/status/forest";
+declare namespace db     = "http://marklogic.com/xdmp/database";
+
+declare function local:settings-table($title, $settings, $database) {
+  &lt;div&gt;
+    &lt;h3&gt;{ $title }&lt;/h3&gt;
+    &lt;table&gt;
+      &lt;tr&gt;
+	      &lt;th&gt;Setting&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;
+      &lt;/tr&gt;
+      {
+       	for $i in $settings
+        let $label := fn:translate($i, "-", " ")
+        let $element-name := xs:QName("db:" || $i)
+        let $element := $database/*[fn:node-name(.) eq $element-name]
+        let $value :=
+          if ($i eq "fields") then
+            let $count := fn:count($database/db:fields/*) - 1
+            return if ($count eq 0) then "none" else $count
+          else if ($i eq "geospatial") then
+            let $count := fn:count($database/*[fn:starts-with(fn:local-name(.), "geospatial-")]/*)
+            return if ($count eq 0) then "none" else $count
+          else if ($i eq "rebalancer-assignment-policy") then
+            fn:string($database/db:assignment-policy/db:assignment-policy-name)
+          else if ($element/* or fn:empty($element/node())) then
+            let $count := fn:count($element/*)
+            return if ($count eq 0) then "none" else $count
+          else
+            fn:string($element)
+	      return
+          &lt;tr&gt;
+            &lt;td&gt;{ $label }&lt;/td&gt;
+            &lt;td&gt;{ $value }&lt;/td&gt;
+          &lt;/tr&gt;
+      }
+    &lt;/table&gt;
+  &lt;/div&gt;
+};
+
+let $project := "Smartlogic"
+let $timestamp := "2017-02-02T14:50:39.858086Z"
+let $base-dir := "/support-dumps/" || $project || "/" || $timestamp
+
+let $hosts-dir := $base-dir || "/hosts/"
+
+let $uris := cts:uris((), (), cts:directory-query($hosts-dir, "infinity"))
+
+let $databases-uris := $uris[fn:ends-with(., "databases.xml")]
+let $databases := fn:doc($databases-uris[1])/db:databases
+
+let $database-name := "test"
+let $database := $databases/db:database[db:database-name eq $database-name]
+
+let $text-index-settings := (
+  "stemmed-searches",
+  "word-searches",
+  "word-positions",
+  "fast-phrase-searches",
+  "fast-reverse-searches",
+  "fast-case-sensitive-searches",
+  "fast-diacritic-sensitive-searches",
+  "fast-element-word-searches",
+  "element-word-positions",
+  "fast-element-phrase-searches",
+  "element-value-positions",
+  "field-value-searches",
+  "field-value-positions",
+  "three-character-searches",
+  "fast-element-character-searches",
+  "trailing-wildcard-searches",
+  "trailing-wildcard-word-positions",
+  "fast-element-trailing-wildcard-searches",
+  "two-character-searches",
+  "one-character-searches",
+  "fields"
+)
+
+let $semantics-settings := (
+  "triple-index",
+  "default-rulesets"
+)
+
+let $geospatial-settings := (
+  "geospatial"
+)
+  
+let $lexicon-settings := (
+  "uri-lexicon",
+  "collection-lexicon",
+  "word-lexicons",
+  "ranges-element-indexes",
+  "range-element-attribute-indexes",
+  "range-path-indexes",
+  "range-field-indexes"
+)
+
+let $fragmentation-settings := (
+  "fragment-roots",
+  "fragment-parents"
+)
+
+let $misc-settings := (
+  "directory-creation",
+  "maintain-last-modified",
+  "maintain-directory-last-modified",
+  "inherit-permissions",
+  "inherit-collections",
+  "inherit-quality",
+  "index-detection",
+  "format-compatibility"
+)
+
+let $rebalancer-settings := (
+  "rebalancer-enabled",
+  "rebalancer-throttle",
+  "rebalancer-assignment-policy"
+)
+
+let $report := 
+&lt;html&gt;
+  &lt;style&gt;
+  {
+    'table { width : 600px; }',
+    'td, th { text-align: left; width: 50% }'
+  }
+  &lt;/style&gt;
+  &lt;body&gt;
+  {
+    local:settings-table("Text Index Settings", $text-index-settings, $database),
+    local:settings-table("Semantics Settings", $semantics-settings, $database),
+    local:settings-table("Geospatial Settings", $geospatial-settings, $database),
+    local:settings-table("Lexicon Settings", $lexicon-settings, $database),
+    local:settings-table("Fragmentation Settings", $fragmentation-settings, $database),
+    local:settings-table("Miscellaneous Settings", $misc-settings, $database),
+    local:settings-table("Rebalancer Settings", $rebalancer-settings, $database)
+  }
+  &lt;/body&gt;
+&lt;/html&gt;
+
+return (
+  $report,
+  xdmp:save("/tmp/report.html", $report)
+)</query><query name="OS Report" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">xquery version "1.0-ml";
+declare namespace hc = "http://marklogic.com/health-check";
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
+declare function local:get-section-row($label, $section-name, $os-dump) {
+  &lt;tr&gt;
+    &lt;td&gt;{ $label }&lt;/td&gt;
+    &lt;td&gt;
+    {
+      if ($section-name eq "TBD") then
+        "[TBD]"
+      else
+        $os-dump/hc:section[hc:name eq $section-name]/hc:output/fn:normalize-space(.)
+    }
+    &lt;/td&gt;
+    &lt;td&gt;[TBD]&lt;/td&gt;
+  &lt;/tr&gt;
+
+};
+
+let $os-dump := xdmp:document-get("/Users/jkerr/dev/projects/smartlogic/HC/ml-hc-ml001-2017-02-24-102336.xml")/hc:health-check
+
+let $report := 
+&lt;html&gt;
+  &lt;style&gt;
+  {
+    'table { width : 600px; }',
+    'td, th { text-align: left; vertical-align: top; width: 50%; }'
+  }
+  &lt;/style&gt;
+  &lt;body&gt;
+  &lt;div&gt;
+    &lt;h3&gt;OS Settings&lt;/h3&gt;
+    &lt;table&gt;
+      &lt;tr&gt;
+	      &lt;th&gt;Setting&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;&lt;th&gt;Check&lt;/th&gt;
+      &lt;/tr&gt;
+      {
+        local:get-section-row("OS Version", "release", $os-dump),
+        local:get-section-row("Kernel", "uname", $os-dump),
+        local:get-section-row("Swappiness", "swappiness", $os-dump),
+        local:get-section-row("Transparent Huge Pages", "transparent huge pages", $os-dump),
+        local:get-section-row("Huge Pages", "TBD", $os-dump),        
+        local:get-section-row("IO Scheduler", "TBD", $os-dump),
+        local:get-section-row("Swap Space (MB)", "TBD", $os-dump),
+        ()
+      }
+    &lt;/table&gt;
+  &lt;/div&gt;
+  
+  &lt;/body&gt;
+&lt;/html&gt;
+
+return (
+  $report
+)
+</query><query name="Memory Report" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">xquery version "1.0-ml";
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
+declare namespace server = "http://marklogic.com/xdmp/status/server";
+declare namespace forest = "http://marklogic.com/xdmp/status/forest";
+declare namespace db     = "http://marklogic.com/xdmp/database";
+declare namespace group  = "http://marklogic.com/xdmp/group";
+
+declare function local:settings-table($title, $settings, $config) {
+  &lt;div&gt;
+    &lt;h3&gt;{ $title }&lt;/h3&gt;
+    &lt;table&gt;
+      &lt;tr&gt;
+	      &lt;th&gt;Setting&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;
+      &lt;/tr&gt;
+      {
+       	for $i in $settings
+        let $label := fn:translate($i, "-", " ")
+        let $element-name := $i
+        let $element := $config/*[fn:local-name(.) eq $element-name]
+        let $value :=
+          if ($i eq "fields") then
+            let $count := fn:count($config/db:fields/*) - 1
+            return if ($count eq 0) then "none" else $count
+          else if ($i eq "geospatial") then
+            let $count := fn:count($config/*[fn:starts-with(fn:local-name(.), "geospatial-")]/*)
+            return if ($count eq 0) then "none" else $count
+          else if ($i eq "rebalancer-assignment-policy") then
+            fn:string($config/db:assignment-policy/db:assignment-policy-name)
+          else if ($element/* or fn:empty($element/node())) then
+            let $count := fn:count($element/*)
+            return if ($count eq 0) then "none" else $count
+          else
+            fn:string($element)
+	      return
+          &lt;tr&gt;
+            &lt;td&gt;{ $label }&lt;/td&gt;
+            &lt;td&gt;{ $value }&lt;/td&gt;
+          &lt;/tr&gt;
+      }
+    &lt;/table&gt;
+  &lt;/div&gt;
+};
+
+let $project := "Smartlogic"
+let $timestamp := "2017-03-08T17:17:06.995123Z"
+let $base-dir := "/support-dumps/" || $project || "/" || $timestamp
+
+let $hosts-dir := $base-dir || "/hosts/"
+
+let $uris := cts:uris((), (), cts:directory-query($hosts-dir, "infinity"))
+
+let $databases-uris := $uris[fn:ends-with(., "databases.xml")]
+let $databases := fn:doc($databases-uris[1])/db:databases
+
+let $database-name := "test"
+let $database := $databases/db:database[db:database-name eq $database-name]
+
+let $groups-uris := $uris[fn:ends-with(., "groups.xml")]
+let $groups := fn:doc($groups-uris[1])/group:groups
+
+let $group-name := "Default"
+let $group := $groups/group:group[group:group-name eq $group-name]
+
+let $db-memory-settings := (
+  "in-memory-limit",
+  "in-memory-list-size",
+  "in-memory-tree-size",
+  "in-memory-range-index-size",
+  "in-memory-reverse-index-size",
+  "in-memory-triple-index-size",
+  "preload-mapped-data",
+  "preload-replica-mapped-data"
+)
+
+let $group-memory-settings := (
+  "list-cache-size",
+  "list-cache-partitions",
+  "compressed-tree-cache-size",
+  "compressed-tree-cache-partitions",
+  "compressed-tree-read-size",
+  "expanded-tree-cache-size",
+  "expanded-tree-cache-partitions",
+  "expanded-tree-cache-partitions",
+  "triple-cache-size",
+  "triple-cache-partitions",
+  "triple-cache-timeout",
+  "triple-value-cache-size",
+  "triple-value-cache-partitions",
+  "triple-value-cache-timeout"
+)
+
+let $report := 
+&lt;html&gt;
+  &lt;style&gt;
+  {
+    'table { width : 600px; }',
+    'td, th { text-align: left; width: 50% }'
+  }
+  &lt;/style&gt;
+  &lt;body&gt;
+  {
+    local:settings-table("Database Memory Settings - " || $database-name, $db-memory-settings, $database),
+    local:settings-table("Group Memory Settings - " || $group-name, $group-memory-settings, $group)
+  }
+  &lt;/body&gt;
+&lt;/html&gt;
+
+return (
+  $report,
+  $group
+)</query><query name="Forest Report" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">xquery version "1.0-ml";
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
+declare namespace server = "http://marklogic.com/xdmp/status/server";
+declare namespace forest = "http://marklogic.com/xdmp/status/forest";
+declare namespace status = "http://marklogic.com/xdmp/status/host";
+declare namespace db     = "http://marklogic.com/xdmp/database";
+declare namespace group  = "http://marklogic.com/xdmp/group";
+declare namespace host   = "http://marklogic.com/xdmp/hosts";
+declare namespace a      = "http://marklogic.com/xdmp/assignments";
+
+declare function local:forest-table($forests, $forests-dir) {
+          &lt;table&gt;
+            &lt;tr&gt;
+              &lt;th&gt;Forest&lt;/th&gt;
+              &lt;th&gt;Stands&lt;/th&gt;
+              &lt;th&gt;Documents&lt;/th&gt;
+              &lt;th&gt;Active Fragments&lt;/th&gt;
+              &lt;th&gt;Deleted Fragments&lt;/th&gt;              
+              &lt;th&gt;On-Disk Size (MB)&lt;/th&gt;
+              &lt;th&gt;In-Memory Size (MB)&lt;/th&gt;
+            &lt;/tr&gt;
+            {
+              for $forest in $forests
+              let $forest-name := $forest/a:forest-name
+              let $forest-status := fn:doc($forests-dir || $forest-name || "/status.xml")/forest:forest-status
+              let $forest-counts := fn:doc($forests-dir || $forest-name || "/counts.xml")/forest:forest-counts
+              return            
+              &lt;tr&gt;
+                &lt;td&gt;{ $forest/a:forest-name/text() }&lt;/td&gt;
+                &lt;td&gt;{ fn:count($forest-status//forest:stand) }&lt;/td&gt;
+                &lt;td&gt;{ $forest-counts/forest:document-count }&lt;/td&gt;
+                &lt;td&gt;{ fn:sum($forest-counts//forest:stand-counts/forest:active-fragment-count) }&lt;/td&gt;
+                &lt;td&gt;{ fn:sum($forest-counts//forest:stand-counts/forest:deleted-fragment-count) }&lt;/td&gt;
+                &lt;td&gt;{ fn:sum($forest-status//forest:stand/forest:disk-size) }&lt;/td&gt;
+                &lt;td&gt;{ fn:sum($forest-status//forest:stand/forest:memory-size) }&lt;/td&gt;
+              &lt;/tr&gt;              
+            }
+          &lt;/table&gt;
+};
+
+let $project := "Smartlogic"
+let $timestamp := "2017-03-08T17:17:06.995123Z"
+let $base-dir := "/support-dumps/" || $project || "/" || $timestamp || "/"
+
+let $hosts-uris := cts:uris((), (), cts:directory-query($base-dir || "hosts/", "infinity"))
+
+let $host := fn:substring-before(fn:substring-after($hosts-uris[1], "/hosts/"), "/")
+let $host-dir := $base-dir || "hosts/" || $host || "/"
+
+let $forests-dir := $base-dir || "forests/"
+
+let $host-status := fn:doc($host-dir || "status.xml")/status:host-status
+
+let $hosts := fn:doc($host-dir || "hosts.xml")/host:hosts
+let $databases := fn:doc($host-dir || "databases.xml")/db:databases
+let $assignments := fn:doc($host-dir || "assignments.xml")/a:assignments
+
+let $report := 
+&lt;html&gt;
+  &lt;style&gt;
+  {
+    'table { width : 100%; }',
+    'td, th { text-align: left;}'
+  }
+  &lt;/style&gt;
+  &lt;body&gt;
+  {
+    for $database in $databases/db:database
+    let $database-name := $database/db:database-name
+    let $forest-ids := $database/db:forests/db:forest-id
+    let $forest-replica-ids := $assignments/a:assignment[a:forest-id = $forest-ids]//a:forest-replica
+    return
+      &lt;div&gt;
+        &lt;h2&gt;{ $database-name }&lt;/h2&gt;
+        {
+          for $host in $hosts/host:host
+          let $host-name := $host/host:host-name
+          let $host-id := $host/host:host-id
+          let $host-forests := $assignments/a:assignment[a:host eq $host-id][a:forest-id = ($forest-ids)]
+          let $host-replica-forests := $assignments/a:assignment[a:host eq $host-id][a:forest-id = ($forest-replica-ids)]
+          return
+            &lt;div&gt;
+              &lt;h3&gt;{ $host-name/text() }&lt;/h3&gt;
+              &lt;b&gt;Primary Forests&lt;/b&gt;
+              {
+                local:forest-table($host-forests, $forests-dir)
+              }
+              &lt;br/&gt;
+              &lt;b&gt;Replica Forests&lt;/b&gt;        
+              {
+                local:forest-table($host-replica-forests, $forests-dir)
+              }
+            &lt;/div&gt;
+        }
+      &lt;/div&gt;
+      
+  }
+  &lt;/body&gt;
+&lt;/html&gt;
+
+return (
+  $report
+)</query><query name="Forest report table" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">xquery version "1.0-ml";
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
+declare namespace server = "http://marklogic.com/xdmp/status/server";
+declare namespace forest = "http://marklogic.com/xdmp/status/forest";
+declare namespace status = "http://marklogic.com/xdmp/status/host";
+declare namespace db     = "http://marklogic.com/xdmp/database";
+declare namespace group  = "http://marklogic.com/xdmp/group";
+declare namespace host   = "http://marklogic.com/xdmp/hosts";
+declare namespace a      = "http://marklogic.com/xdmp/assignments";
+
+declare function local:forest-table($database-name, $host-name, $type, $forests, $forests-dir) {
+              for $forest in $forests
+              let $forest-name := $forest/a:forest-name
+              let $forest-status := fn:doc($forests-dir || $forest-name || "/status.xml")/forest:forest-status
+              let $forest-counts := fn:doc($forests-dir || $forest-name || "/counts.xml")/forest:forest-counts
+              let $values := (
+                $database-name,
+                $host-name,
+                $type,
+                $forest/a:forest-name/text(),
+                fn:count($forest-status//forest:stand),
+                $forest-counts/forest:document-count,
+                fn:sum($forest-counts//forest:stand-counts/forest:active-fragment-count),
+                fn:sum($forest-counts//forest:stand-counts/forest:deleted-fragment-count),
+                fn:sum($forest-status//forest:stand/forest:disk-size),
+                fn:sum($forest-status//forest:stand/forest:memory-size)
+              )
+              return
+                fn:string-join($values ! xs:string(.), ",")
+};
+
+let $project := "Smartlogic"
+let $timestamp := "2017-03-08T17:17:06.995123Z"
+let $base-dir := "/support-dumps/" || $project || "/" || $timestamp || "/"
+
+let $hosts-uris := cts:uris((), (), cts:directory-query($base-dir || "hosts/", "infinity"))
+
+let $host := fn:substring-before(fn:substring-after($hosts-uris[1], "/hosts/"), "/")
+let $host-dir := $base-dir || "hosts/" || $host || "/"
+
+let $forests-dir := $base-dir || "forests/"
+
+let $host-status := fn:doc($host-dir || "status.xml")/status:host-status
+
+let $hosts := fn:doc($host-dir || "hosts.xml")/host:hosts
+let $databases := fn:doc($host-dir || "databases.xml")/db:databases
+let $assignments := fn:doc($host-dir || "assignments.xml")/a:assignments
+
+let $report := 
+    for $database in $databases/db:database
+    let $database-name := $database/db:database-name
+    let $forest-ids := $database/db:forests/db:forest-id
+    let $forest-replica-ids := $assignments/a:assignment[a:forest-id = $forest-ids]//a:forest-replica
+    return
+          for $host in $hosts/host:host
+          let $host-name := $host/host:host-name
+          let $host-id := $host/host:host-id
+          let $host-forests := $assignments/a:assignment[a:host eq $host-id][a:forest-id = ($forest-ids)]
+          let $host-replica-forests := $assignments/a:assignment[a:host eq $host-id][a:forest-id = ($forest-replica-ids)]
+          return (
+                local:forest-table($database-name, $host-name, "primary", $host-forests, $forests-dir),
+                local:forest-table($database-name, $host-name, "replica", $host-replica-forests, $forests-dir)
+          )
+        
+let $headers := (
+  "database",
+  "host",
+  "forest-type",
+  "forest-name",
+  "stands",
+  "documents",
+  "active-fragments",
+  "deleted-fragments",
+  "On-Disk-Size(MB)",
+  "In-Memory-Size(MB)"
+)
+return (
+  fn:string-join($headers, ","),
+  $report
+)</query><query name="Query 1" focus="false" active="true" content-source="as:10692312538026359959:" mode="xquery">let $project := "Smartlogic"
+let $timestamp := "2017-03-08T17:17:06.995123Z"
+let $base-dir := "/support-dumps/" || $project || "/" || $timestamp || "/"
+
+let $hosts-uris := cts:uris((), (), cts:directory-query($base-dir || "hosts/", "infinity"))
+
+for $i in $hosts-uris[fn:ends-with(., "status.xml")]
+let $status := fn:doc($i)/*:host-status
+let $values := (
+  $status/*:host-name,
+  $status/*:log-device-space,
+  $status/*:host-size,
+  $status/*:data-dir-space
+)
+return (fn:string-join($values ! xs:string(.), ","))</query></workspace></export>

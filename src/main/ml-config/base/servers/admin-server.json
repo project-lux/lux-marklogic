@@ -1,0 +1,5 @@
+{
+  "server-name": "Admin",
+  "authentication": "%%mlAdminAuthentication%%",
+  "internal-security": "true"
+}

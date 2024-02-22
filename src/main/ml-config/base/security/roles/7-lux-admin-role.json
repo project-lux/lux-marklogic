@@ -1,0 +1,12 @@
+{
+  "role-name": "lux-admin",
+  "description": "Non-admin administrator",
+  "role": ["lux-deployer"],
+  "privilege": [
+    {
+      "privilege-name": "xdbc:insert-in",
+      "action": "http://marklogic.com/xdmp/privileges/xdbc-insert-in",
+      "kind": "execute"
+    }
+  ]
+}

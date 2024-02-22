@@ -20,7 +20,7 @@ List of details required for the completion of the issue or requirements for the
 **Needed for promotion:**
 If an item on the list is not needed, it should be crossed off but not removed.
 
-- [ ] Wireframe/Mockup - Heather
+- [ ] Wireframe/Mockup - Mike
 - [ ] Committee discussions - Sarah
 - [ ] Feasibility/Team discussion - Sarah
 - [ ] Backend requirements - TBD

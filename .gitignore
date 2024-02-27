@@ -5,6 +5,7 @@
 .settings
 build
 gradle-*.properties
+!gradle-wrapper.properties
 
 src/main/ml-modules/base/root/runDuringDeployment/dataConstants/pipelineDataConstants.json
 

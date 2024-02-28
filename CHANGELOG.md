@@ -1,7 +1,45 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+
 ## Unreleased
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## v1.10.2 - 2024-02-28
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+- Fixed incorrect ID URIs in Activity Streams responses ([#60](https://github.com/project-lux/lux-marklogic/issues/60))
+### Security
+
+## v1.10.1 - 2024-02-21
+### Added
+
+### Changed
+- Cleaned up code for release to public repo ([#1095](https://git.yale.edu/lux-its/marklogic/issues/1095)).
+- Updated documentation on setting up a local Marklogic envrionment ([#1071](https://git.yale.edu/lux-its/marklogic/issues/1071)).
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.10.0 - 2024-02-20
 
 ### Added
 - Added LICENSE.txt and NOTICE.txt ([#60](https://git.yale.edu/lux-its/lux-project/issues/60)).
@@ -10,8 +48,6 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Changed search estimate endpoint to accept scope as a query parameter ([#1161](https://git.yale.edu/lux-its/marklogic/issues/1161)).
 - Changed Context link returned in Activity Streams endpoints to be correct (https://linked.art/ns/v1/search.json) ([#1120](https://git.yale.edu/lux-its/marklogic/issues/1120)).
 - Changed facets and related list endpoints to use Activity Streams format ([#1164](https://git.yale.edu/lux-its/marklogic/issues/1164)).
-- Cleaned up code for release to public repo ([#1095](https://git.yale.edu/lux-its/marklogic/issues/1095)).
-- Updated documentation on setting up a local Marklogic envrionment ([#1071](https://git.yale.edu/lux-its/marklogic/issues/1071)).
 ### Removed
 - Removed search estimates endpoint. It is replaced by multiple requests to the search estimate (singular) endpoint. ([#1118](https://git.yale.edu/lux-its/marklogic/issues/1118)).
 

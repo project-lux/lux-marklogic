@@ -242,7 +242,7 @@ function _search(
     const response = {
       '@context': LUX_CONTEXT,
       id: utils.buildSearchUri({
-        searchCriteria,
+        searchCriteria: resolvedSearchCriteria,
         scope: searchScope,
         mayChangeScope,
         page,
@@ -254,7 +254,7 @@ function _search(
       type: AS_TYPE_ORDERED_COLLECTION_PAGE,
       partOf: [
         {
-          id: utils.buildSearchEstimateUri(searchCriteria, searchScope),
+          id: utils.buildSearchEstimateUri(resolvedSearchCriteria, searchScope),
           type: AS_TYPE_ORDERED_COLLECTION,
           // CHANGE IF MORE THAN ONE LANGUAGE IS SUPPORTED
           label: { en: [SCOPE_LABELS[searchScope]] },
@@ -270,7 +270,7 @@ function _search(
     if (page > 1) {
       response.prev = {
         id: utils.buildSearchUri({
-          searchCriteria,
+          searchCriteria: resolvedSearchCriteria,
           scope: searchScope,
           mayChangeScope,
           page: page - 1,
@@ -285,7 +285,7 @@ function _search(
     if (page < Math.ceil(estimate / pageLength)) {
       response.next = {
         id: utils.buildSearchUri({
-          searchCriteria,
+          searchCriteria: resolvedSearchCriteria,
           scope: searchScope,
           mayChangeScope,
           page: page + 1,
@@ -427,8 +427,9 @@ function calculateEstimate(searchCriteria, scope) {
   });
   const searchScope = searchCriteriaProcessor.getSearchScope();
   const totalItems = searchCriteriaProcessor.getEstimate();
+  const resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
   const orderedCollection = {
-    id: utils.buildSearchEstimateUri(searchCriteria, searchScope),
+    id: utils.buildSearchEstimateUri(resolvedSearchCriteria, searchScope),
     type: AS_TYPE_ORDERED_COLLECTION,
     label: { en: [SCOPE_LABELS[searchScope]] },
     summary: {
@@ -437,7 +438,7 @@ function calculateEstimate(searchCriteria, scope) {
     totalItems,
     first: {
       id: utils.buildSearchUri({
-        searchCriteria,
+        searchCriteria: resolvedSearchCriteria,
         page: 1,
         pageLength: DEFAULT_PAGE_LENGTH,
         scope: searchScope,
@@ -446,7 +447,7 @@ function calculateEstimate(searchCriteria, scope) {
     },
     last: {
       id: utils.buildSearchUri({
-        searchCriteria,
+        searchCriteria: resolvedSearchCriteria,
         page: Math.ceil(totalItems / DEFAULT_PAGE_LENGTH),
         pageLength: DEFAULT_PAGE_LENGTH,
         scope: searchScope,

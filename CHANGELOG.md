@@ -15,7 +15,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Security
 
 
-## v1.10.2 - 2024-02-28
+## v1.11.0 - 2024-03-04
 
 ### Added
 

@@ -1,0 +1,28 @@
+{
+  "database-name": "%%DATABASE%%",
+  "schema-database": "%%SCHEMAS_DATABASE%%",
+  "field": [
+    {
+      "field-name": "indexedValues",
+      "field-path": [
+        {
+          "path": "/indexed-values",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "",
+      "include-root": true
+    }
+  ],
+  "range-field-index": [
+    {
+      "scalar-type": "string",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "indexedValues",
+      "range-value-positions": false,
+      "invalid-values": "reject"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "/embedded-triples-slice01-role/slice01-doc01.json",
+  "indexed-values": ["Slice01"],
+  "triples": [
+    {
+      "triple": {
+        "subject": "/embedded-triples-slice01-role/slice01-doc01.json",
+        "predicate": "isRelatedTo",
+        "object": "/embedded-triples-slice01-role/slice01-doc02.json"
+      }
+    }
+  ]
+}

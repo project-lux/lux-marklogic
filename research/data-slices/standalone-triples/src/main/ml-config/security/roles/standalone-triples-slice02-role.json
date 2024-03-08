@@ -1,0 +1,12 @@
+{
+  "role-name": "standalone-triples-slice02",
+  "description": "Slice02 role",
+  "role": [],
+  "privilege": [
+    {
+      "privilege-name": "rest-reader",
+      "action": "http://marklogic.com/xdmp/privileges/rest-reader",
+      "kind": "execute"
+    }
+  ]
+}

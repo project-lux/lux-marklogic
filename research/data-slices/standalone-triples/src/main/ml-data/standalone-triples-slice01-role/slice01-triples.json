@@ -1,0 +1,11 @@
+{
+  "triples": [
+    {
+      "triple": {
+        "subject": "/slice01-doc01.json",
+        "predicate": "isRelatedTo",
+        "object": "/slice01-doc02.json"
+      }
+    }
+  ]
+}

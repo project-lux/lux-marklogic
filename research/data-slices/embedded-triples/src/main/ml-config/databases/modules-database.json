@@ -1,0 +1,4 @@
+{
+  "database-name": "embedded-triples-modules",
+  "schema-database": "%%SCHEMAS_DATABASE%%"
+}

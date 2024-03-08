@@ -1,0 +1,12 @@
+{
+  "id": "/embedded-triples-slice01-role/slice01-doc04-shared-subject.json",
+  "triples": [
+    {
+      "triple": {
+        "subject": "/embedded-triples-slice01-role/slice01-doc04-shared-subject.json",
+        "predicate": "isRelatedTo",
+        "object": "/embedded-triples-slice01-and-slice02-roles/slice01-slice02-doc02.json"
+      }
+    }
+  ]
+}

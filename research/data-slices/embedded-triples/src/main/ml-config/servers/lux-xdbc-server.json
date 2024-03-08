@@ -1,0 +1,11 @@
+{
+  "server-name": "embedded-triples-xdbc",
+  "group-name": "Default",
+  "server-type": "xdbc",
+  "root": "/",
+  "port": 8007,
+  "content-database": "embedded-triples-content",
+  "modules-database": "embedded-triples-modules",
+  "authentication": "digest",
+  "internal-security": "true"
+}

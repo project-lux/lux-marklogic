@@ -1,0 +1,11 @@
+{
+  "triples": [
+    {
+      "triple": {
+        "subject": "/lux-doc01.json",
+        "predicate": "isRelatedTo",
+        "object": "/lux-doc02.json"
+      }
+    }
+  ]
+}

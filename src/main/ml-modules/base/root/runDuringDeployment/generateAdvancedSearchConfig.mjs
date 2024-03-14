@@ -78,7 +78,7 @@ function createEntry(scopeName, termName, termConfig) {
   } else if (scalarTypeIsBoolean) {
     entry.relation = 'boolean';
   } else {
-    entry.relation = { text: 'text' };
+    entry.relation = 'text';
   }
 
   const autoCompleteContext = getContextParameterValue(scopeName, termName);
@@ -136,7 +136,8 @@ getOrderedUserInterfaceSearchScopeNames()
             'iri',
             'recordType',
             'subject',
-          ].includes(termName)
+          ].includes(termName) &&
+          (!termConfig.hasLabel() || !termConfig.hasHelpText())
         ) {
           add = false;
         } else if (termName.endsWith('Id')) {

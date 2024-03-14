@@ -1,0 +1,15 @@
+{
+  "id": "/data-slice02-role/slice02-doc01.json",
+  "dataType": "dataSlice",
+  "nonSemanticKeywords": ["nsKeyword", "nsSlice02"],
+  "semanticKeywords": ["sKeyword", "sSlice01", "sSlice02"],
+  "triples": [
+    {
+      "triple": {
+        "subject": "/data-slice02-role/slice02-doc01.json",
+        "predicate": "https://lux.collections.yale.edu/ns/isRelatedTo",
+        "object": "/data-slice02-role/slice02-doc02.json"
+      }
+    }
+  ]
+}

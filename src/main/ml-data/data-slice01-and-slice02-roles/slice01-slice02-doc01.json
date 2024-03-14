@@ -1,0 +1,27 @@
+{
+  "id": "/data-slice01-and-slice02-roles/slice01-slice02-doc01.json",
+  "dataType": "dataSlice",
+  "nonSemanticKeywords": ["nsKeyword", "nsSlice01andSlice02"],
+  "semanticKeywords": [
+    "sKeyword",
+    "sSlice01",
+    "sSlice02",
+    "sSlice01andSlice02"
+  ],
+  "triples": [
+    {
+      "triple": {
+        "subject": "/data-slice01-and-slice02-roles/slice01-slice02-doc01.json",
+        "predicate": "https://lux.collections.yale.edu/ns/isRelatedTo",
+        "object": "/data-slice01-role/slice01-doc05-shared-object.json"
+      }
+    },
+    {
+      "triple": {
+        "subject": "/data-slice01-and-slice02-roles/slice01-slice02-doc01.json",
+        "predicate": "https://lux.collections.yale.edu/ns/isRelatedTo",
+        "object": "/data-slice02-role/slice02-doc05-shared-object.json"
+      }
+    }
+  ]
+}

@@ -9,6 +9,13 @@
  *
  */
 const SEARCH_TERM_CONFIG = {
+  'data-slice': {
+    text: {
+      patternName: 'text',
+      indexReferences: ['semanticKeywords'],
+      scalarType: 'string',
+    },
+  },
   agent: {
     activeAt: {
       patternName: 'hopWithField',

@@ -1,0 +1,5 @@
+{
+  "role-name": "data-lux",
+  "description": "LUX role",
+  "role": ["data-role"]
+}

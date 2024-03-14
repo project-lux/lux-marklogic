@@ -11,7 +11,8 @@ To deploy the Data Slice PoC locally:
         mlModulePaths=src/main/ml-modules/base,src/main/ml-modules/data-slices
 
 2. Run `mlDeploy`
-3. Run `mlLoadData`
+3. Install MLCP, which may be downloaded from https://developer.marklogic.com/products/mlcp/.
+4. Configure [/scripts/dataSlices/mlcpTransformTest/mlcp.bat](/scripts/dataSlices/mlcpTransformTest/mlcp.bat) to point to your local MLCP install then run.
 
 ## Search
 
@@ -46,28 +47,25 @@ It can be tricky to validate search results.  A script was developed to help: [/
 
 ## How It Works
 
-1. Documents are given the read permission to each data slice role they are associated to.
-    * Documents that the search endpoint are able to return were loaded using the `mlLoadData` Gradle task and utilized `permissions.properties` files to specify the document permissions.  This was for the PoC only.  See [Document to Data Slice Association](#document-to-data-slice-association) for details on the alternative.
-    * The `data-lux` role is granted read permission to every document as it represents the full LUX site, versus a unit portal.
-2. Characteristics of the PoC documents loaded via `mlLoadData`:
-    * An `id` property value that matches its URI.
+1. Characteristics of the PoC documents:
+    * The `id` property value that matches its URI.
+    * The `slices` property value specifies one or more data slices the document is associated with.  **This needs to become new data within the documents and is expected to provided by the data pipeline --before the documents are presented to MarkLogic.**
     * In four documents, one or more non-semantic keywords in the `nonSemanticKeywords` property, which populates a searchable field and field range index of the same name.
     * In eight documents, one or more semantic keywords in the `semanticKeywords` property, which populates a searchable field and field range index of the same name.
     * In ten documents, one or more triples in the `triples` property whereby the subject IRI matches the document's URI, the predicate is always `https://lux.collections.yale.edu/ns/isRelatedTo`, and the object IRI is the URI of the document that may define the `semanticKeywords` property.
     * A `dataType` property value of `data-slice`.  This becomes record type search criteria.  This search scope was only introduced to better isolate the PoC documents from other documents and will not persist beyond the PoC.
+2. Documents loaded via [/scripts/dataSlices/mlcpTransformTest/mlcp.bat](/scripts/dataSlices/mlcpTransformTest/mlcp.bat) go through a custom transform, [/src/main/ml-modules/data-slices/root/documentTransforms.sjs](/src/main/ml-modules/data-slices/root/documentTransforms.sjs).  The custom transform sets document permissions based on the `slices` property value found within the documents.  On an individual document basis, the read permission is granted to each role associated with each data slice identified within the document.  A naming convention maps data slice property values to data slice role names.  The transform grants every document grants the `data-lux` role read permission as that role represents the full LUX site, versus a unit portal.
 3. When a search is performed:
     * Non-semantic keywords must be directly in the search result documents.
     * Semantic keywords must be in documents related to the search result documents (one `isRelatedTo` hop).  Further, the requesting user must a role that at least has read permission to the *related* document.
     * The requesting user must have a role that at least has read permission to the *search result* document.
     * Of less import to the PoC, the document must have a `dataType` property value of `data-slice`.
 
-## Document to Data Slice Association
+## Data Load Support
 
-Post-PoC the documents will need to identify which data slices (units) they are associated with.  Document permissions may be derived form this data regardless of a live feed from the pipeline (`/v1/documents`) or loading from disk (MLCP).
+At present, LUX supports two ways to load the MarkLogic database: "live" from the data pipeline (`/v1/documents`) and from disk (MLCP).  Given MLCP uses the `/v1/documents` endpoint and it is that endpoint that supports the custom transform, data slice support will not change *how* documents are presented to MarkLogic.  That said and as noted above, the documents need to include additional information.
 
-While the PoC documents accessible via search do not include data that identify data slices, the PoC did prove out the ability to set document permissions based on data within the documents while loading the documents.  This was performed using a transform.  MLCP consumes the `/v1/documents` endpoint and that endpoint supports a custom transform.  While a custom transform can transform the incoming content, it does not have to.  They are also capable of setting document permissions and collections, if not more.  The PoC used [/src/main/ml-modules/data-slices/root/documentTransforms.sjs](/src/main/ml-modules/data-slices/root/documentTransforms.sjs) to set document permissions and collections based on the `slices` property value found in the documents.  The [/scripts/dataSlices/mlcpTransformTest/mlcp.bat](/scripts/dataSlices/mlcpTransformTest/mlcp.bat) script demonstrates how to specify the transform when loading documents via MLCP.  Upon running it, the permissions of documents in the "mlcp" collection may be compared to the `slices` property values.
-
-Both methods used to load PoC documents also put documents into collections; however, collections are not yet utilized or deemed necessary.
+The custom transform also put documents into data slice-specific collections; however, collections are not yet utilized or deemed necessary.
 
 ## Additional Scripts
 

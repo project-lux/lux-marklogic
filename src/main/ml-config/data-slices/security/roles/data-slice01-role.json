@@ -1,0 +1,5 @@
+{
+  "role-name": "data-slice01",
+  "description": "Slice01 role",
+  "role": ["data-role"]
+}

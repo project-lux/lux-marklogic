@@ -5,6 +5,12 @@
  */
 
 const SEARCH_SCOPES = {
+  'data-slice': {
+    isUserInterfaceSearchScope: false,
+    fields: ['nonSemanticKeywords'],
+    predicates: ['lux("isRelatedTo")'],
+    types: ['dataSlice'],
+  },
   agent: {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 3,

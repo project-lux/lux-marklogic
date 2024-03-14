@@ -136,7 +136,8 @@ getOrderedUserInterfaceSearchScopeNames()
             'iri',
             'recordType',
             'subject',
-          ].includes(termName)
+          ].includes(termName) &&
+          (!termConfig.hasLabel() || !termConfig.hasHelpText())
         ) {
           add = false;
         } else if (termName.endsWith('Id')) {

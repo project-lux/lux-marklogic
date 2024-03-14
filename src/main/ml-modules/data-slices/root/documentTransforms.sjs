@@ -21,13 +21,6 @@ function associateDocToDataSlice(content, context) {
   // Override the MLCP-specified permissions.
   context.permissions = permissions;
 
-  console.log(
-    `Updated collections for ${content.uri}: ${context.collections.join(', ')}`
-  );
-  console.log(
-    `Updated permissions for ${content.uri}: ${context.permissions.join(', ')}`
-  );
-
   return content;
 }
 

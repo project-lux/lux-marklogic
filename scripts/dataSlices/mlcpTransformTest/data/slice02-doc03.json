@@ -1,12 +1,13 @@
 {
-  "id": "/data-slice02-role/slice02-doc03.json",
+  "id": "/data/slice02-doc03.json",
   "dataType": "dataSlice",
+  "slices": ["slice02"],
   "triples": [
     {
       "triple": {
-        "subject": "/data-slice02-role/slice02-doc03.json",
+        "subject": "/data/slice02-doc03.json",
         "predicate": "https://lux.collections.yale.edu/ns/isRelatedTo",
-        "object": "/data-slice01-role/slice01-doc01.json"
+        "object": "/data/slice01-doc01.json"
       }
     }
   ]

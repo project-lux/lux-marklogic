@@ -1,14 +1,14 @@
 {
-  "id": "/data-slice01-role/slice01-doc01.json",
+  "id": "/data/lux-doc01.json",
   "dataType": "dataSlice",
-  "nonSemanticKeywords": ["nsKeyword", "nsSlice01"],
+  "nonSemanticKeywords": ["nsKeyword", "nsLUX"],
   "semanticKeywords": ["sKeyword", "sSlice01", "sSlice02"],
   "triples": [
     {
       "triple": {
-        "subject": "/data-slice01-role/slice01-doc01.json",
+        "subject": "/data/lux-doc01.json",
         "predicate": "https://lux.collections.yale.edu/ns/isRelatedTo",
-        "object": "/data-slice01-role/slice01-doc02.json"
+        "object": "/data/lux-doc02.json"
       }
     }
   ]

@@ -42,7 +42,7 @@ Search result counts by keyword and user:
 | Semantic     | sSlice02            | 7        | 2            | 3            |
 | Semantic     | sSlice01andSlice02  | 4        | 2            | 2            |
 
-It can be tricky to validate search results.  A script was developed to help: [/scripts/dataSlices/checkSemanticKeywordsToSubjectDocs.js](/scripts/dataSlices/checkSemanticKeywordsToSubjectDocs.js).  See comments therein for details.
+It can be tricky to validate search results.  A script was developed to help: [/scripts/dataSlices/checkSemanticKeywordToSubjectDocs.js](/scripts/dataSlices/checkSemanticKeywordToSubjectDocs.js).  See comments therein for details.
 
 ## How It Works
 
@@ -65,7 +65,7 @@ It can be tricky to validate search results.  A script was developed to help: [/
 
 Post-PoC the documents will need to identify which data slices (units) they are associated with.  Document permissions may be derived form this data regardless of a live feed from the pipeline (`/v1/documents`) or loading from disk (MLCP).
 
-While the PoC documents accessible via search do not include data that identify data slices, the PoC did prove out the ability to set document permissions based on data within the documents while loading the documents.  This was performed using a transform.  MLCP consumes the `/v1/documents` endpoint and that endpoint supports a custom transform.  While a custom transform can transform the incoming content, they do not have to.  They are also capable of setting document permissions and collections, if not more.  The PoC used [/src/main/ml-modules/data-slices/root/documentTransforms.sjs](/src/main/ml-modules/data-slices/root/documentTransforms.sjs) to set document permissions and collections based on the `slices` property value found in the documents.  The [/scripts/dataSlices/mlcpTransformTest/mlcp.bat](/scripts/dataSlices/mlcpTransformTest/mlcp.bat) script demonstrates how to specify the transform when loading documents via MLCP.  Upon running it, the permissions of documents in the "mlcp" collection may be compared to the `slices` property values.
+While the PoC documents accessible via search do not include data that identify data slices, the PoC did prove out the ability to set document permissions based on data within the documents while loading the documents.  This was performed using a transform.  MLCP consumes the `/v1/documents` endpoint and that endpoint supports a custom transform.  While a custom transform can transform the incoming content, it does not have to.  They are also capable of setting document permissions and collections, if not more.  The PoC used [/src/main/ml-modules/data-slices/root/documentTransforms.sjs](/src/main/ml-modules/data-slices/root/documentTransforms.sjs) to set document permissions and collections based on the `slices` property value found in the documents.  The [/scripts/dataSlices/mlcpTransformTest/mlcp.bat](/scripts/dataSlices/mlcpTransformTest/mlcp.bat) script demonstrates how to specify the transform when loading documents via MLCP.  Upon running it, the permissions of documents in the "mlcp" collection may be compared to the `slices` property values.
 
 Both methods used to load PoC documents also put documents into collections; however, collections are not yet utilized or deemed necessary.
 

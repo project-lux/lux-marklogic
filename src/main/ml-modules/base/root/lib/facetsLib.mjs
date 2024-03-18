@@ -193,18 +193,20 @@ function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
     requestOptions,
     page,
     pageLength
-  ).map((searchResult) => {
-    const uri = searchResult.id + ''; // Required string conversion
-    const val = {
-      value: uri,
-      count: _estimateViaSearchFacetValueCount(
-        uri,
-        facetConfig,
-        baseSearchCriteria
-      ),
-    };
-    return val;
-  });
+  )
+    .map((searchResult) => {
+      const uri = searchResult.id + ''; // Required string conversion
+      const val = {
+        value: uri,
+        count: _estimateViaSearchFacetValueCount(
+          uri,
+          facetConfig,
+          baseSearchCriteria
+        ),
+      };
+      return val;
+    })
+    .sort((a, b) => b.count - a.count);
 
   // Warn when there were more facet values than allowed.
   if (facets.length > MAXIMUM_FACET_VALUE_VIA_SEARCH_DOCUMENTS) {

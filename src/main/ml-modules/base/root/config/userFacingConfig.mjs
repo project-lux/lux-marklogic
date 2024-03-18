@@ -110,6 +110,11 @@ const searchTermText = {
       label: 'Published',
       helpText: 'Search for People & Groups that published the specified Works',
     },
+    recordType: {
+      label: 'Person or Group',
+      helpText:
+        'Search only records that are a Person or search only for records that are a Group',
+    },
     startAt: {
       label: 'Born/Formed At',
       helpText:

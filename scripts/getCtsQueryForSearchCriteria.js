@@ -1,28 +1,40 @@
-// Use this function to get a CTS query for search criteria, without having to pull and format
-// from the logs.  All information available to a SearchCriteriaProcessor instance is available.
+// This script may be used to convert search criteria into a CTS query,
+// formatted as a string or object.  The script is also capable of returning
+// the entire call to cts.search.  One may provide additional values into
+// the call to processSearchCriteria.  Lastly, by modifying the bottom of the
+// script, one may return anything available to the instance of
+// SearchCriteriaProcessor.  Enjoy!
 'use strict';
 import { processSearchCriteria } from '/lib/searchLib.mjs';
+import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
 
 // formatAsObject: when true and includeCtsSearch is false, get the CTS query
 // as a JavaScript object; else, the CTS query is a string.
 const formatAsObject = true;
+//
 // includeCtsSearch: when true, return the entire call to cts.search.  Takes
 // precedence over formatAsObject.
 const includeCtsSearch = false;
-// Provide the search criteria here.  Both search grammars are supported.
+//
+// searchCriteria: the search criteria to convert.  Both search grammars are
+// supported.
 const searchCriteria = {
   _scope: 'item',
   AND: [
     {
-      producedDate: 2023,
+      producedDate: 1940,
       _comp: '>',
     },
     {
-      producedDate: 2023,
+      producedDate: 1950,
       _comp: '<',
     },
   ],
 };
+//
+// searchScope: required by the string search grammar and when not specified
+// by the _scope property in the JSON search grammar.
+const searchScope = null;
 
 /*
   Additional values may be provided to processSearchCriteria.  Below is a 
@@ -44,6 +56,7 @@ const searchCriteria = {
  */
 const searchCriteriaProcessor = processSearchCriteria({
   searchCriteria,
+  searchScope,
 });
 
 // Rather than returning the CTS Query, one may also elect to return other or
@@ -52,6 +65,9 @@ const searchCriteriaProcessor = processSearchCriteria({
 const ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr(includeCtsSearch);
 const requestedQuery =
   !includeCtsSearch && formatAsObject
-    ? xdmp.eval(ctsQueryStr).toArray()[0].toObject()
+    ? xdmp
+        .eval(START_OF_GENERATED_QUERY.concat(ctsQueryStr))
+        .toArray()[0]
+        .toObject()
     : ctsQueryStr;
 requestedQuery;

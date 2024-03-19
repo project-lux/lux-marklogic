@@ -11,6 +11,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
 
 ### Fixed
+- Fixed the search scope specified throughout the search response body when the search request specifies the search scope using the search criteria's `_scope` property ([#81](https://github.com/project-lux/lux-marklogic/issues/81))
 
 ### Security
 

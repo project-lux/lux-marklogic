@@ -1,27 +1,1507 @@
 {
+  "language": "en",
+  "database-name": "lux-content",
+  "forest": [
+    "lux-content-1",
+    "lux-content-2",
+    "lux-content-3",
+    "lux-content-4",
+    "lux-content-5",
+    "lux-content-6",
+    "lux-content-7",
+    "lux-content-8",
+    "lux-content-9"
+  ],
+  "security-database": "Security",
+  "schema-database": "Schemas",
+  "enabled": true,
+  "data-encryption": "off",
+  "backup-encryption-key": "cluster-key",
+  "encryption-key-id": "",
+  "retired-forest-count": 0,
   "stemmed-searches": "off",
   "word-searches": false,
-  "field-value-searches": false,
-  "field-value-positions": false,
+  "word-positions": true,
   "fast-phrase-searches": false,
+  "fast-reverse-searches": false,
+  "triple-index": true,
+  "triple-positions": false,
   "fast-case-sensitive-searches": false,
   "fast-diacritic-sensitive-searches": false,
-  "trailing-wildcard-searches": false,
-  "trailing-wildcard-word-positions": false,
+  "fast-element-word-searches": true,
+  "element-word-positions": false,
+  "fast-element-phrase-searches": true,
+  "element-value-positions": false,
+  "attribute-value-positions": false,
+  "field-value-searches": false,
+  "field-value-positions": false,
   "three-character-searches": false,
   "three-character-word-positions": false,
+  "fast-element-character-searches": false,
+  "trailing-wildcard-searches": false,
+  "trailing-wildcard-word-positions": false,
+  "fast-element-trailing-wildcard-searches": false,
   "two-character-searches": false,
   "one-character-searches": false,
-  "word-positions": true,
-  "element-word-positions": false,
-  "fast-element-trailing-wildcard-searches": false,
-  "word-lexicon": [],
-  "range-element-index": [],
-  "range-path-index": [],
-  "assignment-policy": {
-    "assignment-policy-name": "bucket"
-  },
+  "uri-lexicon": true,
+  "collection-lexicon": true,
+  "reindexer-enable": true,
+  "reindexer-throttle": 5,
+  "reindexer-timestamp": 0,
+  "directory-creation": "manual",
+  "maintain-last-modified": false,
+  "maintain-directory-last-modified": false,
+  "inherit-permissions": false,
+  "inherit-collections": false,
+  "inherit-quality": false,
+  "in-memory-limit": 131072,
+  "in-memory-list-size": 256,
+  "in-memory-tree-size": 64,
+  "in-memory-range-index-size": 8,
+  "in-memory-reverse-index-size": 8,
+  "in-memory-triple-index-size": 21,
+  "in-memory-geospatial-region-index-size": 32,
+  "triple-index-geohash-precision": 5,
+  "large-size-threshold": 1024,
+  "locking": "fast",
+  "journaling": "fast",
+  "journal-size": 2047,
+  "journal-count": 2,
+  "preallocate-journals": false,
+  "preload-mapped-data": false,
+  "preload-replica-mapped-data": false,
+  "range-index-optimize": "facet-time",
+  "positions-list-max-size": 256,
+  "format-compatibility": "automatic",
+  "index-detection": "automatic",
+  "expunge-locks": "none",
+  "tf-normalization": "scaled-log",
+  "merge-priority": "lower",
+  "merge-max-size": 49152,
+  "merge-min-size": 1024,
+  "merge-min-ratio": 3,
+  "merge-timestamp": 0,
+  "retain-until-backup": false,
+  "database-backup": [
+    {
+      "backup-id": "490037969345198321",
+      "backup-enabled": true,
+      "backup-type": "daily",
+      "backup-period": 1,
+      "backup-directory": "s3://rdata-lux-ml-backups/lux-content",
+      "backup-start-time": "05:00:00",
+      "max-backups": 1,
+      "backup-schemas-database": true,
+      "backup-security-database": true,
+      "backup-triggers-database": true,
+      "include-replicas": false,
+      "incremental-backup": true,
+      "incremental-dir": "",
+      "purge-journal-archive": false,
+      "journal-archiving": false,
+      "journal-archive-path": "",
+      "journal-archive-lag-limit": 15,
+      "backup-timestamp": "2024-03-13T15:57:44.9453Z"
+    },
+    {
+      "backup-id": "2009077509671334341",
+      "backup-enabled": true,
+      "backup-type": "weekly",
+      "backup-period": 1,
+      "backup-directory": "s3://rdata-lux-ml-backups/lux-content",
+      "backup-day": ["sunday"],
+      "backup-start-time": "02:00:00",
+      "max-backups": 3,
+      "backup-schemas-database": true,
+      "backup-security-database": true,
+      "backup-triggers-database": true,
+      "include-replicas": false,
+      "journal-archiving": false,
+      "journal-archive-path": "",
+      "journal-archive-lag-limit": 15,
+      "backup-timestamp": "2024-03-13T15:57:44.9453Z"
+    }
+  ],
+  "element-word-query-through": [
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/wordml",
+      "localname": "p"
+    },
+    {
+      "namespace-uri": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+      "localname": "p"
+    }
+  ],
+  "phrase-through": [
+    {
+      "namespace-uri": "http://marklogic.com/entity",
+      "localname": [
+        "coordinate",
+        "credit-card-number",
+        "date",
+        "email",
+        "facility",
+        "gpe",
+        "id",
+        "location",
+        "money",
+        "nationality",
+        "organization",
+        "percent",
+        "person",
+        "phone-number",
+        "religion",
+        "time",
+        "url",
+        "utm"
+      ]
+    },
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/auxHint",
+      "localname": "t"
+    },
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/wordml",
+      "localname": [
+        "br",
+        "cr",
+        "fldChar",
+        "fldData",
+        "fldSimple",
+        "hlink",
+        "noBreakHyphen",
+        "permEnd",
+        "permStart",
+        "pgNum",
+        "proofErr",
+        "r",
+        "softHyphen",
+        "sym",
+        "t",
+        "tab"
+      ]
+    },
+    {
+      "namespace-uri": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+      "localname": [
+        "bookmarkEnd",
+        "bookmarkStart",
+        "commentRangeEnd",
+        "commentRangeStart",
+        "customXml",
+        "endnoteReference",
+        "fldSimple",
+        "footnoteReference",
+        "hyperlink",
+        "ins",
+        "instrText",
+        "proofErr",
+        "r",
+        "sdt",
+        "sdtContent",
+        "smartTag",
+        "t"
+      ]
+    },
+    {
+      "namespace-uri": "http://www.w3.org/1999/xhtml",
+      "localname": [
+        "a",
+        "abbr",
+        "acronym",
+        "b",
+        "big",
+        "br",
+        "center",
+        "cite",
+        "code",
+        "dfn",
+        "em",
+        "font",
+        "i",
+        "kbd",
+        "q",
+        "samp",
+        "small",
+        "span",
+        "strong",
+        "sub",
+        "sup",
+        "tt",
+        "var"
+      ]
+    }
+  ],
+  "phrase-around": [
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/wordml",
+      "localname": [
+        "delInstrText",
+        "delText",
+        "endnote",
+        "footnote",
+        "instrText",
+        "pict",
+        "rPr"
+      ]
+    },
+    {
+      "namespace-uri": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+      "localname": [
+        "commentReference",
+        "customXmlPr",
+        "del",
+        "pPr",
+        "rPr",
+        "sdtPr"
+      ]
+    }
+  ],
   "field": [
+    {
+      "field-name": "workCausedByProjectId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/caused_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventUsedItemId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/used_for/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventAgentId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventTypeId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type= ('Activity', 'Period')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "eventName",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "eventAnyText",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "languageIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type='Language']/identified_by[./type='Identifier']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Place')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByEventId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByConceptId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Person', 'Group')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptPartOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/broader/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placePartOfId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/part_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placeTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placeIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'Place']/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placePrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "placeName",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "placeAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "placeHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Place']/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workCreationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/created_by/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workCreationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/created_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPublicationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPublicationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPartOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/part_of/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutConceptId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('Person','Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about[./type = 'Place']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workLanguageId",
+      "field-path": [
+        {
+          "path": "/json[type = 'LinguisticObject']/language/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/classified_as/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/equivalent/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/identified_by[./type='Identifier']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "workName",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Name']/content",
+          "weight": 1
+        },
+        {
+          "path": "json[type='Set']/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "workAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]//content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "workIsOnlineBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "isCollectionItemBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemMemberOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemShownById",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/shows/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/digitally_shows/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemCarriedById",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/carries/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/digitally_carries/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemProductionTechniqueId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/technique/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/part/technique/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemProductionAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/part/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/part/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemEncounteredAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemProductionPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/part/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/part/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemEncounteredPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemMaterialId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/made_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemName",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemIsOnlineBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/isOnline",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentMemberOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentGenderId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/84ed0c0e-2aa8-49b3-ae02-ed84552f570d']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentOccupationId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/86be41f5-60e4-47f4-bd4e-95a4955a3e9b']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentNationalityId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/05344568-bdd1-4289-90d6-b9fdcdbaaa4c']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentFounderId",
+      "field-path": [
+        {
+          "path": "/json[type='Group']/formed_by/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentEndPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/died/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/dissolved_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentDataTypeName",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType=('Person', 'Group')]/dataType",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentStartPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/born/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/formed_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentActivePlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/carried_out/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Group', 'Person')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Set')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setUsedForId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/used_for/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "referenceIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "referenceTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "referenceAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "referencePrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "referenceName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
     {
       "field-name": "",
       "include-root": true,
@@ -79,238 +1559,6 @@
       ]
     },
     {
-      "field-name": "referenceName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "referencePrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "referenceAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "referenceTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "referenceIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "setPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "setAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "setTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "setUsedForId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/used_for/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "setIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('Set')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "agentName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "agentPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "agentIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('Group', 'Person')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "agentActiveStartDateStr",
       "field-path": [
         {
@@ -336,16 +1584,6 @@
           "weight": 1
         }
       ]
-    },
-    {
-      "field-name": "agentActivePlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/carried_out/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
     },
     {
       "field-name": "agentBornStartDateStr",
@@ -387,40 +1625,6 @@
       ]
     },
     {
-      "field-name": "agentStartPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type='Person']/born/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Group']/formed_by/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentDataTypeName",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType=('Person', 'Group')]/dataType",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
       "field-name": "agentDiedStartDateStr",
       "field-path": [
         {
@@ -458,204 +1662,6 @@
           "weight": 1
         }
       ]
-    },
-    {
-      "field-name": "agentEndPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type='Person']/died/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Group']/dissolved_by/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentFounderId",
-      "field-path": [
-        {
-          "path": "/json[type='Group']/formed_by/carried_out_by/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentNationalityId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/05344568-bdd1-4289-90d6-b9fdcdbaaa4c']/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentOccupationId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/86be41f5-60e4-47f4-bd4e-95a4955a3e9b']/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentGenderId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/84ed0c0e-2aa8-49b3-ae02-ed84552f570d']/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentMemberOfId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/member_of/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "agentHasDigitalImageBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemHasDigitalImageBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/hasDigitalImage",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemIsOnlineBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/isOnline",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "itemName",
-      "field-path": [
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "itemPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "itemIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemMaterialId",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/made_of/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
     },
     {
       "field-name": "itemDimensionValue",
@@ -760,338 +1766,6 @@
       ]
     },
     {
-      "field-name": "itemEncounteredPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/encountered_by/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemProductionPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/part/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/created_by/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/created_by/part/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemEncounteredAgentId",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/encountered_by/carried_out_by/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemProductionAgentId",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/part/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/created_by/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/created_by/part/carried_out_by/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemProductionTechniqueId",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/technique/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/part/technique/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemCarriedById",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/carries/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/digitally_carries/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemShownById",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/shows/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/digitally_shows/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "itemMemberOfId",
-      "field-path": [
-        {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/member_of/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "isCollectionItemBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workHasDigitalImageBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workIsOnlineBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]//content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "workName",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Name']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "workPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "workIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/equivalent/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/classified_as/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workLanguageId",
-      "field-path": [
-        {
-          "path": "/json[type = 'LinguisticObject']/language/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workAboutPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Place']/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/about[./type = 'Place']/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'VisualItem']/represents[./type = 'Place']/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workAboutAgentId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Person', 'Group')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/about[./type = ('Person', 'Group')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'VisualItem']/represents[./type = ('Person','Group')]/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workAboutConceptId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'VisualItem']/represents[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workPartOfId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/part_of/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/member_of/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "workPublicationStartDateStr",
       "field-path": [
         {
@@ -1129,34 +1803,6 @@
           "weight": 1
         }
       ]
-    },
-    {
-      "field-name": "workPublicationPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workPublicationAgentId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/carried_out_by/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
     },
     {
       "field-name": "workCreationStartDateStr",
@@ -1198,142 +1844,6 @@
       ]
     },
     {
-      "field-name": "workCreationPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "workCreationAgentId",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/carried_out_by/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "placeHasDigitalImageBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = 'Place']/hasDigitalImage",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "placeAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "placeName",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "placePrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "placeIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'Place']/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "placeTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "placePartOfId",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']/part_of/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "placeSpatial",
       "field-path": [
         {
@@ -1341,244 +1851,6 @@
           "weight": 1
         }
       ]
-    },
-    {
-      "field-name": "conceptHasDigitalImageBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/hasDigitalImage",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "conceptName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "conceptPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "conceptIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptPartOfId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/broader/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptInfluencedByAgentId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Person', 'Group')]/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptInfluencedByConceptId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptInfluencedByEventId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Activity', 'Period')]/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "conceptInfluencedByPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Place')]/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "languageIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type='Language']/identified_by[./type='Identifier']/content",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "eventAnyText",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "eventName",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/identified_by[./type='Name']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "eventPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "eventIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type= ('Activity', 'Period')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "eventTypeId",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
     },
     {
       "field-name": "eventInitiatedStartDateStr",
@@ -1633,780 +1905,765 @@
           "weight": 1
         }
       ]
-    },
-    {
-      "field-name": "eventAgentId",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/carried_out_by/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "eventPlaceId",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/took_place_at/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "eventUsedItemId",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/used_for/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
     }
   ],
   "range-field-index": [
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "anySortName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "anySortNameEn",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "anySortNameFr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "anySortNameZh",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "referenceName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "referencePrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "referenceTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "referenceIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "setPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "setTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "setUsedForId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "setIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentActiveStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentActiveStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentActiveEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentActivePlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentBornStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentBornStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentBornEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentStartPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentDiedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentDiedStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentDiedEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentEndPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentFounderId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentNationalityId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentOccupationId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentGenderId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "agentMemberOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "agentHasDigitalImageBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemHasDigitalImageBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemIsOnlineBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemMaterialId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemDimensionValue",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemHeightDimensionValue",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemWidthDimensionValue",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemDepthDimensionValue",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemEncounteredStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemEncounteredEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemEncounteredStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemProductionStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemProductionStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "itemProductionEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemEncounteredPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemProductionPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemEncounteredAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemProductionAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemProductionTechniqueId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemCarriedById",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemShownById",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "itemMemberOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "isCollectionItemBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "workHasDigitalImageBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "workIsOnlineBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workLanguageId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workAboutPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workAboutAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workAboutConceptId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workPartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workPublicationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "workPublicationStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "workPublicationEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workPublicationPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workPublicationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workCreationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "workCreationStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "workCreationEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workCreationPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "workCreationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "placeHasDigitalImageBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "placeName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "placePrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "placeIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "placeTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "placePartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "conceptHasDigitalImageBoolean",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptPartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptInfluencedByAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptInfluencedByConceptId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptInfluencedByEventId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "conceptInfluencedByPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "languageIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventInitiatedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "eventInitiatedStartDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "eventInitiatedEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventCompletedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "",
+      "scalar-type": "float",
       "field-name": "eventCompletedStartDateFloat",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
-    },
-    {
       "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
       "field-name": "eventCompletedEndDateFloat",
+      "collation": "",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
+      "scalar-type": "string",
       "field-name": "eventUsedItemId",
+      "collation": "http://marklogic.com/collation/codepoint",
       "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "collation": "http://marklogic.com/collation/",
+      "field-name": "workCausedByProjectId",
+      "range-value-positions": false,
+      "invalid-values": "reject"
     }
-  ]
+  ],
+  "database-replication": null,
+  "rebalancer-enable": true,
+  "rebalancer-throttle": 5,
+  "assignment-policy": {
+    "assignment-policy-name": "bucket"
+  },
+  "shutdown-on-storage-failure": false,
+  "storage-failure-timeout": 60
 }

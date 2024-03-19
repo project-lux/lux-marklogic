@@ -694,7 +694,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/took_place_at/id",
+          "path": "/json[type='Set']/used_for/took_place_at/id",
           "weight": 1
         }
       ],
@@ -708,7 +708,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/member_of/id",
+          "path": "/json[type='Set']/member_of/id",
           "weight": 1
         }
       ],
@@ -1773,7 +1773,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/timespan/begin_of_the_begin",
+          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1786,7 +1786,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1799,7 +1799,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -1812,7 +1812,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/timespan/begin_of_the_begin",
+          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1825,7 +1825,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1838,7 +1838,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]

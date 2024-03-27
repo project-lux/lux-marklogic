@@ -243,7 +243,7 @@ function _search(
       '@context': LUX_CONTEXT,
       id: utils.buildSearchUri({
         searchCriteria: resolvedSearchCriteria,
-        scope: searchScope,
+        scope: resolvedSearchScope,
         mayChangeScope,
         page,
         pageLength,
@@ -254,13 +254,20 @@ function _search(
       type: AS_TYPE_ORDERED_COLLECTION_PAGE,
       partOf: [
         {
-          id: utils.buildSearchEstimateUri(resolvedSearchCriteria, searchScope),
+          id: utils.buildSearchEstimateUri(
+            resolvedSearchCriteria,
+            resolvedSearchScope
+          ),
           type: AS_TYPE_ORDERED_COLLECTION,
           // CHANGE IF MORE THAN ONE LANGUAGE IS SUPPORTED
-          label: { en: [SCOPE_LABELS[searchScope]] },
+          label: { en: [SCOPE_LABELS[resolvedSearchScope]] },
           // CHANGE IF MORE THAN ONE LANGUAGE IS SUPPORTED
           summary: {
-            en: [utils.buildScopeDescription(SCOPE_DESCRIPTORS[searchScope])],
+            en: [
+              utils.buildScopeDescription(
+                SCOPE_DESCRIPTORS[resolvedSearchScope]
+              ),
+            ],
           },
           totalItems: estimate,
         },
@@ -271,7 +278,7 @@ function _search(
       response.prev = {
         id: utils.buildSearchUri({
           searchCriteria: resolvedSearchCriteria,
-          scope: searchScope,
+          scope: resolvedSearchScope,
           mayChangeScope,
           page: page - 1,
           pageLength,
@@ -286,7 +293,7 @@ function _search(
       response.next = {
         id: utils.buildSearchUri({
           searchCriteria: resolvedSearchCriteria,
-          scope: searchScope,
+          scope: resolvedSearchScope,
           mayChangeScope,
           page: page + 1,
           pageLength,

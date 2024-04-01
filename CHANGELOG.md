@@ -7,7 +7,6 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
-- Changed via search facets to order by number of results descending ([#57](https://github.com/project-lux/lux-marklogic/issues/57))
 
 ### Removed
 
@@ -15,6 +14,31 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.13.0 - 2024-04-01
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+- Fixed the search scope specified throughout the search response body when the search request specifies the search scope using the search criteria's `_scope` property ([#81](https://github.com/project-lux/lux-marklogic/issues/81))
+
+### Security
+
+## v1.12.0 - 2024-03-18
+
+### Added
+
+### Changed
+- Changed via search facets to order by number of results descending ([#57](https://github.com/project-lux/lux-marklogic/issues/57))
+
+### Removed
+
+### Fixed
+
+### Security
 
 ## v1.11.0 - 2024-03-04
 

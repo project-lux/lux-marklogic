@@ -6,8 +6,10 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 - Added concept relatedToEvent related list ([#96](https://github.com/project-lux/lux-marklogic/issues/96))
+- 
 ### Changed
-
+- Changed logic for via search facets (Responsible Units contain departments or curate sets directly. Responsible Collections are collection sets.) ([#68](https://github.com/project-lux/lux-marklogic/issues/68))
+- 
 ### Removed
 
 ### Fixed

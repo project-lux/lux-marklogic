@@ -339,6 +339,12 @@ const SEARCH_TERM_CONFIG = {
       inBetweenScopes: ['item', 'work'],
       maxLevel: 1,
     },
+    relatedToEvent: {
+      patternName: 'relatedList',
+      targetScope: 'event',
+      inBetweenScopes: ['item', 'work', 'set'],
+      maxLevel: 3,
+    },
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',

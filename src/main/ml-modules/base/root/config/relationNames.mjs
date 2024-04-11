@@ -28,6 +28,8 @@ const RELATION_NAMES = {
   'created-aboutAgent': 'Created Works About',
   'created-aboutConcept': 'Created Works About',
   'created-aboutPlace': 'Created Works About',
+  'created-carriedBy-memberOf-usedForEvent':
+    'Created Works Carried by Objects Used At',
   'created-classification': 'Created Works Categorized As',
   'created-createdAt': 'Created Works Created At',
   'created-createdBy': 'Co-created Works With',
@@ -81,6 +83,7 @@ const RELATION_NAMES = {
     'Is the Place of Encounter of Objects Created By',
   'encounteredHere-producedUsing':
     'Is the Place of Encounter of Objects Created Using',
+  'encountered-memberOf-usedForEvent': 'Encountered Objects Used At',
   'languageOf-aboutAgent': 'Is the Language of Works About',
   'languageOf-aboutConcept': 'Is the Language of Works About',
   'languageOf-aboutPlace': 'Is the Language of Works About',
@@ -101,6 +104,7 @@ const RELATION_NAMES = {
   'produced-encounteredAt': 'Created Objects Encountered At',
   'produced-encounteredBy': 'Created Objects Encountered By',
   'produced-material': 'Created Objects Made Of',
+  'produced-memberOf-usedForEvent': 'Produced Objects Used At',
   'produced-producedAt': 'Created Objects Created At',
   'produced-producedBy': 'Co-created Objects With',
   'produced-producedUsing': 'Created Objects Using',
@@ -118,6 +122,8 @@ const RELATION_NAMES = {
   'published-aboutAgent': 'Published Works About',
   'published-aboutConcept': 'Published Works About',
   'published-aboutPlace': 'Published Works About',
+  'published-carriedBy-memberOf-usedForEvent':
+    'Published Works Carried by Objects Used At',
   'published-classification': 'Published Works Categorized As',
   'published-createdAt': 'Published Works Created At',
   'published-createdBy': 'Published Works Created By',
@@ -148,6 +154,8 @@ const RELATION_NAMES = {
   'subjectOfAgent-aboutAgent': 'Is the Subject of Works About',
   'subjectOfAgent-aboutConcept': 'Is the Subject of Works About',
   'subjectOfAgent-aboutPlace': 'Is the Subject of Works About',
+  'subjectOfAgent-carriedBy-memberOf-usedForEvent':
+    'Is the Subject of Works Carried by Objects Used At',
   'subjectOfAgent-classification': 'Is the Subject of Works Categorized As',
   'subjectOfAgent-createdAt': 'Is the Subject of Works Created At',
   'subjectOfAgent-createdBy': 'Is the Subject of Works Created By',

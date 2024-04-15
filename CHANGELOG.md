@@ -5,6 +5,9 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+- Added agent recordType (Person or Group) to the user facing config (so it shows up in advanced search) ([#75](https://github.com/project-lux/lux-marklogic/issues/75))
+- Added relation names for agent relatedToEvent related list ([#67](https://github.com/project-lux/lux-marklogic/issues/67))
+- Added place relatedToEvent related list ([#95](https://github.com/project-lux/lux-marklogic/issues/95))
 
 ### Changed
 

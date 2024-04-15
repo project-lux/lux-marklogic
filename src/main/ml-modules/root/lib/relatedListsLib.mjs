@@ -25,6 +25,7 @@ import { getRelationName } from '../config/relationNames.mjs';
 import {
   getInverseSearchTermInfo,
   getSearchTermConfig,
+  SEARCH_TERM_CONFIG,
 } from '../config/searchTermConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import { PATTERN_NAME_RELATED_LIST } from './searchPatternsLib.mjs';
@@ -322,21 +323,35 @@ function getRelatedList({
       for (let t = 0; t < relationKeys.length; t++) {
         const relationKey = relationKeys[t];
         const relationData = relatedDataByRelationKey[relationKey];
+        console.log({ relationKey });
+        if (relationKey.startsWith('used')) {
+          console.dir(
+            {
+              targetScope: relatedListConfig.targetScope,
+              relationToCriteria: relationToCriteria[relationKey],
+              relatedUri,
+              relationDataScope: relationData.scope,
+            },
+            { depth: null }
+          );
+        }
         const criteria = _convertToObjectsOrWorksSearch(
           relatedListConfig.targetScope,
           relationToCriteria[relationKey],
-          relatedUri,
-          relationData.scope
+          relatedUri
         );
+        const uriScope = criteria._scope;
         delete criteria._scope;
         orderedItems.push({
-          id: utils.buildSearchEstimateUri(criteria, relationData.scope),
+          id: utils.buildSearchEstimateUri(criteria, uriScope),
           type: AS_TYPE_ORDERED_COLLECTION,
+          //TO-DO relation data count will be wrong because it is generated from different criteria
           totalItems: relationData.count,
           first: {
             id: utils.buildSearchUri({
               searchCriteria: criteria,
-              scope: relationData.scope,
+
+              scope: uriScope,
             }),
             type: AS_TYPE_ORDERED_COLLECTION_PAGE,
           },
@@ -473,51 +488,57 @@ function _formatRelatedListReturn(
   return relatedListReturn;
 }
 
-function _convertToObjectsOrWorksSearch(
-  fromScope,
-  fromCriteria,
-  relatedUri,
-  toScope
-) {
-  const objectsOrWorksCriteria = {
-    _scope: toScope,
-    AND: [],
-  };
-
-  // Need to identify the top-level search term name.
-  if (SearchCriteriaProcessor.hasNonOptionPropertyName(fromCriteria)) {
-    const termName =
-      SearchCriteriaProcessor.getFirstNonOptionPropertyName(fromCriteria);
-
-    // Need the inverse of the top-level search term.
-    const inverseTermInfo = getInverseSearchTermInfo(fromScope, termName);
-    if (inverseTermInfo) {
-      // First criterion is in inverse search term, applying the related URI.
-      const criterion = {};
-      criterion[inverseTermInfo.searchTermName] = { id: relatedUri };
-      objectsOrWorksCriteria.AND.push(criterion);
-
-      // Second is the value of the top-level search term, after converting any iri terms to id terms, to force
-      // use of the field range indexes / Indexed Value search pattern.
-      objectsOrWorksCriteria.AND.push(
-        utils.replaceMatchingPropertyNames(fromCriteria[termName], 'iri', 'id')
-      );
+function _convertToObjectsOrWorksSearch(fromScope, fromCriteria, relatedUri) {
+  //get top-level terms and inverse them, so that we reach out from an Object or Work in either direction.
+  let foundObjectOrWorkTerm = false;
+  let subCriteria = fromCriteria;
+  let inversedCriteria = { id: relatedUri };
+  let currentScope = fromScope;
+  while (!foundObjectOrWorkTerm) {
+    // Need to identify the top-level search term name.
+    if (SearchCriteriaProcessor.hasNonOptionPropertyName(subCriteria)) {
+      const termName =
+        SearchCriteriaProcessor.getFirstNonOptionPropertyName(subCriteria);
+      // Need the inverse of the top-level search term.
+      const inverseTermInfo = getInverseSearchTermInfo(currentScope, termName);
+      if (inverseTermInfo) {
+        inversedCriteria = {
+          [inverseTermInfo.searchTermName]: inversedCriteria,
+        };
+        const targetScope =
+          SEARCH_TERM_CONFIG[currentScope][termName].targetScope;
+        if (['item', 'work'].includes(targetScope)) {
+          foundObjectOrWorkTerm = true;
+        }
+        subCriteria = subCriteria[termName];
+        currentScope = targetScope;
+      } else {
+        // TBD if this ever happens.
+        // Log mining script matches on a portion(s) of this message.
+        const msg = `Unable to determine the inverse search term of '${termName}', beginning in the '${fromScope}' scope: ${JSON.stringify(
+          fromCriteria
+        )}`;
+        xdmp.trace(traceName, msg);
+        return msg;
+      }
     } else {
       // TBD if this ever happens.
       // Log mining script matches on a portion(s) of this message.
-      const msg = `Unable to determine the inverse search term of '${termName}', beginning in the '${fromScope}' scope: ${JSON.stringify(
-        fromCriteria
-      )}`;
+      const msg = 'Unable to determine search term name.';
       xdmp.trace(traceName, msg);
       return msg;
     }
-  } else {
-    // TBD if this ever happens.
-    // Log mining script matches on a portion(s) of this message.
-    const msg = 'Unable to determine search term name.';
-    xdmp.trace(traceName, msg);
-    return msg;
   }
+  const objectsOrWorksCriteria = {
+    _scope: currentScope,
+    AND: [
+      // First criterion is in inversed search terms, applying the related URI.
+      inversedCriteria,
+      // Second is the sub-criteria, after converting any iri terms to id terms, to force
+      // use of the field range indexes / Indexed Value search pattern.
+      utils.replaceMatchingPropertyNames(subCriteria, 'iri', 'id'),
+    ],
+  };
 
   return objectsOrWorksCriteria;
 }

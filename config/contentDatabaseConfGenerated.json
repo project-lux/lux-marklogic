@@ -73,7 +73,7 @@
       "field-name": "anySortNameZh",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a'][./language/id='https://lux.collections.yale.edu/data/concept/7b2b97d3-c222-44e7-a35f-b3ff38ab98e5']/content",
+          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a'][./language/id='None']/content",
           "weight": 1
         }
       ]
@@ -679,7 +679,7 @@
       "field-name": "itemWidthDimensionValue",
       "field-path": [
         {
-          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/id='https://lux.collections.yale.edu/data/concept/5ce44eb3-a686-4315-961e-07db59b8c887']/value",
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/id='https://lux.collections.yale.edu/data/concept/ca3a9042-c173-4996-bbf0-c557f1126799']/value",
           "weight": 1
         }
       ]
@@ -913,7 +913,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']//content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']//content",
           "weight": 1
         }
       ],
@@ -937,7 +937,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/identified_by[./type='Name']/content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/identified_by[./type='Name']/content",
           "weight": 1
         }
       ],
@@ -961,7 +961,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -989,11 +989,11 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/identified_by[./type='Identifier']/content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/identified_by[./type='Identifier']/content",
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/equivalent/id",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/equivalent/id",
           "weight": 1
         }
       ],
@@ -1007,7 +1007,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/classified_as/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/classified_as/id",
           "weight": 1
         }
       ],
@@ -1031,7 +1031,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/about[./type = 'Place']/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/about[./type = 'Place']/id",
           "weight": 1
         },
         {
@@ -1049,7 +1049,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/about[./type = ('Person', 'Group')]/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/about[./type = ('Person', 'Group')]/id",
           "weight": 1
         },
         {
@@ -1067,7 +1067,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
           "weight": 1
         },
         {
@@ -1085,7 +1085,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/member_of/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/member_of/id",
           "weight": 1
         }
       ],
@@ -1099,7 +1099,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/timespan/begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1112,7 +1112,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1125,7 +1125,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -1138,7 +1138,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/took_place_at/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/took_place_at/id",
           "weight": 1
         }
       ],
@@ -1152,7 +1152,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/used_for/carried_out_by/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/carried_out_by/id",
           "weight": 1
         }
       ],
@@ -1166,7 +1166,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/timespan/begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1179,7 +1179,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1192,7 +1192,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -1205,7 +1205,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/took_place_at/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/took_place_at/id",
           "weight": 1
         }
       ],
@@ -1223,7 +1223,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478']/created_by/carried_out_by/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/carried_out_by/id",
           "weight": 1
         }
       ],

@@ -14,6 +14,19 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.14.1 - 2024-04-18
+
+### Added
+
+### Changed
+- Updated pipelineDataConstants.json for new dataset
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## v1.14.0 - 2024-04-15
 
 ### Added

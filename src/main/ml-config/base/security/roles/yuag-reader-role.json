@@ -1,0 +1,5 @@
+{
+  "role-name": "yuag-reader",
+  "description": "YUAG reader role",
+  "role": ["base-reader"]
+}

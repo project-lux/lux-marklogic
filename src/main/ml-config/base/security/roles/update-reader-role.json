@@ -1,0 +1,5 @@
+{
+  "role-name": "update-reader",
+  "description": "Some records include 'update' in the sources property.",
+  "role": ["base-reader"]
+}

@@ -1,0 +1,5 @@
+{
+  "role-name": "ycba-reader",
+  "description": "YCBA reader role",
+  "role": ["base-reader"]
+}

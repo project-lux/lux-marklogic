@@ -8,9 +8,12 @@ c:\opt\mlcp\mlcp-11.1.0\bin\mlcp.bat ^
   -username admin ^
   -password admin ^
   -database lux-content ^
-  -input_file_path "./data" ^
-  -output_permissions "data-lux,read" ^
-  -output_uri_replace ".*/data/,'/data/'" ^
+  -fastload ^
+  -input_file_path "c:\tmp\ycba_yuag_sources\*.jsonl" ^
+  -input_file_type delimited_json ^
+  -uri_id id ^
   -output_collections "mlcp" ^
   -transform_module /documentTransforms.sjs ^
-  -transform_function associateDocToDataSlice
+  -transform_function associateDocToDataSlice ^
+  -batch_size 200 ^
+  -max_threads 4

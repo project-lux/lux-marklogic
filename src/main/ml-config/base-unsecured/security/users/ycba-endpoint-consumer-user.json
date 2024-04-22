@@ -1,0 +1,5 @@
+{
+  "user-name": "ycba-endpoint-consumer",
+  "password": "%%luxEndpointConsumerPassword%%",
+  "role": ["ycba-endpoint-consumer"]
+}

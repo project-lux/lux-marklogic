@@ -1,5 +1,5 @@
 {
-  "role-name": "lux-nobody",
+  "role-name": "base-nobody",
   "description": "Unauthenticated user",
   "role": []
 }

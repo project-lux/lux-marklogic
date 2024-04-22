@@ -1,0 +1,5 @@
+{
+  "role-name": "yuag-endpoint-consumer",
+  "description": "YUAG endpoint consumer role",
+  "role": ["base-endpoint-consumer", "yuag-reader"]
+}

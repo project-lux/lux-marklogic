@@ -23,6 +23,8 @@ MarkLogic has many security features.  LUX utilizes role security, both at the R
 
 ## LUX Backend Roles
 
+**TODO: if the role changes made for data slices stick, this documentation will need to be updated.**
+
 This project defines the following roles, which are intended to build upon one another enabling us to restrict capabilities by sets of users.  Several of these originated from running ML Gradle's `mlNewProject` task, but may not actually be able to do anything in LUX, yet.
 
 ### Nobody

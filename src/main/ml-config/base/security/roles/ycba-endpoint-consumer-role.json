@@ -1,0 +1,5 @@
+{
+  "role-name": "ycba-endpoint-consumer",
+  "description": "YCBA endpoint consumer role",
+  "role": ["base-endpoint-consumer", "ycba-reader"]
+}

@@ -1,8 +1,13 @@
 {
-  "role-name": "data-role",
-  "description": "Base data slice role (matches but is not lux-endpoint-consumer)",
-  "role": ["lux-reader"],
+  "role-name": "base-endpoint-consumer",
+  "description": "Base role other roles are to inherit in order to consume endpoints and read documents.",
+  "role": ["rest-reader"],
   "privilege": [
+    {
+      "privilege-name": "sem-sparql",
+      "action": "http://marklogic.com/xdmp/privileges/sem-sparql",
+      "kind": "execute"
+    },
     {
       "privilege-name": "xdmp:eval",
       "action": "http://marklogic.com/xdmp/privileges/xdmp-eval",

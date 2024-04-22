@@ -2,16 +2,16 @@ function associateDocToDataSlice(content, context) {
   // Get the list of collections and document permission.
   const collections = ['lux'];
   const permissions = [
-    xdmp.permission('lux-writer', 'update'), // Role from main project.
-    xdmp.permission('data-lux', 'read'),
+    xdmp.permission('lux-writer', 'update'),
+    xdmp.permission('lux-reader', 'read'),
   ];
   content.value
-    .xpath('slices')
+    .xpath('admin/sources')
     .toArray()
     .forEach((name) => {
       name = (name + '').toLowerCase();
       collections.push(name);
-      permissions.push(xdmp.permission(`data-${name}`, 'read'));
+      permissions.push(xdmp.permission(`${name}-reader`, 'read'));
     });
 
   // Add to MLCP-specified collections.

@@ -1,0 +1,5 @@
+{
+  "role-name": "create-reader",
+  "description": "Some records include 'create' in the sources property.",
+  "role": ["base-reader"]
+}

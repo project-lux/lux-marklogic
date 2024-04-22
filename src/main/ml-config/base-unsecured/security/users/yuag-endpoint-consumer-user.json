@@ -1,0 +1,5 @@
+{
+  "user-name": "yuag-endpoint-consumer",
+  "password": "%%luxEndpointConsumerPassword%%",
+  "role": ["yuag-endpoint-consumer"]
+}

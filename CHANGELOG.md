@@ -5,7 +5,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
-
+- Added concept relatedToEvent related list ([#96](https://github.com/project-lux/lux-marklogic/issues/96))
 ### Changed
 
 ### Removed

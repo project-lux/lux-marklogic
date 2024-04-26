@@ -53,6 +53,7 @@ agent	MemberOf	Id	uri	agentMemberOfId	RecordLink	Non	N	Agents that are members o
 agent	MemberOf	Name	keyword	agentMemberOfName	Search	Semantic	N	Agents that are members of the group that matches keywords in name		crm:P107i_is_current_or_former_member_of
 agent	HasDigitalImage	Boolean	numbers	agentHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage	
 										
+item	ArchiveSort	Id	string	itemArchiveSortId	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
 item	HasDigitalImage	Boolean	numbers	itemHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/hasDigitalImage	
 item	IsOnline	Boolean	numbers	itemIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/isOnline	
 item	Any	Text	keyword	itemAnyText	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]//content	
@@ -92,6 +93,7 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 										
 	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
+work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage	
 work	IsOnline	Boolean	numbers	workIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline	
 work	Any	Text	keyword	workAnyText	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]//content ,  /json[type='Set'][./classified_as/id='$archive']//content	

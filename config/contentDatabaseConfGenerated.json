@@ -544,6 +544,16 @@
       "field-value-searches": true
     },
     {
+      "field-name": "itemArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "itemHasDigitalImageBoolean",
       "field-path": [
         {
@@ -880,6 +890,16 @@
       "field-path": [
         {
           "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content",
           "weight": 1
         }
       ],
@@ -1912,6 +1932,13 @@
       "scalar-type": "float"
     },
     {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "itemArchiveSortId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
       "collation": "",
       "field-name": "itemHasDigitalImageBoolean",
       "range-value-positions": false,
@@ -2078,6 +2105,13 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "float"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "workArchiveSortId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
     },
     {
       "collation": "",

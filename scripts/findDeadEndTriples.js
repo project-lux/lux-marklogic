@@ -214,9 +214,10 @@ dataSliceUsernames.forEach((username) => {
         .toArray()[0]
     : diffs.onlyInArr1;
 
-  const start = randomize
-    ? xdmp.random(deadEndUris.length - deadEndSampleSize)
-    : 0;
+  const start =
+    randomize && deadEndUris.length > deadEndSampleSize
+      ? xdmp.random(deadEndUris.length - deadEndSampleSize)
+      : 0;
   const end = start + deadEndSampleSize;
   const deadEndUriSampling = deadEndUris.slice(start, end);
 

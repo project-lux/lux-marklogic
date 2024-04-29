@@ -44,6 +44,11 @@ const SORT_BINDINGS = {
     indexReference: 'eventCompletedStartDateFloat',
     defaultOrder: 'asc',
   },
+  itemArchiveSortId: {
+    indexType: 'field',
+    indexReference: 'itemArchiveSortId',
+    defaultOrder: 'asc',
+  },
   itemDepthDimensionValue: {
     indexType: 'field',
     indexReference: 'itemDepthDimensionValue',
@@ -72,6 +77,11 @@ const SORT_BINDINGS = {
   itemWidthDimensionValue: {
     indexType: 'field',
     indexReference: 'itemWidthDimensionValue',
+    defaultOrder: 'asc',
+  },
+  workArchiveSortId: {
+    indexType: 'field',
+    indexReference: 'workArchiveSortId',
     defaultOrder: 'asc',
   },
   workCreationDate: {

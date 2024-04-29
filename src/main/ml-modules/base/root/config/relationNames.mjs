@@ -8,6 +8,8 @@ const RELATION_NAMES = {
   'classificationOfItem-encounteredBy':
     'Is the Category of Objects Encountered By',
   'classificationOfItem-material': 'Is the Category of Objects Made Of',
+  'classificationOfItem-memberOf-usedForEvent':
+    'Is the Category of Objects Used At',
   'classificationOfItem-producedAt': 'Is the Category of Objects Created At',
   'classificationOfItem-producedBy': 'Is the Category of Objects Created By',
   'classificationOfItem-producedUsing':
@@ -15,6 +17,8 @@ const RELATION_NAMES = {
   'classificationOfWork-aboutAgent': 'Is the Category Of Works About',
   'classificationOfWork-aboutConcept': 'Is the Category of Works About',
   'classificationOfWork-aboutPlace': 'Is the Category of Works About',
+  'classificationOfWork-carriedBy-memberOf-usedForEvent':
+    'Is the Category of Works Carried By Objects Used At',
   'classificationOfWork-classification':
     'Is the Category of Works Categorized As',
   'classificationOfWork-createdAt': 'Is the Category of Works Created At',
@@ -91,6 +95,8 @@ const RELATION_NAMES = {
   'languageOf-aboutAgent': 'Is the Language of Works About',
   'languageOf-aboutConcept': 'Is the Language of Works About',
   'languageOf-aboutPlace': 'Is the Language of Works About',
+  'languageOf-carriedBy-memberOf-usedForEvent':
+    'Is the Language of Works Carried by Objects Used At',
   'languageOf-classification': 'Is the Language of Works Categorized As',
   'languageOf-createdAt': 'Is the Language of Works Created At',
   'languageOf-createdBy': 'Is the Language of Works Created By',
@@ -101,6 +107,7 @@ const RELATION_NAMES = {
   'materialOfItem-encounteredAt': 'Is the Material of Objects Encountered At',
   'materialOfItem-encounteredBy': 'Is the Material of Objects Encountered By',
   'materialOfItem-material': 'Is the Material of Objects Made Of',
+  'materialOfItem-memberOf-usedForEvent': 'Is the Material of Objects Used At',
   'materialOfItem-producedAt': 'Is the Material of Objects Created At',
   'materialOfItem-producedBy': 'Is the Material of Objects Created By',
   'materialOfItem-producedUsing': 'Is the Material of Objects Created Using',
@@ -176,6 +183,8 @@ const RELATION_NAMES = {
   'subjectOfConcept-aboutAgent': 'Is the Subject Of Works About',
   'subjectOfConcept-aboutConcept': 'Is the Subject of Works About',
   'subjectOfConcept-aboutPlace': 'Is the Subject of Works About',
+  'subjectOfConcept-carriedBy-memberOf-usedForEvent':
+    'Is the Subject of Works Carried by Objects Used At',
   'subjectOfConcept-classification': 'Is the Subject of Works Categorized As',
   'subjectOfConcept-createdAt': 'Is the Subject of Works Created At',
   'subjectOfConcept-createdBy': 'Is the Subject Of Works Created By',
@@ -203,6 +212,7 @@ const RELATION_NAMES = {
   'usedToProduce-encounteredAt': 'Is the Technique of Objects Encountered At',
   'usedToProduce-encounteredBy': 'Is the Technique of Objects Encountered By',
   'usedToProduce-material': 'Is the Technique of Objects Made Of',
+  'usedToProduce-memberOf-usedForEvent': 'Is the Technique of Objects Used At',
   'usedToProduce-producedAt': 'Is the Technique of Objects Created At',
   'usedToProduce-producedBy': 'Is the Technique of Objects Created By',
   'usedToProduce-producedUsing': 'Is the Technique of Objects Created Using',

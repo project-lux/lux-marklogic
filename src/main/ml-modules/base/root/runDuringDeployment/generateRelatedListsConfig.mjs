@@ -25,6 +25,10 @@ const RELATION_KEYS_TO_SUPPRESS = [
   'used-member-memberOf-curatedBy',
   'used-containing-memberOf-curatedBy',
   'used-curatedBy',
+  //ignoring keys with relationScope of "set"
+  'classificationOfSet-containing-memberOf-usedForEvent',
+  'classificationOfSet-member-memberOf-usedForEvent',
+  'classificationOfSet-usedForEvent',
 ];
 
 const targetId = TOKEN_RUNTIME_PARAM;

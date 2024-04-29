@@ -18,6 +18,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 - Added concept relatedToEvent related list ([#96](https://github.com/project-lux/lux-marklogic/issues/96))
+- Added support to sort items by their archive sort values ([#90](https://github.com/project-lux/lux-marklogic/issues/90))
   
 ### Changed
 - Changed logic for via search facets (Responsible Units contain departments or curate sets directly. Responsible Collections are collection sets.) ([#68](https://github.com/project-lux/lux-marklogic/issues/68))

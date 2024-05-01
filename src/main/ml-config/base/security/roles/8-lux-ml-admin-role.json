@@ -1,5 +1,5 @@
 {
-  "role-name": "lux-ml-admin",
+  "role-name": "lux-by-unit-ml-admin",
   "description": "admin administrator",
   "role": ["admin"]
 }

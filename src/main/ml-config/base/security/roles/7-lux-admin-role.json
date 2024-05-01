@@ -1,7 +1,7 @@
 {
-  "role-name": "lux-admin",
+  "role-name": "lux-by-unit-admin",
   "description": "Non-admin administrator",
-  "role": ["lux-deployer"],
+  "role": ["lux-by-unit-deployer"],
   "privilege": [
     {
       "privilege-name": "xdbc:insert-in",

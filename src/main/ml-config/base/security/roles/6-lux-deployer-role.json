@@ -1,7 +1,7 @@
 {
-  "role-name": "lux-deployer",
-  "description": "Role enabling one to deploy the non-security portion of the LUX Backend's configuration, code, and related tasks.",
-  "role": ["admin-ui-user", "lux-writer", "manage-admin", "rest-admin"],
+  "role-name": "lux-by-unit-deployer",
+  "description": "Role enabling one to deploy the non-security portion of the LUX by Unit Backend's configuration, code, and related tasks.",
+  "role": ["admin-ui-user", "lux-by-unit-writer", "manage-admin", "rest-admin"],
   "privilege": [
     {
       "privilege-name": "xdbc-invoke",

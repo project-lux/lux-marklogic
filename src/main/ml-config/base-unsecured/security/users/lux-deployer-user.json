@@ -1,5 +1,5 @@
 {
-  "user-name": "lux-deployer",
+  "user-name": "lux-by-unit-deployer",
   "password": "%%luxDeployerPassword%%",
-  "role": ["lux-deployer"]
+  "role": ["lux-by-unit-deployer"]
 }

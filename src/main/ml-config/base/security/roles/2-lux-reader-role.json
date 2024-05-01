@@ -1,5 +1,5 @@
 {
-  "role-name": "lux-reader",
-  "description": "LUX reader role",
+  "role-name": "lux-by-unit-reader",
+  "description": "LUX by Unit reader role",
   "role": ["base-reader"]
 }

@@ -1,5 +1,5 @@
 {
-  "role-name": "lux-endpoint-consumer",
-  "description": "Role intended to be used by LUX backend endpoint consumers, such as the middle tier.",
-  "role": ["base-endpoint-consumer", "lux-reader"]
+  "role-name": "lux-by-unit-endpoint-consumer",
+  "description": "Role intended to be used by LUX by Unit backend endpoint consumers, such as the middle tier.",
+  "role": ["base-endpoint-consumer", "lux-by-unit-reader"]
 }

@@ -1,9 +1,9 @@
 function associateDocToDataSlice(content, context) {
   // Get the list of collections and document permission.
-  const collections = ['lux'];
+  const collections = ['lux-by-unit'];
   const permissions = [
-    xdmp.permission('lux-writer', 'update'),
-    xdmp.permission('lux-reader', 'read'),
+    xdmp.permission('lux-by-unit-writer', 'update'),
+    xdmp.permission('lux-by-unit-reader', 'read'),
   ];
   content.value
     .xpath('admin/sources')

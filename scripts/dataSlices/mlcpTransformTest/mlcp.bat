@@ -3,11 +3,12 @@
 c:\opt\mlcp\mlcp-11.1.0\bin\mlcp.bat ^
    import ^
   -host localhost ^
-  -port 8005 ^
+  -port 8000 ^
   -ssl false ^
   -username admin ^
   -password admin ^
-  -database lux-content ^
+  -database lux-by-unit-content ^
+  -modules lux-by-unit-modules ^
   -fastload ^
   -input_file_path "c:\tmp\ycba_yuag_sources\*.jsonl" ^
   -input_file_type delimited_json ^

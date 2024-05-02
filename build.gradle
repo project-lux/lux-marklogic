@@ -216,14 +216,15 @@ task importDataFull(type: com.marklogic.gradle.task.MlcpTask) {
   port = project.property("importDataPort").toInteger()
   username = project.property("importDataUsername")
   password = credentials.forKey('importDataPassword')
-  database = getFirstPropertyOrDefault(["database"], "NO_DATABASE_SPECIFIED")
+  database = project.property("luxContentDatabase")
+  modules = project.property("luxModulesDatabase")
   fastload = true // Database cleared for full loads
   input_file_path = project.property("importDataFilePath")
   input_file_type = "delimited_json"
   input_compressed = project.property("importDataFileIsCompressed")
   input_compression_codec = "gzip"
-  output_permissions = project.property("mlDataPermissions")
-  output_uri_replace = "https://lux.collections.yale.edu/data/,''"
+  transform_module "/documentTransforms.sjs"
+  transform_function "associateDocToDataSlice"
   uri_id = "id"
   ssl = useSsl
   args = ["-ssl_protocol", "tlsv1.2"]
@@ -254,14 +255,15 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   port = project.property("importDataPort").toInteger()
   username = project.property("importDataUsername")
   password = credentials.forKey('importDataPassword')
-  database = getFirstPropertyOrDefault(["database"], "NO_DATABASE_SPECIFIED")
+  database = project.property("luxContentDatabase")
+  modules = project.property("luxModulesDatabase")
   fastload = false // Database not cleared for incremental loads
   input_file_path = project.property("importDataFilePath")
   input_file_type = "delimited_json"
   input_compressed = project.property("importDataFileIsCompressed")
   input_compression_codec = "gzip"
-  output_permissions = project.property("mlDataPermissions")
-  output_uri_replace = "https://lux.collections.yale.edu/data/,''"
+  transform_module "/documentTransforms.sjs"
+  transform_function "associateDocToDataSlice"
   uri_id = "id"
   ssl = useSsl
   args = ["-ssl_protocol", "tlsv1.2"]

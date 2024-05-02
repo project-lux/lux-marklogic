@@ -189,11 +189,11 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
     *Note the use of single quotes around the value --they ensure the entire value is received.*
 
-13. For pre-existing environments, clear the lux-modules database.  The `performBaseDeployment` task will not automatically do this.  Alternatively, the lux-modules database may be cleared from within the admin console --just make sure you clear the correct database!
+13. For pre-existing environments, clear the LUX modules database.  The `performBaseDeployment` task will not automatically do this.  Alternatively, the LUX modules database may be cleared from within the admin console --just make sure you clear the correct database!
 
-    `./gradlew mlClearDatabase -Pdatabase=lux-modules -Pconfirm=true -PenvironmentName=[env]`
+    `./gradlew mlClearDatabase -Pdatabase=[modulesDatabaseName] -Pconfirm=true -PenvironmentName=[env]`
 
-    It is possible for the lux-modules database to go offline when attempting to clear it, regardless of using ML Gradle or the admin console. More specifically, its forest gets stuck in what should be a temporary status. To resolve, restart the host the forest is on, then attempt the clear operation a second time. We're yet to see this issue happen during the second attempt.
+    It is possible for the LUX modules database to go offline when attempting to clear it, regardless of using ML Gradle or the admin console. More specifically, its forest gets stuck in what should be a temporary status. To resolve, restart the host the forest is on, then attempt the clear operation a second time. We're yet to see this issue happen during the second attempt.
 
 14. Run the following Gradle task to the non-security configuration, the code, and any related dependencies.
 
@@ -262,11 +262,9 @@ BUILD FAILED in 9s
 7 actionable tasks: 6 executed, 1 up-to-date
 ```
 
-The build script is configured to run some tasks after the modules are deployed.  An example is the `generateRemainingSearchTerms` task.  If it starts to fail yet it wasn't recently modified, it is likely a different error is preventing it from running successfully.  A way to get a better error message is to run its resolved code within Query Console.  At the time this was written, one could run the following against the lux-content modules databases:
+The build script is configured to run some tasks after the modules are deployed.  An example is the `generateRemainingSearchTerms` task.  If it starts to fail yet it wasn't recently modified, it is likely a different error is preventing it from running successfully.  A way to get a better error message is to run the task's JavaScript or XQuery within Query Console.  The code for these tasks --with resolved property references-- may be found within [/build/buildSupport](/build/buildSupport); the source scripts (with property references) are within [/scripts/buildSupport](/scripts/buildSupport).
 
-`xdmp.invoke('/runDuringDeployment/generateRemainingSearchTerms.mjs', {}, { database: xdmp.database('lux-content'), modules: xdmp.database('lux-modules'), root: ''})`
-
-Example Query Console response:
+Example Query Console response, identifying an underlying error:
 
 ![Example error via Query Console](/docs/img/example-error-via-query-console.png)
 

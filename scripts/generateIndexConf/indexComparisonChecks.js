@@ -1,11 +1,19 @@
 /*
- * Checks for:
+ * *Partially* checks for:
  *
  *   1. Fields and field range indexes the code is dependent on but not defined by the database.
  *   2. Fields and field range indexes the code is not dependent on but are defined by the database.
  *
- * Individual field and field range index settings are not checked.
+ * Known limitations:
  *
+ *   1. Excludes value of the fullTextSearchRelatedFieldName property (for keyword search).
+ *   2. Excludes indexes referenced in data constant configuration files, specifically the call to
+ *      cts.fieldReference('languageIdentifier') from within languages.mjs.
+ *   3. Excludes references in the configuration of Similar search terms.  Technically, Similar does
+ *      not use the indexes but instead snags XPath expressions from the index configuration; thus,
+ *      unless/until Similar can get the XPaths elsewhere, the associated indexes are required.
+ *
+ * Individual field and field range index settings are not checked.
  */
 
 /*
@@ -13,6 +21,7 @@
  */
 
 const databaseName = 'lux-content';
+const includeAutoComplete = true;
 
 const admin = require('/MarkLogic/admin.xqy');
 const config = admin.getConfiguration();
@@ -66,17 +75,26 @@ const recordReference = (name, isRange, context) => {
   }
 };
 
-getContextParameterValues().forEach((autoCompleteContext) => {
-  const autoCompleteConfig = getConfigurationByContext(autoCompleteContext);
-  if (utils.isNonEmptyArray(autoCompleteConfig.idsIndexReferences)) {
-    autoCompleteConfig.idsIndexReferences.forEach((name) => {
+if (includeAutoComplete) {
+  const recordAutoCompleteReference = (name) => {
+    if (name != null) {
       recordReference(name, true, 'auto complete');
       if (name.includes('Primary')) {
         recordReference(name.replace('Primary', ''), true, 'auto complete');
       }
-    });
-  }
-});
+    }
+  };
+
+  getContextParameterValues().forEach((autoCompleteContext) => {
+    const autoCompleteConfig = getConfigurationByContext(autoCompleteContext);
+    recordAutoCompleteReference(autoCompleteConfig.namesIndexReference);
+    if (utils.isNonEmptyArray(autoCompleteConfig.idsIndexReferences)) {
+      autoCompleteConfig.idsIndexReferences.forEach((name) => {
+        recordAutoCompleteReference(name);
+      });
+    }
+  });
+}
 
 Object.keys(FACETS_CONFIG).forEach((key) => {
   recordReference(FACETS_CONFIG[key].indexReference, true, 'facet');

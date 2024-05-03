@@ -1,15 +1,6 @@
 // Find out which users can see which triples and documents, restricted by a single predicate and
 // maximum number of hops.  Created while vetting the LUX Data Slice design with a small amount
-// of data.  Offers a superset of what checkTripleVisibilityByUser.js can do.
-//
-// Directions until LUX supports data slices:
-//
-//   1. Deploy the main ML Gradle project.  This includes data-* roles and users.
-//   2. Run mlLoadData to load sample records that one or more of the data roles has access to.
-//   3. Paste this query into the query console.
-//   4. Set the database to lux-content.
-//   5. Review/update the rest of the script configuration section, then run.
-//   6. If/when desired, change to the other database and run again.
+// of data; may be used on larger datasets but with reasonable values for the max* variables.
 //
 // Assumptions/prerequisites/limitations/notes:
 //
@@ -19,12 +10,22 @@
 'use strict';
 
 const op = require('/MarkLogic/optic');
+const crm = op.prefixer('http://www.cidoc-crm.org/cidoc-crm/');
+const la = op.prefixer('https://linked.art/ns/terms/');
 const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
+const skos = op.prefixer('http://www.w3.org/2004/02/skos/core#');
 
 // START: Script configuration
-const predicate = lux('isRelatedTo');
-const maxHops = 3;
-const usernames = ['data-lux', 'data-slice01', 'data-slice02'];
+const predicate = skos('broader');
+const maxHops = 2;
+const maxTriplesPerHop = 10;
+const fieldName = 'placePrimaryName';
+const maxFieldValues = 10;
+const usernames = [
+  'lux-by-unit-endpoint-consumer',
+  'ycba-endpoint-consumer',
+  'yuag-endpoint-consumer',
+];
 const includeCurrentUser = false;
 const includeRawData = false;
 // END: Script configuration
@@ -34,7 +35,7 @@ if (includeCurrentUser && !usernames.includes(xdmp.getCurrentUser())) {
 }
 
 function getFieldValues() {
-  return cts.fieldValues('nonSemanticKeywords');
+  return fn.subsequence(cts.fieldValues(fieldName), 1, maxFieldValues);
 }
 
 function getTraversalResults(uris, level) {
@@ -60,8 +61,12 @@ function getTraversalResults(uris, level) {
 }
 
 function getConnections(ctsQuery = cts.andQuery([]), level = 1) {
-  const triples = cts
-    .triples([], sem.iri(predicate), [], [], [], ctsQuery)
+  const triples = fn
+    .subsequence(
+      cts.triples([], sem.iri(predicate), [], [], [], ctsQuery),
+      1,
+      maxTriplesPerHop
+    )
     .toArray();
   let objectUris = [];
   for (const result of triples) {

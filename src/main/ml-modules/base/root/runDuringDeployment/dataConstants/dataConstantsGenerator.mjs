@@ -5,9 +5,24 @@ import {
 } from '../../utils/utils.mjs';
 
 const SPARQL_OPTIONS = [];
+const nonFatalMessages = [];
+
+const processMessage = (msg, level = 'info') => {
+  if (level == 'fatal') {
+    console.error(msg);
+    throw new Error(msg);
+  } else {
+    if (level == 'info') {
+      console.log(msg);
+    } else {
+      console.warn(msg);
+    }
+    nonFatalMessages.push({ msg, level });
+  }
+};
 
 const uri = '/lib/dataConstants.mjs';
-console.log(`Generating data constants within ${uri}`);
+processMessage(`Generating data constants within ${uri}`);
 
 function processDataConstant(dataConstants, configUri) {
   const configDoc = getConfig(configUri);
@@ -31,8 +46,7 @@ function getConfig(configUri) {
   // Shouldn't happen given this came from cts.uriMatch() but leaving just in case.
   if (!config) {
     const msg = `Missing query configuration document: ${configUri}`;
-    console.error(msg);
-    throw new Error(msg);
+    processMessage(msg, 'fatal');
   }
   return config.toObject();
 }
@@ -55,8 +69,7 @@ function executeQuery(configPathInfo, configDoc) {
     const msg = `Unsupported query type specified in ${fn.baseUri(
       configDoc
     )}: ${queryType}`;
-    console.error(msg);
-    throw new Error(msg);
+    processMessage(msg, 'fatal');
   }
 
   // Determine the query's URI, and bail if it does not exist.
@@ -64,8 +77,7 @@ function executeQuery(configPathInfo, configDoc) {
   const baseQuery = getDocFromModulesDatabase(queryUri);
   if (!baseQuery) {
     const msg = `Query document does not exist in the modules database: ${queryUri}`;
-    console.error(msg);
-    throw new Error(msg);
+    processMessage(msg, 'fatal');
   }
 
   // Execute the query.
@@ -83,13 +95,12 @@ function executeQuery(configPathInfo, configDoc) {
     results = fn.head(xdmp.invoke(queryUri));
   }
 
-  // If at least one result is required, this would be a good place to check for that.
-
-  // If one result is expected, warn if more than one and only return one.
-  if (warnIfMultiple && results.length > 1) {
-    console.warn(
-      `The ${queryUri} query returned more than one result when one result was expected; using first result.`
-    );
+  if (results.length == 0) {
+    const msg = `The ${queryUri} query returned zero results.`;
+    processMessage(msg, 'warn');
+  } else if (warnIfMultiple && results.length > 1) {
+    const msg = `The ${queryUri} query returned more than one result when one result was expected; using first result.`;
+    processMessage(msg, 'warn');
     return {
       results: results.splice(0, 1),
       duration: new Date().getTime() - start.getTime(),
@@ -226,15 +237,16 @@ function get(value, defaultValue = '') {
   return value ? value : defaultValue;
 }
 
-function emitMetrics() {
+function emitSummary() {
+  // Metrics block
   const colLabelDuration = 'Duration';
   const colLabelConstants = 'Constants';
   const colLabelUris = 'Query URIs';
   const colWidthDuration = colLabelDuration.length;
   const colWidthConstants = colLabelConstants.length;
   const colWidthUris = colLabelUris.length;
-  let metrics = `${colLabelDuration} | ${colLabelConstants} | ${colLabelUris}\n`;
-  metrics += `${'-'.repeat(colWidthDuration)} | ${'-'.repeat(
+  let summary = `${colLabelDuration} | ${colLabelConstants} | ${colLabelUris}\n`;
+  summary += `${'-'.repeat(colWidthDuration)} | ${'-'.repeat(
     colWidthConstants
   )} | ${'-'.repeat(colWidthUris)}\n`;
   generatorMeta.sort((a, b) => {
@@ -243,7 +255,7 @@ function emitMetrics() {
   let totalDuration = 0;
   let totalCount = 0;
   generatorMeta.forEach((entry) => {
-    metrics += `${' '.repeat(
+    summary += `${' '.repeat(
       colWidthDuration - new String(entry.duration).length
     )}${entry.duration} | ${' '.repeat(
       colWidthConstants - new String(entry.count).length
@@ -251,15 +263,31 @@ function emitMetrics() {
     totalDuration += entry.duration;
     totalCount += entry.count;
   });
-  metrics += `${'-'.repeat(colWidthDuration)} | ${'-'.repeat(
+  summary += `${'-'.repeat(colWidthDuration)} | ${'-'.repeat(
     colWidthConstants
   )} | ${'-'.repeat(colWidthUris)}\n`;
-  metrics += `${' '.repeat(
+  summary += `${' '.repeat(
     colWidthDuration - new String(totalDuration).length
   )}${totalDuration} | ${' '.repeat(
     colWidthConstants - new String(totalCount).length
   )}${totalCount} | ${generatorMeta.length} queries`;
-  return metrics;
+
+  // Messages block
+  if (nonFatalMessages.length > 0) {
+    summary += '\n\nMessages:\n\n';
+    nonFatalMessages.forEach((item, i) => {
+      if (item.level == 'info') {
+        summary += `INFO: ${item.msg}`;
+      } else {
+        summary += `WARN: ${item.msg}`;
+      }
+      if (i + 1 < nonFatalMessages.length) {
+        summary += '\n';
+      }
+    });
+  }
+
+  return summary;
 }
 
 // STEP 1: Get the URIs of the data constant configuration files
@@ -287,8 +315,7 @@ const pipelineDataConstants = getDocFromModulesDatabase(
 );
 if (!pipelineDataConstants) {
   const msg = `There are no data pipeline-provided data constants to include; expected to find them at '${pipelineDataConstantsUri}' within the modules database.`;
-  console.error(msg);
-  throw new Error(msg);
+  processMessage(msg, 'fatal');
 }
 const combinedDataConstants = {
   ...pipelineDataConstants.toObject(),
@@ -318,5 +345,5 @@ evalInModulesDatabase(
   true
 );
 
-// STEP 4: Metrics
-emitMetrics();
+// STEP 4: Summary
+emitSummary();

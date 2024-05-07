@@ -5,7 +5,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
-  
+- Added config file for modules database ([#124](https://github.com/project-lux/lux-marklogic/issues/124))
 ### Changed
   
 ### Removed

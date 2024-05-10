@@ -507,9 +507,14 @@ const searchTermText = {
       helpText:
         'Search for Collections that are categorized with the specified Concept or Type terms.',
     },
-    containing: {
-      label: 'Contain',
+    containingItem: {
+      label: 'Containing Objects',
       helpText: 'Search for Collections that contain the specified Objects.',
+    },
+    containingSet: {
+      label: 'Containing Collections',
+      helpText:
+        'Search for Collections that contain the specified Collections.',
     },
     curatedBy: {
       label: 'Curated By',
@@ -526,7 +531,7 @@ const searchTermText = {
       helpText:
         'Search for Collections by a string identifier or an external authority URI, such as VIAF or wikidata.',
     },
-    member: {
+    memberOf: {
       label: 'Member of',
       helpText:
         'Search for Collections that are hierarchically within the specified Collection.',

@@ -277,7 +277,7 @@ const SEARCH_TERM_CONFIG = {
       patternName: 'hopWithField',
       predicates: ['la("member_of")'],
       targetScope: 'set',
-      hopInverseName: 'member',
+      hopInverseName: 'containingItem',
       indexReferences: ['setPrimaryName'],
     },
     name: {
@@ -398,11 +398,6 @@ const SEARCH_TERM_CONFIG = {
       indexReferences: ['conceptPrimaryName'],
       idIndexReferences: ['setTypeId'],
     },
-    containing: {
-      patternName: 'hopInverse',
-      predicates: ['la("member_of")'],
-      targetScope: 'item',
-    },
     curatedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("agentOfCuration")'],
@@ -415,6 +410,13 @@ const SEARCH_TERM_CONFIG = {
       patternName: 'indexedValue',
       indexReferences: ['setIdentifier'],
       scalarType: 'string',
+    },
+    memberOf: {
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containingSet',
+      indexReferences: ['setPrimaryName'],
     },
     name: {
       patternName: 'indexedWord',

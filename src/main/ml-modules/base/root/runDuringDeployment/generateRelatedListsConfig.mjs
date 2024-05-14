@@ -19,15 +19,12 @@ const RELATION_KEYS_TO_SUPPRESS = [
   'languageOf-depictsAgent',
   'languageOf-depictsConcept',
   'languageOf-depictsPlace',
-  'curated-containing-memberOf-usedForEvent',
-  'curated-member-memberOf-usedForEvent',
+  'curated-containingItem-memberOf-usedForEvent',
   'curated-usedForEvent',
-  'used-member-memberOf-curatedBy',
-  'used-containing-memberOf-curatedBy',
+  'used-containingItem-memberOf-curatedBy',
   'used-curatedBy',
   //ignoring keys with relationScope of "set"
-  'classificationOfSet-containing-memberOf-usedForEvent',
-  'classificationOfSet-member-memberOf-usedForEvent',
+  'classificationOfSet-containingItem-memberOf-usedForEvent',
   'classificationOfSet-usedForEvent',
 ];
 

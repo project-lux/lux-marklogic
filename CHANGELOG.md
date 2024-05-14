@@ -7,7 +7,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
-  
+- Changed indexes to use Getty AAT values instead of data constants ([#54](https://github.com/project-lux/lux-marklogic/issues/54))
 ### Removed
 
 ### Fixed

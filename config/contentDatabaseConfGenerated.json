@@ -46,7 +46,7 @@
       "field-name": "anySortName",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587']/content",
+          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a']/content",
           "weight": 1
         }
       ]
@@ -55,7 +55,7 @@
       "field-name": "anySortNameEn",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content",
+          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a'][./language/id='https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449']/content",
           "weight": 1
         }
       ]
@@ -64,7 +64,7 @@
       "field-name": "anySortNameFr",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content",
+          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a'][./language/id='https://lux.collections.yale.edu/data/concept/416a8d83-430d-4ae9-8039-41b8c84e1353']/content",
           "weight": 1
         }
       ]
@@ -73,7 +73,7 @@
       "field-name": "anySortNameZh",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content",
+          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a'][./language/id='None']/content",
           "weight": 1
         }
       ]
@@ -102,7 +102,7 @@
       "field-name": "referencePrimaryName",
       "field-path": [
         {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -166,7 +166,7 @@
       "field-name": "setPrimaryName",
       "field-path": [
         {
-          "path": "/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = ('Set')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -280,7 +280,7 @@
       "field-name": "agentPrimaryName",
       "field-path": [
         {
-          "path": "/json[type = ('Group', 'Person')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -497,7 +497,7 @@
       "field-name": "agentNationalityId",
       "field-path": [
         {
-          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300379842']/id",
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/05344568-bdd1-4289-90d6-b9fdcdbaaa4c']/id",
           "weight": 1
         }
       ],
@@ -507,7 +507,7 @@
       "field-name": "agentOccupationId",
       "field-path": [
         {
-          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300263369']/id",
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/86be41f5-60e4-47f4-bd4e-95a4955a3e9b']/id",
           "weight": 1
         }
       ],
@@ -517,7 +517,7 @@
       "field-name": "agentGenderId",
       "field-path": [
         {
-          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055147']/id",
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/id='https://lux.collections.yale.edu/data/concept/84ed0c0e-2aa8-49b3-ae02-ed84552f570d']/id",
           "weight": 1
         }
       ],
@@ -617,7 +617,7 @@
       "field-name": "itemPrimaryName",
       "field-path": [
         {
-          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -680,7 +680,7 @@
       "field-name": "itemHeightDimensionValue",
       "field-path": [
         {
-          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055644']/value",
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/id='https://lux.collections.yale.edu/data/concept/32c99593-6526-4cd4-98c7-71e5ccfcafc8']/value",
           "weight": 1
         }
       ]
@@ -689,7 +689,7 @@
       "field-name": "itemWidthDimensionValue",
       "field-path": [
         {
-          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055647']/value",
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/id='https://lux.collections.yale.edu/data/concept/ca3a9042-c173-4996-bbf0-c557f1126799']/value",
           "weight": 1
         }
       ]
@@ -698,7 +698,7 @@
       "field-name": "itemDepthDimensionValue",
       "field-path": [
         {
-          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300072633']/value",
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/id='https://lux.collections.yale.edu/data/concept/37872594-97d9-4338-962b-d31f4bced440']/value",
           "weight": 1
         }
       ]
@@ -933,7 +933,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']//content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']//content",
           "weight": 1
         }
       ],
@@ -957,7 +957,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./type='Name']/content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/identified_by[./type='Name']/content",
           "weight": 1
         }
       ],
@@ -977,11 +977,11 @@
       "field-name": "workPrimaryName",
       "field-path": [
         {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -1009,11 +1009,11 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./type='Identifier']/content",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/identified_by[./type='Identifier']/content",
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/equivalent/id",
+          "path": "/json[type='Set'][./classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/equivalent/id",
           "weight": 1
         }
       ],
@@ -1027,7 +1027,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/classified_as/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/classified_as/id",
           "weight": 1
         }
       ],
@@ -1051,7 +1051,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = 'Place']/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/about[./type = 'Place']/id",
           "weight": 1
         },
         {
@@ -1069,7 +1069,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Person', 'Group')]/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/about[./type = ('Person', 'Group')]/id",
           "weight": 1
         },
         {
@@ -1087,7 +1087,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
           "weight": 1
         },
         {
@@ -1105,7 +1105,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/member_of/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/member_of/id",
           "weight": 1
         }
       ],
@@ -1119,7 +1119,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1132,7 +1132,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1145,7 +1145,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -1158,7 +1158,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/took_place_at/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/took_place_at/id",
           "weight": 1
         }
       ],
@@ -1172,7 +1172,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/carried_out_by/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/used_for/carried_out_by/id",
           "weight": 1
         }
       ],
@@ -1186,7 +1186,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1199,7 +1199,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1212,7 +1212,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -1225,7 +1225,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/took_place_at/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/took_place_at/id",
           "weight": 1
         }
       ],
@@ -1243,7 +1243,7 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/carried_out_by/id",
+          "path": "/json[type='Set'][classified_as/id='https://lux.collections.yale.edu/data/concept/dd625870-8775-44b2-9c19-b6281462c684']/created_by/carried_out_by/id",
           "weight": 1
         }
       ],
@@ -1303,7 +1303,7 @@
       "field-name": "placePrimaryName",
       "field-path": [
         {
-          "path": "/json[type = 'Place']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = 'Place']/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -1416,7 +1416,7 @@
       "field-name": "conceptPrimaryName",
       "field-path": [
         {
-          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],
@@ -1560,7 +1560,7 @@
       "field-name": "eventPrimaryName",
       "field-path": [
         {
-          "path": "/json[type= ('Activity', 'Period')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec']/content",
           "weight": 1
         }
       ],

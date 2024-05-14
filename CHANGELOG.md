@@ -8,7 +8,6 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Added config file for modules database ([#124](https://github.com/project-lux/lux-marklogic/issues/124))
 - Update member of / containing fields to remove duplicate and allow traversing hiearchical sets ([#135](https://github.com/project-lux/lux-marklogic/issues/135))
 ### Changed
-- Changed indexes to use Getty AAT values instead of data constants (except for Sort Name - to be changed with next release) ([#54](https://github.com/project-lux/lux-marklogic/issues/54))
   
 ### Removed
 

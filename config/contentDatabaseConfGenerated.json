@@ -46,7 +46,7 @@
       "field-name": "anySortName",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587']/content",
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content",
           "weight": 1
         }
       ]
@@ -55,7 +55,7 @@
       "field-name": "anySortNameEn",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content",
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content",
           "weight": 1
         }
       ]
@@ -64,7 +64,7 @@
       "field-name": "anySortNameFr",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content",
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content",
           "weight": 1
         }
       ]
@@ -73,7 +73,7 @@
       "field-name": "anySortNameZh",
       "field-path": [
         {
-          "path": "/json/identified_by[./classified_as/id='https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content",
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content",
           "weight": 1
         }
       ]

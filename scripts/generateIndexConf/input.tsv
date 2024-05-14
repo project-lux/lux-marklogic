@@ -1,8 +1,8 @@
 Record Type	Property	Name Type	Query Type	Search Tag Name	Used For	Semantic?	Force Range Index?	Explanation	JSON Path	Predicate
-any	Sort	Name	string	anySortName		Non	N		/json/identified_by[./classified_as/id='$sortName']/content	
-any	Sort	NameEn	string	anySortNameEn		Non	N		/json/identified_by[./classified_as/id='$sortName'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content	
-any	Sort	NameFr	string	anySortNameFr		Non	N		/json/identified_by[./classified_as/id='$sortName'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content	
-any	Sort	NameZh	string	anySortNameZh		Non	N		/json/identified_by[./classified_as/id='$sortName'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content	
+any	Sort	Name	string	anySortName		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
+any	Sort	NameEn	string	anySortNameEn		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content	
+any	Sort	NameFr	string	anySortNameFr		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content	
+any	Sort	NameZh	string	anySortNameZh		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content	
 										
 										
 reference		Name	keyword	referenceName	Search	Non	Y	Auto complete endpoint may attempt to use.	/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content	

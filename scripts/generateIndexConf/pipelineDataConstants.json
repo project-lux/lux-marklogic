@@ -6,7 +6,7 @@
   "archive": "https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478",
   "biographyStatement": "https://lux.collections.yale.edu/data/concept/54e35d81-9548-4b4e-8973-de02b09bf9da",
   "citationsStatement": "https://lux.collections.yale.edu/data/concept/ceef9d2e-1a07-4269-827f-8c407e4d4711",
-  "collection": "https://lux.collections.yale.edu/data/concept/2340bd83-22b4-4a39-ae46-ba0258e3a79d",
+  "collection": "https://lux.collections.yale.edu/data/concept/ef1b235c-ce4a-48ac-8820-b20fda63dc17",
   "collectionItem": "https://lux.collections.yale.edu/data/concept/b34ad31c-4a2f-4cef-aee3-ae8d824e42a2",
   "creditLineStatement": "https://lux.collections.yale.edu/data/concept/7c0ba119-47cb-4ade-8aa3-32a1e66c8ca9",
   "depth": "https://lux.collections.yale.edu/data/concept/37872594-97d9-4338-962b-d31f4bced440",
@@ -29,12 +29,12 @@
   "nationality": "https://lux.collections.yale.edu/data/concept/05344568-bdd1-4289-90d6-b9fdcdbaaa4c",
   "newSortName": "https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587",
   "newSortValue": null,
-  "occupation": "https://lux.collections.yale.edu/data/concept/2129b810-9685-493d-b560-6c9029828a22",
+  "occupation": "https://lux.collections.yale.edu/data/concept/17d77c65-8552-4ddb-a4b7-c6c8ba82afe1",
   "officialName": "https://lux.collections.yale.edu/data/concept/8209ea47-ab8b-4e9c-9802-d043f6d7cced",
   "oldSortName": "https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
   "primaryName": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
   "provenanceStatement": "https://lux.collections.yale.edu/data/concept/dd8b8c75-3f4b-4071-a231-161ae556e572",
-  "sortName": "https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587",
+  "sortName": "https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
   "sortValue": "https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587",
   "statementType": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
   "style": "https://lux.collections.yale.edu/data/concept/532cd8db-d99f-4013-9980-26ddc156d5ad",
@@ -42,5 +42,5 @@
   "typeOfPart": "https://lux.collections.yale.edu/data/concept/861dda5d-03c4-44d6-a2a0-d699a3c7a791",
   "typeOfWork": "https://lux.collections.yale.edu/data/concept/4ea65dc4-76bc-45b7-b54c-a1ca4783d4e2",
   "webPage": "https://lux.collections.yale.edu/data/concept/2eca07bd-be42-4ef5-9ec5-87c1bbfe639d",
-  "width": "https://lux.collections.yale.edu/data/concept/8af77fe4-8a1c-4a5d-8cfe-d921061e92a3"
+  "width": "https://lux.collections.yale.edu/data/concept/cd6fc43b-93ef-48f5-8d53-30e0272148d8"
 }

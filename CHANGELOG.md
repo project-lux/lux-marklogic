@@ -5,6 +5,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+
+### Changed
+  
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.16.0 - 2024-05-14
+
+### Added
 - Added config file for modules database ([#124](https://github.com/project-lux/lux-marklogic/issues/124))
 - Update member of / containing fields to remove duplicate and allow traversing hiearchical sets ([#135](https://github.com/project-lux/lux-marklogic/issues/135))
 ### Changed

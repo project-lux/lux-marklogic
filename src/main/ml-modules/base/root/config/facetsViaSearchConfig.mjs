@@ -1,18 +1,18 @@
-import { getIRI } from "../lib/dataConstants.mjs";
+import { getIRI } from '../lib/dataConstants.mjs';
 
 const FACETS_VIA_SEARCH_CONFIG = {
   responsibleCollections: {
     getFacetValuesCriteria: (baseSearchCriteria) => {
       // If changing this criteria, do so within responsibleUnits too.
       const criteria = {
-        _scope: "set",
+        _scope: 'set',
         AND: [
           {
-            containing: baseSearchCriteria,
+            containingItem: baseSearchCriteria,
           },
           {
             classification: {
-              id: getIRI("collection"),
+              id: getIRI('collection'),
             },
           },
         ],
@@ -21,7 +21,7 @@ const FACETS_VIA_SEARCH_CONFIG = {
     },
     getFacetValueCountCriteria: (baseSearchCriteria, facetValueId) => {
       const criteria = {
-        _scope: "item",
+        _scope: 'item',
         AND: [
           {
             memberOf: {
@@ -37,19 +37,19 @@ const FACETS_VIA_SEARCH_CONFIG = {
   responsibleUnits: {
     getFacetValuesCriteria: (baseSearchCriteria) => {
       const criteria = {
-        _scope: "agent",
+        _scope: 'agent',
         OR: [
           {
             memberOfInverse: {
               AND: [
                 {
                   curated: {
-                    containing: baseSearchCriteria,
+                    containingItem: baseSearchCriteria,
                   },
                 },
                 {
                   classification: {
-                    id: getIRI("department"),
+                    id: getIRI('department'),
                   },
                 },
               ],
@@ -59,13 +59,13 @@ const FACETS_VIA_SEARCH_CONFIG = {
             AND: [
               {
                 curated: {
-                  containing: baseSearchCriteria,
+                  containingItem: baseSearchCriteria,
                 },
               },
               {
                 NOT: {
                   classification: {
-                    id: getIRI("department"),
+                    id: getIRI('department'),
                   },
                 },
               },
@@ -77,7 +77,7 @@ const FACETS_VIA_SEARCH_CONFIG = {
     },
     getFacetValueCountCriteria: (baseSearchCriteria, facetValueId) => {
       const criteria = {
-        _scope: "item",
+        _scope: 'item',
         AND: [
           {
             memberOf: {

@@ -37,15 +37,18 @@ declare function local:db-stats($db) {
   )
 };
 
+let $databaseName := "lux-content"
+
 let $labels := (
   "Documents       ",
   "Data size (MB)  ",
   "Memory size (MB)"
 )
-let $stats-for-database-1 := local:db-stats("lux-content")
+let $stats-for-database-1 := local:db-stats($databaseName)
 
 return fn:string-join((
-  "&#09;&#09;&#09;lux-content",
+  "&#09;&#09;&#09;",
+  $databaseName,
   for $i in 1 to 3
   return fn:string-join((
     $labels[$i],

@@ -77,13 +77,13 @@ The `[passwordPropertyName]` keys are:
    * `copyDatabaseInputPassword` and `copyDatabaseOutputPassword`: Only required by the `copyDatabase` task.
    * `importDataPassword`: Only required by the `importData*` tasks.
 
-Note the `luxEndpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
+Note the `tenantEndpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
 
  Encrypted passwords may need to be updated when switching between environments.
 
 # Custom Token Replacement
 
-This project defines the `preprocessMarkLogicConfigurationFiles` Gradle task.  The task is responsible for replacing one or more custom tokens.  This feature was introduced in order to share database index settings between two content databases.  Unlike the native token feature, the custom token feature enables one to replace the token reference with JSON.
+This project defines the `preprocessMarkLogicConfigurationFiles` Gradle task.  The task is responsible for replacing one or more custom tokens.  This feature was introduced in order to share database index settings between two content databases (within the same tenant).  Unlike the native token feature, the custom token feature enables one to replace the token reference with JSON.
 
 To help differentiate custom token references from native token references, custom token references are surrounded by `@@`, as opposed to `%%`.
 
@@ -109,7 +109,7 @@ The following process is recommended for *every* backend deployment to a shared 
 
 Host names, IP addresses, and more may be found within the [LUX Environments spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit#gid=2019670843).
 
-The majority of the following is intended to be executed by a user with the `lux-deployer` or `admin` role.  A subset requires the `admin`, but is not necessarily *required* with each deployment.
+The majority of the following is intended to be executed by a user with the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) or `admin` role.  A subset requires the `admin`, but is not necessarily *required* with each deployment.
 
 Most Gradle tasks communicate with MarkLogic.  As such, the commands running those tasks need to specify the Gradle properties file that aligns with the target environment, or configuration thereof.  Typically there is a one Gradle properties file per environment, where the environment name is incorporated into the properties file name as `[env]` in `gradle-[env].properties`.  In the commands below, substitute `[env]` for the target environment.  If wanting to use `gradle-local.properties`, you may omit the `environmentName` parameter.
 
@@ -168,12 +168,12 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
     Note: The `setBanner` Gradle task is configured to run after `mlDeploySecurity` as it too requires an admin.  The `setBanner` Gradle task may also be called directly.
 
-10. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the `lux-deployer` role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
+10. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
 
 
 11. **Restricted to administrators:** If the indexing configuration is changing, decide whether to re-load or re-index the database.
 
-    A re-load would have you clear the content database now, then proceed with the rest of this procedure.  A step after deploying the configuration prompts you to load the data.
+    A re-load would have you clear the tenant's content database now, then proceed with the rest of this procedure.  A step after deploying the configuration prompts you to load the data.
 
     If you elect to go the re-indexing route, there is no additional action required in this step; you may proceed to the next step.
     
@@ -182,18 +182,18 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
     * [Guidance on Re-Load vs. Re-Index](/docs/lux-backend-database-indexing.md#re-load-vs-re-index)
     * [Guidance on Detecting Conflicts Between Data and Index Configuration](/docs/lux-backend-database-indexing.md#detecting-conflicts-between-data-and-index-configuration)
 
-12. The rest of the deployment may be performed as a non-admin.  The non-admin user account needs to have the `lux-deployer` role.  To change:
+12. The rest of the deployment may be performed as a non-admin.  The non-admin user account needs to have the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) role.  To change:
 
     * Update the `mlUsername` property in `gradle-[env].properties`
-    * Run `./gradlew addCredentials --key mlPassword --value '[yourLuxDeployerPassword]'`
+    * Run `./gradlew addCredentials --key mlPassword --value '[yourTenantDeployerPassword]'`
 
     *Note the use of single quotes around the value --they ensure the entire value is received.*
 
-13. For pre-existing environments, clear the lux-modules database.  The `performBaseDeployment` task will not automatically do this.  Alternatively, the lux-modules database may be cleared from within the admin console --just make sure you clear the correct database!
+13. For pre-existing environments, clear the tenant's modules database.  The `performBaseDeployment` task will not automatically do this.  Alternatively, the modules database may be cleared from within the admin console --just make sure you clear the correct database!
 
-    `./gradlew mlClearDatabase -Pdatabase=lux-modules -Pconfirm=true -PenvironmentName=[env]`
+    `./gradlew mlClearDatabase -Pdatabase=[modulesDatabaseName] -Pconfirm=true -PenvironmentName=[env]`
 
-    It is possible for the lux-modules database to go offline when attempting to clear it, regardless of using ML Gradle or the admin console. More specifically, its forest gets stuck in what should be a temporary status. To resolve, restart the host the forest is on, then attempt the clear operation a second time. We're yet to see this issue happen during the second attempt.
+    It is possible for the modules database to go offline when attempting to clear it, regardless of using ML Gradle or the admin console. More specifically, its forest gets stuck in what should be a temporary status. To resolve, restart the host the forest is on, then attempt the clear operation a second time. We're yet to see this issue happen during the second attempt.
 
 14. Run the following Gradle task to the non-security configuration, the code, and any related dependencies.
 
@@ -262,11 +262,9 @@ BUILD FAILED in 9s
 7 actionable tasks: 6 executed, 1 up-to-date
 ```
 
-The build script is configured to run some tasks after the modules are deployed.  An example is the `generateRemainingSearchTerms` task.  If it starts to fail yet it wasn't recently modified, it is likely a different error is preventing it from running successfully.  A way to get a better error message is to run its resolved code within Query Console.  At the time this was written, one could run the following against the lux-content modules databases:
+The build script is configured to run some tasks after the modules are deployed.  An example is the `generateRemainingSearchTerms` task.  If it starts to fail yet it wasn't recently modified, it is likely a different error is preventing it from running successfully.  A way to get a better error message is to run the task's JavaScript or XQuery within Query Console.  The code for these tasks --with resolved property references-- may be found within [/build/buildSupport](/build/buildSupport); the source scripts containing property references are within [/scripts/buildSupport](/scripts/buildSupport).
 
-`xdmp.invoke('/runDuringDeployment/generateRemainingSearchTerms.mjs', {}, { database: xdmp.database('lux-content'), modules: xdmp.database('lux-modules'), root: ''})`
-
-Example Query Console response:
+Example Query Console response, identifying an underlying error:
 
 ![Example error via Query Console](/docs/img/example-error-via-query-console.png)
 
@@ -304,7 +302,7 @@ Both of the above tasks are wired into the [Custom Token Replacement](#custom-to
 
 # Deploy Thesauri
 
-To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-data) directory into the content database::
+To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-data) directory into the tenant's content database:
 
 `./gradlew mlLoadData -PenvironmentName=[env]`
 
@@ -312,7 +310,7 @@ To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-d
 
 ML Gradle includes the `mlUndeploy` task.  It should be used with great care in any environment you care about.
 
-This task is **restricted to administrators**.  We did not develop the opposite of the `performBaseDeployment` task, even though the `lux-deployer` role should have the permissions required to undeploy non-security portions of the MarkLogic configuration.
+This task is **restricted to administrators**.  We did not develop the opposite of the `performBaseDeployment` task, even though the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) role should have the permissions required to undeploy non-security portions of the MarkLogic configuration.
 
 Please see the [ML Gradle wiki pages](https://github.com/marklogic-community/ml-gradle/wiki) for directions.
 
@@ -330,8 +328,8 @@ Available application servers and their ports may vary by environment.  The outc
 | n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
 | n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
 | n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the `lux-endpoint-consumer` role. |
-| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the `lux-endpoint-consumer` role. |
+| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-app-endpoint-consumer-role.json) role. |
+| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-app-endpoint-consumer-role.json) role. |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 | `mlQueryPlanViewerPort` | 8006 | REST | No | Offers access to a copy of https://github.com/jpcs/queryplan-viewer, which is a developer tool for visualizing query plans that is useful when optimizing queries.  Locally, the URL is http://localhost:8006/default.xqy. |
 
@@ -347,14 +345,14 @@ In the following sections, the "Always" columns denote those we recommend enabli
 
 ## Custom Trace Events
 
-Each of the following custom trace events should have a constant defined in [appConstants.mjs](/src/main/ml-modules/base/root/lib/appConstants.mjs).
+Each tenant has a unique set of trace events.  The `mlAppName` property value is used in the names.  Below, substitute `%%mlAppName%%` for the value of said property.
 
-Those with an asterisk following the name are input to the log analysis script, [mineBackendLogs.sh](/scripts/logAnalysis/mineBackendLogs.sh).
+Those with an asterisk following the name are input to the log analysis script, [mineBackendLogs.sh](/scripts/logAnalysis/mineBackendLogs.sh).  This script needs to be configured with the tenant's trace event names.
 
 | Trace Name | Always | Description |
 | ---------- | ------ | ----------- |
-| `LuxError` | No | When enabled, the `lux` application server's custom error handler, [luxErrorHandler.mjs](/src/main/ml-modules/base/root/luxErrorHandler.mjs), will log the error's raw details, which can vary from the error handler's response, inclusive of the status response code, status response message, and response body. |
-| `LuxFacets`\* | Yes | Logs the name of a facet set and how long it takes to calculate them, in milliseconds. When `LuxSearch` is also enabled, note that the facet duration is part of the search duration. |
+| `LuxError` | No | When enabled, [customErrorHandler.mjs](/src/main/ml-modules/base/root/customErrorHandler.mjs) will log the error's raw details, which can vary from the error handler's response, inclusive of the status response code, status response message, and response body.  The custom error handler is configured to the HTTP application servers. |
+| `LuxFacets`\* | Yes | Logs the name of a facet set and how long it takes to calculate them, in milliseconds. |
 | `LuxNamedProfiles`\* | Yes | Logs the duration it takes to profile a document, in milliseconds. Only logged when a profile is requested and that profile is known by the system. A warning message is logged when an unknown profile is specified --regardless of this trace event being enabled. |
 | `LuxSearch`\* | Yes | Logs the duration search takes, in milliseconds. No additional context is provided, thereby limiting the value of this trace event; however, the search response body includes durations for that search's steps: parse, query, and facets. |
 | `LuxRelatedList`\* | Yes | Logs the parameters and duration of each successful and failed related list request. |

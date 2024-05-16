@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-endpoint-consumer",
+  "description": "Service account to consume '%%mlAppName%%' tenant endpoints",
+  "password": "%%tenantEndpointConsumerPassword%%",
+  "role": ["%%mlAppName%%-endpoint-consumer"]
+}

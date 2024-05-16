@@ -3,7 +3,7 @@
   "schema-database": "Schemas",
   "database-backup": [
     {
-      "backup-enabled": true,
+      "backup-enabled": %%backupEnabled%%,
       "backup-directory": "%%backupBasePath%%/%%DATABASE%%",
       "backup-type": "daily",
       "backup-period": 1,
@@ -19,7 +19,7 @@
       "journal-archive-lag-limit": 15
     },
     {
-      "backup-enabled": true,
+      "backup-enabled": %%backupEnabled%%,
       "backup-directory": "%%backupBasePath%%/%%DATABASE%%",
       "backup-type": "weekly",
       "backup-period": 1,

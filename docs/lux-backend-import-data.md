@@ -36,7 +36,7 @@ Additional information on the properties used by both of the import data tasks, 
 | importDataPassword         | The password to connect with. |
 | importDataFilePath         | The relative or absolute path of the input file.  If needed, a command line parameter could take precedence to this one. |
 | importDataFileIsCompressed | Using a Boolean, indicate whether the input file is compressed (`true`) or not (`false`).  If needed, a command line parameter could take precedence to this one. |
-| luxContentDatabase | The name of the database to evaluate the data constants queries against. |
+| tenantContentDatabase | The name of the database to evaluate the data constants queries against. |
 
 The working directory should be the clone's root directory, which is also the directory `gradle-[env].properties` should be in.
 
@@ -86,7 +86,7 @@ Data constants need to be regenerated after the associated content database is u
 
 At this time, it needs to be executed separately due to a conflict with the `database` parameter.
 
-The `generateDataConstants` is configured by the `luxContentDatabase` property.  It specifies the database execution context.  Please review this property's value before running this task.
+The `generateDataConstants` is configured by the `tenantContentDatabase` property.  It specifies the database execution context.  Please review this property's value before running this task.
 
 Unlike `processSearchTagConfig`, when this task completes successfully, the generated constants have already reached the modules database.
 
@@ -250,7 +250,7 @@ MLCP may also be invoked directly, from the command line.
 1. Optionally clear the database.  Consider this required if planning to enable MLCP's `fastload` option.\*
 2. Download and extract the MLCP binaries version matching the ML version from https://developer.marklogic.com/products/mlcp/.
 3. See [Detecting Conflicts Between Data and Index Configuration](/docs/lux-backend-database-indexing.md#detecting-conflicts-between-data-and-index-configuration) if interested in doing so.
-4. Configure and run the following command from Git Bash (or switch to MLCP's batch file)
+4. Configure and run the following command.
 
 *For the `output_permissions`, use the current/resolved value of the `mlDataPermissions` Gradle property, which may or may not match the below value.*
 
@@ -261,14 +261,14 @@ MLCP may also be invoked directly, from the command line.
   -ssl true \
   -username [yourUsername] \
   -password [yourPassword] \
-  -database lux-content \
+  -database [contentDatabaseName] \
+  -modules [modulesDatabaseName] \
   -fastload \
   -input_file_path /path/to/dataset.jsonl.gz \
   -input_file_type delimited_json \
   -input_compressed true \
   -input_compression_codec gzip \
   -output_permissions lux-endpoint-consumer,read,lux-writer,update \
-  -output_uri_replace "https://lux.collections.yale.edu/data/,''" \
   -uri_id id
 ```
 
@@ -277,91 +277,6 @@ MLCP may also be invoked directly, from the command line.
 **After the above completes successfully, please follow the [Steps After Importing Data](#steps-after-importing-data).**
 
 \* Fast load allows MLCP to go directly to the data nodes / forests, without care of a document with the same URI being in a different forest, and thus should only be used when the incoming document's URIs are new to the receiving database.  For more insights, see [Time vs. Correctness: Understanding -fastload Tradeoffs](https://docs.marklogic.com/guide/mlcp/import#id_29510).
-
-Example 1: run MLCP from pipeline server to load dataset stored on local disk with an IP
-
-```bash
-# The username varies by pipeline server.
-ssh -i [pemFilename] [username]@[ipAddress]
-# Extract MLCP's application files, if not already available.
-unzip mlcp-11.0.3-bin.zip to mlcp-11.0/;
-cd bin;
-nohup import_to_[env].sh &;
-```
-
-output is saved into nohup.out;
-the sh script looks like:
-
-```bash
-~/mlcp-11.0/bin/mlcp.sh import \
-  -host [yourHost] \
-  -port 8000 \
-  -ssl true \
-  -username [yourUsername] \
-  -password [yourPassword] \
-  -database lux-content \
-  -input_file_path /path/to/dataset \
-  -input_file_type delimited_json \
-  -uri_id id \
-  -copy_permissions false \
-  -input_compressed true \
-  -input_compression_codec gzip \
-  -copy_collections true \
-  -copy_metadata true \
-  -copy_properties true \
-  -copy_quality true \
-  -output_permissions lux-endpoint-consumer,read,lux-writer,update \
-  -fastload true \
-  -archive_metadata_optional true \
-  -thread_count 128 \
-  -batch_size 50
-```
-...where the directory specified by `-input_file_path` contains a number of .gz files. 
-
-Example 2: run MLCP from pipeline server to load dataset stored on local disk with an ALB
-
-```bash
-# The username varies by pipeline server.
-ssh -i [pemFilename] [username]@[ipAddress]
-nohup import_to_[env].sh &;
-```
-
-Output is saved into nohup.out;
-The sh script looks like:
-
-```bash
-~/mlcp-11.0/bin/mlcp.sh import \
-  -host [yourHost] \
-  -port 8000 \
-  -ssl true \
-  -username [yourUsername] \
-  -password [yourPassword] \
-  -database lux-content \
-  -input_file_path /path/to/dataset \
-  -input_file_type delimited_json \
-  -uri_id id \
-  -copy_permissions false \
-  -input_compressed true \
-  -input_compression_codec gzip \
-  -copy_collections true \
-  -copy_metadata true \
-  -copy_properties true \
-  -copy_quality true \
-  -output_permissions lux-endpoint-consumer,read,lux-writer,update \
-  -fastload true \
-  -archive_metadata_optional true \
-  -thread_count 128 \
-  -batch_size 50
-```
-...where the directory specified by `-input_file_path` is the input file location. 
-
-To move data from the first server to the second, run this rsync command from the first server,
-
-rsync -avhn /path/to/dataset [username]@[targetHost]:[targetPath]
-
-where -n means a dry run, remove it to really move data, or run this rsync command from the second server,
-
-rsync -avhn [username]@[sourceHost]:[sourcePath] [targetPath]]
 
 # Alternative 2: Copy a Database
 
@@ -405,13 +320,13 @@ To run MLCP directly, use the following as a template:
   -input_ssl true \
   -input_username [inputUsername] \
   -input_password [inputPassword] \
-  -input_database lux-content \
+  -input_database [inputContentDatabaseName] \
   -output_host [outputHost] \
   -output_port 8000 \
   -output_ssl true \
   -output_username [outputUsername] \
   -output_password [outputPassword] \
-  -output_database lux-content \
+  -output_database [outputContentDatabaseName] \
   -copy_permissions true \
   -copy_collections true \
   -copy_metadata true \

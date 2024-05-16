@@ -33,24 +33,6 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
-ext.lineSep = System.getProperty("line.separator")
-
-ext.getFirstPropertyOrDefault = { propertyNames, defaultValue ->
-  def propertyValue = null
-  for (String propertyName in propertyNames) {
-    println "Looking for the $propertyName property..."
-    if (project.hasProperty(propertyName)) {
-      println "FOUND the $propertyName property"
-      propertyValue = project.property(propertyName)
-      break
-    }
-  }
-  if (propertyValue == null) {
-    println "Requested property(ies) not defined. Returning the provided default value."
-    propertyValue = defaultValue
-  }
-  return propertyValue
-}
 
 // Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
 // Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
@@ -216,7 +198,8 @@ task importDataFull(type: com.marklogic.gradle.task.MlcpTask) {
   port = project.property("importDataPort").toInteger()
   username = project.property("importDataUsername")
   password = credentials.forKey('importDataPassword')
-  database = getFirstPropertyOrDefault(["database"], "NO_DATABASE_SPECIFIED")
+  database = project.property("tenantContentDatabase")
+  modules = project.property("tenantModulesDatabase")
   fastload = true // Database cleared for full loads
   input_file_path = project.property("importDataFilePath")
   input_file_type = "delimited_json"
@@ -254,7 +237,8 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   port = project.property("importDataPort").toInteger()
   username = project.property("importDataUsername")
   password = credentials.forKey('importDataPassword')
-  database = getFirstPropertyOrDefault(["database"], "NO_DATABASE_SPECIFIED")
+  database = project.property("tenantContentDatabase")
+  modules = project.property("tenantModulesDatabase")
   fastload = false // Database not cleared for incremental loads
   input_file_path = project.property("importDataFilePath")
   input_file_type = "delimited_json"
@@ -283,7 +267,7 @@ task generateDataConstants (type: com.marklogic.gradle.task.MarkLogicTask) {
     println "Generating the data constants..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
     def script = new File('./build/buildSupport/generateDataConstants.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
     println result
@@ -305,7 +289,7 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println "Generating the remaining search terms..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
     def script = new File('./build/buildSupport/generateRemainingSearchTerms.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -324,7 +308,7 @@ task generateRelatedListsConfig (type: com.marklogic.gradle.task.MarkLogicTask) 
     println "Generating the related lists configuration..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
     def script = new File('./build/buildSupport/generateRelatedListsConfig.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -343,7 +327,7 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
     println "Generating the advanced search configuration..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("luxContentDatabase"))
+    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
     def script = new File('./build/buildSupport/generateAdvancedSearchConfig.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -380,7 +364,7 @@ task updateSSLCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
 }
 mlDeployServers.finalizedBy updateSSLCiphers
 
-// This is a convenience task intended for one with the lux-deployer role to deploy most of the backend.
+// This is a convenience task intended for one with the tenant's deployer role to deploy most of the backend.
 // Purposely excluded:
 //
 //    mlDeploySecurity: insufficient permissions
@@ -401,7 +385,7 @@ task performBaseDeployment() {
   }
 }
 // It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
-// could result in an error as the lux-modules database didn't exist in time.
+// could result in an error if the tenant's modules database didn't exist in time.
 performBaseDeployment.finalizedBy mlDeployForestReplicas, generateDataConstants
 
 // Enables SSL on the builtin servers

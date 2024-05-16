@@ -1,5 +1,5 @@
 {
-  "server-name": "%%NAME%%-request-group-2",
+  "server-name": "%%mlAppName%%-request-group-2",
   "server-type": "http",
   "root": "/",
   "port": %%mlRestPortGroup2%%,
@@ -12,5 +12,5 @@
   "default-time-limit": %%mlRestDefaultTimeoutGroup2%%,
   "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
   "rewrite-resolves-globally": true,
-  "error-handler": "/luxErrorHandler.mjs"
+  "error-handler": "/customErrorHandler.mjs"
 }

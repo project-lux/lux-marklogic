@@ -7,12 +7,14 @@
 
 'use strict';
 
-// If you paste the contents of /
+// START: script configuration.
+const databaseName = 'lux-content';
 const doc = xdmp.toJSON(REPLACE_ME_WITH_GENERATED_INDEX_CONFIG);
+// END: script configuration.
 
 const admin = require('/MarkLogic/admin.xqy');
 const mlConfig = admin.getConfiguration();
-const databaseId = xdmp.database('lux-content');
+const databaseId = xdmp.database(databaseName);
 
 const findings = {
   fail: [],

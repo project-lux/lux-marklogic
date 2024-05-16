@@ -4,7 +4,8 @@ In this document:
 
 - [Local Deployment](#local-deployment)
 - [Dependencies and Prerequisites](#dependencies-and-prerequisites)
-- [Gradle Properties](#gradle-properties)
+- [Tenant Configuration](#tenant-configuration)
+  - [Tenant Limitations and Warnings](#tenant-limitations-and-warnings)
 - [Gradle Passwords](#gradle-passwords)
 - [Custom Token Replacement](#custom-token-replacement)
 - [Deploy Entire Backend](#deploy-entire-backend)
@@ -28,7 +29,7 @@ Related documentation:
 
 # Local Deployment
 
-To deploy locally, start with the [LUX Backend Local Developer Environment](/docs/lux-backend-setup-local-env.md) document
+To deploy locally, start with the [LUX Backend Local Developer Environment](/docs/lux-backend-setup-local-env.md) document, which will have you come back here once done.
 
 # Dependencies and Prerequisites
 
@@ -51,19 +52,37 @@ What follows is a mix of deployment and runtime dependencies and prerequisites f
 
 6. If planning to run MLCP from the command line (vs. via Gradle), [download](https://server.marklogic.com/products/mlcp) and install the MLCP version that aligns with the MarkLogic Server version.
 
-# Gradle Properties
+# Tenant Configuration
 
-One may view all of the properties set in `gradle.properties` as the defaults and those in `gradle-[env].properties` as the overrides.  It makes for cleaner properties files if the environment-specific files only set properties for which they need to override the default.  You can also always check the resolved property values via `./gradlew properties -PenvironmentName=[env]` with an optional `grep` command to narrow down what you're looking to verify.
+Multiple applications may be deployed within a MarkLogic cluster where each application has a dedicated content database, modules database, application servers, and roles.  Each such set of resources comprises a tenant.  Each tenant can be another instance of LUX whereby the data, configuration, and code may vary from another LUX instance.
 
-If you are creating your local environment, consider starting by copying `gradle-local-template.properties` as `gradle-local.properties`, then editing from there.
+Tenants are configured using Gradle properties.  Each tenant should have its own Gradle properties file.  While Gradle supports default property values, LUX has switched to explicitly defining each property in each properties file, which facilitates property file comparisons.
 
-Group-level cache, forest topology, and volume topology property values will typically vary between local and shared environments.
+Start by copying [/gradle.properties](/gradle.properties) as /gradle-[unique-tenant-name].properties.  The tenant naming convention uses lower case letters with dashes between words.  Tenant names are incorporated in the tenant's resource names.  For example, if the tenant name is "lux-is-awesome", the content database name would be "lux-is-awesome-content".
 
-Properties related to infrequently used LUX Gradle tasks should be reviewed before each run (e.g., `importDataFull` and `copyDatabase`).
+Next, open the tenant's properties file and replace "lux" with the tenant's name in all of these properties:
+
+* `mlAppName`
+* `mlDataPermissions` (likely two instances)
+* `mlForestsPerHost`, when applicable.
+* `mlDatabasesWithForestsOnOneHost`, when applicable.
+* `mlDatabaseNamesAndReplicaCounts`, when applicable.
+* `tenantContentDatabase`: This needs to be the "[tenant-name]-content".
+* `tenantModulesDatabase`: This needs to be the "[tenant-name]-modules".
+* `copyDatabaseInputDatabase` and `copyDatabaseOutputDatabase`: only used by the `copyDatabase` task.
+
+Now review all of the other properties, updating those that are not correct.  There are some that apply to all tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.
 
 This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated properties are `mlConfigPaths` and `mlModulePaths`.
 
-Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.
+Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `tenantEndpointConsumerPassword` and `tenantDeployerPassword`.
+
+## Tenant Limitations and Warnings
+
+The current tenant deployment model includes shared configuration and does not inhibit one tenant from accessing or even modifying another tenant's resources.  The current objective is to facilitate multiple tenants versus complete security controls.  Until this changes, please bear the following in mind:
+
+1. Only LUX proper should modify shared configuration, including certificates and group-level settings.
+2. TODO: continue
 
 # Gradle Passwords
 

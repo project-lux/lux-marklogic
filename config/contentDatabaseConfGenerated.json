@@ -926,6 +926,16 @@
       "field-value-searches": true
     },
     {
+      "field-name": "workIsPublicDomainBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isPublicDomain",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "workAnyText",
       "field-path": [
         {
@@ -2123,6 +2133,13 @@
     {
       "collation": "",
       "field-name": "workIsOnlineBoolean",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "float"
+    },
+    {
+      "collation": "",
+      "field-name": "workIsPublicDomainBoolean",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "float"

@@ -96,6 +96,7 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage	
 work	IsOnline	Boolean	numbers	workIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline	
+work	IsPublicDomain	Boolean	numbers	workIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isPublicDomain	
 work	Any	Text	keyword	workAnyText	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]//content ,  /json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']//content	
 work		Name	keyword	workName	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Name']/content ,  /json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./type='Name']/content	
 work	Primary	Name	keyword	workPrimaryName	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content , /json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	

@@ -35,7 +35,10 @@ To deploy locally, start with the [LUX Backend Local Developer Environment](/doc
 
 What follows is a mix of deployment and runtime dependencies and prerequisites for the target environment.
 
-1. MarkLogic 11.0.3 is installed.
+1. MarkLogic is installed.  Any MarkLogic 11 version should work.  Through May 2024, versions tested by LUX include ML 11.0.0 GA, ML 11.0.3 GA, ML 11.1.0 GA, and ML 11.2.0 GA.
+
+    LUX creates its clusters in AWS using Terraform and a modified version of [MarkLogic's CloudFormation template](https://developer.marklogic.com/products/cloud/aws/).  This portion of LUX is not publicly available.  If more interested in Azure, there's also an [Azure solution template for MarkLogic](https://github.com/marklogic/cloud-enablement-azure).
+
 2. The MarkLogic host name is compatible with MarkLogic Content Pump (MLCP).  The default may not be.  This is set from within the MarkLogic Admin console; see the screenshot below.  Single node, local environments may use "localhost".  MarkLogic clusters in AWS may use the attached ENI IP addresses.
 
     ![MarkLogic Host Name Settings](./img/host-name-settings.png)
@@ -71,7 +74,13 @@ Next, open the tenant's properties file and replace "lux" with the tenant's name
 * `tenantModulesDatabase`: This needs to be the "[tenant-name]-modules".
 * `copyDatabaseInputDatabase` and `copyDatabaseOutputDatabase`: only used by the `copyDatabase` task.
 
-Now review all of the other properties, updating those that are not correct.  There are some that apply to all tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.
+Specify the tenant's ports using these properties:
+
+* `mlRestPortGroup1`
+* `mlRestPortGroup2`
+* `mlXdbcPort`
+
+Now review all of the other properties, updating those that are not correct.  There are some that apply to all tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.  A little bit further down is a complete listing, within [Tenant Limitations and Warnings](#tenant-limitations-and-warnings).
 
 This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated properties are `mlConfigPaths` and `mlModulePaths`.
 
@@ -79,10 +88,29 @@ Passwords should not be set in the properties files. See the step below about st
 
 ## Tenant Limitations and Warnings
 
-The current tenant deployment model includes shared configuration and does not inhibit one tenant from accessing or even modifying another tenant's resources.  The current objective is to facilitate multiple tenants versus complete security controls.  Until this changes, please bear the following in mind:
+The current tenant deployment model includes shared configuration and does not inhibit one tenant from accessing or even modifying another tenant's resources.  The current objective is to facilitate multiple tenants versus comprehensive security.  Until this changes, please bear the following in mind.
 
-1. Only LUX proper should modify shared configuration, including certificates and group-level settings.
-2. TODO: continue
+**Tenant forks that delete the identified ML Gradle configuration files stand a greater chance of not creating an issue for other tenants.**
+
+1. When loading content, tenant-specific document permissions should be used and align with the tenant-specific roles, specifically [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-app-reader-role.json) and [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-app-writer-role.json).  For instance, if `mlAppName` is set to "lux-ftw", MLCP's `-output_permissions` parameter value should be `lux-ftw-reader,read,lux-ftw-writer,update`.
+2. Only LUX proper should modify shared configuration, including:
+    * Admin, App Services, Manage, and HealthCheck application servers.
+        * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)
+        * [/src/main/ml-config/base/servers/app-services-server.json](/src/main/ml-config/base/servers/app-services-server.json)
+        * [/src/main/ml-config/base/servers/manage-server.json](/src/main/ml-config/base/servers/manage-server.json)
+        * LUX does not present override HealthCheck application server settings.
+    * The certificate used by the above application servers, "built-in-app-cert".
+    * The certificate used by all tenant application servers, "lux-app-cert".
+    * The default group: [/src/main/ml-config/base/groups/default-group.json](/src/main/ml-config/base/groups/default-group.json)
+3. Tenants should not need to run the following Gradle tasks.  These are referenced in the [Deploy Entire Backend](#deploy-entire-backend) section.  There are others offered by ML Gradle that are not listed here and not part of typical LUX deployments.  Those need to be vetted individually.
+    * `disableSSL`
+    * `enableSSL`
+    * `setBanner`
+    * `*Ciphers`
+    * `*SSLProtocols`
+4. Tenants need not also deploy the Query Plan Viewer and may:
+    * Omit "build/main/ml-config/query-plan-viewer,build/main/ml-config/query-plan-viewer-secured" from the value of the `mlConfigPaths` build property.
+    * Omit "src/main/ml-modules/query-plan-viewer" from the value of the `mlModulePaths` build property.
 
 # Gradle Passwords
 
@@ -124,13 +152,13 @@ The following table is to define all supported custom tokens.
 
 *Note: Don't always believe Gradle when it reports a failure. Immediately try the same task again. If you get the same error, it's not your lucky day and you'll need to investigate.*
 
-The following process is recommended for *every* backend deployment to a shared environment as it comprehensively covers MarkLogic configuration and code changes.  If MarkLogic is not yet installed, please first start with [Cluster Formation via Terraform](#cluster-formation-via-terraform) or [LUX Backend Local Developer Environment](/docs/lux-backend-setup-local-env.md).
+The following process is recommended for *every* backend deployment to a shared environment as it comprehensively covers MarkLogic configuration and code changes.  If MarkLogic is not yet installed, double back to [Dependencies and Prerequisites](#dependencies-and-prerequisites) or, if your are setting up a local developer environment, [LUX Backend Local Developer Environment](/docs/lux-backend-setup-local-env.md).
 
-Host names, IP addresses, and more may be found within the [LUX Environments spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit#gid=2019670843).
+Host names, IP addresses, and more may be found within the [LUX Environments spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit#gid=2019670843) (private).
 
-The majority of the following is intended to be executed by a user with the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) or `admin` role.  A subset requires the `admin`, but is not necessarily *required* with each deployment.
+The `admin` role is required for some steps.  After the last admin step, the remaining steps may be executed using the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) role.  One of the admin steps is responsible for recreating the tenant-specific roles, including its deployer role.
 
-Most Gradle tasks communicate with MarkLogic.  As such, the commands running those tasks need to specify the Gradle properties file that aligns with the target environment, or configuration thereof.  Typically there is a one Gradle properties file per environment, where the environment name is incorporated into the properties file name as `[env]` in `gradle-[env].properties`.  In the commands below, substitute `[env]` for the target environment.  If wanting to use `gradle-local.properties`, you may omit the `environmentName` parameter.
+Most Gradle tasks communicate with MarkLogic Server.  As such, the commands running those tasks need to specify the Gradle properties file that aligns with the target environment, or tenant thereof.  In single-tenant environments, there will only be one associated Gradle properties file.  In a multi-tenant environment, there will be one Gradle properties file per tenant, if not also one for the base deployment.  The environment or tenant name is incorporated into the Gradle properties filename: anything between `gradle-` and `.properties` serves as the name.  In the commands below, replace `[name]` with the environment or tenant name.
 
 1. At least when the target environment is a production environment, verify you have a recent-enough backup, recovery procedure, a rollback plan, and are within the maintenance window.
 
@@ -174,7 +202,7 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
 8.  **Restricted to administrators:** If converting from a non-SSL environment to an SSL environment, run the following command.
 
-    `./gradlew enableSSL -i -PenvironmentName=[env]`
+    `./gradlew enableSSL -i -PenvironmentName=[name]`
 
     After successfully running `enableSSL`:
     
@@ -183,7 +211,7 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
 9.  **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
 
-    `./gradlew mlDeploySecurity -i -PenvironmentName=[env]`
+    `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
 
     Note: The `setBanner` Gradle task is configured to run after `mlDeploySecurity` as it too requires an admin.  The `setBanner` Gradle task may also be called directly.
 
@@ -203,20 +231,20 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
 12. The rest of the deployment may be performed as a non-admin.  The non-admin user account needs to have the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) role.  To change:
 
-    * Update the `mlUsername` property in `gradle-[env].properties`
+    * Update the `mlUsername` property in `gradle-[name].properties`
     * Run `./gradlew addCredentials --key mlPassword --value '[yourTenantDeployerPassword]'`
 
     *Note the use of single quotes around the value --they ensure the entire value is received.*
 
 13. For pre-existing environments, clear the tenant's modules database.  The `performBaseDeployment` task will not automatically do this.  Alternatively, the modules database may be cleared from within the admin console --just make sure you clear the correct database!
 
-    `./gradlew mlClearDatabase -Pdatabase=[modulesDatabaseName] -Pconfirm=true -PenvironmentName=[env]`
+    `./gradlew mlClearDatabase -Pdatabase=[modulesDatabaseName] -Pconfirm=true -PenvironmentName=[name]`
 
     It is possible for the modules database to go offline when attempting to clear it, regardless of using ML Gradle or the admin console. More specifically, its forest gets stuck in what should be a temporary status. To resolve, restart the host the forest is on, then attempt the clear operation a second time. We're yet to see this issue happen during the second attempt.
 
 14. Run the following Gradle task to the non-security configuration, the code, and any related dependencies.
 
-    `./gradlew performBaseDeployment -i -PenvironmentName=[env]`
+    `./gradlew performBaseDeployment -i -PenvironmentName=[name]`
 
     This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask.  For example, `generateDataConstants` requires the `languageIdentifier` index.  It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually any other parts of `performBaseDeployment` and double back for `generateDataConstants` after re-indexing is complete.
 
@@ -230,7 +258,7 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
     Load the content of the [/src/main/ml-data](/src/main/ml-data) directory, which includes deploying the thesauri. Should you encounter an issue, please see [Deploy Thesauri](#deploy-thesauri).
 
-    `./gradlew mlLoadData -PenvironmentName=[env]`
+    `./gradlew mlLoadData -PenvironmentName=[name]`
 
 18. Need to load the rest/most of the data?  Check out [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md).
 
@@ -245,11 +273,11 @@ Most Gradle tasks communicate with MarkLogic.  As such, the commands running tho
 
 There are lower-level Gradle tasks that deploy code but not the project's configuration (e.g., database index configuration). Pick one as these are mutually-exclusive.
 
-* `./gradlew mlWatch -PenvironmentName=[env]` monitoring for code changes and deploys them when detected.
+* `./gradlew mlWatch -PenvironmentName=[name]` monitoring for code changes and deploys them when detected.
 
-* `./gradlew mlLoadModules -i -PenvironmentName=[env]` deploys changes after they are made.
+* `./gradlew mlLoadModules -i -PenvironmentName=[name]` deploys changes after they are made.
 
-* `./gradlew mlReloadModules -i -PenvironmentName=[env]` first clears the project's modules database, the deploys the code.
+* `./gradlew mlReloadModules -i -PenvironmentName=[name]` first clears the project's modules database, the deploys the code.
 
 If you are encountering the following vague "Server (not a REST instance?) did not respond with an expected REST Error message" error, it is likely happening due to a coding error.  Read on to see how to get a more informed error message.
 
@@ -309,11 +337,11 @@ Before proceeding, please review the General Guidance section of [LUX Backend Da
 
 To deploy all database configuration changes:
 
-`./gradlew mlDeployDatabases -PenvironmentName=[env]`
+`./gradlew mlDeployDatabases -PenvironmentName=[name]`
 
 To only deploy the index configuration for all databases:
 
-`./gradlew mlUpdateIndexes -PenvironmentName=[env]`
+`./gradlew mlUpdateIndexes -PenvironmentName=[name]`
 
 The `mlUpdateIndexes` task will take about 2 minutes.
 
@@ -323,11 +351,11 @@ Both of the above tasks are wired into the [Custom Token Replacement](#custom-to
 
 To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-data) directory into the tenant's content database:
 
-`./gradlew mlLoadData -PenvironmentName=[env]`
+`./gradlew mlLoadData -PenvironmentName=[name]`
 
 # Remove the Project
 
-ML Gradle includes the `mlUndeploy` task.  It should be used with great care in any environment you care about.
+ML Gradle includes the `mlUndeploy` task.  It should be used with great care in any environment you care about **--especially multi-tenant environments!**
 
 This task is **restricted to administrators**.  We did not develop the opposite of the `performBaseDeployment` task, even though the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-app-deployer-role.json) role should have the permissions required to undeploy non-security portions of the MarkLogic configuration.
 
@@ -335,7 +363,7 @@ Please see the [ML Gradle wiki pages](https://github.com/marklogic-community/ml-
 
 # LUX MarkLogic Application Servers
 
-MarkLogic is installed with several application servers.  The LUX project adds to those.  The following table defines all MarkLogic application servers.  
+MarkLogic is installed with several application servers.  The LUX project adds to those.  The following table defines all MarkLogic application servers as deployed in Yale LUX environments when there is only one tenant.  Additional tenants are assigned a range of ports, likely using three.
 
 Performance testing surfaced the ability to get more out of the same level of system resources by splitting a middle tier's requests between two application servers, by request type.  In the table below, these are the application servers listening on ports 8003 and 8004.
 
@@ -352,7 +380,7 @@ Available application servers and their ports may vary by environment.  The outc
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 | `mlQueryPlanViewerPort` | 8006 | REST | No | Offers access to a copy of https://github.com/jpcs/queryplan-viewer, which is a developer tool for visualizing query plans that is useful when optimizing queries.  Locally, the URL is http://localhost:8006/default.xqy. |
 
-\* The most definitive source is the environment itself.  Second would be the environment's `gradle-[env].properties` file.
+\* The most definitive source is the environment itself.  Second would be the environment's `gradle-[name].properties` file.
 
 # Trace Events
 
@@ -364,9 +392,9 @@ In the following sections, the "Always" columns denote those we recommend enabli
 
 ## Custom Trace Events
 
-Each tenant has a unique set of trace events.  The `mlAppName` property value is used in the names.  Below, substitute `%%mlAppName%%` for the value of said property.
+All tenants share the same custom trace events yet each tenant has its own set of application logs, where these trace events are written within.
 
-Those with an asterisk following the name are input to the log analysis script, [mineBackendLogs.sh](/scripts/logAnalysis/mineBackendLogs.sh).  This script needs to be configured with the tenant's trace event names.
+Those with an asterisk following the name are input to the log analysis script, [mineBackendLogs.sh](/scripts/logAnalysis/mineBackendLogs.sh).
 
 | Trace Name | Always | Description |
 | ---------- | ------ | ----------- |

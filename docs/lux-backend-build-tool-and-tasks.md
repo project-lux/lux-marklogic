@@ -66,7 +66,7 @@ To "search" for a task related to a resource you have in mind ("database", in th
 
 To view resolved property values:
 
-`./gradlew properties -PenvironmentName=[env]`
+`./gradlew properties -PenvironmentName=[name]`
 
 ...`grep` works good on that one too.
 

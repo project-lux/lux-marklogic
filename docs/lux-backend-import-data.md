@@ -26,7 +26,7 @@ The external process' execution context needs a configured clone of the backend'
 * [Dependencies and Prerequisites](/docs/lux-backend-deployment.md#dependencies-and-prerequisites)
 * [Gradle Properties](/docs/lux-backend-deployment.md#gradle-properties).
 
-Additional information on the properties used by both of the import data tasks, which should be defined in the `gradle-[env].properties` file.
+Additional information on the properties used by both of the import data tasks, which should be defined in the `gradle-[name].properties` file.
 
 | Property Name              | Description  |
 |----------------------------|--------------|
@@ -38,7 +38,7 @@ Additional information on the properties used by both of the import data tasks, 
 | importDataFileIsCompressed | Using a Boolean, indicate whether the input file is compressed (`true`) or not (`false`).  If needed, a command line parameter could take precedence to this one. |
 | tenantContentDatabase | The name of the database to evaluate the data constants queries against. |
 
-The working directory should be the clone's root directory, which is also the directory `gradle-[env].properties` should be in.
+The working directory should be the clone's root directory, which is also the directory `gradle-[name].properties` should be in.
 
 ## Import Data: Full
 
@@ -50,7 +50,7 @@ The working directory should be the clone's root directory, which is also the di
 
 Full import syntax:
 
-`./gradlew -i importDataFull -PenvironmentName=[env] -Pdatabase=[databaseName] -Pconfirm=true`
+`./gradlew -i importDataFull -PenvironmentName=[name] -Pdatabase=[databaseName] -Pconfirm=true`
 
 Full import example:
 
@@ -68,7 +68,7 @@ Full import example:
 
 Incremental import syntax:
 
-`./gradlew -i importDataIncremental -PenvironmentName=[env] -Pdatabase=[databaseName]`
+`./gradlew -i importDataIncremental -PenvironmentName=[name] -Pdatabase=[databaseName]`
 
 Incremental import example:
 
@@ -92,7 +92,7 @@ Unlike `processSearchTagConfig`, when this task completes successfully, the gene
 
 Regenerate data constants syntax:
 
-`./gradlew -i generateDataConstants -PenvironmentName=[env]`
+`./gradlew -i generateDataConstants -PenvironmentName=[name]`
 
 Regenerate data constants example:
 
@@ -151,7 +151,7 @@ As with generating data constants:
 
 Regenerate remaining search terms syntax:
 
-`./gradlew -i generateRemainingSearchTerms -PenvironmentName=[env]`
+`./gradlew -i generateRemainingSearchTerms -PenvironmentName=[name]`
 
 Regenerate remaining search terms example:
 
@@ -180,7 +180,7 @@ As with generating data constants:
 
 Regenerate related lists configuration syntax:
 
-`./gradlew -i generateRelatedListsConfig -PenvironmentName=[env]`
+`./gradlew -i generateRelatedListsConfig -PenvironmentName=[name]`
 
 Regenerate related lists configuration example:
 
@@ -209,7 +209,7 @@ As with generating data constants:
 
 Regenerate advanced search configuration syntax:
 
-`./gradlew -i generateAdvancedSearchConfig -PenvironmentName=[env]`
+`./gradlew -i generateAdvancedSearchConfig -PenvironmentName=[name]`
 
 Regenerate advanced search configuration example:
 
@@ -229,7 +229,7 @@ For more information on this task, refer to [LUX Gradle Tasks](/docs/lux-backend
 
 Load the thesauri and anything else within [/src/main/ml-data](/src/main/ml-data) into the content database:
 
-`./gradlew mlLoadData -PenvironmentName=[env]`
+`./gradlew mlLoadData -PenvironmentName=[name]`
 
 ## Clear Database
 
@@ -237,7 +237,7 @@ Should one find the need to clear the database as a separate command, one may do
 
 Clear database syntax:
 
-`./gradlew -i mlClearDatabase -PenvironmentName=[env] -Pdatabase=[databaseName] -Pconfirm=true`
+`./gradlew -i mlClearDatabase -PenvironmentName=[name] -Pdatabase=[databaseName] -Pconfirm=true`
 
 Clear database example:
 
@@ -268,7 +268,7 @@ MLCP may also be invoked directly, from the command line.
   -input_file_type delimited_json \
   -input_compressed true \
   -input_compression_codec gzip \
-  -output_permissions lux-endpoint-consumer,read,lux-writer,update \
+  -output_permissions lux-reader,read,lux-writer,update \
   -uri_id id
 ```
 
@@ -301,7 +301,7 @@ The `copyDatabase` Gradle task was introduced as a developer convenience: copy d
 
 Copy database syntax:
 
-`./gradlew -i copyDatabase -PenvironmentName=[env]`
+`./gradlew -i copyDatabase -PenvironmentName=[name]`
 
 Copy database example:
 

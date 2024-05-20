@@ -5,6 +5,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+- Added search term for works that are/are not in the public domain ([#103](https://github.com/project-lux/lux-marklogic/issues/103))
 
 ### Changed
 - Changed indexes to use Getty AAT values instead of data constants ([#54](https://github.com/project-lux/lux-marklogic/issues/54))

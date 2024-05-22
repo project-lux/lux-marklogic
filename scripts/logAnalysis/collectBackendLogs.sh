@@ -18,6 +18,9 @@ sarDate=2024-01-25
 # A reference to the source environment.  Used in the output filename.
 envName=green-as-test
 
+# Make the output directory when it doesn't already exist.
+[[ -d "$outputDir" ]] || mkdir "$outputDir"
+
 #
 # Execute commands on each node.
 #

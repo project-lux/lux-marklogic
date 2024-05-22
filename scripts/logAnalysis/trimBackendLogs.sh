@@ -7,7 +7,7 @@
 # all files that match each input basename --or, as noted above, collect and trim in the same script.
 declare -a inputBasenames=("ErrorLog" "8003_ErrorLog" "8003_AccessLog" "8003_RequestLog" "8004_ErrorLog" "8004_AccessLog" "8004_RequestLog")
 declare -a ipAddresses=("${INSERT}" "${IP_ADDRESSES}" "${HERE}")
-testDate=20240125
+testDate=20240521
 envName=green-as-test
 
 # Omit trailing slash.
@@ -16,9 +16,9 @@ outputDir=./trimmed
 
 # Specify the range to trim to in pieces to faciliate multiple timestamp patterns.
 YYYY=2024
-mmm=Jan
-MM=01
-DD=25
+mmm=May
+MM=05
+DD=21
 startTime="16:01:00"
 endTime="18:07:00"
 

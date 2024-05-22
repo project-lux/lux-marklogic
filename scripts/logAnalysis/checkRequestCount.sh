@@ -35,10 +35,10 @@ die () {
 envName=blue-as-test
 
 # PEM file to access the source environment.
-pemFile=~/.ssh/yale/ch-lux-ssh-2bg.pem
+pemFile=~/Apps/LUX/ML/ch-lux-ssh-prod.pem
 
 # All IP addresses of the target ML cluster.
-declare -a ipAddresses=("10.5.156.217" "10.5.157.111" "10.5.254.22")
+declare -a ipAddresses=("${INSERT}" "${IP_ADDRESSES}" "${HERE}")
 
 # Just specify the base names of the request logs.
 declare -a inputBasenames=("8003_RequestLog" "8004_RequestLog")

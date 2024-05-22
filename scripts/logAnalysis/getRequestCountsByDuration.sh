@@ -12,12 +12,11 @@
 # For a reason not yet investigated, this script can report more requests of the same request types than mineBackendLogs's
 # allRequestsWithDurations.tsv and thus could be better or worse, depending on the reason.
 #
-# To filter by request, set filterPattern to something unique to the request, such as "item" for document
-# requests.  Be wary of using "search" as the middle tier may still be using that endpoint for both search
-# and facet requests.
+# To filter by request, set filterPattern to something unique to the request, such as "document" for document
+# requests.
 #
-filterPattern=item
-filePattern=*RequestLog*
+filterPattern=elapsedTime
+filePattern=*RequestLog-trimmed.txt
 
 function getCount() {
   grep "\elapsedTime\":$1" $filePattern | grep "$filterPattern" | grep -c elapsed

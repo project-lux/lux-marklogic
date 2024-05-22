@@ -175,7 +175,7 @@ CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
 
-grepForSectionCounts "SEARCH ESTIMATE REQUESTS" "LuxSearch" "Calculated [0-9]* estimates in " " milli"
+grepForSectionCounts "SEARCH ESTIMATE REQUESTS" "LuxSearch" "Calculated estimate in " " milli"
 CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
@@ -223,7 +223,7 @@ PATTERN_SEARCH_REQUESTS="requestCompleted"
 PATTERN_FACET_REQUESTS="\[Event:id=LuxFacets\] .* in .* milli"
 PATTERN_RELATED_LIST_REQUESTS="\[Event:id=LuxRelatedList\] Created .* in .* milli"
 PATTERN_SEARCH_WILL_MATCH_REQUESTS="\[Event:id=LuxSearch\] Checked .* searches in .* milli"
-PATTERN_SEARCH_ESTIMATE_REQUESTS="\[Event:id=LuxSearch\] Calculated .* estimates in .* milli"
+PATTERN_SEARCH_ESTIMATE_REQUESTS="\[Event:id=LuxSearch\] Calculated estimate in .* milli"
 PATTERN_DOCUMENT_REQUESTS="\[Event:id=LuxNamedProfiles\] .* in .* milli"
 grep -e "$PATTERN_SEARCH_REQUESTS" \
      -e "$PATTERN_FACET_REQUESTS" \
@@ -237,7 +237,7 @@ grep -e "$PATTERN_SEARCH_REQUESTS" \
 
 # Create a TSV out of the all requests file via multiple sed commands.
 echo -e "   $ALL_REQUESTS_TSV_FILE... Coffee break!"
-echo -e "Source\tTimestamp\tSearch (ms)\tFacet (ms)\tRelated List (ms)\tWill Match\tEstimates\tDocument" > "$ALL_REQUESTS_TSV_FILE"
+echo -e "Source\tTimestamp\tSearch (ms)\tFacet (ms)\tRelated List (ms)\tWill Match\tEstimate\tDocument" > "$ALL_REQUESTS_TSV_FILE"
 cat "$ALL_REQUESTS_FILE" >> "$ALL_REQUESTS_TSV_FILE"
 echo -e "      Processing Search requests..."
 sed -i \
@@ -255,9 +255,9 @@ echo -e "      Processing Searches Will Match requests..."
 sed -i \
     "s/\(.*txt\):\(.*\) Info: \[Event:id=LuxSearch\] Checked .* searches in \([0-9]*\) milli.*/\1\t\2\t\t\t\t\3/" \
     "$ALL_REQUESTS_TSV_FILE"
-echo -e "      Processing Search Estimates requests..."
+echo -e "      Processing Search Estimate requests..."
 sed -i \
-    "s/\(.*txt\):\(.*\) Info: \[Event:id=LuxSearch\] Calculated .* estimates in \([0-9]*\) milli.*/\1\t\2\t\t\t\t\t\3/" \
+    "s/\(.*txt\):\(.*\) Info: \[Event:id=LuxSearch\] Calculated estimate in \([0-9]*\) milli.*/\1\t\2\t\t\t\t\t\3/" \
     "$ALL_REQUESTS_TSV_FILE"
 echo -e "      Processing Document requests..."
 sed -i \

@@ -56,7 +56,7 @@ const SEARCH_TERM_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['agentPrimaryName'],
+      indexReferences: ['agentName'],
       scalarType: 'string',
     },
     nationality: {
@@ -161,7 +161,7 @@ const SEARCH_TERM_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['conceptPrimaryName'],
+      indexReferences: ['conceptName'],
       scalarType: 'string',
     },
     relatedToAgent: {
@@ -212,7 +212,7 @@ const SEARCH_TERM_CONFIG = {
     id: { patternName: 'documentId' },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['eventPrimaryName'],
+      indexReferences: ['eventName'],
       scalarType: 'string',
     },
     text: {
@@ -282,7 +282,7 @@ const SEARCH_TERM_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['itemPrimaryName'],
+      indexReferences: ['itemName'],
       scalarType: 'string',
     },
     producedAt: {
@@ -331,7 +331,7 @@ const SEARCH_TERM_CONFIG = {
     id: { patternName: 'documentId' },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['placePrimaryName'],
+      indexReferences: ['placeName'],
       scalarType: 'string',
     },
     partOf: {
@@ -387,7 +387,7 @@ const SEARCH_TERM_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['referencePrimaryName'],
+      indexReferences: ['referenceName'],
       scalarType: 'string',
     },
     text: {
@@ -501,7 +501,7 @@ const SEARCH_TERM_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['workPrimaryName'],
+      indexReferences: ['workName'],
       scalarType: 'string',
     },
     // Not the correct pattern but avoids getting child name's

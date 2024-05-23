@@ -5,6 +5,10 @@
  * In order to specify the search criteria as a CTS query, this script includes code copied
  * from facetsLib.mjs.  Thus, if that code changes, this copy may need to be updated.
  *
+ * If you can start with the string or JSON search grammar, you may be better off importing
+ * /lib/facets.mjs and calling getFacets directly.  Note though that this version will not
+ * reject the request regardless of the number of estimated search results and facet values.
+ *
  * To use, edit variables in the script's configuration section then execute.
  */
 'use strict';

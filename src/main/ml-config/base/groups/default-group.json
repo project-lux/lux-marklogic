@@ -16,5 +16,5 @@
   "file-log-level": "%%fileLogLevel%%",
   "keep-log-files": %%keepLogFiles%%,
   "events-activated": true,
-  "event": ["LuxFacets", "LuxNamedProfiles", "LuxSearch", "LuxRelatedList"]
+  "event": ["LuxFacets", "LuxNamedProfiles", "LuxSearch", "LuxRelatedList", "v8 delay timeout"]
 }

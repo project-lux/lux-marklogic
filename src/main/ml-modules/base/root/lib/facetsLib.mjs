@@ -59,7 +59,10 @@ function _getFacets(
     }
 
     requestCompleted = true;
-    return _getFacetsResponse(facets, name, searchCriteriaProcessor);
+    // return _getFacetsResponse(facets, name, searchCriteriaProcessor);
+    const response = {};
+    response[name] = facets;
+    return response;
   } finally {
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {

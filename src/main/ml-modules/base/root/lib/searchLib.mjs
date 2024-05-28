@@ -5,7 +5,6 @@ import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   LUX_CONTEXT,
-  REQUEST_LOG_KEY_SEARCH_ID,
   SEARCH_OPTIONS_INVERSE_MAP,
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
@@ -128,8 +127,6 @@ function _search(
   let results = [];
 
   try {
-    xdmp.requestLogPut(REQUEST_LOG_KEY_SEARCH_ID, requestId);
-
     if (xdmp.traceEnabled(traceName)) {
       xdmp.trace(
         traceName,

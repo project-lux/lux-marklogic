@@ -473,6 +473,11 @@ const SEARCH_TERM_CONFIG = {
       indexReferences: ['agentPrimaryName'],
     },
     id: { patternName: 'documentId' },
+    isPublicDomain: {
+      patternName: 'indexedValue',
+      indexReferences: ['workIsPublicDomainBoolean'],
+      scalarType: 'number',
+    },
     language: {
       patternName: 'hopWithField',
       predicates: ['crm("P72_has_language")'],

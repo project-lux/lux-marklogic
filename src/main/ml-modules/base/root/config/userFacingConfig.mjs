@@ -609,6 +609,11 @@ const searchTermText = {
       label: 'Are Online',
       helpText: 'Search for Works with Online Versions.',
     },
+    isPublicDomain: {
+      label: 'Are in the Public Domain',
+      helpText:
+        'Search for Works that have been identified as public domain/no copyright materials. Note that this only applies to materials from the Yale University Art Gallery and Yale Center for British Art collections at this time. For copyright questions or more information about rights and re-use of content found in LUX, please contact the appropriate museum or library or consult the Rights and Usage Frequently Asked Questions(Advanced Search Help) linked below.',
+    },
     language: {
       label: 'Language',
       helpText: 'Search for Works in the specified Language.',

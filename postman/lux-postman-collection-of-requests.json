@@ -160,18 +160,27 @@
 							"formdata": [
 								{
 									"key": "name",
-									"value": "responsibleUnits",
-									"description": "Comma delimited",
+									"value": "workAboutConceptId",
 									"type": "text"
 								},
 								{
 									"key": "q",
-									"value": "mona lisa",
+									"value": "{\"createdBy\":{\"AND\":[{\"gender\":{\"name\":\"female\"}},{\"startAt\":{\"classification\":{\"name\":\"city\"}}}]}}",
 									"type": "text"
 								},
 								{
 									"key": "scope",
 									"value": "work",
+									"type": "text"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "pageLength",
+									"value": "15",
 									"type": "text"
 								}
 							]

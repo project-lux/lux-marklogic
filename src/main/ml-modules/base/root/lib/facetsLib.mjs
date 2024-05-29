@@ -47,7 +47,12 @@ function getFacets({
     let facetValues = null;
     if (_isSemanticFacet(name)) {
       xdmp.setRequestTimeLimit(VIA_SEARCH_FACET_TIMEOUT);
-      facetValues = _getViaSearchFacets(name, searchCriteriaProcessor);
+      facetValues = _getViaSearchFacets(
+        name,
+        searchCriteriaProcessor,
+        page,
+        pageLength
+      );
     } else {
       facetValues = _getNonSemanticFacets(
         name,
@@ -182,7 +187,12 @@ function _getNonSemanticFacets(
     }));
 }
 
-function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
+function _getViaSearchFacets(
+  facetName,
+  searchCriteriaProcessor,
+  page,
+  pageLength
+) {
   // Require search criteria.
   const baseSearchCriteria = searchCriteriaProcessor
     ? searchCriteriaProcessor.getSearchCriteria()
@@ -195,18 +205,11 @@ function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
 
   const facetConfig = FACETS_VIA_SEARCH_CONFIG[facetName];
 
-  /*
-   * TODO: This pagination implementation has not been updated for #161.
-   */
-  const page = 1;
-  const pageLength = MAXIMUM_PAGE_LENGTH + 1;
   const facets = _getViaSearchFacetValues(
     facetName,
     facetConfig,
     baseSearchCriteria,
-    requestOptions,
-    page,
-    pageLength
+    requestOptions
   )
     .map((searchResult) => {
       const uri = searchResult.id + ''; // Required string conversion
@@ -222,27 +225,28 @@ function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
     })
     .sort((a, b) => b.count - a.count);
 
-  // Warn when there were more facet values than allowed.
-  if (facets.length > MAXIMUM_PAGE_LENGTH) {
-    console.warn(
-      `The '${facetName}' facet exceeded the ${MAXIMUM_PAGE_LENGTH} value limit with base search criteria ${JSON.stringify(
-        baseSearchCriteria
-      )}`
-    );
-  }
-  return facets;
+  const startIndex = utils.getStartingPaginationIndexForSplice(
+    page,
+    pageLength
+  );
+  const endIndex = startIndex + pageLength;
+  // thanks to the logic of Array.prototype.slice():
+  // if startIndex > facets.length, an empty array is returned
+  // if endIndex > facets.length, only values up to the end of the array are returned
+  return facets.slice(startIndex, endIndex);
 }
 
 function _getViaSearchFacetValues(
   facetName,
   facetConfig,
   baseSearchCriteria,
-  requestOptions,
-  page,
-  pageLength
+  requestOptions
 ) {
   xdmp.trace(traceName, `Searching for the '${facetName}' facet values.`);
-  return search({
+  const page = 1;
+  // always search for the MAXIMUM_PAGE_LENGTH + 1, this way we can return up to MAXIMUM_PAGE_LENGTH, and also know if there are more facet values than the max
+  const pageLength = MAXIMUM_PAGE_LENGTH + 1;
+  const facets = search({
     searchCriteria: facetConfig.getFacetValuesCriteria(baseSearchCriteria),
     page,
     pageLength,
@@ -251,6 +255,17 @@ function _getViaSearchFacetValues(
     mayCalculateEstimates: false,
     synonymsEnabled: requestOptions.synonymsEnabled,
   }).orderedItems;
+
+  // Warn when there were more facet values than allowed.
+  if (facets.length > MAXIMUM_PAGE_LENGTH) {
+    console.warn(
+      `The '${facetName}' facet exceeded the ${MAXIMUM_PAGE_LENGTH} value limit with base search criteria ${JSON.stringify(
+        baseSearchCriteria
+      )}`
+    );
+  }
+
+  return facets;
 }
 
 function _estimateViaSearchFacetValueCount(

@@ -5,6 +5,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.17.0 - 2024-05-28
+
+### Added
 - Added search term for works that are/are not in the public domain ([#103](https://github.com/project-lux/lux-marklogic/issues/103))
 
 ### Changed

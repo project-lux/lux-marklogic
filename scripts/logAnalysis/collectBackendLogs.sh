@@ -11,12 +11,15 @@ declare -a inputBasenames=("ErrorLog" "8003_ErrorLog" "8003_AccessLog" "8003_Req
 # The suffix to add to the inputBasenames.  Use an empty string for today, _1 for yesterday, etc.
 inputBasenameSuffix=
 # Output directory.  Omit trailing slash.
-outputDir=~/Apps/LUX/ML/test/20230703
+outputDir=~/Apps/LUX/ML/test/20240521
 # Date of test formatted as YYYYMMDD.  Used in the output filename.
-testDate=20240125
-sarDate=2024-01-25
+testDate=20240521
+sarDate=2024-05-21
 # A reference to the source environment.  Used in the output filename.
-envName=green-as-test
+envName=blue-as-test
+
+# Make the output directory when it doesn't already exist.
+[[ -d "$outputDir" ]] || mkdir "$outputDir"
 
 #
 # Execute commands on each node.

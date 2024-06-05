@@ -45,28 +45,32 @@ function getFacets({
 
     // Get the raw facet values and value counts.
     let facetValues = null;
+    let totalItems = null;
     if (_isSemanticFacet(name)) {
       xdmp.setRequestTimeLimit(VIA_SEARCH_FACET_TIMEOUT);
-      facetValues = _getViaSearchFacets(
+      ({ totalItems, facetValues } = _getViaSearchFacets(
         name,
         searchCriteriaProcessor,
         page,
         pageLength
-      );
+      ));
     } else {
-      facetValues = _getNonSemanticFacets(
+      ({ totalItems, facetValues } = _getNonSemanticFacets(
         name,
         searchCriteriaProcessor,
         page,
         pageLength
-      );
+      ));
     }
 
     // Format as Activity Streams
     facetValues = _getFacetsResponse(
       facetValues,
       name,
-      searchCriteriaProcessor
+      searchCriteriaProcessor,
+      totalItems,
+      page,
+      pageLength
     );
 
     requestCompleted = true;
@@ -87,7 +91,14 @@ function getFacets({
   }
 }
 
-function _getFacetsResponse(facets, name, searchCriteriaProcessor) {
+function _getFacetsResponse(
+  facets,
+  name,
+  searchCriteriaProcessor,
+  totalItems,
+  page,
+  pageLength
+) {
   const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
   const scope = searchCriteriaProcessor.getSearchScope();
   const orderedItems = facets.map((facet) => {
@@ -111,12 +122,44 @@ function _getFacetsResponse(facets, name, searchCriteriaProcessor) {
       value,
     };
   });
-  return {
+
+  const response = {
     '@context': LUX_CONTEXT,
-    id: utils.buildFacetsUri(searchCriteria, scope, name),
+    id: utils.buildFacetsUri(searchCriteria, scope, name, page, pageLength),
     type: AS_TYPE_ORDERED_COLLECTION_PAGE,
+    partOf: {
+      type: AS_TYPE_ORDERED_COLLECTION,
+      totalItems,
+    },
     orderedItems,
   };
+
+  if (page > 1) {
+    response.prev = {
+      id: utils.buildFacetsUri(
+        searchCriteria,
+        scope,
+        name,
+        page - 1,
+        pageLength
+      ),
+      type: AS_TYPE_ORDERED_COLLECTION_PAGE,
+    };
+  }
+
+  if (page < Math.ceil(totalItems / pageLength)) {
+    response.next = {
+      id: utils.buildFacetsUri(
+        searchCriteria,
+        scope,
+        name,
+        page + 1,
+        pageLength
+      ),
+      type: AS_TYPE_ORDERED_COLLECTION_PAGE,
+    };
+  }
+  return response;
 }
 
 function _isSemanticFacet(name) {
@@ -170,22 +213,27 @@ function _getNonSemanticFacets(
   }
 
   // We're allowed to calculate the facets.
-  return fn
-    .subsequence(
-      cts.fieldValues(
-        FACETS_CONFIG[facetName].indexReference,
-        null,
-        fieldValuesOptions,
-        ctsQuery
-      ),
-      utils.getStartingPaginationIndexForSubsequence(page, pageLength),
-      pageLength
-    )
-    .toArray()
-    .map((value) => ({
-      value: value,
-      count: cts.frequency(value),
-    }));
+  const sequence = cts.fieldValues(
+    FACETS_CONFIG[facetName].indexReference,
+    null,
+    fieldValuesOptions,
+    ctsQuery
+  );
+
+  return {
+    totalItems: fn.count(sequence),
+    facetValues: fn
+      .subsequence(
+        sequence,
+        utils.getStartingPaginationIndexForSubsequence(page, pageLength),
+        pageLength
+      )
+      .toArray()
+      .map((value) => ({
+        value: value,
+        count: cts.frequency(value),
+      })),
+  };
 }
 
 function _getViaSearchFacets(
@@ -234,7 +282,10 @@ function _getViaSearchFacets(
   // thanks to the logic of Array.prototype.slice():
   // if startIndex > facets.length, an empty array is returned
   // if endIndex > facets.length, only values up to the end of the array are returned
-  return facets.slice(startIndex, endIndex);
+  return {
+    totalItems: facets.length,
+    facetValues: facets.slice(startIndex, endIndex),
+  };
 }
 
 function _getViaSearchFacetValues(

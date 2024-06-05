@@ -546,10 +546,10 @@ function buildSearchEstimateUri(searchCriteria, scope) {
   )}`;
 }
 
-function buildFacetsUri(searchCriteria, scope, name) {
+function buildFacetsUri(searchCriteria, scope, name, page, pageLength) {
   return `${FACETS_PREFIX}/${scope}?q=${encodeURIComponent(
     JSON.stringify(searchCriteria)
-  )}&name=${name}`;
+  )}&name=${name}&page=${page}&pageLength=${pageLength}`;
 }
 
 function buildRelatedListUri({

@@ -23,6 +23,11 @@
       "name": "pageLength",
       "datatype": "int",
       "nullable": true
+    },
+    {
+      "name": "sort",
+      "datatype": "string",
+      "nullable": true
     }
   ],
   "return": {

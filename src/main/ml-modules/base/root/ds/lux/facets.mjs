@@ -6,6 +6,7 @@ const searchCriteria = external.q;
 const searchScope = external.scope;
 const page = external.page;
 const pageLength = external.pageLength;
+const sort = external.sort;
 
 handleRequest(function () {
   return getFacets({
@@ -14,5 +15,6 @@ handleRequest(function () {
     searchScope,
     page,
     pageLength,
+    sort,
   });
 });

@@ -27,6 +27,7 @@ function getFacets({
   searchScope = null,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
+  sort,
 }) {
   const start = new Date();
   let requestCompleted = false;
@@ -59,7 +60,8 @@ function getFacets({
         name,
         searchCriteriaProcessor,
         page,
-        pageLength
+        pageLength,
+        sort
       ));
     }
 
@@ -179,9 +181,20 @@ function _getNonSemanticFacets(
   facetName,
   searchCriteriaProcessor,
   page,
-  pageLength
+  pageLength,
+  sort
 ) {
-  const fieldValuesOptions = ['frequency-order', 'lazy', 'score-zero'];
+  const fieldValuesOptions = ['lazy', 'score-zero'];
+  switch (sort) {
+    case 'asc':
+      fieldValuesOptions.push('ascending');
+      break;
+    case 'desc':
+      fieldValuesOptions.push('descending');
+      break;
+    default:
+      fieldValuesOptions.push('frequency-order');
+  }
 
   // Require search criteria.
   const ctsQueryStr = searchCriteriaProcessor

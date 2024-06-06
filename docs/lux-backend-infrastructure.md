@@ -73,7 +73,7 @@ Features:
 4. Management API: An extensive API capable of configuring and serving up various statuses of MarkLogic environments.  Many ML Gradle tasks consume the configuration portion of the Management API while enterprise system monitoring tools consume the status portion of the API --using a service account with less privileges than required by ML Gradle.  While extensive, there are times when it makes sense to supplement Management API-based tests with custom endpoints; examples include application-specific monitoring tests and multi-tenancy deployments.  See [Management API Recommendations](#management-api-recommendations).
 5. Logs: Log files contain a wealth of information --some of which is critical to system monitoring.  Log files may be retrieved using the Management API* or directly from the file system.  The `manage/v2/logs` endpoint accepts host, start, end, and regex parameters.  Another approach is to copy the logs from all MarkLogic nodes to a log monitoring server capable of alerting system administrators based on log level and string matching.  See [Log Group Level Settings](#log-group-level-settings), [Emerging Recommendations](#emerging-recommendations), and [Log File Recommendations](#log-file-recommendations).
 
-For completion, alerting, scheduled tasks, document events, and the Content Processing Framework are additional MarkLogic features that *could* be used for system monitoring purposes.  While not typical, there may be scenarios where they are preferred.
+Alerting, scheduled tasks, document events, and the Content Processing Framework are additional MarkLogic features that *could* be used for system monitoring purposes.  While not typical, there may be scenarios where they are preferred.
 
 ## Distilled Advise
 

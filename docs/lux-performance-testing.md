@@ -1,11 +1,12 @@
 ## **LUX Performance Testing Procedure**
 
-- [Submit a Ticket](#submit-a-ticket)
+- [Create an Issue](#create-an-issue)
 - [Verify Backend Trace Events are Enabled](#verify-backend-trace-events-are-enabled)
 - [Disable Middle Tier Caching](#disable-middle-tier-caching)
 - [Start Collecting OS-Level Metrics](#start-collecting-os-level-metrics)
 - [Start Monitoring the Backend Nodes (Optional)](#start-monitoring-the-backend-nodes-optional)
 - [Run Performance Test](#run-performance-test)
+- [Early-On Backend Request Count Checks](#early-on-backend-request-count-checks)
 - [Stop Collecting OS-Level Metrics](#stop-collecting-os-level-metrics)
 - [Enable Middle Tier Caching](#enable-middle-tier-caching)
 - [Collect Data](#collect-data)
@@ -23,26 +24,17 @@
   - [Backend Logs](#backend-logs)
   - [OS Logs](#os-logs)
 
-# Submit a Ticket
+# Create an Issue
 
-Submit a backend ticket to capture the context and details of the performance test.
+Using the performance test issue template, create an issue to capture the context and details of the performance test.
 
-Context should include:
+The template should do a pretty good job prompting for context but should you think of additional relevant details, please include them.
 
-1. Versions: dataset, frontend, middle tier, backend (inclusive of indexing configuration), MarkLogic, etc.
-2. List any other changes expected to improve or degrade performance, such as specific optimizations or configuration changes.
-3. List any other changes to the environment or base software, regardless of anticipated impact to performance.
-4. Performance test:
-    * In lieu of a version, request a summary of changes that could have a material effect on comparing the test's results to that of a previous run.
-    * Document any parameters to the test, such as the ramp up and down of users (e.g., *x* virtual users are added every *y* minutes up to *z* virtual users.)
-
-For an example, search for the most recent performance test ticket.
-
-Update the new ticket as you go.
+Update the new ticket as you go.  The procedure in the template includes steps of what to collect.
 
 # Verify Backend Trace Events are Enabled
 
-Verify the backend trace events that should always be enabled are indeed enabled.  These trace events are the primary source of input for the [backend's log mining script](/scripts/logAnalysis/mineBackendLogs.sh).
+Verify the backend trace events that should always be enabled are indeed enabled --this includes "v8 delay timeout".  The LUX trace events are the primary source of input for the [backend's log mining script](/scripts/logAnalysis/mineBackendLogs.sh).
 
 For more information, see [Trace Events](/docs/lux-backend-deployment.md#trace-events).
 
@@ -72,6 +64,15 @@ Note though that the `sar` command is collecting CPU utilization percents for us
 # Run Performance Test
 
 Request QA to run the performance test.
+
+# Early-On Backend Request Count Checks
+
+Checking the backend request count a few times early on in the test is a way to gain confidence the test is configured as expected.  There are two related scripts:
+
+* [/scripts/logAnalysis/checkRequestCount.sh](/scripts/logAnalysis/checkRequestCount.sh): This is the primary script that one runs locally after configuring to the target MarkLogic cluster.
+* [/scripts/logAnalysis/trimLocalRequestLogs.sh](/scripts/logAnalysis/trimLocalRequestLogs.sh): This script needs to be deployed on each MarkLogic node.  Please see the script for details.
+
+The idea is to run this script 10, 15, and 20 minutes into the test and compare those counts to those of the baseline test.
 
 # Stop Collecting OS-Level Metrics
 

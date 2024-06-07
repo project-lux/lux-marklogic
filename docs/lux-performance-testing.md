@@ -7,6 +7,7 @@
 - [Start Monitoring the Backend Nodes (Optional)](#start-monitoring-the-backend-nodes-optional)
 - [Run Performance Test](#run-performance-test)
 - [Early-On Backend Request Count Checks](#early-on-backend-request-count-checks)
+- [Check ErrorLog.txt Files Throughout](#check-errorlogtxt-files-throughout)
 - [Stop Collecting OS-Level Metrics](#stop-collecting-os-level-metrics)
 - [Enable Middle Tier Caching](#enable-middle-tier-caching)
 - [Collect Data](#collect-data)
@@ -73,6 +74,15 @@ Checking the backend request count a few times early on in the test is a way to 
 * [/scripts/logAnalysis/trimLocalRequestLogs.sh](/scripts/logAnalysis/trimLocalRequestLogs.sh): This script needs to be deployed on each MarkLogic node.  Please see the script for details.
 
 The idea is to run this script 10, 15, and 20 minutes into the test and compare those counts to those of the baseline test.
+
+# Check ErrorLog.txt Files Throughout
+
+Throughout the test, one may use [/scripts/logAnalysis/checkErrorLogs.sh](/scripts/logAnalysis/checkErrorLogs.sh) to view select information.  The script offers two modes: 
+
+* `restarts`: see if one of the MarkLogic processes restarted.
+* `warnAndAbove`: entries that have a severity of warning or higher.
+
+Please see the script for configuration and usage details.  And feel free to add additional modes!
 
 # Stop Collecting OS-Level Metrics
 

@@ -5,6 +5,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.18.0 - 2024-06-10
+
+### Added
  - Added build time data constant for 'collection' ([#167](https://github.com/project-lux/lux-marklogic/issues/167))
 
 ### Changed

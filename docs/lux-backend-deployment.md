@@ -362,7 +362,8 @@ Those with an asterisk following the name are input to the log analysis script, 
 ## Other Trace Events of Interest
 
 | Trace Name | Always | Description |
-| ---------- | ------ | ---------- |
+| ---------- | ------ | ----------- |
 | `Optic Execution` | No | Shows the individual operations sent to execute on the data nodes (i.e., what could not be resolved exclusively on the evaluator node).  Generally or at least with joins, the more your query can push to the data nodes, the faster it will be. |
 | `Optic Execution Diagnostics` | No | Output includes insights on memory usage, down to a specific operator. |
 | `Optic Plan Trace` | No | The Optic plan after _MarkLogic's_ optimizations.  Includes costs.  Once you extract this XML-formatted plan from the log file, you can paste it into the Query Plan Viewer.  Locally, the URL is http://localhost:8006/default.xqy, providing it was configured to be deployed. |
+| `v8 delay timeout` | Yes | Logs additional information in the event of a v8 engine crash, which may provide insights on the root cause. |

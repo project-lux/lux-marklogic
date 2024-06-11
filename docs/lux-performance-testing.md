@@ -126,9 +126,17 @@ Within MarkLogic's Monitoring app, set the start and end time to roughly five mi
 
 ![Performance Monitoring Settings](/docs/img/monitoring-history-perf-test.png)
 
-Begin taking screenshots and adding to the ticket.  Be sure to dive ito the detailed view of each section; top-level charts can represent the sum of hosts and/or not display all available charts.  An assumption is that if a chart is excluded, there was either no activity or not change in its activity.
+One category at a time (e.g., CPU), click the blue arrow to go into its detailed view and:
 
-Lastly, click the "export" link in the top-right of the app, attaching that download to the ticket.
+1. Take a screenshot.
+    *  It can be helpful to display the ML node key for one of the graphs in the screenshot.
+    *  For some, you may wish to apply some filters, such as only the `lux-request-group-1` and `lux-request-group-2` app servers and lux-content database.
+    *  Omitted graphs are presumed to have no activity.
+    *  See [example](https://github.com/project-lux/lux-marklogic/issues/162#issuecomment-2158369404).
+2. Click the export link.
+3. Move on to the next category.
+
+Once you have all the exports, attach them to the ticket.  See [example](https://github.com/project-lux/lux-marklogic/issues/162#issuecomment-2158386057).
 
 ## Logs
 

@@ -69,3 +69,7 @@ for (( s=0; s<${ipAddressCnt}; s++ )); do
   echo "Executing: $cmd"
   eval $cmd
 done
+
+echo ""
+echo "Scripted completed at:"
+date -u

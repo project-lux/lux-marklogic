@@ -38,4 +38,5 @@ echo "Total number of filtered requests"
 getCount ""
 
 echo ""
-echo "Done"
+echo "Scripted completed at:"
+date -u

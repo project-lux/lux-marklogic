@@ -54,6 +54,7 @@ agent	MemberOf	Name	keyword	agentMemberOfName	Search	Semantic	N	Agents that are 
 agent	HasDigitalImage	Boolean	numbers	agentHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage	
 										
 item	ArchiveSort	Id	string	itemArchiveSortId	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
+item	DataType	Name	keyword	itemDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType	
 item	HasDigitalImage	Boolean	numbers	itemHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/hasDigitalImage	
 item	IsOnline	Boolean	numbers	itemIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/isOnline	
 item	Any	Text	keyword	itemAnyText	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]//content	
@@ -94,6 +95,7 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
 work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
+work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage	
 work	IsOnline	Boolean	numbers	workIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline	
 work	IsPublicDomain	Boolean	numbers	workIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isPublicDomain	
@@ -145,6 +147,7 @@ place		Spatial	bounds	placeSpatial	Search	Non	N		/json[type = 'Place']/defined_b
 										
 concept	HasDigitalImage	Boolean	numbers	conceptHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/hasDigitalImage	
 concept	Any	Text	keyword	conceptAnyText		Non	N		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]//content	
+concept	DataType	Name	keyword	conceptDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/dataType	
 concept		Name	keyword	conceptName	Search	Non	Y		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Name']/content	
 concept	Primary	Name	keyword	conceptPrimaryName	Search	Non	Y		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
 concept		Identifier	string	conceptIdentifier	Search	Non	N		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Identifier']/content ,  /json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/equivalent/id	
@@ -159,6 +162,7 @@ concept	InfluencedByPlace	Id	uri	conceptInfluencedByPlaceId	RecordLink	Non	N		/j
 language		Identifier	string	languageIdentifier	Search	Non	N		/json[type='Language']/identified_by[./type='Identifier']/content	
 										
 event	Any	Text	keyword	eventAnyText			N		/json[type= ('Activity', 'Period')]//content	
+event	DataType	Name	keyword	eventDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('Activity', 'Period')]/dataType	
 event		Name	keyword	eventName	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./type='Name']/content	
 event	Primary	Name	keyword	eventPrimaryName	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
 event		Identifier	string	eventIdentifier	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./type='Identifier']/content , /json[type= ('Activity', 'Period')]/equivalent/id	

@@ -37,6 +37,7 @@ const FACETS_CONFIG = {
     indexReference: 'conceptPartOfId',
     searchTermName: 'broaderId',
   },
+  conceptRecordType: { indexReference: 'conceptDataTypeName' },
   conceptTypeId: {
     indexReference: 'conceptTypeId',
     searchTermName: 'classificationId',
@@ -45,6 +46,7 @@ const FACETS_CONFIG = {
     indexReference: 'eventAgentId',
     searchTermName: 'carriedOutById',
   },
+  eventRecordType: { indexReference: 'eventDataTypeName' },
   eventStartDate: { indexReference: 'eventInitiatedStartDateStr' },
   eventEndDate: { indexReference: 'eventCompletedStartDateStr' },
   eventIdentifier: { indexReference: 'eventIdentifier' },
@@ -105,6 +107,7 @@ const FACETS_CONFIG = {
     indexReference: 'itemProductionTechniqueId',
     searchTermName: 'producedUsing',
   },
+  itemRecordType: { indexReference: 'itemDataTypeName' },
   itemShownById: {
     indexReference: 'itemShownById',
     searchTermName: 'carriesId',
@@ -156,6 +159,7 @@ const FACETS_CONFIG = {
     indexReference: 'workPublicationPlaceId',
     searchTermName: 'publishedAtId',
   },
+  workRecordType: { indexReference: 'workDataTypeName' },
   workTypeId: {
     indexReference: 'workTypeId',
     searchTermName: 'classificationId',

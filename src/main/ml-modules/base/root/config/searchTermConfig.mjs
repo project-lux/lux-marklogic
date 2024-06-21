@@ -299,6 +299,13 @@ const SEARCH_TERM_CONFIG = {
       hopInverseName: 'produced',
       indexReferences: ['agentPrimaryName'],
     },
+    productionInfluencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("agentInfluencedProduction")'],
+      targetScope: 'agent',
+      hopInverseName: 'influencedProduction',
+      indexReferences: ['agentPrimaryName'],
+    },
     producedUsing: {
       patternName: 'hopWithField',
       predicates: ['lux("techniqueOfProduction")'],
@@ -470,6 +477,13 @@ const SEARCH_TERM_CONFIG = {
       predicates: ['lux("agentOfCreation")'],
       targetScope: 'agent',
       hopInverseName: 'created',
+      indexReferences: ['agentPrimaryName'],
+    },
+    creationInfluencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("agentInfluencedCreation")'],
+      targetScope: 'agent',
+      hopInverseName: 'influencedCreation',
       indexReferences: ['agentPrimaryName'],
     },
     id: { patternName: 'documentId' },

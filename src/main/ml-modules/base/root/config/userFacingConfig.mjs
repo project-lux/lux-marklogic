@@ -80,6 +80,16 @@ const searchTermText = {
       helpText:
         'Search for People & Groups that influenced the specified Concepts',
     },
+    influencedCreation: {
+      label: 'Influenced Creation Of Works',
+      helpText:
+        'Search for People & Groups that influenced the creation of the specified Works',
+    },
+    influencedProduction: {
+      label: 'Influenced Creation Of Objects',
+      helpText:
+        'Search for People & Groups that influenced the creation of the specified Objects',
+    },
     memberOf: {
       label: 'Member of',
       helpText: 'Search for People & Groups that are members of other Groups.',
@@ -421,6 +431,11 @@ const searchTermText = {
       helpText:
         'Search for Objects that were created using the specified Technique.',
     },
+    productionInfluencedBy: {
+      label: 'Creation Influenced By',
+      helpText:
+        'Search for Objects that were created with influence by the specified Person or Group',
+    },
     recordType: {
       label: 'Object Class',
       helpText:
@@ -605,6 +620,11 @@ const searchTermText = {
       label: 'Created Date',
       helpText:
         'Search for Works by the date on which they were authored or created. Note the difference with Publication Date.',
+    },
+    creationInfluencedBy: {
+      label: 'Creation Influenced By',
+      helpText:
+        'Search for Works that were created with influence by the specified Person or Group',
     },
     hasDigitalImage: {
       label: 'Have Digital Image',

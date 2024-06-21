@@ -33,7 +33,7 @@ const searchTermText = {
     encountered: {
       label: 'Encountered',
       helpText:
-        'Search for People & Groups that encountered or found the specified Objects',
+        'Search for People & Groups that encountered or found the specified Objects.',
     },
     endAt: {
       label: 'Died/Dissolved At',
@@ -114,11 +114,15 @@ const searchTermText = {
     },
     produced: {
       label: 'Created Object',
-      helpText: 'Search for People & Groups that created the specified Objects',
+      helpText: 'Search for People & Groups that created the specified Objects.',
+    },
+    professionallyActive: {
+      label: 'Professional Activity Categorized As',
+      helpText: 'Search for people and groups that carried out professional activities of the given categorization.',
     },
     published: {
       label: 'Published',
-      helpText: 'Search for People & Groups that published the specified Works',
+      helpText: 'Search for People & Groups that published the specified Works.',
     },
     recordType: {
       label: 'Person or Group Class',
@@ -209,27 +213,27 @@ const searchTermText = {
     },
     influenced: {
       label: 'Influenced',
-      helpText: 'Search for Concepts that influenced the specified Concepts',
+      helpText: 'Search for Concepts that influenced the specified Concepts.',
     },
     influencedByAgent: {
       label: 'Influenced By People & Groups',
       helpText:
-        'Search for Concepts which are influenced by the specified People & Groups',
+        'Search for Concepts which are influenced by the specified People & Groups.',
     },
     influencedByConcept: {
       label: 'Influenced By Concepts',
       helpText:
-        'Search for Concepts which are influenced by the specified Concepts',
+        'Search for Concepts which are influenced by the specified Concepts.',
     },
     influencedByEvent: {
       label: 'Influenced By Events',
       helpText:
-        'Search for Concepts which are influenced by the specified Events',
+        'Search for Concepts which are influenced by the specified Events.',
     },
     influencedByPlace: {
       label: 'Influenced By Places',
       helpText:
-        'Search for Concepts which are influenced by the specified Places',
+        'Search for Concepts which are influenced by the specified Places.',
     },
     languageOf: {
       label: 'Language of Works',
@@ -279,7 +283,7 @@ const searchTermText = {
     usedToProduce: {
       label: 'Technique Of',
       helpText:
-        'Search for Concept and Type terms that are the creation technique of the specified Objects',
+        'Search for Concept and Type terms that are the creation technique of the specified Objects.',
     },
   },
   event: {
@@ -309,7 +313,7 @@ const searchTermText = {
     },
     influenced: {
       label: 'Influenced',
-      helpText: 'Search for Events that influenced the specified Concepts',
+      helpText: 'Search for Events that influenced the specified Concepts.',
     },
     name: {
       label: 'Name',
@@ -493,7 +497,7 @@ const searchTermText = {
     },
     influenced: {
       label: 'Influenced',
-      helpText: 'Search for Places that influenced the specified Concepts',
+      helpText: 'Search for Places that influenced the specified Concepts.',
     },
     name: {
       label: 'Name',

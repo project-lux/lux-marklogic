@@ -73,6 +73,13 @@ const SEARCH_TERM_CONFIG = {
       hopInverseName: 'occupationOf',
       indexReferences: ['conceptPrimaryName'],
     },
+    professionalActivity: {
+      patternName: 'relatedList',
+      predicates: ['lux("agentProfessionallyActive")'],
+      targetScope: 'concept',
+      indexReferences: ['conceptPrimaryName'],
+      idIndexReferences: ['agentProfessionalActivityId'],
+    },
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',

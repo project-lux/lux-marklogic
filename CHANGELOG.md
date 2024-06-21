@@ -5,6 +5,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+ - Added facets and advanced search configuration for agent's professional activity ([#156](https://github.com/project-lux/lux-marklogic/issues/156))
 
 ### Changed
 

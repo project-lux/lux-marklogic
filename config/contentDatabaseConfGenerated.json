@@ -544,6 +544,16 @@
       "field-value-searches": true
     },
     {
+      "field-name": "agentProfessionalActivityId",
+      "field-path": [
+        {
+          "path": "/json/carried_out[./classified_as[1]/equivalent/id='http://vocab.getty.edu/aat/300393177']/classified_as[2]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "itemArchiveSortId",
       "field-path": [
         {
@@ -2020,6 +2030,13 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "float"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "agentProfessionalActivityId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",

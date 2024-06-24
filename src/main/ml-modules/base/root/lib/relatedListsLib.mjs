@@ -42,7 +42,6 @@ const PRIORITY_BY_RELATION_KEY = {
   'classificationOfWork-classification': 6,
   'created-classification': 9,
   'createdHere-classification': 8,
-  'depictedBy-classification': 4,
   'languageOf-classification': 2,
   'materialOfItem-classification': 3,
   'produced-classification': 6,

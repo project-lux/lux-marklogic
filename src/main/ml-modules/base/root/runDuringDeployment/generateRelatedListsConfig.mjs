@@ -15,10 +15,6 @@ const uri = '/config/relatedListsConfig.mjs';
 console.log(`Generating ${uri}`);
 
 const RELATION_KEYS_TO_SUPPRESS = [
-  'depictedBy-language', // could be an obsolete entry
-  'languageOf-depictsAgent',
-  'languageOf-depictsConcept',
-  'languageOf-depictsPlace',
   'curated-containingItem-memberOf-usedForEvent',
   'curated-usedForEvent',
   'used-containingItem-memberOf-curatedBy',

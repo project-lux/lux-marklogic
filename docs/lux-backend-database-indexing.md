@@ -105,9 +105,9 @@ A copy of the database field-related indexing defaults are below.  In case this 
 
 Thus far, three field index patterns emerged in support of search tags and the fields full text search criteria is resolved against.
 
-The portion of the database indexing configuration utilizing the index patterns is generated into [/conf/contentDatabaseConfGenerated.json](/conf/contentDatabaseConfGenerated.json).  For more information, please see [/conf/README.md's Database Index Configuration section](/conf/README.md#database-index-configuration).
+The portion of the database indexing configuration utilizing the index patterns is generated into [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json).  For more information, please see [/config/README.md's Database Index Configuration section](/config/README.md#database-index-configuration).
 
-Each index pattern includes a copy of its indexing properties.  Should this documentation be out of date, please see [/conf/contentDatabaseConfGenerated.json](/conf/contentDatabaseConfGenerated.json).
+Each index pattern includes a copy of its indexing properties.  Should this documentation be out of date, please see [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json).
 
 ### Keyword
 

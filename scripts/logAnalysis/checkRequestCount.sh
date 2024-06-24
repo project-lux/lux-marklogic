@@ -69,3 +69,7 @@ echo ""
 echo "Request counts:"
 echo ""
 wc -l $downloadDir/*RequestLog*
+
+echo ""
+echo "Scripted completed at:"
+date -u

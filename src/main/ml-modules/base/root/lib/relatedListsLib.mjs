@@ -506,17 +506,6 @@ function _convertToObjectsOrWorksSearch(
     return msg;
   }
 
-  // TBD if this ever happens
-  if (!['item', 'work'].includes(toScope)) {
-    xdmp.trace(
-      traceName,
-      `Providing search criteria for the '${toScope}' scope.  Converted ${JSON.stringify(
-        fromCriteria
-      )} with scope '${fromScope}' to ${JSON.stringify(
-        objectsOrWorksCriteria
-      )}.`
-    );
-  }
   return objectsOrWorksCriteria;
 }
 

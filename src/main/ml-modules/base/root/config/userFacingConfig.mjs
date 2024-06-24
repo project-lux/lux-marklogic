@@ -80,6 +80,16 @@ const searchTermText = {
       helpText:
         'Search for People & Groups that influenced the specified Concepts',
     },
+    influencedCreation: {
+      label: 'Influenced Creation Of Works',
+      helpText:
+        'Search for People & Groups that influenced the creation of the specified Works',
+    },
+    influencedProduction: {
+      label: 'Influenced Creation Of Objects',
+      helpText:
+        'Search for People & Groups that influenced the creation of the specified Objects',
+    },
     memberOf: {
       label: 'Member of',
       helpText: 'Search for People & Groups that are members of other Groups.',
@@ -113,7 +123,7 @@ const searchTermText = {
     recordType: {
       label: 'Person or Group',
       helpText:
-        'Search only records that are a Person or search only for records that are a Group',
+        'Search for records categorized as either a "Person" or a "Group".',
     },
     startAt: {
       label: 'Born/Formed At',
@@ -251,6 +261,11 @@ const searchTermText = {
       helpText:
         'Search for Concept terms that describe the Occupation of the specified People & Groups.',
     },
+    recordType: {
+      label: 'Concept Class',
+      helpText:
+        'Search for records categorized as a "Measurement Unit", "Language", "Material", "Currency" or "General Concept".',
+    },
     subjectOfConcept: {
       label: 'Subject Of',
       helpText:
@@ -300,6 +315,11 @@ const searchTermText = {
       label: 'Name',
       helpText:
         'Enter term(s) to be found within the title or name of the Event. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
+    },
+    recordType: {
+      label: 'Event Class',
+      helpText:
+        'Search for records categorized as either a "Period" or an "Activity".',
     },
     startDate: {
       label: 'Start Date',
@@ -410,6 +430,16 @@ const searchTermText = {
       label: 'Created Using Technique',
       helpText:
         'Search for Objects that were created using the specified Technique.',
+    },
+    productionInfluencedBy: {
+      label: 'Creation Influenced By',
+      helpText:
+        'Search for Objects that were created with influence by the specified Person or Group',
+    },
+    recordType: {
+      label: 'Object Class',
+      helpText:
+        'Search for records categorized as either a "Physical Object" or a "Digital Object".',
     },
     text: {
       label: 'Anywhere',
@@ -591,6 +621,11 @@ const searchTermText = {
       helpText:
         'Search for Works by the date on which they were authored or created. Note the difference with Publication Date.',
     },
+    creationInfluencedBy: {
+      label: 'Creation Influenced By',
+      helpText:
+        'Search for Works that were created with influence by the specified Person or Group',
+    },
     hasDigitalImage: {
       label: 'Have Digital Image',
       helpText: 'Search for Works for which digital images are available.',
@@ -637,6 +672,11 @@ const searchTermText = {
       label: 'Published Date',
       helpText:
         'Search for Works by the date on which they were published. Note the difference with Creation Date, which is when the work was originally conceived by its creator.',
+    },
+    recordType: {
+      label: 'Work Class',
+      helpText:
+        'Search for records categorized as either a "Visual Work" or a "Textual Work".',
     },
     text: {
       label: 'Anywhere',

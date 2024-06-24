@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.19.0 - 2024-06-24
+
+### Added
+- Added facets and search terms for record types for Objects, Works, Concepts, and Events ([#138](https://github.com/project-lux/lux-marklogic/issues/138),[#139](https://github.com/project-lux/lux-marklogic/issues/139),[#140](https://github.com/project-lux/lux-marklogic/issues/140),[#141](https://github.com/project-lux/lux-marklogic/issues/141))
+- Added search terms for creation/production influenced by an agent ([#65](https://github.com/project-lux/lux-marklogic/issues/65))
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## v1.18.0 - 2024-06-10
 
 ### Added

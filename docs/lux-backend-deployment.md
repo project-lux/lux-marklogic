@@ -99,13 +99,13 @@ The following table is to define all supported custom tokens.
 
 | Custom Token Reference | Description |
 | ---------------------- | ----------- |
-| `@@contentDatabaseConfGenerated@@` | Reference is replaced with the top-level properties found in [/conf/contentDatabaseConfGenerated.json](/conf/contentDatabaseConfGenerated.json). |
+| `@@contentDatabaseConfGenerated@@` | Reference is replaced with the top-level properties found in [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json). |
 
 # Deploy Entire Backend
 
 *Note: Don't always believe Gradle when it reports a failure. Immediately try the same task again. If you get the same error, it's not your lucky day and you'll need to investigate.*
 
-The following process is recommended for *every* backend deployment to a shared environment as it comprehensively covers MarkLogic configuration and code changes.  If MarkLogic is not yet installed, please first start with [Cluster Formation via Terraform](#cluster-formation-via-terraform) or [LUX Backend Local Developer Environment](/docs/lux-backend-setup-local-env.md).
+The following process is recommended for *every* backend deployment to a shared environment as it comprehensively covers MarkLogic configuration and code changes.  If MarkLogic is not yet installed, please first start with creating a shared environment or [LUX Backend Local Developer Environment](/docs/lux-backend-setup-local-env.md).
 
 Host names, IP addresses, and more may be found within the [LUX Environments spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit#gid=2019670843).
 

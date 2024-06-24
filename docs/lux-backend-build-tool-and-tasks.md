@@ -17,7 +17,7 @@ This document describes Gradle tasks written for this project, which may be foun
 | ---- | ----------- | --------- |
 | `copyContentDatabaseConfGenerated` | **Deployment task** that provides populates a JavaScript-template with the database's configuration, thereby making it available to the runtime code. |  | 
 | `copyDatabase` | Developer convenience task that enables one to copy the data from one database to another, such as from a LUX shared environment to one's local environment. It uses MLCP. | See [Alternative 2: Copy a Database](/docs/lux-backend-import-data.md#alternative-2-copy-a-database) |
-| `copyPipelineDataConstants` | **Deployment task** responsible for making the data pipeline-provided data constants available to the backend's data constant generator.  It is configured to run before `mlLoadModules`. | See [Database Index Configuration](/conf/README.md#database-index-configuration) and [Data Constants](/docs/lux-backend-data-constants.md) | 
+| `copyPipelineDataConstants` | **Deployment task** responsible for making the data pipeline-provided data constants available to the backend's data constant generator.  It is configured to run before `mlLoadModules`. | See [Database Index Configuration](/config/README.md#database-index-configuration) and [Data Constants](/docs/lux-backend-data-constants.md) | 
 | `disableDeprecatedSSLProtocols` | Disable deprecated SSL protocols. |  |
 | `disableSSL` | Manual **deployment task** that disables SSL which then requires non-SSL connections on app serves. |  |
 | `enableSSL` | Manual **deployment task** that enables SSL which then requires SSL connections on app serves. |  |

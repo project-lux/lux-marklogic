@@ -103,7 +103,7 @@ Had the configuration file set the `name` property to `someOtherName`: `getIRI('
 
 # Example: Query with Multiple Results
 
-[/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.sparql](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.sparql): 
+[/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs): 
 
 ```
 SELECT DISTINCT ?label ?objectIri WHERE {

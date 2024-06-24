@@ -92,7 +92,7 @@ For version compatibility questions, see [MarkLogic's Product Support Matrix](ht
 | Software | Version | Property | Link | Notes |
 |----------|---------|----------|------|-------|
 | MarkLogic Server | 11.0.3 | n/a | https://developer.marklogic.com/products/marklogic-server | | 
-| MarkLogic AWS CloudFormation Template (CFT) | 11.0.3 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, embedded within [/cluster-formation/main.tf](/cluster-formation/main.tf).  For more information, please see [Cluster Formation via Terraform](/docs/lux-backend-deployment.md#cluster-formation-via-terraform). |
+| MarkLogic AWS CloudFormation Template (CFT) | 11.0.3 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, maintained in a private repo. |
 | MarkLogic Content Pump (MLCP) | 11.0.3 | `mlcpVersion` | https://github.com/marklogic/marklogic-contentpump | Loading content in MarkLogic. |
 | Gradle | 7.4.2 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
 | MarkLogic Gradle Plugin | 4.3.4 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |

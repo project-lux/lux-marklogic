@@ -503,6 +503,21 @@ function logValues(label, valuesArr, sort = true, warning = false) {
   }
 }
 
+// The exception given to a catch block may not be as developed as what the custom error
+// handler gets.  It may be an object that Object.keys returns an empty array for yet
+// e.message has a value.
+function getExceptionObjectElseMessage(e) {
+  if (
+    Object.keys(e).length == 0 &&
+    e != null &&
+    e != undefined &&
+    typeof e.message == 'string'
+  ) {
+    return e.message;
+  }
+  return e;
+}
+
 function buildSearchUri({
   searchCriteria = null,
   scope = null,
@@ -600,6 +615,7 @@ export {
   getDeepCopy,
   getDocFromModulesDatabase,
   getDocPermissionsFromString,
+  getExceptionObjectElseMessage,
   getMergedArrays,
   getObjectFromJson,
   getPersonRolesInfo,

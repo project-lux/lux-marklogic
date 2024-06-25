@@ -485,10 +485,10 @@ function getSearchEstimate(searchCriteria, scope) {
       xdmp.trace(
         traceName,
         // Monitoring test and log mining script checks for "Search Estimate errored out".
-        `Search Estimate errored out. ${JSON.stringify({
+        `Search Estimate errored out: ${JSON.stringify({
+          exception: utils.getExceptionObjectElseMessage(e),
           scope,
           searchCriteria,
-          e,
         })}`
       );
     }
@@ -554,7 +554,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
             traceName,
             // Monitoring test and log mining script checks for "Search Will Match errored out".
             `A search named '${name}' given to Search Will Match errored out: ${JSON.stringify(
-              { criteria, exception: e }
+              { exception: utils.getExceptionObjectElseMessage(e), criteria }
             )}`
           );
         }
@@ -577,8 +577,8 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
         traceName,
         // Monitoring test and log mining script checks for "Search Will Match errored out".
         `Search Will Match errored out: ${JSON.stringify({
+          exception: utils.getExceptionObjectElseMessage(e),
           multipleSearchCriteria,
-          e,
         })}`
       );
     }

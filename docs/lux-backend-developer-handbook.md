@@ -15,7 +15,7 @@ The names of private functions are to begin with an underscore.
 
 Alphabetize:
 
-* Functions in modules where it makes sense to do so, such as [/src/main/ml-modules/base/root/lib/model.mjs](/src/main/ml-modules/base/root/lib/model.mjs).  A couple *example* exceptions:
+* Functions in modules where it makes sense to do so, such as [/src/main/ml-modules/root/lib/model.mjs](/src/main/ml-modules/root/lib/model.mjs).  A couple *example* exceptions:
     * Place a module's only exported function at the top.
     * List in execution order.
 * Hard-coded lists of values.

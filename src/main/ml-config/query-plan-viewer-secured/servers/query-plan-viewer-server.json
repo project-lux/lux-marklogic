@@ -1,5 +1,0 @@
-{
-  "server-name": "query-plan-viewer",
-  "internal-security": "true",
-  "ssl-certificate-template": "%%mlAppCertificateName%%"
-}

@@ -503,9 +503,9 @@ function logValues(label, valuesArr, sort = true, warning = false) {
   }
 }
 
-// The exception given to a catch block may not be as developed as what the custom error
-// handler gets.  It may be an object that Object.keys returns an empty array for yet
-// e.message has a value.
+// Catch blocks can be given an instance of the Error primitive, which has three properties:
+// name (may always be "Error"), message, and stack (optional).  Just in case a catch block
+// receives something else, this function was introduced.
 function getExceptionObjectElseMessage(e) {
   if (
     Object.keys(e).length == 0 &&

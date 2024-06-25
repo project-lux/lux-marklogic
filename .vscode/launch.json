@@ -10,7 +10,7 @@
       "request": "attach",
       "type": "ml-jsdebugger",
       "name": "Attach to Debug Request",
-      "root": "${workspaceFolder}/src/main/ml-modules/base/root",
+      "root": "${workspaceFolder}/src/main/ml-modules/root",
       "debugServerName": "lux"
     },
     {
@@ -18,7 +18,7 @@
       "type": "xquery-ml",
       "name": "Launch XQY Debug Request",
       "program": "",
-      "root": "${workspaceFolder}/src/main/ml-modules/base/root"
+      "root": "${workspaceFolder}/src/main/ml-modules/root"
     },
     {
       "request": "attach",

@@ -146,7 +146,7 @@ task copyContentDatabaseConfGenerated(){
   def text = file('./config/contentDatabaseConfGenerated.json').text
   copy{
     from './src/main/templates'
-    into './src/main/ml-modules/base/root/config'
+    into './src/main/ml-modules/root/config'
     include 'contentDatabaseConfGenerated.mjs'
     filter{ line -> {
       return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
@@ -271,7 +271,7 @@ task copyPipelineDataConstants (type: Copy) {
   from('scripts/generateIndexConf') {
     include 'pipelineDataConstants.json'
   }
-  into 'src/main/ml-modules/base/root/runDuringDeployment/dataConstants'
+  into 'src/main/ml-modules/root/runDuringDeployment/dataConstants'
 }
 mlLoadModules.dependsOn copyPipelineDataConstants
 

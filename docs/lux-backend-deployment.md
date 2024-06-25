@@ -61,7 +61,7 @@ Group-level cache, forest topology, and volume topology property values will typ
 
 Properties related to infrequently used LUX Gradle tasks should be reviewed before each run (e.g., `importDataFull` and `copyDatabase`).
 
-This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated properties are `mlConfigPaths` and `mlModulePaths`.
+This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated property is `mlConfigPaths`.
 
 Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.
 
@@ -272,19 +272,19 @@ Example Query Console response:
 
 # Regenerate Data Constants
 
-Data constants are to be regenerated after changing the data or generator ([dataConstantsGenerator.mjs](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs)).  The associated Gradle task, `generateDataConstants`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.  For instructions on configuring and running this task, see import data's [Regenerate Data Constants](/docs/lux-backend-import-data.md#regenerate-data-constants) section.
+Data constants are to be regenerated after changing the data or generator ([dataConstantsGenerator.mjs](/src/main/ml-modules/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs)).  The associated Gradle task, `generateDataConstants`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.  For instructions on configuring and running this task, see import data's [Regenerate Data Constants](/docs/lux-backend-import-data.md#regenerate-data-constants) section.
 
 # Regenerate Remaining Search Terms
 
-Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/base/root/config/facetsConfig.mjs](/src/main/ml-modules/base/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/base/root/config/searchTermConfig.mjs](/src/main/ml-modules/base/root/config/searchTermConfig.mjs), or the associated generator ([/src/main/ml-modules/base/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/base/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
+Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermConfig.mjs](/src/main/ml-modules/root/config/searchTermConfig.mjs), or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
 
 # Regenerate Related Lists Configuration
 
-After `generateRemainingSearchTerms` runs or [/src/main/ml-modules/base/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/base/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes, the configuration for related lists should be regenerated.  The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
+After `generateRemainingSearchTerms` runs or [/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes, the configuration for related lists should be regenerated.  The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
 
 # Regenerate Advanced Search Configuration
 
-The advanced search configuration is to be regenerated after the remaining search terms are generated or when the associated generator ([/src/main/ml-modules/base/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/base/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) is modified.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
+The advanced search configuration is to be regenerated after the remaining search terms are generated or when the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) is modified.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
 
 # Deploy Database Configuration Changes
 
@@ -318,13 +318,13 @@ Please see the [ML Gradle wiki pages](https://github.com/marklogic-community/ml-
 
 # LUX MarkLogic Application Servers
 
-MarkLogic is installed with several application servers.  The LUX project adds to those.  The following table defines all MarkLogic application servers.  
+MarkLogic is installed with several application servers.  The LUX project adds to those.  The following table defines all MarkLogic application servers.* 
 
 Performance testing surfaced the ability to get more out of the same level of system resources by splitting a middle tier's requests between two application servers, by request type.  In the table below, these are the application servers listening on ports 8003 and 8004.
 
-Available application servers and their ports may vary by environment.  The outcome is dependent on included ML Gradle configuration directories and build property values.  For example, the query plan viewer application server may not be deployed in production.  See the [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md) for additional information on LUX's ML Gradle configuration directories.
+Available application servers and their ports may vary by environment.  The outcome is dependent on included ML Gradle configuration directories and build property values.  See the [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md) for additional information on LUX's ML Gradle configuration directories.
 
-| Property | Port* | Type | PROD? | Usage |
+| Property | Port^ | Type | PROD? | Usage |
 | -------- | ----- | ---- | ----- | ----- | 
 | n/a | 7997 | HTTP | Yes | Internal and external health check. |
 | n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
@@ -333,9 +333,10 @@ Available application servers and their ports may vary by environment.  The outc
 | `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the `lux-endpoint-consumer` role. |
 | `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the `lux-endpoint-consumer` role. |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
-| `mlQueryPlanViewerPort` | 8006 | REST | No | Offers access to a copy of https://github.com/jpcs/queryplan-viewer, which is a developer tool for visualizing query plans that is useful when optimizing queries.  Locally, the URL is http://localhost:8006/default.xqy. |
 
-\* The most definitive source is the environment itself.  Second would be the environment's `gradle-[env].properties` file.
+\* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.
+
+^ The most definitive source is the environment itself.  Second would be the environment's `gradle-[env].properties` file.
 
 # Trace Events
 
@@ -347,13 +348,13 @@ In the following sections, the "Always" columns denote those we recommend enabli
 
 ## Custom Trace Events
 
-Each of the following custom trace events should have a constant defined in [appConstants.mjs](/src/main/ml-modules/base/root/lib/appConstants.mjs).
+Each of the following custom trace events should have a constant defined in [appConstants.mjs](/src/main/ml-modules/root/lib/appConstants.mjs).
 
 Those with an asterisk following the name are input to the log analysis script, [mineBackendLogs.sh](/scripts/logAnalysis/mineBackendLogs.sh).
 
 | Trace Name | Always | Description |
 | ---------- | ------ | ----------- |
-| `LuxError` | No | When enabled, the `lux` application server's custom error handler, [luxErrorHandler.mjs](/src/main/ml-modules/base/root/luxErrorHandler.mjs), will log the error's raw details, which can vary from the error handler's response, inclusive of the status response code, status response message, and response body. |
+| `LuxError` | No | When enabled, the `lux` application server's custom error handler, [luxErrorHandler.mjs](/src/main/ml-modules/root/luxErrorHandler.mjs), will log the error's raw details, which can vary from the error handler's response, inclusive of the status response code, status response message, and response body. |
 | `LuxFacets`\* | Yes | Logs the name of a facet set and how long it takes to calculate them, in milliseconds. When `LuxSearch` is also enabled, note that the facet duration is part of the search duration. |
 | `LuxNamedProfiles`\* | Yes | Logs the duration it takes to profile a document, in milliseconds. Only logged when a profile is requested and that profile is known by the system. A warning message is logged when an unknown profile is specified --regardless of this trace event being enabled. |
 | `LuxSearch`\* | Yes | Logs the duration search takes, in milliseconds. No additional context is provided, thereby limiting the value of this trace event; however, the search response body includes durations for that search's steps: parse, query, and facets. |
@@ -365,5 +366,5 @@ Those with an asterisk following the name are input to the log analysis script, 
 | ---------- | ------ | ----------- |
 | `Optic Execution` | No | Shows the individual operations sent to execute on the data nodes (i.e., what could not be resolved exclusively on the evaluator node).  Generally or at least with joins, the more your query can push to the data nodes, the faster it will be. |
 | `Optic Execution Diagnostics` | No | Output includes insights on memory usage, down to a specific operator. |
-| `Optic Plan Trace` | No | The Optic plan after _MarkLogic's_ optimizations.  Includes costs.  Once you extract this XML-formatted plan from the log file, you can paste it into the Query Plan Viewer.  Locally, the URL is http://localhost:8006/default.xqy, providing it was configured to be deployed. |
+| `Optic Plan Trace` | No | The Optic plan after _MarkLogic's_ optimizations.  Includes costs.  Once you extract this XML-formatted plan from the log file, you can paste it into the Query Plan Viewer (deployed separately).  Locally, the URL is http://localhost:8006/default.xqy, providing it was configured to be deployed. |
 | `v8 delay timeout` | Yes | Logs additional information in the event of a v8 engine crash, which may provide insights on the root cause. |

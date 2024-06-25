@@ -16,7 +16,7 @@
 
 ## Check for Mismatched Indexing Configuration
 
-After updating the database indexing configuration and before re-loading the data, check to see if the code references fields and field range indexes that the database does not offer.  This may be done by running [/scripts/generateIndexConf/indexComparisonChecks.js](/scripts/generateIndexConf/indexComparisonChecks.js) in the Query Console of the target environment.  The script accounts for index references within [/src/main/ml-modules/base/root/config](/src/main/ml-modules/base/root/config) and checks for:
+After updating the database indexing configuration and before re-loading the data, check to see if the code references fields and field range indexes that the database does not offer.  This may be done by running [/scripts/generateIndexConf/indexComparisonChecks.js](/scripts/generateIndexConf/indexComparisonChecks.js) in the Query Console of the target environment.  The script accounts for index references within [/src/main/ml-modules/root/config](/src/main/ml-modules/root/config) and checks for:
 
 * The code references fields or field range indexes that are not configured in the database, opening us up to **runtime errors**.
 * The database configures fields or field range indexes that are not referenced by the code, leading to larger memory and storage footprints than necessary.
@@ -115,7 +115,7 @@ The keyword index pattern is used by semantic search tags, non-semantic search t
 
 This index pattern's settings are nearly opposite of the database defaults.
 
-These search tags should set their `optionsReference` to `keyword`.  The associated search options are served up by the [search library's](/src/main/ml-modules/base/root/lib/searchLib.mjs) `getSearchOptions` via `getSearchOptionsByReference`.  The options include basic stemming and --conditionally-- synonyms.
+These search tags should set their `optionsReference` to `keyword`.  The associated search options are served up by the [search library's](/src/main/ml-modules/root/lib/searchLib.mjs) `getSearchOptions` via `getSearchOptionsByReference`.  The options include basic stemming and --conditionally-- synonyms.
 
 ```
   "stemmed-searches": "basic",

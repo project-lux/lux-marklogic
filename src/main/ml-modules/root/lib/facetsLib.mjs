@@ -72,6 +72,7 @@ function _getFacets(
     } else {
       xdmp.trace(
         traceName,
+        // Monitoring test and log mining script checks for "Failed to calculate".
         `Failed to calculate the following facets ${
           searchRequestId ? `for search ${searchRequestId} ` : ''
         }after ${duration} milliseconds: ${name}`
@@ -149,6 +150,7 @@ function _getNonSemanticFacets(facetName, searchCriteriaProcessor) {
   if (requestProduct > FACET_MAXIMUM_PRODUCT) {
     xdmp.trace(
       traceName,
+      // Monitoring test and log mining script checks for "Rejected request to calculate".
       `Rejected request to calculate the ${facetName} facet as ${searchResultEstimate.toLocaleString()} search results by ${indexValueCount.toLocaleString()} field values exceeds the ${FACET_MAXIMUM_PRODUCT.toLocaleString()} threshold.`
     );
     throw new BadRequestError(

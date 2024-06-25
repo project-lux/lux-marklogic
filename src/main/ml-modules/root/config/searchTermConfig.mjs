@@ -74,11 +74,9 @@ const SEARCH_TERM_CONFIG = {
       indexReferences: ['conceptPrimaryName'],
     },
     professionalActivity: {
-      patternName: 'relatedList',
-      predicates: ['lux("agentProfessionallyActive")'],
-      targetScope: 'concept',
+      patternName: 'indexedValue',
       indexReferences: ['conceptPrimaryName'],
-      idIndexReferences: ['agentProfessionalActivityId'],
+      scalarType: 'string',
     },
     relatedToAgent: {
       patternName: 'relatedList',

@@ -37,8 +37,8 @@
 
 # Script configuration
 OUTPUT_DIRECTORY=./out
-ACCESS_LOG_PATTERN_PORT_8003=*800[3-4]-AccessLog*.txt
-ERROR_LOG_PATTERN_PORT_8003=*800[3-4]-ErrorLog*.txt
+APP_ACCESS_LOG_PATTERN=*800[3-4]-AccessLog*.txt
+APP_ERROR_LOG_PATTERN=*800[3-4]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
@@ -53,6 +53,8 @@ SEARCH_PARAMS_WITH_DURATIONS_FILE=$OUTPUT_DIRECTORY/searchParamsAndDurations.txt
 SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE=$OUTPUT_DIRECTORY/searchParamsAndDurations.tsv
 SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE=$OUTPUT_DIRECTORY/searchParamsAndDurations.json
 FAILED_SEARCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchOnlyRequests.txt
+FAILED_SEARCH_ESTIMATE_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchEstimateRequests.txt
+FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchWillMatchRequests.txt
 FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/allFacetRequests.txt
 FAILED_FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/allFailedFacetRequests.txt
 EXCEEDED_FACET_PRODUCT_THRESHOLD=$OUTPUT_DIRECTORY/exceededFacetProductThreshold.txt
@@ -67,7 +69,7 @@ DURATION_IN_SECS_CELL=B6
 
 # grepForLineCount [label] [regEx of all lines] [regEx of lines to count]
 function grepForLineCount() {
-  { echo -e "$1\t"; grep "$2" $ERROR_LOG_PATTERN_PORT_8003 | grep -v "requestContext\":\"viaSearchFacet" | grep -cE "$3"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "$1\t"; grep "$2" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -cE "$3"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
 # grepForSectionCounts [title] [regEx of all lines] [milliPrefix] [milliSuffix]
@@ -100,39 +102,39 @@ function grepForSectionCounts() {
 }
 
 function addCountFromAccessLogs() {
-  { echo -e "$1\t"; grep "$2" $ACCESS_LOG_PATTERN_PORT_8003 | grep -c "$2"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "$1\t"; grep "$2" $APP_ACCESS_LOG_PATTERN | grep -c "$2"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
 function addBonusLinesForSearch() {
   # At least for the time being, partOf search requests can comprise more than 75% of a performance test's
   # search requests.  Until this changes, we want to call this count out.
-  { echo -e "partOf search requests\t"; grep "requestCompleted" $ERROR_LOG_PATTERN_PORT_8003 | grep -v "requestContext\":\"viaSearchFacet" | grep -c "criteria\":{\"partOf"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "partOf search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -c "criteria\":{\"partOf"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" >> $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Failed search requests\t"; grep "requestCompleted" $ERROR_LOG_PATTERN_PORT_8003 | grep -v "requestContext\":\"viaSearchFacet" | grep -c "\"requestCompleted\":false"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Failed search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -c "\"requestCompleted\":false"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
 function addBonusLinesForFacets() {
   # Number of searches performed while calculating facets that require their own searches.
   # Starting in v1.0.17, this count should match the number of search requests with a context of "viaSearchFacet".
-  { echo -e "Searching for the '[a-zA-Z]*' facet values" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "facet"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Searching for the '[a-zA-Z]*' facet values" $APP_ERROR_LOG_PATTERN | grep -c "facet"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" >> $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
 function addBonusLinesForDocuments() {
-  { echo -e "No profile specified\t"; grep "LuxNamedProfiles" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "without applying a profile"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Location profile\t"; grep "LuxNamedProfiles" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "location"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Name profile\t"; grep "LuxNamedProfiles" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "name"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Relationship profile\t"; grep "LuxNamedProfiles" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "relationship"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Results profile\t"; grep "LuxNamedProfiles" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "results"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Other known profiles\t"; grep "LuxNamedProfiles" $ERROR_LOG_PATTERN_PORT_8003 | 
+  { echo -e "No profile specified\t"; grep "LuxNamedProfiles" $APP_ERROR_LOG_PATTERN | grep -c "without applying a profile"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Location profile\t"; grep "LuxNamedProfiles" $APP_ERROR_LOG_PATTERN | grep -c "location"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Name profile\t"; grep "LuxNamedProfiles" $APP_ERROR_LOG_PATTERN | grep -c "name"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Relationship profile\t"; grep "LuxNamedProfiles" $APP_ERROR_LOG_PATTERN | grep -c "relationship"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Results profile\t"; grep "LuxNamedProfiles" $APP_ERROR_LOG_PATTERN | grep -c "results"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Other known profiles\t"; grep "LuxNamedProfiles" $APP_ERROR_LOG_PATTERN | 
     grep -v "without applying a profile" |
     grep -v "location" |
     grep -v "name" |
     grep -v "relationship" |
     grep -v "results" |
     grep -c "LuxNamedProfiles"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Unknown profiles\t"; grep "An unknown profile was requested" $ERROR_LOG_PATTERN_PORT_8003 | grep -c "profile"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Unknown profiles\t"; grep "An unknown profile was requested" $APP_ERROR_LOG_PATTERN | grep -c "profile"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
@@ -231,7 +233,7 @@ grep -e "$PATTERN_SEARCH_REQUESTS" \
      -e "$PATTERN_SEARCH_WILL_MATCH_REQUESTS" \
      -e "$PATTERN_SEARCH_ESTIMATE_REQUESTS" \
      -e "$PATTERN_DOCUMENT_REQUESTS" \
-     $ERROR_LOG_PATTERN_PORT_8003 \
+     $APP_ERROR_LOG_PATTERN \
      | grep -v "requestContext\":\"viaSearchFacet" \
      > $ALL_REQUESTS_FILE
 
@@ -270,7 +272,7 @@ echo -e "Unfiltered Counts\t\t=COUNT(C2:C$CURRENT_ROW)\t=COUNT(D2:D$CURRENT_ROW)
 
 # All completed search requests w/ durations.
 echo -e "   $SEARCH_PARAMS_WITH_DURATIONS_FILE..."
-grep "searchElapsed" $ERROR_LOG_PATTERN_PORT_8003 > $SEARCH_PARAMS_WITH_DURATIONS_FILE
+grep "searchElapsed" $APP_ERROR_LOG_PATTERN > $SEARCH_PARAMS_WITH_DURATIONS_FILE
 echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Create a TSV-formatted report out of the above file
@@ -294,32 +296,42 @@ echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE" >> $ALL_REQUESTS_MET
 
 # Long running searches
 echo -e "   $SEARCHES_LONG_RUNNING_FILE..."
-grep "requestCompleted" $ERROR_LOG_PATTERN_PORT_8003 | grep -v "requestContext\":\"viaSearchFacet" | grep -E "total\":[2-9][0-9]{4}" > $SEARCHES_LONG_RUNNING_FILE
+grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -E "total\":[2-9][0-9]{4}" > $SEARCHES_LONG_RUNNING_FILE
 echo -e "See also\t$SEARCHES_LONG_RUNNING_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Failed search requests that did not request facets.
 echo -e "   $FAILED_SEARCH_REQUESTS_FILE..."
-grep "requestCompleted" $ERROR_LOG_PATTERN_PORT_8003 | grep "\"requestCompleted\":false" | grep -v "requestContext\":\"viaSearchFacet" > $FAILED_SEARCH_REQUESTS_FILE
+grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep "\"requestCompleted\":false" | grep -v "requestContext\":\"viaSearchFacet" > $FAILED_SEARCH_REQUESTS_FILE
 echo -e "See also\t$FAILED_SEARCH_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
+
+# Failed searchEstimate requests.
+echo -e "   $FAILED_SEARCH_ESTIMATE_REQUESTS_FILE..."
+grep "Search Estimate errored out" $APP_ERROR_LOG_PATTERN > $FAILED_SEARCH_ESTIMATE_REQUESTS_FILE
+echo -e "See also\t$FAILED_SEARCH_ESTIMATE_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
+
+# Failed searchWillMatch requests.
+echo -e "   $FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE..."
+grep "Search Will Match errored out" $APP_ERROR_LOG_PATTERN > $FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE
+echo -e "See also\t$FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # All facet requests
 echo -e "   $FACET_REQUESTS_FILE..."
-grep "Calculated the following facets" $ERROR_LOG_PATTERN_PORT_8003 > $FACET_REQUESTS_FILE
+grep "Calculated the following facets" $APP_ERROR_LOG_PATTERN > $FACET_REQUESTS_FILE
 echo -e "See also\t$FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # All failed facet requests
 echo -e "   $FAILED_FACET_REQUESTS_FILE..."
-grep "Failed to calculate the following facets" $ERROR_LOG_PATTERN_PORT_8003 > $FAILED_FACET_REQUESTS_FILE
+grep "Failed to calculate the following facets" $APP_ERROR_LOG_PATTERN > $FAILED_FACET_REQUESTS_FILE
 echo -e "See also\t$FAILED_FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Find out which facet requests exceeded the search result estimate * number of values in the field threshold.
 echo -e "   $EXCEEDED_FACET_PRODUCT_THRESHOLD..."
-grep "Rejected request to calculate" $ERROR_LOG_PATTERN_PORT_8003 > $EXCEEDED_FACET_PRODUCT_THRESHOLD
+grep "Rejected request to calculate" $APP_ERROR_LOG_PATTERN > $EXCEEDED_FACET_PRODUCT_THRESHOLD
 echo -e "See also\t$EXCEEDED_FACET_PRODUCT_THRESHOLD" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Part of a searchWillMatch request, let's see how long it took to determine if a related list contains at least one item
 echo -e "   $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE..."
-grep "LuxRelatedList\] Checked" $ERROR_LOG_PATTERN_PORT_8003 > $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE
+grep "LuxRelatedList\] Checked" $APP_ERROR_LOG_PATTERN > $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE
 echo -e "See also\t$AT_LEAST_ONE_RELATED_LIST_ITEM_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Create a report out of the above file
@@ -332,14 +344,14 @@ echo -e "See also\t$AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE" >> $ALL_REQUESTS_ME
 
 # Find out which related list relation + IRI combinations hit the request's maximum number of relations per relationship.
 echo -e "   $HIT_MAX_NUMBER_OF_RELATIONS..."
-grep "Hit the max" $ERROR_LOG_PATTERN_PORT_8003 > $HIT_MAX_NUMBER_OF_RELATIONS
+grep "Hit the max" $APP_ERROR_LOG_PATTERN > $HIT_MAX_NUMBER_OF_RELATIONS
 echo -e "See also\t$HIT_MAX_NUMBER_OF_RELATIONS" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Failed related list requests (searchWillMatch and relatedList endpoint requests)
 echo -e "   $FAILED_RELATED_LIST_REQUESTS..."
 PATTERN_1="Unable to determine the '[a-zA-Z]*' list"
 PATTERN_2="Failed to create the '[a-zA-Z]*' list"
-grep -e "$PATTERN_1" -e "$PATTERN_2" $ERROR_LOG_PATTERN_PORT_8003 > $FAILED_RELATED_LIST_REQUESTS
+grep -e "$PATTERN_1" -e "$PATTERN_2" $APP_ERROR_LOG_PATTERN > $FAILED_RELATED_LIST_REQUESTS
 echo -e "See also\t$FAILED_RELATED_LIST_REQUESTS" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # We have a few conditions/errors that it's not clear if they would happen in the wild.
@@ -347,7 +359,7 @@ echo -e "   $ODD_RELATED_LIST_ERRORS..."
 PATTERN_1="Unable to determine the inverse search term"
 PATTERN_2="Unable to determine search term name"
 PATTERN_3="Providing search criteria for the '[a-zA-Z]*' scope"
-grep -e "$PATTERN_1" -e "$PATTERN_2" -e "$PATTERN_3" $ERROR_LOG_PATTERN_PORT_8003 > $ODD_RELATED_LIST_ERRORS
+grep -e "$PATTERN_1" -e "$PATTERN_2" -e "$PATTERN_3" $APP_ERROR_LOG_PATTERN > $ODD_RELATED_LIST_ERRORS
 echo -e "See also\t$ODD_RELATED_LIST_ERRORS" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Potentially interesting entries from ML's main error logs (not port specific)

@@ -179,6 +179,7 @@ function getRelatedList({
       ) {
         xdmp.trace(
           traceName,
+          // Monitoring test and log mining script checks for "Hit the max".
           `Hit the max of ${relationshipsPerRelation} relationships for the '${searchConfig.relationKey}' relation with scope '${searchScopeName}', term '${relatedListName}', and URI '${uri}'.`
         );
       }

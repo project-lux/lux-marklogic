@@ -503,6 +503,21 @@ function logValues(label, valuesArr, sort = true, warning = false) {
   }
 }
 
+// Catch blocks can be given an instance of the Error primitive, which has three properties:
+// name (may always be "Error"), message, and stack (optional).  Just in case a catch block
+// receives something else, this function was introduced.
+function getExceptionObjectElseMessage(e) {
+  if (
+    Object.keys(e).length == 0 &&
+    e != null &&
+    e != undefined &&
+    typeof e.message == 'string'
+  ) {
+    return e.message;
+  }
+  return e;
+}
+
 function buildSearchUri({
   searchCriteria = null,
   scope = null,
@@ -600,6 +615,7 @@ export {
   getDeepCopy,
   getDocFromModulesDatabase,
   getDocPermissionsFromString,
+  getExceptionObjectElseMessage,
   getMergedArrays,
   getObjectFromJson,
   getPersonRolesInfo,

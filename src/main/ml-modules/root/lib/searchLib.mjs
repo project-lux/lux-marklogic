@@ -466,85 +466,124 @@ function calculateEstimate(searchCriteria, scope) {
 }
 
 function getSearchEstimate(searchCriteria, scope) {
-  const stopWatch = new StopWatch(true);
-  const estimate = calculateEstimate(searchCriteria, scope);
-  const timeElapsed = stopWatch.stop();
-  if (xdmp.traceEnabled(traceName)) {
-    xdmp.trace(
-      traceName,
-      `Calculated estimate in ${timeElapsed} milliseconds.`
-    );
+  try {
+    const stopWatch = new StopWatch(true);
+    const estimate = calculateEstimate(searchCriteria, scope);
+    const timeElapsed = stopWatch.stop();
+    if (xdmp.traceEnabled(traceName)) {
+      xdmp.trace(
+        traceName,
+        `Calculated estimate in ${timeElapsed} milliseconds.`
+      );
+    }
+    return {
+      '@context': LUX_CONTEXT,
+      ...estimate,
+    };
+  } catch (e) {
+    if (xdmp.traceEnabled(traceName)) {
+      xdmp.trace(
+        traceName,
+        // Monitoring test and log mining script checks for "Search Estimate errored out".
+        `Search Estimate errored out: ${JSON.stringify({
+          exception: utils.getExceptionObjectElseMessage(e),
+          scope,
+          searchCriteria,
+        })}`
+      );
+    }
+    throw e;
   }
-  return {
-    '@context': LUX_CONTEXT,
-    ...estimate,
-  };
 }
 
 // Only supports JSON-formatted search criteria.
 function determineIfSearchWillMatch(multipleSearchCriteria) {
-  const start = new Date();
+  try {
+    const start = new Date();
 
-  // Support an object of named searches or a single, unnamed one.
-  const searchScopeName = multipleSearchCriteria._scope;
-  if (searchScopeName) {
-    multipleSearchCriteria = { unnamed: multipleSearchCriteria };
-  }
-
-  const namedSearchesResponse = {};
-  Object.keys(multipleSearchCriteria).forEach((name) => {
-    try {
-      const stopWatch = new StopWatch(true);
-      const criteria = multipleSearchCriteria[name];
-
-      // If a related list, we need to make the determination without cts.search.
-      let hasOneOrMoreResult;
-      const relatedListSearchInfo = getRelatedListSearchInfo(criteria);
-      if (relatedListSearchInfo.isRelatedList) {
-        hasOneOrMoreResult =
-          getRelatedList({
-            searchScopeName: relatedListSearchInfo.scopeName,
-            relatedListName: relatedListSearchInfo.termName,
-            uri: relatedListSearchInfo.uri,
-            page: 1,
-            pageLength: 2, // 1st may be self (uri)
-            relationshipsPerRelation: 2, // 1st may be self (uri)
-            onlyCheckForOneRelatedItem: true,
-          }).orderedItems.length > 0
-            ? 1
-            : 0;
-      } else {
-        // Given pagination parameters, 0 or 1 is expected.
-        hasOneOrMoreResult = processSearchCriteria({
-          searchCriteria: criteria,
-          page: 1,
-          pageLength: 1,
-          stopWatch,
-        }).getSearchResults().length;
-      }
-
-      namedSearchesResponse[name] = {
-        hasOneOrMoreResult,
-        isRelatedList: relatedListSearchInfo.isRelatedList,
-        duration: stopWatch.stop(),
-      };
-    } catch (e) {
-      namedSearchesResponse[name] = {
-        hasOneOrMoreResult: -1, // -1 indicates error
-      };
+    // Support an object of named searches or a single, unnamed one.
+    const searchScopeName = multipleSearchCriteria._scope;
+    if (searchScopeName) {
+      multipleSearchCriteria = { unnamed: multipleSearchCriteria };
     }
-  });
 
-  if (xdmp.traceEnabled(traceName)) {
-    xdmp.trace(
-      traceName,
-      `Checked ${Object.keys(namedSearchesResponse).length} searches in ${
-        new Date().getTime() - start.getTime()
-      } milliseconds.`
-    );
+    const namedSearchesResponse = {};
+    Object.keys(multipleSearchCriteria).forEach((name) => {
+      const criteria = multipleSearchCriteria[name];
+      try {
+        const stopWatch = new StopWatch(true);
+
+        // If a related list, we need to make the determination without cts.search.
+        let hasOneOrMoreResult;
+        const relatedListSearchInfo = getRelatedListSearchInfo(criteria);
+        if (relatedListSearchInfo.isRelatedList) {
+          hasOneOrMoreResult =
+            getRelatedList({
+              searchScopeName: relatedListSearchInfo.scopeName,
+              relatedListName: relatedListSearchInfo.termName,
+              uri: relatedListSearchInfo.uri,
+              page: 1,
+              pageLength: 2, // 1st may be self (uri)
+              relationshipsPerRelation: 2, // 1st may be self (uri)
+              onlyCheckForOneRelatedItem: true,
+            }).orderedItems.length > 0
+              ? 1
+              : 0;
+        } else {
+          // Given pagination parameters, 0 or 1 is expected.
+          hasOneOrMoreResult = processSearchCriteria({
+            searchCriteria: criteria,
+            page: 1,
+            pageLength: 1,
+            stopWatch,
+          }).getSearchResults().length;
+        }
+
+        namedSearchesResponse[name] = {
+          hasOneOrMoreResult,
+          isRelatedList: relatedListSearchInfo.isRelatedList,
+          duration: stopWatch.stop(),
+        };
+      } catch (e) {
+        namedSearchesResponse[name] = {
+          hasOneOrMoreResult: -1, // -1 indicates error
+        };
+
+        if (xdmp.traceEnabled(traceName)) {
+          xdmp.trace(
+            traceName,
+            // Monitoring test and log mining script checks for "Search Will Match errored out".
+            `A search named '${name}' given to Search Will Match errored out: ${JSON.stringify(
+              { exception: utils.getExceptionObjectElseMessage(e), criteria }
+            )}`
+          );
+        }
+      }
+    });
+
+    if (xdmp.traceEnabled(traceName)) {
+      xdmp.trace(
+        traceName,
+        `Checked ${Object.keys(namedSearchesResponse).length} searches in ${
+          new Date().getTime() - start.getTime()
+        } milliseconds.`
+      );
+    }
+
+    return namedSearchesResponse;
+  } catch (e) {
+    if (xdmp.traceEnabled(traceName)) {
+      xdmp.trace(
+        traceName,
+        // Monitoring test and log mining script checks for "Search Will Match errored out".
+        `Search Will Match errored out: ${JSON.stringify({
+          exception: utils.getExceptionObjectElseMessage(e),
+          multipleSearchCriteria,
+        })}`
+      );
+    }
+    throw e;
   }
-
-  return namedSearchesResponse;
 }
 
 // Bring back if synonym support is restored.

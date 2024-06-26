@@ -2,7 +2,6 @@
 
 - [Introduction](#introduction)
 - [LUX Gradle Tasks](#lux-gradle-tasks)
-- [JavaScript Template Files](#javascript-template-files)
 - [Gradle Tips \& Tricks](#gradle-tips--tricks)
 
 # Introduction
@@ -35,24 +34,6 @@ This document describes Gradle tasks written for this project, which may be foun
 | `showAppServerCiphers` | Display ciphers enabled on the application server. Use to ensure those that should not be enabled are not enabled. |  |
 | `showDeprecatedSSLProtocols` | Display deprecated SSL protocols. |  |
 | `updateSSLCiphers` | Sets hard-coded ciphers on app servers. |  |
-
-# JavaScript Template Files
-
-Gradle tasks may incorporate a JavaScript template file into the task at hand.  No Gradle task presently uses this facility.  It its heyday, there were four templates that a couple Gradle tasks populated during the build process.  As we wrote more generators that execute on the server, it became commonplace for the generator to include static code.  JavaScript templates make more sense when the templates are populated client side, before the resulting code is then copied to the server.  When such a need existed, it allowed us to avoid embedding JavaScript within the Gradle build script.
-
-In case the need returns, follow these steps:
-
-1. Define the template.
-    * Templates are pooling within [/src/main/templates](/src/main/templates).  Sub-directories welcome.  Just the Gradle task(s) using the template needs to know where the template is.
-    * Anything you wish processed by the template engine is to use the JSP style `<% %>` script and `<%= %>` expression syntax.
-2. Come up with the values that the template engine is to apply.
-3. Call `applyTemplate()`, passing in the path to your template as well as the variable-to-value bindings.
-    * Any template literal expressions (`${ }`) are disabled long enough to avoid the Groovy template engine but are then re-enabled to be valid in the JavaScript runtime environment.
-    * The `applyTemplate()` function includes a feature limited to JavaScript: template scripts or expressions immediately preceded by `//` have the `//` removed.  This allows the template to be valid JavaScript yet also allow the Groovy template engine the ability to replace entire lines.
-    * Groovy's [SimpleTemplateEngine](https://docs.groovy-lang.org/latest/html/api/groovy/text/SimpleTemplateEngine.html) is used.
-4. Your Gradle task may then call `writeToFile()`, passing in the output path and content to write within (likely the return of `applyTemplate()`).
-
-Should the need arise, `applyTemplate()` could be extended to support more than JavaScript.
 
 # Gradle Tips & Tricks
 

@@ -33,36 +33,36 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
-// Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
-// Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
-// literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
-// one should not expect this function to resolve those references.  Use the JSP like syntax instead.
-ext.applyTemplate = { templatePath, templateBindings ->
-  // Read template file into memory
-  def text = file(templatePath).text
 
-  // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
-  // '$1' and '${paramName}'.
-  text = text.replaceAll(/\$/, 'DOLLAR_SIGN')
-
-  // When a template variable reference immediately follows a JavaScript single line comment marker, remove the comment marker,
-  // thereby allowing the template's variable value to be uncommented code.
-  text = text.replaceAll(/\/\/\s*(?<templateVarRef><%[^>]*>)/, '${templateVarRef}')
-
-  // Resolve all template variable references: <%...%>
-  def engine = new groovy.text.SimpleTemplateEngine()
-  text = engine.createTemplate(text).make(templateBindings).toString()
-
-  // Change DOLLAR_SIGN back to the actual dollar sign symbol, such that JavaScript recognizes them.
-  text = text.replaceAll(/DOLLAR_SIGN/, '\\$')
-
-  return text
+// This task is intended to execute before any that interact with MarkLogic Server.  It switches
+// from the default default REST port (8003) to the app services port --a port guaranteed to exist.
+// At least needed by setBanner, which is executed before a tenant's app servers are created.
+task switchToAppServicesPort() {
+  println ''
+  println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
+  println ''
+  mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
 }
 
-ext.writeToFile = { outputPath, content ->
-  new File("$outputPath").withWriter { out ->
-    out.println content
+// After the tenant's app servers are created via mlDeployServers, we need to switch to one of
+// its app servers in order to --among other things-- load the modules in the correct database.
+task switchToTenantPort() {
+  doFirst {
+    println ''
+    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlRestPortGroup1")
+    println ''
+    mlAppConfig.setRestPort(project.property("mlRestPortGroup1").toInteger())
   }
+}
+mlLoadModules.dependsOn switchToTenantPort
+
+// The generator tasks need to access to the tenant's modules database.
+ext.getTenantDatabaseClient = {
+  def origPort = mlAppConfig.getRestPort()
+  mlAppConfig.setRestPort(project.property("mlRestPortGroup1").toInteger())
+  def client = mlAppConfig.newDatabaseClient()
+  mlAppConfig.setRestPort(origPort)
+  return client
 }
 
 // This project's implementation of its custom token feature.
@@ -107,6 +107,7 @@ task preprocessMarkLogicConfigurationFiles() {
   }
 }
 
+// Code herein automatically executes.
 task preprocessBuildSupportScripts() {
   // Resolve property references while copying into the build dir.
   copy {
@@ -266,7 +267,7 @@ task generateDataConstants (type: com.marklogic.gradle.task.MarkLogicTask) {
     println "Generating the data constants..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
+    def client = getTenantDatabaseClient()
     def script = new File('./build/buildSupport/generateDataConstants.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
     println result
@@ -288,7 +289,7 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println "Generating the remaining search terms..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
+    def client = getTenantDatabaseClient()
     def script = new File('./build/buildSupport/generateRemainingSearchTerms.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -307,7 +308,7 @@ task generateRelatedListsConfig (type: com.marklogic.gradle.task.MarkLogicTask) 
     println "Generating the related lists configuration..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
+    def client = getTenantDatabaseClient()
     def script = new File('./build/buildSupport/generateRelatedListsConfig.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -326,7 +327,7 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
     println "Generating the advanced search configuration..."
     println ""
 
-    def client = mlAppConfig.newAppServicesDatabaseClient(project.property("tenantContentDatabase"))
+    def client = getTenantDatabaseClient()
     def script = new File('./build/buildSupport/generateAdvancedSearchConfig.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -340,7 +341,6 @@ generateRemainingSearchTerms.finalizedBy generateAdvancedSearchConfig
 // Admin required to run this; thus piggybacking mlDeploySecurity.
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task setBanner(type: com.marklogic.gradle.task.ServerEvalTask) {
-  client = mlAppConfig.newAppServicesDatabaseClient("Documents")
   javascript = new File('./build/buildSupport/setBanner.sjs').getText('UTF-8')
 }
 mlDeploySecurity.finalizedBy setBanner

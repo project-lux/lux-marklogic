@@ -82,7 +82,7 @@ Specify the tenant's ports using these properties:
 
 Now review all of the other properties, updating those that are not correct.  There are some that apply to all tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.  A little bit further down is a complete listing, within [Tenant Limitations and Warnings](#tenant-limitations-and-warnings).
 
-This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated properties are `mlConfigPaths` and `mlModulePaths`.
+This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated property is `mlConfigPaths`.
 
 Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `tenantEndpointConsumerPassword` and `tenantDeployerPassword`.
 
@@ -105,12 +105,9 @@ The current tenant deployment model includes shared configuration and does not i
 3. Tenants should not need to run the following Gradle tasks.  These are referenced in the [Deploy Entire Backend](#deploy-entire-backend) section.  There are others offered by ML Gradle that are not listed here and not part of typical LUX deployments.  Those need to be vetted individually.
     * `disableSSL`
     * `enableSSL`
-    * `setBanner`
-    * `*Ciphers`
-    * `*SSLProtocols`
-4. Tenants need not also deploy the Query Plan Viewer and may:
-    * Omit "build/main/ml-config/query-plan-viewer,build/main/ml-config/query-plan-viewer-secured" from the value of the `mlConfigPaths` build property.
-    * Omit "src/main/ml-modules/query-plan-viewer" from the value of the `mlModulePaths` build property.
+    * `setBanner`: **Presently configured to automatically run after `mlDeploySecurity`.**
+    * `*Ciphers`: **`updateSSLCiphers` is presently configured to run after `deployServers`.**
+    * `*SSLProtocols`: **`disableDeprecatedSSLProtocols` is presently configured to run after `deployServers`.**
 
 # Gradle Passwords
 

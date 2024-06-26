@@ -1,7 +1,7 @@
 {
-  "role-name": "lux-endpoint-consumer",
-  "description": "Role intended to be used by LUX backend endpoint consumers, such as the middle tier.",
-  "role": ["lux-reader"],
+  "role-name": "%%mlAppName%%-endpoint-consumer",
+  "description": "Endpoint consumer role for the '%%mlAppName%%' tenant",
+  "role": ["%%mlAppName%%-reader"],
   "privilege": [
     {
       "privilege-name": "sem-sparql",

@@ -14,26 +14,26 @@
  */
 'use strict';
 
+// START: script configuration, 1 of 2.
+const databaseName = 'lux-content';
+// END: script configuration, 1 of 2.
+
 const admin = require('/MarkLogic/admin.xqy');
 const config = admin.getConfiguration();
 const fieldNames = admin
-  .databaseGetRangeFieldIndexes(config, xdmp.database('lux-content'))
+  .databaseGetRangeFieldIndexes(config, xdmp.database(databaseName))
   .toArray()
   .map((node) => {
     return node.xpath('*:field-name/string()') + '';
   })
   .sort();
 
-/*
- * START: Configuration portion of script.
- */
+// START: script configuration, 2 of 2.
 const fieldStartIdx = 1; // Min is 1.
 const fieldEndIdx = fieldNames.length; // Max is fieldNames.length
 const numberOfValues = 10;
 const mostFrequent = true;
-/*
- * END: Configuration portion of script.
- */
+// END: script configuration, 2 of 2.
 
 function getValues(fieldName) {
   if (fieldName.endsWith('Float') || fieldName.endsWith('Boolean')) {

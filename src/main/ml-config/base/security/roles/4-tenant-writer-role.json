@@ -1,10 +1,10 @@
 {
-  "role-name": "lux-writer",
-  "description": "Those with this role have the ability to update documents in LUX's content and modules databases, while also being able to do everything offered by the lux-qconsole-user role.",
+  "role-name": "%%mlAppName%%-writer",
+  "description": "Document and module writer role for the '%%mlAppName%%' tenant",
   "role": [
     "hadoop-user-read",
     "hadoop-user-write",
-    "lux-qconsole-user",
+    "%%mlAppName%%-qconsole-user",
     "rest-writer"
   ],
   "privilege": [

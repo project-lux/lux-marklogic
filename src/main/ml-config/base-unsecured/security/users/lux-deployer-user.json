@@ -1,5 +1,0 @@
-{
-  "user-name": "lux-deployer",
-  "password": "%%luxDeployerPassword%%",
-  "role": ["lux-deployer"]
-}

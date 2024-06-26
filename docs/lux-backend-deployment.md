@@ -63,16 +63,7 @@ Tenants are configured using Gradle properties.  Each tenant should have its own
 
 Start by copying [/gradle.properties](/gradle.properties) as /gradle-[unique-tenant-name].properties.  The tenant naming convention uses lower case letters with dashes between words.  Tenant names are incorporated in the tenant's resource names.  For example, if the tenant name is "lux-is-awesome", the content database name would be "lux-is-awesome-content".
 
-Next, open the tenant's properties file and replace "lux" with the tenant's name in all of these properties:
-
-* `mlAppName`
-* `mlDataPermissions` (likely two instances)
-* `mlForestsPerHost`, when applicable.
-* `mlDatabasesWithForestsOnOneHost`, when applicable.
-* `mlDatabaseNamesAndReplicaCounts`, when applicable.
-* `tenantContentDatabase`: This needs to be the "[tenant-name]-content".
-* `tenantModulesDatabase`: This needs to be the "[tenant-name]-modules".
-* `copyDatabaseInputDatabase` and `copyDatabaseOutputDatabase`: only used by the `copyDatabase` task.
+Next, open the tenant's properties file and replace all instances of `YOUR_TENANT_NAME` with the tenant's name.
 
 Specify the tenant's ports using these properties:
 
@@ -80,11 +71,12 @@ Specify the tenant's ports using these properties:
 * `mlRestPortGroup2`
 * `mlXdbcPort`
 
-Now review all of the other properties, updating those that are not correct.  There are some that apply to all tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.  A little bit further down is a complete listing, within [Tenant Limitations and Warnings](#tenant-limitations-and-warnings).
+Now review all of the other properties, updating those that are not correct.  Additional notes:
 
-This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated property is `mlConfigPaths`.
-
-Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `tenantEndpointConsumerPassword` and `tenantDeployerPassword`.
+1. Some properties that apply to *all* tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.  A little bit further down is a complete listing, within [Tenant Limitations and Warnings](#tenant-limitations-and-warnings).
+2. This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated property is `mlConfigPaths`.
+3. Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `tenantEndpointConsumerPassword` and `tenantDeployerPassword`.
+4. Forest-level replication is controlled by the `mlDatabaseNamesAndReplicaCounts` property.  Guidance is provided within [/gradle.properties](/gradle.properties).
 
 ## Tenant Limitations and Warnings
 
@@ -105,9 +97,9 @@ The current tenant deployment model includes shared configuration and does not i
 3. Tenants should not need to run the following Gradle tasks.  These are referenced in the [Deploy Entire Backend](#deploy-entire-backend) section.  There are others offered by ML Gradle that are not listed here and not part of typical LUX deployments.  Those need to be vetted individually.
     * `disableSSL`
     * `enableSSL`
-    * `setBanner`: **Presently configured to automatically run after `mlDeploySecurity`.**
-    * `*Ciphers`: **`updateSSLCiphers` is presently configured to run after `deployServers`.**
-    * `*SSLProtocols`: **`disableDeprecatedSSLProtocols` is presently configured to run after `deployServers`.**
+    * `setBanner`: Until we can make this conditional, comment out `mlDeploySecurity.finalizedBy setBanner`.
+    * `*SSLProtocols`: Until we can make this conditional, comment out `mlDeployServers.finalizedBy disableDeprecatedSSLProtocols`.
+    * `*Ciphers`: Until we can make this conditional, comment out `mlDeployServers.finalizedBy updateSSLCiphers`.
 
 # Gradle Passwords
 

@@ -46,8 +46,8 @@ function getFacet({
     let totalItems = null;
     if (_isSemanticFacet(name)) {
       // Validate pagination parameters (and impose a maximum number per request).
-      pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
       utils.checkPaginationParameters(page, pageLength);
+      pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
       xdmp.setRequestTimeLimit(VIA_SEARCH_FACET_TIMEOUT);
       ({ totalItems, facetValues } = _getViaSearchFacet(
         name,
@@ -56,8 +56,8 @@ function getFacet({
         pageLength
       ));
     } else {
-      pageLength = Math.min(pageLength, MAXIMUM_NON_SEMANTIC_PAGE_LENGTH);
       utils.checkPaginationParameters(page, pageLength);
+      pageLength = Math.min(pageLength, MAXIMUM_NON_SEMANTIC_PAGE_LENGTH);
       ({ totalItems, facetValues } = _getNonSemanticFacet(
         name,
         searchCriteriaProcessor,

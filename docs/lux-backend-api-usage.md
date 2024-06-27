@@ -510,7 +510,9 @@ Response Body:
 
 The `facets` endpoint enables consumers to request a facet's values constrained by search criteria.
 
-If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the sum of each requested facet's indexed values, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
+If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold applicable to non-semantic facets and configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the number of values in the requested facet's index, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
+
+Only the first 100 values of a semantic facet's values are accessible.
 
 **URL** : `/ds/lux/facets.mjs`
 
@@ -524,7 +526,7 @@ If unable to calculate the facet, an error is thrown. This includes when the sys
 | `q` | *See [Search's example](#successful-request--response-example-7)* | **REQUIRED** - The query to constrain the facet's values by.  This parameter's support is identical to the [Search endpoint's](#search) `q` parameter. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
-| `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100 for semantic facets and 10,000 for non-semantic facets. An error will be thrown if this value is less than 1. |
+| `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 10,000 for non-semantic facets and 100 for semantic facets. Via multiple requests, one may retrieve more than 10,000 values from a non-semantic facet but never more than 100 values from a semantic facet.  An error will be thrown if this value is less than 1. |
 | `sort` | `asc` | **OPTIONAL** - By default, facet values are sorted by the *number of times* (frequency) the value appears in the search results, in descending order.  This works well for string facet values, but not facets with numeric or date ranges, where it makes more sense to sort by the facet's *values*.  To sort by facet value, set this parameter's value to `asc` for ascending or `desc` for descending.  At present, this parameter is only implemented for non-semantic facets; semantic facets are only sorted by frequency. |
 
 ### Successful Request / Response Example

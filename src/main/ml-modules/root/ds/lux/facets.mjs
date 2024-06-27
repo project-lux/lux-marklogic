@@ -1,5 +1,5 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
-import { getFacets } from '../../lib/facetsLib.mjs';
+import { getFacet } from '../../lib/facetsLib.mjs';
 
 const name = external.name;
 const searchCriteria = external.q;
@@ -9,7 +9,7 @@ const pageLength = external.pageLength;
 const sort = external.sort;
 
 handleRequest(function () {
-  return getFacets({
+  return getFacet({
     name,
     searchCriteria,
     searchScope,

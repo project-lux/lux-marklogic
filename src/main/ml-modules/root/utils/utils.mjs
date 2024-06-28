@@ -134,25 +134,6 @@ function getObjectFromJson(doc) {
   return doc;
 }
 
-// The crm:P14_carried_out_by triple was removed from the Beta 2 dataset.  Events have a LUX
-// alternative, but not people.  Perhaps we can get this information a different way.  Until
-// then, we can expect this to always return an empty array.
-//
-// Return an array of objects describing the person's various roles.  Each object includes
-// the role's IRI and the number of times the person has that role in the corpus.
-function getPersonRolesInfo(personUri) {
-  if (fn.docAvailable(personUri)) {
-    const sparql = `
-    prefix crm: <http://www.cidoc-crm.org/cidoc-crm/>
-    SELECT ?role (COUNT(?role) AS ?count) WHERE {
-      ?act crm:P2_has_type ?role ; 
-           crm:P14_carried_out_by <${personUri}>  
-    } GROUP BY ?role`;
-    return Array.from(op.fromSPARQL(sparql).result());
-  }
-  return [];
-}
-
 function _getUnadjustedStartingSearchResultIndex(page, pageLength) {
   return (page - 1) * pageLength;
 }
@@ -618,7 +599,6 @@ export {
   getExceptionObjectElseMessage,
   getMergedArrays,
   getObjectFromJson,
-  getPersonRolesInfo,
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,

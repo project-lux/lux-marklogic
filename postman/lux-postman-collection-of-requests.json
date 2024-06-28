@@ -250,33 +250,6 @@
 					"response": []
 				},
 				{
-					"name": "Roles for Person",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/personRoles.mjs?uri=https://lux.collections.yale.edu/data/person/82ae39e0-62d4-4088-92cf-15451c498b60",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"personRoles.mjs"
-							],
-							"query": [
-								{
-									"key": "uri",
-									"value": "https://lux.collections.yale.edu/data/person/82ae39e0-62d4-4088-92cf-15451c498b60"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Search",
 					"request": {
 						"method": "POST",

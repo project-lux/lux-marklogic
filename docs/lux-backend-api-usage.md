@@ -20,30 +20,27 @@
   - [Facets](#facets)
     - [Successful Request / Response Example](#successful-request--response-example-4)
     - [Failed Request / Response Example](#failed-request--response-example-4)
-  - [Person Roles](#person-roles)
+  - [Related List](#related-list)
     - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-5)
-  - [Related List](#related-list)
+  - [Search](#search)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-6)
-  - [Search](#search)
+  - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Estimate](#search-estimate)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-8)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-9)
-  - [Search Info](#search-info)
+  - [Stats](#stats)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Stats](#stats)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-12)
-    - [Failed Request / Response Example](#failed-request--response-example-12)
 
 # Introduction
 
@@ -611,70 +608,6 @@ Response Body:
 
 *When the `LuxFacet` trace event is enabled, a message similar to the following will also be logged: "Rejected request to calculate the 'workCreationAgentId' facet as 11,212,278 search results by 4,924,830 field values exceeds the 5,000,000,000,000 threshold."*
 
-## Person Roles
-
-_After a data change, this endpoint lost its ability to return a person's roles.  Unless the associated data is restored or an alternative means is implemented, this endpoint will continue to return an empty array.  LUX production does not rely on this endpoint._
-
-The `personRoles` endpoint enables consumers to retrieve roles associated to a person URI.
-
-**URL** : `/ds/lux/personRoles.mjs`
-
-**Method(s)** : `GET`, `POST`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `uri` | `https://lux.collections.yale.edu/data/person/79773a98-aa39-4fb2-aacb-8a3bb49c2fd4` | **REQUIRED** - The URI of the person you want to know the roles. |
-
-### Successful Request / Response Example
-
-Scenario: retrieve roles associated to a person URI.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `uri` | `https://lux.collections.yale.edu/data/person/79773a98-aa39-4fb2-aacb-8a3bb49c2fd4` |
-
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body:
-
-```
-[
-    {
-        "role": "https://lux.collections.yale.edu/data/concept/e8079f31-81df-4f17-92f6-59eaf453e78d",
-        "count": 2
-    }
-]
-```
-
-### Failed Request / Response Example
-
-Scenario: Missing required parameter.
-
-Parameters: None
-
-Response Status Code: 500
-
-Response Status Message: "Bad Request"
-
-Response Body:
-```
-{
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"XDMP-ENDPOINTNULLABLE",
-    "message":"uri is a parameter the request must provide a value for."
-  }
-}
-```
-
 ## Related List
 
 The `relatedList` endpoint may be used to retrieve a set of items related to the specified document.  Each item identifies:
@@ -1159,15 +1092,14 @@ Response Body:
 
 ## Search Info
 
-The `searchInfo` endpoint enables consumers to determine:
+The `searchInfo` endpoint provides consumers:
 
-1. Search scope and term pairs that may be used in search criteria, plus additional usage details.
-2. What search results may be faceted by and their associated search term names.
-3. What search results may be sorted by.
+1. A complete list of search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.
+2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
+3. A list of facets and their associated search term names.
+4. A list of sort bindings implemented with range indexes.  As detailed in the [Search endpoint](#search)'s documentation, additional sort parameter values include `random` and `relevance`.
 
-The [Search endpoint](#search) offers parameters for all of these.
-
-The [Facets endpoint](#facets) accepts facet names and search criteria.
+Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
 
 **URL** : `/ds/lux/searchInfo.mjs`
 

@@ -7,6 +7,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
+ - Changed facets to have page, pageLength and sort parameters. Allowing large page lengths for non-semantic and smaller page lengths for semantic facets. Can sort by facet value or frequency. ([#161](https://github.com/project-lux/lux-marklogic/issues/161))
+ - Expand full text search to use referenceName rather than referencePrimaryName ([#100](https://github.com/project-lux/lux-marklogic/issues/100))
 
 ### Removed
 

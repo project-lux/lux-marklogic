@@ -4,11 +4,15 @@ import { getFacets } from '../../lib/facetsLib.mjs';
 const name = external.name;
 const searchCriteria = external.q;
 const searchScope = external.scope;
+const page = external.page;
+const pageLength = external.pageLength;
 
 handleRequest(function () {
   return getFacets({
     name,
     searchCriteria,
     searchScope,
+    page,
+    pageLength,
   });
 });

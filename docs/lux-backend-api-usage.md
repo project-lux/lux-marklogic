@@ -510,8 +510,6 @@ Response Body:
 
 The `facets` endpoint enables consumers to request a facet's values constrained by search criteria.
 
-Facet values are not paginated.
-
 If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the sum of each requested facet's indexed values, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
 
 **URL** : `/ds/lux/facets.mjs`
@@ -525,10 +523,12 @@ If unable to calculate the facet, an error is thrown. This includes when the sys
 | `name` | `agentStartDate` | **REQUIRED** - The name of the facet to calculate.  The [Search Info endpoint's](#search-info) `facetBy` response body property lists all of the available facets. |
 | `q` | *See [Search's example](#successful-request--response-example-7)* | **REQUIRED** - The query to constrain the facet's values by.  This parameter's support is identical to the [Search endpoint's](#search) `q` parameter. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
+| `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
+| `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100. An error will be thrown if this value is less than 1. |
 
 ### Successful Request / Response Example
 
-Scenario: Get the places where works associated to "mona lisa" were created.
+Scenario: Get the first page of places where works associated to "mona lisa" were created.
 
 Parameters:
 

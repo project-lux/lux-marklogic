@@ -100,8 +100,6 @@ const SEARCH_GRAMMAR_OPERATORS = [
 // Account for NEAR being optionally followed by a slash and number.
 const REG_EXP_NEAR_OPERATOR = new RegExp('(\\s)NEAR((?:/[^\\s])?\\s)', 'g');
 
-const REQUEST_LOG_KEY_SEARCH_ID = 'searchRequestId';
-
 const SPARQL_PREFIXES = `
 prefix crm: <http://www.cidoc-crm.org/cidoc-crm/>
 prefix dig: <http://www.ics.forth.gr/isl/CRMdig/>
@@ -146,7 +144,6 @@ export {
   RELATED_LIST_PER_RELATION_MAX,
   RELATED_LIST_PREFIX,
   RELATED_LIST_TIMEOUT,
-  REQUEST_LOG_KEY_SEARCH_ID,
   SEARCH_ESTIMATE_PREFIX,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_INVERSE_MAP,

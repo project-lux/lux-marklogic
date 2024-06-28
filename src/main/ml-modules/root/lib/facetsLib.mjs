@@ -17,6 +17,10 @@ import { FACETS_VIA_SEARCH_CONFIG } from '../config/facetsViaSearchConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
 // Pagination constants
+// In June 2024 it was decided that the facets endpoint should be paginated. When the facet response size was large enough, it was contributing to crashing the V8 Engine in MarkLogic Server. Adding pagination restored stability to the system during performance tests.
+// In order to accommodate the frontend's timeline functionality, it was decide to allow the frontend to request a very large pageLength in order to retreive all facet values for a given facet. However, semantic facets are very likely to timeout with a large pageLength
+// so, semantic facets are restricted to a smaller maximum pageLength than non-semantic facets.
+// For more details see issues #160, #161, and #162 in the lux-marklogic GitHub project: https://github.com/project-lux/lux-marklogic
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
 const MAXIMUM_NON_SEMANTIC_PAGE_LENGTH = 10000;

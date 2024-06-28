@@ -2,7 +2,6 @@
 
 - [Introduction](#introduction)
 - [LUX Gradle Tasks](#lux-gradle-tasks)
-- [JavaScript Template Files](#javascript-template-files)
 - [Gradle Tips \& Tricks](#gradle-tips--tricks)
 
 # Introduction
@@ -27,7 +26,7 @@ This document describes Gradle tasks written for this project, which may be foun
 | `generateRemainingSearchTerms` | **Deployment task** that adds facet, hop inverse, type, ID, and IRI search terms to the hard-coded ones defined in [/src/main/ml-modules/root/config/searchTermConfig.mjs](/src/main/ml-modules/root/config/searchTermConfig.mjs).  Added search terms are only in the deployed copy of searchTermConfig.mjs.  Facet search terms are derived from [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs).  Hop inverse search terms are derived from hard-coded search terms with the `hopInverseName` property.  Type and IRI search terms are added to each search scope. |  |
 | `importDataFull` | Loads data after clearing the database first. | See [Import Data](/docs/lux-backend-import-data.md) |
 | `importDataIncremental` | Loads data without clearing the database first. | See [Import Data](/docs/lux-backend-import-data.md) |
-| `performBaseDeployment` | Primary but not initial **deployment task** bundling non-security deployment tasks into one, and is intended to be executed by those with the `lux-deployer` role. See [/build.gradle](/build.gradle) for all other tasks that this will run. | See [Deploy Entire Backend](/docs/lux-backend-deployment.md#deploy-entire-backend) |
+| `performBaseDeployment` | Primary but not initial **deployment task** bundling non-security deployment tasks into one, and is intended to be executed by those with the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role. See [/build.gradle](/build.gradle) for all other tasks that this will run. | See [Deploy Entire Backend](/docs/lux-backend-deployment.md#deploy-entire-backend) |
 | `preprocessBuildSupportScripts` | **Deployment task** that copies the contents of [/scripts/buildSupport/](/scripts/buildSupport/) within the build directory, resolving property references in the process.  Other Gradle tasks load scripts from within /build/buildSupport/, including `setBanner`.  Facilitates maintaining JavaScript and XQuery scripts outside the build script.  Use `%%propertyName%%` to reference a build property. This task is set up to run before all other custom tasks, less `preprocessMarkLogicConfigurationFiles`. |  |
 | `preprocessMarkLogicConfigurationFiles` | **Deployment task** enabling custom token support within the ML Gradle configuration files. Introduced to allow multiple databases configuration files to share the same index configuration. This task needs to **always** run before any other task that references files within directories specified by the `mlConfigPaths` property.  To avoid defining and maintaining a complete list, the task is the first custom task in [/build.gradle](/build.gradle) and runs with *every* Gradle task --a bit overkill but less likely to drive someone batty trying to figure out why there configuration change isn't being deployed. | See [Custom Token Replacement](/docs/lux-backend-deployment.md#custom-token-replacement) |
 | `printCredentials` | Means to display encrypted credentials in plain text.  For your eyes only. |  |
@@ -35,24 +34,6 @@ This document describes Gradle tasks written for this project, which may be foun
 | `showAppServerCiphers` | Display ciphers enabled on the application server. Use to ensure those that should not be enabled are not enabled. |  |
 | `showDeprecatedSSLProtocols` | Display deprecated SSL protocols. |  |
 | `updateSSLCiphers` | Sets hard-coded ciphers on app servers. |  |
-
-# JavaScript Template Files
-
-Gradle tasks may incorporate a JavaScript template file into the task at hand.  No Gradle task presently uses this facility.  It its heyday, there were four templates that a couple Gradle tasks populated during the build process.  As we wrote more generators that execute on the server, it became commonplace for the generator to include static code.  JavaScript templates make more sense when the templates are populated client side, before the resulting code is then copied to the server.  When such a need existed, it allowed us to avoid embedding JavaScript within the Gradle build script.
-
-In case the need returns, follow these steps:
-
-1. Define the template.
-    * Templates are pooling within [/src/main/templates](/src/main/templates).  Sub-directories welcome.  Just the Gradle task(s) using the template needs to know where the template is.
-    * Anything you wish processed by the template engine is to use the JSP style `<% %>` script and `<%= %>` expression syntax.
-2. Come up with the values that the template engine is to apply.
-3. Call `applyTemplate()`, passing in the path to your template as well as the variable-to-value bindings.
-    * Any template literal expressions (`${ }`) are disabled long enough to avoid the Groovy template engine but are then re-enabled to be valid in the JavaScript runtime environment.
-    * The `applyTemplate()` function includes a feature limited to JavaScript: template scripts or expressions immediately preceded by `//` have the `//` removed.  This allows the template to be valid JavaScript yet also allow the Groovy template engine the ability to replace entire lines.
-    * Groovy's [SimpleTemplateEngine](https://docs.groovy-lang.org/latest/html/api/groovy/text/SimpleTemplateEngine.html) is used.
-4. Your Gradle task may then call `writeToFile()`, passing in the output path and content to write within (likely the return of `applyTemplate()`).
-
-Should the need arise, `applyTemplate()` could be extended to support more than JavaScript.
 
 # Gradle Tips & Tricks
 
@@ -66,7 +47,7 @@ To "search" for a task related to a resource you have in mind ("database", in th
 
 To view resolved property values:
 
-`./gradlew properties -PenvironmentName=[env]`
+`./gradlew properties -PenvironmentName=[name]`
 
 ...`grep` works good on that one too.
 

@@ -1,4 +1,4 @@
 {
-  "server-name": "%%NAME%%-request-group-2",
+  "server-name": "%%mlAppName%%-request-group-2",
   "ssl-certificate-template": "%%mlAppCertificateName%%"
 }

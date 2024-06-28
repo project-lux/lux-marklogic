@@ -1,4 +1,4 @@
 {
-  "server-name": "%%NAME%%-xdbc",
+  "server-name": "%%mlAppName%%-xdbc",
   "ssl-certificate-template": "%%mlAppCertificateName%%"
 }

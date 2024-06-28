@@ -1,5 +1,0 @@
-{
-  "user-name": "lux-endpoint-consumer",
-  "password": "%%luxEndpointConsumerPassword%%",
-  "role": ["lux-endpoint-consumer"]
-}

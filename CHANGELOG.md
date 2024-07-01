@@ -7,6 +7,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
+ - Error handler no longer masks the underlying error when `external.error` is undefined ([#207](https://github.com/project-lux/lux-marklogic/issues/207)).
  - Additional details will be logged for failed `searchEstimate` requests ([#183](https://github.com/project-lux/lux-marklogic/issues/183)).
  - Additional details will be logged for failed `searchWillMatch` requests ([#177](https://github.com/project-lux/lux-marklogic/issues/177)).
  - The `facets` endpoint now supports pagination.  Given maximum page lengths, it may be necessary to make multiple facet requests to retrieve the desired number of a facet's values.  The maximum page length varies by facet type (semantic vs. non-semantic).  One may also wish to override the default sort order, for non-semantic facets.  For details, please see the [`facets` endpoint documentation](https://github.com/project-lux/lux-marklogic/blob/main/docs/lux-backend-api-usage.md#facets). ([#160](https://github.com/project-lux/lux-marklogic/issues/160) and [#161](https://github.com/project-lux/lux-marklogic/issues/161))

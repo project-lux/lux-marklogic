@@ -6,7 +6,10 @@
  */
 import { isNonEmptyArray } from './utils/utils.mjs';
 import { TRACE_NAME_ERROR as traceName } from './lib/appConstants.mjs';
-let errorBody = external.error.toObject();
+let errorBody =
+  external.error != undefined && external.error != null
+    ? external.error.toObject()
+    : {};
 
 // When this trace event is enabled, log the raw error's details.
 if (xdmp.traceEnabled(traceName)) {

@@ -1,3 +1,15 @@
+/*
+ * Welcome to the facets endpoint!
+ *
+ * In June 2024 it was decided that the facets endpoint should be paginated. When the facet response
+ * size was large enough, it was contributing to crashing the V8 Engine in MarkLogic Server.  Adding
+ * pagination restored stability to the system during performance tests.  In order to accommodate
+ * the frontend's timeline functionality, it was decide to allow the frontend to request a very large
+ * pageLength in order to retrieve all facet values for a given facet.  However, semantic facets are
+ * very likely to timeout with a large pageLength so, semantic facets are restricted to a smaller
+ * maximum pageLength than non-semantic facets.  For more details see issues #160, #161, and #162 in
+ * the lux-marklogic GitHub project: https://github.com/project-lux/lux-marklogic
+ */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
@@ -17,17 +29,13 @@ import { FACETS_VIA_SEARCH_CONFIG } from '../config/facetsViaSearchConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
 // Pagination constants
-// In June 2024 it was decided that the facets endpoint should be paginated. When the facet response size was large enough, it was contributing to crashing the V8 Engine in MarkLogic Server. Adding pagination restored stability to the system during performance tests.
-// In order to accommodate the frontend's timeline functionality, it was decide to allow the frontend to request a very large pageLength in order to retreive all facet values for a given facet. However, semantic facets are very likely to timeout with a large pageLength
-// so, semantic facets are restricted to a smaller maximum pageLength than non-semantic facets.
-// For more details see issues #160, #161, and #162 in the lux-marklogic GitHub project: https://github.com/project-lux/lux-marklogic
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
 const MAXIMUM_NON_SEMANTIC_PAGE_LENGTH = 10000;
 const MAXIMUM_SEMANTIC_PAGE_LENGTH = 100;
 
 function getFacet({
-  name,
+  facetName,
   searchCriteria = null,
   searchScope = null,
   page = DEFAULT_PAGE,
@@ -48,13 +56,13 @@ function getFacet({
     // Get the raw facet values and value counts.
     let facetValues = null;
     let totalItems = null;
-    if (_isSemanticFacet(name)) {
+    if (_isSemanticFacet(facetName)) {
       // Validate pagination parameters (and impose a maximum number per request).
       utils.checkPaginationParameters(page, pageLength);
       pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
       xdmp.setRequestTimeLimit(VIA_SEARCH_FACET_TIMEOUT);
       ({ totalItems, facetValues } = _getViaSearchFacet(
-        name,
+        facetName,
         searchCriteriaProcessor,
         page,
         pageLength
@@ -63,7 +71,7 @@ function getFacet({
       utils.checkPaginationParameters(page, pageLength);
       pageLength = Math.min(pageLength, MAXIMUM_NON_SEMANTIC_PAGE_LENGTH);
       ({ totalItems, facetValues } = _getNonSemanticFacet(
-        name,
+        facetName,
         searchCriteriaProcessor,
         page,
         pageLength,
@@ -73,7 +81,7 @@ function getFacet({
 
     // Format as Activity Streams
     facetValues = _getFacetResponse(
-      name,
+      facetName,
       facetValues,
       searchCriteriaProcessor,
       totalItems,
@@ -86,21 +94,23 @@ function getFacet({
   } finally {
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {
+      // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facets in ${duration} milliseconds: ${name}`
+        `Calculated the following facet in ${duration} milliseconds: ${facetName}`
       );
     } else {
+      // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        `Failed to calculate the following facets after ${duration} milliseconds: ${name}`
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName}`
       );
     }
   }
 }
 
 function _getFacetResponse(
-  name,
+  facetName,
   facetValues,
   searchCriteriaProcessor,
   totalItems,
@@ -108,16 +118,16 @@ function _getFacetResponse(
   pageLength
 ) {
   const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
-  const scope = searchCriteriaProcessor.getSearchScope();
-  const orderedItems = facetValues.map((facet) => {
-    const { count, value } = facet;
+  const searchScope = searchCriteriaProcessor.getSearchScope();
+  const orderedItems = facetValues.map((item) => {
+    const { count, value } = item;
     const facetSearchCriteria = _getFacetSearchCriteria(
       searchCriteria,
-      name,
+      facetName,
       value
     );
     return {
-      id: utils.buildSearchEstimateUri(facetSearchCriteria, scope),
+      id: utils.buildSearchEstimateUri(facetSearchCriteria, searchScope),
       type: AS_TYPE_ORDERED_COLLECTION,
       totalItems: count,
       value,
@@ -126,7 +136,13 @@ function _getFacetResponse(
 
   const response = {
     '@context': LUX_CONTEXT,
-    id: utils.buildFacetsUri(searchCriteria, scope, name, page, pageLength),
+    id: utils.buildFacetsUri(
+      searchCriteria,
+      searchScope,
+      facetName,
+      page,
+      pageLength
+    ),
     type: AS_TYPE_ORDERED_COLLECTION_PAGE,
     partOf: {
       type: AS_TYPE_ORDERED_COLLECTION,
@@ -139,8 +155,8 @@ function _getFacetResponse(
     response.prev = {
       id: utils.buildFacetsUri(
         searchCriteria,
-        scope,
-        name,
+        searchScope,
+        facetName,
         page - 1,
         pageLength
       ),
@@ -152,8 +168,8 @@ function _getFacetResponse(
     response.next = {
       id: utils.buildFacetsUri(
         searchCriteria,
-        scope,
-        name,
+        searchScope,
+        facetName,
         page + 1,
         pageLength
       ),
@@ -163,14 +179,14 @@ function _getFacetResponse(
   return response;
 }
 
-function _isSemanticFacet(name) {
-  if (FACETS_CONFIG[name]) {
+function _isSemanticFacet(facetName) {
+  if (FACETS_CONFIG[facetName]) {
     return false;
-  } else if (FACETS_VIA_SEARCH_CONFIG[name]) {
+  } else if (FACETS_VIA_SEARCH_CONFIG[facetName]) {
     return true;
   } else {
     throw new BadRequestError(
-      `Unable to calculate the '${name}' facet: not an available facet.`
+      `Unable to calculate the '${facetName}' facet: not an available facet.`
     );
   }
 }

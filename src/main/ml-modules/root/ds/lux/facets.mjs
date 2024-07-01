@@ -10,7 +10,7 @@ const sort = external.sort;
 
 handleRequest(function () {
   return getFacet({
-    name,
+    facetName: name,
     searchCriteria,
     searchScope,
     page,

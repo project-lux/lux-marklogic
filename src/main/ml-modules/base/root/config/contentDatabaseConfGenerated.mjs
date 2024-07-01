@@ -1,4 +1,4 @@
-{
+const contentDatabaseConfGenerated = {
   "stemmed-searches": "off",
   "word-searches": false,
   "field-value-searches": false,
@@ -2586,3 +2586,16 @@
     }
   ]
 }
+
+const fieldPaths = contentDatabaseConfGenerated.field.reduce(
+  (fieldPathsObj, current) => {
+    if (current['field-name'] && current['field-path']) {
+      const { 'field-name': fieldName, 'field-path': fieldPath } = current;
+      fieldPathsObj[fieldName] = fieldPath.map((pathObj) => pathObj.path);
+    }
+    return fieldPathsObj;
+  },
+  {}
+);
+
+export { fieldPaths };

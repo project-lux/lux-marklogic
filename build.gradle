@@ -37,32 +37,13 @@ tasks.withType(JavaExec) {
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
 // from the default default REST port (8003) to the app services port --a port guaranteed to exist.
 // At least needed by setBanner, which is executed before a tenant's app servers are created.
+// generateDataConstants may need more than 20 seconds to execute as well (i.e., don't use the 
+// tenant's app server).
 task switchToAppServicesPort() {
   println ''
   println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
   println ''
   mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
-}
-
-// After the tenant's app servers are created via mlDeployServers, we need to switch to one of
-// its app servers in order to --among other things-- load the modules in the correct database.
-task switchToTenantPort() {
-  doFirst {
-    println ''
-    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlRestPortGroup1")
-    println ''
-    mlAppConfig.setRestPort(project.property("mlRestPortGroup1").toInteger())
-  }
-}
-mlLoadModules.dependsOn switchToTenantPort
-
-// The generator tasks need to access to the tenant's modules database.
-ext.getTenantDatabaseClient = {
-  def origPort = mlAppConfig.getRestPort()
-  mlAppConfig.setRestPort(project.property("mlRestPortGroup1").toInteger())
-  def client = mlAppConfig.newDatabaseClient()
-  mlAppConfig.setRestPort(origPort)
-  return client
 }
 
 // This project's implementation of its custom token feature.
@@ -267,7 +248,7 @@ task generateDataConstants (type: com.marklogic.gradle.task.MarkLogicTask) {
     println "Generating the data constants..."
     println ""
 
-    def client = getTenantDatabaseClient()
+    def client = mlAppConfig.newDatabaseClient()
     def script = new File('./build/buildSupport/generateDataConstants.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
     println result
@@ -289,7 +270,7 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println "Generating the remaining search terms..."
     println ""
 
-    def client = getTenantDatabaseClient()
+    def client = mlAppConfig.newDatabaseClient()
     def script = new File('./build/buildSupport/generateRemainingSearchTerms.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -308,7 +289,7 @@ task generateRelatedListsConfig (type: com.marklogic.gradle.task.MarkLogicTask) 
     println "Generating the related lists configuration..."
     println ""
 
-    def client = getTenantDatabaseClient()
+    def client = mlAppConfig.newDatabaseClient()
     def script = new File('./build/buildSupport/generateRelatedListsConfig.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 
@@ -327,7 +308,7 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
     println "Generating the advanced search configuration..."
     println ""
 
-    def client = getTenantDatabaseClient()
+    def client = mlAppConfig.newDatabaseClient()
     def script = new File('./build/buildSupport/generateAdvancedSearchConfig.sjs').getText('UTF-8')
     def result = client.newServerEval().javascript(script).evalAs(String.class)
 

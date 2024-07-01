@@ -1,3 +1,15 @@
+/*
+ * Welcome to the facets endpoint!
+ *
+ * In June 2024 it was decided that the facets endpoint should be paginated. When the facet response
+ * size was large enough, it was contributing to crashing the V8 Engine in MarkLogic Server.  Adding
+ * pagination restored stability to the system during performance tests.  In order to accommodate
+ * the frontend's timeline functionality, it was decide to allow the frontend to request a very large
+ * pageLength in order to retrieve all facet values for a given facet.  However, semantic facets are
+ * very likely to timeout with a large pageLength so, semantic facets are restricted to a smaller
+ * maximum pageLength than non-semantic facets.  For more details see issues #160, #161, and #162 in
+ * the lux-marklogic GitHub project: https://github.com/project-lux/lux-marklogic
+ */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
@@ -16,118 +28,188 @@ import { BadRequestError } from './mlErrorsLib.mjs';
 import { FACETS_VIA_SEARCH_CONFIG } from '../config/facetsViaSearchConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
-// A safeguard from a current or future viaSearch facet request from pulling too many documents from disk.
-// Not a concern for the initial two facets but what about the next one?  As opposed to facets that pull
-// their values from a field, enabling a request to pull an unlimited number of documents from disk would
-// be bad.
-const MAXIMUM_FACET_VALUE_VIA_SEARCH_DOCUMENTS = 100;
+// Pagination constants
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_LENGTH = 20;
+const MAXIMUM_NON_SEMANTIC_PAGE_LENGTH = 10000;
+const MAXIMUM_SEMANTIC_PAGE_LENGTH = 100;
 
-const FACET_TYPE_NON_SEMANTIC = 1;
-const FACET_TYPE_VIA_SEARCH = 2;
-
-// Intended for facets endpoint.
-function getFacets({ name, searchCriteria = null, searchScope = null }) {
-  const searchCriteriaProcessor = searchCriteria
-    ? processSearchCriteria({
-        searchCriteria,
-        searchScope,
-      })
-    : null;
-  return _getFacets(name, searchCriteriaProcessor, null);
-}
-
-// Core function
-function _getFacets(
-  name,
-  searchCriteriaProcessor = null,
-  searchRequestId = null
-) {
+function getFacet({
+  facetName,
+  searchCriteria = null,
+  searchScope = null,
+  page = DEFAULT_PAGE,
+  pageLength = DEFAULT_PAGE_LENGTH,
+  sort,
+}) {
   const start = new Date();
   let requestCompleted = false;
 
-  const facetType = _getFacetType(name);
   try {
-    let facets = null;
+    const searchCriteriaProcessor = searchCriteria
+      ? processSearchCriteria({
+          searchCriteria,
+          searchScope,
+        })
+      : null;
 
-    if (facetType === FACET_TYPE_NON_SEMANTIC) {
-      facets = _getNonSemanticFacets(name, searchCriteriaProcessor);
-    }
-
-    if (facetType === FACET_TYPE_VIA_SEARCH) {
+    // Get the raw facet values and value counts.
+    let facetValues = null;
+    let totalItems = null;
+    if (_isSemanticFacet(facetName)) {
+      // Validate pagination parameters (and impose a maximum number per request).
+      utils.checkPaginationParameters(page, pageLength);
+      pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
       xdmp.setRequestTimeLimit(VIA_SEARCH_FACET_TIMEOUT);
-      facets = _getViaSearchFacets(name, searchCriteriaProcessor);
+      ({ totalItems, facetValues } = _getViaSearchFacet(
+        facetName,
+        searchCriteriaProcessor,
+        page,
+        pageLength
+      ));
+    } else {
+      utils.checkPaginationParameters(page, pageLength);
+      pageLength = Math.min(pageLength, MAXIMUM_NON_SEMANTIC_PAGE_LENGTH);
+      ({ totalItems, facetValues } = _getNonSemanticFacet(
+        facetName,
+        searchCriteriaProcessor,
+        page,
+        pageLength,
+        sort
+      ));
     }
+
+    // Format as Activity Streams
+    facetValues = _getFacetResponse(
+      facetName,
+      facetValues,
+      searchCriteriaProcessor,
+      totalItems,
+      page,
+      pageLength
+    );
 
     requestCompleted = true;
-    return _getFacetsResponse(facets, name, searchCriteriaProcessor);
+    return facetValues;
   } finally {
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {
+      // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facets ${
-          searchRequestId ? `for search ${searchRequestId} ` : ''
-        }in ${duration} milliseconds: ${name}`
+        `Calculated the following facet in ${duration} milliseconds: ${facetName}`
       );
     } else {
+      // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        // Monitoring test and log mining script checks for "Failed to calculate".
-        `Failed to calculate the following facets ${
-          searchRequestId ? `for search ${searchRequestId} ` : ''
-        }after ${duration} milliseconds: ${name}`
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName}`
       );
     }
   }
 }
 
-function _getFacetsResponse(facets, name, searchCriteriaProcessor) {
+function _getFacetResponse(
+  facetName,
+  facetValues,
+  searchCriteriaProcessor,
+  totalItems,
+  page,
+  pageLength
+) {
   const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
-  const scope = searchCriteriaProcessor.getSearchScope();
-  const orderedItems = facets.map((facet) => {
-    const { count, value } = facet;
+  const searchScope = searchCriteriaProcessor.getSearchScope();
+  const orderedItems = facetValues.map((item) => {
+    const { count, value } = item;
     const facetSearchCriteria = _getFacetSearchCriteria(
       searchCriteria,
-      name,
+      facetName,
       value
     );
     return {
-      id: utils.buildSearchEstimateUri(facetSearchCriteria, scope),
+      id: utils.buildSearchEstimateUri(facetSearchCriteria, searchScope),
       type: AS_TYPE_ORDERED_COLLECTION,
       totalItems: count,
-      first: {
-        id: utils.buildSearchUri({
-          searchCriteria: facetSearchCriteria,
-          scope,
-        }),
-        type: AS_TYPE_ORDERED_COLLECTION_PAGE,
-      },
       value,
     };
   });
-  return {
+
+  const response = {
     '@context': LUX_CONTEXT,
-    id: utils.buildFacetsUri(searchCriteria, scope, name),
+    id: utils.buildFacetsUri(
+      searchCriteria,
+      searchScope,
+      facetName,
+      page,
+      pageLength
+    ),
     type: AS_TYPE_ORDERED_COLLECTION_PAGE,
+    partOf: {
+      type: AS_TYPE_ORDERED_COLLECTION,
+      totalItems,
+    },
     orderedItems,
   };
+
+  if (page > 1) {
+    response.prev = {
+      id: utils.buildFacetsUri(
+        searchCriteria,
+        searchScope,
+        facetName,
+        page - 1,
+        pageLength
+      ),
+      type: AS_TYPE_ORDERED_COLLECTION_PAGE,
+    };
+  }
+
+  if (page < Math.ceil(totalItems / pageLength)) {
+    response.next = {
+      id: utils.buildFacetsUri(
+        searchCriteria,
+        searchScope,
+        facetName,
+        page + 1,
+        pageLength
+      ),
+      type: AS_TYPE_ORDERED_COLLECTION_PAGE,
+    };
+  }
+  return response;
 }
 
-function _getFacetType(name) {
-  if (FACETS_CONFIG[name]) {
-    return FACET_TYPE_NON_SEMANTIC;
-  } else if (FACETS_VIA_SEARCH_CONFIG[name]) {
-    return FACET_TYPE_VIA_SEARCH;
+function _isSemanticFacet(facetName) {
+  if (FACETS_CONFIG[facetName]) {
+    return false;
+  } else if (FACETS_VIA_SEARCH_CONFIG[facetName]) {
+    return true;
   } else {
     throw new BadRequestError(
-      `Unable to calculate the '${name}' facet: not an available facet.`
+      `Unable to calculate the '${facetName}' facet: not an available facet.`
     );
   }
 }
 
-// Support presently limited to field range indexes.
-function _getNonSemanticFacets(facetName, searchCriteriaProcessor) {
-  const fieldValuesOptions = ['frequency-order', 'eager'];
+// Support presently limited to field range indexes (via cts.fieldValues).
+function _getNonSemanticFacet(
+  facetName,
+  searchCriteriaProcessor,
+  page,
+  pageLength,
+  sort
+) {
+  const fieldValuesOptions = ['lazy', 'score-zero'];
+  switch (sort) {
+    case 'asc':
+      fieldValuesOptions.push('ascending');
+      break;
+    case 'desc':
+      fieldValuesOptions.push('descending');
+      break;
+    default:
+      fieldValuesOptions.push('frequency-order');
+  }
 
   // Require search criteria.
   const ctsQueryStr = searchCriteriaProcessor
@@ -158,23 +240,36 @@ function _getNonSemanticFacets(facetName, searchCriteriaProcessor) {
     );
   }
 
-  // We're allowed to calculate the facets.
-  const facets = Array.from(
-    cts.fieldValues(
-      FACETS_CONFIG[facetName].indexReference,
-      null,
-      fieldValuesOptions,
-      ctsQuery
-    )
-  ).map((value) => ({
-    value: value,
-    count: cts.frequency(value),
-  }));
+  // We're allowed to calculate the facet.
+  const sequence = cts.fieldValues(
+    FACETS_CONFIG[facetName].indexReference,
+    null,
+    fieldValuesOptions,
+    ctsQuery
+  );
 
-  return facets;
+  return {
+    totalItems: fn.count(sequence),
+    facetValues: fn
+      .subsequence(
+        sequence,
+        utils.getStartingPaginationIndexForSubsequence(page, pageLength),
+        pageLength
+      )
+      .toArray()
+      .map((value) => ({
+        value: value,
+        count: cts.frequency(value),
+      })),
+  };
 }
 
-function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
+function _getViaSearchFacet(
+  facetName,
+  searchCriteriaProcessor,
+  page,
+  pageLength
+) {
   // Require search criteria.
   const baseSearchCriteria = searchCriteriaProcessor
     ? searchCriteriaProcessor.getSearchCriteria()
@@ -186,15 +281,12 @@ function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
   const requestOptions = searchCriteriaProcessor.getRequestOptions();
 
   const facetConfig = FACETS_VIA_SEARCH_CONFIG[facetName];
-  const page = 1;
-  const pageLength = MAXIMUM_FACET_VALUE_VIA_SEARCH_DOCUMENTS + 1;
-  const facets = _getViaSearchFacetValues(
+
+  const facetValues = _getViaSearchFacetValues(
     facetName,
     facetConfig,
     baseSearchCriteria,
-    requestOptions,
-    page,
-    pageLength
+    requestOptions
   )
     .map((searchResult) => {
       const uri = searchResult.id + ''; // Required string conversion
@@ -210,27 +302,31 @@ function _getViaSearchFacets(facetName, searchCriteriaProcessor) {
     })
     .sort((a, b) => b.count - a.count);
 
-  // Warn when there were more facet values than allowed.
-  if (facets.length > MAXIMUM_FACET_VALUE_VIA_SEARCH_DOCUMENTS) {
-    console.warn(
-      `The '${facetName}' facet exceeded the ${MAXIMUM_FACET_VALUE_VIA_SEARCH_DOCUMENTS} value limit with base search criteria ${JSON.stringify(
-        baseSearchCriteria
-      )}`
-    );
-  }
-  return facets;
+  const startIndex = utils.getStartingPaginationIndexForSplice(
+    page,
+    pageLength
+  );
+  const endIndex = startIndex + pageLength;
+  // thanks to the logic of Array.prototype.slice():
+  // if startIndex > facetValues.length, an empty array is returned
+  // if endIndex > facetValues.length, only values up to the end of the array are returned
+  return {
+    totalItems: facetValues.length,
+    facetValues: facetValues.slice(startIndex, endIndex),
+  };
 }
 
 function _getViaSearchFacetValues(
   facetName,
   facetConfig,
   baseSearchCriteria,
-  requestOptions,
-  page,
-  pageLength
+  requestOptions
 ) {
   xdmp.trace(traceName, `Searching for the '${facetName}' facet values.`);
-  return search({
+  const page = 1;
+  // always search for the MAXIMUM_SEMANTIC_PAGE_LENGTH + 1, this way we can return up to MAXIMUM_SEMANTIC_PAGE_LENGTH, and also know if there are more facet values than the max
+  const pageLength = MAXIMUM_SEMANTIC_PAGE_LENGTH + 1;
+  const facetValues = search({
     searchCriteria: facetConfig.getFacetValuesCriteria(baseSearchCriteria),
     page,
     pageLength,
@@ -239,6 +335,17 @@ function _getViaSearchFacetValues(
     mayCalculateEstimates: false,
     synonymsEnabled: requestOptions.synonymsEnabled,
   }).orderedItems;
+
+  // Warn when there were more facet values than allowed.
+  if (facetValues.length > MAXIMUM_SEMANTIC_PAGE_LENGTH) {
+    console.warn(
+      `The '${facetName}' facet exceeded the ${MAXIMUM_SEMANTIC_PAGE_LENGTH} value limit with base search criteria ${JSON.stringify(
+        baseSearchCriteria
+      )}`
+    );
+  }
+
+  return facetValues;
 }
 
 function _estimateViaSearchFacetValueCount(
@@ -300,4 +407,4 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   return { [termName]: facetValue };
 }
 
-export { getFacets };
+export { getFacet };

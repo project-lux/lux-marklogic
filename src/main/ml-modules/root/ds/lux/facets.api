@@ -13,6 +13,21 @@
       "name": "scope",
       "datatype": "string",
       "nullable": true
+    },
+    {
+      "name": "page",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "pageLength",
+      "datatype": "int",
+      "nullable": true
+    },
+    {
+      "name": "sort",
+      "datatype": "string",
+      "nullable": true
     }
   ],
   "return": {

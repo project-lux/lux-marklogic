@@ -1,974 +1,841 @@
 {
-	"info": {
-		"_postman_id": "c40b1ef0-de68-4258-9d3a-19e74ecc9226",
-		"name": "LUX",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "7323789"
-	},
-	"item": [
-		{
-			"name": "Backend Custom API",
-			"item": [
-				{
-					"name": "Advanced Search Config",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/advancedSearchConfig.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"advancedSearchConfig.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Auto Complete",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/autoComplete.mjs?text=smith&context=item.producedBy&fullyHonorContext=true&onlyMatchOnPrimaryNames=false&onlyReturnPrimaryNames=false&page=1&pageLength=10&filterIndex=0&previouslyFiltered=0&timeoutInMilliseconds=500",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"autoComplete.mjs"
-							],
-							"query": [
-								{
-									"key": "text",
-									"value": "smith"
-								},
-								{
-									"key": "context",
-									"value": "item.producedBy"
-								},
-								{
-									"key": "fullyHonorContext",
-									"value": "true"
-								},
-								{
-									"key": "onlyMatchOnPrimaryNames",
-									"value": "false"
-								},
-								{
-									"key": "onlyReturnPrimaryNames",
-									"value": "false"
-								},
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "pageLength",
-									"value": "10"
-								},
-								{
-									"key": "filterIndex",
-									"value": "0"
-								},
-								{
-									"key": "previouslyFiltered",
-									"value": "0"
-								},
-								{
-									"key": "timeoutInMilliseconds",
-									"value": "500"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Data Constants",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/dataConstants.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"dataConstants.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Document",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document.mjs?uri=https://lux.collections.yale.edu/data/text/54d7b8f6-7702-4384-9d30-e54bfda36c92&profile=name",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"document.mjs"
-							],
-							"query": [
-								{
-									"key": "uri",
-									"value": "https://lux.collections.yale.edu/data/text/54d7b8f6-7702-4384-9d30-e54bfda36c92"
-								},
-								{
-									"key": "profile",
-									"value": "name"
-								},
-								{
-									"key": "lang",
-									"value": "fr",
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Facets",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "name",
-									"value": "responsibleUnits",
-									"description": "Comma delimited",
-									"type": "text"
-								},
-								{
-									"key": "q",
-									"value": "mona lisa",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "work",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/facets.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"facets.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Related List",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "scope",
-									"value": "concept",
-									"type": "text"
-								},
-								{
-									"key": "name",
-									"value": "relatedToAgent",
-									"type": "text"
-								},
-								{
-									"key": "uri",
-									"value": "https://lux.collections.yale.edu/data/person/82ae39e0-62d4-4088-92cf-15451c498b60",
-									"type": "text"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "pageLength",
-									"value": "1000",
-									"type": "text"
-								},
-								{
-									"key": "relationshipsPerRelation",
-									"value": "250000",
-									"type": "text",
-									"disabled": true
-								}
-							]
-						},
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/relatedList.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"relatedList.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Search",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "q",
-									"value": "{\n  \"_scope\": \"place\",\n  \"classification\": {\"name\": \"city\"}\n}",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "place",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "mayChangeScope",
-									"value": "true",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "facetNames",
-									"value": "itemProductionDate",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "facetsOnly",
-									"value": "true",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "facetsSoon",
-									"value": "true",
-									"description": "Set to true if a seperate call for facets using same criteria will be made soon.",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"type": "text"
-								},
-								{
-									"key": "pageLength",
-									"value": "20",
-									"type": "text"
-								},
-								{
-									"key": "sort",
-									"value": "itemProductionDate:desc",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "synonymsEnabled",
-									"value": "true",
-									"type": "text",
-									"disabled": true
-								}
-							]
-						},
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/search.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"search.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Search Estimate",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "q",
-									"value": "{\n  \"AND\":[\n      {\n        \"startDate\":\"1700\",\n        \"_comp\":\">\"\n      },\n      {\n        \"endDate\":\"1750\",\n        \"_comp\":\"<\"\n      }\n  ]\n}",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "agent",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchEstimate.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"searchEstimate.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Search Info",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchInfo.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"searchInfo.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Search Will Match",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "q",
-									"value": "{\n  \"lux:conceptAboutAgentFromRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptInfluencedConcepts\": {\n    \"_scope\": \"concept\",\n    \"influenced\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:conceptItemEncounteredTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemMadeTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemTypes\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedAgents\": {\n    \"_scope\": \"agent\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedConcepts\": {\n    \"_scope\": \"concept\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedItems\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedPlaces\": {\n    \"_scope\": \"place\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkCreatedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkPublishedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkTypes\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:genderForAgent\": {\n    \"_scope\": \"agent\",\n    \"gender\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:nationalityForAgent\": {\n    \"_scope\": \"agent\",\n    \"nationality\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:occupationForAgent\": {\n    \"_scope\": \"agent\",\n    \"occupation\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:typeForAgent\": {\n    \"_scope\": \"agent\",\n    \"classification\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  }\n}\n",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchWillMatch.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"searchWillMatch.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Stats",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/stats.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"stats.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Translate to JSON Search Grammar",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/translate.mjs?q=(goat or boar) and river&scope=item",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"translate.mjs"
-							],
-							"query": [
-								{
-									"key": "q",
-									"value": "(goat or boar) and river"
-								},
-								{
-									"key": "scope",
-									"value": "item"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			],
-			"auth": {
-				"type": "digest",
-				"digest": [
-					{
-						"key": "password",
-						"value": "{{mlAppPassword}}",
-						"type": "string"
-					},
-					{
-						"key": "username",
-						"value": "{{mlAppUsername}}",
-						"type": "string"
-					},
-					{
-						"key": "algorithm",
-						"value": "MD5",
-						"type": "string"
-					}
-				]
-			},
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				}
-			]
-		},
-		{
-			"name": "Backend Native API",
-			"item": [
-				{
-					"name": "Search",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/v1/search?q=hamlet BOOST tennant",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"v1",
-								"search"
-							],
-							"query": [
-								{
-									"key": "q",
-									"value": "hamlet BOOST tennant"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Document by URI",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/v1/search?q=infinite NEAR variety",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"v1",
-								"search"
-							],
-							"query": [
-								{
-									"key": "q",
-									"value": "infinite NEAR variety"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Backend Config & Logs",
-			"item": [
-				{
-					"name": "Get App Server Config",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux-request-group-1/properties?format=json&group-id=Default",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"servers",
-								"lux-request-group-1",
-								"properties"
-							],
-							"query": [
-								{
-									"key": "format",
-									"value": "json"
-								},
-								{
-									"key": "group-id",
-									"value": "Default"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get App Server Queue Metrics",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers?view=metrics&format=json&summary=true&detail=true&start=2024-01-26T16:30:00&end=2024-01-26T19:00:00&period=raw&summary-aggregation=sum&server-metrics=queue-size",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"servers"
-							],
-							"query": [
-								{
-									"key": "view",
-									"value": "metrics"
-								},
-								{
-									"key": "format",
-									"value": "json"
-								},
-								{
-									"key": "summary",
-									"value": "true"
-								},
-								{
-									"key": "detail",
-									"value": "true"
-								},
-								{
-									"key": "start",
-									"value": "2024-01-26T16:30:00"
-								},
-								{
-									"key": "end",
-									"value": "2024-01-26T19:00:00"
-								},
-								{
-									"key": "period",
-									"value": "raw"
-								},
-								{
-									"key": "summary-aggregation",
-									"value": "sum"
-								},
-								{
-									"key": "server-metrics",
-									"value": "queue-size"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Amp",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/amps/search/properties?document-uri=/lib/searchLib.mjs&modules-database=lux-modules&namespace=https://lux.collections.yale.edu/&format=json",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"amps",
-								"search",
-								"properties"
-							],
-							"query": [
-								{
-									"key": "document-uri",
-									"value": "/lib/searchLib.mjs"
-								},
-								{
-									"key": "modules-database",
-									"value": "lux-modules"
-								},
-								{
-									"key": "namespace",
-									"value": "https://lux.collections.yale.edu/"
-								},
-								{
-									"key": "format",
-									"value": "json"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Group Config",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/groups/Default/properties?format=json",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"groups",
-								"Default",
-								"properties"
-							],
-							"query": [
-								{
-									"key": "format",
-									"value": "json"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Database Config",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/databases/lux-content/properties?format=json",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"databases",
-								"lux-content",
-								"properties"
-							],
-							"query": [
-								{
-									"key": "format",
-									"value": "json"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Database Status",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/databases/lux-content?view=status&format=json",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"databases",
-								"lux-content"
-							],
-							"query": [
-								{
-									"key": "view",
-									"value": "status"
-								},
-								{
-									"key": "format",
-									"value": "json"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Log Excerpt",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/logs?start=2024-02-20T19:47:00&filename=8003_ErrorLog.txt&format=json&host={{mlHost}}",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"logs"
-							],
-							"query": [
-								{
-									"key": "start",
-									"value": "2024-02-20T19:47:00"
-								},
-								{
-									"key": "filename",
-									"value": "8003_ErrorLog.txt"
-								},
-								{
-									"key": "format",
-									"value": "json"
-								},
-								{
-									"key": "host",
-									"value": "{{mlHost}}"
-								},
-								{
-									"key": "end",
-									"value": "",
-									"disabled": true
-								},
-								{
-									"key": "regex",
-									"value": "",
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Related Resources",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux-request-group-1?format=json&group-id=Default",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"servers",
-								"lux-request-group-1"
-							],
-							"query": [
-								{
-									"key": "format",
-									"value": "json"
-								},
-								{
-									"key": "group-id",
-									"value": "Default"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Role",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/roles/lux-endpoint-consumer/properties?format=json",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"roles",
-								"lux-endpoint-consumer",
-								"properties"
-							],
-							"query": [
-								{
-									"key": "format",
-									"value": "json"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			],
-			"auth": {
-				"type": "digest",
-				"digest": [
-					{
-						"key": "password",
-						"value": "{{mlManagePassword}}",
-						"type": "string"
-					},
-					{
-						"key": "username",
-						"value": "{{mlManageUsername}}",
-						"type": "string"
-					},
-					{
-						"key": "algorithm",
-						"value": "MD5",
-						"type": "string"
-					}
-				]
-			},
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				}
-			]
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		}
-	]
+  "info": {
+    "_postman_id": "c40b1ef0-de68-4258-9d3a-19e74ecc9226",
+    "name": "LUX",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "7323789"
+  },
+  "item": [
+    {
+      "name": "Backend Custom API",
+      "item": [
+        {
+          "name": "Advanced Search Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/advancedSearchConfig.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "advancedSearchConfig.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Auto Complete",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/autoComplete.mjs?text=smith&context=item.producedBy&fullyHonorContext=true&onlyMatchOnPrimaryNames=false&onlyReturnPrimaryNames=false&page=1&pageLength=10&filterIndex=0&previouslyFiltered=0&timeoutInMilliseconds=500",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "autoComplete.mjs"],
+              "query": [
+                {
+                  "key": "text",
+                  "value": "smith"
+                },
+                {
+                  "key": "context",
+                  "value": "item.producedBy"
+                },
+                {
+                  "key": "fullyHonorContext",
+                  "value": "true"
+                },
+                {
+                  "key": "onlyMatchOnPrimaryNames",
+                  "value": "false"
+                },
+                {
+                  "key": "onlyReturnPrimaryNames",
+                  "value": "false"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageLength",
+                  "value": "10"
+                },
+                {
+                  "key": "filterIndex",
+                  "value": "0"
+                },
+                {
+                  "key": "previouslyFiltered",
+                  "value": "0"
+                },
+                {
+                  "key": "timeoutInMilliseconds",
+                  "value": "500"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Data Constants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/dataConstants.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "dataConstants.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document.mjs?uri=https://lux.collections.yale.edu/data/text/54d7b8f6-7702-4384-9d30-e54bfda36c92&profile=name",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "document.mjs"],
+              "query": [
+                {
+                  "key": "uri",
+                  "value": "https://lux.collections.yale.edu/data/text/54d7b8f6-7702-4384-9d30-e54bfda36c92"
+                },
+                {
+                  "key": "profile",
+                  "value": "name"
+                },
+                {
+                  "key": "lang",
+                  "value": "fr",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Facets",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "workAboutConceptId",
+                  "type": "text"
+                },
+                {
+                  "key": "q",
+                  "value": "{\"createdBy\":{\"AND\":[{\"gender\":{\"name\":\"female\"}},{\"startAt\":{\"classification\":{\"name\":\"city\"}}}]}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "work",
+                  "type": "text"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "pageLength",
+                  "value": "15",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/facets.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "facets.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Related List",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "scope",
+                  "value": "concept",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "relatedToAgent",
+                  "type": "text"
+                },
+                {
+                  "key": "uri",
+                  "value": "https://lux.collections.yale.edu/data/person/82ae39e0-62d4-4088-92cf-15451c498b60",
+                  "type": "text"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "pageLength",
+                  "value": "1000",
+                  "type": "text"
+                },
+                {
+                  "key": "relationshipsPerRelation",
+                  "value": "250000",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/relatedList.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "relatedList.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "q",
+                  "value": "{\n  \"_scope\": \"place\",\n  \"classification\": {\"name\": \"city\"}\n}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "place",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "mayChangeScope",
+                  "value": "true",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "facetNames",
+                  "value": "itemProductionDate",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "facetsOnly",
+                  "value": "true",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "facetsSoon",
+                  "value": "true",
+                  "description": "Set to true if a seperate call for facets using same criteria will be made soon.",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "pageLength",
+                  "value": "20",
+                  "type": "text"
+                },
+                {
+                  "key": "sort",
+                  "value": "itemProductionDate:desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "synonymsEnabled",
+                  "value": "true",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/search.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "search.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Estimate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "q",
+                  "value": "{\n  \"AND\":[\n      {\n        \"startDate\":\"1700\",\n        \"_comp\":\">\"\n      },\n      {\n        \"endDate\":\"1750\",\n        \"_comp\":\"<\"\n      }\n  ]\n}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "agent",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchEstimate.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "searchEstimate.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchInfo.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "searchInfo.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Will Match",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "q",
+                  "value": "{\n  \"lux:conceptAboutAgentFromRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptInfluencedConcepts\": {\n    \"_scope\": \"concept\",\n    \"influenced\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:conceptItemEncounteredTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemMadeTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemTypes\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedAgents\": {\n    \"_scope\": \"agent\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedConcepts\": {\n    \"_scope\": \"concept\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedItems\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedPlaces\": {\n    \"_scope\": \"place\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkCreatedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkPublishedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkTypes\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:genderForAgent\": {\n    \"_scope\": \"agent\",\n    \"gender\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:nationalityForAgent\": {\n    \"_scope\": \"agent\",\n    \"nationality\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:occupationForAgent\": {\n    \"_scope\": \"agent\",\n    \"occupation\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:typeForAgent\": {\n    \"_scope\": \"agent\",\n    \"classification\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  }\n}\n",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchWillMatch.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "searchWillMatch.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/stats.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "stats.mjs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Translate to JSON Search Grammar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/translate.mjs?q=(goat or boar) and river&scope=item",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["ds", "lux", "translate.mjs"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "(goat or boar) and river"
+                },
+                {
+                  "key": "scope",
+                  "value": "item"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "digest",
+        "digest": [
+          {
+            "key": "password",
+            "value": "{{mlAppPassword}}",
+            "type": "string"
+          },
+          {
+            "key": "username",
+            "value": "{{mlAppUsername}}",
+            "type": "string"
+          },
+          {
+            "key": "algorithm",
+            "value": "MD5",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Backend Native API",
+      "item": [
+        {
+          "name": "Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/v1/search?q=hamlet BOOST tennant",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["v1", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "hamlet BOOST tennant"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Document by URI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/v1/search?q=infinite NEAR variety",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlAppPort}}",
+              "path": ["v1", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "infinite NEAR variety"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Backend Config & Logs",
+      "item": [
+        {
+          "name": "Get App Server Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux-request-group-1/properties?format=json&group-id=Default",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": [
+                "manage",
+                "v2",
+                "servers",
+                "lux-request-group-1",
+                "properties"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                },
+                {
+                  "key": "group-id",
+                  "value": "Default"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get App Server Queue Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers?view=metrics&format=json&summary=true&detail=true&start=2024-01-26T16:30:00&end=2024-01-26T19:00:00&period=raw&summary-aggregation=sum&server-metrics=queue-size",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": ["manage", "v2", "servers"],
+              "query": [
+                {
+                  "key": "view",
+                  "value": "metrics"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                },
+                {
+                  "key": "summary",
+                  "value": "true"
+                },
+                {
+                  "key": "detail",
+                  "value": "true"
+                },
+                {
+                  "key": "start",
+                  "value": "2024-01-26T16:30:00"
+                },
+                {
+                  "key": "end",
+                  "value": "2024-01-26T19:00:00"
+                },
+                {
+                  "key": "period",
+                  "value": "raw"
+                },
+                {
+                  "key": "summary-aggregation",
+                  "value": "sum"
+                },
+                {
+                  "key": "server-metrics",
+                  "value": "queue-size"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Amp",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/amps/search/properties?document-uri=/lib/searchLib.mjs&modules-database=lux-modules&namespace=https://lux.collections.yale.edu/&format=json",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": ["manage", "v2", "amps", "search", "properties"],
+              "query": [
+                {
+                  "key": "document-uri",
+                  "value": "/lib/searchLib.mjs"
+                },
+                {
+                  "key": "modules-database",
+                  "value": "lux-modules"
+                },
+                {
+                  "key": "namespace",
+                  "value": "https://lux.collections.yale.edu/"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/groups/Default/properties?format=json",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": ["manage", "v2", "groups", "Default", "properties"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Database Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/databases/lux-content/properties?format=json",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": [
+                "manage",
+                "v2",
+                "databases",
+                "lux-content",
+                "properties"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Database Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/databases/lux-content?view=status&format=json",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": ["manage", "v2", "databases", "lux-content"],
+              "query": [
+                {
+                  "key": "view",
+                  "value": "status"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Log Excerpt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/logs?start=2024-02-20T19:47:00&filename=8003_ErrorLog.txt&format=json&host={{mlHost}}",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": ["manage", "v2", "logs"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "2024-02-20T19:47:00"
+                },
+                {
+                  "key": "filename",
+                  "value": "8003_ErrorLog.txt"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                },
+                {
+                  "key": "host",
+                  "value": "{{mlHost}}"
+                },
+                {
+                  "key": "end",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "regex",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Related Resources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux-request-group-1?format=json&group-id=Default",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": ["manage", "v2", "servers", "lux-request-group-1"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                },
+                {
+                  "key": "group-id",
+                  "value": "Default"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/roles/lux-endpoint-consumer/properties?format=json",
+              "protocol": "{{mlProtocol}}",
+              "host": ["{{mlHost}}"],
+              "port": "{{mlManagePort}}",
+              "path": [
+                "manage",
+                "v2",
+                "roles",
+                "lux-endpoint-consumer",
+                "properties"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "digest",
+        "digest": [
+          {
+            "key": "password",
+            "value": "{{mlManagePassword}}",
+            "type": "string"
+          },
+          {
+            "key": "username",
+            "value": "{{mlManageUsername}}",
+            "type": "string"
+          },
+          {
+            "key": "algorithm",
+            "value": "MD5",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ]
 }

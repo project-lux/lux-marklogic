@@ -7,10 +7,17 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
- - Changed facets to have page, pageLength and sort parameters. Allowing large page lengths for non-semantic and smaller page lengths for semantic facets. Can sort by facet value or frequency. ([#161](https://github.com/project-lux/lux-marklogic/issues/161))
- - Expand full text search to use referenceName rather than referencePrimaryName ([#100](https://github.com/project-lux/lux-marklogic/issues/100))
+ - Additional details will be logged for failed `searchEstimate` requests ([#183](https://github.com/project-lux/lux-marklogic/issues/183)).
+ - Additional details will be logged for failed `searchWillMatch` requests ([#177](https://github.com/project-lux/lux-marklogic/issues/177)).
+ - The `facets` endpoint now supports pagination.  Given maximum page lengths, it may be necessary to make multiple facet requests to retrieve the desired number of a facet's values.  The maximum page length varies by facet type (semantic vs. non-semantic).  One may also wish to override the default sort order, for non-semantic facets.  For details, please see the [`facets` endpoint documentation](https://github.com/project-lux/lux-marklogic/blob/main/docs/lux-backend-api-usage.md#facets). ([#160](https://github.com/project-lux/lux-marklogic/issues/160) and [#161](https://github.com/project-lux/lux-marklogic/issues/161))
+ - Increased support for multi-tenant environments ([#149](https://github.com/project-lux/lux-marklogic/issues/149)).
+ - Name search criteria now resolves against primary and alternative names within select contexts ([#100](https://github.com/project-lux/lux-marklogic/issues/100)):
+     - Keyword search criteria resolves in related documents using primary and alternative reference names.
+     - Less the `set` search scope, all `name` search terms resolve against their respective primary and alternative names.
 
 ### Removed
+- Removed the `personRoles` endpoint. A data change made long ago resigned this endpoint to returning an empty array ([#203](https://github.com/project-lux/lux-marklogic/issues/203)).
+- Removed obsolete depict-related configuration ([#190](https://github.com/project-lux/lux-marklogic/issues/190)).
 
 ### Fixed
 

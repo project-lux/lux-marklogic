@@ -343,6 +343,23 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
 }
 generateRemainingSearchTerms.finalizedBy generateAdvancedSearchConfig
 
+task copyRestApiOptions (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Copying the REST API options to the second app server..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def script = new File('./build/buildSupport/copyRestApiOptions.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+generateAdvancedSearchConfig.finalizedBy copyRestApiOptions
+
 // Admin required to run this; thus piggybacking mlDeploySecurity.
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task setBanner(type: com.marklogic.gradle.task.ServerEvalTask) {

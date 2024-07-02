@@ -7,6 +7,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
+ - The REST API options of both application servers used by the middle tier are now identical ([#212](https://github.com/project-lux/lux-marklogic/issues/212)).
  - Error handler no longer masks the underlying error when `external.error` is undefined ([#207](https://github.com/project-lux/lux-marklogic/issues/207)).
  - Additional details will be logged for failed `searchEstimate` requests ([#183](https://github.com/project-lux/lux-marklogic/issues/183)).
  - Additional details will be logged for failed `searchWillMatch` requests ([#177](https://github.com/project-lux/lux-marklogic/issues/177)).

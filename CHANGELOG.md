@@ -18,6 +18,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Removed
 - Removed the `personRoles` endpoint. A data change made long ago resigned this endpoint to returning an empty array ([#203](https://github.com/project-lux/lux-marklogic/issues/203)).
+- Moved the query plan viewer (developer tool) into its own ML Gradle project ([#192](https://github.com/project-lux/lux-marklogic/issues/192)).
 - Removed obsolete depict-related configuration ([#190](https://github.com/project-lux/lux-marklogic/issues/190)).
 
 ### Fixed

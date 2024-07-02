@@ -33,18 +33,41 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
-
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
-// from the default default REST port (8003) to the app services port --a port guaranteed to exist.
-// At least needed by setBanner, which is executed before a tenant's app servers are created.
-// generateDataConstants may need more than 20 seconds to execute as well (i.e., don't use the 
-// tenant's app server).
-task switchToAppServicesPort() {
+// from the default default REST port (8003) to the app services port.  This port is used by the
+// majority of the tasks, and has been proven necessary for setBanner (tenant app server may not
+// exist) and generateDataConstants (may need more than the tenant's app server default timeout).
+// An exception is mlLoadModules: we need to switch to the tenant app server to ensure the REST
+// options are added to the tenant's modules database.
+task startWithAppServicesPort() {
   println ''
-  println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
+  println "Setting mlAppConfig's port to " + project.property("mlAppServicesPort") + " (from " + mlAppConfig.getRestPort() + ")"
   println ''
   mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
 }
+
+// Change ML app config's rest port to that of the app services port.  See startWithAppServicesPort's
+// comment for details.
+task switchToAppServicesPort() {
+  doFirst {
+    println ''
+    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
+    println ''
+    mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
+  }
+}
+
+// Change ML app config's rest port to that of the tenant's app server port (one of them).  See
+// startWithAppServicesPort's comment for details.
+task switchToTenantPort() {
+  doFirst {
+    println ''
+    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlRestPortGroup1")
+    println ''
+    mlAppConfig.setRestPort(project.property("mlRestPortGroup1").toInteger())
+  }
+}
+mlLoadModules.dependsOn switchToTenantPort
 
 // This project's implementation of its custom token feature.
 //
@@ -258,6 +281,7 @@ task generateDataConstants (type: com.marklogic.gradle.task.MarkLogicTask) {
     println ""
   }
 }
+generateDataConstants.dependsOn switchToAppServicesPort
 mlDeploy.finalizedBy generateDataConstants
 mlLoadModules.finalizedBy generateDataConstants
 copyDatabase.finalizedBy generateDataConstants

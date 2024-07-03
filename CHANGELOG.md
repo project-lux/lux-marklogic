@@ -23,6 +23,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Removed obsolete depict-related configuration ([#190](https://github.com/project-lux/lux-marklogic/issues/190)).
 
 ### Fixed
+- The event scope's `used` search term now works with an ID child field ([#186](https://github.com/project-lux/lux-marklogic/issues/186)).
 
 ### Security
 

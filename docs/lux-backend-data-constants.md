@@ -17,13 +17,13 @@ The backend's data constant generator also incorporates data constants provided 
 
 The `generateDataConstants` Gradle task invokes the generator, and is wired to automatically run after `mlLoadModules` and `copyDatabase`.  Due to a conflict with the `database` parameter, this task is **not** automatically run after `importDataFull` or `importDataIncremental` --it must be run after those though (See [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md)).  There may be additional circumstances when `generateDataConstants` needs to be run.  Basically, any time the modules database is cleared or the data changes the `generateDataConstants` Gradle task needs to be run.  If you're deploying *generator* updates via `mlWatch`, you'll probably need to run the `generateDataConstants` Gradle task when ready to test the changes.
 
-The database to execute the queries against may be specified by the `luxContentDatabase` Gradle property.
+The database to execute the queries against may be specified by the `tenantContentDatabase` Gradle property.
 
-The generator is implemented by [/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs).  When invoked, the generator iterates through all JSON-formatted data constant configuration files within [/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries), inclusive of sub-directories.  For each, the generator attempts to define one or more data constants.  How many constants and the names of constants are determined by the query's configuration and results.  For SPARQL queries, the generator adds the prefixes defined by [/src/main/ml-modules/base/root/lib/appConstants.mjs](/src/main/ml-modules/base/root/lib/appConstants.mjs)' `SPARQL_PREFIXES` constant; thus, the queries should not also.
+The generator is implemented by [/src/main/ml-modules/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs](/src/main/ml-modules/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs).  When invoked, the generator iterates through all JSON-formatted data constant configuration files within [/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries](/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries), inclusive of sub-directories.  For each, the generator attempts to define one or more data constants.  How many constants and the names of constants are determined by the query's configuration and results.  For SPARQL queries, the generator adds the prefixes defined by [/src/main/ml-modules/root/lib/appConstants.mjs](/src/main/ml-modules/root/lib/appConstants.mjs)' `SPARQL_PREFIXES` constant; thus, the queries should not also.
 
 Each configuration file is to be accompanied by a SPARQL (\*.sparql) or JavaScript (\*.mjs) file, defining the data constant's query.  The query file needs to have the same path/URI as its configuration file, less the file extension.
 
-JavaScript query files need to be to be MJS main modules that return an array of values.  For an example, see [/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs).
+JavaScript query files need to be to be MJS main modules that return an array of values.  For an example, see [/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs](/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs).
 
 The configuration data model has the following properties.
 
@@ -73,7 +73,7 @@ See the next sections for examples.
 
 # Example: Query with One Result
 
-[/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.sparql](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.sparql): 
+[/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.sparql](/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.sparql): 
 
 ```
 SELECT ?objectIri WHERE {
@@ -82,7 +82,7 @@ SELECT ?objectIri WHERE {
 }
 ```
 
-[/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.json](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.json): 
+[/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.json](/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/primaryName.json): 
 
 ```
 {
@@ -103,7 +103,7 @@ Had the configuration file set the `name` property to `someOtherName`: `getIRI('
 
 # Example: Query with Multiple Results
 
-[/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs): 
+[/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs](/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/languages.mjs): 
 
 ```
 SELECT DISTINCT ?label ?objectIri WHERE {
@@ -113,7 +113,7 @@ SELECT DISTINCT ?label ?objectIri WHERE {
 }
 ```
 
-[/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.json](/src/main/ml-modules/base/root/runDuringDeployment/dataConstants/queries/IRIs/languages.json): 
+[/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/languages.json](/src/main/ml-modules/root/runDuringDeployment/dataConstants/queries/IRIs/languages.json): 
 
 ```
 {

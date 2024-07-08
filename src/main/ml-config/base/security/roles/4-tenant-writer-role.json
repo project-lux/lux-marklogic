@@ -1,0 +1,22 @@
+{
+  "role-name": "%%mlAppName%%-writer",
+  "description": "Document and module writer role for the '%%mlAppName%%' tenant",
+  "role": [
+    "hadoop-user-read",
+    "hadoop-user-write",
+    "%%mlAppName%%-qconsole-user",
+    "rest-writer"
+  ],
+  "privilege": [
+    {
+      "privilege-name": "any-uri",
+      "action": "http://marklogic.com/xdmp/privileges/any-uri",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "unprotected-collections",
+      "action": "http://marklogic.com/xdmp/privileges/unprotected-collections",
+      "kind": "execute"
+    }
+  ]
+}

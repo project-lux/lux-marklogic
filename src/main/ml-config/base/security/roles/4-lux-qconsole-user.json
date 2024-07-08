@@ -1,6 +1,0 @@
-{
-  "role-name": "lux-qconsole-user",
-  "description": "Same abilities as a LUX Backend endpoint consumer plus the ability to use Query Console in a read-only fashion.",
-  "role": ["lux-endpoint-consumer", "qconsole-user"],
-  "privilege": []
-}

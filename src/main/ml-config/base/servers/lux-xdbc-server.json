@@ -1,5 +1,5 @@
 {
-  "server-name": "%%NAME%%-xdbc",
+  "server-name": "%%mlAppName%%-xdbc",
   "group-name": "Default",
   "server-type": "xdbc",
   "root": "/",

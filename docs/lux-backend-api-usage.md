@@ -20,34 +20,31 @@
   - [Facets](#facets)
     - [Successful Request / Response Example](#successful-request--response-example-4)
     - [Failed Request / Response Example](#failed-request--response-example-4)
-  - [Person Roles](#person-roles)
+  - [Related List](#related-list)
     - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-5)
-  - [Related List](#related-list)
+  - [Search](#search)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-6)
-  - [Search](#search)
+  - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Estimate](#search-estimate)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-8)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-9)
-  - [Search Info](#search-info)
+  - [Stats](#stats)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Stats](#stats)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-12)
-    - [Failed Request / Response Example](#failed-request--response-example-12)
 
 # Introduction
 
-The LUX platform's custom backend API is presently implemented as a set of MarkLogic Data Services, all of which are to be documented herein.  The source code may be found within [/src/main/ml-modules/base/root/ds](/src/main/ml-modules/base/root/ds).
+The LUX platform's custom backend API is presently implemented as a set of MarkLogic Data Services, all of which are to be documented herein.  The source code may be found within [/src/main/ml-modules/root/ds](/src/main/ml-modules/root/ds).
 
 Where applicable these endpoints return JSON API responses which are based upon the [Linked Art Search Response Format](https://linked.art/api/1.0/ecosystem/search/), which itself is based upon the Collections model from [Activity Streams](https://www.w3.org/TR/activitystreams-core/#collections).
 
@@ -55,7 +52,7 @@ It is possible that LUX backend consumers also consume MarkLogic native endpoint
 
 # Security
 
-Every LUX backend endpoint request must be authenticated.  Approved LUX backend API consumers are intended to have the `lux-endpoint-consumer` MarkLogic role, which will provide the consumer sufficient privilege to consume all of LUX's backend endpoints.
+Every LUX backend endpoint request must be authenticated.  Approved LUX backend API consumers are intended to have the tenant's endpoint consumer role ([%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json)), which will provide the consumer sufficient privilege to consume all of LUX's backend endpoints.
 
 Use DIGEST for HTTP application servers and BASIC for HTTPS application servers.
 
@@ -202,7 +199,7 @@ In the context of servicing a single user typing in a field, endpoint consumers 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
 | `text` | `'kra'` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported.  |
-| `context` | `'item.material'` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/base/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/base/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
+| `context` | `'item.material'` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
 | `fullyHonorContext` | `false` | **OPTIONAL** - Each auto complete context is configured with two constraints: a list of names and a relationship.  For example, the `itemProductionAgentId` context is configured to agent names and requires the agent have produced something.  When this parameter value is `true`, both constraints are applied.  When `false`, the relationship constraint is not applied --faster but will include false positives.  Some of the other parameters only apply when this parameter value is `true`.  Defaults to `true`. |
 | `onlyMatchOnPrimaryNames` | `false` | **OPTIONAL** - When `true`, the list of names to match on is restricted to primary names.  When `false`, the list of names includes both primary and alternative names.  Defaults to `true`. |
 | `onlyReturnPrimaryNames` | `true` | **OPTIONAL** - Primary names are always included in the response, as the `primaryNames` property value, within the `matches` array.  Some of those names may not match the text --but at least one in the associated document did.  Depending on the value of the `onlyMatchOnPrimaryNames` parameter, a document could have been included that only matched on an alternative now.  When `onlyReturnPrimaryNames` is `false`, the `matchingNames` property is also included for each match and contains the names that matched the text.  The `matchingNames` property value can include alternative names when `onlyMatchOnPrimaryNames` is `false`.  `onlyReturnPrimaryNames` defaults to `false`.  This parameter is presently only used when `fullyHonorContext` is `true`. |
@@ -433,7 +430,7 @@ The `document` endpoint enables consumers to retrieve a single document's JSON-L
 | Parameter | Example | Description |
 |-----------|---------|-------------|
 | `uri` | *See example below* | **REQUIRED** - The URI of the requested document. |
-| `profile` | "relationship" | **OPTIONAL** - The name of a profile that informs which subset of the JSON-LD to return. The default is to serve up the entire JSON-LD block, which is also the behavior when an invalid profile name is specified or an exception is encountered. Available profiles: "name", "location", "relationship", "results"\*, and "rights"; one may double check in the `applyProfile()` function within [/src/main/ml-modules/base/root/lib/profileDocLib.mjs](/src/main/ml-modules/base/root/lib/profileDocLib.mjs). |
+| `profile` | "relationship" | **OPTIONAL** - The name of a profile that informs which subset of the JSON-LD to return. The default is to serve up the entire JSON-LD block, which is also the behavior when an invalid profile name is specified or an exception is encountered. Available profiles: "name", "location", "relationship", "results"\*, and "rights"; one may double check in the `applyProfile()` function within [/src/main/ml-modules/root/lib/profileDocLib.mjs](/src/main/ml-modules/root/lib/profileDocLib.mjs). |
 | `lang` | "en" | **OPTIONAL** - The language to serve up when there are multiple to choose from. Default is `en`. |
 
 \* _Until the "results" profile's implementation is updated, the profile will return the entire JSON-LD block.  Nonetheless, present-day use of this profile within a search results context is encouraged._
@@ -513,9 +510,9 @@ Response Body:
 
 The `facets` endpoint enables consumers to request a facet's values constrained by search criteria.
 
-Facet values are not paginated.
+If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold applicable to non-semantic facets and configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the number of values in the requested facet's index, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
 
-If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the sum of each requested facet's indexed values, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
+Only the first 100 values of a semantic facet's values are accessible.
 
 **URL** : `/ds/lux/facets.mjs`
 
@@ -528,10 +525,13 @@ If unable to calculate the facet, an error is thrown. This includes when the sys
 | `name` | `agentStartDate` | **REQUIRED** - The name of the facet to calculate.  The [Search Info endpoint's](#search-info) `facetBy` response body property lists all of the available facets. |
 | `q` | *See [Search's example](#successful-request--response-example-7)* | **REQUIRED** - The query to constrain the facet's values by.  This parameter's support is identical to the [Search endpoint's](#search) `q` parameter. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
+| `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
+| `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 10,000 for non-semantic facets and 100 for semantic facets. Via multiple requests, one may retrieve more than 10,000 values from a non-semantic facet but never more than 100 values from a semantic facet.  An error will be thrown if this value is less than 1. |
+| `sort` | `asc` | **OPTIONAL** - By default, facet values are sorted by the *number of times* (frequency) the value appears in the search results, in descending order.  This works well for string facet values, but not facets with numeric or date ranges, where it makes more sense to sort by the facet's *values*.  To sort by facet value, set this parameter's value to `asc` for ascending or `desc` for descending.  At present, this parameter is only implemented for non-semantic facets; semantic facets are only sorted by frequency. |
 
 ### Successful Request / Response Example
 
-Scenario: Get the places where works associated to "mona lisa" were created.
+Scenario: Get the first page of places where works associated to "mona lisa" were created.
 
 Parameters:
 
@@ -610,70 +610,6 @@ Response Body:
 ```
 
 *When the `LuxFacet` trace event is enabled, a message similar to the following will also be logged: "Rejected request to calculate the 'workCreationAgentId' facet as 11,212,278 search results by 4,924,830 field values exceeds the 5,000,000,000,000 threshold."*
-
-## Person Roles
-
-_After a data change, this endpoint lost its ability to return a person's roles.  Unless the associated data is restored or an alternative means is implemented, this endpoint will continue to return an empty array.  LUX production does not rely on this endpoint._
-
-The `personRoles` endpoint enables consumers to retrieve roles associated to a person URI.
-
-**URL** : `/ds/lux/personRoles.mjs`
-
-**Method(s)** : `GET`, `POST`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `uri` | `https://lux.collections.yale.edu/data/person/79773a98-aa39-4fb2-aacb-8a3bb49c2fd4` | **REQUIRED** - The URI of the person you want to know the roles. |
-
-### Successful Request / Response Example
-
-Scenario: retrieve roles associated to a person URI.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `uri` | `https://lux.collections.yale.edu/data/person/79773a98-aa39-4fb2-aacb-8a3bb49c2fd4` |
-
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body:
-
-```
-[
-    {
-        "role": "https://lux.collections.yale.edu/data/concept/e8079f31-81df-4f17-92f6-59eaf453e78d",
-        "count": 2
-    }
-]
-```
-
-### Failed Request / Response Example
-
-Scenario: Missing required parameter.
-
-Parameters: None
-
-Response Status Code: 500
-
-Response Status Message: "Bad Request"
-
-Response Body:
-```
-{
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"XDMP-ENDPOINTNULLABLE",
-    "message":"uri is a parameter the request must provide a value for."
-  }
-}
-```
 
 ## Related List
 
@@ -1159,15 +1095,14 @@ Response Body:
 
 ## Search Info
 
-The `searchInfo` endpoint enables consumers to determine:
+The `searchInfo` endpoint provides consumers:
 
-1. Search scope and term pairs that may be used in search criteria, plus additional usage details.
-2. What search results may be faceted by and their associated search term names.
-3. What search results may be sorted by.
+1. A complete list of search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.
+2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
+3. A list of facets and their associated search term names.
+4. A list of sort bindings implemented with range indexes.  As detailed in the [Search endpoint](#search)'s documentation, additional sort parameter values include `random` and `relevance`.
 
-The [Search endpoint](#search) offers parameters for all of these.
-
-The [Facets endpoint](#facets) accepts facet names and search criteria.
+Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
 
 **URL** : `/ds/lux/searchInfo.mjs`
 

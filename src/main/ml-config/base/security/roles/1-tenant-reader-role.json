@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-reader",
+  "description": "Document and module reader role for the '%%mlAppName%%' tenant",
+  "role": ["rest-reader"]
+}

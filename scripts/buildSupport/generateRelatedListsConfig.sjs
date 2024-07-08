@@ -2,8 +2,8 @@ xdmp.invoke(
   '/runDuringDeployment/generateRelatedListsConfig.mjs',
   {},
   {
-    database: xdmp.database('%%luxContentDatabase%%'),
-    modules: xdmp.database('%%luxModulesDatabase%%'),
+    database: xdmp.database('%%tenantContentDatabase%%'),
+    modules: xdmp.database('%%tenantModulesDatabase%%'),
     root: '',
   }
 );

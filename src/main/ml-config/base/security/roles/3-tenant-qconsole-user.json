@@ -1,0 +1,6 @@
+{
+  "role-name": "%%mlAppName%%-qconsole-user",
+  "description": "Query Console role for the '%%mlAppName%%' tenant",
+  "role": ["%%mlAppName%%-endpoint-consumer", "qconsole-user"],
+  "privilege": []
+}

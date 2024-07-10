@@ -1,7 +1,9 @@
 ## **LUX Backend Security and Software**
 
 - [Security](#security)
-  - [MarkLogic](#marklogic)
+  - [MarkLogic Server](#marklogic-server)
+  - [Tenants](#tenants)
+  - [Unit Portals](#unit-portals)
   - [Security Roles](#security-roles)
     - [Reader](#reader)
     - [Endpoint Consumer](#endpoint-consumer)
@@ -14,9 +16,19 @@
 
 # Security
 
-## MarkLogic
+## MarkLogic Server
 
-MarkLogic has many security features.  LUX utilizes role security, both at the REST API and document levels.  The role to grant authorized LUX backend API consumers is described in the next section.  For more information on MarkLogic security features, please refer to [Marklogic's Security Guide](https://docs.marklogic.com/guide/security).
+LUX utilizes MarkLogic Server's role security, both at the REST API and document levels.  Each LUX deployment is provided a base set of roles.  These roles are specific to a tenant.  Tenants supporting unit portals are also provided a couple unit-specific roles.  For more on tenants, unit portals, and roles as implemented in LUX, read on!  To learn more about MarkLogic Server security features, please refer to the [Marklogic Server Security Guide](https://docs.marklogic.com/guide/security).
+
+## Tenants
+
+Each MarkLogic Server cluster has at least one tenant.  A tenant is provided a set of MarkLogic resources enabling a single environment to host multiple applications.  The set of MarkLogic resources includes a content database, modules database, at least two application servers, and security roles.  The tenant's [Reader](#reader) role is granted to the documents.  Tenant user accounts are granted roles that inherit the same [Reader](#reader) role.  This includes service accounts.  For more information on tenants, see [Tenant Configuration](/docs/lux-backend-deployment.md#tenant-configuration).
+
+## Unit Portals
+
+A single tenant can support multiple unit portals.  A unit portal is a website that has access to a subset of data.  The subset of data is comprised of data provided by a single Yale library or museum (the unit) plus documents it shares with other units, such as concepts they have in common.  Each participating unit is to configure their middle tier to a MarkLogic load balancer and two application servers.  The unit is to use its service account to authenticate into the application servers.  The service account is granted an [Endpoint Consumer](#endpoint-consumer) role that is specific to the unit.  When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  MarkLogic Server security takes it from there.
+
+Regardless of a tenant offering unit service accounts, every tenant offers a service account that has access to all of the documents.  https://lux.collections.yale.edu/ uses such an account.
 
 ## Security Roles
 
@@ -26,7 +38,7 @@ A role restricted to administering a single tenant/application does not yet exis
 
 ### Reader
 
-The [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json) role probably should be able to read documents in the content database, if not also execute code in the modules database; but, at present, it only has the `rest-reader` role.
+The [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json) role is to be granted to documents the tenant has read permission to.
 
 ### Endpoint Consumer
 
@@ -54,13 +66,13 @@ For internal security environments, the project offers the [%%mlAppName%%-deploy
 
 One or more individuals on the project should monitor for software updates and security patches, ideally being notified when one becomes available.
 
-For MarkLogic, if you haven't already created a MarkLogic Developer account or attended training, go to the bottom of https://developer.marklogic.com/engage/ and click the Sign Me Up button.
+For MarkLogic Server, if you haven't already created a MarkLogic Developer account or attended training, go to the bottom of https://developer.marklogic.com/engage/ and click the Sign Me Up button.
 
 For the eight or so GitHub repositories LUX uses, "watch" the repo for issues, releases, and security alerts.
 
 That leaves a few that one either needs to periodically check or see if they offer automated notifications.  Read on for the complete list.
 
-For version compatibility questions, see [MarkLogic's Product Support Matrix](https://developer.marklogic.com/products/support-matrix/).
+For version compatibility questions, see the [MarkLogic Server Product Support Matrix](https://developer.marklogic.com/products/support-matrix/).
 
 ## Inventory
 

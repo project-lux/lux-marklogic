@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-ycba-reader",
+  "description": "Document and module reader role for YCBA in the '%%mlAppName%%' tenant",
+  "role": ["base-reader"]
+}

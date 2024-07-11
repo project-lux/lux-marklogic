@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-ypm-endpoint-consumer",
+  "description": "Service account for YPM to consume '%%mlAppName%%' tenant endpoints",
+  "password": "%%endpointConsumerPassword%%",
+  "role": ["%%mlAppName%%-ypm-endpoint-consumer"]
+}

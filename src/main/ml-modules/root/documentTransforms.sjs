@@ -11,7 +11,7 @@ function associateDocToDataSlice(content, context) {
     .forEach((name) => {
       name = (name + '').toLowerCase();
       collections.push(name);
-      permissions.push(xdmp.permission(`${name}-reader`, 'read'));
+      permissions.push(xdmp.permission(`%%mlAppName%%-${name}-reader`, 'read'));
     });
 
   // Add to MLCP-specified collections.

@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-yuag-endpoint-consumer",
+  "description": "Endpoint consumer role for YUAG in the '%%mlAppName%%' tenant",
+  "role": ["%%mlAppName%%-yuag-reader", "base-endpoint-consumer"]
+}

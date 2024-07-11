@@ -642,8 +642,11 @@ const SearchCriteriaProcessor = class {
   // Get a search term's configuration by scope name and term name.  Exception thrown when an invalid combination.
   static _getSearchTermConfig(scopeName, termName) {
     const scopedTerms = SEARCH_TERM_CONFIG[scopeName];
-    if (!scopedTerms || !scopedTerms[termName]) {
-      // This error message presumes the search scope name is valid; that check should happen at the request level.
+    if (!scopedTerms) {
+      throw new BadRequestError(
+        `No terms are configured to the '${scopeName}' search scope.`
+      );
+    } else if (!scopedTerms[termName]) {
       throw new BadRequestError(
         `The '${termName}' term is invalid for the '${scopeName}' search scope. Valid choices: ${Object.keys(
           scopedTerms

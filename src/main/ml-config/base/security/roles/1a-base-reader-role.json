@@ -1,0 +1,5 @@
+{
+  "role-name": "base-reader",
+  "description": "Base role for reading documents",
+  "role": []
+}

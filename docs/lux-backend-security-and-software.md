@@ -18,7 +18,7 @@
 
 ## MarkLogic Server
 
-LUX utilizes MarkLogic Server's role security, both at the REST API and document levels.  Each LUX deployment is provided a base set of roles.  These roles are specific to a tenant.  Tenants supporting unit portals are also provided a couple unit-specific roles.  For more on tenants, unit portals, and roles as implemented in LUX, read on!  To learn more about MarkLogic Server security features, please refer to the [Marklogic Server Security Guide](https://docs.marklogic.com/guide/security).
+LUX utilizes MarkLogic Server's role security, both at the REST API and document levels.  Each LUX deployment is provided a base set of roles.  These roles are specific to a tenant.  Tenants supporting unit portals are also provided a couple unit-specific roles.  For more on tenants, unit portals, and roles as implemented in LUX, read on!  To learn more about MarkLogic Server security features, please refer to the [MarkLogic Server Security Guide](https://docs.marklogic.com/guide/security).
 
 ## Tenants
 
@@ -38,17 +38,17 @@ A role restricted to administering a single tenant/application does not yet exis
 
 ### Reader
 
-The [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json) role is to be granted to documents the tenant has read permission to.
+The [base-reader](/src/main/ml-config/base/security/roles/1a-base-reader-role.json) role is the lowest level role.  The [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1b-tenant-reader-role.json) tenant role and any unit reader roles are to inherit the base reader role.  The tenant and user reader roles are granted read permissions to all or a subset of documents, respectively.
 
 ### Endpoint Consumer
 
-The [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role is the first role explicitly intended to have LUX backend capabilities.  It is intended to be granted to the middle tier, and should be able to perform everything backend endpoint consumers need, including searching for documents and retrieving documents.  Developers are encouraged to test endpoints using a user account that has this role.
+All tenant and unit endpoint consumer roles are to inherit the [base-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json) role.  The endpoint consumer roles are the first ones explicitly intended to have LUX backend capabilities.  Middle tiers may use service accounts that have one of these roles to authenticate into a tenant's application servers.  These roles should enable everything backend endpoint consumers need, including searching for and retrieving documents.  Developers are encouraged to test endpoints using a user account that has one of these roles.
 
-For internal security environments, the project offers the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base-unsecured/security/users/tenant-endpoint-consumer-user.json) *user account*, which is granted the endpoint consumer role.  To deploy, set the `tenantEndpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
 
 ### Query Console
 
-The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
+The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
 
 ### Writer
 
@@ -58,7 +58,7 @@ The [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writ
 
 The [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role builds upon the [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json) role by also being able to run the `performBaseDeployment` task.  This role should not be able to run the `mlDeploySecurity` task or lower level security tasks, specifically creating user accounts, changing a user account's roles and privileges, and changing a role's inherited roles and privileges.
 
-For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `tenantDeployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
+For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
 
 # Software
 

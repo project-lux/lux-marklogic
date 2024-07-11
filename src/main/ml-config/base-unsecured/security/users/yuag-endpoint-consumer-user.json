@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-yuag-endpoint-consumer",
+  "description": "Service account for YUAG to consume '%%mlAppName%%' tenant endpoints",
+  "password": "%%endpointConsumerPassword%%",
+  "role": ["%%mlAppName%%-yuag-endpoint-consumer"]
+}

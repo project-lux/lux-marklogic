@@ -75,7 +75,7 @@ Now review all of the other properties, updating those that are not correct.  Ad
 
 1. Some properties that apply to *all* tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.  A little bit further down is a complete listing, within [Tenant Limitations and Warnings](#tenant-limitations-and-warnings).
 2. This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated property is `mlConfigPaths`.
-3. Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `tenantEndpointConsumerPassword` and `tenantDeployerPassword`.
+3. Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `endpointConsumerPassword` and `deployerPassword`.
 4. Forest-level replication is controlled by the `mlDatabaseNamesAndReplicaCounts` property.  Guidance is provided within [/gradle.properties](/gradle.properties).
 
 ## Tenant Limitations and Warnings
@@ -84,7 +84,7 @@ The current tenant deployment model includes shared configuration and does not i
 
 **Tenant forks that delete the identified ML Gradle configuration files stand a greater chance of not creating an issue for other tenants.**
 
-1. When loading content, tenant-specific document permissions should be used and align with the tenant-specific roles, specifically [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json) and [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json).  For instance, if `mlAppName` is set to "lux-ftw", MLCP's `-output_permissions` parameter value should be `lux-ftw-reader,read,lux-ftw-writer,update`.
+1. When loading content, tenant-specific document permissions should be used and align with the tenant-specific roles, specifically [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1b-tenant-reader-role.json) and [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json).  For instance, if `mlAppName` is set to "lux-ftw", MLCP's `-output_permissions` parameter value should be `lux-ftw-reader,read,lux-ftw-writer,update`.
 2. Only LUX proper should modify shared configuration, including:
     * Admin, App Services, Manage, and HealthCheck application servers.
         * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)
@@ -113,7 +113,7 @@ The `[passwordPropertyName]` keys are:
    * `copyDatabaseInputPassword` and `copyDatabaseOutputPassword`: Only required by the `copyDatabase` task.
    * `importDataPassword`: Only required by the `importData*` tasks.
 
-Note the `tenantEndpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
+Note the `endpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
 
  Encrypted passwords may need to be updated when switching between environments.
 
@@ -221,7 +221,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 12. The rest of the deployment may be performed as a non-admin.  The non-admin user account needs to have the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.  To change:
 
     * Update the `mlUsername` property in `gradle-[name].properties`
-    * Run `./gradlew addCredentials --key mlPassword --value '[yourTenantDeployerPassword]'`
+    * Run `./gradlew addCredentials --key mlPassword --value '[yourdeployerPassword]'`
 
     *Note the use of single quotes around the value --they ensure the entire value is received.*
 
@@ -364,8 +364,8 @@ Available application servers and their ports may vary by environment.  The outc
 | n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
 | n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
 | n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role. |
-| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role. |
+| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json) role. |
+| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json) role. |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 
 \* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.

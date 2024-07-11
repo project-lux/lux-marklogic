@@ -226,7 +226,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 12. The rest of the deployment may be performed as a non-admin.  The non-admin user account needs to have the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.  To change:
 
     * Update the `mlUsername` property in `gradle-[name].properties`
-    * Run `./gradlew addCredentials --key mlPassword --value '[yourdeployerPassword]'`
+    * Run `./gradlew addCredentials --key mlPassword --value '[yourTenantDeployerPassword]'`
 
     *Note the use of single quotes around the value --they ensure the entire value is received.*
 

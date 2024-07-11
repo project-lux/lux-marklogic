@@ -52,9 +52,9 @@ It is possible that LUX backend consumers also consume MarkLogic native endpoint
 
 # Security
 
-Every LUX backend endpoint request must be authenticated.  Approved LUX backend API consumers are intended to have the tenant's endpoint consumer role ([%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json)), which will provide the consumer sufficient privilege to consume all of LUX's backend endpoints.
+Every LUX backend endpoint request must be authenticated.  Approved LUX backend API consumers are intended to have the [base-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json) role, which will provide the consumer sufficient privilege to consume all of LUX's backend endpoints.  Document permissions may restrict the endpoint consumer to a subset of data.  The tenant's endpoint consumer service account has access to all documents.  Individual unit endpoint service accounts may have access to overlapping subsets of data.  For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
 
-Use DIGEST for HTTP application servers and BASIC for HTTPS application servers.
+Use the DIGEST authentication scheme for HTTP and HTTPS application servers.
 
 # Generated Data Service Interfaces
 

@@ -1773,6 +1773,16 @@
         }
       ],
       "field-value-searches": true
+    },
+    {
+      "field-name": "workCausedByProjectId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/caused_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
     }
   ],
   "range-field-index": [
@@ -2566,6 +2576,13 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
+    },
+    {
+      "scalar-type": "string",
+      "collation": "http://marklogic.com/collation/",
+      "field-name": "workCausedByProjectId",
+      "range-value-positions": false,
+      "invalid-values": "reject"
     }
   ]
 }

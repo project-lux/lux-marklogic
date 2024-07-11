@@ -316,6 +316,11 @@ const searchTermText = {
       helpText:
         'Enter term(s) to be found within the title or name of the Event. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
     },
+    provided: {
+      label: 'Produced Dataset',
+      helpText:
+        'Search for projects that produced datasets. Use this option to include criteria from Works in your search.',
+    },
     recordType: {
       label: 'Event Class',
       helpText:
@@ -601,6 +606,11 @@ const searchTermText = {
       label: 'Included In Objects',
       helpText:
         'Search for Works that are included in the specified Objects. Use this option to include criteria from Objects in your search.',
+    },
+    causedByProject: {
+      label: 'From Project',
+      helpText:
+        'Search for Works that are from projects. Use this option to include criteria from projects (Events) in your search.',
     },
     classification: {
       label: 'Categorized As',

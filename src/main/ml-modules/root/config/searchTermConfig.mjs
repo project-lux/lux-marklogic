@@ -457,6 +457,14 @@ const SEARCH_TERM_CONFIG = {
       hopInverseName: 'subjectOfPlace',
       indexReferences: ['placePrimaryName'],
     },
+    causedByProject: {
+      patternName: 'hopWithField',
+      predicates: ['lux("causeOfCreation")'],
+      targetScope: 'event',
+      hopInverseName: 'provided',
+      indexReferences: ['eventPrimaryName'],
+      idIndexReferences: ['workCausedByProjectId'],
+    },
     classification: {
       patternName: 'hopWithField',
       predicates: ['lux("workClassifiedAs")'],

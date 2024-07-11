@@ -82,10 +82,15 @@ Now review all of the other properties, updating those that are not correct.  Ad
 
 The current tenant deployment model includes shared configuration and does not inhibit one tenant from accessing or even modifying another tenant's resources.  The current objective is to facilitate multiple tenants versus comprehensive security.  Until this changes, please bear the following in mind.
 
-**Tenant forks that delete the identified ML Gradle configuration files stand a greater chance of not creating an issue for other tenants.**
+**Secondary tenants that delete the ML Gradle configuration files listed below stand a greater chance of not creating an issue for other tenants.**
 
-1. When loading content, tenant-specific document permissions should be used and align with the tenant-specific roles, specifically [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1b-tenant-reader-role.json) and [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json).  For instance, if `mlAppName` is set to "lux-ftw", MLCP's `-output_permissions` parameter value should be `lux-ftw-reader,read,lux-ftw-writer,update`.
+1. When loading content, the tenant's reader role(s) should be granted the read permission and the tenant's writer role should be granted the update permission.
+    * If the dataset includes the `admin.sources` property, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
+    * Else, the document permissions must be specified.  With MLCP, this is done using the `-output_permissions` parameter.
 2. Only LUX proper should modify shared configuration, including:
+    * The base roles:
+        * [base-reader](/src/main/ml-config/base/security/roles/1a-base-reader-role.json)
+        * [base-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json)
     * Admin, App Services, Manage, and HealthCheck application servers.
         * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)
         * [/src/main/ml-config/base/servers/app-services-server.json](/src/main/ml-config/base/servers/app-services-server.json)
@@ -364,8 +369,8 @@ Available application servers and their ports may vary by environment.  The outc
 | n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
 | n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
 | n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json) role. |
-| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json) role. |
+| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 
 \* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.

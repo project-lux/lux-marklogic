@@ -38,11 +38,27 @@ A role restricted to administering a single tenant/application does not yet exis
 
 ### Reader
 
-The [base-reader](/src/main/ml-config/base/security/roles/1a-base-reader-role.json) role is the lowest level role.  The [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1b-tenant-reader-role.json) tenant role and any unit reader roles are to inherit the base reader role.  The tenant and user reader roles are granted read permissions to all or a subset of documents, respectively.
+All tenant and unit reader roles are to inherit the [base-reader](/src/main/ml-config/base/security/roles/1a-base-reader-role.json) role.  Reader roles are the most restricted in the system.  They are granted read permission to all or a subset of documents --but not the ability to get to them via endpoint.
+
+Multiple reader roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
+
+Reader role naming conventions for units, where `[alpha]` is the next available letter and `[unit]` uniquely identifies the unit:
+
+* File names: `1[letter]-[unit]-reader-role.json`
+* Role names: `%%mlAppName%%-[unit]-reader`
+
+**IMPORTANT:** When loading content, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) requires `[unit]` to be the value used for the unit within the `admin.sources` property.
 
 ### Endpoint Consumer
 
 All tenant and unit endpoint consumer roles are to inherit the [base-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json) role.  The endpoint consumer roles are the first ones explicitly intended to have LUX backend capabilities.  Middle tiers may use service accounts that have one of these roles to authenticate into a tenant's application servers.  These roles should enable everything backend endpoint consumers need, including searching for and retrieving documents.  Developers are encouraged to test endpoints using a user account that has one of these roles.
+
+Multiple endpoint consumer roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
+
+Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
+
+* File names: `2[alpha]-[unit]-endpoint-consumer-role.json`
+* Role names: `%%mlAppName%%-[unit]-endpoint-consumer`
 
 For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
 

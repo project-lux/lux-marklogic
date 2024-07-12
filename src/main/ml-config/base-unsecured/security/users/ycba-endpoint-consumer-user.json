@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-ycba-endpoint-consumer",
+  "description": "Service account for YCBA to consume '%%mlAppName%%' tenant endpoints",
+  "password": "%%endpointConsumerPassword%%",
+  "role": ["%%mlAppName%%-ycba-endpoint-consumer"]
+}

@@ -1,7 +1,7 @@
 {
-  "role-name": "%%mlAppName%%-endpoint-consumer",
-  "description": "Endpoint consumer role for the '%%mlAppName%%' tenant",
-  "role": ["%%mlAppName%%-reader"],
+  "role-name": "base-endpoint-consumer",
+  "description": "Base role other roles are to inherit in order to consume endpoints and read documents.",
+  "role": ["rest-reader", "base-reader"],
   "privilege": [
     {
       "privilege-name": "sem-sparql",

@@ -209,8 +209,8 @@ task importDataFull(type: com.marklogic.gradle.task.MlcpTask) {
   input_file_type = "delimited_json"
   input_compressed = project.property("importDataFileIsCompressed")
   input_compression_codec = "gzip"
-  output_permissions = project.property("mlDataPermissions")
-  output_uri_replace = "https://lux.collections.yale.edu/data/,''"
+  transform_module "/documentTransforms.sjs"
+  transform_function "associateDocToDataSlice"
   uri_id = "id"
   ssl = useSsl
   args = ["-ssl_protocol", "tlsv1.2"]
@@ -248,8 +248,8 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   input_file_type = "delimited_json"
   input_compressed = project.property("importDataFileIsCompressed")
   input_compression_codec = "gzip"
-  output_permissions = project.property("mlDataPermissions")
-  output_uri_replace = "https://lux.collections.yale.edu/data/,''"
+  transform_module "/documentTransforms.sjs"
+  transform_function "associateDocToDataSlice"
   uri_id = "id"
   ssl = useSsl
   args = ["-ssl_protocol", "tlsv1.2"]
@@ -349,13 +349,21 @@ task copyRestApiOptions (type: com.marklogic.gradle.task.MarkLogicTask) {
     println "Copying the REST API options to the second app server..."
     println ""
 
-    def client = mlAppConfig.newDatabaseClient()
-    def script = new File('./build/buildSupport/copyRestApiOptions.sjs').getText('UTF-8')
-    def result = client.newServerEval().javascript(script).evalAs(String.class)
+    try {
+      def client = mlAppConfig.newDatabaseClient()
+      def script = new File('./build/buildSupport/copyRestApiOptions.sjs').getText('UTF-8')
+      def result = client.newServerEval().javascript(script).evalAs(String.class)
 
-    println ""
-    println result
-    println ""
+      println ""
+      println result
+      println ""
+    } catch ( e ) {
+      // 20240710: user with the deployer role was unable to execute this task.  Best I reckon,
+      // it's because /Default/lux-request-group-1/rest-api/options/lux-options.xml only grants
+      // permissions to the rest-reader-internal and rest-admin-internal roles.
+      throw new GradleException('This task failed. If it was executed by a non-admin, try running as an admin. ' + 
+        'Error from server, which may be misleading: "' + e.message + '"')
+    }
   }
 }
 generateAdvancedSearchConfig.finalizedBy copyRestApiOptions

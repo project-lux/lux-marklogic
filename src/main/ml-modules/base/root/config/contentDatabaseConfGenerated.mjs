@@ -547,7 +547,7 @@ const contentDatabaseConfGenerated = {
       "field-name": "agentProfessionalActivityId",
       "field-path": [
         {
-          "path": "/json/carried_out[./classified_as[1]/equivalent/id='http://vocab.getty.edu/aat/300393177']/classified_as[2]/id",
+          "path": "/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]",
           "weight": 1
         }
       ],

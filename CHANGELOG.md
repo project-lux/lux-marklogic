@@ -8,6 +8,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+ - Changed the People or Group advanced search option config to People or Group Class ([#201](https://github.com/project-lux/lux-marklogic/issues/201)).
+
 ### Removed
  
 ### Fixed

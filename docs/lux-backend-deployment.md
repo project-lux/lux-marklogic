@@ -346,7 +346,7 @@ To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-d
 
 # Remove a Tenant or Project
 
-ML Gradle includes the   It should be used with great care in any environment you care about **--especially multi-tenant environments!**
+ML Gradle includes the `mlUndeploy` task.  It should be used with great care in any environment you care about **--especially multi-tenant environments!**
 
 This task is **restricted to administrators**.  We did not develop the opposite of the `performBaseDeployment` task, even though the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role should have the permissions required to undeploy non-security portions of the MarkLogic configuration.
 

@@ -88,9 +88,6 @@ The current tenant deployment model includes shared configuration and does not i
     * If the dataset includes the `admin.sources` property, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
     * Else, the document permissions must be specified.  With MLCP, this is done using the `-output_permissions` parameter.
 2. Only LUX proper should modify shared configuration, including:
-    * The base roles:
-        * [base-reader](/src/main/ml-config/base/security/roles/1a-base-reader-role.json)
-        * [base-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json)
     * Admin, App Services, Manage, and HealthCheck application servers.
         * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)
         * [/src/main/ml-config/base/servers/app-services-server.json](/src/main/ml-config/base/servers/app-services-server.json)
@@ -349,16 +346,11 @@ To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-d
 
 # Remove a Tenant or Project
 
-ML Gradle includes the `mlUndeploy` task.  It should be used with great care in any environment you care about **--especially multi-tenant environments!**
+ML Gradle includes the   It should be used with great care in any environment you care about **--especially multi-tenant environments!**
 
 This task is **restricted to administrators**.  We did not develop the opposite of the `performBaseDeployment` task, even though the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role should have the permissions required to undeploy non-security portions of the MarkLogic configuration.
 
-**Delete these files** when removing one tenant from a multi-tenant environment:
-
-1. [/src/main/ml-config/base/security/roles/1a-base-reader-role.json](/src/main/ml-config/base/security/roles/1a-base-reader-role.json)
-2. [/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json)
-
-ML Gradle prevents projects from deleting specific databases, application servers, roles, and users, as well as all groups.  Protected app servers include Admin, App-Services, and Manage.  As such, it is not necessary to delete the ML Gradle configuration files for groups or those application servers.
+There is no need to delete the ML Gradle configuration files for the group or protected application servers before running the `mlUndeploy` task.  ML Gradle prevents projects from deleting specific databases, application servers, roles, and users, as well as all groups.  Protected application servers include Admin, App-Services, and Manage.
 
 Within `gradle-[name].properties`, check the following property values.  **Triple-check for multi-tenant environments.**
 
@@ -386,11 +378,7 @@ At this point, the following resources should have been deleted:
 4. Tenant's security roles.
 5. Tenant's user/service accounts.
 
-Verify the following did not change:
-
-1. The `base-reader` and `base-endpoint-consumer` roles.
-
-For multi-tenant deployments, smoke test a remaining tenant's application.
+For multi-tenant deployments, consider smoke testing a remaining tenant's application.
 
 If the tenant has a frontend and middle tier, decide whether those too should be removed.
 

@@ -1,5 +1,5 @@
 {
   "role-name": "%%mlAppName%%-yuag-reader",
   "description": "Document and module reader role for YUAG in the '%%mlAppName%%' tenant",
-  "role": ["base-reader"]
+  "role": []
 }

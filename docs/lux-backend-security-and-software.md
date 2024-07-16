@@ -38,9 +38,11 @@ A role restricted to administering a single tenant/application does not yet exis
 
 ### Reader
 
-All tenant and unit reader roles are to inherit the [base-reader](/src/main/ml-config/base/security/roles/1a-base-reader-role.json) role.  Reader roles are the most restricted in the system.  They are granted read permission to all or a subset of documents --but not the ability to get to them via endpoint.
+Each tenant and unit is to have a dedicated reader role.  The tenant's reader role is defined by [1-tenant-reader-role.json](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json).  Reader roles are the most restricted in the system.  They are granted read permission to all or a subset of documents --but not the ability to get to them via endpoint.
 
-Multiple reader roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
+Reader roles are not to inherit another reader role.
+
+Additional reader roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
 
 Reader role naming conventions for units, where `[alpha]` is the next available letter and `[unit]` uniquely identifies the unit:
 
@@ -51,9 +53,11 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ### Endpoint Consumer
 
-All tenant and unit endpoint consumer roles are to inherit the [base-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-base-endpoint-consumer-role.json) role.  The endpoint consumer roles are the first ones explicitly intended to have LUX backend capabilities.  Middle tiers may use service accounts that have one of these roles to authenticate into a tenant's application servers.  These roles should enable everything backend endpoint consumers need, including searching for and retrieving documents.  Developers are encouraged to test endpoints using a user account that has one of these roles.
+Each tenant and unit is to have a dedicated endpoint consumer role.  The tenant's endpoint consumer role is defined by [2-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json).  Endpoint consumer roles are the first ones explicitly intended to have LUX backend capabilities.  Middle tiers may use service accounts that have one of these roles to authenticate into a tenant's application servers.  These roles should enable everything backend endpoint consumers need, including searching for and retrieving documents.  
 
-Multiple endpoint consumer roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
+Endpoint consumer roles are not to inherit another endpoint consumer role.
+
+Additional endpoint consumer roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
 
 Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
 
@@ -62,9 +66,11 @@ Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]
 
 For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
 
+Developers are encouraged to test endpoints using a user account that has one of these roles.
+
 ### Query Console
 
-The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2b-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
+The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
 
 ### Writer
 

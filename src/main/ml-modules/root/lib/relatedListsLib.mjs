@@ -1,6 +1,7 @@
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
+  DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   IRI_DOES_NOT_EXIST,
   LUX_CONTEXT,
   RELATED_LIST_PAGE_LENGTH_DEFAULT,
@@ -93,6 +94,7 @@ function getRelatedList({
   uri,
   page = 1,
   pageLength = RELATED_LIST_PAGE_LENGTH_DEFAULT,
+  filterResults = DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   relationshipsPerRelation = RELATED_LIST_PER_RELATION_DEFAULT,
   onlyCheckForOneRelatedItem = false,
 }) {
@@ -162,6 +164,7 @@ function getRelatedList({
         valuesOnly,
         page: 1,
         pageLength: relationshipsPerRelation, // Applies when not in values mode.
+        filterResults,
       });
       if (valuesOnly) {
         urisByRelation[searchConfig.relationKey] =
@@ -177,9 +180,9 @@ function getRelatedList({
         urisByRelation[searchConfig.relationKey].length >=
           relationshipsPerRelation
       ) {
+        // Monitoring test and log mining script checks for "Hit the max".
         xdmp.trace(
           traceName,
-          // Monitoring test and log mining script checks for "Hit the max".
           `Hit the max of ${relationshipsPerRelation} relationships for the '${searchConfig.relationKey}' relation with scope '${searchScopeName}', term '${relatedListName}', and URI '${uri}'.`
         );
       }
@@ -370,6 +373,7 @@ function getRelatedList({
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {
       if (onlyCheckForOneRelatedItem) {
+        // Not associated with monitoring tests or the log mining script.
         xdmp.trace(
           traceName,
           `Checked ${relationsChecked} relation(s) to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' ${
@@ -377,6 +381,7 @@ function getRelatedList({
           } at least one related item, in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
         );
       } else {
+        // Log mining script matches on portions of this message.
         xdmp.trace(
           traceName,
           `Created the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
@@ -384,11 +389,13 @@ function getRelatedList({
       }
     } else {
       if (onlyCheckForOneRelatedItem) {
+        // Log mining script matches on portions of this message.
         xdmp.trace(
           traceName,
           `Unable to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' has at least one related item, after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
         );
       } else {
+        // Log mining script matches on portions of this message.
         xdmp.trace(
           traceName,
           `Failed to create the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
@@ -492,7 +499,8 @@ function _convertToObjectsOrWorksSearch(
         utils.replaceMatchingPropertyNames(fromCriteria[termName], 'iri', 'id')
       );
     } else {
-      // TBD if this ever happens
+      // TBD if this ever happens.
+      // Log mining script matches on a portion of this message.
       const msg = `Unable to determine the inverse search term of '${termName}', beginning in the '${fromScope}' scope: ${JSON.stringify(
         fromCriteria
       )}`;
@@ -500,7 +508,8 @@ function _convertToObjectsOrWorksSearch(
       return msg;
     }
   } else {
-    // TBD if this ever happens
+    // TBD if this ever happens.
+    // Log mining script matches on a portion of this message.
     const msg = 'Unable to determine search term name.';
     xdmp.trace(traceName, msg);
     return msg;
@@ -544,8 +553,9 @@ function getRelatedListQuery(
       searchTerm.getValue()
     ),
     searchScope: relatedListConfig.targetScope,
-    applicableOptions: relatedListSearchPatternOptions,
+    searchPatternOptions: relatedListSearchPatternOptions,
     includeTypeConstraint,
+    filterResults: requestOptions.requestOptions,
     valuesOnly: false,
   });
 

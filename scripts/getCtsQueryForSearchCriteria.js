@@ -16,6 +16,9 @@ const formatAsObject = true;
 // precedence over formatAsObject.
 const includeCtsSearch = false;
 //
+// filterResults: set to true for filtered results or false for unfiltered.
+const filterResults = false;
+//
 // searchCriteria: the search criteria to convert.  Both search grammars are
 // supported.
 const searchCriteria = {
@@ -57,6 +60,7 @@ const searchScope = null;
 const searchCriteriaProcessor = processSearchCriteria({
   searchCriteria,
   searchScope,
+  filterResults,
 });
 
 // Rather than returning the CTS Query, one may also elect to return other or

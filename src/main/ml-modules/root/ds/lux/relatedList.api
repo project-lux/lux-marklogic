@@ -24,6 +24,11 @@
       "nullable": true
     },
     {
+      "name": "filterResults",
+      "datatype": "boolean",
+      "nullable": true
+    },
+    {
       "name": "relationshipsPerRelation",
       "datatype": "int",
       "nullable": true

@@ -6,6 +6,7 @@ const relatedListName = external.name;
 const uri = external.uri;
 const page = external.page;
 const pageLength = external.pageLength;
+const filterResults = external.filterResults;
 const relationshipsPerRelation = external.relationshipsPerRelation;
 
 handleRequest(function () {
@@ -15,6 +16,7 @@ handleRequest(function () {
     uri,
     page,
     pageLength,
+    filterResults,
     relationshipsPerRelation,
   });
 });

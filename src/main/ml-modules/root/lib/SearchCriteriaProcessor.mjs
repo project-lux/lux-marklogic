@@ -44,12 +44,13 @@ const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
 const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");`;
 
 const SearchCriteriaProcessor = class {
-  constructor(synonymsEnabled, facetsAreLikely) {
-    // Constructor parameters.
+  constructor(filterResults, facetsAreLikely, synonymsEnabled) {
+    // Capture all constructor parameters as request options, enabling search patterns to utilize.
     this.requestOptions = {
+      filterResults,
+      facetsAreLikely,
       synonymsEnabled,
     };
-    this.facetsAreLikely = facetsAreLikely;
 
     // Given to process()
     this.searchCriteria;
@@ -196,16 +197,16 @@ const SearchCriteriaProcessor = class {
 
     if (withSearchResults === true) {
       // Concatenate the search options
-      let searchOptionsStr = '[';
-      searchOptionsStr +=
-        this.facetsAreLikely === true ? '"faceted"' : '"unfaceted"';
-      if (this.sortCriteria.hasSortOptions()) {
-        searchOptionsStr += `, ${utils.arrayToString(
-          this.sortCriteria.getSortOptions(),
-          'code'
-        )}`;
-      }
-      searchOptionsStr += ']';
+      const searchOptionsArr = [
+        this.requestOptions.filterResults === true
+          ? '"filtered"'
+          : '"unfiltered"',
+        this.requestOptions.facetsAreLikely === true
+          ? '"faceted"'
+          : '"unfaceted"',
+        this.sortCriteria.getSortOptions(),
+      ];
+      const searchOptionsStr = utils.arrayToString(searchOptionsArr, 'code');
 
       return `${START_OF_GENERATED_QUERY}
         const docs = fn.subsequence(

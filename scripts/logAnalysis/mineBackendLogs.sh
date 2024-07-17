@@ -8,9 +8,8 @@
 #   extended to mine 8003 request logs (good stuff!).
 #
 #   Portions may not work as expected if the input logs are that of a single node because grep
-#   only starts matching lines with the filename when multiple files are involved.  The sed
-#   commands that produces ALL_REQUESTS_TSV_FILE and SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE 
-#   will not match when the lines do not start with a file name.
+#   only starts matching lines with the filename when multiple files are involved.  Multiple 
+#   regular expressions expect lines to start with file names.
 #
 # Directions:
 #
@@ -277,18 +276,18 @@ echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> $ALL_REQUESTS_METRICS_
 
 # Create a TSV-formatted report out of the above file
 echo -e "   $SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE..."
-echo -e "Timestamp\tRequest ID\tContext\tTotal Duration (ms)\tSearch Duration (ms)\tEstimate\tReturned\tScope\tCriteria" > "$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE"
+echo -e "Timestamp\tRequest ID\tContext\tFiltered\tTotal Duration (ms)\tSearch Duration (ms)\tEstimate\tReturned\tScope\tCriteria" > "$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE"
 # Switched to Perl as sed only supports 9 backreferences and awk was taking too long to figure out.
 # The regular expression requires the line start with a file name (*.txt)
 # Keep the following regular expression in sync with one in the next section.
-perl -pe 's/^.*txt:(.*) Info: .* requestId: ([^;]+); requestContext: ([^;]+); totalElapsed: ([0-9]+); searchElapsed: ([0-9]+); estimate: ([0-9]+); returned: ([0-9]+); scope: \[([^\]]+)\]; searchCriteria: \[(.*)\]$/$1\t$2\t$3\t$4\t$5\t$6\t$7\t$8\t$9/' "$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> "$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE"
+perl -pe 's/^.*txt:(.*) Info: .* requestId: ([^;]+); requestContext: ([^;]+); filterResults: ([^;]+); totalElapsed: ([0-9]+); searchElapsed: ([0-9]+); estimate: ([0-9]+); returned: ([0-9]+); scope: \[([^\]]+)\]; searchCriteria: \[(.*)\]$/$1\t$2\t$3\t$4\t$5\t$6\t$7\t$8\t$9\t$10/' "$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> "$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE"
 echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Convert the search params info into JSON
 echo -e "   $SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE..."
 echo -e "{\"requests\": [" > "$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE"
 # Keep the following regular expression in sync with one in the previous section.
-perl -pe 's/^.*txt:(.*) Info: .* requestId: ([^;]+); requestContext: ([^;]+); totalElapsed: ([0-9]+); searchElapsed: ([0-9]+); estimate: ([0-9]+); returned: ([0-9]+); scope: \[([^\]]+)\]; searchCriteria: \[(.*)\]$/{"timestamp": "$1", "requestId": "$2", "requestContext": "$3", "total": $4, "search": $5, "estimate": $6, "returned": $7, "scope": "$8", "criteria": $9},/' "$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> "$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE"
+perl -pe 's/^.*txt:(.*) Info: .* requestId: ([^;]+); requestContext: ([^;]+); filterResults: ([^;]+); totalElapsed: ([0-9]+); searchElapsed: ([0-9]+); estimate: ([0-9]+); returned: ([0-9]+); scope: \[([^\]]+)\]; searchCriteria: \[(.*)\]$/{"timestamp": "$1", "requestId": "$2", "requestContext": "$3", "filterResults": $4, "total": $5, "search": $6, "estimate": $7, "returned": $8, "scope": "$9", "criteria": $10},/' "$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> "$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE"
 echo -e "{\"hereForLastComma\": true}" >> "$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE"
 echo -e "]}" >> "$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE"
 echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE

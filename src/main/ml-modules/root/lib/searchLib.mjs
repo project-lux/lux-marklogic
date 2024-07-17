@@ -338,6 +338,7 @@ function _search(
         estimate: estimate,
         page,
         pageLength,
+        filterResults,
         requestContext,
         returned: results.length,
         scope: resolvedSearchScope,
@@ -359,7 +360,7 @@ function _search(
         // Log mining script matches on then parses this message.
         xdmp.trace(
           traceName,
-          `requestId: ${requestId}; requestContext: ${requestContext}; totalElapsed: ${stopWatch.totalElapsed()}; searchElapsed: ${stopWatch.lapElapsed(
+          `requestId: ${requestId}; requestContext: ${requestContext}; filterResults: ${filterResults}; totalElapsed: ${stopWatch.totalElapsed()}; searchElapsed: ${stopWatch.lapElapsed(
             'search'
           )}; estimate: ${estimate}; returned: ${
             results.length

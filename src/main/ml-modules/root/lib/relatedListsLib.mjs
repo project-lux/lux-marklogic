@@ -65,6 +65,10 @@ const PRIORITY_BY_RELATION_KEY = {
  *       the URI should be of a Person or Group.
  *    {int} page: The starting page.  Default is 1.
  *    {int} pageLength: The number of items per page.  Default is 25.
+ *    {boolean} filterResults: Submit true to filter search results.  Filtering can slow the request but can
+ *       remove false positives.  TBD if related lists _can_ return false positives.  Recommendation: submit
+ *       false unless you have discovered a false positive and cannot accept it.  The default is specified by
+ *       a build property (via constant).
  *    {int} relationshipsPerRelation: The maximum number of relationships to process per relation.  Each related
  *       list may have 12+ relations.  Each relation is resolved in the triples store.  Without capping highly
  *       referenced documents, requests can take an excessive amount of time.
@@ -183,7 +187,7 @@ function getRelatedList({
         // Monitoring test and log mining script checks for "Hit the max".
         xdmp.trace(
           traceName,
-          `Hit the max of ${relationshipsPerRelation} relationships for the '${searchConfig.relationKey}' relation with scope '${searchScopeName}', term '${relatedListName}', and URI '${uri}'.`
+          `Hit the max of ${relationshipsPerRelation} relationships for the '${searchConfig.relationKey}' relation with scope '${searchScopeName}', term '${relatedListName}', and URI '${uri}' (filterResults: ${filterResults}).`
         );
       }
       relationToScope[searchConfig.relationKey] = searchConfig.relationScope;
@@ -373,7 +377,7 @@ function getRelatedList({
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {
       if (onlyCheckForOneRelatedItem) {
-        // Not associated with monitoring tests or the log mining script.
+        // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
           `Checked ${relationsChecked} relation(s) to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' ${
@@ -381,24 +385,24 @@ function getRelatedList({
           } at least one related item, in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
         );
       } else {
-        // Log mining script matches on portions of this message.
+        // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
-          `Created the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
+          `Created the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`
         );
       }
     } else {
       if (onlyCheckForOneRelatedItem) {
-        // Log mining script matches on portions of this message.
+        // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
-          `Unable to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' has at least one related item, after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
+          `Unable to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' has at least one related item, after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`
         );
       } else {
-        // Log mining script matches on portions of this message.
+        // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
-          `Failed to create the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
+          `Failed to create the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`
         );
       }
     }
@@ -500,7 +504,7 @@ function _convertToObjectsOrWorksSearch(
       );
     } else {
       // TBD if this ever happens.
-      // Log mining script matches on a portion of this message.
+      // Log mining script matches on a portion(s) of this message.
       const msg = `Unable to determine the inverse search term of '${termName}', beginning in the '${fromScope}' scope: ${JSON.stringify(
         fromCriteria
       )}`;
@@ -509,7 +513,7 @@ function _convertToObjectsOrWorksSearch(
     }
   } else {
     // TBD if this ever happens.
-    // Log mining script matches on a portion of this message.
+    // Log mining script matches on a portion(s) of this message.
     const msg = 'Unable to determine search term name.';
     xdmp.trace(traceName, msg);
     return msg;

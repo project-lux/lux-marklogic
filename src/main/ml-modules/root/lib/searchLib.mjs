@@ -327,7 +327,7 @@ function _search(
     throw e;
   } finally {
     if (!searchAgain && (xdmp.traceEnabled(traceName) || !requestCompleted)) {
-      // Log mining script matches on portions of this message.
+      // Log mining script matches on a portion(s) of this message.
       const searchInfo = {
         requestId,
         requestCompleted,
@@ -485,7 +485,7 @@ function getSearchEstimate(searchCriteria, scope) {
     const estimate = calculateEstimate(searchCriteria, scope);
     const timeElapsed = stopWatch.stop();
     if (xdmp.traceEnabled(traceName)) {
-      // Log mining script matches on a portion of this message.
+      // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
         `Calculated estimate in ${timeElapsed} milliseconds.`
@@ -579,7 +579,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
     });
 
     if (xdmp.traceEnabled(traceName)) {
-      // Log mining script matches on portions of this message.
+      // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
         `Checked ${Object.keys(namedSearchesResponse).length} searches in ${

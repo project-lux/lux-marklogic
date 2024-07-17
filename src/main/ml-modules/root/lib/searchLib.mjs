@@ -393,7 +393,6 @@ function processSearchCriteria({
   stopWatch = new StopWatch(true),
   valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
-  console.log(`processSearchCriteria's filterResults param: ${filterResults}`);
   const searchCriteriaProcessor = new SearchCriteriaProcessor(
     filterResults,
     facetsAreLikely,
@@ -539,6 +538,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               uri: relatedListSearchInfo.uri,
               page: 1,
               pageLength: 2, // 1st may be self (uri)
+              filterResults: true,
               relationshipsPerRelation: 2, // 1st may be self (uri)
               onlyCheckForOneRelatedItem: true,
             }).orderedItems.length > 0

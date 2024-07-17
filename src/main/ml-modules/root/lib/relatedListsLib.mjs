@@ -555,7 +555,7 @@ function getRelatedListQuery(
     searchScope: relatedListConfig.targetScope,
     searchPatternOptions: relatedListSearchPatternOptions,
     includeTypeConstraint,
-    filterResults: requestOptions.requestOptions,
+    filterResults: requestOptions.filterResults,
     valuesOnly: false,
   });
 

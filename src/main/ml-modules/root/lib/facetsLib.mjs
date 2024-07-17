@@ -106,7 +106,7 @@ function getFacet({
       // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facet in ${duration} milliseconds: ${facetName} (filterResults: ${
+        `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
           isSemantic === true ? filterResults : 'n/a'
         })`
       );
@@ -114,7 +114,7 @@ function getFacet({
       // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (filterResults: ${
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
           isSemantic === true ? filterResults : 'n/a'
         })`
       );

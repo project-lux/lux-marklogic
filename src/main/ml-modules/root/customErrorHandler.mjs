@@ -18,6 +18,7 @@ if (xdmp.traceEnabled(traceName)) {
     headers: { statusCode: errorHeaders[0], status: errorHeaders[1] },
     body: errorBody,
   };
+  // Not associated with monitoring tests or the log mining script.
   xdmp.trace(traceName, `Raw error details: ${JSON.stringify(traceError)}`);
 }
 

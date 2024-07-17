@@ -54,6 +54,7 @@ function applyProfile(doc, profileName, lang) {
         }
     }
     if (profiled) {
+      // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
         `Applied the '${profileName}' profile to '${xdmp.nodeUri(doc)}' in ${
@@ -61,6 +62,7 @@ function applyProfile(doc, profileName, lang) {
         } milliseconds.`
       );
     } else {
+      // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
         `Returned '${xdmp.nodeUri(doc)}' without applying a profile in ${

@@ -1,5 +1,0 @@
-{
-  "role-name": "%%mlAppName%%-ypm-endpoint-consumer",
-  "description": "Endpoint consumer role for YPM in the '%%mlAppName%%' tenant",
-  "role": ["%%mlAppName%%-ypm-reader", "base-endpoint-consumer"]
-}

@@ -48,6 +48,7 @@ function getFacet({
 }) {
   const start = new Date();
   let requestCompleted = false;
+  let isSemantic = 'unk'; // set within try block but referenced in catch block.
 
   try {
     const searchCriteriaProcessor = searchCriteria
@@ -62,7 +63,8 @@ function getFacet({
     // Get the raw facet values and value counts.
     let facetValues = null;
     let totalItems = null;
-    if (_isSemanticFacet(facetName)) {
+    isSemantic = _isSemanticFacet(facetName);
+    if (isSemantic) {
       // Validate pagination parameters (and impose a maximum number per request).
       utils.checkPaginationParameters(page, pageLength);
       pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
@@ -104,13 +106,17 @@ function getFacet({
       // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facet in ${duration} milliseconds: ${facetName}`
+        `Calculated the following facet in ${duration} milliseconds: ${facetName} (filterResults: ${
+          isSemantic === true ? filterResults : 'n/a'
+        })`
       );
     } else {
       // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName}`
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (filterResults: ${
+          isSemantic === true ? filterResults : 'n/a'
+        })`
       );
     }
   }
@@ -331,7 +337,10 @@ function _getViaSearchFacetValues(
   requestOptions
 ) {
   // Log mining script matches on this message.
-  xdmp.trace(traceName, `Searching for the '${facetName}' facet values.`);
+  xdmp.trace(
+    traceName,
+    `Searching for the '${facetName}' facet values (filterResults: ${filterResults}).`
+  );
   const page = 1;
   // always search for the MAXIMUM_SEMANTIC_PAGE_LENGTH + 1, this way we can return up to MAXIMUM_SEMANTIC_PAGE_LENGTH, and also know if there are more facet values than the max
   const pageLength = MAXIMUM_SEMANTIC_PAGE_LENGTH + 1;

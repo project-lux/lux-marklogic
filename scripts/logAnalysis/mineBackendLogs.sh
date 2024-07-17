@@ -319,7 +319,7 @@ echo -e "See also\t$FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # All failed facet requests
 echo -e "   $FAILED_FACET_REQUESTS_FILE..."
-grep "Failed to calculate the following facet" $APP_ERROR_LOG_PATTERN > $FAILED_FACET_REQUESTS_FILE
+grep "Failed to calculate" $APP_ERROR_LOG_PATTERN > $FAILED_FACET_REQUESTS_FILE
 echo -e "See also\t$FAILED_FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Find out which facet requests exceeded the search result estimate * number of values in the field threshold.

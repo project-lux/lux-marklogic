@@ -121,7 +121,7 @@ const searchTermText = {
       helpText: 'Search for People & Groups that published the specified Works',
     },
     recordType: {
-      label: 'Person or Group',
+      label: 'Person or Group Class',
       helpText:
         'Search for records categorized as either a "Person" or a "Group".',
     },

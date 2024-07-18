@@ -509,6 +509,10 @@
         {
           "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300263369']/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300435108']/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -538,6 +542,16 @@
       "field-path": [
         {
           "path": "/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentProfessionalActivityId",
+      "field-path": [
+        {
+          "path": "/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]/id",
           "weight": 1
         }
       ],
@@ -931,6 +945,10 @@
         {
           "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType",
           "weight": 1
+        },
+        {
+          "path": "/indexedProperties[dataType = 'Set']/dataType",
+          "weight": 1
         }
       ],
       "stemmed-searches": "basic",
@@ -950,6 +968,10 @@
       "field-path": [
         {
           "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage",
+          "weight": 1
+        },
+        {
+          "path": "/indexedProperties[dataType = 'Set']/hasDigitalImage",
           "weight": 1
         }
       ],
@@ -1765,10 +1787,10 @@
       "field-value-searches": true
     },
     {
-      "field-name": "eventUsedItemId",
+      "field-name": "eventUsedSetId",
       "field-path": [
         {
-          "path": "/json[type= ('Activity', 'Period')]/used_for/id",
+          "path": "/json[type= ('Activity', 'Period')]/used_specific_object/id",
           "weight": 1
         }
       ],
@@ -2020,6 +2042,13 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "float"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "agentProfessionalActivityId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2492,6 +2521,20 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "eventName",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "eventPrimaryName",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "eventIdentifier",
       "range-value-positions": false,
       "invalid-values": "ignore",
@@ -2562,7 +2605,7 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "eventUsedItemId",
+      "field-name": "eventUsedSetId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

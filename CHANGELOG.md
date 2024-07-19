@@ -5,12 +5,14 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## Unreleased
 
 ### Added
+
  - Added the ability to switch from filtered to unfiltered results in the search, semantic facet, and related list contexts.  The default for each context is controlled by a dedicated build property: `filterSearchResults`, `filterSemanticFacetSearchResults`, and `filterRelatedListSearchResults`, respectively.  The initial intent is to continue filtering results by default.  The `search`, `facets`, and `relatedLists` endpoints now accept the `filterResults` parameter, which may be used to override the default or otherwise explicitly specify the filtering behavior. ([#223](https://github.com/project-lux/lux-marklogic/issues/223))
 
 ### Changed
 
- - Changed the People or Group advanced search option config to People or Group Class ([#201](https://github.com/project-lux/lux-marklogic/issues/201)).
  - Changed log messages for failed facet and search estimate requests when due to insufficient search criteria in order to prevent email alerts ([#236](https://github.com/project-lux/lux-marklogic/issues/236)).
+ - Changed the People or Group advanced search option config to People or Group Class ([#201](https://github.com/project-lux/lux-marklogic/issues/201)).
+ - Changed security roles and how document permissions are set in support of tenants and unit portals.  Includes roles for YCBA, YPM, and YUAG.  For details, see [LUX Backend: Security and Software](/docs/lux-backend-security-and-software.md) and [LUX Backend: Importing Data](/docs/lux-backend-import-data.md).  (Security portion of [#73](https://github.com/project-lux/lux-marklogic/issues/73))
 
 ### Removed
  

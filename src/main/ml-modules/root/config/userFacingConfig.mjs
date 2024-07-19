@@ -114,15 +114,18 @@ const searchTermText = {
     },
     produced: {
       label: 'Created Object',
-      helpText: 'Search for People & Groups that created the specified Objects.',
+      helpText:
+        'Search for People & Groups that created the specified Objects.',
     },
-    professionallyActive: {
+    professionalActivity: {
       label: 'Professional Activity Categorized As',
-      helpText: 'Search for people and groups that carried out professional activities of the given categorization.',
+      helpText:
+        'Search for people and groups that carried out professional activities of the given categorization.',
     },
     published: {
       label: 'Published',
-      helpText: 'Search for People & Groups that published the specified Works.',
+      helpText:
+        'Search for People & Groups that published the specified Works.',
     },
     recordType: {
       label: 'Person or Group Class',

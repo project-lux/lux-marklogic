@@ -73,11 +73,6 @@ const SEARCH_TERM_CONFIG = {
       hopInverseName: 'occupationOf',
       indexReferences: ['conceptPrimaryName'],
     },
-    professionalActivity: {
-      patternName: 'indexedValue',
-      indexReferences: ['conceptPrimaryName'],
-      scalarType: 'string',
-    },
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',

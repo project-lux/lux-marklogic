@@ -15,6 +15,9 @@ const FACETS_CONFIG = {
   agentMemberOfId: { indexReference: 'agentMemberOfId' },
   agentNationalityId: { indexReference: 'agentNationalityId' },
   agentOccupationId: { indexReference: 'agentOccupationId' },
+  agentProfessionalActivityId: {
+    indexReference: 'agentProfessionalActivityId',
+  },
   agentRecordType: { indexReference: 'agentDataTypeName' },
   agentStartDate: { indexReference: 'agentBornStartDateStr' },
   agentStartPlaceId: {

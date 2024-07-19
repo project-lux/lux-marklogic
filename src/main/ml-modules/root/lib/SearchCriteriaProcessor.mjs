@@ -36,6 +36,9 @@ import {
 import { BadRequestError, InternalServerError } from './mlErrorsLib.mjs';
 import * as utils from '../utils/utils.mjs';
 
+// Helps non-search endpoints decide whether to log they failed.
+const INSUFFICIENT_SEARCH_CRITERIA_MESSAGE = 'Insufficient search criteria';
+
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
 const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
@@ -129,12 +132,12 @@ const SearchCriteriaProcessor = class {
     ) {
       if (this.ignoredTerms.length > 0) {
         throw new BadRequestError(
-          `The search criteria given only contains ignored terms: '${this.ignoredTerms.join(
+          `${INSUFFICIENT_SEARCH_CRITERIA_MESSAGE}. The search criteria given only contains ignored terms: '${this.ignoredTerms.join(
             "', '"
           )}'. Please consider creating phrases using double quotes and/or adding additional criteria.`
         );
       }
-      throw new BadRequestError('More search criteria is required');
+      throw new BadRequestError(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE);
     }
 
     // Conditionally add type constraint, using a token for search scope-specific estimates.
@@ -910,4 +913,8 @@ const SearchCriteriaProcessor = class {
   }
 };
 
-export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };
+export {
+  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
+  START_OF_GENERATED_QUERY,
+  SearchCriteriaProcessor,
+};

@@ -12,7 +12,10 @@
  */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import {
+  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
+  SearchCriteriaProcessor,
+} from './SearchCriteriaProcessor.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
@@ -48,6 +51,7 @@ function getFacet({
 }) {
   const start = new Date();
   let requestCompleted = false;
+  let insufficientSearchCriteria = false;
   let isSemantic = 'unk'; // set within try block but referenced in catch block.
 
   try {
@@ -97,9 +101,13 @@ function getFacet({
       page,
       pageLength
     );
-
     requestCompleted = true;
     return facetValues;
+  } catch (e) {
+    if (e.message.includes(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE)) {
+      insufficientSearchCriteria = true;
+    }
+    throw e;
   } finally {
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {
@@ -109,6 +117,12 @@ function getFacet({
         `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
           isSemantic === true ? filterResults : 'n/a'
         })`
+      );
+    } else if (insufficientSearchCriteria) {
+      // Not associated to a monitoring test or the log mining script.
+      xdmp.trace(
+        traceName,
+        `Unable to calculate the '${facetName}' facet due to insufficient search criteria.`
       );
     } else {
       // Monitoring test and log mining script checks for "Failed to calculate".

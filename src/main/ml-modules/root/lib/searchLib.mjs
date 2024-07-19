@@ -19,7 +19,10 @@ import {
   getSearchScope,
   isUserInterfaceSearchScopeName,
 } from './searchScope.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import {
+  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
+  SearchCriteriaProcessor,
+} from './SearchCriteriaProcessor.mjs';
 import { getDefaultSearchOptionsNameByPatternName } from './searchPatternsLib.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 import {
@@ -497,15 +500,23 @@ function getSearchEstimate(searchCriteria, scope) {
     };
   } catch (e) {
     if (xdmp.traceEnabled(traceName)) {
-      // Monitoring test and log mining script checks for "Search Estimate errored out".
-      xdmp.trace(
-        traceName,
-        `Search Estimate errored out: ${JSON.stringify({
-          exception: utils.getExceptionObjectElseMessage(e),
-          scope,
-          searchCriteria,
-        })}`
-      );
+      if (e.message.includes(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE)) {
+        // Not associated to a monitoring test or the log mining script.
+        xdmp.trace(
+          traceName,
+          `Unable to calculate an estimate due to insufficient search criteria.`
+        );
+      } else {
+        // Monitoring test and log mining script checks for "Search Estimate errored out".
+        xdmp.trace(
+          traceName,
+          `Search Estimate errored out: ${JSON.stringify({
+            exception: utils.getExceptionObjectElseMessage(e),
+            scope,
+            searchCriteria,
+          })}`
+        );
+      }
     }
     throw e;
   }

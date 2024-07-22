@@ -343,30 +343,30 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
 }
 generateRemainingSearchTerms.finalizedBy generateAdvancedSearchConfig
 
-task copyRestApiOptions (type: com.marklogic.gradle.task.MarkLogicTask) {
-  doFirst {
-    println ""
-    println "Copying the REST API options to the second app server..."
-    println ""
-
-    try {
-      def client = mlAppConfig.newDatabaseClient()
-      def script = new File('./build/buildSupport/copyRestApiOptions.sjs').getText('UTF-8')
-      def result = client.newServerEval().javascript(script).evalAs(String.class)
-
-      println ""
-      println result
-      println ""
-    } catch ( e ) {
-      // 20240710: user with the deployer role was unable to execute this task.  Best I reckon,
-      // it's because /Default/lux-request-group-1/rest-api/options/lux-options.xml only grants
-      // permissions to the rest-reader-internal and rest-admin-internal roles.
-      throw new GradleException('This task failed. If it was executed by a non-admin, try running as an admin. ' + 
-        'Error from server, which may be misleading: "' + e.message + '"')
-    }
+task importRestApiOptions(type: com.marklogic.gradle.task.MlcpTask) {
+  //check if SSL is enabled and use the properties value
+  def useSsl = true
+  if (project.hasProperty("mlAppServicesSimpleSsl")) {
+    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
   }
+  
+  classpath = configurations.mlcp
+  command = "IMPORT"
+  host = project.property("mlHost")
+  port = project.property("mlRestPortGroup2").toInteger()
+  username = project.property("mlUsername")
+  password = credentials.forKey('mlPassword')
+  database = project.property("tenantModulesDatabase")
+  modules = project.property("tenantModulesDatabase")
+  fastload = false // need ability to overwrite
+  input_file_path = "./src/main/ml-modules/options/lux-options.xml"
+  input_file_type = "documents"
+  output_uri_replace = ".*/options/lux-options.xml,'/Default/" + project.getProperty("mlAppName") + "-request-group-2/rest-api/options/lux-options.xml'"
+  output_permissions "rest-reader-internal,read,rest-admin-internal,update"
+  ssl = useSsl
+  args = ["-ssl_protocol", "tlsv1.2"]
 }
-generateAdvancedSearchConfig.finalizedBy copyRestApiOptions
+generateAdvancedSearchConfig.finalizedBy importRestApiOptions
 
 // Admin required to run this; thus piggybacking mlDeploySecurity.
 // More info in /docs/lux-backend-build-tool-and-tasks.md

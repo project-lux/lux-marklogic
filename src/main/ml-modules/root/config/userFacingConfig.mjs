@@ -665,6 +665,11 @@ const searchTermText = {
       helpText:
         'Enter term(s) to be found within the title or name of the Work. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
     },
+    partOf: {
+      label: 'Member of',
+      helpText:
+        'Search for Archival Sets that are members of the specified Sets',
+    },
     publishedAt: {
       label: 'Published At',
       helpText:

@@ -6,6 +6,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+### Changed
+
+### Removed
+ 
+### Fixed
+
+### Security
+
+## v1.21.0 - 2024-07-22
+
+### Added
+
  - Added the ability to switch from filtered to unfiltered results in the search, semantic facet, and related list contexts.  The default for each context is controlled by a dedicated build property: `filterSearchResults`, `filterSemanticFacetSearchResults`, and `filterRelatedListSearchResults`, respectively.  The initial intent is to continue filtering results by default.  The `search`, `facets`, and `relatedLists` endpoints now accept the `filterResults` parameter, which may be used to override the default or otherwise explicitly specify the filtering behavior. ([#223](https://github.com/project-lux/lux-marklogic/issues/223))
  - Added facets and advanced search configuration for agent's professional activity ([#156](https://github.com/project-lux/lux-marklogic/issues/156))
 

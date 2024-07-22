@@ -73,8 +73,6 @@ function createEntry(scopeName, termName, termConfig) {
     entry.relation = 'text';
   } else if (PATTERN_NAME_SIMILAR == patternName) {
     entry.relation = 'id';
-  } else if (termConfig.onlyAcceptsIdTermAsChild()) {
-    entry.relation = { id: 'id' };
   } else if (scalarTypeIsBoolean) {
     entry.relation = 'boolean';
   } else {
@@ -141,8 +139,6 @@ getOrderedUserInterfaceSearchScopeNames()
         ) {
           add = false;
         } else if (termName.endsWith('Id')) {
-          add = false;
-        } else if (termConfig.onlyAcceptsIdTermAsChild()) {
           add = false;
         }
         // 20230420, bhartwig: asked to suppress Similar terms.

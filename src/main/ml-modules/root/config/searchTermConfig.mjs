@@ -233,6 +233,7 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'set',
       hopInverseName: 'usedForEvent',
       indexReferences: ['setPrimaryName'],
+      idIndexReferences: ['eventUsedSetId'],
     },
   },
   item: {

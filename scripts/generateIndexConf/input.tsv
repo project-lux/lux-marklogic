@@ -45,13 +45,15 @@ agent	Type	Id	uri	agentTypeId	RecordLink	Non	N		/json[type = ('Group', 'Person')
 agent	Type	Name	keyword	agentTypeName	Search	Semantic	N	Search all types, (gender, occupation, nationality, ethnicity, etc etc)		lux:agentClassifiedAs
 agent	Nationality	Id	uri	agentNationalityId	RecordLink	Non	N		/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300379842']/id	
 agent	Nationality	Name	keyword	agentNationalityName	Search	Semantic	N			lux:agentNationality
-agent	Occupation	Id	uri	agentOccupationId	RecordLink	Non	N		/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300263369']/id	
+agent	Occupation	Id	uri	agentOccupationId	RecordLink	Non	N		/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300263369']/id ,  /json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300435108']/id	
 agent	Occupation	Name	keyword	agentOccupationName	Search	Semantic	N			lux:agentOccupation
 agent	Gender	Id	uri	agentGenderId	RecordLink	Non	N		/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055147']/id	
 agent	Gender	Name	keyword	agentGenderName	Search	Semantic	N			lux:agentGender
 agent	MemberOf	Id	uri	agentMemberOfId	RecordLink	Non	N	Agents that are members of the group with given URI	/json[type = ('Group', 'Person')]/member_of/id	
 agent	MemberOf	Name	keyword	agentMemberOfName	Search	Semantic	N	Agents that are members of the group that matches keywords in name		crm:P107i_is_current_or_former_member_of
 agent	HasDigitalImage	Boolean	numbers	agentHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage	
+agent	ProfessionalActivity	Id	uri	agentProfessionalActivityId	RecordLink	Non	N		/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]/id	
+agent	ProfessionalActivity	Name	keyword	agentProfessionalActivityName	Search	Semantic	N			lux:agentProfessionallyActive
 										
 item	ArchiveSort	Id	string	itemArchiveSortId	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
 item	DataType	Name	keyword	itemDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType	
@@ -95,8 +97,8 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
 work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
-work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType	
-work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage	
+work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType ,  /indexedProperties[dataType = 'Set']/dataType	
+work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage ,  /indexedProperties[dataType = 'Set']/hasDigitalImage	
 work	IsOnline	Boolean	numbers	workIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline	
 work	IsPublicDomain	Boolean	numbers	workIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isPublicDomain	
 work	Any	Text	keyword	workAnyText	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]//content ,  /json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']//content	
@@ -163,8 +165,8 @@ language		Identifier	string	languageIdentifier	Search	Non	N		/json[type='Languag
 										
 event	Any	Text	keyword	eventAnyText			N		/json[type= ('Activity', 'Period')]//content	
 event	DataType	Name	keyword	eventDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('Activity', 'Period')]/dataType	
-event		Name	keyword	eventName	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./type='Name']/content	
-event	Primary	Name	keyword	eventPrimaryName	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
+event		Name	keyword	eventName	Search	Non	Y		/json[type= ('Activity', 'Period')]/identified_by[./type='Name']/content	
+event	Primary	Name	keyword	eventPrimaryName	Search	Non	Y		/json[type= ('Activity', 'Period')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
 event		Identifier	string	eventIdentifier	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./type='Identifier']/content , /json[type= ('Activity', 'Period')]/equivalent/id	
 event	Type	Id 	uri	eventTypeId 	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/classified_as/id	
 event	Type	Name	keyword	eventTypeName	Search	Semantic	N			lux:eventClassifiedAs
@@ -178,8 +180,7 @@ event	Agent	Id	uri	eventAgentId	RecordLink	Non	N		/json[type= ('Activity', 'Peri
 event	Agent	Name	keyword	eventAgentName	Search	Semantic	N			lux:eventCarriedOutBy
 event	Place	Id	uri	eventPlaceId	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/took_place_at/id	
 event	Place	Name	keyword	eventPlaceName	Search	Semantic	N			lux:eventTookPlaceAt
-event	UsedItem	Id	uri	eventUsedItemId	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/used_for/id	
 event	UsedItem	Name	keyword	eventUsedItemName	Search	Semantic	N			
-										
+event	UsedSet	Id	uri	eventUsedSetId	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/used_specific_object/id	
 										
 								Multi-hop searches, likely to be too expensive to perform		

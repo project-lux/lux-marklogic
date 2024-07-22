@@ -16,7 +16,7 @@ In this document:
 - [Regenerate Advanced Search Configuration](#regenerate-advanced-search-configuration)
 - [Deploy Database Configuration Changes](#deploy-database-configuration-changes)
 - [Deploy Thesauri](#deploy-thesauri)
-- [Remove the Project](#remove-the-project)
+- [Remove a Tenant or Project](#remove-a-tenant-or-project)
 - [LUX MarkLogic Application Servers](#lux-marklogic-application-servers)
 - [Trace Events](#trace-events)
   - [Custom Trace Events](#custom-trace-events)
@@ -75,22 +75,24 @@ Now review all of the other properties, updating those that are not correct.  Ad
 
 1. Some properties that apply to *all* tenants, including group-level configuration settings.  Please do not change those values.  Ideally, shared configuration will be separated from a tenant's configuration in the future.  A little bit further down is a complete listing, within [Tenant Limitations and Warnings](#tenant-limitations-and-warnings).
 2. This project provides multiple ML Gradle configuration directories.  They are listed and described within [LUX Backend Repository Inventory](/docs/lux-backend-repo-inventory.md).  The associated property is `mlConfigPaths`.
-3. Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `tenantEndpointConsumerPassword` and `tenantDeployerPassword`.
+3. Passwords should not be set in the properties files. See the step below about storing encrypted passwords for use with Gradle tasks.  There is one exception: in local environments, the `mlConfigPaths` property may include [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured); in this case, the properties files need to define `endpointConsumerPassword` and `deployerPassword`.
 4. Forest-level replication is controlled by the `mlDatabaseNamesAndReplicaCounts` property.  Guidance is provided within [/gradle.properties](/gradle.properties).
 
 ## Tenant Limitations and Warnings
 
 The current tenant deployment model includes shared configuration and does not inhibit one tenant from accessing or even modifying another tenant's resources.  The current objective is to facilitate multiple tenants versus comprehensive security.  Until this changes, please bear the following in mind.
 
-**Tenant forks that delete the identified ML Gradle configuration files stand a greater chance of not creating an issue for other tenants.**
+**Secondary tenants that delete the ML Gradle configuration files listed below stand a greater chance of not creating an issue for other tenants.**
 
-1. When loading content, tenant-specific document permissions should be used and align with the tenant-specific roles, specifically [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json) and [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json).  For instance, if `mlAppName` is set to "lux-ftw", MLCP's `-output_permissions` parameter value should be `lux-ftw-reader,read,lux-ftw-writer,update`.
+1. When loading content, the tenant's reader role(s) should be granted the read permission and the tenant's writer role should be granted the update permission.
+    * If the dataset includes the `admin.sources` property, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
+    * Else, the document permissions must be specified.  With MLCP, this is done using the `-output_permissions` parameter.
 2. Only LUX proper should modify shared configuration, including:
     * Admin, App Services, Manage, and HealthCheck application servers.
         * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)
         * [/src/main/ml-config/base/servers/app-services-server.json](/src/main/ml-config/base/servers/app-services-server.json)
         * [/src/main/ml-config/base/servers/manage-server.json](/src/main/ml-config/base/servers/manage-server.json)
-        * LUX does not present override HealthCheck application server settings.
+        * LUX does not presently override HealthCheck application server settings.
     * The certificate used by the above application servers, "built-in-app-cert".
     * The certificate used by all tenant application servers, "lux-app-cert".
     * The default group: [/src/main/ml-config/base/groups/default-group.json](/src/main/ml-config/base/groups/default-group.json)
@@ -113,7 +115,7 @@ The `[passwordPropertyName]` keys are:
    * `copyDatabaseInputPassword` and `copyDatabaseOutputPassword`: Only required by the `copyDatabase` task.
    * `importDataPassword`: Only required by the `importData*` tasks.
 
-Note the `tenantEndpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
+Note the `endpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
 
  Encrypted passwords may need to be updated when switching between environments.
 
@@ -235,7 +237,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
     `./gradlew performBaseDeployment -i -PenvironmentName=[name]`
 
-    This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask.  For example, `generateDataConstants` requires the `languageIdentifier` index.  It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually any other parts of `performBaseDeployment` and double back for `generateDataConstants` after re-indexing is complete.
+    This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask.  For example, `generateDataConstants` requires the `languageIdentifier` index.  It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually run other subtasks of `performBaseDeployment` and double back for `generateDataConstants` after re-indexing is complete.
 
     The entire `performBaseDeployment` task and sub-tasks is expected to take about 6 minutes.
 
@@ -342,13 +344,43 @@ To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-d
 
 `./gradlew mlLoadData -PenvironmentName=[name]`
 
-# Remove the Project
+# Remove a Tenant or Project
 
 ML Gradle includes the `mlUndeploy` task.  It should be used with great care in any environment you care about **--especially multi-tenant environments!**
 
 This task is **restricted to administrators**.  We did not develop the opposite of the `performBaseDeployment` task, even though the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role should have the permissions required to undeploy non-security portions of the MarkLogic configuration.
 
-Please see the [ML Gradle wiki pages](https://github.com/marklogic-community/ml-gradle/wiki) for directions.
+There is no need to delete the ML Gradle configuration files for the group or protected application servers before running the `mlUndeploy` task.  ML Gradle prevents projects from deleting specific databases, application servers, roles, and users, as well as all groups.  Protected application servers include Admin, App-Services, and Manage.
+
+Within `gradle-[name].properties`, check the following property values.  **Triple-check for multi-tenant environments.**
+
+1. `mlAppName`
+2. `mlRestPortGroup1`
+3. `mlRestPortGroup2`
+4. `mlXdbcPort`
+5. `tenantContentDatabase`
+6. `tenantModulesDatabase`
+7. `mlDatabasesWithForestsOnOneHost`
+8. `mlForestsPerHost`
+9. If set, ensure `mlDatabaseNamesAndReplicaCounts` only includes the to-be-removed tenant's databases.
+
+Execute the following, specifying the same Gradle properties file.  Don't be too quick to hit the enter key.  There is no undo.
+
+`./gradlew mlUndeploy -i -Pconfirm=true -PenvironmentName=[name]`
+
+From within the MarkLogic admin console, delete the tenant's user/service accounts.
+
+At this point, the following resources should have been deleted:
+
+1. Tenant's content and modules databases.
+2. Tenant's content and modules forests.
+3. Tenant's application servers.
+4. Tenant's security roles.
+5. Tenant's user/service accounts.
+
+For multi-tenant deployments, consider smoke testing a remaining tenant's application.
+
+If the tenant has a frontend and middle tier, decide whether those too should be removed.
 
 # LUX MarkLogic Application Servers
 
@@ -364,8 +396,8 @@ Available application servers and their ports may vary by environment.  The outc
 | n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
 | n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
 | n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role. |
-| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  The middle tier is to connect using a user only granted the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role. |
+| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 
 \* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.

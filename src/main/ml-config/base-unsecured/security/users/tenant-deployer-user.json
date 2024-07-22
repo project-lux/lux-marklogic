@@ -1,6 +1,6 @@
 {
   "user-name": "%%mlAppName%%-deployer",
   "description": "Service account to deploy the '%%mlAppName%%' tenant",
-  "password": "%%tenantDeployerPassword%%",
+  "password": "%%deployerPassword%%",
   "role": ["%%mlAppName%%-deployer"]
 }

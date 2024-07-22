@@ -1,7 +1,9 @@
 ## **LUX Backend Security and Software**
 
 - [Security](#security)
-  - [MarkLogic](#marklogic)
+  - [MarkLogic Server](#marklogic-server)
+  - [Tenants](#tenants)
+  - [Unit Portals](#unit-portals)
   - [Security Roles](#security-roles)
     - [Reader](#reader)
     - [Endpoint Consumer](#endpoint-consumer)
@@ -14,9 +16,19 @@
 
 # Security
 
-## MarkLogic
+## MarkLogic Server
 
-MarkLogic has many security features.  LUX utilizes role security, both at the REST API and document levels.  The role to grant authorized LUX backend API consumers is described in the next section.  For more information on MarkLogic security features, please refer to [Marklogic's Security Guide](https://docs.marklogic.com/guide/security).
+LUX utilizes MarkLogic Server's role security, both at the REST API and document levels.  Each LUX deployment is provided a base set of roles.  These roles are specific to a tenant.  Tenants supporting unit portals are also provided a couple unit-specific roles.  For more on tenants, unit portals, and roles as implemented in LUX, read on!  To learn more about MarkLogic Server security features, please refer to the [MarkLogic Server Security Guide](https://docs.marklogic.com/guide/security).
+
+## Tenants
+
+Each MarkLogic Server cluster has at least one tenant.  A tenant is provided a set of MarkLogic resources enabling a single environment to host multiple applications.  The set of MarkLogic resources includes a content database, modules database, at least two application servers, and security roles.  The tenant's [Reader](#reader) role is granted to the documents.  Tenant user accounts are granted roles that inherit the same [Reader](#reader) role.  This includes service accounts.  For more information on tenants, see [Tenant Configuration](/docs/lux-backend-deployment.md#tenant-configuration).
+
+## Unit Portals
+
+A single tenant can support multiple unit portals.  A unit portal is a website that has access to a subset of data.  The subset of data is comprised of data provided by a single Yale library or museum (the unit) plus documents it shares with other units, such as concepts they have in common.  Each participating unit is to configure their middle tier to a MarkLogic load balancer and two application servers.  The unit is to use its service account to authenticate into the application servers.  The service account is granted an [Endpoint Consumer](#endpoint-consumer) role that is specific to the unit.  When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  MarkLogic Server security takes it from there.
+
+Regardless of a tenant offering unit service accounts, every tenant offers a service account that has access to all of the documents.  https://lux.collections.yale.edu/ uses such an account.
 
 ## Security Roles
 
@@ -26,13 +38,35 @@ A role restricted to administering a single tenant/application does not yet exis
 
 ### Reader
 
-The [%%mlAppName%%-reader](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json) role probably should be able to read documents in the content database, if not also execute code in the modules database; but, at present, it only has the `rest-reader` role.
+Each tenant and unit is to have a dedicated reader role.  The tenant's reader role is defined by [1-tenant-reader-role.json](/src/main/ml-config/base/security/roles/1-tenant-reader-role.json).  Reader roles are the most restricted in the system.  They are granted read permission to all or a subset of documents --but not the ability to get to them via endpoint.
+
+Reader roles are not to inherit another reader role.
+
+Additional reader roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
+
+Reader role naming conventions for units, where `[alpha]` is the next available letter and `[unit]` uniquely identifies the unit:
+
+* File names: `1[letter]-[unit]-reader-role.json`
+* Role names: `%%mlAppName%%-[unit]-reader`
+
+**IMPORTANT:** When loading content, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) requires `[unit]` to be the value used for the unit within the `admin.sources` property.
 
 ### Endpoint Consumer
 
-The [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role is the first role explicitly intended to have LUX backend capabilities.  It is intended to be granted to the middle tier, and should be able to perform everything backend endpoint consumers need, including searching for documents and retrieving documents.  Developers are encouraged to test endpoints using a user account that has this role.
+Each tenant and unit is to have a dedicated endpoint consumer role.  The tenant's endpoint consumer role is defined by [2-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json).  Endpoint consumer roles are the first ones explicitly intended to have LUX backend capabilities.  Middle tiers may use service accounts that have one of these roles to authenticate into a tenant's application servers.  These roles should enable everything backend endpoint consumers need, including searching for and retrieving documents.  
 
-For internal security environments, the project offers the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base-unsecured/security/users/tenant-endpoint-consumer-user.json) *user account*, which is granted the endpoint consumer role.  To deploy, set the `tenantEndpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+Endpoint consumer roles are not to inherit another endpoint consumer role.
+
+Additional endpoint consumer roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
+
+Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
+
+* File names: `2[alpha]-[unit]-endpoint-consumer-role.json`
+* Role names: `%%mlAppName%%-[unit]-endpoint-consumer`
+
+For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+
+Developers are encouraged to test endpoints using a user account that has one of these roles.
 
 ### Query Console
 
@@ -46,7 +80,7 @@ The [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writ
 
 The [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role builds upon the [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json) role by also being able to run the `performBaseDeployment` task.  This role should not be able to run the `mlDeploySecurity` task or lower level security tasks, specifically creating user accounts, changing a user account's roles and privileges, and changing a role's inherited roles and privileges.
 
-For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `tenantDeployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
+For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
 
 # Software
 
@@ -54,13 +88,13 @@ For internal security environments, the project offers the [%%mlAppName%%-deploy
 
 One or more individuals on the project should monitor for software updates and security patches, ideally being notified when one becomes available.
 
-For MarkLogic, if you haven't already created a MarkLogic Developer account or attended training, go to the bottom of https://developer.marklogic.com/engage/ and click the Sign Me Up button.
+For MarkLogic Server, if you haven't already created a MarkLogic Developer account or attended training, go to the bottom of https://developer.marklogic.com/engage/ and click the Sign Me Up button.
 
 For the eight or so GitHub repositories LUX uses, "watch" the repo for issues, releases, and security alerts.
 
 That leaves a few that one either needs to periodically check or see if they offer automated notifications.  Read on for the complete list.
 
-For version compatibility questions, see [MarkLogic's Product Support Matrix](https://developer.marklogic.com/products/support-matrix/).
+For version compatibility questions, see the [MarkLogic Server Product Support Matrix](https://developer.marklogic.com/products/support-matrix/).
 
 ## Inventory
 

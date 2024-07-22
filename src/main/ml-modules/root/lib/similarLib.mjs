@@ -37,6 +37,7 @@ function getSimilarQuery(
   const searchCriteriaProcessor = processSearchCriteria({
     searchCriteria,
     includeTypeConstraint: false,
+    filterResults: requestOptions.filterResults,
   });
   return searchCriteriaProcessor.getCtsQueryStr(false);
 }

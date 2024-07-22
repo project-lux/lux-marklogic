@@ -16,6 +16,13 @@ const RELATED_LIST_PER_RELATION_MAX = parseInt(
 
 const FACET_MAXIMUM_PRODUCT = parseInt('%%facetMaximumProduct%%'.trim());
 
+const DEFAULT_FILTER_SEARCH_RESULTS =
+  '%%filterSearchResults%%'.trim() === 'true';
+const DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS =
+  '%%filterSemanticFacetSearchResults%%'.trim() === 'true';
+const DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS =
+  '%%filterRelatedListSearchResults%%'.trim() === 'true';
+
 const FULL_TEXT_SEARCH_RELATED_FIELD_NAME =
   '%%fullTextSearchRelatedFieldName%%'.trim();
 
@@ -129,6 +136,9 @@ export {
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   BASE_URL,
   DATA_PERMISSIONS_DELIMITED_STRING,
+  DEFAULT_FILTER_SEARCH_RESULTS,
+  DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
+  DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   ENVIRONMENT_NAME,

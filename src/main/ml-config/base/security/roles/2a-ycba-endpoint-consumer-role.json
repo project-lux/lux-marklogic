@@ -1,7 +1,7 @@
 {
-  "role-name": "%%mlAppName%%-endpoint-consumer",
-  "description": "Endpoint consumer role for the '%%mlAppName%%' tenant",
-  "role": ["%%mlAppName%%-reader", "rest-reader"],
+  "role-name": "%%mlAppName%%-ycba-endpoint-consumer",
+  "description": "Endpoint consumer role for YCBA in the '%%mlAppName%%' tenant",
+  "role": ["%%mlAppName%%-ycba-reader", "rest-reader"],
   "privilege": [
     {
       "privilege-name": "sem-sparql",

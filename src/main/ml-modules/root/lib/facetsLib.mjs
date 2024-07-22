@@ -12,10 +12,14 @@
  */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import {
+  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
+  SearchCriteriaProcessor,
+} from './SearchCriteriaProcessor.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
+  DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
   FACET_MAXIMUM_PRODUCT,
   LUX_CONTEXT,
   TRACE_NAME_FACETS as traceName,
@@ -34,29 +38,37 @@ const DEFAULT_PAGE_LENGTH = 20;
 const MAXIMUM_NON_SEMANTIC_PAGE_LENGTH = 10000;
 const MAXIMUM_SEMANTIC_PAGE_LENGTH = 100;
 
+const DEFAULT_SORT = 'frequency-order';
+
 function getFacet({
   facetName,
   searchCriteria = null,
   searchScope = null,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
-  sort,
+  sort = DEFAULT_SORT,
+  filterResults = DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
 }) {
   const start = new Date();
   let requestCompleted = false;
+  let insufficientSearchCriteria = false;
+  let isSemantic = 'unk'; // set within try block but referenced in catch block.
 
   try {
     const searchCriteriaProcessor = searchCriteria
       ? processSearchCriteria({
           searchCriteria,
           searchScope,
+          // The filterResults parameter is used elsewhere, specific to semantic facet requests.
+          filterResults: false,
         })
       : null;
 
     // Get the raw facet values and value counts.
     let facetValues = null;
     let totalItems = null;
-    if (_isSemanticFacet(facetName)) {
+    isSemantic = _isSemanticFacet(facetName);
+    if (isSemantic) {
       // Validate pagination parameters (and impose a maximum number per request).
       utils.checkPaginationParameters(page, pageLength);
       pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
@@ -65,7 +77,8 @@ function getFacet({
         facetName,
         searchCriteriaProcessor,
         page,
-        pageLength
+        pageLength,
+        filterResults
       ));
     } else {
       utils.checkPaginationParameters(page, pageLength);
@@ -88,22 +101,36 @@ function getFacet({
       page,
       pageLength
     );
-
     requestCompleted = true;
     return facetValues;
+  } catch (e) {
+    if (e.message.includes(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE)) {
+      insufficientSearchCriteria = true;
+    }
+    throw e;
   } finally {
     const duration = new Date().getTime() - start.getTime();
     if (requestCompleted) {
       // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facet in ${duration} milliseconds: ${facetName}`
+        `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
+          isSemantic === true ? filterResults : 'n/a'
+        })`
+      );
+    } else if (insufficientSearchCriteria) {
+      // Not associated to a monitoring test or the log mining script.
+      xdmp.trace(
+        traceName,
+        `Unable to calculate the '${facetName}' facet due to insufficient search criteria.`
       );
     } else {
       // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName}`
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
+          isSemantic === true ? filterResults : 'n/a'
+        })`
       );
     }
   }
@@ -230,9 +257,9 @@ function _getNonSemanticFacet(
   const searchResultEstimate = parseInt(cts.estimate(ctsQuery)); // comes back as an object, which toLocaleString doesn't format
   const requestProduct = searchResultEstimate * indexValueCount;
   if (requestProduct > FACET_MAXIMUM_PRODUCT) {
+    // Monitoring test and log mining script checks for "Rejected request to calculate".
     xdmp.trace(
       traceName,
-      // Monitoring test and log mining script checks for "Rejected request to calculate".
       `Rejected request to calculate the ${facetName} facet as ${searchResultEstimate.toLocaleString()} search results by ${indexValueCount.toLocaleString()} field values exceeds the ${FACET_MAXIMUM_PRODUCT.toLocaleString()} threshold.`
     );
     throw new BadRequestError(
@@ -268,7 +295,8 @@ function _getViaSearchFacet(
   facetName,
   searchCriteriaProcessor,
   page,
-  pageLength
+  pageLength,
+  filterResults
 ) {
   // Require search criteria.
   const baseSearchCriteria = searchCriteriaProcessor
@@ -278,15 +306,14 @@ function _getViaSearchFacet(
     _throwSearchCriteriaRequiredError();
   }
 
-  const requestOptions = searchCriteriaProcessor.getRequestOptions();
-
   const facetConfig = FACETS_VIA_SEARCH_CONFIG[facetName];
 
   const facetValues = _getViaSearchFacetValues(
     facetName,
     facetConfig,
     baseSearchCriteria,
-    requestOptions
+    filterResults,
+    searchCriteriaProcessor.getRequestOptions()
   )
     .map((searchResult) => {
       const uri = searchResult.id + ''; // Required string conversion
@@ -320,9 +347,14 @@ function _getViaSearchFacetValues(
   facetName,
   facetConfig,
   baseSearchCriteria,
+  filterResults,
   requestOptions
 ) {
-  xdmp.trace(traceName, `Searching for the '${facetName}' facet values.`);
+  // Log mining script matches on this message.
+  xdmp.trace(
+    traceName,
+    `Searching for the '${facetName}' facet values (filterResults: ${filterResults}).`
+  );
   const page = 1;
   // always search for the MAXIMUM_SEMANTIC_PAGE_LENGTH + 1, this way we can return up to MAXIMUM_SEMANTIC_PAGE_LENGTH, and also know if there are more facet values than the max
   const pageLength = MAXIMUM_SEMANTIC_PAGE_LENGTH + 1;
@@ -330,6 +362,7 @@ function _getViaSearchFacetValues(
     searchCriteria: facetConfig.getFacetValuesCriteria(baseSearchCriteria),
     page,
     pageLength,
+    filterResults,
     requestContext: 'viaSearchFacet',
     mayExceedMaximumPageLength: true,
     mayCalculateEstimates: false,
@@ -358,6 +391,7 @@ function _estimateViaSearchFacetValueCount(
       baseSearchCriteria,
       facetValueId
     ),
+    filterResults: false,
     includeTypeConstraint: false,
   }).getEstimate();
 }

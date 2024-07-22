@@ -36,6 +36,9 @@ import {
 import { BadRequestError, InternalServerError } from './mlErrorsLib.mjs';
 import * as utils from '../utils/utils.mjs';
 
+// Helps non-search endpoints decide whether to log they failed.
+const INSUFFICIENT_SEARCH_CRITERIA_MESSAGE = 'Insufficient search criteria';
+
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
 const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
@@ -44,12 +47,13 @@ const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
 const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");`;
 
 const SearchCriteriaProcessor = class {
-  constructor(synonymsEnabled, facetsAreLikely) {
-    // Constructor parameters.
+  constructor(filterResults, facetsAreLikely, synonymsEnabled) {
+    // Capture all constructor parameters as request options, enabling search patterns to utilize.
     this.requestOptions = {
+      filterResults,
+      facetsAreLikely,
       synonymsEnabled,
     };
-    this.facetsAreLikely = facetsAreLikely;
 
     // Given to process()
     this.searchCriteria;
@@ -128,12 +132,12 @@ const SearchCriteriaProcessor = class {
     ) {
       if (this.ignoredTerms.length > 0) {
         throw new BadRequestError(
-          `The search criteria given only contains ignored terms: '${this.ignoredTerms.join(
+          `${INSUFFICIENT_SEARCH_CRITERIA_MESSAGE}. The search criteria given only contains ignored terms: '${this.ignoredTerms.join(
             "', '"
           )}'. Please consider creating phrases using double quotes and/or adding additional criteria.`
         );
       }
-      throw new BadRequestError('More search criteria is required');
+      throw new BadRequestError(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE);
     }
 
     // Conditionally add type constraint, using a token for search scope-specific estimates.
@@ -196,16 +200,16 @@ const SearchCriteriaProcessor = class {
 
     if (withSearchResults === true) {
       // Concatenate the search options
-      let searchOptionsStr = '[';
-      searchOptionsStr +=
-        this.facetsAreLikely === true ? '"faceted"' : '"unfaceted"';
-      if (this.sortCriteria.hasSortOptions()) {
-        searchOptionsStr += `, ${utils.arrayToString(
-          this.sortCriteria.getSortOptions(),
-          'code'
-        )}`;
-      }
-      searchOptionsStr += ']';
+      const searchOptionsArr = [
+        this.requestOptions.filterResults === true
+          ? '"filtered"'
+          : '"unfiltered"',
+        this.requestOptions.facetsAreLikely === true
+          ? '"faceted"'
+          : '"unfaceted"',
+        this.sortCriteria.getSortOptions(),
+      ];
+      const searchOptionsStr = utils.arrayToString(searchOptionsArr, 'code');
 
       return `${START_OF_GENERATED_QUERY}
         const docs = fn.subsequence(
@@ -642,8 +646,11 @@ const SearchCriteriaProcessor = class {
   // Get a search term's configuration by scope name and term name.  Exception thrown when an invalid combination.
   static _getSearchTermConfig(scopeName, termName) {
     const scopedTerms = SEARCH_TERM_CONFIG[scopeName];
-    if (!scopedTerms || !scopedTerms[termName]) {
-      // This error message presumes the search scope name is valid; that check should happen at the request level.
+    if (!scopedTerms) {
+      throw new BadRequestError(
+        `No terms are configured to the '${scopeName}' search scope.`
+      );
+    } else if (!scopedTerms[termName]) {
       throw new BadRequestError(
         `The '${termName}' term is invalid for the '${scopeName}' search scope. Valid choices: ${Object.keys(
           scopedTerms
@@ -906,4 +913,8 @@ const SearchCriteriaProcessor = class {
   }
 };
 
-export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };
+export {
+  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
+  START_OF_GENERATED_QUERY,
+  SearchCriteriaProcessor,
+};

@@ -252,7 +252,7 @@ MLCP may also be invoked directly, from the command line.
 3. See [Detecting Conflicts Between Data and Index Configuration](/docs/lux-backend-database-indexing.md#detecting-conflicts-between-data-and-index-configuration) if interested in doing so.
 4. Configure and run the following command.
 
-*For the `output_permissions`, use the current/resolved value of the `mlDataPermissions` Gradle property, which may or may not match the below value.*
+*The transform function is responsible for setting document permissions.*
 
 ```bash
 [nohup] sh mlcp.sh import \
@@ -268,7 +268,8 @@ MLCP may also be invoked directly, from the command line.
   -input_file_type delimited_json \
   -input_compressed true \
   -input_compression_codec gzip \
-  -output_permissions [%%mlAppName%%-reader],read,[%%mlAppName%%-writer],update \
+  -transform_module /documentTransforms.sjs \
+  -transform_function associateDocToDataSlice \
   -uri_id id
 ```
 

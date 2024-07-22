@@ -2,6 +2,7 @@ import { StopWatch } from '../utils/stopWatch.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
+  DEFAULT_FILTER_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   LUX_CONTEXT,
@@ -18,7 +19,10 @@ import {
   getSearchScope,
   isUserInterfaceSearchScopeName,
 } from './searchScope.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import {
+  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
+  SearchCriteriaProcessor,
+} from './SearchCriteriaProcessor.mjs';
 import { getDefaultSearchOptionsNameByPatternName } from './searchPatternsLib.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 import {
@@ -36,6 +40,7 @@ const DEFAULT_PAGE_LENGTH = 20;
 const DEFAULT_REQUEST_CONTEXT = 'unspecified';
 const DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH = false;
 const DEFAULT_MAY_ESTIMATE = true;
+const DEFAULT_FILTER_RESULTS_NO_CONTEXT = true;
 const DEFAULT_FACETS_SOON = false;
 const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
 const DEFAULT_SYNONYMS_ENABLED = SYNONYMS_ENABLED;
@@ -74,6 +79,7 @@ function search({
   mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
   mayEstimate = DEFAULT_MAY_ESTIMATE,
   sortDelimitedStr = EMPTY_STRING,
+  filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
   facetsSoon = DEFAULT_FACETS_SOON,
   synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
   valuesOnly = DEFAULT_VALUES_ONLY,
@@ -89,6 +95,7 @@ function search({
       mayExceedMaximumPageLength,
       mayEstimate,
       sortDelimitedStr,
+      filterResults,
       facetsSoon,
       synonymsEnabled,
       valuesOnly,
@@ -109,6 +116,7 @@ function _search(
     mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
     mayEstimate = DEFAULT_MAY_ESTIMATE,
     sortDelimitedStr = EMPTY_STRING,
+    filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
     facetsSoon = DEFAULT_FACETS_SOON,
     synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
     valuesOnly = DEFAULT_VALUES_ONLY,
@@ -128,6 +136,7 @@ function _search(
 
   try {
     if (xdmp.traceEnabled(traceName)) {
+      // Not associated with monitoring tests or the log mining script.
       xdmp.trace(
         traceName,
         `Search ${requestId} parameters: ${JSON.stringify({
@@ -140,6 +149,7 @@ function _search(
           mayExceedMaximumPageLength,
           mayEstimate,
           sortDelimitedStr,
+          filterResults,
           facetsSoon,
           synonymsEnabled,
         })}`
@@ -166,6 +176,7 @@ function _search(
       page,
       pageLength,
       sortCriteria,
+      filterResults,
       synonymsEnabled,
       facetsAreLikely,
       stopWatch,
@@ -200,6 +211,7 @@ function _search(
           searchAgain = true;
           resolvedSearchScope = candidateSearchScopeName;
           if (xdmp.traceEnabled(traceName)) {
+            // Not associated with monitoring tests or the log mining script.
             xdmp.trace(
               traceName,
               `Changed search request ${requestId}'s scope from '${searchScope}' to '${resolvedSearchScope}'`
@@ -212,6 +224,7 @@ function _search(
               mayChangeScope: false, // avoid recursion when the unfiltered count is greater than the filtered count.
               page,
               pageLength,
+              filterResults,
               requestContext,
               mayExceedMaximumPageLength,
               mayEstimate: true,
@@ -308,6 +321,7 @@ function _search(
     return response;
   } catch (e) {
     if (xdmp.traceEnabled(traceName)) {
+      // Not associated with monitoring tests or the log mining script.
       xdmp.trace(
         traceName,
         `Search ${requestId} errored out: ${JSON.stringify(e)}`
@@ -316,6 +330,7 @@ function _search(
     throw e;
   } finally {
     if (!searchAgain && (xdmp.traceEnabled(traceName) || !requestCompleted)) {
+      // Log mining script matches on a portion(s) of this message.
       const searchInfo = {
         requestId,
         requestCompleted,
@@ -326,6 +341,7 @@ function _search(
         estimate: estimate,
         page,
         pageLength,
+        filterResults,
         requestContext,
         returned: results.length,
         scope: resolvedSearchScope,
@@ -344,9 +360,10 @@ function _search(
 
       // Grep friendlier
       if (requestCompleted) {
+        // Log mining script matches on then parses this message.
         xdmp.trace(
           traceName,
-          `requestId: ${requestId}; requestContext: ${requestContext}; totalElapsed: ${stopWatch.totalElapsed()}; searchElapsed: ${stopWatch.lapElapsed(
+          `requestId: ${requestId}; requestContext: ${requestContext}; filterResults: ${filterResults}; totalElapsed: ${stopWatch.totalElapsed()}; searchElapsed: ${stopWatch.lapElapsed(
             'search'
           )}; estimate: ${estimate}; returned: ${
             results.length
@@ -374,14 +391,16 @@ function processSearchCriteria({
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
   sortCriteria = new SortCriteria(EMPTY_STRING),
+  filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
   synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
   facetsAreLikely = DEFAULT_FACETS_ARE_LIKELY,
   stopWatch = new StopWatch(true),
   valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
   const searchCriteriaProcessor = new SearchCriteriaProcessor(
-    synonymsEnabled,
-    facetsAreLikely
+    filterResults,
+    facetsAreLikely,
+    synonymsEnabled
   );
   searchCriteriaProcessor.process(
     searchCriteria,
@@ -428,6 +447,7 @@ function calculateEstimate(searchCriteria, scope) {
   const searchCriteriaProcessor = processSearchCriteria({
     searchCriteria,
     searchScope: scope,
+    filterResults: false,
   });
   const searchScope = searchCriteriaProcessor.getSearchScope();
   const totalItems = searchCriteriaProcessor.getEstimate();
@@ -468,6 +488,7 @@ function getSearchEstimate(searchCriteria, scope) {
     const estimate = calculateEstimate(searchCriteria, scope);
     const timeElapsed = stopWatch.stop();
     if (xdmp.traceEnabled(traceName)) {
+      // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
         `Calculated estimate in ${timeElapsed} milliseconds.`
@@ -479,15 +500,23 @@ function getSearchEstimate(searchCriteria, scope) {
     };
   } catch (e) {
     if (xdmp.traceEnabled(traceName)) {
-      xdmp.trace(
-        traceName,
+      if (e.message.includes(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE)) {
+        // Not associated to a monitoring test or the log mining script.
+        xdmp.trace(
+          traceName,
+          `Unable to calculate an estimate due to insufficient search criteria.`
+        );
+      } else {
         // Monitoring test and log mining script checks for "Search Estimate errored out".
-        `Search Estimate errored out: ${JSON.stringify({
-          exception: utils.getExceptionObjectElseMessage(e),
-          scope,
-          searchCriteria,
-        })}`
-      );
+        xdmp.trace(
+          traceName,
+          `Search Estimate errored out: ${JSON.stringify({
+            exception: utils.getExceptionObjectElseMessage(e),
+            scope,
+            searchCriteria,
+          })}`
+        );
+      }
     }
     throw e;
   }
@@ -521,6 +550,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               uri: relatedListSearchInfo.uri,
               page: 1,
               pageLength: 2, // 1st may be self (uri)
+              filterResults: true,
               relationshipsPerRelation: 2, // 1st may be self (uri)
               onlyCheckForOneRelatedItem: true,
             }).orderedItems.length > 0
@@ -532,6 +562,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
             searchCriteria: criteria,
             page: 1,
             pageLength: 1,
+            filterResults: true,
             stopWatch,
           }).getSearchResults().length;
         }
@@ -547,9 +578,9 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
         };
 
         if (xdmp.traceEnabled(traceName)) {
+          // Monitoring test and log mining script checks for "Search Will Match errored out".
           xdmp.trace(
             traceName,
-            // Monitoring test and log mining script checks for "Search Will Match errored out".
             `A search named '${name}' given to Search Will Match errored out: ${JSON.stringify(
               { exception: utils.getExceptionObjectElseMessage(e), criteria }
             )}`
@@ -559,6 +590,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
     });
 
     if (xdmp.traceEnabled(traceName)) {
+      // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
         `Checked ${Object.keys(namedSearchesResponse).length} searches in ${
@@ -570,9 +602,9 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
     return namedSearchesResponse;
   } catch (e) {
     if (xdmp.traceEnabled(traceName)) {
+      // Monitoring test and log mining script checks for "Search Will Match errored out".
       xdmp.trace(
         traceName,
-        // Monitoring test and log mining script checks for "Search Will Match errored out".
         `Search Will Match errored out: ${JSON.stringify({
           exception: utils.getExceptionObjectElseMessage(e),
           multipleSearchCriteria,

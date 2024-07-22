@@ -7,6 +7,7 @@ const searchScope = external.scope;
 const page = external.page;
 const pageLength = external.pageLength;
 const sort = external.sort;
+const filterResults = external.filterResults;
 
 handleRequest(function () {
   return getFacet({
@@ -16,5 +17,6 @@ handleRequest(function () {
     page,
     pageLength,
     sort,
+    filterResults,
   });
 });

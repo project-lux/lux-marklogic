@@ -838,7 +838,6 @@ export {
   TYPE_GROUP,
   TYPE_TERM,
   TYPE_ATOMIC,
-  acceptsId,
   acceptsGroup,
   acceptsTerm,
   acceptsAtomicValue,

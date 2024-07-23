@@ -44,7 +44,6 @@ const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
 const OPTION_NAME_MAXIMUM_VALUES = 'maximumValues';
 const OPTION_NAME_RETURN_VALUES = 'returnValues';
 
-const TYPE_ID = 8;
 const TYPE_GROUP = 4;
 const TYPE_TERM = 2;
 const TYPE_ATOMIC = 1;
@@ -96,10 +95,6 @@ function applyPattern({
     searchPatternOptions,
     requestOptions
   );
-}
-
-function acceptsId(patternName) {
-  return (getPatternConfig(patternName).allowedChildren & TYPE_ID) === TYPE_ID;
 }
 
 function acceptsGroup(patternName) {
@@ -389,7 +384,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
-  allowedChildren: TYPE_GROUP + TYPE_TERM + TYPE_ID,
+  allowedChildren: TYPE_GROUP + TYPE_TERM,
   isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
@@ -840,11 +835,9 @@ export {
   PATTERN_NAME_RELATED_LIST,
   PATTERN_NAME_SIMILAR,
   PATTERN_NAME_TEXT,
-  TYPE_ID,
   TYPE_GROUP,
   TYPE_TERM,
   TYPE_ATOMIC,
-  acceptsId,
   acceptsGroup,
   acceptsTerm,
   acceptsAtomicValue,

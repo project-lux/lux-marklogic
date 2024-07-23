@@ -33,11 +33,11 @@ import {
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_NAME_KEYWORD,
 } from './appConstants.mjs';
-import { BadRequestError, InternalServerError } from './mlErrorsLib.mjs';
+import {
+  InternalServerError,
+  InvalidSearchRequestError,
+} from './mlErrorsLib.mjs';
 import * as utils from '../utils/utils.mjs';
-
-// Helps non-search endpoints decide whether to log they failed.
-const INSUFFICIENT_SEARCH_CRITERIA_MESSAGE = 'Insufficient search criteria';
 
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
@@ -108,12 +108,12 @@ const SearchCriteriaProcessor = class {
         // Some search patterns need to know the requested search scope
         this.requestOptions.scopeName = scopeName;
       } else {
-        throw new BadRequestError(
-          `Invalid search scope specified: '${this.resolvedSearchCriteria._scope}'`
+        throw new InvalidSearchRequestError(
+          `'${this.resolvedSearchCriteria._scope}' is not a valid search scope.`
         );
       }
     } else {
-      throw new BadRequestError(`Search scope not specified.`);
+      throw new InvalidSearchRequestError(`search scope not specified.`);
     }
 
     this.ctsQueryStrWithTokens = this.generateQueryFromCriteria(
@@ -131,13 +131,13 @@ const SearchCriteriaProcessor = class {
       !utils.isNonEmptyString(this.ctsQueryStrWithTokens)
     ) {
       if (this.ignoredTerms.length > 0) {
-        throw new BadRequestError(
-          `${INSUFFICIENT_SEARCH_CRITERIA_MESSAGE}. The search criteria given only contains ignored terms: '${this.ignoredTerms.join(
+        throw new InvalidSearchRequestError(
+          `the search criteria given only contains '${this.ignoredTerms.join(
             "', '"
-          )}'. Please consider creating phrases using double quotes and/or adding additional criteria.`
+          )}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`
         );
       }
-      throw new BadRequestError(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE);
+      throw new InvalidSearchRequestError(`more search criteria is required.`);
     }
 
     // Conditionally add type constraint, using a token for search scope-specific estimates.
@@ -351,8 +351,8 @@ const SearchCriteriaProcessor = class {
           true // We want cts.trueQuery so as to avoid cts.notQuery(cts.falseQuery)
         )})`;
       } else {
-        throw new BadRequestError(
-          `Object or array expected for NOT search criteria but given: ${JSON.stringify(
+        throw new InvalidSearchRequestError(
+          `object or array expected for NOT search criteria but given ${JSON.stringify(
             searchCriteria
           )}`
         );
@@ -380,8 +380,8 @@ const SearchCriteriaProcessor = class {
           )}
         )`;
       } else {
-        throw new BadRequestError(
-          `The BOOST operator requires an array of two items.`
+        throw new InvalidSearchRequestError(
+          `the BOOST operator requires an array of two items.`
         );
       }
     } else {
@@ -456,13 +456,13 @@ const SearchCriteriaProcessor = class {
 
           // Need to check for the property's existence as zero is a valid value.
           if (!searchCriteria.hasOwnProperty(termName)) {
-            throw new BadRequestError(
-              `The '${termName}' term requires a value.`
+            throw new InvalidSearchRequestError(
+              `the '${termName}' term requires a value.`
             );
           }
         } else {
-          throw new BadRequestError(
-            `Search term defines more than one term name: ${JSON.stringify(
+          throw new InvalidSearchRequestError(
+            `search term defines more than one term name in criteria ${JSON.stringify(
               searchCriteria
             )}`
           );
@@ -470,8 +470,8 @@ const SearchCriteriaProcessor = class {
       }
     }
     if (!searchTerm.hasName()) {
-      throw new BadRequestError(
-        `Search term does not specify a term name: ${JSON.stringify(
+      throw new InvalidSearchRequestError(
+        `search term does not specify a term name in criteria ${JSON.stringify(
           searchCriteria
         )}`
       );
@@ -535,8 +535,8 @@ const SearchCriteriaProcessor = class {
         if (SearchCriteriaProcessor._hasGroup(termValue)) {
           searchTerm.setValueType(TYPE_GROUP);
           if (!acceptsGroup(patternName)) {
-            throw new BadRequestError(
-              `The '${termName}' term contains a group but is not allowed to.`
+            throw new InvalidSearchRequestError(
+              `the '${termName}' term contains a group but is not allowed to.`
             );
           }
         } else if (
@@ -544,8 +544,8 @@ const SearchCriteriaProcessor = class {
         ) {
           searchTerm.setValueType(TYPE_TERM);
           if (!acceptsTerm(patternName)) {
-            throw new BadRequestError(
-              `The '${termName}' term contains another term but is not allowed to.`
+            throw new InvalidSearchRequestError(
+              `the '${termName}' term contains another term but is not allowed to.`
             );
           }
         }
@@ -583,12 +583,12 @@ const SearchCriteriaProcessor = class {
       searchTermConfig.hasIdIndexReferences() &&
       !searchTermConfig.hasPatternName()
     ) {
-      throw new BadRequestError(
-        `Search term '${termName}' in scope '${scopeName}' only supports the 'id' child search term.`
+      throw new InvalidSearchRequestError(
+        `the search term '${termName}' in scope '${scopeName}' only supports the 'id' child search term.`
       );
     } else if (!acceptsAtomicValue(patternName)) {
-      throw new BadRequestError(
-        `The search term '${termName}' in scope '${scopeName}' does not accept atomic values.`
+      throw new InvalidSearchRequestError(
+        `the search term '${termName}' in scope '${scopeName}' does not accept atomic values.`
       );
     } else {
       searchTerm.setValueType(TYPE_ATOMIC);
@@ -647,12 +647,12 @@ const SearchCriteriaProcessor = class {
   static _getSearchTermConfig(scopeName, termName) {
     const scopedTerms = SEARCH_TERM_CONFIG[scopeName];
     if (!scopedTerms) {
-      throw new BadRequestError(
+      throw new InternalServerError(
         `No terms are configured to the '${scopeName}' search scope.`
       );
     } else if (!scopedTerms[termName]) {
-      throw new BadRequestError(
-        `The '${termName}' term is invalid for the '${scopeName}' search scope. Valid choices: ${Object.keys(
+      throw new InvalidSearchRequestError(
+        `the '${termName}' term is invalid for the '${scopeName}' search scope. Valid choices: ${Object.keys(
           scopedTerms
         )
           .sort()
@@ -718,8 +718,8 @@ const SearchCriteriaProcessor = class {
     if (utils.isObject(searchCriteria)) {
       return true;
     }
-    throw new BadRequestError(
-      `Object expected but given: ${JSON.stringify(searchCriteria)}`
+    throw new InvalidSearchRequestError(
+      `object expected but given ${JSON.stringify(searchCriteria)}`
     );
   }
 
@@ -727,8 +727,8 @@ const SearchCriteriaProcessor = class {
     if (utils.isArray(searchCriteria)) {
       return true;
     }
-    throw new BadRequestError(
-      `Array expected but given: ${JSON.stringify(searchCriteria)}`
+    throw new InvalidSearchRequestError(
+      `array expected but given ${JSON.stringify(searchCriteria)}`
     );
   }
 
@@ -786,8 +786,8 @@ const SearchCriteriaProcessor = class {
 
   static translateStringGrammarToJSON(scopeName, searchCriteria) {
     if (!isSearchScopeName(scopeName)) {
-      throw new BadRequestError(
-        `Invalid search scope specified: '${scopeName}'`
+      throw new InvalidSearchRequestError(
+        `'${scopeName}' is not a valid search scope.`
       );
     }
     // Parse as ML's search grammar and convert to the LUX Search JSON format.  There are no bindings.
@@ -797,8 +797,8 @@ const SearchCriteriaProcessor = class {
     try {
       ctsQueryObj = cts.parse(adjustedSearchCriteriaStr).toObject();
     } catch (e) {
-      throw new BadRequestError(
-        `Unable to parse the search criteria: ${searchCriteria}`
+      throw new InvalidSearchRequestError(
+        `unable to parse criteria ${searchCriteria}`
       );
     }
     return {
@@ -898,8 +898,8 @@ const SearchCriteriaProcessor = class {
         }
       } else {
         // Better to ignore or bring back warnings?
-        throw new BadRequestError(
-          `Encountered unsupported portion of the search string grammar: '${propName}'`
+        throw new InvalidSearchRequestError(
+          `'${propName}' is not a supported portion of the search string grammar.`
         );
       }
     }
@@ -913,8 +913,4 @@ const SearchCriteriaProcessor = class {
   }
 };
 
-export {
-  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
-  START_OF_GENERATED_QUERY,
-  SearchCriteriaProcessor,
-};
+export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };

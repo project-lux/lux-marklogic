@@ -19,12 +19,12 @@ import {
   getSearchScope,
   isUserInterfaceSearchScopeName,
 } from './searchScope.mjs';
-import {
-  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
-  SearchCriteriaProcessor,
-} from './SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import { getDefaultSearchOptionsNameByPatternName } from './searchPatternsLib.mjs';
-import { BadRequestError } from './mlErrorsLib.mjs';
+import {
+  InvalidSearchRequestError,
+  isInvalidSearchRequestError,
+} from './mlErrorsLib.mjs';
 import {
   getRelatedList,
   getRelatedListSearchInfo,
@@ -380,7 +380,7 @@ function _search(
 
 /**
  * Processes the provided search criteria, returning an instance of SearchCriteriaProcessor from which a
- * generated CTS query may be retrieved.  A BadRequestError or InternalServerError may be bubbled up from
+ * generated CTS query may be retrieved.  An InternalServerError or InvalidSearchRequestError may be bubbled up from
  * SearchCriteriaProcessor.
  */
 function processSearchCriteria({
@@ -500,11 +500,11 @@ function getSearchEstimate(searchCriteria, scope) {
     };
   } catch (e) {
     if (xdmp.traceEnabled(traceName)) {
-      if (e.message.includes(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE)) {
+      if (isInvalidSearchRequestError(e)) {
         // Not associated to a monitoring test or the log mining script.
         xdmp.trace(
           traceName,
-          `Unable to calculate an estimate due to insufficient search criteria.`
+          `Unable to calculate an estimate due to an invalid search request.`
         );
       } else {
         // Monitoring test and log mining script checks for "Search Estimate errored out".
@@ -578,13 +578,21 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
         };
 
         if (xdmp.traceEnabled(traceName)) {
-          // Monitoring test and log mining script checks for "Search Will Match errored out".
-          xdmp.trace(
-            traceName,
-            `A search named '${name}' given to Search Will Match errored out: ${JSON.stringify(
-              { exception: utils.getExceptionObjectElseMessage(e), criteria }
-            )}`
-          );
+          if (isInvalidSearchRequestError(e)) {
+            // Not associated to a monitoring test or the log mining script.
+            xdmp.trace(
+              traceName,
+              `Unable to determine if the '${name}' search will match due to an invalid search request.`
+            );
+          } else {
+            // Monitoring test and log mining script checks for "Search Will Match errored out".
+            xdmp.trace(
+              traceName,
+              `A search named '${name}' given to Search Will Match errored out: ${JSON.stringify(
+                { exception: utils.getExceptionObjectElseMessage(e), criteria }
+              )}`
+            );
+          }
         }
       }
     });
@@ -795,11 +803,11 @@ function sanitizeAndValidateWildcardedStrings(strOrArr) {
       const origValue = strOrArr[i] + '';
       strOrArr[i] = _consolidateApplicableWildcards(origValue.trim());
       if (_hasInvalidWildcardCriteria(strOrArr[i])) {
-        let msg = `Wildcarded strings must have at least three non-wildcard characters before or after the wildcard; '${origValue}' does not qualify`;
+        let msg = `wildcarded strings must have at least three non-wildcard characters before or after the wildcard; '${origValue}' does not qualify`;
         if (origValue != strOrArr[i]) {
           msg += `, even after adjusting to '${strOrArr[i]}'`;
         }
-        throw new BadRequestError(msg);
+        throw new InvalidSearchRequestError(msg);
       }
     }
     if (returnOneValue) {

@@ -12,10 +12,7 @@
  */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
-import {
-  INSUFFICIENT_SEARCH_CRITERIA_MESSAGE,
-  SearchCriteriaProcessor,
-} from './SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
@@ -28,7 +25,11 @@ import {
 import { processSearchCriteria, search } from './searchLib.mjs';
 import { getFieldRangeIndexCountIRI } from './dataConstants.mjs';
 import * as utils from '../utils/utils.mjs';
-import { BadRequestError } from './mlErrorsLib.mjs';
+import {
+  BadRequestError,
+  InternalServerError,
+  isInvalidSearchRequestError,
+} from './mlErrorsLib.mjs';
 import { FACETS_VIA_SEARCH_CONFIG } from '../config/facetsViaSearchConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
@@ -51,7 +52,7 @@ function getFacet({
 }) {
   const start = new Date();
   let requestCompleted = false;
-  let insufficientSearchCriteria = false;
+  let InvalidSearchRequestError = false;
   let isSemantic = 'unk'; // set within try block but referenced in catch block.
 
   try {
@@ -104,8 +105,8 @@ function getFacet({
     requestCompleted = true;
     return facetValues;
   } catch (e) {
-    if (e.message.includes(INSUFFICIENT_SEARCH_CRITERIA_MESSAGE)) {
-      insufficientSearchCriteria = true;
+    if (isInvalidSearchRequestError(e)) {
+      InvalidSearchRequestError = true;
     }
     throw e;
   } finally {
@@ -118,11 +119,11 @@ function getFacet({
           isSemantic === true ? filterResults : 'n/a'
         })`
       );
-    } else if (insufficientSearchCriteria) {
+    } else if (InvalidSearchRequestError) {
       // Not associated to a monitoring test or the log mining script.
       xdmp.trace(
         traceName,
-        `Unable to calculate the '${facetName}' facet due to insufficient search criteria.`
+        `Unable to calculate the '${facetName}' facet due to an invalid search request.`
       );
     } else {
       // Monitoring test and log mining script checks for "Failed to calculate".
@@ -423,7 +424,9 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
     }
   }
   if (!SEARCH_TERM_CONFIG[scopeName][termName]) {
-    throw new Error(`Unable to convert ${facetName} to a search term`);
+    throw new InternalServerError(
+      `Unable to convert '${facetName}' to a search term`
+    );
   }
   const searchTermInfo = SEARCH_TERM_CONFIG[scopeName][termName];
   const { scalarType } = searchTermInfo;

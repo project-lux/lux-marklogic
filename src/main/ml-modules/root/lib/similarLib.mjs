@@ -1,7 +1,7 @@
 import { processSearchCriteria } from './searchLib.mjs';
 import {
-  BadRequestError,
   InternalServerError,
+  InvalidSearchRequestError,
   NotFoundError,
 } from './mlErrorsLib.mjs';
 import {
@@ -44,7 +44,7 @@ function getSimilarQuery(
 
 function getSimilarValues(scopeName, iri, aspects) {
   if (!SIMILAR_CONFIG.hasOwnProperty(scopeName)) {
-    throw new BadRequestError(
+    throw new InvalidSearchRequestError(
       `'${scopeName}' is not a valid search scope for similar queries`
     );
   }
@@ -53,8 +53,8 @@ function getSimilarValues(scopeName, iri, aspects) {
     throw new NotFoundError(`Document '${iri}' does not exist`);
   }
   if (!doesSearchScopeHaveType(scopeName, getType(doc))) {
-    throw new BadRequestError(
-      `Document '${iri}' is not associated with '${scopeName}' search scope`
+    throw new InvalidSearchRequestError(
+      `document '${iri}' is not associated with '${scopeName}' search scope`
     );
   }
   const returnObj = {};
@@ -72,7 +72,7 @@ function getSimilarValues(scopeName, iri, aspects) {
 
   for (const aspect of aspects) {
     if (!scopeConfig.hasOwnProperty(aspect)) {
-      throw new BadRequestError(
+      throw new InvalidSearchRequestError(
         `'${aspect}' is not a valid search aspect for the '${scopeName}' search scope. Valid similarity aspects for the '${scopeName}' search scope are: ${Object.keys(
           scopeConfig
         ).join(', ')}.`
@@ -136,8 +136,8 @@ function buildSearchCriteria(scope, similarValues) {
     }
   }
   if (criteriaCnt === 0) {
-    throw new BadRequestError(
-      `The similar query cannot extract any search criteria with the given aspects. Please select more aspects. If all aspects are selected, there is not enough information in this record to search for similar ones.`
+    throw new InvalidSearchRequestError(
+      `the similar query cannot extract any search criteria with the given aspects. Please select more aspects. If all aspects are selected, there is not enough information in this record to search for similar ones.`
     );
   }
   return combinedCriteria;

@@ -79,6 +79,12 @@ function getJSErrorResponseBody(errorBody) {
       status = 'Internal Server Error';
       messageCode = 'InternalServerError';
       break;
+    // Convert to a bad request.
+    case 'InvalidSearchRequestError':
+      statusCode = 400;
+      status = 'Bad Request';
+      messageCode = 'BadRequestError';
+      break;
     case 'NotFoundError':
       statusCode = 404;
       status = 'Not Found';

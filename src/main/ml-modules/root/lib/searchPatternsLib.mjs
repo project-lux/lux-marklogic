@@ -15,7 +15,10 @@ import {
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
 } from './appConstants.mjs';
-import { BadRequestError, InternalServerError } from './mlErrorsLib.mjs';
+import {
+  InternalServerError,
+  InvalidSearchRequestError,
+} from './mlErrorsLib.mjs';
 import { getRelatedListQuery } from './relatedListsLib.mjs';
 import { getSimilarQuery } from './similarLib.mjs';
 import {
@@ -219,8 +222,8 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
     const startDateStr = dates[0].length > 0 ? dates[0] : null;
     const endDateStr = dates[1].length > 0 ? dates[1] : null;
     if (!startDateStr && !endDateStr) {
-      throw new BadRequestError(
-        `The '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`
+      throw new InvalidSearchRequestError(
+        `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`
       );
     }
 
@@ -676,8 +679,8 @@ function _formattedPatternResponse(
 
 function _requireRangeOperator(termName, op) {
   if (!['>', '>=', '<', '<=', '=', '!='].includes(op)) {
-    throw new BadRequestError(
-      `The '${termName}' search term requires the '_comp' property set to '>', '>=', '<', '<=', '=', or '!='.`
+    throw new InvalidSearchRequestError(
+      `the '${termName}' search term requires the '_comp' property set to '>', '>=', '<', '<=', '=', or '!='.`
     );
   }
 }

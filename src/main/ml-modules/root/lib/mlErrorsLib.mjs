@@ -4,11 +4,15 @@
  * class name to determine the response's status code and status message.  Only the class name and
  * message reach the error handler.
  */
+// Helps non-search endpoints decide whether to log they failed.
+const INVALID_SEARCH_REQUEST_LABEL = 'Invalid search request';
+
 class BadRequestError extends Error {
   constructor(message) {
     super(message);
   }
 }
+
 class DataMergeError extends Error {
   constructor(message) {
     super(message);
@@ -21,6 +25,11 @@ class InternalServerError extends Error {
   }
 }
 
+class InvalidSearchRequestError extends Error {
+  constructor(message) {
+    super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`);
+  }
+}
 class NotFoundError extends Error {
   constructor(message) {
     super(message);
@@ -33,10 +42,17 @@ class NotImplementedError extends Error {
   }
 }
 
+// Because e.name isn't InvalidSearchRequestError within a catch block :(
+function isInvalidSearchRequestError(e) {
+  return e.message && e.message.includes(INVALID_SEARCH_REQUEST_LABEL);
+}
+
 export {
   BadRequestError,
   DataMergeError,
   InternalServerError,
+  InvalidSearchRequestError,
   NotFoundError,
   NotImplementedError,
+  isInvalidSearchRequestError,
 };

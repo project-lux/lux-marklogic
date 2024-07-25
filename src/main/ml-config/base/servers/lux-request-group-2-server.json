@@ -12,5 +12,6 @@
   "default-time-limit": %%mlRestDefaultTimeoutGroup2%%,
   "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
   "rewrite-resolves-globally": true,
-  "error-handler": "/customErrorHandler.mjs"
+  "error-handler": "/customErrorHandler.mjs",
+  "default-user": "nobody"
 }

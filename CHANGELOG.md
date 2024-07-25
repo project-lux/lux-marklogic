@@ -8,13 +8,16 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- Changed exception handling for invalid search requests, enabling endpoints to conditionally process invalid search requests.  The `facets`, `searchEstimate`, and `searchWillMatch` endpoints now _log_ different messages when failing due to invalid search requests, enabling more targeted system monitoring alerts.  Other than the wording of some messages, there is no impact to endpoint consumers. ([#236](https://github.com/project-lux/lux-marklogic/issues/236))
+
 ### Removed
  
 ### Fixed
 
 ### Security
 
-- Replaced the `copyRestApiOptions` deployment task with `importRestApiOptions`.  The tenant's deployer role was unable to execute the `copyRestApiOptions` task but is able to execute the `importRestApiOptions` task
+- The default user on the request-group-1 and request-group-2 application servers is now explicitly set to `nobody` during deployment ([#252](https://github.com/project-lux/lux-marklogic/issues/252)).
+- Replaced the `copyRestApiOptions` deployment task with `importRestApiOptions`.  The tenant's deployer role was unable to execute the `copyRestApiOptions` task but is able to execute the `importRestApiOptions` task ([#243](https://github.com/project-lux/lux-marklogic/issues/243)).
 
 ## v1.21.0 - 2024-07-22
 

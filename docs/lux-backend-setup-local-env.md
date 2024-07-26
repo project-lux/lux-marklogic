@@ -32,8 +32,8 @@ A 2021 update to the Docker subscription service agreement may require a paid su
 | 3 | Install Docker | Download for Windows or Mac from https://www.docker.com/products/docker-desktop. |
 | 4 | If you don't already have a Docker ID account, [sign up](https://hub.docker.com/signup) for one.| The sign up link is https://hub.docker.com/signup. |
 | 5 |  MarkLogic's Docker page link is https://hub.docker.com/r/marklogicdb/marklogic-db. Make sure you have met any prerequisites listed on that page. |
-| 6 | Pull the Docker image you would like to start with --ideally the version matching the DEV environment. | `docker pull marklogicdb/marklogic-db:11.2.0-centos` |
-| 7 | Create a container from the image. The example command also initializes MarkLogic and names the container "lux". See [LUX MarkLogic Application Servers](/docs/lux-backend-deployment.md#lux-marklogic-application-servers) if you would like to be more restrictive on the container's exposed ports. | `docker run -d -it -p 8000-8010:8000-8010 --name=lux -v [ml-data]:/var/opt/MarkLogic -v [clone]:/host/code -v [tmp]:/host/tmp -e MARKLOGIC_INIT=true -e MARKLOGIC_ADMIN_USERNAME=admin -e MARKLOGIC_ADMIN_PASSWORD=admin marklogicdb/marklogic-db:11.2.0-centos` |
+| 6 | Pull the Docker image you would like to start with --ideally the version matching the DEV environment. | `docker pull progressofficial/marklogic-db:latest-11.3` |
+| 7 | Create a container from the image. The example command also initializes MarkLogic and names the container "lux". See [LUX MarkLogic Application Servers](/docs/lux-backend-deployment.md#lux-marklogic-application-servers) if you would like to be more restrictive on the container's exposed ports. | `docker run -d -it -p 8000-8010:8000-8010 --name=lux -v [ml-data]:/var/opt/MarkLogic -v [clone]:/host/code -v [tmp]:/host/tmp -e MARKLOGIC_INIT=true -e MARKLOGIC_ADMIN_USERNAME=admin -e MARKLOGIC_ADMIN_PASSWORD=admin progressofficial/marklogic-db:latest-11.3` |
 | 8 | Open up http://localhost:8001 to verify MarkLogic is running. | |
 
 ## Manual Install

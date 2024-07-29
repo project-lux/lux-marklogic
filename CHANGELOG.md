@@ -9,6 +9,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 
 - Changed exception handling for invalid search requests, enabling endpoints to conditionally process invalid search requests.  The `facets`, `searchEstimate`, and `searchWillMatch` endpoints now _log_ different messages when failing due to invalid search requests, enabling more targeted system monitoring alerts.  Other than the wording of some messages, there is no impact to endpoint consumers. ([#236](https://github.com/project-lux/lux-marklogic/issues/236))
+- Search no longer calculates search result scores when sorting by an index ([#123](https://github.com/project-lux/lux-marklogic/issues/123)).
 
 ### Removed
  
@@ -30,7 +31,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
  - Changed log messages for failed facet and search estimate requests when due to insufficient search criteria in order to prevent email alerts ([#236](https://github.com/project-lux/lux-marklogic/issues/236)).
  - Changed the People or Group advanced search option config to People or Group Class ([#201](https://github.com/project-lux/lux-marklogic/issues/201)).
- - Changed event used field to use a field index instead of triples - this doesn't change functionality, but keeps patterns used in the code consistent([#217](https://github.com/project-lux/lux-marklogic/issues/217)).
+ - Changed event used field to use a field index instead of triples - this doesn't change functionality, but keeps patterns used in the code consistent ([#217](https://github.com/project-lux/lux-marklogic/issues/217)).
 
 ### Removed
  

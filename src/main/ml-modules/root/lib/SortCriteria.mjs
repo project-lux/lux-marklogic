@@ -1,6 +1,8 @@
 import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
 import * as utils from '../utils/utils.mjs';
 
+const DEFAULT = 'default';
+
 const SortCriteria = class {
   // Excepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
@@ -8,6 +10,7 @@ const SortCriteria = class {
   // When name is 'relevance', we are to sort by score (highest to lowest, depending on direction).
   constructor(sortCriteriaStr) {
     this.sortCriteriaStr = sortCriteriaStr;
+    this.scoresRequired = DEFAULT; // can switch to a boolean value.
     this.sortOptions = [];
     this.warnings = [];
     this._parse();
@@ -15,6 +18,16 @@ const SortCriteria = class {
 
   getSortCriteriaStr() {
     return this.sortCriteriaStr;
+  }
+
+  areScoresRequired() {
+    return this.scoresRequired === DEFAULT || this.scoresRequired;
+  }
+
+  conditionallySetScoresRequired(bool) {
+    if (this.scoresRequired !== true) {
+      this.scoresRequired = bool;
+    }
   }
 
   getSortOptions() {
@@ -44,12 +57,14 @@ const SortCriteria = class {
           utils.isNonEmptyString(sortByName) &&
           sortByName.toLowerCase() == 'random'
         ) {
+          this.conditionallySetScoresRequired(true);
           this.sortOptions = ['"score-random"'];
           return false;
         } else if (
           utils.isNonEmptyString(sortByName) &&
           sortByName.toLowerCase() == 'relevance'
         ) {
+          this.conditionallySetScoresRequired(true);
           this.sortOptions = [
             `cts.scoreOrder('${this._getOrder(
               specifiedOrder,
@@ -60,6 +75,7 @@ const SortCriteria = class {
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
           if (sortBinding) {
+            this.conditionallySetScoresRequired(false);
             this.sortOptions.push(
               `cts.indexOrder(cts.${sortBinding.indexType}Reference('${
                 sortBinding.indexReference

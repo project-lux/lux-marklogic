@@ -209,6 +209,9 @@ const SearchCriteriaProcessor = class {
           : '"unfaceted"',
         this.sortCriteria.getSortOptions(),
       ];
+      if (!this.sortCriteria.areScoresRequired()) {
+        searchOptionsArr.push('"score-zero"');
+      }
       const searchOptionsStr = utils.arrayToString(searchOptionsArr, 'code');
 
       return `${START_OF_GENERATED_QUERY}

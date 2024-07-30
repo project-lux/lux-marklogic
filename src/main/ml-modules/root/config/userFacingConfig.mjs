@@ -109,8 +109,9 @@ const searchTermText = {
       helpText: 'Search for People & Groups with the specified Nationality.',
     },
     occupation: {
-      label: 'Occupation',
-      helpText: 'Search for a People & Groups with the specified Occupation.',
+      label: 'Occupation/Role',
+      helpText:
+        'Search for People & Groups with the specified Occupation or Role.',
     },
     produced: {
       label: 'Created Object',

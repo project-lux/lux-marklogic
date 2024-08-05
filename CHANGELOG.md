@@ -8,6 +8,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+### Removed
+ 
+### Fixed
+
+### Security
+
+## v1.22.0 - 2024-08-05
+
+### Added
+
+### Changed
+
 - Changed exception handling for invalid search requests, enabling endpoints to conditionally process invalid search requests.  The `facets`, `searchEstimate`, and `searchWillMatch` endpoints now _log_ different messages when failing due to invalid search requests, enabling more targeted system monitoring alerts.  Other than the wording of some messages, there is no impact to endpoint consumers. ([#236](https://github.com/project-lux/lux-marklogic/issues/236))
 - Search no longer calculates search result scores when sorting by an index ([#123](https://github.com/project-lux/lux-marklogic/issues/123)).
 - Changed help text for \[Record Type\] Class advanced search fields to explain what each Class is ([#251](https://github.com/project-lux/lux-marklogic/issues/251)).

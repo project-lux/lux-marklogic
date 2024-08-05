@@ -9,7 +9,6 @@ import {
   PATTERN_NAME_RELATED_LIST,
 } from '../lib/searchPatternsLib.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
-import { search } from '../lib/searchLib.mjs';
 
 const uri = '/config/relatedListsConfig.mjs';
 console.log(`Generating ${uri}`);

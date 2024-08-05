@@ -100,9 +100,9 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 
 | Software | Version | Build Property | Link | Notes |
 |----------|---------|----------------|------|-------|
-| MarkLogic Server | 11.0.3 | n/a | https://developer.marklogic.com/products/marklogic-server | | 
-| MarkLogic AWS CloudFormation Template (CFT) | 11.0.3 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, maintained in a private repo. |
-| MarkLogic Content Pump (MLCP) | 11.0.3 | `mlcpVersion` | https://github.com/marklogic/marklogic-contentpump | Loading content in MarkLogic. |
+| MarkLogic Server | 11.3.0 | n/a | https://developer.marklogic.com/products/marklogic-server | | 
+| MarkLogic AWS CloudFormation Template (CFT) | 11.3.0 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, maintained in a private repo. |
+| MarkLogic Content Pump (MLCP) | 11.3.0 | `mlcpVersion` | https://github.com/marklogic/marklogic-contentpump | Loading content in MarkLogic. |
 | Gradle | 7.4.2 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
 | MarkLogic Gradle Plugin | 4.3.4 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |
 | MarkLogic Node Module | ^3.3.0 | n/a | https://www.npmjs.com/package/marklogic | To check the version used by LUX's middle tier, check its [package.json](https://github.com/project-lux/lux-middletier/blob/main/package.json). For additional information, see [Generated Data Service Interfaces](./lux-backend-api-usage.md#generated-data-service-interfaces). |

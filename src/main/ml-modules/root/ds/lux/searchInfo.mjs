@@ -12,14 +12,12 @@ handleRequest(function () {
         const termConfig = new SearchTermConfig(
           SEARCH_TERM_CONFIG[searchScope][termName]
         );
-        const onlyAcceptsIdTerm = termConfig.onlyAcceptsIdTermAsChild();
         return {
           name: termName,
           targetScope: termConfig.getTargetScopeName() || searchScope,
           acceptsGroup: termConfig.acceptsGroupAsChild(),
           acceptsTerm: termConfig.acceptsTermAsChild(),
           acceptsIdTerm: termConfig.acceptsIdTermAsChild(),
-          onlyAcceptsId: onlyAcceptsIdTerm,
           acceptsAtomicValue: termConfig.acceptsAtomicValue(),
           scalarType: termConfig.getScalarType(),
         };

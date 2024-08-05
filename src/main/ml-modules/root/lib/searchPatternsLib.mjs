@@ -15,7 +15,10 @@ import {
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
 } from './appConstants.mjs';
-import { BadRequestError, InternalServerError } from './mlErrorsLib.mjs';
+import {
+  InternalServerError,
+  InvalidSearchRequestError,
+} from './mlErrorsLib.mjs';
 import { getRelatedListQuery } from './relatedListsLib.mjs';
 import { getSimilarQuery } from './similarLib.mjs';
 import {
@@ -44,7 +47,6 @@ const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
 const OPTION_NAME_MAXIMUM_VALUES = 'maximumValues';
 const OPTION_NAME_RETURN_VALUES = 'returnValues';
 
-const TYPE_ID = 8;
 const TYPE_GROUP = 4;
 const TYPE_TERM = 2;
 const TYPE_ATOMIC = 1;
@@ -96,10 +98,6 @@ function applyPattern({
     searchPatternOptions,
     requestOptions
   );
-}
-
-function acceptsId(patternName) {
-  return (getPatternConfig(patternName).allowedChildren & TYPE_ID) === TYPE_ID;
 }
 
 function acceptsGroup(patternName) {
@@ -224,8 +222,8 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
     const startDateStr = dates[0].length > 0 ? dates[0] : null;
     const endDateStr = dates[1].length > 0 ? dates[1] : null;
     if (!startDateStr && !endDateStr) {
-      throw new BadRequestError(
-        `The '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`
+      throw new InvalidSearchRequestError(
+        `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`
       );
     }
 
@@ -389,7 +387,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
-  allowedChildren: TYPE_GROUP + TYPE_TERM + TYPE_ID,
+  allowedChildren: TYPE_GROUP + TYPE_TERM,
   isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
@@ -681,8 +679,8 @@ function _formattedPatternResponse(
 
 function _requireRangeOperator(termName, op) {
   if (!['>', '>=', '<', '<=', '=', '!='].includes(op)) {
-    throw new BadRequestError(
-      `The '${termName}' search term requires the '_comp' property set to '>', '>=', '<', '<=', '=', or '!='.`
+    throw new InvalidSearchRequestError(
+      `the '${termName}' search term requires the '_comp' property set to '>', '>=', '<', '<=', '=', or '!='.`
     );
   }
 }
@@ -840,11 +838,9 @@ export {
   PATTERN_NAME_RELATED_LIST,
   PATTERN_NAME_SIMILAR,
   PATTERN_NAME_TEXT,
-  TYPE_ID,
   TYPE_GROUP,
   TYPE_TERM,
   TYPE_ATOMIC,
-  acceptsId,
   acceptsGroup,
   acceptsTerm,
   acceptsAtomicValue,

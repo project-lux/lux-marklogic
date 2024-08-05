@@ -109,8 +109,9 @@ const searchTermText = {
       helpText: 'Search for People & Groups with the specified Nationality.',
     },
     occupation: {
-      label: 'Occupation',
-      helpText: 'Search for a People & Groups with the specified Occupation.',
+      label: 'Occupation/Role',
+      helpText:
+        'Search for People & Groups with the specified Occupation or Role.',
     },
     produced: {
       label: 'Created Object',
@@ -130,7 +131,7 @@ const searchTermText = {
     recordType: {
       label: 'Person or Group Class',
       helpText:
-        'Search for records categorized as either a "Person" or a "Group".',
+        'Search for records categorized as either a "Person" or a "Group". Person is an individual either real or fictionalized. Group is an organization, either real or fictionalized, with one or more members.',
     },
     startAt: {
       label: 'Born/Formed At',
@@ -271,7 +272,7 @@ const searchTermText = {
     recordType: {
       label: 'Concept Class',
       helpText:
-        'Search for records categorized as a "Measurement Unit", "Language", "Material", "Currency" or "General Concept".',
+        'Search for records categorized as either a "Measurement Unit", "Language", "Material", "Currency" or a "General Concept". Measurement Units are Concepts that are used as the unit of a measurement, such as inches, seconds, kilograms or bytes. Languages are Concepts that represent human-spoken languages, such as English, Spanish or Latin. Materials are Concepts that represent a class of physical material, such as bronze, paper, or agate. Currencies are Concepts that represent monetary currencies, such as dollars, euros, or francs. General Concepts are Concepts that represent more general ideas or subjects, which excludes the more specific classes of Measurement Unit, Language, Material, and Currency.',
     },
     subjectOfConcept: {
       label: 'Subject Of',
@@ -326,7 +327,7 @@ const searchTermText = {
     recordType: {
       label: 'Event Class',
       helpText:
-        'Search for records categorized as either a "Period" or an "Activity".',
+        'Search for records categorized as either a "Period" or an "Activity". Periods are Events that have the class of Period, which consists of a Time Period, as opposed to other human-caused activities. Activities are Events that have the class of Activity, which consists of events such as Exhibitions or other collections-related activities.',
     },
     startDate: {
       label: 'Start Date',
@@ -446,7 +447,7 @@ const searchTermText = {
     recordType: {
       label: 'Object Class',
       helpText:
-        'Search for records categorized as either a "Physical Object" or a "Digital Object".',
+        'Search for records categorized as either a "Physical Object" or a "Digital Object". Physical Objects are physical items, such as paintings, sculptures, fossils and other specimens, and archival objects. Individual physical copies of books are included in this class. Digital Object are digital items, such as internet resources (datasets, e-books, and other digital files). Digitized images of collection items that are physical objects can be found with the “Is Online” facet on Physical Objects.',
     },
     text: {
       label: 'Anywhere',
@@ -683,7 +684,7 @@ const searchTermText = {
     recordType: {
       label: 'Work Class',
       helpText:
-        'Search for records categorized as either a "Visual Work" or a "Textual Work".',
+        'Search for records categorized as either a "Visual Work" or a "Textual Work. Visual Works are Works that are primarily visual, such as the images shown by paintings or photographs, sculptures, or other non language oriented creative expressions. Textual Works are Works that are primarily textual or otherwise convey information via human language. An Object may include both visual and textual works, such as a poster with graphics and text. In addition, Textual Works encompasses most items from the Library collections, including posters, artworks, musical scores, video and sound recordings.',
     },
     text: {
       label: 'Anywhere',

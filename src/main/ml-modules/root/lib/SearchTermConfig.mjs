@@ -25,18 +25,7 @@ const SearchTermConfig = class {
   }
   acceptsIdTermAsChild() {
     // Do not also require acceptsTermAsChild given how the search criteria processor accommodates ID child terms.
-    // Fields can accept IDs when given an IdIndexReferences property, even if their search pattern does not accept an ID by default
-    return (
-      this.hasIdIndexReferences() ||
-      (this.hasPatternName() && patternConfig.acceptsId(this.getPatternName()))
-    );
-  }
-  onlyAcceptsIdTermAsChild() {
-    return (
-      this.acceptsIdTermAsChild() &&
-      (!this.hasPatternName() ||
-        patternConfig.onlyAcceptsAtomicValue(this.getPatternName()))
-    );
+    return this.hasIdIndexReferences();
   }
   acceptsAtomicValue() {
     return (

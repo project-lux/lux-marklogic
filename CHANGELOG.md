@@ -12,6 +12,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
  
 ### Fixed
 
+- Fixed search criteria processing for terms containing a phrase and either another phrase or word, such as `"physical measurements" analysis`.  The phrase was being split into words when it should have been.  This only impacted advanced search. ([#273](https://github.com/project-lux/lux-marklogic/issues/273))
+
 ### Security
 
 ## v1.22.0 - 2024-08-05

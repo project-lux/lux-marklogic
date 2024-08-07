@@ -498,6 +498,9 @@ const SearchCriteriaProcessor = class {
             searchTerm.getPropertyNames().forEach((name) => {
               criterion[`_${name}`] = searchTerm.getProperty(name);
             });
+            // #273: Mark as a complete term to avoid tokenizing phrases when the
+            // encapsulating AND gets processed.
+            criterion._complete = true;
             return criterion;
           }),
         });

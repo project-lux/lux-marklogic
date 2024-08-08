@@ -504,12 +504,13 @@ const SEARCH_TERM_CONFIG = {
       indexReferences: ['workName'],
       scalarType: 'string',
     },
-    // Not the correct pattern but avoids getting child name's
-    // pattern when there's an ID child term.
+    // Oddly, archival sets are considered works.  No other works are associated to sets.
     partOf: {
-      patternName: 'indexedWord',
-      indexReferences: ['workPrimaryName'],
-      scalarType: 'string',
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containsWorks',
+      indexReferences: ['setPrimaryName'],
     },
     publishedAt: {
       patternName: 'hopWithField',

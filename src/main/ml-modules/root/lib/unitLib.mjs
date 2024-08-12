@@ -1,3 +1,5 @@
+import { UNITS } from './appConstants.mjs';
+import { split } from '../utils/utils.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 
 const ALL_UNITS = 'lux';
@@ -5,9 +7,14 @@ const ALL_UNITS_ROLE_NAME = 'lux-endpoint-consumer';
 const ADMIN_ROLE_NAME = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 
+// Get an array of unit names known to this deployment.
+function getUnitNames() {
+  return split(UNITS, ',', true);
+}
+
 // Get the current user's unit name.
 // Relies on role naming convention.
-function getUnitName() {
+function getCurrentUserUnitName() {
   let unitName = null;
 
   xdmp
@@ -34,4 +41,4 @@ function getUnitName() {
   return unitName;
 }
 
-export { getUnitName };
+export { getCurrentUserUnitName, getUnitNames };

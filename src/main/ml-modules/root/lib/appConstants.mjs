@@ -1,5 +1,7 @@
 const ENVIRONMENT_NAME = '%%environmentName%%';
 
+const UNITS = '%%units%%'.trim();
+
 const DATA_PERMISSIONS_DELIMITED_STRING = '%%mlDataPermissions%%'.trim();
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
@@ -170,5 +172,6 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
+  UNITS,
   VIA_SEARCH_FACET_TIMEOUT,
 };

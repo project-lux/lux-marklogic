@@ -12,7 +12,10 @@ import * as utils from '../utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
 import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
-import { ALL_UNITS, getUnitNames } from '../lib/unitLib.mjs';
+import {
+  UNRESTRICTED_UNIT_NAME,
+  getRestrictedUnitNames,
+} from '../lib/unitLib.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -111,83 +114,87 @@ function createEntry(scopeName, termName, termConfig, report) {
 }
 
 const advancedSearchConfigs = {};
-[ALL_UNITS].concat(getUnitNames()).forEach((unitName) => {
-  const unitAdvancedSearchConfig = { terms: {}, options: {} };
-  const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
-  const report = unitName == ALL_UNITS;
+[UNRESTRICTED_UNIT_NAME]
+  .concat(getRestrictedUnitNames())
+  .forEach((unitName) => {
+    const unitAdvancedSearchConfig = { terms: {}, options: {} };
+    const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
+    const report = unitName == UNRESTRICTED_UNIT_NAME;
 
-  getOrderedUserInterfaceSearchScopeNames()
-    .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
-    .sort()
-    .forEach((scopeName) => {
-      unitAdvancedSearchConfig.terms[scopeName] = {};
-      Object.keys(unitSearchTermsConfig[scopeName])
-        .sort()
-        .forEach((termName) => {
-          const termConfig = new SearchTermConfig(
-            unitSearchTermsConfig[scopeName][termName]
-          );
-          const patternName = termConfig.getPatternName();
-
-          // Suppress search terms that may never be exposed via advanced search and those
-          // the frontend is not yet ready for.
-          let add = true;
-          if (
-            [
-              'any', // Term may no longer exist.
-              'classificationOfReference',
-              'classificationOfSet',
-              'iri',
-              'recordType',
-              'subject',
-            ].includes(termName) &&
-            (!termConfig.hasLabel() || !termConfig.hasHelpText())
-          ) {
-            add = false;
-          } else if (termName.endsWith('Id')) {
-            add = false;
-          }
-          // 20230420, bhartwig: asked to suppress Similar terms.
-          else if (
-            [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-              patternName
-            )
-          ) {
-            add = false;
-          }
-
-          if (add) {
-            unitAdvancedSearchConfig.terms[scopeName][termName] = createEntry(
-              scopeName,
-              termName,
-              termConfig,
-              report
+    getOrderedUserInterfaceSearchScopeNames()
+      .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
+      .sort()
+      .forEach((scopeName) => {
+        unitAdvancedSearchConfig.terms[scopeName] = {};
+        Object.keys(unitSearchTermsConfig[scopeName])
+          .sort()
+          .forEach((termName) => {
+            const termConfig = new SearchTermConfig(
+              unitSearchTermsConfig[scopeName][termName]
             );
-          } else if (report) {
-            omittedTermNames.push(`[${patternName}] ${scopeName}.${termName}`);
-          }
-        });
+            const patternName = termConfig.getPatternName();
+
+            // Suppress search terms that may never be exposed via advanced search and those
+            // the frontend is not yet ready for.
+            let add = true;
+            if (
+              [
+                'any', // Term may no longer exist.
+                'classificationOfReference',
+                'classificationOfSet',
+                'iri',
+                'recordType',
+                'subject',
+              ].includes(termName) &&
+              (!termConfig.hasLabel() || !termConfig.hasHelpText())
+            ) {
+              add = false;
+            } else if (termName.endsWith('Id')) {
+              add = false;
+            }
+            // 20230420, bhartwig: asked to suppress Similar terms.
+            else if (
+              [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
+                patternName
+              )
+            ) {
+              add = false;
+            }
+
+            if (add) {
+              unitAdvancedSearchConfig.terms[scopeName][termName] = createEntry(
+                scopeName,
+                termName,
+                termConfig,
+                report
+              );
+            } else if (report) {
+              omittedTermNames.push(
+                `[${patternName}] ${scopeName}.${termName}`
+              );
+            }
+          });
+      });
+
+    // Within each scope, sort by the search term's label.
+    Object.keys(unitAdvancedSearchConfig.terms).forEach((scopeName) => {
+      unitAdvancedSearchConfig.terms[scopeName] = utils.sortObj(
+        unitAdvancedSearchConfig.terms[scopeName],
+        'label',
+        'Name' // If this label changes, this should be updated to match.
+      );
     });
 
-  // Within each scope, sort by the search term's label.
-  Object.keys(unitAdvancedSearchConfig.terms).forEach((scopeName) => {
-    unitAdvancedSearchConfig.terms[scopeName] = utils.sortObj(
-      unitAdvancedSearchConfig.terms[scopeName],
-      'label',
-      'Name' // If this label changes, this should be updated to match.
-    );
-  });
+    // Provide mapping from options name to its allowed and default options.
+    allOptionsNames.forEach((name) => {
+      unitAdvancedSearchConfig.options[name] = {
+        allowed: getAllowedSearchOptionsByOptionsName(name),
+        default: getDefaultSearchOptionsByOptionsName(name),
+      };
+    });
 
-  // Provide mapping from options name to its allowed and default options.
-  allOptionsNames.forEach((name) => {
-    unitAdvancedSearchConfig.options[name] = {
-      allowed: getAllowedSearchOptionsByOptionsName(name),
-      default: getDefaultSearchOptionsByOptionsName(name),
-    };
+    advancedSearchConfigs[unitName] = unitAdvancedSearchConfig;
   });
-
-  advancedSearchConfigs[unitName] = unitAdvancedSearchConfig;
-});
 
 // Consolidated log entries
 utils.logValues(

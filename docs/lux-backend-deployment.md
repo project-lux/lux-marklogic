@@ -312,7 +312,7 @@ Data constants are to be regenerated after changing the data or generator ([data
 
 # Regenerate Remaining Search Terms
 
-Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `units` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
+Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `restrictedUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
 
 # Regenerate Related Lists Configuration
 
@@ -320,7 +320,7 @@ After `generateRemainingSearchTerms` runs or [/src/main/ml-modules/root/runDurin
 
 # Regenerate Advanced Search Configuration
 
-The advanced search configuration is to be regenerated after the remaining search terms are generated or when either the value of the `units` build property or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) changes.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
+The advanced search configuration is to be regenerated after the remaining search terms are generated or when either the value of the `restrictedUnitNames` build property or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) changes.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
 
 # Deploy Database Configuration Changes
 

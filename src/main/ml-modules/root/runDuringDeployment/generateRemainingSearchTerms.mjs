@@ -11,14 +11,17 @@ import { getSearchScopeTypes } from '../lib/searchScope.mjs';
 import { searchTermText } from '../config/userFacingConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 import * as utils from '../utils/utils.mjs';
-import { ALL_UNITS, getUnitNames } from '../lib/unitLib.mjs';
+import {
+  UNRESTRICTED_UNIT_NAME,
+  getRestrictedUnitNames,
+} from '../lib/unitLib.mjs';
 
 const uri = '/config/searchTermsConfig.mjs';
 console.log(`Adding remaining search terms within ${uri}`);
 
-const regenerate = SEARCH_TERMS_CONFIG[ALL_UNITS] != null;
+const regenerate = SEARCH_TERMS_CONFIG[UNRESTRICTED_UNIT_NAME] != null;
 const BASE_CONFIG = regenerate
-  ? SEARCH_TERMS_CONFIG[ALL_UNITS]
+  ? SEARCH_TERMS_CONFIG[UNRESTRICTED_UNIT_NAME]
   : SEARCH_TERMS_CONFIG;
 
 // Remove generated search terms.
@@ -33,243 +36,246 @@ if (regenerate) {
 }
 
 const reportInfo = (unitName, msg) => {
-  if (unitName == ALL_UNITS) {
+  if (unitName == UNRESTRICTED_UNIT_NAME) {
     console.log(msg);
   }
 };
 
 const reportWarning = (unitName, msg) => {
-  if (unitName == ALL_UNITS) {
+  if (unitName == UNRESTRICTED_UNIT_NAME) {
     console.warn(msg);
   }
 };
 
 // Deemed safer to have a single loop for all the units versus multiple.
 const searchTermsConfig = {};
-[ALL_UNITS].concat(getUnitNames()).forEach((unitName) => {
-  const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
+[UNRESTRICTED_UNIT_NAME]
+  .concat(getRestrictedUnitNames())
+  .forEach((unitName) => {
+    const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
 
-  // Generate facet search terms.
-  Object.keys(FACETS_CONFIG).forEach((facetName) => {
-    let { scopeName, termName } = facetToScopeAndTermName(facetName);
+    // Generate facet search terms.
+    Object.keys(FACETS_CONFIG).forEach((facetName) => {
+      let { scopeName, termName } = facetToScopeAndTermName(facetName);
 
-    const facetIndexReference = FACETS_CONFIG[facetName].indexReference;
-    const isIdTerm = termName.endsWith('Id');
-    const isDate = facetIndexReference.endsWith('DateStr');
-    const isDimension = facetIndexReference.endsWith('DimensionValue');
-    const isZeroOrOne = ['hasDigitalImage', 'isOnline'].includes(termName);
+      const facetIndexReference = FACETS_CONFIG[facetName].indexReference;
+      const isIdTerm = termName.endsWith('Id');
+      const isDate = facetIndexReference.endsWith('DateStr');
+      const isDimension = facetIndexReference.endsWith('DimensionValue');
+      const isZeroOrOne = ['hasDigitalImage', 'isOnline'].includes(termName);
 
-    let facetIdIndexReferences = [facetIndexReference];
-    if (isDate) {
-      facetIdIndexReferences = [
-        facetIndexReference
-          .substring(0, facetIndexReference.length - 3)
-          .concat('Float'),
-      ];
-      facetIdIndexReferences.push(
-        facetIdIndexReferences[0].replace('Start', 'End')
-      );
-    }
-
-    let scalarType = 'string';
-    if (isDate) {
-      scalarType = 'dateTime';
-    } else if (isDimension) {
-      scalarType = 'float';
-    } else if (isZeroOrOne) {
-      scalarType = 'number';
-    }
-
-    // Get ready to add
-    if (!unitConfig[scopeName]) {
-      unitConfig[scopeName] = {};
-    }
-
-    if (isIdTerm) {
-      const parentTermName = termName.substring(0, termName.length - 2);
-      if (!unitConfig[scopeName][parentTermName]) {
-        unitConfig[scopeName][parentTermName] = {
-          idIndexReferences: facetIdIndexReferences,
-        };
-      } else {
-        // Try to add our indexes.
-        const searchTermIdIndexReferences =
-          unitConfig[scopeName][parentTermName].idIndexReferences;
-        if (searchTermIdIndexReferences == null) {
-          unitConfig[scopeName][parentTermName].idIndexReferences =
-            facetIdIndexReferences;
-        } else if (
-          utils.getArrayDiff(
-            facetIdIndexReferences,
-            searchTermIdIndexReferences
-          ).length > 0
-        ) {
-          // Merge the ID index arrays
-          const mergedArrays = utils.getMergedArrays(
-            searchTermIdIndexReferences,
-            facetIdIndexReferences
-          );
-          unitConfig[scopeName][parentTermName].idIndexReferences =
-            mergedArrays;
-          reportInfo(
-            unitName,
-            `[scope=${scopeName}] Merged search term ${parentTermName}'s ID index references to ['${mergedArrays.join(
-              "', '"
-            )}'], as specified by the facet configuration.`
-          );
-        } else {
-          reportInfo(
-            unitName,
-            `[scope=${scopeName}] The search term ${parentTermName}'s ID index reference matches the facet configuration, and could be omitted from the search criteria configuration.`
-          );
-        }
-      }
-    } else {
-      if (unitConfig[scopeName][termName]) {
-        reportWarning(
-          unitName,
-          `[scope=${scopeName}] Overriding search term '${termName}' with settings from the facet configuration; consider ensuring facet configuration is correct and omitting from the search criteria configuration.`
+      let facetIdIndexReferences = [facetIndexReference];
+      if (isDate) {
+        facetIdIndexReferences = [
+          facetIndexReference
+            .substring(0, facetIndexReference.length - 3)
+            .concat('Float'),
+        ];
+        facetIdIndexReferences.push(
+          facetIdIndexReferences[0].replace('Start', 'End')
         );
       }
 
-      const patternName = isDate
-        ? PATTERN_NAME_DATE_RANGE
-        : isDimension
-        ? PATTERN_NAME_INDEXED_RANGE
-        : PATTERN_NAME_INDEXED_VALUE;
-
-      unitConfig[scopeName][termName] = {
-        patternName: patternName,
-        indexReferences: facetIdIndexReferences,
-        scalarType,
-        generated: true,
-      };
-
+      let scalarType = 'string';
       if (isDate) {
-        unitConfig[scopeName][termName].isStartDate =
-          termName.indexOf('Start') > -1 ? true : false;
+        scalarType = 'dateTime';
+      } else if (isDimension) {
+        scalarType = 'float';
+      } else if (isZeroOrOne) {
+        scalarType = 'number';
       }
-    }
-  });
 
-  // Generate the hop inverse search terms.
-  Object.keys(unitConfig).forEach((scopeName) => {
-    Object.keys(unitConfig[scopeName]).forEach((termName) => {
-      if (
-        unitConfig[scopeName][termName].hopInverseName &&
-        unitConfig[scopeName][termName].targetScope &&
-        unitConfig[scopeName][termName].predicates &&
-        unitConfig[scopeName][termName].generated !== true
-      ) {
-        const newScopeName = unitConfig[scopeName][termName].targetScope;
-        const newTermName = unitConfig[scopeName][termName].hopInverseName;
-        if (unitConfig[newScopeName][newTermName]) {
-          const msg = `Search term '${newTermName}' in the '${newScopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
-          console.error(msg);
-          throw new Error(msg);
-        }
-        if (!unitConfig[newScopeName]) {
-          unitConfig[newScopeName] = {};
-        }
-        unitConfig[newScopeName][newTermName] = {
-          patternName: PATTERN_NAME_HOP_INVERSE,
-          predicates: unitConfig[scopeName][termName].predicates,
-          targetScope: scopeName,
-          hopInverseName: termName, // added for getInverseSearchTermInfo
-          generated: true,
-        };
+      // Get ready to add
+      if (!unitConfig[scopeName]) {
+        unitConfig[scopeName] = {};
       }
-    });
-  });
 
-  // Add a type search term to each scope (even though a couple scopes only have one type).
-  Object.keys(unitConfig).forEach((scopeName) => {
-    const termName = 'recordType'; // 'type' is already used by facets for classification type.
-    if (
-      unitConfig[scopeName][termName] &&
-      // Generated check shouldn't be necessary but I found it to be.
-      unitConfig[scopeName][termName].generated !== true
-    ) {
-      reportWarning(
-        unitName,
-        `[scope=${scopeName}] Overriding search term '${termName}'; consider omitting from the search criteria configuration or updating the remaining search terms generator.`
-      );
-    }
-    if (!unitConfig[scopeName]) {
-      unitConfig[scopeName] = {};
-    }
-    unitConfig[scopeName][termName] = {
-      patternName: PATTERN_NAME_PROPERTY_VALUE,
-      propertyNames: ['dataType'],
-      scalarType: 'string',
-      forceExactMatch: true,
-      generated: true,
-    };
-  });
-
-  // Add an iri search term to each scope.
-  Object.keys(unitConfig).forEach((scopeName) => {
-    const termName = 'iri';
-    if (unitConfig[scopeName][termName]) {
-      reportWarning(
-        unitName,
-        `[scope=${scopeName}] Overriding search term '${termName}'; consider omitting from the search criteria configuration or updating the remaining search terms generator.`
-      );
-    }
-    unitConfig[scopeName][termName] = {
-      patternName: 'iri',
-      generated: true,
-    };
-  });
-
-  // Add one ID search term per type per scope that has the associated property.
-  Object.keys(unitConfig).forEach((scopeName) => {
-    getSearchScopeTypes(scopeName).forEach((type) => {
-      // Require data backing this search term be in the dataset.
-      const termName = `${utils.lowercaseFirstCharacter(type)}Id`;
-      if (
-        cts.estimate(cts.jsonPropertyScopeQuery(termName, cts.trueQuery())) > 0
-      ) {
+      if (isIdTerm) {
+        const parentTermName = termName.substring(0, termName.length - 2);
+        if (!unitConfig[scopeName][parentTermName]) {
+          unitConfig[scopeName][parentTermName] = {
+            idIndexReferences: facetIdIndexReferences,
+          };
+        } else {
+          // Try to add our indexes.
+          const searchTermIdIndexReferences =
+            unitConfig[scopeName][parentTermName].idIndexReferences;
+          if (searchTermIdIndexReferences == null) {
+            unitConfig[scopeName][parentTermName].idIndexReferences =
+              facetIdIndexReferences;
+          } else if (
+            utils.getArrayDiff(
+              facetIdIndexReferences,
+              searchTermIdIndexReferences
+            ).length > 0
+          ) {
+            // Merge the ID index arrays
+            const mergedArrays = utils.getMergedArrays(
+              searchTermIdIndexReferences,
+              facetIdIndexReferences
+            );
+            unitConfig[scopeName][parentTermName].idIndexReferences =
+              mergedArrays;
+            reportInfo(
+              unitName,
+              `[scope=${scopeName}] Merged search term ${parentTermName}'s ID index references to ['${mergedArrays.join(
+                "', '"
+              )}'], as specified by the facet configuration.`
+            );
+          } else {
+            reportInfo(
+              unitName,
+              `[scope=${scopeName}] The search term ${parentTermName}'s ID index reference matches the facet configuration, and could be omitted from the search criteria configuration.`
+            );
+          }
+        }
+      } else {
         if (unitConfig[scopeName][termName]) {
           reportWarning(
             unitName,
-            `[scope=${scopeName}] Overriding search term '${termName}'; consider omitting from the search criteria configuration or updating the remaining search terms generator.`
+            `[scope=${scopeName}] Overriding search term '${termName}' with settings from the facet configuration; consider ensuring facet configuration is correct and omitting from the search criteria configuration.`
           );
         }
+
+        const patternName = isDate
+          ? PATTERN_NAME_DATE_RANGE
+          : isDimension
+          ? PATTERN_NAME_INDEXED_RANGE
+          : PATTERN_NAME_INDEXED_VALUE;
+
         unitConfig[scopeName][termName] = {
-          patternName: PATTERN_NAME_PROPERTY_VALUE,
-          propertyNames: [termName],
-          scalarType: 'string',
-          forceExactMatch: true,
+          patternName: patternName,
+          indexReferences: facetIdIndexReferences,
+          scalarType,
           generated: true,
         };
-      } else {
-        reportInfo(
+
+        if (isDate) {
+          unitConfig[scopeName][termName].isStartDate =
+            termName.indexOf('Start') > -1 ? true : false;
+        }
+      }
+    });
+
+    // Generate the hop inverse search terms.
+    Object.keys(unitConfig).forEach((scopeName) => {
+      Object.keys(unitConfig[scopeName]).forEach((termName) => {
+        if (
+          unitConfig[scopeName][termName].hopInverseName &&
+          unitConfig[scopeName][termName].targetScope &&
+          unitConfig[scopeName][termName].predicates &&
+          unitConfig[scopeName][termName].generated !== true
+        ) {
+          const newScopeName = unitConfig[scopeName][termName].targetScope;
+          const newTermName = unitConfig[scopeName][termName].hopInverseName;
+          if (unitConfig[newScopeName][newTermName]) {
+            const msg = `Search term '${newTermName}' in the '${newScopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
+            console.error(msg);
+            throw new Error(msg);
+          }
+          if (!unitConfig[newScopeName]) {
+            unitConfig[newScopeName] = {};
+          }
+          unitConfig[newScopeName][newTermName] = {
+            patternName: PATTERN_NAME_HOP_INVERSE,
+            predicates: unitConfig[scopeName][termName].predicates,
+            targetScope: scopeName,
+            hopInverseName: termName, // added for getInverseSearchTermInfo
+            generated: true,
+          };
+        }
+      });
+    });
+
+    // Add a type search term to each scope (even though a couple scopes only have one type).
+    Object.keys(unitConfig).forEach((scopeName) => {
+      const termName = 'recordType'; // 'type' is already used by facets for classification type.
+      if (
+        unitConfig[scopeName][termName] &&
+        // Generated check shouldn't be necessary but I found it to be.
+        unitConfig[scopeName][termName].generated !== true
+      ) {
+        reportWarning(
           unitName,
-          `[scope=${scopeName}] Skipping definition of search term '${termName}' as no records contain the '${termName}' property.`
+          `[scope=${scopeName}] Overriding search term '${termName}'; consider omitting from the search criteria configuration or updating the remaining search terms generator.`
         );
       }
-    });
-  });
-
-  // Add labels and help text.
-  Object.keys(searchTermText).forEach((scopeName) => {
-    Object.keys(searchTermText[scopeName]).forEach((termName) => {
-      if (unitConfig[scopeName][termName]) {
-        unitConfig[scopeName][termName] = {
-          ...unitConfig[scopeName][termName],
-          ...searchTermText[scopeName][termName],
-        };
+      if (!unitConfig[scopeName]) {
+        unitConfig[scopeName] = {};
       }
+      unitConfig[scopeName][termName] = {
+        patternName: PATTERN_NAME_PROPERTY_VALUE,
+        propertyNames: ['dataType'],
+        scalarType: 'string',
+        forceExactMatch: true,
+        generated: true,
+      };
     });
-  });
 
-  // Sort by key within each scope.
-  Object.keys(unitConfig).forEach((scopeName) => {
-    unitConfig[scopeName] = utils.sortObj(unitConfig[scopeName]);
+    // Add an iri search term to each scope.
+    Object.keys(unitConfig).forEach((scopeName) => {
+      const termName = 'iri';
+      if (unitConfig[scopeName][termName]) {
+        reportWarning(
+          unitName,
+          `[scope=${scopeName}] Overriding search term '${termName}'; consider omitting from the search criteria configuration or updating the remaining search terms generator.`
+        );
+      }
+      unitConfig[scopeName][termName] = {
+        patternName: 'iri',
+        generated: true,
+      };
+    });
+
+    // Add one ID search term per type per scope that has the associated property.
+    Object.keys(unitConfig).forEach((scopeName) => {
+      getSearchScopeTypes(scopeName).forEach((type) => {
+        // Require data backing this search term be in the dataset.
+        const termName = `${utils.lowercaseFirstCharacter(type)}Id`;
+        if (
+          cts.estimate(cts.jsonPropertyScopeQuery(termName, cts.trueQuery())) >
+          0
+        ) {
+          if (unitConfig[scopeName][termName]) {
+            reportWarning(
+              unitName,
+              `[scope=${scopeName}] Overriding search term '${termName}'; consider omitting from the search criteria configuration or updating the remaining search terms generator.`
+            );
+          }
+          unitConfig[scopeName][termName] = {
+            patternName: PATTERN_NAME_PROPERTY_VALUE,
+            propertyNames: [termName],
+            scalarType: 'string',
+            forceExactMatch: true,
+            generated: true,
+          };
+        } else {
+          reportInfo(
+            unitName,
+            `[scope=${scopeName}] Skipping definition of search term '${termName}' as no records contain the '${termName}' property.`
+          );
+        }
+      });
+    });
+
+    // Add labels and help text.
+    Object.keys(searchTermText).forEach((scopeName) => {
+      Object.keys(searchTermText[scopeName]).forEach((termName) => {
+        if (unitConfig[scopeName][termName]) {
+          unitConfig[scopeName][termName] = {
+            ...unitConfig[scopeName][termName],
+            ...searchTermText[scopeName][termName],
+          };
+        }
+      });
+    });
+
+    // Sort by key within each scope.
+    Object.keys(unitConfig).forEach((scopeName) => {
+      unitConfig[scopeName] = utils.sortObj(unitConfig[scopeName]);
+    });
+    searchTermsConfig[unitName] = utils.sortObj(unitConfig);
   });
-  searchTermsConfig[unitName] = utils.sortObj(unitConfig);
-});
 
 // Write to the modules database.
 function constructModuleNode(searchTermsConfig) {

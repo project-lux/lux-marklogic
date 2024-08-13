@@ -1,14 +1,18 @@
 import * as utils from '../utils/utils.mjs';
 import { TOKEN_RUNTIME_PARAM } from '../lib/appConstants.mjs';
 import {
+  SEARCH_TERMS_CONFIG,
   getInverseSearchTermInfo,
-  getSearchTermsConfig,
 } from '../config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_HOP_WITH_FIELD,
   PATTERN_NAME_RELATED_LIST,
 } from '../lib/searchPatternsLib.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
+import {
+  UNRESTRICTED_UNIT_NAME,
+  getRestrictedUnitNames,
+} from '../lib/unitLib.mjs';
 
 const uri = '/config/relatedListsConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -22,8 +26,6 @@ const RELATION_KEYS_TO_SUPPRESS = [
   'classificationOfSet-containingItem-memberOf-usedForEvent',
   'classificationOfSet-usedForEvent',
 ];
-
-const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 const targetId = TOKEN_RUNTIME_PARAM;
 
@@ -58,15 +60,17 @@ function _getSearchConfigEntry(scopeName, targetScope, termName, subEntry) {
 }
 
 function _getSearchConfigEntries(
+  unitSearchTermsConfig,
   startingScope,
   endingScope,
   inBetweenScopes,
   maxLevel,
-  currentLevel
+  currentLevel,
+  report
 ) {
   const searchConfigEntries = [];
-  Object.keys(SEARCH_TERMS_CONFIG[startingScope]).forEach((termName) => {
-    const termConfig = SEARCH_TERMS_CONFIG[startingScope][termName];
+  Object.keys(unitSearchTermsConfig[startingScope]).forEach((termName) => {
+    const termConfig = unitSearchTermsConfig[startingScope][termName];
     const targetScope = termConfig.targetScope;
     const matchesEndingScope = targetScope == endingScope;
     if (matchesEndingScope || inBetweenScopes.includes(targetScope)) {
@@ -75,9 +79,11 @@ function _getSearchConfigEntries(
         _inverseIsDisqualifiedHopWithField(startingScope, termName) ||
         (currentLevel === 1 && matchesEndingScope)
       ) {
-        skippedNonQualifyingTopLevelTerms.push(
-          `[${termConfig.patternName}] '${termName}' term in the ${startingScope}-to-${endingScope} list`
-        );
+        if (report) {
+          skippedNonQualifyingTopLevelTerms.push(
+            `[${termConfig.patternName}] '${termName}' term in the ${startingScope}-to-${endingScope} list`
+          );
+        }
       } else {
         scopedTermsToPatternNames[`${startingScope}.${termName}`] =
           termConfig.patternName;
@@ -87,21 +93,24 @@ function _getSearchConfigEntries(
             _getSearchConfigEntry(startingScope, targetScope, termName, null)
           );
         } else {
-          addSubEntries(targetScope, termName);
+          addSubEntries(unitSearchTermsConfig, targetScope, termName);
         }
       }
     }
   });
   return searchConfigEntries;
-  function addSubEntries(targetScope, termName) {
+
+  function addSubEntries(unitSearchTermsConfig, targetScope, termName) {
     const subEntries = _getSearchConfigEntries(
+      unitSearchTermsConfig,
       targetScope,
       endingScope,
       // Not allowing any in-between scopes if current level is at the max level as that could result in
       // obscure relationships that dilute the value of the items displayed on entity pages.
       currentLevel < maxLevel ? inBetweenScopes : [],
       maxLevel,
-      currentLevel + 1
+      currentLevel + 1,
+      report
     );
     subEntries.forEach((subEntry) => {
       searchConfigEntries.push(
@@ -114,7 +123,8 @@ function _getSearchConfigEntries(
 function _convertToRuntimeFormat(
   relatedListScopeName,
   relatedListTermName,
-  searchConfigEntry
+  searchConfigEntry,
+  report
 ) {
   const criteria = {};
   let currentSpot = criteria;
@@ -149,12 +159,14 @@ function _convertToRuntimeFormat(
   }
 
   if (RELATION_KEYS_TO_SUPPRESS.includes(relationKey)) {
-    suppressedRelations.push(
-      `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`
-    );
+    if (report) {
+      suppressedRelations.push(
+        `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`
+      );
+    }
     return null;
   } else {
-    if (!RELATION_NAMES[relationKey]) {
+    if (!RELATION_NAMES[relationKey] && report) {
       noRelationLabel.push(
         `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`
       );
@@ -168,73 +180,86 @@ function _convertToRuntimeFormat(
   }
 }
 
-/*
- * STEP 1: Get a list of all 'related to' search terms.
- */
-const relatedListTermsInfo = [];
-Object.keys(SEARCH_TERMS_CONFIG).forEach((scopeName) => {
-  Object.keys(SEARCH_TERMS_CONFIG[scopeName]).forEach((termName) => {
-    if (termName.startsWith('relatedTo')) {
-      relatedListTermsInfo.push({
-        toScope: SEARCH_TERMS_CONFIG[scopeName][termName].targetScope,
-        termName,
-        fromScope: scopeName,
-        inBetweenScopes:
-          SEARCH_TERMS_CONFIG[scopeName][termName].inBetweenScopes,
-        maxLevel: SEARCH_TERMS_CONFIG[scopeName][termName].maxLevel,
+// Perform the following for LUX (all data / UNRESTRICTED_UNIT_NAME) and all known units.
+const relatedListsConfig = {};
+[UNRESTRICTED_UNIT_NAME]
+  .concat(getRestrictedUnitNames())
+  .forEach((unitName) => {
+    const unitRelatedListsConfig = {};
+    const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
+    const report = unitName == UNRESTRICTED_UNIT_NAME;
+
+    /*
+     * STEP 1: Get a list of all 'related to' search terms.
+     */
+    const relatedListTermsInfo = [];
+    Object.keys(unitSearchTermsConfig).forEach((scopeName) => {
+      Object.keys(unitSearchTermsConfig[scopeName]).forEach((termName) => {
+        if (termName.startsWith('relatedTo')) {
+          relatedListTermsInfo.push({
+            toScope: unitSearchTermsConfig[scopeName][termName].targetScope,
+            termName,
+            fromScope: scopeName,
+            inBetweenScopes:
+              unitSearchTermsConfig[scopeName][termName].inBetweenScopes,
+            maxLevel: unitSearchTermsConfig[scopeName][termName].maxLevel,
+          });
+        }
       });
-    }
-  });
-});
-
-/*
- * STEP 2: Collect information on each related list, starting from the scope to return results of, working towards the scope
- * we will be given an ID of.  For example, for the agent to place list, we will be given an agent ID.  We need to start with
- * place, and find all paths to agent IDs.  This is not yet the runtime format.
- */
-let relatedListsConfig = {};
-relatedListTermsInfo.forEach((termInfo) => {
-  if (!relatedListsConfig[termInfo.fromScope]) {
-    relatedListsConfig[termInfo.fromScope] = {};
-  }
-  relatedListsConfig[termInfo.fromScope][termInfo.termName] = {
-    scopeName: termInfo.toScope,
-    searchConfigEntries: _getSearchConfigEntries(
-      termInfo.fromScope,
-      termInfo.toScope,
-      termInfo.inBetweenScopes,
-      termInfo.maxLevel,
-      1
-    ),
-  };
-});
-
-/*
- * STEP 3: Convert to the runtime format.  The outer structure is the same as the search term configuration whereby the
- * top-level properties are scope names and the next level down are search term names.  But, this is only for related list
- * search terms.  An example is `concept.relatedToAgent`.  The value of each search term property is an object that defines
- * the target scope and an array of search configurations.  See _convertToRuntimeFormat for lower level data model details.
- */
-Object.keys(relatedListsConfig).forEach((toScope) => {
-  Object.keys(relatedListsConfig[toScope]).forEach((termName) => {
-    const searchConfigs = [];
-    const relatedListConfig = relatedListsConfig[toScope][termName];
-    relatedListConfig.searchConfigEntries.forEach((searchConfigEntry) => {
-      const runtimeConfig = _convertToRuntimeFormat(
-        toScope,
-        termName,
-        searchConfigEntry
-      );
-      if (runtimeConfig) {
-        searchConfigs.push(runtimeConfig);
-      }
     });
-    relatedListsConfig[toScope][termName] = {
-      targetScope: toScope,
-      searchConfigs,
-    };
+
+    /*
+     * STEP 2: Collect information on each related list, starting from the scope to return results of, working towards the scope
+     * we will be given an ID of.  For example, for the agent to place list, we will be given an agent ID.  We need to start with
+     * place, and find all paths to agent IDs.  This is not yet the runtime format.
+     */
+    relatedListTermsInfo.forEach((termInfo) => {
+      if (!unitRelatedListsConfig[termInfo.fromScope]) {
+        unitRelatedListsConfig[termInfo.fromScope] = {};
+      }
+      unitRelatedListsConfig[termInfo.fromScope][termInfo.termName] = {
+        scopeName: termInfo.toScope,
+        searchConfigEntries: _getSearchConfigEntries(
+          unitSearchTermsConfig,
+          termInfo.fromScope,
+          termInfo.toScope,
+          termInfo.inBetweenScopes,
+          termInfo.maxLevel,
+          1,
+          report
+        ),
+      };
+    });
+
+    /*
+     * STEP 3: Convert to the runtime format.  The outer structure is the same as the search term configuration whereby the
+     * top-level properties are scope names and the next level down are search term names.  But, this is only for related list
+     * search terms.  An example is `concept.relatedToAgent`.  The value of each search term property is an object that defines
+     * the target scope and an array of search configurations.  See _convertToRuntimeFormat for lower level data model details.
+     */
+    Object.keys(unitRelatedListsConfig).forEach((toScope) => {
+      Object.keys(unitRelatedListsConfig[toScope]).forEach((termName) => {
+        const searchConfigs = [];
+        const relatedListConfig = unitRelatedListsConfig[toScope][termName];
+        relatedListConfig.searchConfigEntries.forEach((searchConfigEntry) => {
+          const runtimeConfig = _convertToRuntimeFormat(
+            toScope,
+            termName,
+            searchConfigEntry
+          );
+          if (runtimeConfig) {
+            searchConfigs.push(runtimeConfig);
+          }
+        });
+        unitRelatedListsConfig[toScope][termName] = {
+          targetScope: toScope,
+          searchConfigs,
+        };
+      });
+    });
+
+    relatedListsConfig[unitName] = unitRelatedListsConfig;
   });
-});
 
 // Consolidated logging
 utils.logValues(
@@ -255,15 +280,17 @@ function constructModuleNode(relatedListsConfig) {
  *
  * Generated timestamp: ${new Date()}
  */
+import { getCurrentUserUnitName } from '../lib/unitLib.mjs';
 import { BadRequestError } from '../lib/mlErrorsLib.mjs';
   
 const RELATED_LISTS_CONFIG = ${JSON.stringify(relatedListsConfig)};
 
 function getRelatedListKeys() {
+  const relatedListsConfig = _getRelatedListsConfig(true);
   const scopesToListNames = {};
-  Object.keys(RELATED_LISTS_CONFIG).forEach(scopeName => {
+  Object.keys(relatedListsConfig).forEach(scopeName => {
     scopesToListNames[scopeName] = [];
-    Object.keys(RELATED_LISTS_CONFIG[scopeName]).forEach(relatedListName => {
+    Object.keys(relatedListsConfig[scopeName]).forEach(relatedListName => {
       scopesToListNames[scopeName].push(relatedListName);
     })
   })
@@ -286,7 +313,20 @@ function getRelatedListConfig(scopeName, relatedListName) {
   
 // Does not throw an error if the requested related list is not defined
 function _getRelatedListConfig(scopeName, relatedListName) {
-  return RELATED_LISTS_CONFIG[scopeName] ? RELATED_LISTS_CONFIG[scopeName][relatedListName] : null;
+  const relatedListsConfig = _getRelatedListsConfig(false);
+  return relatedListsConfig[scopeName] ? relatedListsConfig[scopeName][relatedListName] : null;
+}
+
+// Get the configuration for all related lists available to the current user.
+function _getRelatedListsConfig(mayThrowException = true) {
+  const unitName = getCurrentUserUnitName()
+  if (RELATED_LISTS_CONFIG[unitName] != null) {
+    return RELATED_LISTS_CONFIG[unitName];
+  }
+  if (mayThrowException) {
+    throw new BadRequestError("The related lists configuration for the '" + unitName + "' unit is not available.");
+  }
+  return null;
 }
 
 export {

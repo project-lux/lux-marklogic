@@ -140,14 +140,14 @@ For more information on this task, refer to [LUX Gradle Tasks](/docs/lux-backend
 
 ### *Regenerate Remaining Search Terms*
 
-Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermConfig.mjs](/src/main/ml-modules/root/config/searchTermConfig.mjs), or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).
+Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `units` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).
 
 The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
 
 As with generating data constants:
 
 * Generating the remaining search terms needs to be executed separate from other tasks that use a different value for the `database` parameter.
-* When this task completes successfully, the generated remaining search terms have already reached the modules database.  In fact, this Gradle task is modifying the deployed version of [/src/main/ml-modules/root/config/searchTermConfig.mjs](/src/main/ml-modules/root/config/searchTermConfig.mjs)
+* When this task completes successfully, the generated remaining search terms have already reached the modules database.  In fact, this Gradle task is modifying the deployed version of [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs)
 
 Regenerate remaining search terms syntax:
 

@@ -13,21 +13,22 @@
  * In April 2024, this script took 10 seconds to run in SBX.
  */
 'use strict';
-import { SEARCH_TERM_CONFIG } from '/config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
 import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
 import { getSearchScopeTypes } from '/lib/searchScope.mjs';
 
+const searchTermsConfig = getSearchTermsConfig();
 const types = [...new Set(getSearchScopeTypes())].sort();
 
 const termToTypes = {};
-for (const searchScope of Object.keys(SEARCH_TERM_CONFIG).sort()) {
+for (const searchScope of Object.keys(searchTermsConfig).sort()) {
   if (!termToTypes[searchScope]) {
     termToTypes[searchScope] = {};
   }
-  Object.keys(SEARCH_TERM_CONFIG[searchScope])
+  Object.keys(searchTermsConfig[searchScope])
     .sort()
     .map((termName) => {
-      const termConfig = SEARCH_TERM_CONFIG[searchScope][termName];
+      const termConfig = searchTermsConfig[searchScope][termName];
       if (termConfig.predicates) {
         termConfig.predicates.forEach((predicate) => {
           const predicateIri = eval(

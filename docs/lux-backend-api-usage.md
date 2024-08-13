@@ -109,6 +109,8 @@ More:
 
 # Custom MarkLogic Data Services
 
+Several endpoints utilize configuration that may vary by endpoint consumer role.  Thus, different configuration may apply by authenticating with users that have different endpoint consumer roles.  This includes the search term, advanced search term, and related list configurations.  When the user has the `lux-endpoint-consumer` role, all search terms and the full configuration for related lists are available.
+
 ## Advanced Search Configuration
 
 The `advancedSearchConfig` endpoint enables consumers to get a typescript-formatted version of the search configuration geared towards an advanced search user interface.

@@ -1,9 +1,9 @@
 import * as utils from '../utils/utils.mjs';
 import { TOKEN_RUNTIME_PARAM } from '../lib/appConstants.mjs';
 import {
-  SEARCH_TERM_CONFIG,
   getInverseSearchTermInfo,
-} from '../config/searchTermConfig.mjs';
+  getSearchTermsConfig,
+} from '../config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_HOP_WITH_FIELD,
   PATTERN_NAME_RELATED_LIST,
@@ -22,6 +22,8 @@ const RELATION_KEYS_TO_SUPPRESS = [
   'classificationOfSet-containingItem-memberOf-usedForEvent',
   'classificationOfSet-usedForEvent',
 ];
+
+const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 const targetId = TOKEN_RUNTIME_PARAM;
 
@@ -63,8 +65,8 @@ function _getSearchConfigEntries(
   currentLevel
 ) {
   const searchConfigEntries = [];
-  Object.keys(SEARCH_TERM_CONFIG[startingScope]).forEach((termName) => {
-    const termConfig = SEARCH_TERM_CONFIG[startingScope][termName];
+  Object.keys(SEARCH_TERMS_CONFIG[startingScope]).forEach((termName) => {
+    const termConfig = SEARCH_TERMS_CONFIG[startingScope][termName];
     const targetScope = termConfig.targetScope;
     const matchesEndingScope = targetScope == endingScope;
     if (matchesEndingScope || inBetweenScopes.includes(targetScope)) {
@@ -113,16 +115,16 @@ function _getSearchConfigEntries(
  * STEP 1: Get a list of all 'related to' search terms.
  */
 const relatedListTermsInfo = [];
-Object.keys(SEARCH_TERM_CONFIG).forEach((scopeName) => {
-  Object.keys(SEARCH_TERM_CONFIG[scopeName]).forEach((termName) => {
+Object.keys(SEARCH_TERMS_CONFIG).forEach((scopeName) => {
+  Object.keys(SEARCH_TERMS_CONFIG[scopeName]).forEach((termName) => {
     if (termName.startsWith('relatedTo')) {
       relatedListTermsInfo.push({
-        toScope: SEARCH_TERM_CONFIG[scopeName][termName].targetScope,
+        toScope: SEARCH_TERMS_CONFIG[scopeName][termName].targetScope,
         termName,
         fromScope: scopeName,
         inBetweenScopes:
-          SEARCH_TERM_CONFIG[scopeName][termName].inBetweenScopes,
-        maxLevel: SEARCH_TERM_CONFIG[scopeName][termName].maxLevel,
+          SEARCH_TERMS_CONFIG[scopeName][termName].inBetweenScopes,
+        maxLevel: SEARCH_TERMS_CONFIG[scopeName][termName].maxLevel,
       });
     }
   });

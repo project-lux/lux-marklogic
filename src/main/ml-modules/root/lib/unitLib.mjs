@@ -41,4 +41,4 @@ function getCurrentUserUnitName() {
   return unitName;
 }
 
-export { getCurrentUserUnitName, getUnitNames };
+export { ALL_UNITS, getCurrentUserUnitName, getUnitNames };

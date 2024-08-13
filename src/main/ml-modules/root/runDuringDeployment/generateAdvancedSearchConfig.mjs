@@ -1,4 +1,4 @@
-import { SEARCH_TERM_CONFIG } from '../config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_RELATED_LIST,
   PATTERN_NAME_SIMILAR,
@@ -15,6 +15,8 @@ import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
+
+const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 // Arrays for consolidating logging.
 const unknownPattern = [];
@@ -115,11 +117,11 @@ getOrderedUserInterfaceSearchScopeNames()
   .sort()
   .forEach((scopeName) => {
     advancedSearchConfigs.terms[scopeName] = {};
-    Object.keys(SEARCH_TERM_CONFIG[scopeName])
+    Object.keys(SEARCH_TERMS_CONFIG[scopeName])
       .sort()
       .forEach((termName) => {
         const termConfig = new SearchTermConfig(
-          SEARCH_TERM_CONFIG[scopeName][termName]
+          SEARCH_TERMS_CONFIG[scopeName][termName]
         );
         const patternName = termConfig.getPatternName();
 

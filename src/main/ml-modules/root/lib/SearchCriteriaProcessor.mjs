@@ -1,4 +1,4 @@
-import { SEARCH_TERM_CONFIG } from '../config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
 import { SearchPatternOptions } from './SearchPatternOptions.mjs';
@@ -38,6 +38,8 @@ import {
   InvalidSearchRequestError,
 } from './mlErrorsLib.mjs';
 import * as utils from '../utils/utils.mjs';
+
+const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
@@ -651,7 +653,7 @@ const SearchCriteriaProcessor = class {
 
   // Get a search term's configuration by scope name and term name.  Exception thrown when an invalid combination.
   static _getSearchTermConfig(scopeName, termName) {
-    const scopedTerms = SEARCH_TERM_CONFIG[scopeName];
+    const scopedTerms = SEARCH_TERMS_CONFIG[scopeName];
     if (!scopedTerms) {
       throw new InternalServerError(
         `No terms are configured to the '${scopeName}' search scope.`

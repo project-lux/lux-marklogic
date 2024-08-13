@@ -48,6 +48,10 @@ const reportWarning = (unitName, msg) => {
   }
 };
 
+const isDroppedSearchTerm = (droppedTerms, scopeName, termName) => {
+  return droppedTerms[scopeName] && droppedTerms[scopeName].includes(termName);
+};
+
 // Deemed safer to have a single loop for all the units versus multiple.
 const searchTermsConfig = {};
 [UNRESTRICTED_UNIT_NAME]
@@ -56,12 +60,17 @@ const searchTermsConfig = {};
     const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
 
     // Drop any not intended for this unit.
+    const droppedTerms = {};
     Object.keys(unitConfig).forEach((scopeName) => {
       Object.keys(unitConfig[scopeName]).forEach((termName) => {
         if (!isSearchTermForUnit(unitName, unitConfig[scopeName][termName])) {
           console.log(
             `[scope=${scopeName}] Dropping the ${termName} search term from ${unitName}'s configuration.`
           );
+          if (!droppedTerms[scopeName]) {
+            droppedTerms[scopeName] = [];
+          }
+          droppedTerms[scopeName].push(termName);
           delete unitConfig[scopeName][termName];
         }
       });
@@ -105,44 +114,46 @@ const searchTermsConfig = {};
 
       if (isIdTerm) {
         const parentTermName = termName.substring(0, termName.length - 2);
-        if (!unitConfig[scopeName][parentTermName]) {
-          unitConfig[scopeName][parentTermName] = {
-            idIndexReferences: facetIdIndexReferences,
-          };
-        } else {
-          // Try to add our indexes.
-          const searchTermIdIndexReferences =
-            unitConfig[scopeName][parentTermName].idIndexReferences;
-          if (searchTermIdIndexReferences == null) {
-            unitConfig[scopeName][parentTermName].idIndexReferences =
-              facetIdIndexReferences;
-          } else if (
-            utils.getArrayDiff(
-              facetIdIndexReferences,
-              searchTermIdIndexReferences
-            ).length > 0
-          ) {
-            // Merge the ID index arrays
-            const mergedArrays = utils.getMergedArrays(
-              searchTermIdIndexReferences,
-              facetIdIndexReferences
-            );
-            unitConfig[scopeName][parentTermName].idIndexReferences =
-              mergedArrays;
-            reportInfo(
-              unitName,
-              `[scope=${scopeName}] Merged search term ${parentTermName}'s ID index references to ['${mergedArrays.join(
-                "', '"
-              )}'], as specified by the facet configuration.`
-            );
+        if (!isDroppedSearchTerm(droppedTerms, scopeName, parentTermName)) {
+          if (!unitConfig[scopeName][parentTermName]) {
+            unitConfig[scopeName][parentTermName] = {
+              idIndexReferences: facetIdIndexReferences,
+            };
           } else {
-            reportInfo(
-              unitName,
-              `[scope=${scopeName}] The search term ${parentTermName}'s ID index reference matches the facet configuration, and could be omitted from the search criteria configuration.`
-            );
+            // Try to add our indexes.
+            const searchTermIdIndexReferences =
+              unitConfig[scopeName][parentTermName].idIndexReferences;
+            if (searchTermIdIndexReferences == null) {
+              unitConfig[scopeName][parentTermName].idIndexReferences =
+                facetIdIndexReferences;
+            } else if (
+              utils.getArrayDiff(
+                facetIdIndexReferences,
+                searchTermIdIndexReferences
+              ).length > 0
+            ) {
+              // Merge the ID index arrays
+              const mergedArrays = utils.getMergedArrays(
+                searchTermIdIndexReferences,
+                facetIdIndexReferences
+              );
+              unitConfig[scopeName][parentTermName].idIndexReferences =
+                mergedArrays;
+              reportInfo(
+                unitName,
+                `[scope=${scopeName}] Merged search term ${parentTermName}'s ID index references to ['${mergedArrays.join(
+                  "', '"
+                )}'], as specified by the facet configuration.`
+              );
+            } else {
+              reportInfo(
+                unitName,
+                `[scope=${scopeName}] The search term ${parentTermName}'s ID index reference matches the facet configuration, and could be omitted from the search criteria configuration.`
+              );
+            }
           }
         }
-      } else {
+      } else if (!isDroppedSearchTerm(droppedTerms, scopeName, termName)) {
         if (unitConfig[scopeName][termName]) {
           reportWarning(
             unitName,

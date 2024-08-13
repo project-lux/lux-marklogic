@@ -55,7 +55,7 @@ function isSearchTermForUnit(unitName, searchTermConfig) {
 
   // See if the unit is excluded.
   if (isNonEmptyArray(searchTermConfig.excludedUnits)) {
-    return searchTermConfig.excludedUnits.includes(unitName);
+    return !searchTermConfig.excludedUnits.includes(unitName);
   }
 
   // Default

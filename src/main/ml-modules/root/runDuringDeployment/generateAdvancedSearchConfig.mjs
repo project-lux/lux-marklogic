@@ -1,4 +1,4 @@
-import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
+import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_RELATED_LIST,
   PATTERN_NAME_SIMILAR,
@@ -16,8 +16,6 @@ import { ALL_UNITS, getUnitNames } from '../lib/unitLib.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
-
-const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 // Arrays for consolidating logging.
 const omittedTermNames = [];
@@ -114,19 +112,20 @@ function createEntry(scopeName, termName, termConfig, report) {
 
 const advancedSearchConfigs = {};
 [ALL_UNITS].concat(getUnitNames()).forEach((unitName) => {
-  const unitConfig = { terms: {}, options: {} };
+  const unitAdvancedSearchConfig = { terms: {}, options: {} };
+  const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
   const report = unitName == ALL_UNITS;
 
   getOrderedUserInterfaceSearchScopeNames()
     .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
     .sort()
     .forEach((scopeName) => {
-      unitConfig.terms[scopeName] = {};
-      Object.keys(SEARCH_TERMS_CONFIG[scopeName])
+      unitAdvancedSearchConfig.terms[scopeName] = {};
+      Object.keys(unitSearchTermsConfig[scopeName])
         .sort()
         .forEach((termName) => {
           const termConfig = new SearchTermConfig(
-            SEARCH_TERMS_CONFIG[scopeName][termName]
+            unitSearchTermsConfig[scopeName][termName]
           );
           const patternName = termConfig.getPatternName();
 
@@ -158,7 +157,7 @@ const advancedSearchConfigs = {};
           }
 
           if (add) {
-            unitConfig.terms[scopeName][termName] = createEntry(
+            unitAdvancedSearchConfig.terms[scopeName][termName] = createEntry(
               scopeName,
               termName,
               termConfig,
@@ -171,9 +170,9 @@ const advancedSearchConfigs = {};
     });
 
   // Within each scope, sort by the search term's label.
-  Object.keys(unitConfig.terms).forEach((scopeName) => {
-    unitConfig.terms[scopeName] = utils.sortObj(
-      unitConfig.terms[scopeName],
+  Object.keys(unitAdvancedSearchConfig.terms).forEach((scopeName) => {
+    unitAdvancedSearchConfig.terms[scopeName] = utils.sortObj(
+      unitAdvancedSearchConfig.terms[scopeName],
       'label',
       'Name' // If this label changes, this should be updated to match.
     );
@@ -181,13 +180,13 @@ const advancedSearchConfigs = {};
 
   // Provide mapping from options name to its allowed and default options.
   allOptionsNames.forEach((name) => {
-    unitConfig.options[name] = {
+    unitAdvancedSearchConfig.options[name] = {
       allowed: getAllowedSearchOptionsByOptionsName(name),
       default: getDefaultSearchOptionsByOptionsName(name),
     };
   });
 
-  advancedSearchConfigs[unitName] = unitConfig;
+  advancedSearchConfigs[unitName] = unitAdvancedSearchConfig;
 });
 
 // Consolidated log entries

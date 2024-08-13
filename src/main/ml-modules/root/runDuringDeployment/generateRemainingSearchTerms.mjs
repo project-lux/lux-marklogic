@@ -348,7 +348,7 @@ function getSearchTermNames(scopeFrom, scopeTo = null) {
 }
 
 export {
-  SEARCH_TERMS_CONFIG, // only intended for the search term generator.
+  SEARCH_TERMS_CONFIG, // only generators are to import this.
   getInverseSearchTermInfo,
   getSearchTermConfig,
   getSearchTermsConfig,

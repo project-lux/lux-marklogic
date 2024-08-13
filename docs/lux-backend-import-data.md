@@ -198,7 +198,7 @@ For more information on this task, refer to [LUX Gradle Tasks](/docs/lux-backend
 
 ### *Regenerate Advanced Search Configuration*
 
-The advanced search configuration is to be regenerated after the remaining search terms are generated or when the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) is modified.  
+The advanced search configuration is to be regenerated after the remaining search terms are generated or when either the value of the `units` build property or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) changes.
 
 The associated Gradle task, `generateAdvancedSearchConfig`, is automatically after `generateRemainingSearchTerms`.
 

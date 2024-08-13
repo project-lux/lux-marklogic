@@ -320,7 +320,7 @@ After `generateRemainingSearchTerms` runs or [/src/main/ml-modules/root/runDurin
 
 # Regenerate Advanced Search Configuration
 
-The advanced search configuration is to be regenerated after the remaining search terms are generated or when the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) is modified.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
+The advanced search configuration is to be regenerated after the remaining search terms are generated or when either the value of the `units` build property or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) changes.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
 
 # Deploy Database Configuration Changes
 

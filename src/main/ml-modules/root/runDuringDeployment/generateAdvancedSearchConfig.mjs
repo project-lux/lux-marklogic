@@ -12,6 +12,7 @@ import * as utils from '../utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
 import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
+import { ALL_UNITS, getUnitNames } from '../lib/unitLib.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -19,6 +20,7 @@ console.log(`Generating ${uri}`);
 const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 // Arrays for consolidating logging.
+const omittedTermNames = [];
 const unknownPattern = [];
 const noAllowedOptions = [];
 const noDefaultsOptions = [];
@@ -35,7 +37,7 @@ function recordOptionsNames(allowedOptionsName, defaultOptionsName) {
   }
 }
 
-function createEntry(scopeName, termName, termConfig) {
+function createEntry(scopeName, termName, termConfig, report) {
   const entry = {};
 
   const patternName = termConfig.getPatternName();
@@ -48,13 +50,13 @@ function createEntry(scopeName, termName, termConfig) {
 
   if (termConfig.hasLabel()) {
     entry.label = termConfig.getLabel();
-  } else {
+  } else if (report) {
     noLabel.push(`${scopeName}.${termName}`);
   }
 
   if (termConfig.hasHelpText()) {
     entry.helpText = termConfig.getHelpText();
-  } else {
+  } else if (report) {
     noHelpText.push(`${scopeName}.${termName}`);
   }
 
@@ -96,13 +98,13 @@ function createEntry(scopeName, termName, termConfig) {
         getDefaultSearchOptionsNameByPatternName(patternName);
       if (defaultOptionsName) {
         entry.defaultOptionsName = defaultOptionsName;
-      } else {
+      } else if (report) {
         noDefaultsOptions.push(`[${patternName}] ${scopeName}.${termName}`);
       }
-    } else {
+    } else if (report) {
       noAllowedOptions.push(`[${patternName}] ${scopeName}.${termName}`);
     }
-  } else {
+  } else if (report) {
     unknownPattern.push(`${scopeName}.${termName}`);
   }
   recordOptionsNames(allowedOptionsName, defaultOptionsName);
@@ -110,75 +112,82 @@ function createEntry(scopeName, termName, termConfig) {
   return entry;
 }
 
-const advancedSearchConfigs = { terms: {}, options: {} };
-const omittedTermNames = [];
-getOrderedUserInterfaceSearchScopeNames()
-  .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
-  .sort()
-  .forEach((scopeName) => {
-    advancedSearchConfigs.terms[scopeName] = {};
-    Object.keys(SEARCH_TERMS_CONFIG[scopeName])
-      .sort()
-      .forEach((termName) => {
-        const termConfig = new SearchTermConfig(
-          SEARCH_TERMS_CONFIG[scopeName][termName]
-        );
-        const patternName = termConfig.getPatternName();
+const advancedSearchConfigs = {};
+[ALL_UNITS].concat(getUnitNames()).forEach((unitName) => {
+  const unitConfig = { terms: {}, options: {} };
+  const report = unitName == ALL_UNITS;
 
-        // Suppress search terms that may never be exposed via advanced search and those
-        // the frontend is not yet ready for.
-        let add = true;
-        if (
-          [
-            'any', // Term may no longer exist.
-            'classificationOfReference',
-            'classificationOfSet',
-            'iri',
-            'recordType',
-            'subject',
-          ].includes(termName) &&
-          (!termConfig.hasLabel() || !termConfig.hasHelpText())
-        ) {
-          add = false;
-        } else if (termName.endsWith('Id')) {
-          add = false;
-        }
-        // 20230420, bhartwig: asked to suppress Similar terms.
-        else if (
-          [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-            patternName
-          )
-        ) {
-          add = false;
-        }
-
-        if (add) {
-          advancedSearchConfigs.terms[scopeName][termName] = createEntry(
-            scopeName,
-            termName,
-            termConfig
+  getOrderedUserInterfaceSearchScopeNames()
+    .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
+    .sort()
+    .forEach((scopeName) => {
+      unitConfig.terms[scopeName] = {};
+      Object.keys(SEARCH_TERMS_CONFIG[scopeName])
+        .sort()
+        .forEach((termName) => {
+          const termConfig = new SearchTermConfig(
+            SEARCH_TERMS_CONFIG[scopeName][termName]
           );
-        } else {
-          omittedTermNames.push(`[${patternName}] ${scopeName}.${termName}`);
-        }
-      });
+          const patternName = termConfig.getPatternName();
+
+          // Suppress search terms that may never be exposed via advanced search and those
+          // the frontend is not yet ready for.
+          let add = true;
+          if (
+            [
+              'any', // Term may no longer exist.
+              'classificationOfReference',
+              'classificationOfSet',
+              'iri',
+              'recordType',
+              'subject',
+            ].includes(termName) &&
+            (!termConfig.hasLabel() || !termConfig.hasHelpText())
+          ) {
+            add = false;
+          } else if (termName.endsWith('Id')) {
+            add = false;
+          }
+          // 20230420, bhartwig: asked to suppress Similar terms.
+          else if (
+            [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
+              patternName
+            )
+          ) {
+            add = false;
+          }
+
+          if (add) {
+            unitConfig.terms[scopeName][termName] = createEntry(
+              scopeName,
+              termName,
+              termConfig,
+              report
+            );
+          } else if (report) {
+            omittedTermNames.push(`[${patternName}] ${scopeName}.${termName}`);
+          }
+        });
+    });
+
+  // Within each scope, sort by the search term's label.
+  Object.keys(unitConfig.terms).forEach((scopeName) => {
+    unitConfig.terms[scopeName] = utils.sortObj(
+      unitConfig.terms[scopeName],
+      'label',
+      'Name' // If this label changes, this should be updated to match.
+    );
   });
 
-// Within each scope, sort by the search term's label.
-Object.keys(advancedSearchConfigs.terms).forEach((scopeName) => {
-  advancedSearchConfigs.terms[scopeName] = utils.sortObj(
-    advancedSearchConfigs.terms[scopeName],
-    'label',
-    'Name' // If this label changes, this should be updated to match.
-  );
-});
+  // Provide mapping from options name to its allowed and default options.
+  allOptionsNames.forEach((name) => {
+    unitConfig.options[name] = {
+      allowed: getAllowedSearchOptionsByOptionsName(name),
+      default: getDefaultSearchOptionsByOptionsName(name),
+    };
+  });
 
-// Provide mapping from options name to its allowed and default options.
-allOptionsNames.forEach((name) => {
-  advancedSearchConfigs.options[name] = {
-    allowed: getAllowedSearchOptionsByOptionsName(name),
-    default: getDefaultSearchOptionsByOptionsName(name),
-  };
+  advancedSearchConfigs[unitName] = unitConfig;
 });
 
 // Consolidated log entries
@@ -214,9 +223,21 @@ function constructModuleNode(advancedSearchConfigs) {
  *
  * Generated timestamp: ${new Date()}
  */
+import { getCurrentUserUnitName } from '../lib/unitLib.mjs';
+import { BadRequestError } from '../lib/mlErrorsLib.mjs';
+
 const ADVANCED_SEARCH_CONFIG = ${JSON.stringify(advancedSearchConfigs)};
 
-export { ADVANCED_SEARCH_CONFIG };`);
+// Get the configuration applicable to the current user.
+function getAdvancedSearchConfig() {
+  const unitName = getCurrentUserUnitName()
+  if (ADVANCED_SEARCH_CONFIG[unitName] != null) {
+    return ADVANCED_SEARCH_CONFIG[unitName];
+  }
+  throw new BadRequestError("The advanced search configuration for the '" + unitName + "' unit is not available.");
+}
+
+export { getAdvancedSearchConfig };`);
   return textNode.toNode();
 }
 

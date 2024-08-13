@@ -557,7 +557,7 @@ const SEARCH_TERMS_CONFIG = {
 // has a chance to provide the runtime version.
 function dummy() {}
 export {
-  SEARCH_TERMS_CONFIG, // only intended for the search term generator.
+  SEARCH_TERMS_CONFIG, // only generators are to import this.
   dummy as getInverseSearchTermInfo,
   dummy as getSearchTermConfig,
   dummy as getSearchTermsConfig,

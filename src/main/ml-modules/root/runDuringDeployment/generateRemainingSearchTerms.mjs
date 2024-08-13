@@ -14,6 +14,7 @@ import * as utils from '../utils/utils.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
   getRestrictedUnitNames,
+  isSearchTermForUnit,
 } from '../lib/unitLib.mjs';
 
 const uri = '/config/searchTermsConfig.mjs';
@@ -53,6 +54,18 @@ const searchTermsConfig = {};
   .concat(getRestrictedUnitNames())
   .forEach((unitName) => {
     const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
+
+    // Drop any not intended for this unit.
+    Object.keys(unitConfig).forEach((scopeName) => {
+      Object.keys(unitConfig[scopeName]).forEach((termName) => {
+        if (!isSearchTermForUnit(unitName, unitConfig[scopeName][termName])) {
+          console.log(
+            `[scope=${scopeName}] Dropping the ${termName} search term from ${unitName}'s configuration.`
+          );
+          delete unitConfig[scopeName][termName];
+        }
+      });
+    });
 
     // Generate facet search terms.
     Object.keys(FACETS_CONFIG).forEach((facetName) => {

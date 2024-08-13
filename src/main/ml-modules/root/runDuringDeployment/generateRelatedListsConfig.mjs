@@ -111,47 +111,6 @@ function _getSearchConfigEntries(
   }
 }
 
-/*
- * STEP 1: Get a list of all 'related to' search terms.
- */
-const relatedListTermsInfo = [];
-Object.keys(SEARCH_TERMS_CONFIG).forEach((scopeName) => {
-  Object.keys(SEARCH_TERMS_CONFIG[scopeName]).forEach((termName) => {
-    if (termName.startsWith('relatedTo')) {
-      relatedListTermsInfo.push({
-        toScope: SEARCH_TERMS_CONFIG[scopeName][termName].targetScope,
-        termName,
-        fromScope: scopeName,
-        inBetweenScopes:
-          SEARCH_TERMS_CONFIG[scopeName][termName].inBetweenScopes,
-        maxLevel: SEARCH_TERMS_CONFIG[scopeName][termName].maxLevel,
-      });
-    }
-  });
-});
-
-/*
- * STEP 2: Collect information on each related list, starting from the scope to return results of, working towards the scope
- * we will be given an ID of.  For example, for the agent to place list, we will be given an agent ID.  We need to start with
- * place, and find all paths to agent IDs.  This is not yet the runtime format.
- */
-let relatedListsConfig = {};
-relatedListTermsInfo.forEach((termInfo) => {
-  if (!relatedListsConfig[termInfo.fromScope]) {
-    relatedListsConfig[termInfo.fromScope] = {};
-  }
-  relatedListsConfig[termInfo.fromScope][termInfo.termName] = {
-    scopeName: termInfo.toScope,
-    searchConfigEntries: _getSearchConfigEntries(
-      termInfo.fromScope,
-      termInfo.toScope,
-      termInfo.inBetweenScopes,
-      termInfo.maxLevel,
-      1
-    ),
-  };
-});
-
 function _convertToRuntimeFormat(
   relatedListScopeName,
   relatedListTermName,
@@ -208,6 +167,47 @@ function _convertToRuntimeFormat(
     };
   }
 }
+
+/*
+ * STEP 1: Get a list of all 'related to' search terms.
+ */
+const relatedListTermsInfo = [];
+Object.keys(SEARCH_TERMS_CONFIG).forEach((scopeName) => {
+  Object.keys(SEARCH_TERMS_CONFIG[scopeName]).forEach((termName) => {
+    if (termName.startsWith('relatedTo')) {
+      relatedListTermsInfo.push({
+        toScope: SEARCH_TERMS_CONFIG[scopeName][termName].targetScope,
+        termName,
+        fromScope: scopeName,
+        inBetweenScopes:
+          SEARCH_TERMS_CONFIG[scopeName][termName].inBetweenScopes,
+        maxLevel: SEARCH_TERMS_CONFIG[scopeName][termName].maxLevel,
+      });
+    }
+  });
+});
+
+/*
+ * STEP 2: Collect information on each related list, starting from the scope to return results of, working towards the scope
+ * we will be given an ID of.  For example, for the agent to place list, we will be given an agent ID.  We need to start with
+ * place, and find all paths to agent IDs.  This is not yet the runtime format.
+ */
+let relatedListsConfig = {};
+relatedListTermsInfo.forEach((termInfo) => {
+  if (!relatedListsConfig[termInfo.fromScope]) {
+    relatedListsConfig[termInfo.fromScope] = {};
+  }
+  relatedListsConfig[termInfo.fromScope][termInfo.termName] = {
+    scopeName: termInfo.toScope,
+    searchConfigEntries: _getSearchConfigEntries(
+      termInfo.fromScope,
+      termInfo.toScope,
+      termInfo.inBetweenScopes,
+      termInfo.maxLevel,
+      1
+    ),
+  };
+});
 
 /*
  * STEP 3: Convert to the runtime format.  The outer structure is the same as the search term configuration whereby the

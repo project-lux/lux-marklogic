@@ -1,5 +1,10 @@
 import { RESTRICTED_UNIT_NAMES } from './appConstants.mjs';
-import { isNonEmptyArray, isObject, split } from '../utils/utils.mjs';
+import {
+  isNonEmptyArray,
+  isObject,
+  removeItemByValueFromArray,
+  split,
+} from '../utils/utils.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 
 const UNRESTRICTED_UNIT_NAME = 'lux';
@@ -12,7 +17,10 @@ const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
 // Get an array of unit names known to this deployment.
 function getRestrictedUnitNames() {
-  return split(RESTRICTED_UNIT_NAMES, ',', true);
+  return removeItemByValueFromArray(
+    split(RESTRICTED_UNIT_NAMES, ',', true),
+    UNRESTRICTED_UNIT_NAME
+  );
 }
 
 // Get the current user's unit name.
@@ -30,8 +38,9 @@ function getCurrentUserUnitName() {
         return false;
       } else if (roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH)) {
         const parts = roleName.split('-');
-        if (parts.length === 4) {
-          unitName = parts[1];
+        if (parts.length >= 4) {
+          // Return whatever is between "lux-" and "-endpoint-consumer".
+          unitName = parts.slice(1, parts.length - 2).join('-');
           return false;
         }
       }

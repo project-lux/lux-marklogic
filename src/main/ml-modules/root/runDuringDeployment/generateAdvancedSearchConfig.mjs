@@ -126,54 +126,53 @@ const advancedSearchConfigs = {};
       .sort()
       .forEach((scopeName) => {
         unitAdvancedSearchConfig.terms[scopeName] = {};
-        Object.keys(unitSearchTermsConfig[scopeName])
-          .sort()
-          .forEach((termName) => {
-            const termConfig = new SearchTermConfig(
-              unitSearchTermsConfig[scopeName][termName]
-            );
-            const patternName = termConfig.getPatternName();
-
-            // Suppress search terms that may never be exposed via advanced search and those
-            // the frontend is not yet ready for.
-            let add = true;
-            if (
-              [
-                'any', // Term may no longer exist.
-                'classificationOfReference',
-                'classificationOfSet',
-                'iri',
-                'recordType',
-                'subject',
-              ].includes(termName) &&
-              (!termConfig.hasLabel() || !termConfig.hasHelpText())
-            ) {
-              add = false;
-            } else if (termName.endsWith('Id')) {
-              add = false;
-            }
-            // 20230420, bhartwig: asked to suppress Similar terms.
-            else if (
-              [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-                patternName
-              )
-            ) {
-              add = false;
-            }
-
-            if (add) {
-              unitAdvancedSearchConfig.terms[scopeName][termName] = createEntry(
-                scopeName,
-                termName,
-                termConfig,
-                report
+        // Entire scopes may not apply to some units.
+        if (unitSearchTermsConfig[scopeName]) {
+          Object.keys(unitSearchTermsConfig[scopeName])
+            .sort()
+            .forEach((termName) => {
+              const termConfig = new SearchTermConfig(
+                unitSearchTermsConfig[scopeName][termName]
               );
-            } else if (report) {
-              omittedTermNames.push(
-                `[${patternName}] ${scopeName}.${termName}`
-              );
-            }
-          });
+              const patternName = termConfig.getPatternName();
+
+              // Suppress search terms that may never be exposed via advanced search and those
+              // the frontend is not yet ready for.
+              let add = true;
+              if (
+                [
+                  'any', // Term may no longer exist.
+                  'classificationOfReference',
+                  'classificationOfSet',
+                  'iri',
+                  'recordType',
+                  'subject',
+                ].includes(termName) &&
+                (!termConfig.hasLabel() || !termConfig.hasHelpText())
+              ) {
+                add = false;
+              } else if (termName.endsWith('Id')) {
+                add = false;
+              }
+              // 20230420, bhartwig: asked to suppress Similar terms.
+              else if (
+                [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
+                  patternName
+                )
+              ) {
+                add = false;
+              }
+
+              if (add) {
+                unitAdvancedSearchConfig.terms[scopeName][termName] =
+                  createEntry(scopeName, termName, termConfig, report);
+              } else if (report) {
+                omittedTermNames.push(
+                  `[${patternName}] ${scopeName}.${termName}`
+                );
+              }
+            });
+        }
       });
 
     // Within each scope, sort by the search term's label.

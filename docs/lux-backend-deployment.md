@@ -316,7 +316,7 @@ Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after c
 
 # Regenerate Related Lists Configuration
 
-After `generateRemainingSearchTerms` runs or [/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes, the configuration for related lists should be regenerated.  The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
+After `generateRemainingSearchTerms` runs or when either the value of the `restrictedUnitNames` build property or the associated generator [/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes, the configuration for related lists should be regenerated.  The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
 
 # Regenerate Advanced Search Configuration
 

@@ -169,7 +169,7 @@ For more information on this task, refer to [LUX Gradle Tasks](/docs/lux-backend
 
 ### *Regenerate Related Lists Configuration*
 
-The advanced search configuration is to be regenerated after the remaining search terms are generated or when the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs)) is modified. 
+The related lists configuration is to be regenerated after the remaining search terms are generated or when either the value of the `restrictedUnitNames` build property or the associated generator [/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes.
 
 The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
 

@@ -1,6 +1,6 @@
 const ENVIRONMENT_NAME = '%%environmentName%%';
 
-const RESTRICTED_UNIT_NAMES = '%%restrictedUnitNames%%'.toLowerCase().trim();
+const RESTRICTED_UNIT_NAMES = '%%restrictedUnitNames%%'.trim();
 
 const DATA_PERMISSIONS_DELIMITED_STRING = '%%mlDataPermissions%%'.trim();
 

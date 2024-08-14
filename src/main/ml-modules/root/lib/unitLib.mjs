@@ -17,6 +17,10 @@ const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
 // Get an array of unit names known to this deployment.
 function getRestrictedUnitNames() {
+  // In case the property is not set, in which there are no restricted units.
+  if (RESTRICTED_UNIT_NAMES.includes('restrictedUnitNames')) {
+    return [];
+  }
   return removeItemByValueFromArray(
     split(RESTRICTED_UNIT_NAMES, ',', true),
     UNRESTRICTED_UNIT_NAME

@@ -45,7 +45,7 @@ Here's how it works:
 
 * Set the `restrictedUnitNames` build property to the units to generate configuration for.  Endpoint consumers for which there is no configuration for may expect runtime errors.
 * Within [searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `onlyForUnits` and `excludedUnits` arrays control which units have access to entire search scopes and specific search terms.
-* The array values should be unit names, and should match `[unitName]` in the `lux-[unitName]-endpoint-consumer` role names.
+* The array values should be unit names, and should match `[unitName]` in the `lux-[unitName]-endpoint-consumer` role names (case-sensitive).
 * When both arrays are set on the same search scope or search term, `onlyForUnits` takes precedence.
 * The default is to provide all search scopes and search terms to all units.
 * "lux" is a reserved value and represents an endpoint consumer that has access to all documents and configuration.  The only time it makes sense to use that value in one of these arrays is to suppress a search scope or search term from all restricted units: `"onlyForUnits": ["lux"]`.

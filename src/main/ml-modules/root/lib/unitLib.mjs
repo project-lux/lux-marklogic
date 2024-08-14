@@ -36,7 +36,7 @@ function getCurrentUserUnitName() {
     });
 
   if (unitName === null) {
-    throw new BadRequestError('Unknown unit');
+    throw new BadRequestError('Unable to determine unit from roles.');
   }
   return unitName;
 }

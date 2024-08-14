@@ -1,11 +1,14 @@
 import { RESTRICTED_UNIT_NAMES } from './appConstants.mjs';
-import { isNonEmptyArray, split } from '../utils/utils.mjs';
+import { isNonEmptyArray, isObject, split } from '../utils/utils.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 
 const UNRESTRICTED_UNIT_NAME = 'lux';
 const UNRESTRICTED_ROLE_NAME = 'lux-endpoint-consumer';
 const ADMIN_ROLE_NAME = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
+
+const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
+const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
 // Get an array of unit names known to this deployment.
 function getRestrictedUnitNames() {
@@ -41,30 +44,46 @@ function getCurrentUserUnitName() {
   return unitName;
 }
 
-// Determine if the given search term should be provided to the specified unit.
-function isSearchTermForUnit(unitName, searchTermConfig) {
+// Determine if the given scope or search term configuration is applicable to the specified unit.
+// configTree should either be an entire scope or single search term from searchTermsConfig.mjs.
+// These are the objects that are allowed to implement the PROPERTY_NAME_ONLY_FOR_UNITS and
+// PROPERTY_NAME_EXCLUDED_UNITS properties.
+function isConfiguredForUnit(unitName, configTree) {
   // The unrestricted unit gets everything.
   if (UNRESTRICTED_UNIT_NAME == unitName) {
     return true;
   }
 
   // Only-for takes precedence over excluded.
-  if (isNonEmptyArray(searchTermConfig.onlyForUnits)) {
-    return searchTermConfig.onlyForUnits.includes(unitName);
+  if (isNonEmptyArray(configTree[PROPERTY_NAME_ONLY_FOR_UNITS])) {
+    return configTree[PROPERTY_NAME_ONLY_FOR_UNITS].includes(unitName);
   }
 
   // See if the unit is excluded.
-  if (isNonEmptyArray(searchTermConfig.excludedUnits)) {
-    return !searchTermConfig.excludedUnits.includes(unitName);
+  if (isNonEmptyArray(configTree[PROPERTY_NAME_EXCLUDED_UNITS])) {
+    return !configTree[PROPERTY_NAME_EXCLUDED_UNITS].includes(unitName);
   }
 
   // Default
   return true;
 }
 
+function removeUnitConfigProperties(configTree, recursive = false) {
+  delete configTree[PROPERTY_NAME_ONLY_FOR_UNITS];
+  delete configTree[PROPERTY_NAME_EXCLUDED_UNITS];
+  if (recursive) {
+    Object.keys(configTree).forEach((propName) => {
+      if (isObject(configTree[propName])) {
+        removeUnitConfigProperties(configTree[propName]);
+      }
+    });
+  }
+}
+
 export {
   UNRESTRICTED_UNIT_NAME,
   getCurrentUserUnitName,
   getRestrictedUnitNames,
-  isSearchTermForUnit,
+  isConfiguredForUnit,
+  removeUnitConfigProperties,
 };

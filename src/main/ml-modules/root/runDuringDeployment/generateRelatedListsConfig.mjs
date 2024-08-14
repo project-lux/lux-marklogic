@@ -11,7 +11,7 @@ import {
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
-  getRestrictedUnitNames,
+  getEndpointAccessUnitNames,
 } from '../lib/unitLib.mjs';
 
 const uri = '/config/relatedListsConfig.mjs';
@@ -183,7 +183,7 @@ function _convertToRuntimeFormat(
 // Perform the following for LUX (all data / UNRESTRICTED_UNIT_NAME) and all known units.
 const relatedListsConfig = {};
 [UNRESTRICTED_UNIT_NAME]
-  .concat(getRestrictedUnitNames())
+  .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
     const unitRelatedListsConfig = {};
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];

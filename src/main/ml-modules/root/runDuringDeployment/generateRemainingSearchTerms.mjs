@@ -13,7 +13,7 @@ import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
-  getRestrictedUnitNames,
+  getEndpointAccessUnitNames,
   isConfiguredForUnit,
   removeUnitConfigProperties,
 } from '../lib/unitLib.mjs';
@@ -66,7 +66,7 @@ const hasHopInverseInfo = (searchTerm) => {
 // Deemed safer to have a single loop for all the units versus multiple.
 const searchTermsConfig = {};
 [UNRESTRICTED_UNIT_NAME]
-  .concat(getRestrictedUnitNames())
+  .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
     const isUnrestrictedUnit = unitName == UNRESTRICTED_UNIT_NAME;
     const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));

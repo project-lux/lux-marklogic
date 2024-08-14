@@ -16,9 +16,9 @@ const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
 // Get an array of unit names known to this deployment.
-function getRestrictedUnitNames() {
+function getEndpointAccessUnitNames() {
   // In case the property is not set, in which there are no restricted units.
-  if (RESTRICTED_UNIT_NAMES.includes('restrictedUnitNames')) {
+  if (RESTRICTED_UNIT_NAMES.includes('endpointAccessUnitNames')) {
     return [];
   }
   return removeItemByValueFromArray(
@@ -96,7 +96,7 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 export {
   UNRESTRICTED_UNIT_NAME,
   getCurrentUserUnitName,
-  getRestrictedUnitNames,
+  getEndpointAccessUnitNames,
   isConfiguredForUnit,
   removeUnitConfigProperties,
 };

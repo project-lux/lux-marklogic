@@ -14,7 +14,7 @@ import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
-  getRestrictedUnitNames,
+  getEndpointAccessUnitNames,
 } from '../lib/unitLib.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
@@ -115,7 +115,7 @@ function createEntry(scopeName, termName, termConfig, report) {
 
 const advancedSearchConfigs = {};
 [UNRESTRICTED_UNIT_NAME]
-  .concat(getRestrictedUnitNames())
+  .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
     const unitAdvancedSearchConfig = { terms: {}, options: {} };
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];

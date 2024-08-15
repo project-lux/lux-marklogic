@@ -125,9 +125,9 @@ const advancedSearchConfigs = {};
       .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
       .sort()
       .forEach((scopeName) => {
-        unitAdvancedSearchConfig.terms[scopeName] = {};
         // Entire scopes may not apply to some units.
         if (unitSearchTermsConfig[scopeName]) {
+          unitAdvancedSearchConfig.terms[scopeName] = {};
           Object.keys(unitSearchTermsConfig[scopeName])
             .sort()
             .forEach((termName) => {

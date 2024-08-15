@@ -214,21 +214,24 @@ const relatedListsConfig = {};
      * place, and find all paths to agent IDs.  This is not yet the runtime format.
      */
     relatedListTermsInfo.forEach((termInfo) => {
-      if (!unitRelatedListsConfig[termInfo.fromScope]) {
-        unitRelatedListsConfig[termInfo.fromScope] = {};
+      const searchConfigEntries = _getSearchConfigEntries(
+        unitSearchTermsConfig,
+        termInfo.fromScope,
+        termInfo.toScope,
+        termInfo.inBetweenScopes,
+        termInfo.maxLevel,
+        1,
+        report
+      );
+      if (utils.isNonEmptyArray(searchConfigEntries)) {
+        if (!unitRelatedListsConfig[termInfo.fromScope]) {
+          unitRelatedListsConfig[termInfo.fromScope] = {};
+        }
+        unitRelatedListsConfig[termInfo.fromScope][termInfo.termName] = {
+          scopeName: termInfo.toScope,
+          searchConfigEntries,
+        };
       }
-      unitRelatedListsConfig[termInfo.fromScope][termInfo.termName] = {
-        scopeName: termInfo.toScope,
-        searchConfigEntries: _getSearchConfigEntries(
-          unitSearchTermsConfig,
-          termInfo.fromScope,
-          termInfo.toScope,
-          termInfo.inBetweenScopes,
-          termInfo.maxLevel,
-          1,
-          report
-        ),
-      };
     });
 
     /*

@@ -1,4 +1,4 @@
-import { RESTRICTED_UNIT_NAMES } from './appConstants.mjs';
+import { ENDPOINT_ACCESS_UNIT_NAMES } from './appConstants.mjs';
 import {
   isNonEmptyArray,
   isObject,
@@ -17,12 +17,13 @@ const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
-  // In case the property is not set, in which there are no restricted units.
-  if (RESTRICTED_UNIT_NAMES.includes('endpointAccessUnitNames')) {
+  // In case the property is not set, in which there are no endpoint consumers with
+  // restricted access.
+  if (ENDPOINT_ACCESS_UNIT_NAMES.includes('endpointAccessUnitNames')) {
     return [];
   }
   return removeItemByValueFromArray(
-    split(RESTRICTED_UNIT_NAMES, ',', true),
+    split(ENDPOINT_ACCESS_UNIT_NAMES, ',', true),
     UNRESTRICTED_UNIT_NAME
   );
 }

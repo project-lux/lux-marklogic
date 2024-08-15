@@ -50,7 +50,7 @@ Here's how it works:
 * The array values should be unit names, and should match `[unitName]` in the `lux-[unitName]-endpoint-consumer` role names (case-sensitive).
 * When both arrays are set on the same search scope or search term, `onlyForUnits` takes precedence.
 * The default is to provide all search scopes and search terms to all units.
-* "lux" is a reserved value and represents an endpoint consumer that has access to all documents and configuration.  The only time it makes sense to use that value in one of these arrays is to suppress a search scope or search term from all restricted units: `"onlyForUnits": ["lux"]`.
+* "lux" is a reserved value and represents an endpoint consumer that has access to all documents and configuration.  The only time it makes sense to use that value in one of these arrays is to suppress a search scope or search term from all endpoint consumers with restricted access: `"onlyForUnits": ["lux"]`.
 * The logic is encapsulated within `isConfiguredForUnit` of [unitLib.mjs](/src/main/ml-modules/root/lib/unitLib.mjs).
 * The [remaining search term generator](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs) is responsible for calling `isConfiguredForUnit` everywhere it needs to.  Its output is the input for the [advanced search configuration generator](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs) and [related lists generator](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs).
 * At runtime, the applicable configuration is derived from the user's endpoint role.

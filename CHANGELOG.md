@@ -6,6 +6,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+- Added the Objects/Works about/subject of other Objects/Works relationship ([#74](https://github.com/project-lux/lux-marklogic/issues/74)).
+
 ### Changed
 
 ### Removed

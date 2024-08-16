@@ -1170,6 +1170,42 @@
       "field-value-searches": true
     },
     {
+      "field-name": "workAboutWorkId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutItemId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "workPartOfId",
       "field-path": [
         {
@@ -2305,6 +2341,20 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "workAboutConceptId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "workAboutWorkId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "workAboutItemId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

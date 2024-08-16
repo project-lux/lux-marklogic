@@ -443,6 +443,7 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'agent',
       hopInverseName: 'subjectOfAgent',
       indexReferences: ['agentPrimaryName'],
+      idIndexReferences: 'workAboutAgentId',
     },
     aboutConcept: {
       patternName: 'hopWithField',
@@ -450,6 +451,15 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'concept',
       hopInverseName: 'subjectOfConcept',
       indexReferences: ['conceptPrimaryName'],
+      idIndexReferences: 'workAboutConceptId',
+    },
+    aboutItem: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_item")'],
+      targetScope: 'item',
+      hopInverseName: 'subjectOfItem',
+      indexReferences: ['itemPrimaryName'],
+      idIndexReferences: 'workAboutItemId',
     },
     aboutPlace: {
       patternName: 'hopWithField',
@@ -457,6 +467,15 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'place',
       hopInverseName: 'subjectOfPlace',
       indexReferences: ['placePrimaryName'],
+      idIndexReferences: 'workAboutPlaceId',
+    },
+    aboutWork: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_work")'],
+      targetScope: 'work',
+      hopInverseName: 'subjectOfWork',
+      indexReferences: ['workPrimaryName'],
+      idIndexReferences: 'workAboutWorkId',
     },
     classification: {
       patternName: 'hopWithField',

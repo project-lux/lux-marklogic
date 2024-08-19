@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.23.1 - 2024-08-19
+
+### Added
+
+### Changed
+
+- Changed units lib to parse units based on %%mlAppName%% instead of 'lux' ([#277](https://github.com/project-lux/lux-marklogic/issues/277))
+
+### Removed
+ 
+### Fixed
+
+### Security
+
 ## v1.23.0 - 2024-08-19
 
 ### Added

@@ -1,4 +1,4 @@
-import { ENDPOINT_ACCESS_UNIT_NAMES } from './appConstants.mjs';
+import { ENDPOINT_ACCESS_UNIT_NAMES, ML_APP_NAME } from './appConstants.mjs';
 import {
   isNonEmptyArray,
   isObject,
@@ -7,8 +7,8 @@ import {
 } from '../utils/utils.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 
-const UNRESTRICTED_UNIT_NAME = 'lux';
-const UNRESTRICTED_ROLE_NAME = 'lux-endpoint-consumer';
+const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
+const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
 const ADMIN_ROLE_NAME = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 
@@ -31,26 +31,21 @@ function getEndpointAccessUnitNames() {
 // Get the current user's unit name.
 // Relies on role naming convention.
 function getCurrentUserUnitName() {
-  let unitName = null;
-
-  xdmp
+  const unitName = xdmp
     .getCurrentRoles()
     .toArray()
-    .every((roleId) => {
+    .reduce((prev, roleId) => {
       const roleName = xdmp.roleName(roleId);
       if (roleName == UNRESTRICTED_ROLE_NAME || roleName == ADMIN_ROLE_NAME) {
-        unitName = UNRESTRICTED_UNIT_NAME;
-        return false;
+        return UNRESTRICTED_UNIT_NAME;
       } else if (roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH)) {
-        const parts = roleName.split('-');
-        if (parts.length >= 4) {
-          // Return whatever is between "lux-" and "-endpoint-consumer".
-          unitName = parts.slice(1, parts.length - 2).join('-');
-          return false;
-        }
+        return roleName.slice(
+          `${UNRESTRICTED_UNIT_NAME}-`.length,
+          roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length
+        );
       }
-      return true;
-    });
+      return prev;
+    }, null);
 
   if (unitName === null) {
     throw new BadRequestError('Unable to determine unit from roles.');

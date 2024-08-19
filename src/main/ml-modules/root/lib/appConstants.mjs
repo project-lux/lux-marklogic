@@ -1,5 +1,7 @@
 const ENVIRONMENT_NAME = '%%environmentName%%';
 
+const ML_APP_NAME = '%%mlAppName%%';
+
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
 const DATA_PERMISSIONS_DELIMITED_STRING = '%%mlDataPermissions%%'.trim();
@@ -150,6 +152,7 @@ export {
   IRI_DOES_NOT_EXIST,
   IRI_PREFIX,
   LUX_CONTEXT,
+  ML_APP_NAME,
   REG_EXP_NEAR_OPERATOR,
   RELATED_LIST_PAGE_LENGTH_DEFAULT,
   RELATED_LIST_PER_RELATION_DEFAULT,

@@ -25,7 +25,7 @@ import { getRelationName } from '../config/relationNames.mjs';
 import {
   getInverseSearchTermInfo,
   getSearchTermConfig,
-} from '../config/searchTermConfig.mjs';
+} from '../config/searchTermsConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import { PATTERN_NAME_RELATED_LIST } from './searchPatternsLib.mjs';
 

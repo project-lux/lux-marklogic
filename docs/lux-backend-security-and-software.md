@@ -4,6 +4,9 @@
   - [MarkLogic Server](#marklogic-server)
   - [Tenants](#tenants)
   - [Unit Portals](#unit-portals)
+    - [Document Access](#document-access)
+    - [Applicable Configuration](#applicable-configuration)
+    - [Connecting to MarkLogic](#connecting-to-marklogic)
   - [Security Roles](#security-roles)
     - [Reader](#reader)
     - [Endpoint Consumer](#endpoint-consumer)
@@ -26,9 +29,35 @@ Each MarkLogic Server cluster has at least one tenant.  A tenant is provided a s
 
 ## Unit Portals
 
-A single tenant can support multiple unit portals.  A unit portal is a website that has access to a subset of data.  The subset of data is comprised of data provided by a single Yale library or museum (the unit) plus documents it shares with other units, such as concepts they have in common.  Each participating unit is to configure their middle tier to a MarkLogic load balancer and two application servers.  The unit is to use its service account to authenticate into the application servers.  The service account is granted an [Endpoint Consumer](#endpoint-consumer) role that is specific to the unit.  When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  MarkLogic Server security takes it from there.
+A single tenant can support multiple unit portals.  A unit portal is a website that has access to a subset of data.  A more generic and supported use case is enabling a unit to consume LUX's backend endpoints while being restricted to subset of data associated to their unit.
 
-Regardless of a tenant offering unit service accounts, every tenant offers a service account that has access to all of the documents.  https://lux.collections.yale.edu/ uses such an account.
+A unit's data is comprised of data provided by a single Yale library or museum (the unit) plus documents it shares with other units, such as concepts they have in common.  The unit is to authenticate into MarkLogic using a service account that is granted a unit-specific [Endpoint Consumer](#endpoint-consumer) role.  It is the endpoint consumer role that restricts access to documents and determines the applicable configuration.
+
+Regardless of a tenant offering unit service accounts, every tenant offers a service account that has access to all of the documents and superset of configurations.  https://lux.collections.yale.edu/ uses such an account.
+
+### Document Access
+
+When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  The unit's endpoint consumer role inherits the unit's [Reader](#reader) role.  MarkLogic Server security takes it from there.
+
+### Applicable Configuration
+
+To better align with data available to the unit, several endpoints utilize configuration that may vary by endpoint consumer role.
+
+Here's how it works:
+
+* Set the `endpointAccessUnitNames` build property to the units that require unit-specific configurations.  This will likely be a subset of units represented in the `/admin/sources` array.  While a (unit-specific) reader role is required for every unit that may appear in the `/admin/sources` array, only units that intend to consume endpoints restricted to their data are required to be included in the `endpointAccessUnitNames` property's value, have an endpoint consumer role, and a service account.
+* Within [searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `onlyForUnits` and `excludedUnits` arrays control which units have access to entire search scopes and specific search terms.
+* The array values should be unit names, and should match `[unitName]` in the `lux-[unitName]-endpoint-consumer` role names (case-sensitive).
+* When both arrays are set on the same search scope or search term, `onlyForUnits` takes precedence.
+* The default is to provide all search scopes and search terms to all units.
+* "lux" is a reserved value and represents an endpoint consumer that has access to all documents and configuration.  The only time it makes sense to use that value in one of these arrays is to suppress a search scope or search term from all endpoint consumers with restricted access: `"onlyForUnits": ["lux"]`.
+* The logic is encapsulated within `isConfiguredForUnit` of [unitLib.mjs](/src/main/ml-modules/root/lib/unitLib.mjs).
+* The [remaining search term generator](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs) is responsible for calling `isConfiguredForUnit` everywhere it needs to.  Its output is the input for the [advanced search configuration generator](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs) and [related lists generator](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs).
+* At runtime, the applicable configuration is derived from the user's endpoint role.
+
+### Connecting to MarkLogic
+
+Each participating unit is to provide a frontend and configure their middle tier to two MarkLogic application servers, accessible via load balancer (provided).  The unit is to use its service account to authenticate into the application servers.  
 
 ## Security Roles
 
@@ -49,7 +78,7 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 * File names: `1[letter]-[unit]-reader-role.json`
 * Role names: `%%mlAppName%%-[unit]-reader`
 
-**IMPORTANT:** When loading content, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) requires `[unit]` to be the value used for the unit within the `admin.sources` property.
+**IMPORTANT:** When loading content, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) requires `[unit]` to be the value used for the unit within the `/admin/sources` array.
 
 ### Endpoint Consumer
 

@@ -1,16 +1,17 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
-import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
 import { SearchTermConfig } from '../../lib/SearchTermConfig.mjs';
 handleRequest(function () {
+  const searchTermsConfig = getSearchTermsConfig();
   const searchBy = {};
-  for (const searchScope of Object.keys(SEARCH_TERM_CONFIG).sort()) {
-    searchBy[searchScope] = Object.keys(SEARCH_TERM_CONFIG[searchScope])
+  for (const searchScope of Object.keys(searchTermsConfig).sort()) {
+    searchBy[searchScope] = Object.keys(searchTermsConfig[searchScope])
       .sort()
       .map((termName) => {
         const termConfig = new SearchTermConfig(
-          SEARCH_TERM_CONFIG[searchScope][termName]
+          searchTermsConfig[searchScope][termName]
         );
         return {
           name: termName,

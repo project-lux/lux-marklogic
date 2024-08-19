@@ -1,5 +1,7 @@
 const ENVIRONMENT_NAME = '%%environmentName%%';
 
+const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
+
 const DATA_PERMISSIONS_DELIMITED_STRING = '%%mlDataPermissions%%'.trim();
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
@@ -154,6 +156,7 @@ export {
   RELATED_LIST_PER_RELATION_MAX,
   RELATED_LIST_PREFIX,
   RELATED_LIST_TIMEOUT,
+  ENDPOINT_ACCESS_UNIT_NAMES,
   SEARCH_ESTIMATE_PREFIX,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_INVERSE_MAP,

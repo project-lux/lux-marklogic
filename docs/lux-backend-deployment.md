@@ -85,7 +85,7 @@ The current tenant deployment model includes shared configuration and does not i
 **Secondary tenants that delete the ML Gradle configuration files listed below stand a greater chance of not creating an issue for other tenants.**
 
 1. When loading content, the tenant's reader role(s) should be granted the read permission and the tenant's writer role should be granted the update permission.
-    * If the dataset includes the `admin.sources` property, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
+    * If the dataset includes the `/admin/sources` array, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
     * Else, the document permissions must be specified.  With MLCP, this is done using the `-output_permissions` parameter.
 2. Only LUX proper should modify shared configuration, including:
     * Admin, App Services, Manage, and HealthCheck application servers.
@@ -312,15 +312,15 @@ Data constants are to be regenerated after changing the data or generator ([data
 
 # Regenerate Remaining Search Terms
 
-Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermConfig.mjs](/src/main/ml-modules/root/config/searchTermConfig.mjs), or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
+Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `endpointAccessUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
 
 # Regenerate Related Lists Configuration
 
-After `generateRemainingSearchTerms` runs or [/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes, the configuration for related lists should be regenerated.  The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
+After `generateRemainingSearchTerms` runs or when either the value of the `endpointAccessUnitNames` build property or the associated generator [/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRelatedListsConfig.mjs) changes, the configuration for related lists should be regenerated.  The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
 
 # Regenerate Advanced Search Configuration
 
-The advanced search configuration is to be regenerated after the remaining search terms are generated or when the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) is modified.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
+The advanced search configuration is to be regenerated after the remaining search terms are generated or when either the value of the `endpointAccessUnitNames` build property or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) changes.  The associated Gradle task, `generateAdvancedSearchConfig`, is run automatically when `generateRemainingSearchTerms` runs.
 
 # Deploy Database Configuration Changes
 

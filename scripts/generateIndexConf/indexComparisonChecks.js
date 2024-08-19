@@ -14,6 +14,8 @@
  *      unless/until Similar can get the XPaths elsewhere, the associated indexes are required.
  *
  * Individual field and field range index settings are not checked.
+ *
+ * Run as an admin or lux-endpoint-consumer to ensure getSearchTermsConfig() returns all search terms.
  */
 
 /*
@@ -58,8 +60,10 @@ import {
   getContextParameterValues,
 } from '../config/autoCompleteConfig.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
+
+const searchTermsConfig = getSearchTermsConfig();
 
 const referenced = {
   fields: {},
@@ -104,9 +108,9 @@ Object.keys(SORT_BINDINGS).forEach((key) => {
   recordReference(SORT_BINDINGS[key].indexReference, true, 'sort');
 });
 
-Object.keys(SEARCH_TERM_CONFIG).forEach((searchScope) => {
-  Object.keys(SEARCH_TERM_CONFIG[searchScope]).forEach((termName) => {
-    const term = SEARCH_TERM_CONFIG[searchScope][termName];
+Object.keys(searchTermsConfig).forEach((searchScope) => {
+  Object.keys(searchTermsConfig[searchScope]).forEach((termName) => {
+    const term = searchTermsConfig[searchScope][termName];
     if (term.indexReferences) {
       term.indexReferences.forEach((name) => {
         const isRange =

@@ -14,6 +14,23 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.23.0 - 2024-08-19
+
+### Added
+
+- Added the Objects/Works about/subject of other Objects/Works relationship ([#74](https://github.com/project-lux/lux-marklogic/issues/74)).
+- Added the ability to vary the search term, advanced search, and related lists configurations by unit, or more precisely, endpoint consumer.  This has no impact on https://lux.collections.yale.edu/.  For more information, see [Unit Portals](/docs/lux-backend-security-and-software.md#unit-portals), an upcoming feature of LUX. ([#277](https://github.com/project-lux/lux-marklogic/issues/277))
+
+### Changed
+
+### Removed
+ 
+### Fixed
+
+- Fixed search criteria processing for terms containing a phrase and either another phrase or word, such as `"physical measurements" analysis`.  The phrase was being split into words when it should have been.  This only impacted advanced search. ([#273](https://github.com/project-lux/lux-marklogic/issues/273))
+
+### Security
+
 ## v1.22.0 - 2024-08-05
 
 ### Added

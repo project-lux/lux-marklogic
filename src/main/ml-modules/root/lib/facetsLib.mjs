@@ -11,7 +11,7 @@
  * the lux-marklogic GitHub project: https://github.com/project-lux/lux-marklogic
  */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
-import { SEARCH_TERM_CONFIG } from '../../config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
@@ -32,6 +32,8 @@ import {
 } from './mlErrorsLib.mjs';
 import { FACETS_VIA_SEARCH_CONFIG } from '../config/facetsViaSearchConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
+
+const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 // Pagination constants
 const DEFAULT_PAGE = 1;
@@ -419,16 +421,16 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   //facets ending in Id usually convert to search terms without Id
   if (termName.endsWith('Id')) {
     const termNameWithoutId = termName.substring(0, termName.length - 2);
-    if (SEARCH_TERM_CONFIG[scopeName][termNameWithoutId]) {
+    if (SEARCH_TERMS_CONFIG[scopeName][termNameWithoutId]) {
       termName = termNameWithoutId;
     }
   }
-  if (!SEARCH_TERM_CONFIG[scopeName][termName]) {
+  if (!SEARCH_TERMS_CONFIG[scopeName][termName]) {
     throw new InternalServerError(
       `Unable to convert '${facetName}' to a search term`
     );
   }
-  const searchTermInfo = SEARCH_TERM_CONFIG[scopeName][termName];
+  const searchTermInfo = SEARCH_TERMS_CONFIG[scopeName][termName];
   const { scalarType } = searchTermInfo;
   if (!scalarType) {
     return { [termName]: { id: facetValue } };

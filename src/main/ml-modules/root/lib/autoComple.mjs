@@ -46,7 +46,8 @@ function getMatches(
     // Presumes a naming convention and that the derived field has a range index.
     fieldForMatchingNames = fieldForNamesToReturn.replace('Primary', '');
   }
-  // TODO: should we pull this from SEARCH_TERM_CONFIG and at that point, merge all of auto complete's configuration therein?
+  // TODO: should we pull this from getSearchTermsConfig() and at that point, merge all of
+  // auto complete's configuration therein?
   const fieldForId = autoCompleteConfig.idsIndexReferences;
 
   const matchOn = sanitizeAndValidateWildcardedStrings(text + '*');

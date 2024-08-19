@@ -449,6 +449,11 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Physical Object" or a "Digital Object". Physical Objects are physical items, such as paintings, sculptures, fossils and other specimens, and archival objects. Individual physical copies of books are included in this class. Digital Object are digital items, such as internet resources (datasets, e-books, and other digital files). Digitized images of collection items that are physical objects can be found with the “Is Online” facet on Physical Objects.',
     },
+    subjectOfItem: {
+      label: 'Subject Of',
+      helpText:
+        'Search for Objects that are the subject of the specified Works.',
+    },
     text: {
       label: 'Anywhere',
       helpText:
@@ -601,9 +606,17 @@ const searchTermText = {
       helpText:
         'Search for Works that are about the specified Concept or Type terms.',
     },
+    aboutItem: {
+      label: 'About Objects',
+      helpText: 'Search for Works that are about the specified Objects.',
+    },
     aboutPlace: {
       label: 'About Places',
       helpText: 'Search for Works that are about the specified Places.',
+    },
+    aboutWork: {
+      label: 'About Works',
+      helpText: 'Search for Works that are about the specified Works.',
     },
     carriedBy: {
       label: 'Included In Objects',
@@ -685,6 +698,11 @@ const searchTermText = {
       label: 'Work Class',
       helpText:
         'Search for records categorized as either a "Visual Work" or a "Textual Work. Visual Works are Works that are primarily visual, such as the images shown by paintings or photographs, sculptures, or other non language oriented creative expressions. Textual Works are Works that are primarily textual or otherwise convey information via human language. An Object may include both visual and textual works, such as a poster with graphics and text. In addition, Textual Works encompasses most items from the Library collections, including posters, artworks, musical scores, video and sound recordings.',
+    },
+    subjectOfWork: {
+      label: 'Subject Of',
+      helpText:
+        'Search for Works that are the subject of the specified Works.',
     },
     text: {
       label: 'Anywhere',

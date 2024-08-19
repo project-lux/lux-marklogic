@@ -20,10 +20,12 @@ import {
   getRelatedListConfig,
   getRelatedListKeys,
 } from '/config/relatedListsConfig.mjs';
-import { SEARCH_TERM_CONFIG } from '/config/searchTermConfig.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
 import { getSearchScopes } from '/lib/searchScope.mjs';
 
 const addSearchScopeToTypeLabel = true;
+
+const searchTermsConfig = getSearchTermsConfig();
 
 // Run getRecordTypesByPredicates.js and set term2Types to its return.
 const term2Types = {};
@@ -59,7 +61,7 @@ const getRecordTypes = (searchScope, criteria) => {
     return null;
   }
 
-  const termConfig = SEARCH_TERM_CONFIG[searchScope][termName];
+  const termConfig = searchTermsConfig[searchScope][termName];
   const recordTypes = {
     termName,
     types: term2Types[searchScope][termName],

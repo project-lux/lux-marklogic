@@ -1,14 +1,15 @@
 /*
- * NOTICE: The deployed version of this document is to include additional search terms via
- *         the generateRemainingSearchTerms build task.  The list of generated search terms
- *         has grown; please consult the remaining search terms generator for details and
- *         tail the deployment app server's log during deployment for warnings.  Ideally,
- *         only information not provided by the generator is defined herein.
+ * NOTICE: The deployed version of this document is to include additional sets of search terms
+ *         for the units plus additional search terms courtesy of the generateRemainingSearchTerms
+ *         build task.  The list of generated search terms has grown; please consult the remaining
+ *         search terms generator for details and tail the deployment app server's log during
+ *         deployment for warnings.  Ideally, only information not provided by the generator is
+ *         defined herein.
  *
  * The top-level properties are the search scopes.  The next level down holds the search terms.
  *
  */
-const SEARCH_TERM_CONFIG = {
+const SEARCH_TERMS_CONFIG = {
   agent: {
     activeAt: {
       patternName: 'hopWithField',
@@ -443,6 +444,7 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'agent',
       hopInverseName: 'subjectOfAgent',
       indexReferences: ['agentPrimaryName'],
+      idIndexReferences: 'workAboutAgentId',
     },
     aboutConcept: {
       patternName: 'hopWithField',
@@ -450,6 +452,15 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'concept',
       hopInverseName: 'subjectOfConcept',
       indexReferences: ['conceptPrimaryName'],
+      idIndexReferences: 'workAboutConceptId',
+    },
+    aboutItem: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_item")'],
+      targetScope: 'item',
+      hopInverseName: 'subjectOfItem',
+      indexReferences: ['itemPrimaryName'],
+      idIndexReferences: 'workAboutItemId',
     },
     aboutPlace: {
       patternName: 'hopWithField',
@@ -457,6 +468,15 @@ const SEARCH_TERM_CONFIG = {
       targetScope: 'place',
       hopInverseName: 'subjectOfPlace',
       indexReferences: ['placePrimaryName'],
+      idIndexReferences: 'workAboutPlaceId',
+    },
+    aboutWork: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_work")'],
+      targetScope: 'work',
+      hopInverseName: 'subjectOfWork',
+      indexReferences: ['workPrimaryName'],
+      idIndexReferences: 'workAboutWorkId',
     },
     classification: {
       patternName: 'hopWithField',
@@ -537,8 +557,9 @@ const SEARCH_TERM_CONFIG = {
 // has a chance to provide the runtime version.
 function dummy() {}
 export {
-  SEARCH_TERM_CONFIG,
+  SEARCH_TERMS_CONFIG, // only generators are to import this.
   dummy as getInverseSearchTermInfo,
   dummy as getSearchTermConfig,
+  dummy as getSearchTermsConfig,
   dummy as getSearchTermNames,
 };

@@ -154,7 +154,7 @@ function getStartingPaginationIndexForSubsequence(page, pageLength) {
 }
 
 function isObject(obj) {
-  return !isArray(obj) && typeof obj == 'object';
+  return typeof obj === 'object' && !Array.isArray(obj) && obj !== null;
 }
 
 function isArray(arr) {

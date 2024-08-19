@@ -8,11 +8,13 @@
  * Use justEstimates to only return the estimates or also the search terms that are
  * configured to the predicate.
  */
-import { SEARCH_TERM_CONFIG as config } from '/config/searchTermConfig';
+import { getSearchTermsConfig } from '/config/searchTermsConfig';
 import { START_OF_GENERATED_QUERY as prefixes } from '/lib/SearchCriteriaProcessor';
 import * as utils from '/utils/utils';
 
 const justEstimates = true;
+
+const searchTermsConfig = getSearchTermsConfig();
 
 const findings = {};
 const estimate = (predicate) => {
@@ -24,9 +26,9 @@ const estimate = (predicate) => {
   );
 };
 const allDoubleQuotesRegExp = new RegExp('"', 'g');
-Object.keys(config).forEach((scopeName) => {
-  Object.keys(config[scopeName]).forEach((termName) => {
-    const termConfig = config[scopeName][termName];
+Object.keys(searchTermsConfig).forEach((scopeName) => {
+  Object.keys(searchTermsConfig[scopeName]).forEach((termName) => {
+    const termConfig = searchTermsConfig[scopeName][termName];
     if (utils.isNonEmptyArray(termConfig.predicates)) {
       termConfig.predicates.forEach((predicate) => {
         predicate = predicate.replace(allDoubleQuotesRegExp, "'"); // for readability

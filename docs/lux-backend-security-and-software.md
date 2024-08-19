@@ -47,7 +47,7 @@ Here's how it works:
 
 * Set the `endpointAccessUnitNames` build property to the units that require unit-specific configurations.  This will likely be a subset of units represented in the `/admin/sources` array.  While a (unit-specific) reader role is required for every unit that may appear in the `/admin/sources` array, only units that intend to consume endpoints restricted to their data are required to be included in the `endpointAccessUnitNames` property's value, have an endpoint consumer role, and a service account.
 * Within [searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `onlyForUnits` and `excludedUnits` arrays control which units have access to entire search scopes and specific search terms.
-* The array values should be unit names, and should match `[unitName]` in the `lux-[unitName]-endpoint-consumer` role names (case-sensitive).
+* The array values should be unit names, and should match `[unitName]` in the `%%mlAppName%%-[unitName]-endpoint-consumer` role names (case-sensitive).
 * When both arrays are set on the same search scope or search term, `onlyForUnits` takes precedence.
 * The default is to provide all search scopes and search terms to all units.
 * "lux" is a reserved value and represents an endpoint consumer that has access to all documents and configuration.  The only time it makes sense to use that value in one of these arrays is to suppress a search scope or search term from all endpoint consumers with restricted access: `"onlyForUnits": ["lux"]`.

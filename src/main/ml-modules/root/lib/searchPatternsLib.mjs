@@ -1,5 +1,4 @@
 import * as utils from '../utils/utils.mjs';
-import { convertPartialDateTimeToSeconds } from '../utils/dateUtils.mjs';
 import {
   resolveSearchOptions,
   TOKEN_FIELDS,
@@ -212,20 +211,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
     const startIndexName = indexReferences[0];
     const endIndexName = indexReferences[1];
 
-    // Accept two dates, requiring at least one.
-    const delim = ';';
-    let termValue = searchTerm.getValue() + '';
-    if (termValue.indexOf(delim) === -1) {
-      termValue += delim;
-    }
-    const dates = termValue.split(';');
-    const startDateStr = dates[0].length > 0 ? dates[0] : null;
-    const endDateStr = dates[1].length > 0 ? dates[1] : null;
-    if (!startDateStr && !endDateStr) {
-      throw new InvalidSearchRequestError(
-        `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`
-      );
-    }
+    const termValue = searchTerm.getValue();
 
     let codeStr = null;
     const op = searchTerm.getComparisonOperator();
@@ -235,9 +221,8 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
       // Use the end index and prefer the end date.
       codeStr = _getDateFieldRangeQuery(
         startIndexName,
-        startDateStr,
         endIndexName,
-        endDateStr,
+        termValue,
         op,
         termWeight
       );
@@ -245,17 +230,15 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
       codeStr = `cts.andQuery([
         ${_getDateFieldRangeQuery(
           startIndexName,
-          startDateStr,
           endIndexName,
-          endDateStr,
+          termValue,
           '>=',
           termWeight
         )},
         ${_getDateFieldRangeQuery(
           startIndexName,
-          startDateStr,
           endIndexName,
-          endDateStr,
+          termValue,
           '<=',
           termWeight
         )}
@@ -264,17 +247,15 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
       codeStr = `cts.orQuery([
         ${_getDateFieldRangeQuery(
           startIndexName,
-          startDateStr,
           endIndexName,
-          endDateStr,
+          termValue,
           '<',
           termWeight
         )},
         ${_getDateFieldRangeQuery(
           startIndexName,
-          startDateStr,
           endIndexName,
-          endDateStr,
+          termValue,
           '>',
           termWeight
         )}
@@ -790,9 +771,8 @@ function _getAtLeastOneCtsTriple(
 
 function _getDateFieldRangeQuery(
   startIndexName,
-  startDateStr,
   endIndexName,
-  endDateStr,
+  termValue,
   op,
   weight
 ) {
@@ -801,16 +781,7 @@ function _getDateFieldRangeQuery(
   // Each date range is expected to be configured with a start and end field range index.
   const fieldName = isStartDate ? startIndexName : endIndexName;
 
-  // We may only have of the two, and even if it is a start date but only given an end date,
-  // use as a start date (and vice versa).
-  const dateStr = isStartDate
-    ? startDateStr || endDateStr
-    : endDateStr || startDateStr;
-
-  return `cts.fieldRangeQuery('${fieldName}', '${op}', ${convertPartialDateTimeToSeconds(
-    dateStr,
-    isStartDate
-  )}, [], ${weight})`;
+  return `cts.fieldRangeQuery('${fieldName}', '${op}', ${termValue}, [], ${weight})`;
 }
 
 function _determineIsStartDateByOperator(op) {

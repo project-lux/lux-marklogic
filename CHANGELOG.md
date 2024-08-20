@@ -8,6 +8,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- Update date facets and search terms to return and require dates represented as epoch times in seconds ([#256](https://github.com/project-lux/lux-marklogic/issues/256))
+
 ### Removed
  
 ### Fixed

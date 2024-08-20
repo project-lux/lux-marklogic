@@ -435,7 +435,7 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   if (!scalarType) {
     return { [termName]: { id: facetValue } };
   }
-  if (scalarType === 'dateTime') {
+  if (scalarType === 'long') {
     return {
       AND: [
         { [termName]: facetValue, _comp: '>=' },

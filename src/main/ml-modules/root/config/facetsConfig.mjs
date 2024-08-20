@@ -1,10 +1,10 @@
 const FACETS_CONFIG = {
-  agentActiveDate: { indexReference: 'agentActiveStartDateStr' },
+  agentActiveDate: { indexReference: 'agentActiveStartDateLong' },
   agentActivePlaceId: {
     indexReference: 'agentActivePlaceId',
     searchTermName: 'activeAtId',
   },
-  agentEndDate: { indexReference: 'agentDiedStartDateStr' },
+  agentEndDate: { indexReference: 'agentDiedStartDateLong' },
   agentEndPlaceId: {
     indexReference: 'agentEndPlaceId',
     searchTermName: 'endAtId',
@@ -19,7 +19,7 @@ const FACETS_CONFIG = {
     indexReference: 'agentProfessionalActivityId',
   },
   agentRecordType: { indexReference: 'agentDataTypeName' },
-  agentStartDate: { indexReference: 'agentBornStartDateStr' },
+  agentStartDate: { indexReference: 'agentBornStartDateLong' },
   agentStartPlaceId: {
     indexReference: 'agentStartPlaceId',
     searchTermName: 'startAtId',
@@ -50,8 +50,8 @@ const FACETS_CONFIG = {
     searchTermName: 'carriedOutById',
   },
   eventRecordType: { indexReference: 'eventDataTypeName' },
-  eventStartDate: { indexReference: 'eventInitiatedStartDateStr' },
-  eventEndDate: { indexReference: 'eventCompletedStartDateStr' },
+  eventStartDate: { indexReference: 'eventInitiatedStartDateLong' },
+  eventEndDate: { indexReference: 'eventCompletedStartDateLong' },
   eventIdentifier: { indexReference: 'eventIdentifier' },
   eventPlaceId: {
     indexReference: 'eventPlaceId',
@@ -78,7 +78,7 @@ const FACETS_CONFIG = {
     searchTermName: 'encounteredById',
   },
   itemEncounteredDate: {
-    indexReference: 'itemEncounteredStartDateStr',
+    indexReference: 'itemEncounteredStartDateLong',
     searchTermName: 'encounteredDate',
   },
   itemEncounteredPlaceId: {
@@ -99,7 +99,7 @@ const FACETS_CONFIG = {
     searchTermName: 'producedById',
   },
   itemProductionDate: {
-    indexReference: 'itemProductionStartDateStr',
+    indexReference: 'itemProductionStartDateLong',
     searchTermName: 'producedDate',
   },
   itemProductionPlaceId: {
@@ -138,7 +138,7 @@ const FACETS_CONFIG = {
     searchTermName: 'createdById',
   },
   workCreationDate: {
-    indexReference: 'workCreationStartDateStr',
+    indexReference: 'workCreationStartDateLong',
     searchTermName: 'createdDate',
   },
   workCreationPlaceId: {
@@ -155,7 +155,7 @@ const FACETS_CONFIG = {
     searchTermName: 'publishedById',
   },
   workPublicationDate: {
-    indexReference: 'workPublicationStartDateStr',
+    indexReference: 'workPublicationStartDateLong',
     searchTermName: 'publishedDate',
   },
   workPublicationPlaceId: {

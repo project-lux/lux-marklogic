@@ -64,7 +64,10 @@ function createEntry(scopeName, termName, termConfig, report) {
   const targetScopeName = termConfig.getTargetScopeName();
   if (targetScopeName) {
     entry.relation = targetScopeName;
-  } else if ('dateTime' == scalarType) {
+  }
+  // right now dates are the only fields that use scalarType == long. The relation is expected to be date for backwards compatibility.
+  // If fields other than dates start to use scalarType == 'long', we will have to adjust this logic
+  else if ('long' == scalarType) {
     entry.relation = 'date';
   } else if ('float' == scalarType) {
     entry.relation = 'float';

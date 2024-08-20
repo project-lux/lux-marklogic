@@ -1150,7 +1150,7 @@ Response Body:
         "acceptsIdTerm":false,
         "onlyAcceptsId":false,
         "acceptsAtomicValue":true,
-        "scalarType":"dateTime"
+        "scalarType":"long"
       },
       {
         "name":"any",

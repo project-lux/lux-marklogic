@@ -456,7 +456,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     aboutItem: {
       patternName: 'hopWithField',
-      predicates: ['lux("about_or_depicts_item")'],
+      predicates: ['lux("about_or_depicts_object")'],
       targetScope: 'item',
       hopInverseName: 'subjectOfItem',
       indexReferences: ['itemPrimaryName'],

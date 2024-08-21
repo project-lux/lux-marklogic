@@ -248,7 +248,8 @@ const relatedListsConfig = {};
           const runtimeConfig = _convertToRuntimeFormat(
             toScope,
             termName,
-            searchConfigEntry
+            searchConfigEntry,
+            report
           );
           if (runtimeConfig) {
             searchConfigs.push(runtimeConfig);

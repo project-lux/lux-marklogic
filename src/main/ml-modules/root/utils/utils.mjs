@@ -1,4 +1,5 @@
 const op = require('/MarkLogic/optic');
+import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
 import { BadRequestError, NotImplementedError } from '../lib/mlErrorsLib.mjs';
 import {
   FACETS_PREFIX,
@@ -328,9 +329,12 @@ function splitHonoringPhrases(str, phraseDelim = '"') {
  *
  * @param {Object} val The object to return as an array.
  * @param {String} castTo The object type to cast each array value to.  When null, no cast is attempted.
+ * @param {Boolean} isStart When castTo is 'dateTime', this parameter can influence the end of the value,
+ *        when not a complete dateTime value.  Submit true if if the beginning values of the month, day, etc.
+ *        should be used.
  * @returns {Array} An array representation of val.
  */
-function toArray(val, castTo = null) {
+function toArray(val, castTo = null, isStart = true) {
   if (val == null) {
     return [];
   }
@@ -350,11 +354,9 @@ function toArray(val, castTo = null) {
           if (typeof val[i] != 'string') {
             val[i] = val[i] + '';
           }
-        } else if (
-          castTo == 'number' ||
-          castTo == 'float' ||
-          castTo == 'long'
-        ) {
+        } else if (castTo == 'dateTime') {
+          val[i] = convertPartialDateTimeToSeconds(val[i], isStart);
+        } else if (castTo == 'number' || castTo == 'float') {
           if (typeof val[i] != 'number') {
             const origValue = val[i];
             val[i] = +val[i];

@@ -1,17 +1,17 @@
 const SORT_BINDINGS = {
   agentActiveDate: {
     indexType: 'field',
-    indexReference: 'agentActiveStartDateFloat',
+    indexReference: 'agentActiveStartDateLong',
     defaultOrder: 'asc',
   },
   agentEndDate: {
     indexType: 'field',
-    indexReference: 'agentDiedStartDateFloat',
+    indexReference: 'agentDiedStartDateLong',
     defaultOrder: 'asc',
   },
   agentStartDate: {
     indexType: 'field',
-    indexReference: 'agentBornStartDateFloat',
+    indexReference: 'agentBornStartDateLong',
     defaultOrder: 'asc',
   },
   anySortName: {
@@ -36,12 +36,12 @@ const SORT_BINDINGS = {
   },
   eventStartDate: {
     indexType: 'field',
-    indexReference: 'eventInitiatedStartDateFloat',
+    indexReference: 'eventInitiatedStartDateLong',
     defaultOrder: 'asc',
   },
   eventEndDate: {
     indexType: 'field',
-    indexReference: 'eventCompletedStartDateFloat',
+    indexReference: 'eventCompletedStartDateLong',
     defaultOrder: 'asc',
   },
   itemArchiveSortId: {
@@ -66,12 +66,12 @@ const SORT_BINDINGS = {
   },
   itemEncounteredDate: {
     indexType: 'field',
-    indexReference: 'itemEncounteredStartDateFloat',
+    indexReference: 'itemEncounteredStartDateLong',
     defaultOrder: 'asc',
   },
   itemProductionDate: {
     indexType: 'field',
-    indexReference: 'itemProductionStartDateFloat',
+    indexReference: 'itemProductionStartDateLong',
     defaultOrder: 'asc',
   },
   itemWidthDimensionValue: {
@@ -86,12 +86,12 @@ const SORT_BINDINGS = {
   },
   workCreationDate: {
     indexType: 'field',
-    indexReference: 'workCreationStartDateFloat',
+    indexReference: 'workCreationStartDateLong',
     defaultOrder: 'asc',
   },
   workPublicationDate: {
     indexType: 'field',
-    indexReference: 'workPublicationStartDateFloat',
+    indexReference: 'workPublicationStartDateLong',
     defaultOrder: 'asc',
   },
 };

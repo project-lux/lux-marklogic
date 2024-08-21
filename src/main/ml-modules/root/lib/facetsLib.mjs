@@ -24,6 +24,7 @@ import {
 } from './appConstants.mjs';
 import { processSearchCriteria, search } from './searchLib.mjs';
 import { getFieldRangeIndexCountIRI } from './dataConstants.mjs';
+import { convertSecondsToDateStr } from '../utils/dateUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
   BadRequestError,
@@ -278,6 +279,8 @@ function _getNonSemanticFacet(
     ctsQuery
   );
 
+  const isDateFacet = facetName.endsWith('Date');
+
   return {
     totalItems: fn.count(sequence),
     facetValues: fn
@@ -288,7 +291,7 @@ function _getNonSemanticFacet(
       )
       .toArray()
       .map((value) => ({
-        value: value,
+        value: isDateFacet ? convertSecondsToDateStr(value) : value,
         count: cts.frequency(value),
       })),
   };
@@ -435,7 +438,7 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   if (!scalarType) {
     return { [termName]: { id: facetValue } };
   }
-  if (scalarType === 'long') {
+  if (scalarType === 'dateTime') {
     return {
       AND: [
         { [termName]: facetValue, _comp: '>=' },

@@ -131,7 +131,7 @@ const searchTermsConfig = {};
 
       let scalarType = 'string';
       if (isDate) {
-        scalarType = 'long';
+        scalarType = 'dateTime';
       } else if (isDimension) {
         scalarType = 'float';
       } else if (isZeroOrOne) {

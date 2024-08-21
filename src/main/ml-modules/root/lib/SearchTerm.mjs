@@ -157,6 +157,17 @@ const SearchTerm = class {
     return this.props.complete === true;
   }
 
+  addTokenized(tokenized) {
+    this.setTokenized(tokenized);
+    return this;
+  }
+  setTokenized(tokenized) {
+    this.props.tokenized = tokenized;
+  }
+  isTokenized() {
+    return this.props.tokenized === true;
+  }
+
   addValue(value) {
     this.setValue(value);
     return this;

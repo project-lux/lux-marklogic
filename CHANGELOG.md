@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.23.3 - 2024-08-21
+
+### Added
+
+### Changed
+
+### Removed
+ 
+### Fixed
+
+- Fixed tokenization issue that [#273](https://github.com/project-lux/lux-marklogic/issues/273)'s original implementation introduced in v1.23.0.
+
+### Security
+
 ## v1.23.2 - 2024-08-21
 
 ### Added

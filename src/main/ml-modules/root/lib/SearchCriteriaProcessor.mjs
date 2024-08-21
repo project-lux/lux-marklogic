@@ -489,7 +489,7 @@ const SearchCriteriaProcessor = class {
     if (utils.isString(termValue)) {
       const tokenizedValues = SearchCriteriaProcessor._tokenizeSearchTermValue(
         searchCriteria[termName],
-        searchTerm.isCompleteMatch()
+        searchTerm.isCompleteMatch() || searchTerm.isTokenized()
       );
       if (tokenizedValues.length > 1) {
         return searchTerm.addModifiedCriteria({
@@ -500,9 +500,8 @@ const SearchCriteriaProcessor = class {
             searchTerm.getPropertyNames().forEach((name) => {
               criterion[`_${name}`] = searchTerm.getProperty(name);
             });
-            // #273: Mark as a complete term to avoid tokenizing phrases when the
-            // encapsulating AND gets processed.
-            criterion._complete = true;
+            // #273: Prevent re-tokenization when the encapsulating AND gets processed.
+            criterion._tokenized = true;
             return criterion;
           }),
         });
@@ -772,9 +771,9 @@ const SearchCriteriaProcessor = class {
     return this.translateStringGrammarToJSON(scopeName, searchCriteria);
   }
 
-  static _tokenizeSearchTermValue(value, isCompleteMatch) {
-    // Do not tokenize or even trim when instructed to match on the full property value.
-    if (isCompleteMatch) {
+  static _tokenizeSearchTermValue(value, leaveAsIs) {
+    // Just return the value in an array when told not to manipulate the value.
+    if (leaveAsIs) {
       return [value];
     }
 

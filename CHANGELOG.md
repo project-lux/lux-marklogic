@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.23.2 - 2024-08-21
+
+### Added
+
+### Changed
+
+### Removed
+ 
+### Fixed
+
+- Fixed the triple referenced by work.aboutItem so that it can return results ([#74](https://github.com/project-lux/lux-marklogic/issues/74)).
+
+### Security
+
 ## v1.23.1 - 2024-08-19
 
 ### Added

@@ -1,6 +1,0 @@
-{
-  "type": "mjs",
-  "namePrefix": "count",
-  "nameKey": "fieldName",
-  "valueKey": "fieldCount"
-}

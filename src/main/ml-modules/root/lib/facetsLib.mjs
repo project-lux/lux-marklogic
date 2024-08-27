@@ -17,13 +17,11 @@ import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
-  FACET_MAXIMUM_PRODUCT,
   LUX_CONTEXT,
   TRACE_NAME_FACETS as traceName,
   VIA_SEARCH_FACET_TIMEOUT,
 } from './appConstants.mjs';
 import { processSearchCriteria, search } from './searchLib.mjs';
-import { getFieldRangeIndexCountIRI } from './dataConstants.mjs';
 import { convertSecondsToDateStr } from '../utils/dateUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
@@ -252,26 +250,6 @@ function _getNonSemanticFacet(
 
   const ctsQuery = SearchCriteriaProcessor.evalQueryString(ctsQueryStr);
 
-  // Tally up the number of index values this request would interact with.
-  let indexValueCount = getFieldRangeIndexCountIRI(
-    FACETS_CONFIG[facetName].indexReference
-  );
-
-  // Reject request if the product of the estimated number of search results and index values exceeds the threshold.
-  const searchResultEstimate = parseInt(cts.estimate(ctsQuery)); // comes back as an object, which toLocaleString doesn't format
-  const requestProduct = searchResultEstimate * indexValueCount;
-  if (requestProduct > FACET_MAXIMUM_PRODUCT) {
-    // Monitoring test and log mining script checks for "Rejected request to calculate".
-    xdmp.trace(
-      traceName,
-      `Rejected request to calculate the ${facetName} facet as ${searchResultEstimate.toLocaleString()} search results by ${indexValueCount.toLocaleString()} field values exceeds the ${FACET_MAXIMUM_PRODUCT.toLocaleString()} threshold.`
-    );
-    throw new BadRequestError(
-      `Threshold to calculate the ${facetName} facet exceeded.`
-    );
-  }
-
-  // We're allowed to calculate the facet.
   const sequence = cts.fieldValues(
     FACETS_CONFIG[facetName].indexReference,
     null,

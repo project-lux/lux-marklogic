@@ -1,9 +1,5 @@
 import { fieldPaths } from './contentDatabaseConfGenerated.mjs';
-import {
-  getIRI,
-  getLanguageIRI,
-  getOptionalIRIs,
-} from '../lib/dataConstants.mjs';
+import { IDENTIFIERS } from '../lib/identifierConstants.mjs';
 
 const ASPECT_NAME_RESERVED = '_RESERVED';
 
@@ -87,13 +83,9 @@ const SIMILAR_CONFIG = {
         child: null,
         paths: [
           // this was the field agentDescriptionNoteText, but that field was removed
-          `/json[type = ('Group', 'Person')]/referred_to_by[./classified_as/id='${getIRI(
-            'biographyStatement'
-          )}']/content`,
+          `/json[type = ('Group', 'Person')]/referred_to_by[./classified_as/equivalent/id='${IDENTIFIERS.biographyStatement}']/content`,
           // there is no field configuration for this one
-          `/json[type = ('Group', 'Person')]/referred_to_by[./classified_as/id='${getIRI(
-            'descriptionStatement'
-          )}' and ./language/id='${getLanguageIRI('en')}']/content`,
+          `/json[type = ('Group', 'Person')]/referred_to_by[./classified_as/equivalent/id='${IDENTIFIERS.descriptionStatement}' and ./language/equivalent/id='${IDENTIFIERS.langen}']/content`,
         ],
         ignore: ['born', 'died'],
         weight: 1,
@@ -102,10 +94,13 @@ const SIMILAR_CONFIG = {
     },
     concept: {
       classification: {
-        child: 'id',
-        paths: [...fieldPaths.agentTypeId],
+        child: 'identifier',
+        // similar to agentTypeId index, but uses equivalent identifiers rather than LUX URIs
+        paths: [
+          "/json[type = ('Group', 'Person')]/classified_as/equivalent/id",
+        ],
         // ignore sex/gender when looking at agent types
-        ignore: getOptionalIRIs(['male', 'female', 'intersexual']),
+        ignore: [IDENTIFIERS.female, IDENTIFIERS.intersexual, IDENTIFIERS.male],
         weight: 2,
         searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
       },
@@ -142,9 +137,7 @@ const SIMILAR_CONFIG = {
         child: null,
         paths: [
           // this was the field itemDescriptionNoteText, but that field was removed
-          `/json[type = ('HumanMadeObject', 'DigitalObject')]/referred_to_by[./classified_as/id='${getIRI(
-            'descriptionStatement'
-          )}']/content`,
+          `/json[type = ('HumanMadeObject', 'DigitalObject')]/referred_to_by[./classified_as/equivalent/id='${IDENTIFIERS.descriptionStatement}']/content`,
           ...fieldPaths.itemPrimaryName,
           ...fieldPaths.itemName,
         ],
@@ -156,8 +149,10 @@ const SIMILAR_CONFIG = {
     concept: {
       classification: {
         child: 'id',
-        paths: [...fieldPaths.itemTypeId],
-        ignore: getOptionalIRIs(['collectionItem']),
+        paths: [
+          "/json[type = ('HumanMadeObject', 'DigitalObject')]/classified_as/equivalent/id",
+        ],
+        ignore: [IDENTIFIERS.collectionItem],
         weight: 1,
         searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
       },

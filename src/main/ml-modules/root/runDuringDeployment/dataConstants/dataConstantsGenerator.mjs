@@ -157,24 +157,6 @@ function getOptionalIRIs(names) {
   return iris;
 }
 
-function _getFieldRangeIndexCountKey(fieldRangeIndexName) {
-  return 'count' + fieldRangeIndexName;
-}
-
-function hasFieldRangeIndexCountIRI(fieldRangeIndexName) {
-  return hasIRI(_getFieldRangeIndexCountKey(fieldRangeIndexName));
-}
-
-function getFieldRangeIndexCountIRI(fieldRangeIndexName) {
-  const key = _getFieldRangeIndexCountKey(fieldRangeIndexName);
-  if (hasIRI(key)) {
-    return IRIs[key];
-  }
-  throw new InternalServerError(
-    "A field range index count IRI constant is not defined for the '" + fieldRangeIndexName + "' field range index. Developer to correct the reference or ensure the constant is defined."
-  );
-}
-
 function _getLanguageConstantKey(languageCode) {
   return 'lang' + languageCode;
 }
@@ -219,12 +201,10 @@ const IRIs = ${JSON.stringify(constants)};
 export {
   IRIs,
   getIRI,
-  getFieldRangeIndexCountIRI,
   getLanguageIRI,
   getOptionalIRIs,
   getOptionalLanguageIRIs,
   hasIRI,
-  hasFieldRangeIndexCountIRI,
   hasLanguageIRI,
   resolveReferences
 }

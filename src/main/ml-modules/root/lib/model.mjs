@@ -21,6 +21,7 @@
 import { getIRI, hasLanguageIRI, getLanguageIRI } from './dataConstants.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
 import { toArray } from '../utils/utils.mjs';
+import { IDENTIFIERS } from './identifierConstants.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -54,7 +55,9 @@ function getClassifiedAs(doc) {
 function getClassifiedAsExhibition(doc) {
   return _upTo(
     'classified_as',
-    doc.xpath(`json/classified_as[id = "${getIRI('exhibition')}"]`),
+    doc.xpath(
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.exhibition}"]`
+    ),
     null
   );
 }
@@ -63,7 +66,7 @@ function getClassifiedAsNationalities(doc) {
   return _upTo(
     'classified_as',
     doc.xpath(
-      `json/classified_as[classified_as[id = "${getIRI('nationality')}"]]`
+      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.nationality}"]]`
     )
   );
 }
@@ -72,7 +75,7 @@ function getClassifiedAsOccupations(doc) {
   return _upTo(
     'classified_as',
     doc.xpath(
-      `json/classified_as[classified_as[id = "${getIRI('occupation')}"]]`
+      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.occupation}}"]]`
     )
   );
 }
@@ -165,9 +168,7 @@ function getReferredToBy(doc) {
   return _upTo(
     'referred_to_by',
     doc.xpath(
-      `json/referred_to_by/classified_as[id = "${getIRI(
-        'descriptionStatement'
-      )}"]`
+      `json/referred_to_by/classified_as[equivalent/id = "${IDENTIFIERS.descriptionStatement}"]`
     )
   );
 }
@@ -191,7 +192,7 @@ function getSupertypes(doc) {
   return _upTo(
     'classified_as',
     doc.xpath(
-      `json/classified_as[./classified_as/id = "${getIRI('typeOfWork')}"]`
+      `json/classified_as[./classified_as/equivalent/id = "${IDENTIFIERS.typeOfWork}"]`
     )
   );
 }

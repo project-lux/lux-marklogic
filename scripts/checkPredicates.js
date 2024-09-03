@@ -2,6 +2,12 @@
  * Get an estimated number of *documents* containing *at least* one triple by predicate where
  * the list of predicates come from the backend's search term configuration.
  *
+ * Purposes of the script include:
+ *
+ *   1. Find out if a search term is configured to non-existent triples.
+ *   2. Find out if some triples are missing (by expected predicate).
+ *   3. Find out if some search terms will never return results for some users.
+ *
  * Note there are additional triples in the dataset, such as those with the crm('p2_has_type')
  * predicate.  Those are not included by this script.
  */

@@ -14,7 +14,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
-- Added reader roles for ILS, IPCH, and PMC. Removed endpoint consumer roles for YCBA and YUAG. [#280](https://github.com/project-lux/lux-marklogic/issues/280)
+- Removed endpoint consumer roles for YCBA and YUAG. Added reader roles for ILS, IPCH, and PMC. Also added reader roles for a couple other values that may be present in the `admin.sources` array: 'create' and 'update'. [#280](https://github.com/project-lux/lux-marklogic/issues/280)
 
 ## v1.23.3 - 2024-08-21
 

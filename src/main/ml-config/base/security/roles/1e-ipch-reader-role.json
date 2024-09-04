@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-ipch-reader",
+  "description": "Document and module reader role for IPCH in the '%%mlAppName%%' tenant",
+  "role": []
+}

@@ -2,7 +2,7 @@
  * For each search term configured to predicates, determine which record
  * types triples with those predicates are defined in.
  *
- * Originally while assessing a risk that getRecordTypesByRelatedListSearches.js
+ * Originally developed while assessing a risk that getRecordTypesByRelatedListSearches.js
  * discusses.  The output of this script is used by that script.
  *
  * An additional use of it could be to verify search terms are configured to

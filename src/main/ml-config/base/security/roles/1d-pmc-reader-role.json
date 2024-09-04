@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-pmc-reader",
+  "description": "Document and module reader role for PMC in the '%%mlAppName%%' tenant",
+  "role": []
+}

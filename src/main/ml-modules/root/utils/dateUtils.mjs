@@ -30,7 +30,6 @@ function convertSecondsToDateStr(seconds) {
  * @param {String} dateTimeStr The string to convert to a xs.dateTime string.
  * @param {Boolean} start Able to influence the auto-completed portion of the date time value.  Only used when operator is not GT, GE, LT, or LE.
  *        Submit true if this is a start date or false for an end date.
- * @param {String} operator Able to influence the auto-completed portion of the date time value.  Only used when operator is GT, GE, LT, or LE.
  * @returns {String} An xs.dateTime-formatted version of the given value; note that this function supports values that xs.dateTime() does not,
  *        including dates older than 10,000 BCE.
  */
@@ -91,7 +90,7 @@ function _convertDateTimeToSeconds(dateTimeStr) {
   if (year >= -9999 && year <= 9999) {
     totalSeconds = new Date(dateTimeStr).getTime() / 1000;
   }
-  // Else, we exceeded our agreed full Date support and need to calculate ourselves.
+  // Else, we exceeded our agreed full date support and need to calculate ourselves.
   else {
     totalSeconds = (year - 1970) * 365.2425 * 24 * 60 * 60;
   }

@@ -20,14 +20,14 @@ const ctsQuery = cts.andQuery([
       cts.andQuery(
         [
           cts.fieldRangeQuery(
-            'itemProductionStartDateFloat',
+            'itemProductionStartDateLong',
             '>=',
             1672531200,
             [],
             1
           ),
           cts.fieldRangeQuery(
-            'itemProductionStartDateFloat',
+            'itemProductionStartDateLong',
             '<=',
             1704067199,
             [],
@@ -39,14 +39,14 @@ const ctsQuery = cts.andQuery([
       cts.andQuery(
         [
           cts.fieldRangeQuery(
-            'itemProductionEndDateFloat',
+            'itemProductionEndDateLong',
             '>=',
             1672531200,
             [],
             1
           ),
           cts.fieldRangeQuery(
-            'itemProductionEndDateFloat',
+            'itemProductionEndDateLong',
             '<=',
             1704067199,
             [],
@@ -58,14 +58,14 @@ const ctsQuery = cts.andQuery([
       cts.andQuery(
         [
           cts.fieldRangeQuery(
-            'itemProductionStartDateFloat',
+            'itemProductionStartDateLong',
             '<=',
             1672531200,
             [],
             1
           ),
           cts.fieldRangeQuery(
-            'itemProductionEndDateFloat',
+            'itemProductionEndDateLong',
             '>=',
             1704067199,
             [],

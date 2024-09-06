@@ -4,7 +4,7 @@
  *
  * The getValues function hard-codes some additional logic:
  *
- *   -If the field name ends with "Float" or "Boolean", skip.
+ *   -If the field name ends with "Boolean", "Float", or "Long", skip.
  *
  *   -If the field name ends with "Id", treat the ID as a URI and append that document's value from
  *    the anySortNameEn field.
@@ -36,7 +36,11 @@ const mostFrequent = true;
 // END: script configuration, 2 of 2.
 
 function getValues(fieldName) {
-  if (fieldName.endsWith('Float') || fieldName.endsWith('Boolean')) {
+  if (
+    fieldName.endsWith('Boolean') ||
+    fieldName.endsWith('Float') ||
+    fieldName.endsWith('Long')
+  ) {
     return 'Skipped';
   }
 

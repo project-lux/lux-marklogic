@@ -320,7 +320,7 @@
       ]
     },
     {
-      "field-name": "agentActiveStartDateFloat",
+      "field-name": "agentActiveStartDateLong",
       "field-path": [
         {
           "path": "/json[type = ('Group', 'Person')]/carried_out/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -329,7 +329,7 @@
       ]
     },
     {
-      "field-name": "agentActiveEndDateFloat",
+      "field-name": "agentActiveEndDateLong",
       "field-path": [
         {
           "path": "/json[type = ('Group', 'Person')]/carried_out/timespan/_seconds_since_epoch_end_of_the_end",
@@ -361,7 +361,7 @@
       ]
     },
     {
-      "field-name": "agentBornStartDateFloat",
+      "field-name": "agentBornStartDateLong",
       "field-path": [
         {
           "path": "/json[type='Person']/born/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -374,7 +374,7 @@
       ]
     },
     {
-      "field-name": "agentBornEndDateFloat",
+      "field-name": "agentBornEndDateLong",
       "field-path": [
         {
           "path": "/json[type='Person']/born/timespan/_seconds_since_epoch_end_of_the_end",
@@ -434,7 +434,7 @@
       ]
     },
     {
-      "field-name": "agentDiedStartDateFloat",
+      "field-name": "agentDiedStartDateLong",
       "field-path": [
         {
           "path": "/json[type='Person']/died/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -447,7 +447,7 @@
       ]
     },
     {
-      "field-name": "agentDiedEndDateFloat",
+      "field-name": "agentDiedEndDateLong",
       "field-path": [
         {
           "path": "/json[type='Person']/died/timespan/_seconds_since_epoch_end_of_the_end",
@@ -738,7 +738,7 @@
       ]
     },
     {
-      "field-name": "itemEncounteredStartDateFloat",
+      "field-name": "itemEncounteredStartDateLong",
       "field-path": [
         {
           "path": "/json[type = 'HumanMadeObject']/encountered_by/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -747,7 +747,7 @@
       ]
     },
     {
-      "field-name": "itemEncounteredEndDateFloat",
+      "field-name": "itemEncounteredEndDateLong",
       "field-path": [
         {
           "path": "/json[type = 'HumanMadeObject']/encountered_by/timespan/_seconds_since_epoch_end_of_the_end",
@@ -778,7 +778,7 @@
       ]
     },
     {
-      "field-name": "itemProductionStartDateFloat",
+      "field-name": "itemProductionStartDateLong",
       "field-path": [
         {
           "path": "/json[type = 'HumanMadeObject']/produced_by/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -791,7 +791,7 @@
       ]
     },
     {
-      "field-name": "itemProductionEndDateFloat",
+      "field-name": "itemProductionEndDateLong",
       "field-path": [
         {
           "path": "/json[type = 'HumanMadeObject']/produced_by/timespan/_seconds_since_epoch_end_of_the_end",
@@ -1233,7 +1233,7 @@
       ]
     },
     {
-      "field-name": "workPublicationStartDateFloat",
+      "field-name": "workPublicationStartDateLong",
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -1246,7 +1246,7 @@
       ]
     },
     {
-      "field-name": "workPublicationEndDateFloat",
+      "field-name": "workPublicationEndDateLong",
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end",
@@ -1300,7 +1300,7 @@
       ]
     },
     {
-      "field-name": "workCreationStartDateFloat",
+      "field-name": "workCreationStartDateLong",
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -1313,7 +1313,7 @@
       ]
     },
     {
-      "field-name": "workCreationEndDateFloat",
+      "field-name": "workCreationEndDateLong",
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end",
@@ -1758,7 +1758,7 @@
       ]
     },
     {
-      "field-name": "eventInitiatedStartDateFloat",
+      "field-name": "eventInitiatedStartDateLong",
       "field-path": [
         {
           "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -1767,7 +1767,7 @@
       ]
     },
     {
-      "field-name": "eventInitiatedEndDateFloat",
+      "field-name": "eventInitiatedEndDateLong",
       "field-path": [
         {
           "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_begin",
@@ -1785,7 +1785,7 @@
       ]
     },
     {
-      "field-name": "eventCompletedStartDateFloat",
+      "field-name": "eventCompletedStartDateLong",
       "field-path": [
         {
           "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_begin_of_the_end",
@@ -1794,7 +1794,7 @@
       ]
     },
     {
-      "field-name": "eventCompletedEndDateFloat",
+      "field-name": "eventCompletedEndDateLong",
       "field-path": [
         {
           "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_end",
@@ -1948,17 +1948,17 @@
     },
     {
       "collation": "",
-      "field-name": "agentActiveStartDateFloat",
+      "field-name": "agentActiveStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "agentActiveEndDateFloat",
+      "field-name": "agentActiveEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -1976,17 +1976,17 @@
     },
     {
       "collation": "",
-      "field-name": "agentBornStartDateFloat",
+      "field-name": "agentBornStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "agentBornEndDateFloat",
+      "field-name": "agentBornEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2011,17 +2011,17 @@
     },
     {
       "collation": "",
-      "field-name": "agentDiedStartDateFloat",
+      "field-name": "agentDiedStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "agentDiedEndDateFloat",
+      "field-name": "agentDiedEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2165,17 +2165,17 @@
     },
     {
       "collation": "",
-      "field-name": "itemEncounteredStartDateFloat",
+      "field-name": "itemEncounteredStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "itemEncounteredEndDateFloat",
+      "field-name": "itemEncounteredEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2193,17 +2193,17 @@
     },
     {
       "collation": "",
-      "field-name": "itemProductionStartDateFloat",
+      "field-name": "itemProductionStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "itemProductionEndDateFloat",
+      "field-name": "itemProductionEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2375,17 +2375,17 @@
     },
     {
       "collation": "",
-      "field-name": "workPublicationStartDateFloat",
+      "field-name": "workPublicationStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "workPublicationEndDateFloat",
+      "field-name": "workPublicationEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2410,17 +2410,17 @@
     },
     {
       "collation": "",
-      "field-name": "workCreationStartDateFloat",
+      "field-name": "workCreationStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "workCreationEndDateFloat",
+      "field-name": "workCreationEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2606,17 +2606,17 @@
     },
     {
       "collation": "",
-      "field-name": "eventInitiatedStartDateFloat",
+      "field-name": "eventInitiatedStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "eventInitiatedEndDateFloat",
+      "field-name": "eventInitiatedEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
@@ -2627,17 +2627,17 @@
     },
     {
       "collation": "",
-      "field-name": "eventCompletedStartDateFloat",
+      "field-name": "eventCompletedStartDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "",
-      "field-name": "eventCompletedEndDateFloat",
+      "field-name": "eventCompletedEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
-      "scalar-type": "float"
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",

@@ -356,7 +356,11 @@ function toArray(val, castTo = null, isStart = true) {
           }
         } else if (castTo == 'dateTime') {
           val[i] = convertPartialDateTimeToSeconds(val[i], isStart);
-        } else if (castTo == 'number' || castTo == 'float') {
+        } else if (
+          castTo == 'number' ||
+          castTo == 'float' ||
+          castTo == 'long'
+        ) {
           if (typeof val[i] != 'number') {
             const origValue = val[i];
             val[i] = +val[i];

@@ -8,6 +8,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+### Removed
+ 
+### Fixed
+
+### Security
+
+## v1.24.0 - 2024-09-09
+
+### Added
+
+### Changed
+
 - Update date facets such that they can be sorted more accurately([#256](https://github.com/project-lux/lux-marklogic/issues/256))
 
 ### Removed

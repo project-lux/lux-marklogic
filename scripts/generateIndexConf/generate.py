@@ -72,7 +72,7 @@ with open(script_dir + '/input.tsv') as csv_file:
         stn = stn.strip()
         if not stn:
             continue
-        path = row['JSON Path']
+        path = row['JSON Path(s)']
         if not path or not path[0] == "/":
             continue
 
@@ -149,8 +149,8 @@ with open(script_dir + '/input.tsv') as csv_file:
             pass
         elif qt == "datesAsString":
             pass
-        elif qt == "datesAsFloat":
-            field_range_index['scalar-type'] = "float"
+        elif qt == "datesAsLong":
+            field_range_index['scalar-type'] = "long"
             field_range_index['collation'] = ""
         elif qt == "numbers":
             field_range_index['scalar-type'] = "float"

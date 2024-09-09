@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-update-reader",
+  "description": "Only present because the data pipeline can include 'update' in the sources array.",
+  "role": []
+}

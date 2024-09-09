@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-create-reader",
+  "description": "Only present because the data pipeline can include 'create' in the sources array.",
+  "role": []
+}

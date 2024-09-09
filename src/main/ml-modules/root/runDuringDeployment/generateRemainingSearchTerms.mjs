@@ -117,17 +117,13 @@ const searchTermsConfig = {};
 
       const facetIndexReference = FACETS_CONFIG[facetName].indexReference;
       const isIdTerm = termName.endsWith('Id');
-      const isDate = facetIndexReference.endsWith('DateStr');
+      const isDate = facetIndexReference.endsWith('DateLong');
       const isDimension = facetIndexReference.endsWith('DimensionValue');
       const isZeroOrOne = ['hasDigitalImage', 'isOnline'].includes(termName);
 
       let facetIdIndexReferences = [facetIndexReference];
       if (isDate) {
-        facetIdIndexReferences = [
-          facetIndexReference
-            .substring(0, facetIndexReference.length - 3)
-            .concat('Float'),
-        ];
+        facetIdIndexReferences = [facetIndexReference];
         facetIdIndexReferences.push(
           facetIdIndexReferences[0].replace('Start', 'End')
         );

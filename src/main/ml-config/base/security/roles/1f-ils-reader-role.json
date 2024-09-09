@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-ils-reader",
+  "description": "Document and module reader role for ILS in the '%%mlAppName%%' tenant",
+  "role": []
+}

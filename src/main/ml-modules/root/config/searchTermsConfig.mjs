@@ -130,7 +130,7 @@ const SEARCH_TERMS_CONFIG = {
     id: { patternName: 'documentId' },
     influencedByAgent: {
       patternName: 'hopWithField',
-      predicates: ['lux("influenced_by_agent")'],
+      predicates: ['lux("agentInfluencedCreation")'],
       targetScope: 'agent',
       hopInverseName: 'influenced',
       indexReferences: ['agentPrimaryName'],
@@ -138,7 +138,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     influencedByConcept: {
       patternName: 'hopWithField',
-      predicates: ['lux("influenced_by_concept")'],
+      predicates: ['lux("conceptInfluencedCreation")'],
       targetScope: 'concept',
       hopInverseName: 'influenced',
       indexReferences: ['conceptPrimaryName'],
@@ -146,7 +146,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     influencedByEvent: {
       patternName: 'hopWithField',
-      predicates: ['lux("influenced_by_activity")'],
+      predicates: ['lux("activityInfluencedCreation")'],
       targetScope: 'event',
       hopInverseName: 'influenced',
       indexReferences: ['eventPrimaryName'],
@@ -154,7 +154,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     influencedByPlace: {
       patternName: 'hopWithField',
-      predicates: ['lux("influenced_by_place")'],
+      predicates: ['lux("placeInfluencedCreation")'],
       targetScope: 'place',
       hopInverseName: 'influenced',
       indexReferences: ['placePrimaryName'],

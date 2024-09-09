@@ -14,6 +14,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
  
 ### Fixed
 
+- Updated triples used by search terms so that there are not overlapping triples used for different search scopes. This prevents records of the wrong scope showing up in related lists. (e.g. the Exhibitions concept showing up in Related People & Groups for Pablo Picasso) ([#309](https://github.com/project-lux/lux-marklogic/issues/309))
+
 ### Security
 
 - Added reader roles for ILS, IPCH, and PMC. Added reader roles for a couple other values that may be present in the `admin.sources` array: 'create' and 'update'. Added endpoint consumer role for IPCH. Removed endpoint consumer roles for YCBA and YUAG. [#280](https://github.com/project-lux/lux-marklogic/issues/280)

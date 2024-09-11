@@ -4,8 +4,6 @@ const ML_APP_NAME = '%%mlAppName%%';
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
-const DATA_PERMISSIONS_DELIMITED_STRING = '%%mlDataPermissions%%'.trim();
-
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const VIA_SEARCH_FACET_TIMEOUT = parseInt('%%viaSearchFacetTimeout%%'.trim());
 
@@ -139,7 +137,6 @@ export {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   BASE_URL,
-  DATA_PERMISSIONS_DELIMITED_STRING,
   DEFAULT_FILTER_SEARCH_RESULTS,
   DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,

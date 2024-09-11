@@ -84,9 +84,7 @@ The current tenant deployment model includes shared configuration and does not i
 
 **Secondary tenants that delete the ML Gradle configuration files listed below stand a greater chance of not creating an issue for other tenants.**
 
-1. When loading content, the tenant's reader role(s) should be granted the read permission and the tenant's writer role should be granted the update permission.
-    * If the dataset includes the `/admin/sources` array, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
-    * Else, the document permissions must be specified.  With MLCP, this is done using the `-output_permissions` parameter.
+1. When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function is to be used to set document permissions based on the units specified in the `/admin/sources` array of each document.  The transform function may be specified in MLCP and direct calls to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents).  A reader role is required for each possible value in the array.  These are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles) and documented within [LUX Backend Security and Software](./lux-backend-security-and-software.md).
 2. Only LUX proper should modify shared configuration, including:
     * Admin, App Services, Manage, and HealthCheck application servers.
         * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)

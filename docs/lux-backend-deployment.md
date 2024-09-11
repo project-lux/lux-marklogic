@@ -129,7 +129,7 @@ To utilize, one must configure ML Gradle to use the ML configuration and modules
 
 ```
 mlConfigPaths=build/main/ml-config/base,build/main/ml-config/base-secured
-mlModulesPaths=build/main/ml-modules
+mlModulePaths=build/main/ml-modules
 ```
 
 The following table is to define all supported custom tokens.

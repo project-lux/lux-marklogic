@@ -6,7 +6,7 @@
 
 ## Database Index Configuration
 
-This directory includes [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json), which is the generated portion of the ML Gradle content database configuration, [/src/main/ml-config/base/databases/content-database.json](/src/main/ml-config/base/databases/content-database.json).  The `preprocessMarkLogicConfigurationFiles` ML Gradle task is responsible for  merging the two and writing the result within [/build/main/ml-config/base/databases/content-database.json](/build/main/ml-config/base/databases/content-database.json).  The `mlConfigPaths` ML Gradle build property configures ML Gradle to use the configuration files within /build/main/ml-config vs /src/main/ml-config.  Related: [Custom Token Replacement](/docs/lux-backend-deployment.md#custom-token-replacement).
+This directory includes [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json), which is the generated portion of the ML Gradle content database configuration, [/src/main/ml-config/base/databases/content-database.json](/src/main/ml-config/base/databases/content-database.json).  The `preprocessRuntimeConfigAndModules` ML Gradle task is responsible for  merging the two and writing the result within [/build/main/ml-config/base/databases/content-database.json](/build/main/ml-config/base/databases/content-database.json).  The `mlConfigPaths` ML Gradle build property configures ML Gradle to use the configuration files within /build/main/ml-config vs /src/main/ml-config.  Related: [Custom Token Replacement](/docs/lux-backend-deployment.md#custom-token-replacement).
 
 Here is how we maintain [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json):
 

@@ -1,4 +1,4 @@
-const CODE_VERSION = 'v1.25.0';
+const CODE_VERSION = '@@codeVersion@@';
 
 const ENVIRONMENT_NAME = '%%environmentName%%';
 

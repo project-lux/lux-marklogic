@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-ipch-endpoint-consumer",
+  "description": "Service account for IPCH to consume '%%mlAppName%%' tenant endpoints",
+  "password": "%%endpointConsumerPassword%%",
+  "role": ["%%mlAppName%%-ipch-endpoint-consumer"]
+}

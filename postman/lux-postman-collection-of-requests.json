@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "ad404e47-c673-4f3f-89cc-fea4d885dfc4",
+		"_postman_id": "e4fe8b12-4e24-4065-a168-f2ab0bfcbfd2",
 		"name": "LUX",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "7323789"
+		"_exporter_id": "21505844"
 	},
 	"item": [
 		{
@@ -492,6 +492,27 @@
 									"key": "scope",
 									"value": "item"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Version Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/versionInfo.mjs",
+							"protocol": "{{mlProtocol}}",
+							"host": [
+								"{{mlHost}}"
+							],
+							"port": "{{mlAppPort}}",
+							"path": [
+								"ds",
+								"lux",
+								"versionInfo.mjs"
 							]
 						}
 					},

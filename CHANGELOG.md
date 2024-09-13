@@ -8,6 +8,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- Added IPCH user for local deployments ([#314](https://github.com/project-lux/lux-marklogic/issues/314))
+
 ### Removed
  
 ### Fixed

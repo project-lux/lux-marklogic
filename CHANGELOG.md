@@ -7,10 +7,10 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 - Added versionInfo endpoint to make the Marklogic Code Version, Date Version, Server Version, Database (Tenant) Name available ([#264](https://github.com/project-lux/lux-marklogic/issues/264))
+- Added IPCH user for local deployments ([#314](https://github.com/project-lux/lux-marklogic/issues/314))
 
 ### Changed
-
-- Added IPCH user for local deployments ([#314](https://github.com/project-lux/lux-marklogic/issues/314))
+- Updated help text for ID fields so that they don't prescribe a specific entity type ([#303](https://github.com/project-lux/lux-marklogic/issues/303))
 
 ### Removed
  

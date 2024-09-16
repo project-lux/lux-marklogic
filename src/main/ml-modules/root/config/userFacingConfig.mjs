@@ -68,7 +68,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for People & Groups by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/person/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for People & Groups by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -208,7 +208,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for Concept or Type terms by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/concept/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for Concept or Type terms by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -308,7 +308,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for Events by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/activity/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for Events by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -395,7 +395,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for Objects by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/object/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for Objects by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -497,7 +497,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for Places by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/place/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for Places by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -567,7 +567,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for Collections by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/set/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for Collections by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -654,7 +654,7 @@ const searchTermText = {
     id: {
       label: 'ID',
       helpText:
-        'Search for Works by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/text/ and followed by a UUID, not the URI with /view/ in it).',
+        'Search for Works by their LUX data URI (e.g. starting with https://lux.collections.yale.edu/data/ and followed by a URI path containing a UUID, not the URI with /view/ in it).',
     },
     identifier: {
       label: 'Identifier',
@@ -701,8 +701,7 @@ const searchTermText = {
     },
     subjectOfWork: {
       label: 'Subject Of',
-      helpText:
-        'Search for Works that are the subject of the specified Works.',
+      helpText: 'Search for Works that are the subject of the specified Works.',
     },
     text: {
       label: 'Anywhere',

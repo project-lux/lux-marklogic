@@ -179,6 +179,16 @@ function isNonEmptyString(str, trim = false) {
   return false;
 }
 
+function includesOrEquals(strOrArr, val) {
+  if (isNonEmptyArray(strOrArr)) {
+    return strOrArr.includes(val);
+  } else if (typeof strOrArr == 'string') {
+    return strOrArr == val;
+  } else {
+    return false;
+  }
+}
+
 function removeItemByIndexFromArray(arr, indexToDelete) {
   if (
     isNonEmptyArray(arr) &&
@@ -606,6 +616,7 @@ export {
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,
+  includesOrEquals,
   isArray,
   isNonEmptyArray,
   isNonEmptyString,

@@ -1,6 +1,6 @@
 import { ENDPOINT_ACCESS_UNIT_NAMES, ML_APP_NAME } from './appConstants.mjs';
 import {
-  isNonEmptyArray,
+  includesOrEquals,
   isObject,
   removeItemByValueFromArray,
   split,
@@ -64,13 +64,16 @@ function isConfiguredForUnit(unitName, configTree) {
   }
 
   // Only-for takes precedence over excluded.
-  if (isNonEmptyArray(configTree[PROPERTY_NAME_ONLY_FOR_UNITS])) {
-    return configTree[PROPERTY_NAME_ONLY_FOR_UNITS].includes(unitName);
+  if (configTree[PROPERTY_NAME_ONLY_FOR_UNITS]) {
+    return includesOrEquals(configTree[PROPERTY_NAME_ONLY_FOR_UNITS], unitName);
   }
 
   // See if the unit is excluded.
-  if (isNonEmptyArray(configTree[PROPERTY_NAME_EXCLUDED_UNITS])) {
-    return !configTree[PROPERTY_NAME_EXCLUDED_UNITS].includes(unitName);
+  if (configTree[PROPERTY_NAME_EXCLUDED_UNITS]) {
+    return !includesOrEquals(
+      configTree[PROPERTY_NAME_EXCLUDED_UNITS],
+      unitName
+    );
   }
 
   // Default

@@ -74,6 +74,13 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'occupationOf',
       indexReferences: ['conceptPrimaryName'],
     },
+    professionalActivity: {
+      patternName: 'hopWithField',
+      predicates: ['lux("typeOfProfessionalActivity")'],
+      targetScope: 'concept',
+      hopInverseName: 'professionalActivityOf',
+      indexReferences: ['agentProfessionalActivityId'],
+    },
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
@@ -444,7 +451,7 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'agent',
       hopInverseName: 'subjectOfAgent',
       indexReferences: ['agentPrimaryName'],
-      idIndexReferences: 'workAboutAgentId',
+      idIndexReferences: ['workAboutAgentId'],
     },
     aboutConcept: {
       patternName: 'hopWithField',
@@ -452,7 +459,7 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'concept',
       hopInverseName: 'subjectOfConcept',
       indexReferences: ['conceptPrimaryName'],
-      idIndexReferences: 'workAboutConceptId',
+      idIndexReferences: ['workAboutConceptId'],
     },
     aboutItem: {
       patternName: 'hopWithField',
@@ -460,7 +467,7 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'item',
       hopInverseName: 'subjectOfItem',
       indexReferences: ['itemPrimaryName'],
-      idIndexReferences: 'workAboutItemId',
+      idIndexReferences: ['workAboutItemId'],
     },
     aboutPlace: {
       patternName: 'hopWithField',
@@ -468,7 +475,7 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'place',
       hopInverseName: 'subjectOfPlace',
       indexReferences: ['placePrimaryName'],
-      idIndexReferences: 'workAboutPlaceId',
+      idIndexReferences: ['workAboutPlaceId'],
     },
     aboutWork: {
       patternName: 'hopWithField',
@@ -476,7 +483,7 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'work',
       hopInverseName: 'subjectOfWork',
       indexReferences: ['workPrimaryName'],
-      idIndexReferences: 'workAboutWorkId',
+      idIndexReferences: ['workAboutWorkId'],
     },
     classification: {
       patternName: 'hopWithField',

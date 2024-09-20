@@ -269,6 +269,11 @@ const searchTermText = {
       helpText:
         'Search for Concept terms that describe the Occupation of the specified People & Groups.',
     },
+    professionalActivityOf: {
+      label: 'Professional Activity of',
+      helpText:
+        'Search for Concept terms that describe the Professional Activity of the specified People & Groups.',
+    },
     recordType: {
       label: 'Concept Class',
       helpText:

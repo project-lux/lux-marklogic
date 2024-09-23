@@ -6,6 +6,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+### Changed
+
+### Removed
+ 
+### Fixed
+
+### Security
+
+## v1.25.0 - 2024-09-23
+
+### Added
+
 - Added the 'Professional Activity Categorized As' and 'Professional Activity of' search terms to Advanced Search ([#248](https://github.com/project-lux/lux-marklogic/issues/248))
 - Added versionInfo endpoint to make the Marklogic Code Version, Date Version, Server Version, Database (Tenant) Name available ([#264](https://github.com/project-lux/lux-marklogic/issues/264))
 - Added IPCH user for local deployments ([#314](https://github.com/project-lux/lux-marklogic/issues/314))

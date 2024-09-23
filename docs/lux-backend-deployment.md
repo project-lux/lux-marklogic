@@ -84,9 +84,7 @@ The current tenant deployment model includes shared configuration and does not i
 
 **Secondary tenants that delete the ML Gradle configuration files listed below stand a greater chance of not creating an issue for other tenants.**
 
-1. When loading content, the tenant's reader role(s) should be granted the read permission and the tenant's writer role should be granted the update permission.
-    * If the dataset includes the `/admin/sources` array, MLCP or the call directly to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents) should be configured to use [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function.
-    * Else, the document permissions must be specified.  With MLCP, this is done using the `-output_permissions` parameter.
+1. When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs)'s `associateDocToDataSlice` function is to be used to set document permissions based on the units specified in the `/admin/sources` array of each document.  The transform function may be specified in MLCP and direct calls to [/v1/documents](https://docs.marklogic.com/REST/POST/v1/documents).  A reader role is required for each possible value in the array.  These are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles) and documented within [LUX Backend Security and Software](./lux-backend-security-and-software.md).
 2. Only LUX proper should modify shared configuration, including:
     * Admin, App Services, Manage, and HealthCheck application servers.
         * [/src/main/ml-config/base/servers/admin-server.json](/src/main/ml-config/base/servers/admin-server.json)
@@ -121,16 +119,17 @@ Note the `endpointConsumerPassword` password may be set directly in the properti
 
 # Custom Token Replacement
 
-This project defines the `preprocessMarkLogicConfigurationFiles` Gradle task.  The task is responsible for replacing one or more custom tokens.  This feature was introduced in order to share database index settings between two content databases (within the same tenant).  Unlike the native token feature, the custom token feature enables one to replace the token reference with JSON.
+This project defines the `preprocessRuntimeConfigAndModules` Gradle task.  The task is responsible for replacing one or more custom tokens.  This feature was introduced in order to share database index settings between two content databases (within the same tenant).  Unlike the native token feature, the custom token feature enables one to replace the token reference with JSON.
 
 To help differentiate custom token references from native token references, custom token references are surrounded by `@@`, as opposed to `%%`.
 
-Custom token references are presently only supported within `/src/main/ml-config-*`.
+Custom token references are presently only supported within `/src/main/ml-config` and `/src/main/ml-modules`.
 
-To utilize, one must configure ML Gradle to use the ML configuration directories copied within `/build/main`, as that is where the Gradle task copies the ML configuration files before replacing the custom token references.  As an example, the following setting in the target environment's Gradle properties file will result in ML Gradle using `/src/main/ml-config/base` and `/src/main/ml-config/base-secured` but only after the `preprocessMarkLogicConfigurationFiles` task copies them within `/build/main` and replaces all supported custom token references.
+To utilize, one must configure ML Gradle to use the ML configuration and modules directories copied within `/build/main`, as that is where the Gradle task copies the ML configuration files before replacing the custom token references.  As an example, the following setting in the target environment's Gradle properties file will result in ML Gradle using `/src/main/ml-config/base` and `/src/main/ml-config/base-secured` but only after the `preprocessRuntimeConfigAndModules` task copies them within `/build/main` and replaces all supported custom token references.
 
 ```
 mlConfigPaths=build/main/ml-config/base,build/main/ml-config/base-secured
+mlModulePaths=build/main/ml-modules
 ```
 
 The following table is to define all supported custom tokens.
@@ -138,6 +137,7 @@ The following table is to define all supported custom tokens.
 | Custom Token Reference | Description |
 | ---------------------- | ----------- |
 | `@@contentDatabaseConfGenerated@@` | Reference is replaced with the top-level properties found in [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json). |
+| `@@codeVersion@@` | Version of the code. |
 
 # Deploy Entire Backend
 

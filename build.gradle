@@ -33,6 +33,8 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
+def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
+
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
 // from the default default REST port (8003) to the app services port.  This port is used by the
 // majority of the tasks, and has been proven necessary for setBanner (tenant app server may not
@@ -69,13 +71,39 @@ task switchToTenantPort() {
 }
 mlLoadModules.dependsOn switchToTenantPort
 
+task determineCodeVersion {
+  def applyDefault = false
+	def stdOut = new ByteArrayOutputStream()
+  try {
+    exec {
+      commandLine 'sh', './version.sh'
+      standardOutput = stdOut
+    }
+  } catch (Exception e) {
+    println ''
+    println 'WARNING: Unable to determine the code version via git; using default.'
+    println ''
+    applyDefault = true
+  }
+
+  stdOut = stdOut.toString().trim()
+  if (applyDefault || stdOut == 'default') {
+    println "Applying default code version of ${codeVersion}"
+  } else {
+    codeVersion = stdOut
+    println "Applying derived code version of ${codeVersion}"
+  }
+}
+
 // This project's implementation of its custom token feature.
 //
 // This task needs to run before any ML Gradle task that references ML Gradle configuration files does.  Rather than
 // list all the related ML Gradle tasks, we're defining it as the first custom task and allow it to always run.
 //
 // More info in /docs/lux-backend-build-tool-and-tasks.md
-task preprocessMarkLogicConfigurationFiles() {
+task preprocessRuntimeConfigAndModules() {
+  dependsOn 'determineCodeVersion'
+
   def names = []
   def texts = []
   def text
@@ -90,6 +118,9 @@ task preprocessMarkLogicConfigurationFiles() {
   text = file('./config/' + names.get(0) + '.json').text.trim()
   texts.push(text.substring(1, text.length() - 1))
 
+  names.push('codeVersion')
+  texts.push(codeVersion)
+
   println ''
   println 'Resolving custom token(s): ' + names.join(", ")
   println ''
@@ -102,6 +133,7 @@ task preprocessMarkLogicConfigurationFiles() {
     from './src/main'
     into './build/main'
     include 'ml-config/**'
+    include 'ml-modules/**'
     filter { line -> {
       for (def i = 0; i < names.size(); i++) {
         line = line.replaceAll('@@' + names[i] + '@@', texts[i])

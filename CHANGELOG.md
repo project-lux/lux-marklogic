@@ -6,6 +6,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+- CHERRY-PICKED-UPDATE: Added versionInfo endpoint to make the Marklogic Code Version, Date Version, Server Version, Database (Tenant) Name available ([#264](https://github.com/project-lux/lux-marklogic/issues/264))
+
 ### Changed
 - Changed via search facets to order by number of results descending ([#57](https://github.com/project-lux/lux-marklogic/issues/57))
 

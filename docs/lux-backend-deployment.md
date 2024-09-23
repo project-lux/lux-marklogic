@@ -83,16 +83,17 @@ Note the `luxEndpointConsumerPassword` password may be set directly in the prope
 
 # Custom Token Replacement
 
-This project defines the `preprocessMarkLogicConfigurationFiles` Gradle task.  The task is responsible for replacing one or more custom tokens.  This feature was introduced in order to share database index settings between two content databases.  Unlike the native token feature, the custom token feature enables one to replace the token reference with JSON.
+This project defines the `preprocessRuntimeConfigAndModules` Gradle task.  The task is responsible for replacing one or more custom tokens.  This feature was introduced in order to share database index settings between two content databases.  Unlike the native token feature, the custom token feature enables one to replace the token reference with JSON.
 
 To help differentiate custom token references from native token references, custom token references are surrounded by `@@`, as opposed to `%%`.
 
-Custom token references are presently only supported within `/src/main/ml-config-*`.
+Custom token references are presently only supported within `/src/main/ml-config-*` and `/src/main/ml-modules`.
 
-To utilize, one must configure ML Gradle to use the ML configuration directories copied within `/build/main`, as that is where the Gradle task copies the ML configuration files before replacing the custom token references.  As an example, the following setting in the target environment's Gradle properties file will result in ML Gradle using `/src/main/ml-config/base` and `/src/main/ml-config/base-secured` but only after the `preprocessMarkLogicConfigurationFiles` task copies them within `/build/main` and replaces all supported custom token references.
+To utilize, one must configure ML Gradle to use the ML configuration and modules directories copied within `/build/main`, as that is where the Gradle task copies the ML configuration files before replacing the custom token references.  As an example, the following setting in the target environment's Gradle properties file will result in ML Gradle using `/src/main/ml-config/base` and `/src/main/ml-config/base-secured` but only after the `preprocessRuntimeConfigAndModules` task copies them within `/build/main` and replaces all supported custom token references.
 
 ```
 mlConfigPaths=build/main/ml-config/base,build/main/ml-config/base-secured
+mlModulePaths=build/main/ml-modules
 ```
 
 The following table is to define all supported custom tokens.
@@ -100,6 +101,7 @@ The following table is to define all supported custom tokens.
 | Custom Token Reference | Description |
 | ---------------------- | ----------- |
 | `@@contentDatabaseConfGenerated@@` | Reference is replaced with the top-level properties found in [/conf/contentDatabaseConfGenerated.json](/conf/contentDatabaseConfGenerated.json). |
+| `@@codeVersion@@` | Version of the code. |
 
 # Deploy Entire Backend
 

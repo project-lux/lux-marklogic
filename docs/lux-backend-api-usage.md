@@ -44,6 +44,9 @@
   - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-12)
     - [Failed Request / Response Example](#failed-request--response-example-12)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-13)
+    - [Failed Request / Response Example](#failed-request--response-example-13)
 
 # Introduction
 
@@ -1424,3 +1427,37 @@ Response Body:
     }
 }
 ```
+## Version Info
+
+The `versionInfo` endpoint enables consumers to get the current versions of the code, data, and ML server. It also returns the name of the content database being used by this tenant.
+
+**URL** : `/ds/lux/versionInfo.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters** : None
+
+### Successful Request / Response Example
+
+Scenario: versionInfo returns version info
+
+Parameters: None
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body:
+
+```
+{
+    "codeVersion": "v1.24.0-6-gaf84473",
+    "dataVersion": "2024-09-04T12:45:25.112260",
+    "mlVersion": "11.3.0",
+    "databaseName": "lux-content"
+}
+```
+
+### Failed Request / Response Example
+
+*Only known scenarios would be an authentication error and internal server error.*

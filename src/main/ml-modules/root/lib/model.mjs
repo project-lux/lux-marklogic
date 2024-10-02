@@ -18,7 +18,10 @@
  *
  * Exported functions are in alphabetical order, both where they are defined and exported.
  */
-import { getIRI, hasLanguageIRI, getLanguageIRI } from './dataConstants.mjs';
+import {
+  getLanguageIdentifier,
+  hasLanguageIdentifier,
+} from './identifierConstants.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
 import { toArray } from '../utils/utils.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
@@ -115,15 +118,14 @@ function getIdentifiedByIdentifier(doc) {
 
 function getIdentifiedByPrimaryName(doc, lang) {
   let seq = null;
-  const primaryNameIRI = getIRI('primaryName');
 
   // Ideal: requested language
-  if (hasLanguageIRI(lang)) {
-    seq = doc.xpath(_getPrimaryNameByLanguage(primaryNameIRI, lang));
+  if (hasLanguageIdentifier(lang)) {
+    seq = doc.xpath(_getPrimaryNameByLanguage(lang));
   }
   // Fallback #1: primary name in English
   if (fn.empty(seq)) {
-    seq = doc.xpath(_getPrimaryNameByLanguage(primaryNameIRI, LANGUAGE_EN));
+    seq = doc.xpath(_getPrimaryNameByLanguage(LANGUAGE_EN));
   }
   // Fallback #2: the first name, primary or otherwise.
   if (fn.empty(seq)) {
@@ -384,10 +386,10 @@ function _getValue(mustBeAnArray, val) {
 }
 
 // Only expected caller is getIdentifiedByPrimaryName()
-function _getPrimaryNameByLanguage(primaryNameIRI, lang) {
-  return `json/identified_by[type = "Name"][classified_as/id = "${primaryNameIRI}"][language/id = "${getLanguageIRI(
-    [lang]
-  )}"]`;
+function _getPrimaryNameByLanguage(lang) {
+  return `json/identified_by[type = "Name"][classified_as/equivalent/id = "${
+    IDENTIFIERS.primaryName
+  }"][language/equivalent/id = "${getLanguageIdentifier(lang)}"]`;
 }
 
 export {

@@ -4,7 +4,6 @@ Below is a static list of available documentation within the [/docs](/docs) dire
 
 - [API Usage](/docs/lux-backend-api-usage.md)
 - [Build Tool and Tasks](/docs/lux-backend-build-tool-and-tasks.md)
-- [Data Constants](/docs/lux-backend-data-constants.md)
 - [Database Indexing](/docs/lux-backend-database-indexing.md)
 - [Deployment](/docs/lux-backend-deployment.md)
 - [Developer Handbook](/docs/lux-backend-developer-handbook.md)

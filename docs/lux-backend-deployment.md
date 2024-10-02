@@ -10,7 +10,6 @@ In this document:
 - [Custom Token Replacement](#custom-token-replacement)
 - [Deploy Entire Backend](#deploy-entire-backend)
 - [Deploy Code Changes](#deploy-code-changes)
-- [Regenerate Data Constants](#regenerate-data-constants)
 - [Regenerate Remaining Search Terms](#regenerate-remaining-search-terms)
 - [Regenerate Related Lists Configuration](#regenerate-related-lists-configuration)
 - [Regenerate Advanced Search Configuration](#regenerate-advanced-search-configuration)
@@ -237,7 +236,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
     `./gradlew performBaseDeployment -i -PenvironmentName=[name]`
 
-    This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask.  For example, `generateDataConstants` requires the `languageIdentifier` index.  It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually run other subtasks of `performBaseDeployment` and double back for `generateDataConstants` after re-indexing is complete.
+    This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask. It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually run other subtasks of `performBaseDeployment` and double back for the failed subtask after re-indexing is complete.
 
     The entire `performBaseDeployment` task and sub-tasks is expected to take about 6 minutes.
 
@@ -253,7 +252,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
 18. Need to load the rest/most of the data?  Check out [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md).
 
-19. If you executed the above step, verify the [Steps After Importing Data](/docs/lux-backend-import-data.md#steps-after-importing-data) were executed, specifically including regenerating the data constants.
+19. If you executed the above step, verify the [Steps After Importing Data](/docs/lux-backend-import-data.md#steps-after-importing-data) were executed.
 
 20. Perform a smoke test.  One way is to run through the endpoints from within Postman.
 
@@ -306,9 +305,6 @@ Example Query Console response, identifying an underlying error:
 
 ![Example error via Query Console](/docs/img/example-error-via-query-console.png)
 
-# Regenerate Data Constants
-
-Data constants are to be regenerated after changing the data or generator ([dataConstantsGenerator.mjs](/src/main/ml-modules/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs)).  The associated Gradle task, `generateDataConstants`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.  For instructions on configuring and running this task, see import data's [Regenerate Data Constants](/docs/lux-backend-import-data.md#regenerate-data-constants) section.
 
 # Regenerate Remaining Search Terms
 

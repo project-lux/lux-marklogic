@@ -7,6 +7,4 @@ build
 gradle-*.properties
 !gradle-wrapper.properties
 
-src/main/ml-modules/root/runDuringDeployment/dataConstants/pipelineDataConstants.json
-
 src/main/ml-modules/root/config/contentDatabaseConfGenerated.mjs

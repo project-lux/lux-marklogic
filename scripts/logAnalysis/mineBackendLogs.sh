@@ -191,7 +191,6 @@ addBonusLinesForDocuments
 echo -e "OTHER REQUESTS\tCounts only." >> $ALL_REQUESTS_METRICS_TSV_FILE
 addCountFromAccessLogs "Advanced search configuration" "/ds/lux/advancedSearchConfig.mjs"
 addCountFromAccessLogs "Auto complete" "/ds/lux/autoComplete.mjs"
-addCountFromAccessLogs "Data constants" "/ds/lux/dataConstants.mjs"
 addCountFromAccessLogs "Person roles" "/ds/lux/personRoles.mjs"
 addCountFromAccessLogs "Search info" "/ds/lux/searchInfo.mjs"
 addCountFromAccessLogs "Stats" "/ds/lux/stats.mjs"

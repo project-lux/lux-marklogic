@@ -4,10 +4,6 @@ import os
 import re
 
 script_dir = os.path.dirname(__file__)
-global_fh = open(script_dir + '/pipelineDataConstants.json')
-global_data = global_fh.read()
-global_fh.close()
-global_map = json.loads(global_data)
 
 # 904: By defining database defaults herein and only specifying the overrides at the field level, the 
 #      mlUpdateIndexes portion of the ML deployment gets down to two minutes.
@@ -84,13 +80,6 @@ with open(script_dir + '/input.tsv') as csv_file:
         np = []
         for p in paths:
             p = p.strip()
-            if "$" in p:
-                for (k, v) in global_map.items():
-                    # Presumes all variable references are immediately surrounded by single quotes.
-                    # Added this to ensure a shorter variable name that starts the same is not used (e.g., collection vs. collectionItem).
-                    # Better may be to process the variable references in order of variable name length --longest to shortest.
-                    # We do have a safety check at the end for unresolved variables though.
-                    p = p.replace("'$" + k + "'", "'" + f"{v}" + "'")
             np.append({"path": p, "weight": 1})
         
 

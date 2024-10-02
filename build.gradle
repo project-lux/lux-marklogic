@@ -38,7 +38,7 @@ def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in det
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
 // from the default default REST port (8003) to the app services port.  This port is used by the
 // majority of the tasks, and has been proven necessary for setBanner (tenant app server may not
-// exist) and generateDataConstants (may need more than the tenant's app server default timeout).
+// exist).
 // An exception is mlLoadModules: we need to switch to the tenant app server to ensure the REST
 // options are added to the tenant's modules database.
 task startWithAppServicesPort() {
@@ -287,37 +287,6 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   args = ["-ssl_protocol", "tlsv1.2"]
 }
 
-task copyPipelineDataConstants (type: Copy) {
-  from('scripts/generateIndexConf') {
-    include 'pipelineDataConstants.json'
-  }
-  into 'src/main/ml-modules/root/runDuringDeployment/dataConstants'
-}
-mlLoadModules.dependsOn copyPipelineDataConstants
-
-// Runs the data constants generator
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-task generateDataConstants (type: com.marklogic.gradle.task.MarkLogicTask) {
-  doFirst {
-    println ""
-    println "Generating the data constants..."
-    println ""
-
-    def client = mlAppConfig.newDatabaseClient()
-    def script = new File('./build/buildSupport/generateDataConstants.sjs').getText('UTF-8')
-    def result = client.newServerEval().javascript(script).evalAs(String.class)
-    println result
-
-    println ""
-    println "Data constants generator done."
-    println ""
-  }
-}
-generateDataConstants.dependsOn switchToAppServicesPort
-mlDeploy.finalizedBy generateDataConstants
-mlLoadModules.finalizedBy generateDataConstants
-copyDatabase.finalizedBy generateDataConstants
-
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask) {
@@ -335,7 +304,6 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println ""
   }
 }
-generateDataConstants.finalizedBy generateRemainingSearchTerms
 
 // Runs the related lists configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -447,7 +415,7 @@ task performBaseDeployment() {
 }
 // It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
 // could result in an error if the tenant's modules database didn't exist in time.
-performBaseDeployment.finalizedBy mlDeployForestReplicas, generateDataConstants
+performBaseDeployment.finalizedBy mlDeployForestReplicas
 
 // Enables SSL on the builtin servers
 // And create the certificate intended for the non-builtin servers

@@ -7,9 +7,7 @@
  * Known limitations:
  *
  *   1. Excludes value of the fullTextSearchRelatedFieldName property (for keyword search).
- *   2. Excludes indexes referenced in data constant configuration files, specifically the call to
- *      cts.fieldReference('languageIdentifier') from within languages.mjs.
- *   3. Excludes references in the configuration of Similar search terms.  Technically, Similar does
+ *   2. Excludes references in the configuration of Similar search terms.  Technically, Similar does
  *      not use the indexes but instead snags XPath expressions from the index configuration; thus,
  *      unless/until Similar can get the XPaths elsewhere, the associated indexes are required.
  *

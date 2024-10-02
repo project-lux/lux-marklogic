@@ -5,7 +5,6 @@
   - [Import Data: Full](#import-data-full)
   - [Import Data: Incremental](#import-data-incremental)
   - [Steps After Importing Data](#steps-after-importing-data)
-    - [*Regenerate Data Constants*](#regenerate-data-constants)
     - [*Regenerate Remaining Search Terms*](#regenerate-remaining-search-terms)
     - [*Regenerate Related Lists Configuration*](#regenerate-related-lists-configuration)
     - [*Regenerate Advanced Search Configuration*](#regenerate-advanced-search-configuration)
@@ -36,7 +35,7 @@ Additional information on the properties used by both of the import data tasks, 
 | importDataPassword         | The password to connect with. |
 | importDataFilePath         | The relative or absolute path of the input file.  If needed, a command line parameter could take precedence to this one. |
 | importDataFileIsCompressed | Using a Boolean, indicate whether the input file is compressed (`true`) or not (`false`).  If needed, a command line parameter could take precedence to this one. |
-| tenantContentDatabase | The name of the database to evaluate the data constants queries against. |
+| tenantContentDatabase | The name of the database to evaluate queries against. |
 
 The working directory should be the clone's root directory, which is also the directory `gradle-[name].properties` should be in.
 
@@ -80,71 +79,11 @@ The `confirm` parameter is not necessary for incremental loads as the target dat
 
 ## Steps After Importing Data
 
-### *Regenerate Data Constants*
-
-Data constants need to be regenerated after the associated content database is updated (or the generator, [dataConstantsGenerator.mjs](/src/main/ml-modules/root/runDuringDeployment/dataConstants/dataConstantsGenerator.mjs)).
-
-At this time, it needs to be executed separately due to a conflict with the `database` parameter.
-
-The `generateDataConstants` is configured by the `tenantContentDatabase` property.  It specifies the database execution context.  Please review this property's value before running this task.
-
-Unlike `processSearchTagConfig`, when this task completes successfully, the generated constants have already reached the modules database.
-
-Regenerate data constants syntax:
-
-`./gradlew -i generateDataConstants -PenvironmentName=[name]`
-
-Regenerate data constants example:
-
-`./gradlew -i generateDataConstants -PenvironmentName=dev`
-
-The output should include a table where each row identifies the query executed, the number of constants it created, and how long the query took to execute:
-
-```bash
-> Task :generateDataConstants
-
-Generating the data constants...
-
-Duration | Constants | Query URIs
--------- | --------- | ----------
-      54 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/animalSpecimens.json
-      34 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/widthConcept.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/collectionItem.json
-      34 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/copyrightLicensingStatement.json
-      36 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/curatorship.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/department.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/depthConcept.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/female.json
-   49097 |        66 | /runDuringDeployment/dataConstants/queries/IRIs/fieldCounts.json
-      54 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/first.json
-      46 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/fossil.json
-      36 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/biologicalSpecimens.json
-      36 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/heightConcept.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/intersexual.json
-      48 |      1425 | /runDuringDeployment/dataConstants/queries/IRIs/languages.json
-      48 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/male.json
-      36 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/nationality.json
-      35 |         0 | /runDuringDeployment/dataConstants/queries/IRIs/occupation.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/plantSpecimens.json
-      35 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/primaryName.json
-      47 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/typeOfWork.json
-      36 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/visitors.json
-      36 |         1 | /runDuringDeployment/dataConstants/queries/IRIs/gender.json
--------- | --------- | ----------
-   49958 |      1511 | 23 queries
-
-Data constants generator done.
-```
-
-For more information on this task, refer to [LUX Gradle Tasks](/docs/lux-backend-build-tool-and-tasks.md#lux-gradle-tasks).
-
 ### *Regenerate Remaining Search Terms*
 
 Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `endpointAccessUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).
 
 The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
-
-As with generating data constants:
 
 * Generating the remaining search terms needs to be executed separate from other tasks that use a different value for the `database` parameter.
 * When this task completes successfully, the generated remaining search terms have already reached the modules database.  In fact, this Gradle task is modifying the deployed version of [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs)
@@ -173,8 +112,6 @@ The related lists configuration is to be regenerated after the remaining search 
 
 The associated Gradle task, `generateRelatedListsConfig`, is run automatically after `generateRemainingSearchTerms`.
 
-As with generating data constants:
-
 * Generating the related lists configuration needs to be executed separate from other tasks that use a different value for the `database` parameter.
 * When this task completes successfully, the generated related lists configuration have already reached the modules database.
 
@@ -201,8 +138,6 @@ For more information on this task, refer to [LUX Gradle Tasks](/docs/lux-backend
 The advanced search configuration is to be regenerated after the remaining search terms are generated or when either the value of the `endpointAccessUnitNames` build property or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs](/src/main/ml-modules/root/runDuringDeployment/generateAdvancedSearchConfig.mjs)) changes.
 
 The associated Gradle task, `generateAdvancedSearchConfig`, is automatically after `generateRemainingSearchTerms`.
-
-As with generating data constants:
 
 * Generating the advanced search configuration needs to be executed separate from other tasks that use a different value for the `database` parameter.
 * When this task completes successfully, the generated advanced search configuration have already reached the modules database.

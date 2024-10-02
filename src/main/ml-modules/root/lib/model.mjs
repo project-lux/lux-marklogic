@@ -18,9 +18,13 @@
  *
  * Exported functions are in alphabetical order, both where they are defined and exported.
  */
-import { getIRI, hasLanguageIRI, getLanguageIRI } from './dataConstants.mjs';
+import {
+  getLanguageIdentifier,
+  hasLanguageIdentifier,
+} from './identifierConstants.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
 import { toArray } from '../utils/utils.mjs';
+import { IDENTIFIERS } from './identifierConstants.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -54,7 +58,9 @@ function getClassifiedAs(doc) {
 function getClassifiedAsExhibition(doc) {
   return _upTo(
     'classified_as',
-    doc.xpath(`json/classified_as[id = "${getIRI('exhibition')}"]`),
+    doc.xpath(
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.exhibition}"]`
+    ),
     null
   );
 }
@@ -63,7 +69,7 @@ function getClassifiedAsNationalities(doc) {
   return _upTo(
     'classified_as',
     doc.xpath(
-      `json/classified_as[classified_as[id = "${getIRI('nationality')}"]]`
+      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.nationality}"]]`
     )
   );
 }
@@ -72,7 +78,7 @@ function getClassifiedAsOccupations(doc) {
   return _upTo(
     'classified_as',
     doc.xpath(
-      `json/classified_as[classified_as[id = "${getIRI('occupation')}"]]`
+      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.occupation}}"]]`
     )
   );
 }
@@ -112,15 +118,14 @@ function getIdentifiedByIdentifier(doc) {
 
 function getIdentifiedByPrimaryName(doc, lang) {
   let seq = null;
-  const primaryNameIRI = getIRI('primaryName');
 
   // Ideal: requested language
-  if (hasLanguageIRI(lang)) {
-    seq = doc.xpath(_getPrimaryNameByLanguage(primaryNameIRI, lang));
+  if (hasLanguageIdentifier(lang)) {
+    seq = doc.xpath(_getPrimaryNameByLanguage(lang));
   }
   // Fallback #1: primary name in English
   if (fn.empty(seq)) {
-    seq = doc.xpath(_getPrimaryNameByLanguage(primaryNameIRI, LANGUAGE_EN));
+    seq = doc.xpath(_getPrimaryNameByLanguage(LANGUAGE_EN));
   }
   // Fallback #2: the first name, primary or otherwise.
   if (fn.empty(seq)) {
@@ -165,9 +170,7 @@ function getReferredToBy(doc) {
   return _upTo(
     'referred_to_by',
     doc.xpath(
-      `json/referred_to_by/classified_as[id = "${getIRI(
-        'descriptionStatement'
-      )}"]`
+      `json/referred_to_by/classified_as[equivalent/id = "${IDENTIFIERS.descriptionStatement}"]`
     )
   );
 }
@@ -191,7 +194,7 @@ function getSupertypes(doc) {
   return _upTo(
     'classified_as',
     doc.xpath(
-      `json/classified_as[./classified_as/id = "${getIRI('typeOfWork')}"]`
+      `json/classified_as[./classified_as/equivalent/id = "${IDENTIFIERS.typeOfWork}"]`
     )
   );
 }
@@ -383,10 +386,10 @@ function _getValue(mustBeAnArray, val) {
 }
 
 // Only expected caller is getIdentifiedByPrimaryName()
-function _getPrimaryNameByLanguage(primaryNameIRI, lang) {
-  return `json/identified_by[type = "Name"][classified_as/id = "${primaryNameIRI}"][language/id = "${getLanguageIRI(
-    [lang]
-  )}"]`;
+function _getPrimaryNameByLanguage(lang) {
+  return `json/identified_by[type = "Name"][classified_as/equivalent/id = "${
+    IDENTIFIERS.primaryName
+  }"][language/equivalent/id = "${getLanguageIdentifier(lang)}"]`;
 }
 
 export {

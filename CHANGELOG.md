@@ -8,7 +8,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
-- TODO: change this - determining next steps for language identifiers - LUX is no longer dependent on generating data constants after data is loaded into the content database. ([#290](https://github.com/project-lux/lux-marklogic/issues/290)).
+- LUX is no longer dependent on generating data constants after data is loaded into the content database. ([#290](https://github.com/project-lux/lux-marklogic/issues/290)).
 
 ### Removed
  

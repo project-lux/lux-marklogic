@@ -14,6 +14,21 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.25.1 - 2024-10-04
+
+### Added
+
+### Changed
+- Updated help text for ID fields so that they don't prescribe a specific entity type ([#303](https://github.com/project-lux/lux-marklogic/issues/303))
+
+### Removed
+ 
+### Fixed
+
+- Fixed '<=' and '>=' comparators for dates ([#332](https://github.com/project-lux/lux-marklogic/issues/332))
+
+### Security
+
 ## v1.25.0 - 2024-09-23
 
 ### Added

@@ -815,7 +815,7 @@ function _getDateFieldRangeQuery(
 
 function _determineIsStartDateByOperator(op) {
   // Only when the operator is < and >= should a partial date be treated as a start date.
-  return ['<', '>='].includes(op);
+  return ['<', '<='].includes(op);
 }
 
 function _getCtsQueryFunctionName(indexType, isCompleteMatch) {

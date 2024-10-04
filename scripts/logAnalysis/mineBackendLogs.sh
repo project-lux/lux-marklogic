@@ -56,7 +56,6 @@ FAILED_SEARCH_ESTIMATE_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchEstimateReque
 FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchWillMatchRequests.txt
 FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/allFacetRequests.txt
 FAILED_FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/allFailedFacetRequests.txt
-EXCEEDED_FACET_PRODUCT_THRESHOLD=$OUTPUT_DIRECTORY/exceededFacetProductThreshold.txt
 AT_LEAST_ONE_RELATED_LIST_ITEM_FILE=$OUTPUT_DIRECTORY/atLeastOneRelatedListItem.txt
 AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE=$OUTPUT_DIRECTORY/atLeastOneRelatedListItem.tsv
 HIT_MAX_NUMBER_OF_RELATIONS=$OUTPUT_DIRECTORY/hitMaxNumberOfRelations.txt
@@ -320,11 +319,6 @@ echo -e "See also\t$FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 echo -e "   $FAILED_FACET_REQUESTS_FILE..."
 grep "Failed to calculate" $APP_ERROR_LOG_PATTERN > $FAILED_FACET_REQUESTS_FILE
 echo -e "See also\t$FAILED_FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
-
-# Find out which facet requests exceeded the search result estimate * number of values in the field threshold.
-echo -e "   $EXCEEDED_FACET_PRODUCT_THRESHOLD..."
-grep "Rejected request to calculate" $APP_ERROR_LOG_PATTERN > $EXCEEDED_FACET_PRODUCT_THRESHOLD
-echo -e "See also\t$EXCEEDED_FACET_PRODUCT_THRESHOLD" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Part of a searchWillMatch request, let's see how long it took to determine if a related list contains at least one item
 echo -e "   $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE..."

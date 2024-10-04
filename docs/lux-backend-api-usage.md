@@ -426,7 +426,7 @@ Response Body:
 
 The `facets` endpoint enables consumers to request a facet's values constrained by search criteria.
 
-If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold applicable to non-semantic facets and configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the number of values in the requested facet's index, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
+If unable to calculate the facet, an error is thrown.
 
 Only the first 100 values of a semantic facet's values are accessible.
 
@@ -499,13 +499,13 @@ Response Body:
 
 ### Failed Request / Response Example
 
-Scenario: Request exceeds threshold of estimated number of search results multiplied by the number of the facet's indexed values.
+Scenario: Unknown facet requested.
 
 Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `name` | `workCreationAgentId` |
+| `name` | `workAboutConceptIdddd` |
 | `q` | `book` |
 | `scope` | `work` |
 
@@ -517,16 +517,14 @@ Response Body:
 
 ```
 {
-  "errorResponse": {
-    "statusCode": 400,
-    "status": "Bad Request",
-    "messageCode": "BadRequestError",
-    "message": "Threshold to calculate the 'workCreationAgentId' facet exceeded."
+  "errorResponse":{
+    "statusCode":400,
+    "status":"Bad Request",
+    "messageCode":"BadRequestError",
+    "message":"Unable to calculate the 'workAboutConceptIdddd' facet: not an available facet."
   }
 }
 ```
-
-*When the `LuxFacet` trace event is enabled, a message similar to the following will also be logged: "Rejected request to calculate the 'workCreationAgentId' facet as 11,212,278 search results by 4,924,830 field values exceeds the 5,000,000,000,000 threshold."*
 
 ## Related List
 

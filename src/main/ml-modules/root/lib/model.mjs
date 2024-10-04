@@ -19,12 +19,12 @@
  * Exported functions are in alphabetical order, both where they are defined and exported.
  */
 import {
+  IDENTIFIERS,
   getLanguageIdentifier,
   hasLanguageIdentifier,
 } from './identifierConstants.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
 import { toArray } from '../utils/utils.mjs';
-import { IDENTIFIERS } from './identifierConstants.mjs';
 
 const LANGUAGE_EN = 'en';
 

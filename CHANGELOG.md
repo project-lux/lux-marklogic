@@ -19,7 +19,6 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
-- Updated help text for ID fields so that they don't prescribe a specific entity type ([#303](https://github.com/project-lux/lux-marklogic/issues/303))
 
 ### Removed
  

@@ -304,6 +304,9 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println ""
   }
 }
+mlDeploy.finalizedBy generateRemainingSearchTerms
+mlLoadModules.finalizedBy generateRemainingSearchTerms
+copyDatabase.finalizedBy generateRemainingSearchTerms
 
 // Runs the related lists configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -415,7 +418,7 @@ task performBaseDeployment() {
 }
 // It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
 // could result in an error if the tenant's modules database didn't exist in time.
-performBaseDeployment.finalizedBy mlDeployForestReplicas
+performBaseDeployment.finalizedBy mlDeployForestReplicas, generateRemainingSearchTerms
 
 // Enables SSL on the builtin servers
 // And create the certificate intended for the non-builtin servers

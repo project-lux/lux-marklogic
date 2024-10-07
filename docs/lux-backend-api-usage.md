@@ -11,39 +11,36 @@
     - [Implementation Notes](#implementation-notes)
     - [Successful Request / Response Example](#successful-request--response-example-1)
     - [Failed Request / Response Example](#failed-request--response-example-1)
-  - [Data Constants](#data-constants)
+  - [Document](#document)
     - [Successful Request / Response Example](#successful-request--response-example-2)
     - [Failed Request / Response Example](#failed-request--response-example-2)
-  - [Document](#document)
+  - [Facets](#facets)
     - [Successful Request / Response Example](#successful-request--response-example-3)
     - [Failed Request / Response Example](#failed-request--response-example-3)
-  - [Facets](#facets)
+  - [Related List](#related-list)
     - [Successful Request / Response Example](#successful-request--response-example-4)
     - [Failed Request / Response Example](#failed-request--response-example-4)
-  - [Related List](#related-list)
+  - [Search](#search)
     - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-5)
-  - [Search](#search)
+  - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-6)
-  - [Search Estimate](#search-estimate)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-8)
-  - [Search Info](#search-info)
+  - [Stats](#stats)
     - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-9)
-  - [Stats](#stats)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Translate](#translate)
+  - [Version Info](#version-info)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Version Info](#version-info)
-    - [Successful Request / Response Example](#successful-request--response-example-12)
-    - [Failed Request / Response Example](#failed-request--response-example-12)
 
 # Introduction
 
@@ -336,92 +333,6 @@ Response Status Message: "Wildcarded strings must have at least three non-wildca
 }
 ```
 
-## Data Constants
-
-The `dataConstants` endpoint enables consumers to get all data constants available at that moment.
-
-**Data constant values may vary between dataset versions.**  Data constants are only guaranteed constant within a single dataset version.  As such backend endpoint consumers are strongly encouraged not to hardcode these values within their application.  Rather, hardcode the data constant names and use this endpoint to retrieve the values for the dataset version present in the target environment.
-
-**URL** : `/ds/lux/dataConstants.mjs`
-
-**Method(s)** : `GET`, `POST`
-
-**Endpoint Parameters** : None
-
-### Successful Request / Response Example
-
-Scenario: dataConstants returns some results.
-
-Parameters: None
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body:
-
-*Abbreviated content shown below.*
-
-```
-{
-  "accessStatement":"https://lux.collections.yale.edu/data/concept/03f4eb19-0611-4f31-8e09-fc111c52f898",
-  "active":"https://lux.collections.yale.edu/data/concept/11c48705-1114-49aa-8896-c7490678b608",
-  "alternateName":"https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
-  "alternateTitle":"https://lux.collections.yale.edu/data/concept/1ea34972-1a4f-46b3-bd69-e4b2c57950b5",
-  "animalSpecimens":"https://lux.collections.yale.edu/data/concept/5f857a13-add4-4c25-ae8b-019975e75bcd",
-  "archive":"https://lux.collections.yale.edu/data/concept/24a671f3-e269-4ad9-9710-4796b8cc9478",
-  "biographyStatement":"https://lux.collections.yale.edu/data/concept/54e35d81-9548-4b4e-8973-de02b09bf9da",
-  "biologicalSpecimens":"https://lux.collections.yale.edu/data/concept/676b56e6-2f8a-47fd-af1a-e5edc560cdb7",
-  "citationsStatement":"https://lux.collections.yale.edu/data/concept/ceef9d2e-1a07-4269-827f-8c407e4d4711",
-  "collection":"https://lux.collections.yale.edu/data/concept/74296593-a7da-4f42-ae7b-327a0b6bdd6a",
-  "collectionItem":"https://lux.collections.yale.edu/data/concept/b34ad31c-4a2f-4cef-aee3-ae8d824e42a2",
-  "copyrightLicensingStatement":"https://lux.collections.yale.edu/data/concept/4030679e-c6e0-4e5e-b3c0-48ee1b8cfe60",
-  "countagentActivePlaceId":10584,
-  ...more count constants
-  "creditLineStatement":"https://lux.collections.yale.edu/data/concept/7c0ba119-47cb-4ade-8aa3-32a1e66c8ca9",
-  "curatorship":"https://lux.collections.yale.edu/data/concept/6704dc8a-6e72-4282-a50d-1c8ea575ad8f",
-  "department":"https://lux.collections.yale.edu/data/concept/7f59ed0b-0231-4784-ad5a-ffcff08cc277",
-  "depth":"https://lux.collections.yale.edu/data/concept/37872594-97d9-4338-962b-d31f4bced440",
-  "depthConcept":"https://lux.collections.yale.edu/data/concept/37872594-97d9-4338-962b-d31f4bced440",
-  "descriptionStatement":"https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
-  "dimensionStatement":"https://lux.collections.yale.edu/data/concept/53922f57-dab5-43c5-a527-fc20a63fe128",
-  "displayName":"https://lux.collections.yale.edu/data/concept/5088ec29-065b-4c66-b49e-e61d3c8f3717",
-  "exhibition":"https://lux.collections.yale.edu/data/concept/88af90e3-d194-4bfb-aa8c-0998cdf7e679",
-  "female":"https://lux.collections.yale.edu/data/concept/a309a746-9e51-4c34-b207-7f4773d2ac1a",
-  "first":"https://lux.collections.yale.edu/data/concept/6eee749b-8038-4d26-b184-68321ea4fe91",
-  "fossil":"https://lux.collections.yale.edu/data/concept/05a41429-8a18-4911-854e-eae804b7d46f",
-  "gender":"https://lux.collections.yale.edu/data/concept/84ed0c0e-2aa8-49b3-ae02-ed84552f570d",
-  "height":"https://lux.collections.yale.edu/data/concept/32c99593-6526-4cd4-98c7-71e5ccfcafc8",
-  "heightConcept":"https://lux.collections.yale.edu/data/concept/32c99593-6526-4cd4-98c7-71e5ccfcafc8",
-  "imprintStatement":"https://lux.collections.yale.edu/data/concept/e29bcdc8-e35d-4a6d-a7ae-fd3702611fb8",
-  "intersexual":"https://lux.collections.yale.edu/data/concept/3e2f0b8f-e5c0-4b24-805c-2dde5cca71ee",
-  "langaa":"https://lux.collections.yale.edu/data/concept/a92f7b18-48d4-4fdc-8b65-6413a0fc8d10",
-  ...many more language constants
-  "male":"https://lux.collections.yale.edu/data/concept/6f652917-4c07-4d51-8209-fcdd4f285343",
-  "materialsStatement":"https://lux.collections.yale.edu/data/concept/a51a170c-211c-4cc1-bb11-52e24836117f",
-  "nationality":"https://lux.collections.yale.edu/data/concept/05344568-bdd1-4289-90d6-b9fdcdbaaa4c",
-  "occupation":"https://lux.collections.yale.edu/data/concept/86be41f5-60e4-47f4-bd4e-95a4955a3e9b",
-  "officialName":"https://lux.collections.yale.edu/data/concept/8209ea47-ab8b-4e9c-9802-d043f6d7cced",
-  "plantSpecimens":"https://lux.collections.yale.edu/data/concept/47ab8e09-e39c-46f1-b140-bdcabfbf2e1e",
-  "primaryName":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
-  "provenanceStatement":"https://lux.collections.yale.edu/data/concept/dd8b8c75-3f4b-4071-a231-161ae556e572",
-  "sortName":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
-  "statementType":"https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
-  "style":"https://lux.collections.yale.edu/data/concept/532cd8db-d99f-4013-9980-26ddc156d5ad",
-  "translatedTitle":"https://lux.collections.yale.edu/data/concept/42e23e1e-c630-4ebd-aab0-f36a42f63170",
-  "typeOfPart":"https://lux.collections.yale.edu/data/concept/861dda5d-03c4-44d6-a2a0-d699a3c7a791",
-  "typeOfWork":"https://lux.collections.yale.edu/data/concept/4ea65dc4-76bc-45b7-b54c-a1ca4783d4e2",
-  "visitors":"https://lux.collections.yale.edu/data/concept/d97f2e4a-1549-4c4b-9a27-bcf41a2b4972",
-  "webPage":"https://lux.collections.yale.edu/data/concept/2eca07bd-be42-4ef5-9ec5-87c1bbfe639d",
-  "width":"https://lux.collections.yale.edu/data/concept/5ce44eb3-a686-4315-961e-07db59b8c887",
-  "widthConcept":"https://lux.collections.yale.edu/data/concept/5ce44eb3-a686-4315-961e-07db59b8c887"
-}
-```
-
-### Failed Request / Response Example
-
-*Only known scenarios would be an authentication error and internal server error.*
-
 ## Document
 
 The `document` endpoint enables consumers to retrieve a single document's JSON-LD, or subset thereof upon specifying a named profile.
@@ -515,7 +426,7 @@ Response Body:
 
 The `facets` endpoint enables consumers to request a facet's values constrained by search criteria.
 
-If unable to calculate the facet, an error is thrown. This includes when the system determines the request would exceed a threshold applicable to non-semantic facets and configured by the `facetMaximumProduct` build property.  When that property value is less than the estimated number of search results multiplied by the number of values in the requested facet's index, the threshold is exceeded and an error is thrown.  When the `LuxFacet` trace event is enabled, a message is also logged.
+If unable to calculate the facet, an error is thrown.
 
 Only the first 100 values of a semantic facet's values are accessible.
 
@@ -588,13 +499,13 @@ Response Body:
 
 ### Failed Request / Response Example
 
-Scenario: Request exceeds threshold of estimated number of search results multiplied by the number of the facet's indexed values.
+Scenario: Unknown facet requested.
 
 Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `name` | `workCreationAgentId` |
+| `name` | `workAboutConceptIdddd` |
 | `q` | `book` |
 | `scope` | `work` |
 
@@ -606,16 +517,14 @@ Response Body:
 
 ```
 {
-  "errorResponse": {
-    "statusCode": 400,
-    "status": "Bad Request",
-    "messageCode": "BadRequestError",
-    "message": "Threshold to calculate the 'workCreationAgentId' facet exceeded."
+  "errorResponse":{
+    "statusCode":400,
+    "status":"Bad Request",
+    "messageCode":"BadRequestError",
+    "message":"Unable to calculate the 'workAboutConceptIdddd' facet: not an available facet."
   }
 }
 ```
-
-*When the `LuxFacet` trace event is enabled, a message similar to the following will also be logged: "Rejected request to calculate the 'workCreationAgentId' facet as 11,212,278 search results by 4,924,830 field values exceeds the 5,000,000,000,000 threshold."*
 
 ## Related List
 

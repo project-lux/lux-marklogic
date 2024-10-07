@@ -94,27 +94,6 @@
 					"response": []
 				},
 				{
-					"name": "Data Constants",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/dataConstants.mjs",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"dataConstants.mjs"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Document",
 					"request": {
 						"method": "GET",

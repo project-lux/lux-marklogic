@@ -18,8 +18,6 @@ const RELATED_LIST_PER_RELATION_MAX = parseInt(
   '%%relatedListPerRelationMax%%'.trim()
 );
 
-const FACET_MAXIMUM_PRODUCT = parseInt('%%facetMaximumProduct%%'.trim());
-
 const DEFAULT_FILTER_SEARCH_RESULTS =
   '%%filterSearchResults%%'.trim() === 'true';
 const DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS =
@@ -146,7 +144,6 @@ export {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   ENVIRONMENT_NAME,
-  FACET_MAXIMUM_PRODUCT,
   FACETS_PREFIX,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
   IRI_DOES_NOT_EXIST,

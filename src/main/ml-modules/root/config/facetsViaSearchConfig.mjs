@@ -1,4 +1,4 @@
-import { getIRI } from '../lib/dataConstants.mjs';
+import { IDENTIFIERS } from '../lib/identifierConstants.mjs';
 
 const FACETS_VIA_SEARCH_CONFIG = {
   responsibleCollections: {
@@ -12,7 +12,7 @@ const FACETS_VIA_SEARCH_CONFIG = {
           },
           {
             classification: {
-              id: getIRI('collection'),
+              identifier: IDENTIFIERS.collection,
             },
           },
         ],
@@ -49,7 +49,7 @@ const FACETS_VIA_SEARCH_CONFIG = {
                 },
                 {
                   classification: {
-                    id: getIRI('department'),
+                    identifier: IDENTIFIERS.department,
                   },
                 },
               ],
@@ -65,7 +65,7 @@ const FACETS_VIA_SEARCH_CONFIG = {
               {
                 NOT: {
                   classification: {
-                    id: getIRI('department'),
+                    identifier: IDENTIFIERS.department,
                   },
                 },
               },

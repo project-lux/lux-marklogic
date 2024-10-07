@@ -14,6 +14,22 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.26.0 - 2024-10-07
+
+### Added
+
+### Changed
+
+- Workaround for missing 'setClassifiedAs' triple on Collection sets. Sets will use the 'referenceClassifiedAs' triple in the meantime. ([#337](https://github.com/project-lux/lux-marklogic/issues/337)).
+
+- LUX is no longer dependent on generating data constants after data is loaded into the content database. ([#290](https://github.com/project-lux/lux-marklogic/issues/290)).
+
+### Removed
+ 
+### Fixed
+
+### Security
+
 ## v1.25.1 - 2024-10-04
 
 ### Added

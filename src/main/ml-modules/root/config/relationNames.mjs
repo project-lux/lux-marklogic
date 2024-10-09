@@ -123,20 +123,6 @@ const RELATION_NAMES = {
   'published-language': 'Published Works In',
   'published-publishedAt': 'Published Works Published At',
   'published-publishedBy': 'Published Works With',
-  'publishedHere-aboutAgent': 'Is the Place of Publication of Works About',
-  'publishedHere-aboutConcept': 'Is the Place of Publication of Works About',
-  'publishedHere-aboutPlace': 'Is the Place of Publication of Works About',
-  'publishedHere-carriedBy-memberOf-usedForEvent':
-    'Is the Place of Publication of Works Carried by Items Used At',
-  'publishedHere-classification':
-    'Is the Place of Publication of Objects Categorized As',
-  'publishedHere-createdAt': 'Is the Place of Publication of Works Created At',
-  'publishedHere-createdBy': 'Is the Place of Publication of Works Created By',
-  'publishedHere-language': 'Is the Place of Publication of Works In',
-  'publishedHere-publishedAt':
-    'Is the Place of Publication of Works Published At',
-  'publishedHere-publishedBy':
-    'Is the Place of Publication of Works Published By',
   'subjectOfAgent-aboutAgent': 'Is the Subject of Works About',
   'subjectOfAgent-aboutConcept': 'Is the Subject of Works About',
   'subjectOfAgent-aboutPlace': 'Is the Subject of Works About',

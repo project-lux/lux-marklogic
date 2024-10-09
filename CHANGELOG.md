@@ -9,7 +9,9 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 
 ### Removed
- 
+
+- Removed "Is the Place of Publication of..." relationships from Related Lists ([#284](https://github.com/project-lux/lux-marklogic/issues/284)).
+
 ### Fixed
 
 ### Security

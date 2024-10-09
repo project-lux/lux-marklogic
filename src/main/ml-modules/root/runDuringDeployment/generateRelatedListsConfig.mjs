@@ -25,6 +25,18 @@ const RELATION_KEYS_TO_SUPPRESS = [
   //ignoring keys with relationScope of "set"
   'classificationOfSet-containingItem-memberOf-usedForEvent',
   'classificationOfSet-usedForEvent',
+
+  //ignore all keys that start with publishedHere
+  'publishedHere-aboutAgent',
+  'publishedHere-aboutConcept',
+  'publishedHere-aboutPlace',
+  'publishedHere-carriedBy-memberOf-usedForEvent',
+  'publishedHere-classification',
+  'publishedHere-createdAt',
+  'publishedHere-createdBy',
+  'publishedHere-language',
+  'publishedHere-publishedAt',
+  'publishedHere-publishedBy',
 ];
 
 const targetId = TOKEN_RUNTIME_PARAM;

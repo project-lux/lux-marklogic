@@ -1,3 +1,6 @@
+import op from '/MarkLogic/optic';
+const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
+
 const SORT_BINDINGS = {
   agentActiveDate: {
     indexType: 'field',
@@ -42,6 +45,11 @@ const SORT_BINDINGS = {
   eventEndDate: {
     indexType: 'field',
     indexReference: 'eventCompletedStartDateLong',
+    defaultOrder: 'asc',
+  },
+  itemAgentName: {
+    predicate: lux('agentOfProduction'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemArchiveSortId: {

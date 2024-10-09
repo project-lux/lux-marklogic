@@ -6,6 +6,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+- Enable sorting using semantic criteria ([#10](https://github.com/project-lux/lux-marklogic/issues/10)).
+
 ### Changed
 
 ### Removed

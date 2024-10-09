@@ -1,3 +1,4 @@
+import op from '/MarkLogic/optic';
 import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
@@ -32,6 +33,7 @@ import {
   REG_EXP_NEAR_OPERATOR,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_NAME_KEYWORD,
+  SEMANTIC_SORT_TIMEOUT,
 } from './appConstants.mjs';
 import {
   InternalServerError,
@@ -191,7 +193,93 @@ const SearchCriteriaProcessor = class {
   }
 
   getSearchResults() {
+    if (this.sortCriteria.hasSemanticSortOption()) {
+      return this._getSemanticSortResults();
+    } else {
+      return this._getNonSemanticSortResults();
+    }
+  }
+
+  _getNonSemanticSortResults() {
     return utils.evalInContentDatabase(this.getCtsQueryStr(true)).toArray()[0];
+  }
+
+  _getSemanticSortResults() {
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+    //assuming we do want this right now
+    const oneSortValuePerResult = true;
+    const { predicate, indexReference, order } =
+      this.sortCriteria.getSemanticSortOption();
+    const ctsQuery = SearchCriteriaProcessor.evalQueryString(
+      this.getCtsQueryStr(false)
+    );
+
+    // Let's come up with a plan.
+    let semanticSortPlan = op
+      // Start with our search
+      .fromSearch(ctsQuery)
+      // Get the IRI of each search result.
+      .joinInner(
+        op.fromLexicons(
+          { searchResultIri: cts.iriReference() },
+          null,
+          op.fragmentIdCol('lexiconFragmentId')
+        ),
+        op.on('fragmentId', 'lexiconFragmentId')
+      )
+      // Get the IRI of documents that contain the values to sort by.
+      .joinInner(
+        op.fromTriples(
+          op.pattern(op.col('subjectIri'), predicate, op.col('objectIri'))
+        )
+      )
+      // Restrict to just documents that are associated to the search results.
+      .where(op.eq(op.col('searchResultIri'), op.col('subjectIri')))
+      // Create one row for each unique combination of search result and its sort values.
+      .joinInner(
+        op.fromLexicons(
+          {
+            fieldDocIri: cts.iriReference(),
+            sortByMe: cts.fieldReference(indexReference),
+          },
+          null,
+          op.fragmentIdCol('lexiconFragmentId2')
+        ),
+        op.on('objectIri', 'fieldDocIri')
+      );
+
+    // The following is necessary when one wants each search result represented once yet has more than one triple with sortPredicate
+    // (e.g., co-produced items) or multiple names to sort on (e.g., primary names in multiple languages).
+    if (oneSortValuePerResult === true) {
+      // When a search value has multiple values to sort by, it is not yet understood which one prevails.
+      semanticSortPlan = semanticSortPlan.groupBy(
+        ['searchResultIri'],
+        ['sortByMe', 'objectIri']
+      );
+    }
+
+    // // And finally, the columns we want.  The objectIri column is included to help validate the results.
+    semanticSortPlan = semanticSortPlan.select([
+      'searchResultIri',
+      'objectIri',
+      'sortByMe',
+    ]);
+
+    const results = Array.from(
+      semanticSortPlan
+        .orderBy(
+          order === 'ascending'
+            ? op.asc(op.col('sortByMe'))
+            : op.desc(op.col('sortByMe'))
+        )
+        .offset((this.page - 1) * this.pageLength)
+        .limit(this.pageLength)
+        .result(null, null, null)
+    ).map(({ searchResultIri }) => ({
+      id: searchResultIri,
+      type: cts.doc(searchResultIri).xpath('/json/type'),
+    }));
+    return results;
   }
 
   // Get query.  If you're looking for the query with different token values, use resolveTokens.
@@ -209,7 +297,7 @@ const SearchCriteriaProcessor = class {
         this.requestOptions.facetsAreLikely === true
           ? '"faceted"'
           : '"unfaceted"',
-        this.sortCriteria.getSortOptions(),
+        this.sortCriteria.getNonSemanticSortOptions(),
       ];
       if (!this.sortCriteria.areScoresRequired()) {
         searchOptionsArr.push('"score-zero"');

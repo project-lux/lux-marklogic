@@ -11,7 +11,8 @@ const SortCriteria = class {
   constructor(sortCriteriaStr) {
     this.sortCriteriaStr = sortCriteriaStr;
     this.scoresRequired = DEFAULT; // can switch to a boolean value.
-    this.sortOptions = [];
+    this.semanticSortOption = null;
+    this.nonSemanticSortOptions = [];
     this.warnings = [];
     this._parse();
   }
@@ -30,12 +31,20 @@ const SortCriteria = class {
     }
   }
 
-  getSortOptions() {
-    return this.sortOptions;
+  getNonSemanticSortOptions() {
+    return this.nonSemanticSortOptions;
   }
 
-  hasSortOptions() {
-    return this.sortOptions.length > 0;
+  hasNonSemanticSortOptions() {
+    return this.nonSemanticSortOptions.length > 0;
+  }
+
+  getSemanticSortOption() {
+    return this.semanticSortOption;
+  }
+
+  hasSemanticSortOption() {
+    return this.semanticSortOption !== null;
   }
 
   getWarnings() {
@@ -58,14 +67,14 @@ const SortCriteria = class {
           sortByName.toLowerCase() == 'random'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.sortOptions = ['"score-random"'];
+          this.nonSemanticSortOptions = ['"score-random"'];
           return false;
         } else if (
           utils.isNonEmptyString(sortByName) &&
           sortByName.toLowerCase() == 'relevance'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.sortOptions = [
+          this.nonSemanticSortOptions = [
             `cts.scoreOrder('${this._getOrder(
               specifiedOrder,
               'desc' // Matches when there is no sort parameter.
@@ -75,15 +84,23 @@ const SortCriteria = class {
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
           if (sortBinding) {
-            this.conditionallySetScoresRequired(false);
-            this.sortOptions.push(
-              `cts.indexOrder(cts.${sortBinding.indexType}Reference('${
-                sortBinding.indexReference
-              }'),'${this._getOrder(
-                specifiedOrder,
-                sortBinding.defaultOrder
-              )}')`
-            );
+            if (sortBinding.predicate) {
+              this.semanticSortOption = {
+                predicate: sortBinding.predicate,
+                indexReference: sortBinding.indexReference,
+                order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+              };
+            } else {
+              this.conditionallySetScoresRequired(false);
+              this.nonSemanticSortOptions.push(
+                `cts.indexOrder(cts.${sortBinding.indexType}Reference('${
+                  sortBinding.indexReference
+                }'),'${this._getOrder(
+                  specifiedOrder,
+                  sortBinding.defaultOrder
+                )}')`
+              );
+            }
           } else {
             this.warnings.push(
               `Unable to sort by '${

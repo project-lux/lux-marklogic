@@ -206,7 +206,9 @@ const SearchCriteriaProcessor = class {
 
   _getSemanticSortResults() {
     xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
-    //assuming we do want this right now
+    // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
+    // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
+    // For now, this defaults to true. Feel free to parameterize if desired.
     const oneSortValuePerResult = true;
     const { predicate, indexReference, order } =
       this.sortCriteria.getSemanticSortOption();
@@ -214,56 +216,51 @@ const SearchCriteriaProcessor = class {
       this.getCtsQueryStr(false)
     );
 
-    // Let's come up with a plan.
-    let semanticSortPlan = op
-      // Start with our search
+    // get cts results into an optic plan.
+    // add a column for the document uri for each result, which we will use later
+    const ctsPlan = op
       .fromSearch(ctsQuery)
-      // Get the IRI of each search result.
-      .joinInner(
-        op.fromLexicons(
-          { searchResultIri: cts.iriReference() },
-          null,
-          op.fragmentIdCol('lexiconFragmentId')
-        ),
-        op.on('fragmentId', 'lexiconFragmentId')
-      )
-      // Get the IRI of documents that contain the values to sort by.
-      .joinInner(
-        op.fromTriples(
-          op.pattern(op.col('subjectIri'), predicate, op.col('objectIri'))
-        )
-      )
-      // Restrict to just documents that are associated to the search results.
-      .where(op.eq(op.col('searchResultIri'), op.col('subjectIri')))
-      // Create one row for each unique combination of search result and its sort values.
-      .joinInner(
-        op.fromLexicons(
-          {
-            fieldDocIri: cts.iriReference(),
-            sortByMe: cts.fieldReference(indexReference),
-          },
-          null,
-          op.fragmentIdCol('lexiconFragmentId2')
-        ),
-        op.on('objectIri', 'fieldDocIri')
-      );
+      .joinDocUri('uri', op.fragmentIdCol('fragmentId'));
 
-    // The following is necessary when one wants each search result represented once yet has more than one triple with sortPredicate
-    // (e.g., co-produced items) or multiple names to sort on (e.g., primary names in multiple languages).
+    // create a plan from all of the triples linked to our predicate
+    // make sure we get a fragmentId for each triple
+    const triplePlan = op.fromTriples(
+      op.pattern(
+        op.col('subjectIri'),
+        predicate,
+        op.col('objectIri'),
+        op.fragmentIdCol('fragmentId')
+      )
+    );
+
+    // join the triples to the cts results where they have matching fragmentId
+    let semanticSortPlan = ctsPlan.joinLeftOuter(triplePlan);
+
+    // create a plan where each row has the following -
+    // - fieldDocIri: iri of a document
+    // - sortByMe: indexed value from that document, which we will use for sorting
+    const indexedFieldPlan = op.fromLexicons({
+      fieldDocIri: cts.iriReference(),
+      sortByMe: cts.fieldReference(indexReference),
+    });
+
+    // Add the sortByMe values to the rows, where the index's fieldDocIri matches the triple's objectIri
+    semanticSortPlan = semanticSortPlan.joinLeftOuter(
+      indexedFieldPlan,
+      op.on('objectIri', 'fieldDocIri')
+    );
+
+    // // The following is necessary when one wants each search result represented once yet has more than one triple with sortPredicate
+    // // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
     if (oneSortValuePerResult === true) {
-      // When a search value has multiple values to sort by, it is not yet understood which one prevails.
+      // When a search value has multiple values to sort by, they prevail in the following order:
+      // - for multiple triples: whichever objectIri has comes first in ascending string order
+      // - for multiple indexed names: whichever sortByMe comes first in ascending string order
       semanticSortPlan = semanticSortPlan.groupBy(
-        ['searchResultIri'],
+        ['uri'],
         ['sortByMe', 'objectIri']
       );
     }
-
-    // // And finally, the columns we want.  The objectIri column is included to help validate the results.
-    semanticSortPlan = semanticSortPlan.select([
-      'searchResultIri',
-      'objectIri',
-      'sortByMe',
-    ]);
 
     const results = Array.from(
       semanticSortPlan
@@ -274,10 +271,10 @@ const SearchCriteriaProcessor = class {
         )
         .offset((this.page - 1) * this.pageLength)
         .limit(this.pageLength)
-        .result(null, null, null)
-    ).map(({ searchResultIri }) => ({
-      id: searchResultIri,
-      type: cts.doc(searchResultIri).xpath('/json/type'),
+        .result()
+    ).map(({ uri }) => ({
+      id: uri,
+      type: cts.doc(uri).xpath('/json/type'),
     }));
     return results;
   }

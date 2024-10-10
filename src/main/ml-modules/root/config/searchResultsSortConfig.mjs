@@ -47,11 +47,6 @@ const SORT_BINDINGS = {
     indexReference: 'eventCompletedStartDateLong',
     defaultOrder: 'asc',
   },
-  itemAgentName: {
-    predicate: lux('agentOfProduction'),
-    indexReference: 'anySortName',
-    defaultOrder: 'asc',
-  },
   itemArchiveSortId: {
     indexType: 'field',
     indexReference: 'itemArchiveSortId',
@@ -75,6 +70,11 @@ const SORT_BINDINGS = {
   itemEncounteredDate: {
     indexType: 'field',
     indexReference: 'itemEncounteredStartDateLong',
+    defaultOrder: 'asc',
+  },
+  itemProductionAgentName: {
+    predicate: lux('agentOfProduction'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemProductionDate: {

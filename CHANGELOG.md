@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.26.1 - 2024-10-11
+
+### Added
+
+### Changed
+
+### Removed
+ 
+### Fixed
+
+- Fixed issues getting docs with the 'name' profile and primary names ([#290](https://github.com/project-lux/lux-marklogic/issues/290)).
+
+### Security
+
 ## v1.26.0 - 2024-10-07
 
 ### Added

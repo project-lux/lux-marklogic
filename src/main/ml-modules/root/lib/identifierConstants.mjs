@@ -10,7 +10,7 @@ const IDENTIFIERS = {
   male: 'http://vocab.getty.edu/aat/300189559',
   nationality: 'http://vocab.getty.edu/aat/300379842',
   occupation: 'http://vocab.getty.edu/aat/300263369',
-  primaryName: 'https://vocab.getty.edu/aat/300404670',
+  primaryName: 'http://vocab.getty.edu/aat/300404670',
   typeOfWork: 'http://vocab.getty.edu/aat/300435443',
 
   langaa: 'http://vocab.getty.edu/aat/300387779',
@@ -648,7 +648,7 @@ function hasLanguageIdentifier(languageCode) {
 
 function getLanguageIdentifier(languageCode) {
   const key = _getLanguageIdentifierKey(languageCode);
-  if (IDENTIFIERS.hasIdentifier(key)) {
+  if (hasIdentifier(key)) {
     return IDENTIFIERS[key];
   }
   throw new InternalServerError(

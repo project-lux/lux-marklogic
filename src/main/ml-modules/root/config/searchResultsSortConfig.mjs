@@ -67,6 +67,16 @@ const SORT_BINDINGS = {
     indexReference: 'itemHeightDimensionValue',
     defaultOrder: 'asc',
   },
+  itemEncounterAgentName: {
+    predicate: lux('agentOfEncounter'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  itemEncounterPlaceName: {
+    predicate: lux('placeOfEncounter'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   itemEncounteredDate: {
     indexType: 'field',
     indexReference: 'itemEncounteredStartDateLong',
@@ -74,6 +84,11 @@ const SORT_BINDINGS = {
   },
   itemProductionAgentName: {
     predicate: lux('agentOfProduction'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  itemProductionPlaceName: {
+    predicate: lux('placeOfProduction'),
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },

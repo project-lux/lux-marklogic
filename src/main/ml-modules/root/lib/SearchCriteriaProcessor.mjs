@@ -258,7 +258,11 @@ const SearchCriteriaProcessor = class {
       // - for multiple indexed names: whichever sortByMe comes first in ascending string order
       semanticSortPlan = semanticSortPlan.groupBy(
         ['uri'],
-        ['sortByMe', 'objectIri']
+        [
+          order === 'ascending'
+            ? op.min('sortByMe', op.col('sortByMe'))
+            : op.max('sortByMe', op.col('sortByMe')),
+        ]
       );
     }
 

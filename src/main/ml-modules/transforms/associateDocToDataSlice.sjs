@@ -1,10 +1,13 @@
-function associateDocToDataSlice(content, context) {
+function associateDocToDataSlice(context, params, content) {
   // Get the list of collections and document permission.
   const collections = ['%%mlAppName%%'];
   const permissions = [
     xdmp.permission('%%mlAppName%%-writer', 'update'),
     xdmp.permission('%%mlAppName%%-reader', 'read'),
   ];
+  // console.log('Context: ' + JSON.stringify(context));
+  // console.log('Params: ' + JSON.stringify(params));
+  // console.log('Content: ' + JSON.stringify(content));
   content.value
     .xpath('admin/sources')
     .toArray()
@@ -24,4 +27,4 @@ function associateDocToDataSlice(content, context) {
   return content;
 }
 
-exports.associateDocToDataSlice = associateDocToDataSlice;
+exports.transform = associateDocToDataSlice;

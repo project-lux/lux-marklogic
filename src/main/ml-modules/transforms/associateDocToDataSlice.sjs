@@ -5,10 +5,7 @@ function associateDocToDataSlice(context, params, content) {
     xdmp.permission('%%mlAppName%%-writer', 'update'),
     xdmp.permission('%%mlAppName%%-reader', 'read'),
   ];
-  // console.log('Context: ' + JSON.stringify(context));
-  // console.log('Params: ' + JSON.stringify(params));
-  // console.log('Content: ' + JSON.stringify(content));
-  content.value
+  content
     .xpath('admin/sources')
     .toArray()
     .forEach((name) => {

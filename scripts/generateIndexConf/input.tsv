@@ -55,7 +55,7 @@ agent	HasDigitalImage	Boolean	numbers	agentHasDigitalImageBoolean	Search	Non	N		
 agent	ProfessionalActivity	Id	uri	agentProfessionalActivityId	RecordLink	Non	N		/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]/id	
 agent	ProfessionalActivity	Name	keyword	agentProfessionalActivityName	Search	Semantic	N			lux:agentProfessionallyActive
 										
-item	ArchiveSort	Id	string	itemArchiveSortId	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
+item	ArchiveSort	Id	string	itemArchiveSortId	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
 item	DataType	Name	keyword	itemDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType	
 item	HasDigitalImage	Boolean	numbers	itemHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/hasDigitalImage	
 item	IsOnline	Boolean	numbers	itemIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/isOnline	
@@ -96,10 +96,10 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 										
 	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
-work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content	
+work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
 work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType ,  /indexedProperties[dataType = 'Set']/dataType	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage ,  /indexedProperties[dataType = 'Set']/hasDigitalImage	
-work	IsOnline	Boolean	numbers	workIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline	
+work	IsOnline	Boolean	numbers	workIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline , /indexedProperties[dataType = 'Set']/isOnline	
 work	IsPublicDomain	Boolean	numbers	workIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isPublicDomain	
 work	Any	Text	keyword	workAnyText	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]//content ,  /json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']//content	
 work		Name	keyword	workName	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Name']/content ,  /json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./type='Name']/content	
@@ -130,7 +130,7 @@ work	CreationStart	Date	datesAsLong	workCreationStartDateLong	Search	Non	N		/jso
 work	CreationEnd	Date	datesAsLong	workCreationEndDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/_seconds_since_epoch_end_of_the_end	
 work	CreationPlace	Id	uri	workCreationPlaceId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/took_place_at/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/took_place_at/id	
 work	CreationPlace	Name	keyword	workCreationPlaceName	Search	Semantic	N			lux:placeOfCreation
-work	CreationAgent	Id	uri	workCreationAgentId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id ,  /json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/carried_out_by/id	
+work	CreationAgent	Id	uri	workCreationAgentId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id ,  /json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/carried_out_by/id , /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/part/carried_out_by/id	
 work	CreationAgent	Name	keyword	workCreationAgentName	Search	Semantic	N			lux:agentOfCreation
 work	MemberOf	Name	keyword	workMemberOfName	Search	Semantic	N	This should probably be merged into workPartOfName like workPartOfId		la:member_of
 										

@@ -6,6 +6,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.27.0 - 2024-10-21
+
+### Added
+
 - Enabled searching for Works whose creation was caused by an Event and vice-versa ([#269](https://github.com/project-lux/lux-marklogic/issues/269)).
 
 ### Changed

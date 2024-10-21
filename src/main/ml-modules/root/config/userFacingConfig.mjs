@@ -299,7 +299,12 @@ const searchTermText = {
     carriedOutBy: {
       label: 'Carried Out By',
       helpText:
-        'Search for Events that were carried out by the specified People & Groups',
+        'Search for Events that were carried out by the specified People & Groups.',
+    },
+    causedCreationOf: {
+      label: 'Caused Creation Of',
+      helpText:
+        'Search for Events that caused the creation of the specified Works.',
     },
     classification: {
       label: 'Categorized As',
@@ -646,6 +651,11 @@ const searchTermText = {
       label: 'Created Date',
       helpText:
         'Search for Works by the date on which they were authored or created. Note the difference with Publication Date.',
+    },
+    creationCausedBy: {
+      label: 'Creation Caused By',
+      helpText:
+        'Search for Works that were created because of the specified Events.',
     },
     creationInfluencedBy: {
       label: 'Creation Influenced By',

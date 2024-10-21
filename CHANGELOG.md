@@ -9,7 +9,29 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 
 ### Removed
- 
+
+### Fixed
+
+### Security
+
+## v1.27.0 - 2024-10-21
+
+### Added
+
+- Enabled searching for Works whose creation was caused by an Event and vice-versa ([#269](https://github.com/project-lux/lux-marklogic/issues/269)).
+
+### Changed
+
+- Updated Work Is Online facet to include Sets  ([#250](https://github.com/project-lux/lux-marklogic/issues/250)).
+
+- Change Work Created By to include People & Groups that are listed as being creators in part ([#278](https://github.com/project-lux/lux-marklogic/issues/278)).
+
+- Update AAT for archive sorting - used to be sort titles (http://vocab.getty.edu/aat/300451544), now it is sort values (http://vocab.getty.edu/aat/300456575) ([#325](https://github.com/project-lux/lux-marklogic/issues/325)).
+
+### Removed
+
+- Removed "Is the Place of Publication of..." and "...Published At this Place" relationships from Related Lists ([#284](https://github.com/project-lux/lux-marklogic/issues/284)).
+
 ### Fixed
 
 ### Security

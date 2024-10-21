@@ -506,6 +506,13 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'created',
       indexReferences: ['agentPrimaryName'],
     },
+    creationCausedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("causeOfCreation")'],
+      targetScope: 'event',
+      hopInverseName: 'causedCreationOf',
+      indexReferences: ['workCreationAgentId'],
+    },
     creationInfluencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("agentInfluencedCreation")'],

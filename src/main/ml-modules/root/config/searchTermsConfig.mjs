@@ -407,7 +407,7 @@ const SEARCH_TERMS_CONFIG = {
   set: {
     classification: {
       patternName: 'hopWithField',
-      predicates: ['lux("referenceClassifiedAs")'],
+      predicates: ['lux("setClassifiedAs")'],
       targetScope: 'concept',
       hopInverseName: 'classificationOfSet',
       indexReferences: ['conceptPrimaryName'],

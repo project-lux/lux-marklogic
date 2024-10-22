@@ -27,6 +27,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Change Work Created By to include People & Groups that are listed as being creators in part ([#278](https://github.com/project-lux/lux-marklogic/issues/278)).
 
 - Update AAT for archive sorting - used to be sort titles (http://vocab.getty.edu/aat/300451544), now it is sort values (http://vocab.getty.edu/aat/300456575) ([#325](https://github.com/project-lux/lux-marklogic/issues/325)).
+  
+- Revert workaround in #337 - triple has been restored ([#337](https://github.com/project-lux/lux-marklogic/issues/337)).
 
 ### Removed
 

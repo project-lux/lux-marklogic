@@ -8,6 +8,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- Exclude Collection Sets from the stats for Works ([#283](https://github.com/project-lux/lux-marklogic/issues/283)).
+
 ### Removed
 
 ### Fixed

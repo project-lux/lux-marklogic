@@ -1,5 +1,14 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
-import { getSearchScope, getSearchScopeNames } from '../../lib/searchScope.mjs';
+import {
+  getSearchScopeNames,
+  getSearchScopeTypes,
+} from '../../lib/searchScope.mjs';
+import { removeItemByValueFromArray } from '../../utils/utils.mjs';
+import { IDENTIFIERS } from '../../lib/identifierConstants.mjs';
+
+const getDataTypeQuery = (dataTypes) => {
+  return cts.jsonPropertyValueQuery('dataType', dataTypes, ['exact']);
+};
 
 handleRequest(function () {
   const start = new Date();
@@ -16,40 +25,19 @@ handleRequest(function () {
       name === 'work'
         ? cts.estimate(
             cts.orQuery([
-              cts.jsonPropertyValueQuery(
-                'dataType',
-                ['LinguisticObject'],
-                ['exact']
+              // Only sets need special treatment.
+              getDataTypeQuery(
+                removeItemByValueFromArray(getSearchScopeTypes('work'), 'Set')
               ),
+              // A field would be more precise but does not appear necessary.
               cts.andQuery([
-                cts.jsonPropertyValueQuery('dataType', ['Set'], ['exact']),
-                cts.notQuery(
-                  cts.jsonPropertyScopeQuery(
-                    'json',
-                    cts.jsonPropertyScopeQuery(
-                      'classified_as',
-                      cts.jsonPropertyScopeQuery(
-                        'equivalent',
-                        cts.jsonPropertyValueQuery(
-                          'id',
-                          // this is the aat for collection
-                          'http://vocab.getty.edu/aat/300025976',
-                          ['exact']
-                        )
-                      )
-                    )
-                  )
-                ),
+                getDataTypeQuery('Set'),
+                cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection),
               ]),
-              cts.jsonPropertyValueQuery('dataType', ['VisualItem'], ['exact']),
             ])
           )
         : // else, scope is not work, so just estimate based on dataType
-          cts.estimate(
-            cts.jsonPropertyValueQuery('dataType', getSearchScope(name).types, [
-              'exact',
-            ])
-          );
+          cts.estimate(getDataTypeQuery(getSearchScopeTypes(name)));
   });
 
   const end = new Date();

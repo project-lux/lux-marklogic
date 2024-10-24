@@ -32,7 +32,9 @@ handleRequest(function () {
               // A field would be more precise but does not appear necessary.
               cts.andQuery([
                 getDataTypeQuery('Set'),
-                cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection),
+                cts.notQuery(
+                  cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection)
+                ),
               ]),
             ])
           )

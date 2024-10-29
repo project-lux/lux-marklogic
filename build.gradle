@@ -365,7 +365,7 @@ task importRestApiOptions(type: com.marklogic.gradle.task.MlcpTask) {
   input_file_path = "./src/main/ml-modules/options/lux-options.xml"
   input_file_type = "documents"
   output_uri_replace = ".*/options/lux-options.xml,'/Default/" + project.getProperty("mlAppName") + "-request-group-2/rest-api/options/lux-options.xml'"
-  output_permissions "rest-reader-internal,read,rest-admin-internal,update"
+  output_permissions "rest-reader-internal,read,rest-admin-internal,update," + project.getProperty("mlAppName") + "-deployer,update"
   ssl = useSsl
   args = ["-ssl_protocol", "tlsv1.2"]
 }

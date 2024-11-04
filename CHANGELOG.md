@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.28.0 - 2024-11-04
+
+### Added
+
+### Changed
+
+- Exclude Collection Sets from the stats for Works ([#283](https://github.com/project-lux/lux-marklogic/issues/283)).
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## v1.27.0 - 2024-10-21
 
 ### Added

@@ -86,11 +86,7 @@ const SearchCriteriaProcessor = class {
     sortCriteria,
     valuesOnly
   ) {
-    this.resolvedSearchCriteria =
-      SearchCriteriaProcessor._requireSearchCriteriaJson(
-        scopeName,
-        searchCriteria
-      );
+    this.resolvedSearchCriteria = searchCriteria;
     this.page = page;
     this.pageLength = pageLength;
     this.sortCriteria = sortCriteria;
@@ -116,6 +112,61 @@ const SearchCriteriaProcessor = class {
       }
     } else {
       throw new InvalidSearchRequestError(`search scope not specified.`);
+    }
+
+    // TODO: change this
+    if (scopeName === 'multi') {
+      if (this.resolvedSearchCriteria.OR) {
+        const orArr = searchCriteria.OR;
+        SearchCriteriaProcessor._requireSearchCriteriaArray(orArr);
+        if (orArr.length === 0) {
+          // if OR array is empty, do nothing, we will try to generate with empty criteria which will throw an error
+        } else if (orArr.length === 1) {
+          this.process(
+            orArr[0],
+            scopeName,
+            searchPatternOptions,
+            includeTypeConstraint,
+            page,
+            pageLength,
+            sortCriteria,
+            valuesOnly
+          );
+          // return since we are making a new call to this.process()
+          return;
+        } else {
+          this.scopeName = scopeName;
+          this.ctsQueryStr = `cts.orQuery([${orArr.map(
+            (subCriteria, index, array) => {
+              const { filterResults, facetsAreLikely, synonymsEnabled } =
+                this.requestOptions;
+              const searchCriteriaProcessor = new SearchCriteriaProcessor(
+                filterResults,
+                facetsAreLikely,
+                synonymsEnabled
+              );
+              searchCriteriaProcessor.process(
+                subCriteria,
+                scopeName,
+                searchPatternOptions,
+                includeTypeConstraint,
+                page,
+                pageLength,
+                sortCriteria,
+                valuesOnly
+              );
+              const suffix = index === array.length ? '' : ',';
+              return searchCriteriaProcessor.getCtsQueryStr(false) + suffix;
+            }
+          )}])`;
+          // return since we have set this.ctsQueryStr based on other calls to this.process()
+          return;
+        }
+      } else {
+        throw new InvalidSearchRequestError(
+          `a search with scope 'multi' must contain an 'OR' array`
+        );
+      }
     }
 
     this.ctsQueryStrWithTokens = this.generateQueryFromCriteria(
@@ -737,38 +788,6 @@ const SearchCriteriaProcessor = class {
     throw new InvalidSearchRequestError(
       `array expected but given ${JSON.stringify(searchCriteria)}`
     );
-  }
-
-  // Accept search criteria formats:
-  //
-  //   1. JSON
-  //   2. Stringified JSON
-  //   3. Search string abiding by the LUX-supported subset of ML's search grammar.
-  //
-  static _requireSearchCriteriaJson(scopeName, searchCriteria) {
-    // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
-    if (typeof searchCriteria == 'object') {
-      if (scopeName) {
-        searchCriteria._scope = scopeName;
-      }
-      return searchCriteria;
-    }
-
-    // When search criteria starts with an open curly brace, try to parse as JSON.
-    if (typeof searchCriteria == 'string' && searchCriteria.startsWith('{')) {
-      try {
-        const searchCriteriaJson = JSON.parse(searchCriteria);
-        // Give precedence to the search scope parameter.
-        if (scopeName) {
-          searchCriteriaJson._scope = scopeName;
-        }
-        return searchCriteriaJson;
-      } catch (e) {
-        // Allow to flow through
-      }
-    }
-
-    return this.translateStringGrammarToJSON(scopeName, searchCriteria);
   }
 
   static _tokenizeSearchTermValue(value, leaveAsIs) {

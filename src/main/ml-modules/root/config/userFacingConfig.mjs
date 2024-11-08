@@ -639,8 +639,8 @@ const searchTermText = {
         'Search for Works that are categorized with the specified Concept or Type terms.',
     },
     containsWork: {
-      label: 'Contains Work',
-      helpText: 'Search for Works that contain the specified Work.',
+      label: 'Contains Works',
+      helpText: 'Search for Works that contain the specified Works.',
     },
     createdAt: {
       label: 'Created At',
@@ -699,9 +699,8 @@ const searchTermText = {
         'Enter term(s) to be found within the title or name of the Work. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
     },
     partOfWork: {
-      label: 'Part Of Work',
-      helpText: 
-        'Search for Works that are part of the specified Work.',
+      label: 'Part Of Works',
+      helpText: 'Search for Works that are part of the specified Works.',
     },
     publishedAt: {
       label: 'Published At',

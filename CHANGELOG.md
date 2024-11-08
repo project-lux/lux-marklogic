@@ -7,6 +7,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 - Added Part Of Work and Contains Work search terms to Works ([#234](https://github.com/project-lux/lux-marklogic/issues/234)).
+- Enabled searching and sorting across multiple scopes ([#318](https://github.com/project-lux/lux-marklogic/issues/318)).
 
 ### Changed
 

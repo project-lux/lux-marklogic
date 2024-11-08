@@ -22,6 +22,7 @@
     - [Failed Request / Response Example](#failed-request--response-example-4)
   - [Search](#search)
     - [Successful Request / Response Example](#successful-request--response-example-5)
+    - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
     - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-6)
@@ -662,11 +663,11 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 | Parameter | Example | Description |
 |-----------|---------|-------------|
 | `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using LUX JSON Search Grammar, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept if not require term options.  For example, one may specify the comparator operator using the `_comp` property of terms configured to the `indexedRange` pattern.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The `BOOST` property may be used to provide an array containing two search terms. The first term is used for matching results and the second term will boost the score of results that match the first term.  For additional details on the LUX *String* Search Grammar, see the [Translate endpoint](#translate).|
-| `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
+| `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to the listed scopes, one can use the `multi` scope with an `OR` property to search across multiple scopes. For an example, see the [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example) below.
 | `mayChangeScope` | `true` | **OPTIONAL** - Submit `true` if the endpoint is allowed to change the search scope when the requested search's results estimate is zero yet another search scope's estimate is greater than zero.  Only applicable to search scopes associated with the user interface.  When the search scope is changed, the `metadata.changedScope` response body property value will be `true`.  Regardless, the `metadata.scope` parameter value will always align with the search *performed*.  The selected search scope is based on a user interface order specified in the endpoint.  No other part of the search is adjusted, specifically including the values of the `sort` and `facetNames` parameters.  Endpoint consumers are encouraged to submit `true` for search requests that do not require a specific user interface scope.  Subsequent requests that need to stick to a specific search should submit `false`.  Defaults to `false`. |
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
 | `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100. An error will be thrown if this value is less than 1. |
-| `sort` | `itemProductionDate:asc` | **OPTIONAL** - A comma-delimited list of sort specifications.  Each specification must include the sort binding name and may optionally include the sort's direction.  Use `asc` for ascending and `desc` for descending.  The [Search Info endpoint's](#search-info) `sortBy` response body property lists most of this parameter's accepted values. There are two additional ones: `random` and `relevance`.  When either is used, all other sort options are ignored. Use `random` to apply random scores to the search results; sort direction does not apply to this option. Use `relevance` to sort the search results by their score. For each sort binding name specified in this parameter, the default sort direction is ascending; however, when the parameter is not provided, search results are sorted by `relevance`, from highest score to lowest score (descending). A warning is included for each invalid sort option. |
+| `sort` | `itemProductionDate:asc` | **OPTIONAL** - A comma-delimited list of sort specifications. Including a multi-scope sort specification will override any other sort specification, only the final multi-scope sort in a list will be used.  Each specification must include the sort binding name and may optionally include the sort's direction.  Use `asc` for ascending and `desc` for descending.  The [Search Info endpoint's](#search-info) `sortBy` response body property lists most of this parameter's accepted values. There are two additional ones: `random` and `relevance`.  When either is used, all other sort options are ignored. Use `random` to apply random scores to the search results; sort direction does not apply to this option. Use `relevance` to sort the search results by their score. For each sort binding name specified in this parameter, the default sort direction is ascending; however, when the parameter is not provided, search results are sorted by `relevance`, from highest score to lowest score (descending). A warning is included for each invalid sort option. |
 | `filterResults` | `false` | **OPTIONAL** - Submit `true` to instruct the system to filter the results to ensure there are no false positives.  Filtering is the process of pulling candidate search result documents from disk in order to verify they meet all search criteria.  The process can significantly slow the request and often yields the same results.  Unfiltered search results are calculated using indexes alone --the same as non-semantic facets and estimates.  Unfiltered search results cannot be punctuation- or whitespace-sensitive.  Unfiltered search results cannot be case-sensitive _when_ the criteria is all lowercase (but can be case-sensitive for upper or mixed case).  This endpoint parameter's default is specified by the `filterSearchResults` build property.  Initially, the default will be `true` (filtered) but it is expected to switch to `false` (unfiltered). |
 | `facetsSoon` | `true` | **OPTIONAL** - Submit `true` to indicate one or more facets may be requested in a subsequent request, relatively soon, using the same criteria.  When `true` and the search is performed, search will be asked to do a little more work to speed up the subsequent request to calculate facets.  Use the [Facets endpoint](#facets) for the facet request.  Defaults to `false`. |
 | `synonymsEnabled` | `true` | **OPTIONAL** - Indicate if synonyms are to be included in the search criteria. The default is controlled by the `synonymsEnabled` Gradle property, during deployment. |
@@ -731,6 +732,72 @@ Response Body:
       "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&mayChangeScope=true&page=2&pageLength=20&sort=itemProductionDate%3Adesc",
       "type":"OrderedCollectionPage"
    }
+}
+```
+
+### Successful Multiple Scope Request / Response Example
+
+Scenario: Search for works and items which are part of the set with id 'https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e' and sort them by their archiveSortId
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `q` | `{"OR":[{"_scope":"work","partOf":{"id":"https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e"}},{"_scope":"item","memberOf":{"id":"https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e"}}]}` |
+| `scope` | `multi` |
+| `page` | `1` |
+| `pageLength` | `20` |
+| `sort` | `archiveSortId` |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body:
+
+*Abbreviated content shown below.*
+
+```
+{
+    "@context": "https://linked.art/ns/v1/search.json",
+    "id": "https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=1&pageLength=20&sort=archiveSortId%3Aasc",
+    "type": "OrderedCollectionPage",
+    "partOf": [
+        {
+            "id": "https://lux.collections.yale.edu/api/search-estimate/multi?q=%7B%22OR%22%3A%5B%7B%22partOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D",
+            "type": "OrderedCollection",
+            "label": {
+                "en": [
+                    "Multiple Types"
+                ]
+            },
+            "summary": {
+                "en": [
+                    "Records representing multiple types that match your search."
+                ]
+            },
+            "totalItems": 28
+        }
+    ],
+    "orderedItems": [
+        {
+            "id": "https://lux.collections.yale.edu/data/set/ec1d5400-fb7a-4e18-9721-410c5dfecd43",
+            "type": "Set"
+        },
+        {
+            "id": "https://lux.collections.yale.edu/data/set/e7a2214b-f20f-4c2f-a127-370366307452",
+            "type": "Set"
+        },
+        {
+            "id": "https://lux.collections.yale.edu/data/digital/ce21c5d9-177a-40c3-949e-029632af4d5d",
+            "type": "DigitalObject"
+        },
+        ...more search results
+    ],
+    "next": {
+        "id": "https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=2&pageLength=20&sort=archiveSortId%3Aasc",
+        "type": "OrderedCollectionPage"
+    }
 }
 ```
 

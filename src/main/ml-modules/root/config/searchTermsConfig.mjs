@@ -540,10 +540,17 @@ const SEARCH_TERMS_CONFIG = {
     },
     // Not the correct pattern but avoids getting child name's
     // pattern when there's an ID child term.
-    partOf: {
+    partOfSet: {
       patternName: 'indexedWord',
       indexReferences: ['workPrimaryName'],
       scalarType: 'string',
+    },
+    partOfWork: {
+      patternName: 'hopWithField',
+      predicates: ['crm("P106i_forms_part_of")'],
+      targetScope: 'work',
+      hopInverseName: 'containsWork',
+      indexReferences: ['workPrimaryName'],
     },
     publishedAt: {
       patternName: 'hopWithField',

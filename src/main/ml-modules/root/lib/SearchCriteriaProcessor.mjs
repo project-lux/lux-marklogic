@@ -1,3 +1,4 @@
+import op from '/MarkLogic/optic';
 import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
@@ -114,8 +115,7 @@ const SearchCriteriaProcessor = class {
       throw new InvalidSearchRequestError(`search scope not specified.`);
     }
 
-    // TODO: change this
-    if (scopeName === 'multi') {
+    if (this.requestOptions.scopeName === 'multi') {
       if (this.resolvedSearchCriteria.OR) {
         const orArr = searchCriteria.OR;
         SearchCriteriaProcessor._requireSearchCriteriaArray(orArr);
@@ -242,6 +242,67 @@ const SearchCriteriaProcessor = class {
   }
 
   getSearchResults() {
+    if (this.sortCriteria.hasMultiScopeSortOption()) {
+      return this._getMultiScopeSortResults();
+    } else {
+      return this._getNonSemanticSortResults();
+    }
+  }
+
+  _getMultiScopeSortResults() {
+    const ctsQuery = SearchCriteriaProcessor.evalQueryString(
+      this.getCtsQueryStr(false)
+    );
+
+    const docPlan = op
+      .fromSearch(ctsQuery)
+      .joinDocUri('uri', op.fragmentIdCol('fragmentId'));
+
+    const { order, subSortConfigs } =
+      this.sortCriteria.getMultiScopeSortOption();
+    const subSortPlans = subSortConfigs.map((subSortConfig) =>
+      this._getSubSortPlan(docPlan, subSortConfig)
+    );
+    const unionPlan = subSortPlans.reduce((union, curr) => {
+      if (union === null) {
+        return curr;
+      }
+      return union.union(curr);
+    }, null);
+
+    const results = unionPlan
+      .orderBy(
+        order === 'ascending'
+          ? op.asc(op.col('sortByMe'))
+          : op.desc(op.col('sortByMe'))
+      )
+      .offset((this.page - 1) * this.pageLength)
+      .limit(this.pageLength)
+      .result()
+      .toArray()
+      .map(({ uri }) => ({
+        id: uri,
+        type: cts.doc(uri).xpath('/json/type'),
+      }));
+    return results;
+  }
+
+  _getSubSortPlan(docPlan, subSortConfig) {
+    // can add an if statement here to handle semantic sorts
+    return this._getNonSemanticSubSortPlan(docPlan, subSortConfig);
+  }
+
+  _getNonSemanticSubSortPlan(docPlan, subSortConfig) {
+    const fieldPlan = op.fromLexicons({
+      uri: cts.uriReference(),
+      sortByMe: cts.fieldReference(subSortConfig.indexReference),
+    });
+
+    const subSortPlan = docPlan.joinInner(fieldPlan, op.on('uri', 'uri'));
+    return subSortPlan;
+  }
+
+  _getNonSemanticSortResults() {
     return utils.evalInContentDatabase(this.getCtsQueryStr(true)).toArray()[0];
   }
 
@@ -260,7 +321,7 @@ const SearchCriteriaProcessor = class {
         this.requestOptions.facetsAreLikely === true
           ? '"faceted"'
           : '"unfaceted"',
-        this.sortCriteria.getSortOptions(),
+        this.sortCriteria.getNonSemanticSortOptions(),
       ];
       if (!this.sortCriteria.areScoresRequired()) {
         searchOptionsArr.push('"score-zero"');

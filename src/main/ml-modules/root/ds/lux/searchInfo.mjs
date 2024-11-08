@@ -25,26 +25,38 @@ handleRequest(function () {
       });
   }
 
-  const facetBy = [];
-  Object.keys(FACETS_CONFIG)
+  const facetBy = Object.keys(FACETS_CONFIG)
     .sort()
-    .forEach((name) => {
+    .map((name) => {
       const facetConfig = FACETS_CONFIG[name];
       let searchTermName = facetConfig.searchTermName || name;
       let idFacet = searchTermName.endsWith('Id');
       if (idFacet) {
         searchTermName = searchTermName.substring(0, searchTermName.length - 2);
       }
-      facetBy.push({
+      return {
         name,
         searchTermName,
         idFacet,
-      });
+      };
+    });
+
+  const sortBy = Object.keys(SORT_BINDINGS)
+    .sort()
+    .map((name) => {
+      let type = 'nonSemantic';
+      if (SORT_BINDINGS[name].subSorts) {
+        type = 'multiScope';
+      }
+      return {
+        name,
+        type,
+      };
     });
 
   return {
     searchBy,
     facetBy,
-    sortBy: Object.keys(SORT_BINDINGS).sort(),
+    sortBy,
   };
 });

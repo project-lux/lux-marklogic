@@ -1198,10 +1198,18 @@ Response Body:
     ...more facets
   ],
   "sortBy":[
-    "agentActiveDate",
-    "agentEndDate",
-    "agentStartDate",
-    "anySortName",
+    {
+        "name": "agentActiveDate",
+        "type": "nonSemantic"
+    },
+    {
+        "name": "agentEndDate",
+        "type": "nonSemantic"
+    },
+    {
+        "name": "agentStartDate",
+        "type": "nonSemantic"
+    },
     ...more to sort by
   ]
 }

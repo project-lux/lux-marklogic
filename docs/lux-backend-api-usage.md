@@ -21,26 +21,26 @@
     - [Successful Request / Response Example](#successful-request--response-example-4)
     - [Failed Request / Response Example](#failed-request--response-example-4)
   - [Search](#search)
-    - [Successful Request / Response Example](#successful-request--response-example-5)
+    - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
     - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Search Estimate](#search-estimate)
-    - [Successful Request / Response Example](#successful-request--response-example-6)
+    - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-6)
   - [Search Will Match](#search-will-match)
-    - [Successful Request / Response Example](#successful-request--response-example-7)
+    - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
   - [Search Info](#search-info)
-    - [Successful Request / Response Example](#successful-request--response-example-8)
+    - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-8)
   - [Stats](#stats)
-    - [Successful Request / Response Example](#successful-request--response-example-9)
+    - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-9)
   - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-10)
+    - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-10)
   - [Version Info](#version-info)
-    - [Successful Request / Response Example](#successful-request--response-example-11)
+    - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-11)
 
 # Introduction
@@ -201,8 +201,8 @@ In the context of servicing a single user typing in a field, endpoint consumers 
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `text` | `'kra'` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported.  |
-| `context` | `'item.material'` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
+| `text` | `kra` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported.  |
+| `context` | `item.material` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
 | `fullyHonorContext` | `false` | **OPTIONAL** - Each auto complete context is configured with two constraints: a list of names and a relationship.  For example, the `itemProductionAgentId` context is configured to agent names and requires the agent have produced something.  When this parameter value is `true`, both constraints are applied.  When `false`, the relationship constraint is not applied --faster but will include false positives.  Some of the other parameters only apply when this parameter value is `true`.  Defaults to `true`. |
 | `onlyMatchOnPrimaryNames` | `false` | **OPTIONAL** - When `true`, the list of names to match on is restricted to primary names.  When `false`, the list of names includes both primary and alternative names.  Defaults to `true`. |
 | `onlyReturnPrimaryNames` | `true` | **OPTIONAL** - Primary names are always included in the response, as the `primaryNames` property value, within the `matches` array.  Some of those names may not match the text --but at least one in the associated document did.  Depending on the value of the `onlyMatchOnPrimaryNames` parameter, a document could have been included that only matched on an alternative now.  When `onlyReturnPrimaryNames` is `false`, the `matchingNames` property is also included for each match and contains the names that matched the text.  The `matchingNames` property value can include alternative names when `onlyMatchOnPrimaryNames` is `false`.  `onlyReturnPrimaryNames` defaults to `false`.  This parameter is presently only used when `fullyHonorContext` is `true`. |
@@ -216,7 +216,7 @@ In the context of servicing a single user typing in a field, endpoint consumers 
 
 Implementation choices and restrictions combined with the dataset and certain parameter values could lead to some discrepancies:
 
-1. For performance reasons, candidate names are not filtered by underlying capabilities, leading to the potential of false positives.  For instance, if the consumer specifies `'ben'` as the text to match, qualifying documents _should_ have at least one name that begins with "ben"; however, the system may include results with "ben" anywhere in one of the names.  There is an option to improve this without accepting the full performance penalty.
+1. For performance reasons, candidate names are not filtered by underlying capabilities, leading to the potential of false positives.  For instance, if the consumer specifies `ben` as the text to match, qualifying documents _should_ have at least one name that begins with "ben"; however, the system may include results with "ben" anywhere in one of the names.  There is an option to improve this without accepting the full performance penalty.
 2. Due to a difference in supported options between two native functions, the `matchingNames` property value may omit some names that matched the input.  This may be expected when the system had to ignore punctuation or whitespace in order to make the match.  Stemmed words may also be a factor.
 
 ### Successful Request / Response Example
@@ -227,8 +227,8 @@ Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `text` | `'smith'` |
-| `context` | `'item.producedBy'` |
+| `text` | `smith` |
+| `context` | `item.producedBy` |
 | `fullyHonorContext` | `true` |
 | `onlyMatchOnPrimaryNames` | `false` |
 | `onlyReturnPrimaryNames` | `false` |
@@ -316,8 +316,8 @@ Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `text` | `'be'` |
-| `context` | `'agent.activeAt'` |
+| `text` | `be` |
+| `context` | `agent.activeAt` |
 
 Response Status Code: 400
 
@@ -325,12 +325,12 @@ Response Status Message: "Wildcarded strings must have at least three non-wildca
 
 ```
 {
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"BadRequestError",
-    "message":"Wildcarded strings must have at least three non-wildcard characters before or after the wildcard; 'be*' does not qualify"
-  }
+    "errorResponse": {
+        "statusCode": 400,
+        "status": "Bad Request",
+        "messageCode": "BadRequestError",
+        "message": "Invalid search request: wildcarded strings must have at least three non-wildcard characters before or after the wildcard; 'be*' does not qualify"
+    }
 }
 ```
 
@@ -518,12 +518,12 @@ Response Body:
 
 ```
 {
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"BadRequestError",
-    "message":"Unable to calculate the 'workAboutConceptIdddd' facet: not an available facet."
-  }
+    "errorResponse": {
+        "statusCode": 400,
+        "status": "Bad Request",
+        "messageCode": "BadRequestError",
+        "message": "Unable to calculate the 'workAboutConceptIdddd' facet: not an available facet."
+    }
 }
 ```
 
@@ -641,12 +641,12 @@ Response Status Message: Bad Request
 Response Body:
 ```
 {
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"BadRequestError",
-    "message":"No configuration for the 'relatedToConcept' related list in the 'work' scope."
-  }
+    "errorResponse": {
+        "statusCode": 400,
+        "status": "Bad Request",
+        "messageCode": "BadRequestError",
+        "message": "No configuration for the 'relatedToConcept' related list in the 'work' scope."
+    }
 }
 ```
 
@@ -672,7 +672,7 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 | `facetsSoon` | `true` | **OPTIONAL** - Submit `true` to indicate one or more facets may be requested in a subsequent request, relatively soon, using the same criteria.  When `true` and the search is performed, search will be asked to do a little more work to speed up the subsequent request to calculate facets.  Use the [Facets endpoint](#facets) for the facet request.  Defaults to `false`. |
 | `synonymsEnabled` | `true` | **OPTIONAL** - Indicate if synonyms are to be included in the search criteria. The default is controlled by the `synonymsEnabled` Gradle property, during deployment. |
 
-### Successful Request / Response Example
+### Successful Single Scope Request / Response Example
 
 Scenario: Search for the first three agents matching "ben" and boosted by "franklin". Sort the results by name. Allow the system to change the search scope should there be no results in the requested search scope.
 
@@ -832,7 +832,7 @@ Response Body:
         "statusCode": 400,
         "status": "Bad Request",
         "messageCode": "BadRequestError",
-        "message": "The 'producedFor' term is invalid for the 'item' search scope. Valid choices: carries, classification, depth, dimension, encounteredAt, encounteredBy, encounteredDate, hasDigitalImage, height, id, identifier, iri, isOnline, material, memberOf, name, producedAt, producedBy, producedDate, producedUsing, recordType, similar, text, width"
+        "message": "Invalid search request: the 'producedFor' term is invalid for the 'item' search scope. Valid choices: carries, classification, depth, dimension, encounteredAt, encounteredBy, encounteredDate, hasDigitalImage, height, id, identifier, iri, isOnline, material, memberOf, name, producedAt, producedBy, producedDate, producedUsing, productionInfluencedBy, recordType, similar, subjectOfItem, text, width"
     }
 }
 ```
@@ -914,7 +914,7 @@ Response Body:
         "statusCode": 400,
         "status": "Bad Request",
         "messageCode": "BadRequestError",
-        "message": "Invalid search scope specified: 'agenttt'"
+        "message": "Invalid search request: 'agenttt' is not a valid search scope."
     }
 }
 ```
@@ -1347,7 +1347,7 @@ Response Body:
         "statusCode": 400,
         "status": "Bad Request",
         "messageCode": "BadRequestError",
-        "message": "Unable to parse the search criteria via string grammar: {\"\"}"
+        "message": "Invalid search request: unable to parse criteria {\"\"}"
     }
 }
 ```

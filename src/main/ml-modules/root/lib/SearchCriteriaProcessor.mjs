@@ -245,7 +245,7 @@ const SearchCriteriaProcessor = class {
     if (this.sortCriteria.hasMultiScopeSortOption()) {
       return this._getMultiScopeSortResults();
     } else {
-      return this._getNonSemanticSortResults();
+      return this._getSingleScopeSortResults();
     }
   }
 
@@ -289,10 +289,10 @@ const SearchCriteriaProcessor = class {
 
   _getSubSortPlan(docPlan, subSortConfig) {
     // can add an if statement here to handle semantic sorts
-    return this._getNonSemanticSubSortPlan(docPlan, subSortConfig);
+    return this._getSingleScopeSubSortPlan(docPlan, subSortConfig);
   }
 
-  _getNonSemanticSubSortPlan(docPlan, subSortConfig) {
+  _getSingleScopeSubSortPlan(docPlan, subSortConfig) {
     const fieldPlan = op.fromLexicons({
       uri: cts.uriReference(),
       sortByMe: cts.fieldReference(subSortConfig.indexReference),
@@ -302,7 +302,7 @@ const SearchCriteriaProcessor = class {
     return subSortPlan;
   }
 
-  _getNonSemanticSortResults() {
+  _getSingleScopeSortResults() {
     return utils.evalInContentDatabase(this.getCtsQueryStr(true)).toArray()[0];
   }
 
@@ -321,7 +321,7 @@ const SearchCriteriaProcessor = class {
         this.requestOptions.facetsAreLikely === true
           ? '"faceted"'
           : '"unfaceted"',
-        this.sortCriteria.getNonSemanticSortOptions(),
+        this.sortCriteria.getSingleScopeSortOptions(),
       ];
       if (!this.sortCriteria.areScoresRequired()) {
         searchOptionsArr.push('"score-zero"');

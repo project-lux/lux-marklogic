@@ -12,7 +12,7 @@ const SortCriteria = class {
     this.sortCriteriaStr = sortCriteriaStr;
     this.scoresRequired = DEFAULT; // can switch to a boolean value.
     this.multiScopeSortOption = null;
-    this.nonSemanticSortOptions = [];
+    this.singleScopeSortOptions = [];
     this.warnings = [];
     this._parse();
   }
@@ -31,12 +31,12 @@ const SortCriteria = class {
     }
   }
 
-  getNonSemanticSortOptions() {
-    return this.nonSemanticSortOptions;
+  getSingleScopeSortOptions() {
+    return this.singleScopeSortOptions;
   }
 
-  hasNonSemanticSortOptions() {
-    return this.nonSemanticSortOptions.length > 0;
+  hasSingleScopeSortOptions() {
+    return this.singleScopeSortOptions.length > 0;
   }
 
   getMultiScopeSortOption() {
@@ -67,14 +67,14 @@ const SortCriteria = class {
           sortByName.toLowerCase() == 'random'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.nonSemanticSortOptions = ['"score-random"'];
+          this.singleScopeSortOptions = ['"score-random"'];
           return false;
         } else if (
           utils.isNonEmptyString(sortByName) &&
           sortByName.toLowerCase() == 'relevance'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.nonSemanticSortOptions = [
+          this.singleScopeSortOptions = [
             `cts.scoreOrder('${this._getOrder(
               specifiedOrder,
               'desc' // Matches when there is no sort parameter.
@@ -93,7 +93,7 @@ const SortCriteria = class {
               };
             } else {
               this.conditionallySetScoresRequired(false);
-              this.nonSemanticSortOptions.push(
+              this.singleScopeSortOptions.push(
                 `cts.indexOrder(cts.${sortBinding.indexType}Reference('${
                   sortBinding.indexReference
                 }'),'${this._getOrder(

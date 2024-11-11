@@ -138,6 +138,7 @@ const SearchCriteriaProcessor = class {
           this.scopeName = scopeName;
           this.ctsQueryStr = `cts.orQuery([${orArr.map(
             (subCriteria, index, array) => {
+              const subScope = subCriteria._scope;
               const { filterResults, facetsAreLikely, synonymsEnabled } =
                 this.requestOptions;
               const searchCriteriaProcessor = new SearchCriteriaProcessor(
@@ -145,16 +146,21 @@ const SearchCriteriaProcessor = class {
                 facetsAreLikely,
                 synonymsEnabled
               );
-              searchCriteriaProcessor.process(
-                subCriteria,
-                scopeName,
-                searchPatternOptions,
-                includeTypeConstraint,
-                page,
-                pageLength,
-                sortCriteria,
-                valuesOnly
-              );
+              try {
+                searchCriteriaProcessor.process(
+                  subCriteria,
+                  scopeName,
+                  searchPatternOptions,
+                  includeTypeConstraint,
+                  page,
+                  pageLength,
+                  sortCriteria,
+                  valuesOnly
+                );
+              } catch (e) {
+                e.message = `Error in scope '${subScope}': ${e.message}`;
+                throw e;
+              }
               const suffix = index === array.length - 1 ? '' : ',';
               return searchCriteriaProcessor.getCtsQueryStr(false) + suffix;
             }

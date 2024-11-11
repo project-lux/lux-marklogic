@@ -155,7 +155,7 @@ const SearchCriteriaProcessor = class {
                 sortCriteria,
                 valuesOnly
               );
-              const suffix = index === array.length ? '' : ',';
+              const suffix = index === array.length - 1 ? '' : ',';
               return searchCriteriaProcessor.getCtsQueryStr(false) + suffix;
             }
           )}])`;

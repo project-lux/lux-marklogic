@@ -59,7 +59,6 @@ const SearchCriteriaProcessor = class {
     };
 
     // Given to process()
-    this.searchCriteria;
     this.scopeName;
     this.searchPatternOptions;
     this.includeTypeConstraint; // Patterns can override to false.
@@ -87,7 +86,13 @@ const SearchCriteriaProcessor = class {
     sortCriteria,
     valuesOnly
   ) {
-    this.resolvedSearchCriteria = searchCriteria;
+    this.resolvedSearchCriteria =
+      SearchCriteriaProcessor._requireSearchCriteriaJson(
+        scopeName,
+        searchCriteria
+      );
+    searchCriteria = null; // use this.resolvedSearchCriteria
+
     this.page = page;
     this.pageLength = pageLength;
     this.sortCriteria = sortCriteria;
@@ -114,17 +119,18 @@ const SearchCriteriaProcessor = class {
     } else {
       throw new InvalidSearchRequestError(`search scope not specified.`);
     }
+    scopeName = null; // use this.scopeName (or this.requestOptions.scopeName).
 
-    if (this.requestOptions.scopeName === 'multi') {
+    if (this.scopeName === 'multi') {
       if (this.resolvedSearchCriteria.OR) {
-        const orArr = searchCriteria.OR;
+        const orArr = this.resolvedSearchCriteria.OR;
         SearchCriteriaProcessor._requireSearchCriteriaArray(orArr);
         if (orArr.length === 0) {
           // if OR array is empty, do nothing, we will try to generate with empty criteria which will throw an error
         } else if (orArr.length === 1) {
           this.process(
             orArr[0],
-            scopeName,
+            null, // search criteria must define scope.
             searchPatternOptions,
             includeTypeConstraint,
             page,
@@ -149,7 +155,7 @@ const SearchCriteriaProcessor = class {
               try {
                 searchCriteriaProcessor.process(
                   subCriteria,
-                  scopeName,
+                  null, // search criteria must define scope.
                   searchPatternOptions,
                   includeTypeConstraint,
                   page,
@@ -854,6 +860,41 @@ const SearchCriteriaProcessor = class {
     }
     throw new InvalidSearchRequestError(
       `array expected but given ${JSON.stringify(searchCriteria)}`
+    );
+  }
+
+  // Accept search criteria formats:
+  //
+  //   1. JSON
+  //   2. Stringified JSON
+  //   3. Search string abiding by the LUX-supported subset of ML's search grammar.
+  //
+  static _requireSearchCriteriaJson(scopeName, searchCriteria) {
+    // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
+    if (typeof searchCriteria == 'object') {
+      if (scopeName) {
+        searchCriteria._scope = scopeName;
+      }
+      return searchCriteria;
+    }
+
+    // When search criteria starts with an open curly brace, try to parse as JSON.
+    if (typeof searchCriteria == 'string' && searchCriteria.startsWith('{')) {
+      try {
+        const searchCriteriaJson = JSON.parse(searchCriteria);
+        // Give precedence to the search scope parameter.
+        if (scopeName) {
+          searchCriteriaJson._scope = scopeName;
+        }
+        return searchCriteriaJson;
+      } catch (e) {
+        // Allow to flow through
+      }
+    }
+
+    return SearchCriteriaProcessor.translateStringGrammarToJSON(
+      scopeName,
+      searchCriteria
     );
   }
 

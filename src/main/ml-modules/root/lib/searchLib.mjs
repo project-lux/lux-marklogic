@@ -380,41 +380,6 @@ function _search(
   }
 }
 
-// Accept search criteria formats:
-//
-//   1. JSON
-//   2. Stringified JSON
-//   3. Search string abiding by the LUX-supported subset of ML's search grammar.
-//
-function _requireSearchCriteriaJson(scopeName, searchCriteria) {
-  // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
-  if (typeof searchCriteria == 'object') {
-    if (scopeName) {
-      searchCriteria._scope = scopeName;
-    }
-    return searchCriteria;
-  }
-
-  // When search criteria starts with an open curly brace, try to parse as JSON.
-  if (typeof searchCriteria == 'string' && searchCriteria.startsWith('{')) {
-    try {
-      const searchCriteriaJson = JSON.parse(searchCriteria);
-      // Give precedence to the search scope parameter.
-      if (scopeName) {
-        searchCriteriaJson._scope = scopeName;
-      }
-      return searchCriteriaJson;
-    } catch (e) {
-      // Allow to flow through
-    }
-  }
-
-  return SearchCriteriaProcessor.translateStringGrammarToJSON(
-    scopeName,
-    searchCriteria
-  );
-}
-
 /**
  * Processes the provided search criteria, returning an instance of SearchCriteriaProcessor from which a
  * generated CTS query may be retrieved.  An InternalServerError or InvalidSearchRequestError may be bubbled up from
@@ -439,14 +404,8 @@ function processSearchCriteria({
     facetsAreLikely,
     synonymsEnabled
   );
-
-  const resolvedSearchCriteria = _requireSearchCriteriaJson(
-    searchScope,
-    searchCriteria
-  );
-
   searchCriteriaProcessor.process(
-    resolvedSearchCriteria,
+    searchCriteria,
     searchScope,
     searchPatternOptions,
     includeTypeConstraint,

@@ -60,6 +60,7 @@ const SearchCriteriaProcessor = class {
 
     // Given to process()
     this.scopeName;
+    this.allowMultiScope;
     this.searchPatternOptions;
     this.includeTypeConstraint; // Patterns can override to false.
     this.page;
@@ -79,6 +80,7 @@ const SearchCriteriaProcessor = class {
   process(
     searchCriteria,
     scopeName,
+    allowMultiScope,
     searchPatternOptions,
     includeTypeConstraint,
     page,
@@ -93,6 +95,7 @@ const SearchCriteriaProcessor = class {
       );
     searchCriteria = null; // use this.resolvedSearchCriteria
 
+    this.allowMultiScope = allowMultiScope;
     this.page = page;
     this.pageLength = pageLength;
     this.sortCriteria = sortCriteria;
@@ -122,6 +125,11 @@ const SearchCriteriaProcessor = class {
     scopeName = null; // use this.scopeName (or this.requestOptions.scopeName).
 
     if (this.scopeName === 'multi') {
+      if (!this.allowMultiScope) {
+        throw new InvalidSearchRequestError(
+          `search scope of 'multi' not supported by this operation or level.`
+        );
+      }
       if (this.resolvedSearchCriteria.OR) {
         const orArr = this.resolvedSearchCriteria.OR;
         SearchCriteriaProcessor._requireSearchCriteriaArray(orArr);
@@ -131,6 +139,7 @@ const SearchCriteriaProcessor = class {
           this.process(
             orArr[0],
             null, // search criteria must define scope.
+            false, // reject nested multi scope requests.
             searchPatternOptions,
             includeTypeConstraint,
             page,
@@ -156,6 +165,7 @@ const SearchCriteriaProcessor = class {
                 searchCriteriaProcessor.process(
                   subCriteria,
                   null, // search criteria must define scope.
+                  false, // reject nested multi scope requests.
                   searchPatternOptions,
                   includeTypeConstraint,
                   page,

@@ -33,6 +33,7 @@ import {
 const MAXIMUM_PAGE_LENGTH = 100;
 
 const EMPTY_STRING = '';
+const DEFAULT_ALLOW_MULTI_SCOPE = true;
 const DEFAULT_MAY_CHANGE_SCOPE = false;
 const DEFAULT_INCLUDE_TYPE_CONSTRAINT = true;
 const DEFAULT_PAGE = 1;
@@ -388,6 +389,7 @@ function _search(
 function processSearchCriteria({
   searchCriteria = null,
   searchScope = null,
+  allowMultiScope = DEFAULT_ALLOW_MULTI_SCOPE,
   searchPatternOptions = null,
   includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
   page = DEFAULT_PAGE,
@@ -407,6 +409,7 @@ function processSearchCriteria({
   searchCriteriaProcessor.process(
     searchCriteria,
     searchScope,
+    allowMultiScope,
     searchPatternOptions,
     includeTypeConstraint,
     page,

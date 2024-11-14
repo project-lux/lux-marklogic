@@ -40,6 +40,9 @@ import {
 } from './mlErrorsLib.mjs';
 import * as utils from '../utils/utils.mjs';
 
+// Once supported, we want to stop calculating scores.
+const FROM_SEARCH_OPTIONS = { scoreMethod: 'simple' };
+
 const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 const START_OF_GENERATED_QUERY = `
@@ -150,7 +153,6 @@ const SearchCriteriaProcessor = class {
           // return since we are making a new call to this.process()
           return;
         } else {
-          this.scopeName = scopeName;
           this.ctsQueryStr = `cts.orQuery([${orArr.map(
             (subCriteria, index, array) => {
               const subScope = subCriteria._scope;
@@ -177,11 +179,10 @@ const SearchCriteriaProcessor = class {
                 e.message = `Error in scope '${subScope}': ${e.message}`;
                 throw e;
               }
-              const suffix = index === array.length - 1 ? '' : ',';
-              return searchCriteriaProcessor.getCtsQueryStr(false) + suffix;
+              return searchCriteriaProcessor.getCtsQueryStr(false);
             }
           )}])`;
-          // return since we have set this.ctsQueryStr based on other calls to this.process()
+          // return since we have set this.ctsQueryStr based on other calls to searchCriteriaProcessor.process()
           return;
         }
       } else {
@@ -276,23 +277,35 @@ const SearchCriteriaProcessor = class {
       this.getCtsQueryStr(false)
     );
 
-    const docPlan = op
-      .fromSearch(ctsQuery)
-      .joinDocUri('uri', op.fragmentIdCol('fragmentId'));
-
+    const docPlan = op.fromSearch(
+      ctsQuery,
+      ['fragmentId'],
+      null,
+      FROM_SEARCH_OPTIONS
+    );
     const { order, subSortConfigs } =
       this.sortCriteria.getMultiScopeSortOption();
     const subSortPlans = subSortConfigs.map((subSortConfig) =>
-      this._getSubSortPlan(docPlan, subSortConfig)
+      this._getSubSortPlan(subSortConfig)
     );
-    const unionPlan = subSortPlans.reduce((union, curr) => {
-      if (union === null) {
-        return curr;
-      }
-      return union.union(curr);
-    }, null);
+    const combinedSubSortPlan = subSortPlans.reduce(
+      (combinedPlan, subSortPlan) => {
+        if (combinedPlan === null) {
+          return subSortPlan;
+        } else {
+          return combinedPlan.union(subSortPlan);
+        }
+      },
+      null
+    );
 
-    const results = unionPlan
+    const finalPlan = docPlan.joinLeftOuter(
+      combinedSubSortPlan,
+      op.on('fragmentId', 'fragmentId')
+    );
+
+    const results = finalPlan
+      .joinDocUri(op.col('uri'), op.fragmentIdCol('fragmentId'))
       .orderBy(
         order === 'ascending'
           ? op.asc(op.col('sortByMe'))
@@ -309,19 +322,19 @@ const SearchCriteriaProcessor = class {
     return results;
   }
 
-  _getSubSortPlan(docPlan, subSortConfig) {
+  _getSubSortPlan(subSortConfig) {
     // can add an if statement here to handle semantic sorts
-    return this._getSingleScopeSubSortPlan(docPlan, subSortConfig);
+    return this._getFieldReferencePlan(subSortConfig);
   }
 
-  _getSingleScopeSubSortPlan(docPlan, subSortConfig) {
-    const fieldPlan = op.fromLexicons({
-      uri: cts.uriReference(),
-      sortByMe: cts.fieldReference(subSortConfig.indexReference),
-    });
-
-    const subSortPlan = docPlan.joinInner(fieldPlan, op.on('uri', 'uri'));
-    return subSortPlan;
+  _getFieldReferencePlan(subSortConfig) {
+    return op.fromLexicons(
+      {
+        sortByMe: cts.fieldReference(subSortConfig.indexReference),
+      },
+      null,
+      op.fragmentIdCol('fragmentId')
+    );
   }
 
   _getSingleScopeSortResults() {

@@ -34,6 +34,12 @@ const SEARCH_SCOPES = {
     predicates: ['lux("itemAny")'],
     types: ['DigitalObject', 'HumanMadeObject'],
   },
+  multi: {
+    isUserInterfaceSearchScope: false,
+    fields: [],
+    predicates: [],
+    types: [],
+  },
   place: {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 4,

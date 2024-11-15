@@ -14,6 +14,9 @@ const SORT_BINDINGS = {
     indexReference: 'agentBornStartDateLong',
     defaultOrder: 'asc',
   },
+  archiveSortId: {
+    subSorts: ['itemArchiveSortId', 'workArchiveSortId'],
+  },
   anySortName: {
     indexType: 'field',
     indexReference: 'anySortName',

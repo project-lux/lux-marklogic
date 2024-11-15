@@ -33,6 +33,7 @@ import {
 const MAXIMUM_PAGE_LENGTH = 100;
 
 const EMPTY_STRING = '';
+const DEFAULT_ALLOW_MULTI_SCOPE = true;
 const DEFAULT_MAY_CHANGE_SCOPE = false;
 const DEFAULT_INCLUDE_TYPE_CONSTRAINT = true;
 const DEFAULT_PAGE = 1;
@@ -57,6 +58,7 @@ const SCOPE_LABELS = {
   concept: 'Concepts',
   event: 'Events',
   set: 'Sets',
+  multi: 'Multiple Types',
 };
 const SCOPE_DESCRIPTORS = {
   item: 'physical and digital objects',
@@ -66,6 +68,7 @@ const SCOPE_DESCRIPTORS = {
   concept: 'concepts',
   event: 'events',
   set: 'sets',
+  multi: 'multiple types',
 };
 
 // Public
@@ -386,6 +389,7 @@ function _search(
 function processSearchCriteria({
   searchCriteria = null,
   searchScope = null,
+  allowMultiScope = DEFAULT_ALLOW_MULTI_SCOPE,
   searchPatternOptions = null,
   includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
   page = DEFAULT_PAGE,
@@ -405,6 +409,7 @@ function processSearchCriteria({
   searchCriteriaProcessor.process(
     searchCriteria,
     searchScope,
+    allowMultiScope,
     searchPatternOptions,
     includeTypeConstraint,
     page,

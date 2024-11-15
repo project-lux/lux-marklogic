@@ -1,3 +1,4 @@
+import op from '/MarkLogic/optic';
 import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
@@ -39,6 +40,9 @@ import {
 } from './mlErrorsLib.mjs';
 import * as utils from '../utils/utils.mjs';
 
+// Once supported, we want to stop calculating scores.
+const FROM_SEARCH_OPTIONS = { scoreMethod: 'simple' };
+
 const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
 const START_OF_GENERATED_QUERY = `
@@ -58,8 +62,8 @@ const SearchCriteriaProcessor = class {
     };
 
     // Given to process()
-    this.searchCriteria;
     this.scopeName;
+    this.allowMultiScope;
     this.searchPatternOptions;
     this.includeTypeConstraint; // Patterns can override to false.
     this.page;
@@ -79,6 +83,7 @@ const SearchCriteriaProcessor = class {
   process(
     searchCriteria,
     scopeName,
+    allowMultiScope,
     searchPatternOptions,
     includeTypeConstraint,
     page,
@@ -91,6 +96,9 @@ const SearchCriteriaProcessor = class {
         scopeName,
         searchCriteria
       );
+    searchCriteria = null; // use this.resolvedSearchCriteria
+
+    this.allowMultiScope = allowMultiScope;
     this.page = page;
     this.pageLength = pageLength;
     this.sortCriteria = sortCriteria;
@@ -116,6 +124,72 @@ const SearchCriteriaProcessor = class {
       }
     } else {
       throw new InvalidSearchRequestError(`search scope not specified.`);
+    }
+    scopeName = null; // use this.scopeName (or this.requestOptions.scopeName).
+
+    if (this.scopeName === 'multi') {
+      if (!this.allowMultiScope) {
+        throw new InvalidSearchRequestError(
+          `search scope of 'multi' not supported by this operation or level.`
+        );
+      }
+      if (this.resolvedSearchCriteria.OR) {
+        const orArr = this.resolvedSearchCriteria.OR;
+        SearchCriteriaProcessor._requireSearchCriteriaArray(orArr);
+        if (orArr.length === 0) {
+          // if OR array is empty, do nothing, we will try to generate with empty criteria which will throw an error
+        } else if (orArr.length === 1) {
+          this.process(
+            orArr[0],
+            null, // search criteria must define scope.
+            false, // reject nested multi scope requests.
+            searchPatternOptions,
+            includeTypeConstraint,
+            page,
+            pageLength,
+            sortCriteria,
+            valuesOnly
+          );
+          // return since we are making a new call to this.process()
+          return;
+        } else {
+          this.ctsQueryStr = `cts.orQuery([${orArr.map(
+            (subCriteria, index, array) => {
+              const subScope = subCriteria._scope;
+              const { filterResults, facetsAreLikely, synonymsEnabled } =
+                this.requestOptions;
+              const searchCriteriaProcessor = new SearchCriteriaProcessor(
+                filterResults,
+                facetsAreLikely,
+                synonymsEnabled
+              );
+              try {
+                searchCriteriaProcessor.process(
+                  subCriteria,
+                  null, // search criteria must define scope.
+                  false, // reject nested multi scope requests.
+                  searchPatternOptions,
+                  includeTypeConstraint,
+                  page,
+                  pageLength,
+                  sortCriteria,
+                  valuesOnly
+                );
+              } catch (e) {
+                e.message = `Error in scope '${subScope}': ${e.message}`;
+                throw e;
+              }
+              return searchCriteriaProcessor.getCtsQueryStr(false);
+            }
+          )}])`;
+          // return since we have set this.ctsQueryStr based on other calls to searchCriteriaProcessor.process()
+          return;
+        }
+      } else {
+        throw new InvalidSearchRequestError(
+          `a search with scope 'multi' must contain an 'OR' array`
+        );
+      }
     }
 
     this.ctsQueryStrWithTokens = this.generateQueryFromCriteria(
@@ -191,6 +265,79 @@ const SearchCriteriaProcessor = class {
   }
 
   getSearchResults() {
+    if (this.sortCriteria.hasMultiScopeSortOption()) {
+      return this._getMultiScopeSortResults();
+    } else {
+      return this._getSingleScopeSortResults();
+    }
+  }
+
+  _getMultiScopeSortResults() {
+    const ctsQuery = SearchCriteriaProcessor.evalQueryString(
+      this.getCtsQueryStr(false)
+    );
+
+    const docPlan = op.fromSearch(
+      ctsQuery,
+      ['fragmentId'],
+      null,
+      FROM_SEARCH_OPTIONS
+    );
+    const { order, subSortConfigs } =
+      this.sortCriteria.getMultiScopeSortOption();
+    const subSortPlans = subSortConfigs.map((subSortConfig) =>
+      this._getSubSortPlan(subSortConfig)
+    );
+    const combinedSubSortPlan = subSortPlans.reduce(
+      (combinedPlan, subSortPlan) => {
+        if (combinedPlan === null) {
+          return subSortPlan;
+        } else {
+          return combinedPlan.union(subSortPlan);
+        }
+      },
+      null
+    );
+
+    const finalPlan = docPlan.joinLeftOuter(
+      combinedSubSortPlan,
+      op.on('fragmentId', 'fragmentId')
+    );
+
+    const results = finalPlan
+      .joinDocUri(op.col('uri'), op.fragmentIdCol('fragmentId'))
+      .orderBy(
+        order === 'ascending'
+          ? op.asc(op.col('sortByMe'))
+          : op.desc(op.col('sortByMe'))
+      )
+      .offset((this.page - 1) * this.pageLength)
+      .limit(this.pageLength)
+      .result()
+      .toArray()
+      .map(({ uri }) => ({
+        id: uri,
+        type: cts.doc(uri).xpath('/json/type'),
+      }));
+    return results;
+  }
+
+  _getSubSortPlan(subSortConfig) {
+    // can add an if statement here to handle semantic sorts
+    return this._getFieldReferencePlan(subSortConfig);
+  }
+
+  _getFieldReferencePlan(subSortConfig) {
+    return op.fromLexicons(
+      {
+        sortByMe: cts.fieldReference(subSortConfig.indexReference),
+      },
+      null,
+      op.fragmentIdCol('fragmentId')
+    );
+  }
+
+  _getSingleScopeSortResults() {
     return utils.evalInContentDatabase(this.getCtsQueryStr(true)).toArray()[0];
   }
 
@@ -209,7 +356,7 @@ const SearchCriteriaProcessor = class {
         this.requestOptions.facetsAreLikely === true
           ? '"faceted"'
           : '"unfaceted"',
-        this.sortCriteria.getSortOptions(),
+        this.sortCriteria.getSingleScopeSortOptions(),
       ];
       if (!this.sortCriteria.areScoresRequired()) {
         searchOptionsArr.push('"score-zero"');
@@ -768,7 +915,10 @@ const SearchCriteriaProcessor = class {
       }
     }
 
-    return this.translateStringGrammarToJSON(scopeName, searchCriteria);
+    return SearchCriteriaProcessor.translateStringGrammarToJSON(
+      scopeName,
+      searchCriteria
+    );
   }
 
   static _tokenizeSearchTermValue(value, leaveAsIs) {

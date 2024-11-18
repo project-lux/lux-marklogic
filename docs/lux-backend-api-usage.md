@@ -1081,10 +1081,10 @@ Response Body:
 
 The `searchInfo` endpoint provides consumers:
 
-1. A complete list of search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.
+1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
 2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
 3. A list of facets and their associated search term names.
-4. A list of sort bindings implemented with range indexes.  As detailed in the [Search endpoint](#search)'s documentation, additional sort parameter values include `random` and `relevance`.
+4. A list of sort bindings implemented with range indexes.  Most have a type of `singleScope`.  `archiveSortId` is a `multiScope` example; for searches of both Items and Works, it is able to sort by a combined list of Item and Work sort IDs.  As detailed in the [Search endpoint](#search)'s documentation, additional sort parameter values include `random` and `relevance`.
 
 Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
 
@@ -1200,15 +1200,15 @@ Response Body:
   "sortBy":[
     {
         "name": "agentActiveDate",
-        "type": "nonSemantic"
+        "type": "singleScope"
     },
     {
         "name": "agentEndDate",
-        "type": "nonSemantic"
+        "type": "singleScope"
     },
     {
         "name": "agentStartDate",
-        "type": "nonSemantic"
+        "type": "singleScope"
     },
     ...more to sort by
   ]

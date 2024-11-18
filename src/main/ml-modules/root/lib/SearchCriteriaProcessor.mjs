@@ -965,6 +965,10 @@ const SearchCriteriaProcessor = class {
   }
 
   static _adjustSearchString(givenQueryString) {
+    const spaceOrStringRegex = new RegExp('[\\s"]+');
+    if (!spaceOrStringRegex.test(givenQueryString)) {
+      return `"${givenQueryString}"`;
+    }
     // Find all operators within the search string.  These are used later.
     const foundOperators = SEARCH_GRAMMAR_OPERATORS.filter((op) => {
       let re = new RegExp(`\\s${op}\\s`, 'i');

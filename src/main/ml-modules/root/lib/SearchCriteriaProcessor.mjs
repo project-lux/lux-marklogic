@@ -965,6 +965,9 @@ const SearchCriteriaProcessor = class {
   }
 
   static _adjustSearchString(givenQueryString) {
+    // if a string doesn't contain any spaces or quotes, surround it in quotes
+    // this helps users search for identifiers without quoting them
+    // e.g. ils:yul:mfhd:8752038
     const spaceOrStringRegex = new RegExp('[\\s"]+');
     if (!spaceOrStringRegex.test(givenQueryString)) {
       return `"${givenQueryString}"`;

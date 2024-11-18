@@ -6,6 +6,18 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.29.0 - 2024-11-18
+
+### Added
+
 - Added Part Of Work and Contains Work search terms to Works ([#234](https://github.com/project-lux/lux-marklogic/issues/234)).
 - Enabled searching and sorting across multiple scopes ([#318](https://github.com/project-lux/lux-marklogic/issues/318)).
 - Enable searching for identifiers without quoting them ([#272](https://github.com/project-lux/lux-marklogic/issues/272)).

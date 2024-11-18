@@ -61,6 +61,7 @@ function getFacet({
       ? processSearchCriteria({
           searchCriteria,
           searchScope,
+          allowMultiScope: false,
           // The filterResults parameter is used elsewhere, specific to semantic facet requests.
           filterResults: false,
         })

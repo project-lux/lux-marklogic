@@ -163,6 +163,7 @@ function getRelatedList({
           uri
         ),
         searchScope: relatedListConfig.targetScope,
+        allowMultiScope: false,
         searchPatternOptions,
         includeTypeConstraint,
         valuesOnly,
@@ -557,6 +558,7 @@ function getRelatedListQuery(
       searchTerm.getValue()
     ),
     searchScope: relatedListConfig.targetScope,
+    allowMultiScope: false,
     searchPatternOptions: relatedListSearchPatternOptions,
     includeTypeConstraint,
     filterResults: requestOptions.filterResults,

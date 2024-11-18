@@ -94,6 +94,7 @@ const SearchCriteriaProcessor = class {
     includeTypeConstraint,
     page,
     pageLength,
+    pageWith,
     sortCriteria,
     valuesOnly
   ) {
@@ -153,6 +154,7 @@ const SearchCriteriaProcessor = class {
             includeTypeConstraint,
             page,
             pageLength,
+            pageWith,
             sortCriteria,
             valuesOnly
           );
@@ -178,6 +180,7 @@ const SearchCriteriaProcessor = class {
                   includeTypeConstraint,
                   page,
                   pageLength,
+                  pageWith,
                   sortCriteria,
                   valuesOnly
                 );

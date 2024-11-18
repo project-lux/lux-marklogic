@@ -78,6 +78,7 @@ function search({
   mayChangeScope = DEFAULT_MAY_CHANGE_SCOPE,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
+  pageWith = null,
   requestContext = DEFAULT_REQUEST_CONTEXT,
   mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
   mayEstimate = DEFAULT_MAY_ESTIMATE,
@@ -94,6 +95,7 @@ function search({
       mayChangeScope,
       page,
       pageLength,
+      pageWith,
       requestContext,
       mayExceedMaximumPageLength,
       mayEstimate,
@@ -115,6 +117,7 @@ function _search(
     mayChangeScope = DEFAULT_MAY_CHANGE_SCOPE,
     page = DEFAULT_PAGE,
     pageLength = DEFAULT_PAGE_LENGTH,
+    pageWith = null,
     requestContext = DEFAULT_REQUEST_CONTEXT,
     mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
     mayEstimate = DEFAULT_MAY_ESTIMATE,
@@ -178,6 +181,7 @@ function _search(
       searchScope: resolvedSearchScope,
       page,
       pageLength,
+      pageWith,
       sortCriteria,
       filterResults,
       synonymsEnabled,
@@ -394,6 +398,7 @@ function processSearchCriteria({
   includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
+  pageWith = null,
   sortCriteria = new SortCriteria(EMPTY_STRING),
   filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
   synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
@@ -414,6 +419,7 @@ function processSearchCriteria({
     includeTypeConstraint,
     page,
     pageLength,
+    pageWith,
     sortCriteria,
     valuesOnly
   );

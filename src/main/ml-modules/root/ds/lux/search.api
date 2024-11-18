@@ -26,6 +26,11 @@
       "nullable": true
     },
     {
+      "name": "pageWith",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
       "name": "sort",
       "datatype": "string",
       "nullable": true

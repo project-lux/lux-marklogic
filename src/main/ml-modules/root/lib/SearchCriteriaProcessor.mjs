@@ -965,13 +965,6 @@ const SearchCriteriaProcessor = class {
   }
 
   static _adjustSearchString(givenQueryString) {
-    // if a string doesn't contain any spaces or quotes, surround it in quotes
-    // this helps users search for identifiers without quoting them
-    // e.g. ils:yul:mfhd:8752038
-    const spaceOrStringRegex = new RegExp('[\\s"]+');
-    if (!spaceOrStringRegex.test(givenQueryString)) {
-      return `"${givenQueryString}"`;
-    }
     // Find all operators within the search string.  These are used later.
     const foundOperators = SEARCH_GRAMMAR_OPERATORS.filter((op) => {
       let re = new RegExp(`\\s${op}\\s`, 'i');
@@ -1001,7 +994,17 @@ const SearchCriteriaProcessor = class {
         // Until we support NEAR, lowercase NEAR to avoid search returning an error that it is not supported.
         piece = piece.replace(REG_EXP_NEAR_OPERATOR, '$1near$2');
 
-        adjustedSearchString += piece;
+        // Tokenize once more to perform term-level adjustments.
+        adjustedSearchString += piece
+          .split(/\s/)
+          .map((term) => {
+            // Terms containing more than one colon (e.g., ils:yul:mfhd:8752038) will not get past cts.parse
+            // unless quoted.  We cannot quote every term as that could change the meaning of the query
+            // (e.g., AND vs "AND").  If we ever want to support the string grammar's colon operator, this
+            // logic will need to be refined.
+            return term.includes(':') ? `"${term}"` : term;
+          })
+          .join(' ');
       } else {
         // Odd pieces are quoted strings, which happens to be align with the requirement to not stem a *word* that is quoted.
         // Note that this is later ignored when the keyword search options do not apply, including all search tags configured

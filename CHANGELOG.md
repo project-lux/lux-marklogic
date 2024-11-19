@@ -14,6 +14,19 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.29.1 - 2024-11-19
+
+### Added
+
+### Changed
+- Modified logic for quoting terms with colons ([#272](https://github.com/project-lux/lux-marklogic/issues/272)).
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## v1.29.0 - 2024-11-18
 
 ### Added

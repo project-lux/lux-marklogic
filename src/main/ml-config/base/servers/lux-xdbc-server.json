@@ -2,6 +2,7 @@
   "server-name": "%%mlAppName%%-xdbc",
   "group-name": "Default",
   "server-type": "xdbc",
+  "enabled": "true",
   "root": "/",
   "port": %%mlXdbcPort%%,
   "content-database": "%%DATABASE%%",

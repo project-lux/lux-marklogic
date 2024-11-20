@@ -1,6 +1,7 @@
 {
   "server-name": "%%mlAppName%%-request-group-1",
   "server-type": "http",
+  "enabled": "true",
   "root": "/",
   "port": %%mlRestPortGroup1%%,
   "content-database": "%%DATABASE%%",

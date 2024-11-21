@@ -33,6 +33,7 @@ import {
   REG_EXP_NEAR_OPERATOR,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_NAME_KEYWORD,
+  SEMANTIC_SORT_TIMEOUT,
 } from './appConstants.mjs';
 import {
   InternalServerError,
@@ -340,6 +341,7 @@ const SearchCriteriaProcessor = class {
   }
 
   _getSemanticSortResults() {
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
     // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
     // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
     // For now, this defaults to true. Feel free to parameterize if desired.

@@ -1,0 +1,21 @@
+{
+  "database-name": "Security",
+  "database-backup": [
+    {
+      "backup-enabled": %%backupEnabled%%,
+      "backup-directory": "%%backupBasePath%%/Security",
+      "backup-type": "daily",
+      "backup-period": 1,
+      "backup-start-time": "04:45:00",
+      "max-backups": 7,
+      "backup-security-database": false,
+      "backup-schemas-database": false,
+      "backup-triggers-database": false,
+      "include-replicas": false,
+      "incremental-backup": false,
+      "journal-archiving": false,
+      "journal-archive-path": "",
+      "journal-archive-lag-limit": 15
+    }
+  ]
+}

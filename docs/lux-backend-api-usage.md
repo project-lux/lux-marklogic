@@ -66,44 +66,18 @@ Node.js and Java interfaces may be generated from MarkLogic Data Services.  LUX'
 3. Once those packages are installed, run `gulp proxygen`.
 4. Node.js code may now use the generated interfaces.
 
-Usage example that presumes an Express.JS context:
+LUX's Middle Tier implementation:
 
-```javascript
-const router = express.Router();
+1. [Proxy generation](https://github.com/project-lux/lux-middletier/blob/main/gulpfile.js)
+2. [DatabaseClient initialization and data service consumption](https://github.com/project-lux/lux-middletier/blob/main/app/app.js)
 
-const mlApi = require('../utils/mlApi.js');
-const client = new mlApi().getMarkLogicClient();
+The generated data service proxies require an instance of the `DatabaseClient`.  A `DatabaseClient` instance may be created using the MarkLogic Node.js Client API.  API info:
 
-const Lux = require('../lib/lux.js');
-const luxInstance = Lux.on(client);
-
-router.get(
-  '/api/document',
-  passport.authenticate('jwt-user', {
-    session: false,
-  }),
-  function (req, res, next) {
-    luxInstance
-	  .item(req.query.uri, req.query.profile, req.query.lang)
-	  .then((doc) => {
-	    res.send(doc);
-	  })
-	  .catch((e) => {
-	    errors.handleError(req, res, e);
-	  });
-  }
-);
-
-module.exports = router;
-```
-
-More:
-
-* Middle tier's package.json defines the version of the MarkLogic Node.js module it uses.
-* MarkLogic Node.js module in npm repo: https://www.npmjs.com/package/marklogic
-* MarkLogic Node.js module source repo: https://github.com/marklogic/node-client-api
-* MarkLogic Node.js Client API documentation: https://docs.marklogic.com/jsdoc/index.html
-* MarkLogic Node.js Application Developer's Guide: https://docs.marklogic.com/guide/node-dev
+* Gain access to the API by adding `marklogic` as a dependency in package.json.
+* npm repo: https://www.npmjs.com/package/marklogic
+* Module source repo: https://github.com/marklogic/node-client-api
+* API documentation: https://docs.marklogic.com/jsdoc/index.html
+* Application Developer's Guide: https://docs.marklogic.com/guide/node-dev
 * Like Java better?  Check out https://docs.marklogic.com/guide/java/DataServices
 
 *Note to backend endpoint developers: generated Data Service interfaces do not play nicely with hyphens in the Data Service file names.  Use camelCase instead.*

@@ -44,9 +44,16 @@ handleRequest(function () {
   const sortBy = Object.keys(SORT_BINDINGS)
     .sort()
     .map((name) => {
+      let type = 'nonSemantic';
+      if (SORT_BINDINGS[name].subSorts) {
+        type = 'multiScope';
+      }
+      if (SORT_BINDINGS[name].predicate) {
+        type = 'semantic';
+      }
       return {
         name,
-        type: SORT_BINDINGS[name].subSorts ? 'multiScope' : 'singleScope',
+        type,
       };
     });
 

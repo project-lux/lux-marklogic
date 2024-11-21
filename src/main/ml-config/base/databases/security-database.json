@@ -6,7 +6,7 @@
       "backup-directory": "%%backupBasePath%%/Security",
       "backup-type": "daily",
       "backup-period": 1,
-      "backup-start-time": "11:50:00",
+      "backup-start-time": "05:00:00",
       "max-backups": 1,
       "backup-security-database": false,
       "backup-schemas-database": false,

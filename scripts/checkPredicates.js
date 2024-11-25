@@ -18,6 +18,7 @@ import {
   getSearchScopePredicates,
 } from '/lib/searchScope';
 import { getSearchTermsConfig } from '/config/searchTermsConfig';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
 import { START_OF_GENERATED_QUERY as prefixes } from '/lib/SearchCriteriaProcessor';
 import * as utils from '/utils/utils';
 
@@ -118,6 +119,15 @@ const checkPredicates = () => {
     getSearchScopePredicates(scopeName).forEach((predicate) => {
       checkPredicate(findings, scopeName, null, resolvePredicate(predicate));
     });
+  });
+
+  // Add in predicates used by sort.
+  Object.keys(SORT_BINDINGS).forEach((sortBindingName) => {
+    const sortBinding = SORT_BINDINGS[sortBindingName];
+    if (sortBinding.predicate) {
+      const scopeName = utils.upToFirstUpperCaseCharacter(sortBindingName);
+      checkPredicate(findings, scopeName, null, sortBinding.predicate);
+    }
   });
 
   return utils.sortObj(findings);

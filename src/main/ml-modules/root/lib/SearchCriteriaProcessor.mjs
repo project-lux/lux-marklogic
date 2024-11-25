@@ -30,6 +30,11 @@ import {
   isSearchScopeName,
 } from './searchScope.mjs';
 import {
+  SORT_TYPE_MULTI_SCOPE,
+  SORT_TYPE_NON_SEMANTIC,
+  SORT_TYPE_SEMANTIC,
+} from './SortCriteria.mjs';
+import {
   REG_EXP_NEAR_OPERATOR,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_NAME_KEYWORD,
@@ -266,9 +271,12 @@ const SearchCriteriaProcessor = class {
   }
 
   getSearchResults() {
-    if (this.sortCriteria.hasMultiScopeSortOption()) {
+    const sortType = SearchCriteriaProcessor.getSortTypeFromSortCriteria(
+      this.sortCriteria
+    );
+    if (SORT_TYPE_MULTI_SCOPE === sortType) {
       return this._getMultiScopeSortResults();
-    } else if (this.sortCriteria.hasSemanticSortOption()) {
+    } else if (SORT_TYPE_SEMANTIC === sortType) {
       return this._getSemanticSortResults();
     } else {
       return this._getNonSemanticSortResults();
@@ -1153,6 +1161,29 @@ const SearchCriteriaProcessor = class {
       }
     }
     return searchCriteriaJson;
+  }
+
+  // Single definition of which sort type gets precedence.
+  static getSortType(isMultiScope, isSemantic) {
+    let sortType = SORT_TYPE_NON_SEMANTIC;
+    if (isMultiScope) {
+      sortType = SORT_TYPE_MULTI_SCOPE;
+    } else if (isSemantic) {
+      sortType = SORT_TYPE_SEMANTIC;
+    }
+    return sortType;
+  }
+
+  static getSortTypeFromSortBinding(sortBinding) {
+    const isMultiScope = sortBinding.subSorts != null;
+    const isSemantic = sortBinding.predicate != null;
+    return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
+  }
+
+  static getSortTypeFromSortCriteria(sortCriteria) {
+    const isMultiScope = sortCriteria.hasMultiScopeSortOption();
+    const isSemantic = sortCriteria.hasSemanticSortOption();
+    return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
   }
 
   // Examples input includes cts.*Query() and cts.*Values().  The point in using this is to ensure

@@ -3,6 +3,10 @@ import * as utils from '../utils/utils.mjs';
 
 const DEFAULT = 'default';
 
+const SORT_TYPE_MULTI_SCOPE = 'multi';
+const SORT_TYPE_SEMANTIC = 'semantic';
+const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';
+
 const SortCriteria = class {
   // Excepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
@@ -156,4 +160,9 @@ const SortCriteria = class {
   }
 };
 
-export { SortCriteria };
+export {
+  SortCriteria,
+  SORT_TYPE_MULTI_SCOPE,
+  SORT_TYPE_NON_SEMANTIC,
+  SORT_TYPE_SEMANTIC,
+};

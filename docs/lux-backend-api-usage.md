@@ -1058,7 +1058,9 @@ The `searchInfo` endpoint provides consumers:
 1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
 2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
 3. A list of facets and their associated search term names.
-4. A list of sort bindings implemented with range indexes.  Most have a type of `nonSemantic`, some have a type of `semantic`.  `archiveSortId` is a `multiScope` example; for searches of both Items and Works, it is able to sort by a combined list of Item and Work sort IDs.  As detailed in the [Search endpoint](#search)'s documentation, additional sort parameter values include `random` and `relevance`.
+4. A list of sort bindings implemented with range indexes or semantically related data.  These are in addition to the `random` and `relevance` sort options.  For each binding, this endpoint will specify the `name` to use in the [Search endpoint](#search)'s `sort` parameter as well as the binding's `type`.  There are a couple instances when the sort binding type becomes important to the endpoint consumer:
+    * When the search scope is `multi`, one of the `multiScope` sort bindings should be used to sort the results.  For example, when searching for Items and Works, `archiveSortId` may be used to sort the results.
+    * When specifying multiple sort bindings in a search request, at which point one may refer to [Search endpoint](#search)'s `sort` parameter documentation for precedence.
 
 Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
 

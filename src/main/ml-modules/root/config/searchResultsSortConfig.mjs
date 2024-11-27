@@ -1,7 +1,18 @@
+import op from '/MarkLogic/optic';
+const crm = op.prefixer('http://www.cidoc-crm.org/cidoc-crm/');
+const la = op.prefixer('https://linked.art/ns/terms/');
+const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
+const skos = op.prefixer('http://www.w3.org/2004/02/skos/core#');
+
 const SORT_BINDINGS = {
   agentActiveDate: {
     indexType: 'field',
     indexReference: 'agentActiveStartDateLong',
+    defaultOrder: 'asc',
+  },
+  agentClassificationConceptName: {
+    predicate: lux('agentClassifiedAs'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   agentEndDate: {
@@ -9,9 +20,34 @@ const SORT_BINDINGS = {
     indexReference: 'agentDiedStartDateLong',
     defaultOrder: 'asc',
   },
+  agentEndPlaceName: {
+    predicate: lux('placeOfEnding'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  agentGenderConceptName: {
+    predicate: lux('agentGender'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  agentOccupationConceptName: {
+    predicate: lux('agentOccupation'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  agentNationalityConceptName: {
+    predicate: lux('agentNationality'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   agentStartDate: {
     indexType: 'field',
     indexReference: 'agentBornStartDateLong',
+    defaultOrder: 'asc',
+  },
+  agentStartPlaceName: {
+    predicate: lux('placeOfBeginning'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   archiveSortId: {
@@ -37,6 +73,26 @@ const SORT_BINDINGS = {
     indexReference: 'anySortNameZh',
     defaultOrder: 'asc',
   },
+  conceptClassificationConceptName: {
+    predicate: lux('conceptClassifiedAs'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  eventCarriedOutByAgentName: {
+    predicate: lux('eventCarriedOutBy'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  eventClassificationConceptName: {
+    predicate: lux('eventClassifiedAs'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  eventTookPlaceAtPlaceName: {
+    predicate: lux('eventTookPlaceAt'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   eventStartDate: {
     indexType: 'field',
     indexReference: 'eventInitiatedStartDateLong',
@@ -50,6 +106,11 @@ const SORT_BINDINGS = {
   itemArchiveSortId: {
     indexType: 'field',
     indexReference: 'itemArchiveSortId',
+    defaultOrder: 'asc',
+  },
+  itemClassificationConceptName: {
+    predicate: lux('itemClassifiedAs'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemDepthDimensionValue: {
@@ -67,9 +128,39 @@ const SORT_BINDINGS = {
     indexReference: 'itemHeightDimensionValue',
     defaultOrder: 'asc',
   },
+  itemEncounterAgentName: {
+    predicate: lux('agentOfEncounter'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  itemEncounterPlaceName: {
+    predicate: lux('placeOfEncounter'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   itemEncounteredDate: {
     indexType: 'field',
     indexReference: 'itemEncounteredStartDateLong',
+    defaultOrder: 'asc',
+  },
+  itemMaterialConceptName: {
+    predicate: crm('P45_consists_of'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  itemProductionAgentName: {
+    predicate: lux('agentOfProduction'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  itemProductionInfluencedByAgentName: {
+    predicate: lux('agentInfluencedProduction'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  itemProductionPlaceName: {
+    predicate: lux('placeOfProduction'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemProductionDate: {
@@ -77,9 +168,19 @@ const SORT_BINDINGS = {
     indexReference: 'itemProductionStartDateLong',
     defaultOrder: 'asc',
   },
+  itemTechniqueConceptName: {
+    predicate: lux('techniqueOfProduction'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   itemWidthDimensionValue: {
     indexType: 'field',
     indexReference: 'itemWidthDimensionValue',
+    defaultOrder: 'asc',
+  },
+  placeClassificationConceptName: {
+    predicate: lux('placeClassifiedAs'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   workArchiveSortId: {
@@ -87,14 +188,34 @@ const SORT_BINDINGS = {
     indexReference: 'workArchiveSortId',
     defaultOrder: 'asc',
   },
+  workCreationAgentName: {
+    predicate: lux('agentOfCreation'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   workCreationDate: {
     indexType: 'field',
     indexReference: 'workCreationStartDateLong',
     defaultOrder: 'asc',
   },
+  workClassificationConceptName: {
+    predicate: lux('workClassifiedAs'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   workPublicationDate: {
     indexType: 'field',
     indexReference: 'workPublicationStartDateLong',
+    defaultOrder: 'asc',
+  },
+  workPublicationAgentName: {
+    predicate: lux('agentOfPublication'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  workPublicationPlaceName: {
+    predicate: lux('placeOfPublication'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
 };

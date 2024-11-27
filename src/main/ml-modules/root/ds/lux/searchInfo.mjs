@@ -2,6 +2,7 @@ import { handleRequest } from '../../lib/requestHandleLib.mjs';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
+import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
 import { SearchTermConfig } from '../../lib/SearchTermConfig.mjs';
 handleRequest(function () {
   const searchTermsConfig = getSearchTermsConfig();
@@ -46,7 +47,9 @@ handleRequest(function () {
     .map((name) => {
       return {
         name,
-        type: SORT_BINDINGS[name].subSorts ? 'multiScope' : 'singleScope',
+        type: SearchCriteriaProcessor.getSortTypeFromSortBinding(
+          SORT_BINDINGS[name]
+        ),
       };
     });
 

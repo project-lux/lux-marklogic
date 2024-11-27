@@ -149,7 +149,7 @@ const FACETS_CONFIG = {
   workIdentifier: { indexReference: 'workIdentifier' },
   workIsOnline: { indexReference: 'workIsOnlineBoolean' },
   workLanguageId: { indexReference: 'workLanguageId' },
-  workPartOfId: { indexReference: 'workPartOfId' },
+  workPartOfId: { indexReference: 'workPartOfId', searchTermName: 'partOfSet' },
   workPublicationAgentId: {
     indexReference: 'workPublicationAgentId',
     searchTermName: 'publishedById',

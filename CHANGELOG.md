@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.29.2 - 2024-11-27
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed Part of Set search term for Works, which was modified while creating Part of Work search term ([#234](https://github.com/project-lux/lux-marklogic/issues/234)).
+
+### Security
+
 ## v1.29.1 - 2024-11-19
 
 ### Added

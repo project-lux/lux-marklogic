@@ -12,7 +12,7 @@
  * this, we should be able to use this technique to programmatically
  * denote which triple searches require additional scrutiny.
  *
- * Usage: Set term2Types to the return of getRecordTypesByPredicates.js,
+ * Usage: Set term2Types to the return of getRecordTypesByRelatedListSearchesInput.js,
  * then run.
  */
 'use strict';
@@ -27,7 +27,7 @@ const addSearchScopeToTypeLabel = true;
 
 const searchTermsConfig = getSearchTermsConfig();
 
-// Run getRecordTypesByPredicates.js and set term2Types to its return.
+// Run getRecordTypesByRelatedListSearchesInput.js and set term2Types to its return.
 const term2Types = {};
 
 const getScopeFromType = (type) => {

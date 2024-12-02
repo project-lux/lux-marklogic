@@ -30,6 +30,11 @@ const SORT_BINDINGS = {
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
+  agentHasDigitalImage: {
+    indexType: 'field',
+    indexReference: 'agentHasDigitalImageBoolean',
+    defaultOrder: 'desc',
+  },
   agentOccupationConceptName: {
     predicate: lux('agentOccupation'),
     indexReference: 'anySortName',
@@ -38,6 +43,11 @@ const SORT_BINDINGS = {
   agentNationalityConceptName: {
     predicate: lux('agentNationality'),
     indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  agentRecordType: {
+    indexType: 'field',
+    indexReference: 'agentDataTypeName',
     defaultOrder: 'asc',
   },
   agentStartDate: {
@@ -78,6 +88,11 @@ const SORT_BINDINGS = {
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
+  conceptRecordType: {
+    indexType: 'field',
+    indexReference: 'conceptDataTypeName',
+    defaultOrder: 'asc',
+  },
   eventCarriedOutByAgentName: {
     predicate: lux('eventCarriedOutBy'),
     indexReference: 'anySortName',
@@ -86,6 +101,11 @@ const SORT_BINDINGS = {
   eventClassificationConceptName: {
     predicate: lux('eventClassifiedAs'),
     indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  eventRecordType: {
+    indexType: 'field',
+    indexReference: 'eventDataTypeName',
     defaultOrder: 'asc',
   },
   eventTookPlaceAtPlaceName: {
@@ -143,6 +163,11 @@ const SORT_BINDINGS = {
     indexReference: 'itemEncounteredStartDateLong',
     defaultOrder: 'asc',
   },
+  itemHasDigitalImage: {
+    indexType: 'field',
+    indexReference: 'itemHasDigitalImageBoolean',
+    defaultOrder: 'desc',
+  },
   itemMaterialConceptName: {
     predicate: crm('P45_consists_of'),
     indexReference: 'anySortName',
@@ -168,6 +193,11 @@ const SORT_BINDINGS = {
     indexReference: 'itemProductionStartDateLong',
     defaultOrder: 'asc',
   },
+  itemRecordType: {
+    indexType: 'field',
+    indexReference: 'itemDataTypeName',
+    defaultOrder: 'asc',
+  },
   itemTechniqueConceptName: {
     predicate: lux('techniqueOfProduction'),
     indexReference: 'anySortName',
@@ -182,6 +212,11 @@ const SORT_BINDINGS = {
     predicate: lux('placeClassifiedAs'),
     indexReference: 'anySortName',
     defaultOrder: 'asc',
+  },
+  placeHasDigitalImage: {
+    indexType: 'field',
+    indexReference: 'placeHasDigitalImageBoolean',
+    defaultOrder: 'desc',
   },
   workArchiveSortId: {
     indexType: 'field',
@@ -203,6 +238,11 @@ const SORT_BINDINGS = {
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
+  workHasDigitalImage: {
+    indexType: 'field',
+    indexReference: 'workHasDigitalImageBoolean',
+    defaultOrder: 'desc',
+  },
   workPublicationDate: {
     indexType: 'field',
     indexReference: 'workPublicationStartDateLong',
@@ -216,6 +256,11 @@ const SORT_BINDINGS = {
   workPublicationPlaceName: {
     predicate: lux('placeOfPublication'),
     indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  workRecordType: {
+    indexType: 'field',
+    indexReference: 'workDataTypeName',
     defaultOrder: 'asc',
   },
 };

@@ -3,6 +3,10 @@ import * as utils from '../utils/utils.mjs';
 
 const DEFAULT = 'default';
 
+const SORT_TYPE_MULTI_SCOPE = 'multi';
+const SORT_TYPE_SEMANTIC = 'semantic';
+const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';
+
 const SortCriteria = class {
   // Excepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
@@ -12,7 +16,8 @@ const SortCriteria = class {
     this.sortCriteriaStr = sortCriteriaStr;
     this.scoresRequired = DEFAULT; // can switch to a boolean value.
     this.multiScopeSortOption = null;
-    this.singleScopeSortOptions = [];
+    this.semanticSortOption = null;
+    this.nonSemanticSortOptions = [];
     this.warnings = [];
     this._parse();
   }
@@ -31,12 +36,12 @@ const SortCriteria = class {
     }
   }
 
-  getSingleScopeSortOptions() {
-    return this.singleScopeSortOptions;
+  getNonSemanticSortOptions() {
+    return this.nonSemanticSortOptions;
   }
 
-  hasSingleScopeSortOptions() {
-    return this.singleScopeSortOptions.length > 0;
+  hasNonSemanticSortOptions() {
+    return this.nonSemanticSortOptions.length > 0;
   }
 
   getMultiScopeSortOption() {
@@ -45,6 +50,14 @@ const SortCriteria = class {
 
   hasMultiScopeSortOption() {
     return this.multiScopeSortOption !== null;
+  }
+
+  getSemanticSortOption() {
+    return this.semanticSortOption;
+  }
+
+  hasSemanticSortOption() {
+    return this.semanticSortOption !== null;
   }
 
   getWarnings() {
@@ -67,14 +80,14 @@ const SortCriteria = class {
           sortByName.toLowerCase() == 'random'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.singleScopeSortOptions = ['"score-random"'];
+          this.nonSemanticSortOptions = ['"score-random"'];
           return false;
         } else if (
           utils.isNonEmptyString(sortByName) &&
           sortByName.toLowerCase() == 'relevance'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.singleScopeSortOptions = [
+          this.nonSemanticSortOptions = [
             `cts.scoreOrder('${this._getOrder(
               specifiedOrder,
               'desc' // Matches when there is no sort parameter.
@@ -91,9 +104,15 @@ const SortCriteria = class {
                   (sortName) => SORT_BINDINGS[sortName]
                 ),
               };
+            } else if (sortBinding.predicate) {
+              this.semanticSortOption = {
+                predicate: sortBinding.predicate,
+                indexReference: sortBinding.indexReference,
+                order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+              };
             } else {
               this.conditionallySetScoresRequired(false);
-              this.singleScopeSortOptions.push(
+              this.nonSemanticSortOptions.push(
                 `cts.indexOrder(cts.${sortBinding.indexType}Reference('${
                   sortBinding.indexReference
                 }'),'${this._getOrder(
@@ -141,4 +160,9 @@ const SortCriteria = class {
   }
 };
 
-export { SortCriteria };
+export {
+  SortCriteria,
+  SORT_TYPE_MULTI_SCOPE,
+  SORT_TYPE_NON_SEMANTIC,
+  SORT_TYPE_SEMANTIC,
+};

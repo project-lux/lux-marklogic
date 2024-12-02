@@ -7,6 +7,7 @@ const ML_APP_NAME = '%%mlAppName%%';
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
+const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 const VIA_SEARCH_FACET_TIMEOUT = parseInt('%%viaSearchFacetTimeout%%'.trim());
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
@@ -163,6 +164,7 @@ export {
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
   SEARCH_PREFIX,
+  SEMANTIC_SORT_TIMEOUT,
   SPARQL_PREFIXES,
   SYNONYM_WEIGHT,
   SYNONYMS_ENABLED,

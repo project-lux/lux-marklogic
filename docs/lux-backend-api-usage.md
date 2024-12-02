@@ -66,44 +66,18 @@ Node.js and Java interfaces may be generated from MarkLogic Data Services.  LUX'
 3. Once those packages are installed, run `gulp proxygen`.
 4. Node.js code may now use the generated interfaces.
 
-Usage example that presumes an Express.JS context:
+LUX's Middle Tier implementation:
 
-```javascript
-const router = express.Router();
+1. [Proxy generation](https://github.com/project-lux/lux-middletier/blob/main/gulpfile.js)
+2. [DatabaseClient initialization and data service consumption](https://github.com/project-lux/lux-middletier/blob/main/app/app.js)
 
-const mlApi = require('../utils/mlApi.js');
-const client = new mlApi().getMarkLogicClient();
+The generated data service proxies require an instance of the `DatabaseClient`.  A `DatabaseClient` instance may be created using the MarkLogic Node.js Client API.  API info:
 
-const Lux = require('../lib/lux.js');
-const luxInstance = Lux.on(client);
-
-router.get(
-  '/api/document',
-  passport.authenticate('jwt-user', {
-    session: false,
-  }),
-  function (req, res, next) {
-    luxInstance
-	  .item(req.query.uri, req.query.profile, req.query.lang)
-	  .then((doc) => {
-	    res.send(doc);
-	  })
-	  .catch((e) => {
-	    errors.handleError(req, res, e);
-	  });
-  }
-);
-
-module.exports = router;
-```
-
-More:
-
-* Middle tier's package.json defines the version of the MarkLogic Node.js module it uses.
-* MarkLogic Node.js module in npm repo: https://www.npmjs.com/package/marklogic
-* MarkLogic Node.js module source repo: https://github.com/marklogic/node-client-api
-* MarkLogic Node.js Client API documentation: https://docs.marklogic.com/jsdoc/index.html
-* MarkLogic Node.js Application Developer's Guide: https://docs.marklogic.com/guide/node-dev
+* Gain access to the API by adding `marklogic` as a dependency in package.json.
+* npm repo: https://www.npmjs.com/package/marklogic
+* Module source repo: https://github.com/marklogic/node-client-api
+* API documentation: https://docs.marklogic.com/jsdoc/index.html
+* Application Developer's Guide: https://docs.marklogic.com/guide/node-dev
 * Like Java better?  Check out https://docs.marklogic.com/guide/java/DataServices
 
 *Note to backend endpoint developers: generated Data Service interfaces do not play nicely with hyphens in the Data Service file names.  Use camelCase instead.*
@@ -667,7 +641,7 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 | `mayChangeScope` | `true` | **OPTIONAL** - Submit `true` if the endpoint is allowed to change the search scope when the requested search's results estimate is zero yet another search scope's estimate is greater than zero.  Only applicable to search scopes associated with the user interface.  When the search scope is changed, the `metadata.changedScope` response body property value will be `true`.  Regardless, the `metadata.scope` parameter value will always align with the search *performed*.  The selected search scope is based on a user interface order specified in the endpoint.  No other part of the search is adjusted, specifically including the values of the `sort` and `facetNames` parameters.  Endpoint consumers are encouraged to submit `true` for search requests that do not require a specific user interface scope.  Subsequent requests that need to stick to a specific search should submit `false`.  Defaults to `false`. |
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
 | `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100. An error will be thrown if this value is less than 1. |
-| `sort` | `itemProductionDate:asc` | **OPTIONAL** - A comma-delimited list of sort specifications. Including a multi-scope sort specification will override any other sort specification, only the final multi-scope sort in a list will be used.  Each specification must include the sort binding name and may optionally include the sort's direction.  Use `asc` for ascending and `desc` for descending.  The [Search Info endpoint's](#search-info) `sortBy` response body property lists most of this parameter's accepted values. There are two additional ones: `random` and `relevance`.  When either is used, all other sort options are ignored. Use `random` to apply random scores to the search results; sort direction does not apply to this option. Use `relevance` to sort the search results by their score. For each sort binding name specified in this parameter, the default sort direction is ascending; however, when the parameter is not provided, search results are sorted by `relevance`, from highest score to lowest score (descending). Invalid sort options are ignored. |
+| `sort` | `itemProductionDate:asc` | **OPTIONAL** - A comma-delimited list of sort specifications. Multi-scope and semantic sorts will only use a single sort specification. Multi-scope takes prority over semantic which takes priority over non-semantic. If multiple multi-scope or semantic sorts are specified, the final sort specified with highest priority will be used. Each specification must include the sort binding name and may optionally include the sort's direction.  Use `asc` for ascending and `desc` for descending.  The [Search Info endpoint's](#search-info) `sortBy` response body property lists most of this parameter's accepted values. There are two additional ones: `random` and `relevance`.  When either is used, all other sort options are ignored. Use `random` to apply random scores to the search results; sort direction does not apply to this option. Use `relevance` to sort the search results by their score. For each sort binding name specified in this parameter, the default sort direction is ascending; however, when the parameter is not provided, search results are sorted by `relevance`, from highest score to lowest score (descending). Invalid sort options are ignored. |
 | `filterResults` | `false` | **OPTIONAL** - Submit `true` to instruct the system to filter the results to ensure there are no false positives.  Filtering is the process of pulling candidate search result documents from disk in order to verify they meet all search criteria.  The process can significantly slow the request and often yields the same results.  Unfiltered search results are calculated using indexes alone --the same as non-semantic facets and estimates.  Unfiltered search results cannot be punctuation- or whitespace-sensitive.  Unfiltered search results cannot be case-sensitive _when_ the criteria is all lowercase (but can be case-sensitive for upper or mixed case).  This endpoint parameter's default is specified by the `filterSearchResults` build property.  Initially, the default will be `true` (filtered) but it is expected to switch to `false` (unfiltered). |
 | `facetsSoon` | `true` | **OPTIONAL** - Submit `true` to indicate one or more facets may be requested in a subsequent request, relatively soon, using the same criteria.  When `true` and the search is performed, search will be asked to do a little more work to speed up the subsequent request to calculate facets.  Use the [Facets endpoint](#facets) for the facet request.  Defaults to `false`. |
 | `synonymsEnabled` | `true` | **OPTIONAL** - Indicate if synonyms are to be included in the search criteria. The default is controlled by the `synonymsEnabled` Gradle property, during deployment. |
@@ -1084,7 +1058,9 @@ The `searchInfo` endpoint provides consumers:
 1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
 2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
 3. A list of facets and their associated search term names.
-4. A list of sort bindings implemented with range indexes.  Most have a type of `singleScope`.  `archiveSortId` is a `multiScope` example; for searches of both Items and Works, it is able to sort by a combined list of Item and Work sort IDs.  As detailed in the [Search endpoint](#search)'s documentation, additional sort parameter values include `random` and `relevance`.
+4. A list of sort bindings implemented with range indexes or semantically related data.  These are in addition to the `random` and `relevance` sort options.  For each binding, this endpoint will specify the `name` to use in the [Search endpoint](#search)'s `sort` parameter as well as the binding's `type`.  There are a couple instances when the sort binding type becomes important to the endpoint consumer:
+    * When the search scope is `multi`, one of the `multiScope` sort bindings should be used to sort the results.  For example, when searching for Items and Works, `archiveSortId` may be used to sort the results.
+    * When specifying multiple sort bindings in a search request, at which point one may refer to [Search endpoint](#search)'s `sort` parameter documentation for precedence.
 
 Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
 

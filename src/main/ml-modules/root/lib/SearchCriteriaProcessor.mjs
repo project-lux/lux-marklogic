@@ -30,9 +30,15 @@ import {
   isSearchScopeName,
 } from './searchScope.mjs';
 import {
+  SORT_TYPE_MULTI_SCOPE,
+  SORT_TYPE_NON_SEMANTIC,
+  SORT_TYPE_SEMANTIC,
+} from './SortCriteria.mjs';
+import {
   REG_EXP_NEAR_OPERATOR,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_NAME_KEYWORD,
+  SEMANTIC_SORT_TIMEOUT,
 } from './appConstants.mjs';
 import {
   InternalServerError,
@@ -265,10 +271,15 @@ const SearchCriteriaProcessor = class {
   }
 
   getSearchResults() {
-    if (this.sortCriteria.hasMultiScopeSortOption()) {
+    const sortType = SearchCriteriaProcessor.getSortTypeFromSortCriteria(
+      this.sortCriteria
+    );
+    if (SORT_TYPE_MULTI_SCOPE === sortType) {
       return this._getMultiScopeSortResults();
+    } else if (SORT_TYPE_SEMANTIC === sortType) {
+      return this._getSemanticSortResults();
     } else {
-      return this._getSingleScopeSortResults();
+      return this._getNonSemanticSortResults();
     }
   }
 
@@ -337,7 +348,86 @@ const SearchCriteriaProcessor = class {
     );
   }
 
-  _getSingleScopeSortResults() {
+  _getSemanticSortResults() {
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+    // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
+    // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
+    // For now, this defaults to true. Feel free to parameterize if desired.
+    const oneSortValuePerResult = true;
+    const { predicate, indexReference, order } =
+      this.sortCriteria.getSemanticSortOption();
+    const ctsQuery = SearchCriteriaProcessor.evalQueryString(
+      this.getCtsQueryStr(false)
+    );
+
+    // get cts results into an optic plan.
+    // add a column for the document uri for each result, which we will use later
+    const ctsPlan = op
+      .fromSearch(ctsQuery)
+      .joinDocUri('uri', op.fragmentIdCol('fragmentId'));
+
+    // create a plan from all of the triples linked to our predicate
+    // make sure we get a fragmentId for each triple
+    const triplePlan = op.fromTriples(
+      op.pattern(
+        op.col('subjectIri'),
+        predicate,
+        op.col('objectIri'),
+        op.fragmentIdCol('fragmentId')
+      )
+    );
+
+    // join the triples to the cts results where they have matching fragmentId
+    let semanticSortPlan = ctsPlan.joinLeftOuter(triplePlan);
+
+    // create a plan where each row has the following -
+    // - fieldDocIri: iri of a document
+    // - sortByMe: indexed value from that document, which we will use for sorting
+    const indexedFieldPlan = op.fromLexicons({
+      fieldDocIri: cts.iriReference(),
+      sortByMe: cts.fieldReference(indexReference),
+    });
+
+    // Add the sortByMe values to the rows, where the index's fieldDocIri matches the triple's objectIri
+    semanticSortPlan = semanticSortPlan.joinLeftOuter(
+      indexedFieldPlan,
+      op.on('objectIri', 'fieldDocIri')
+    );
+
+    // // The following is necessary when one wants each search result represented once yet has more than one triple with sortPredicate
+    // // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
+    if (oneSortValuePerResult === true) {
+      // When a search value has multiple values to sort by, they prevail in the following order:
+      // - for multiple triples: whichever objectIri has comes first in ascending string order
+      // - for multiple indexed names: whichever sortByMe comes first in ascending string order
+      semanticSortPlan = semanticSortPlan.groupBy(
+        ['uri'],
+        [
+          order === 'ascending'
+            ? op.min('sortByMe', op.col('sortByMe'))
+            : op.max('sortByMe', op.col('sortByMe')),
+        ]
+      );
+    }
+
+    const results = Array.from(
+      semanticSortPlan
+        .orderBy(
+          order === 'ascending'
+            ? op.asc(op.col('sortByMe'))
+            : op.desc(op.col('sortByMe'))
+        )
+        .offset((this.page - 1) * this.pageLength)
+        .limit(this.pageLength)
+        .result()
+    ).map(({ uri }) => ({
+      id: uri,
+      type: cts.doc(uri).xpath('/json/type'),
+    }));
+    return results;
+  }
+
+  _getNonSemanticSortResults() {
     return utils.evalInContentDatabase(this.getCtsQueryStr(true)).toArray()[0];
   }
 
@@ -356,7 +446,7 @@ const SearchCriteriaProcessor = class {
         this.requestOptions.facetsAreLikely === true
           ? '"faceted"'
           : '"unfaceted"',
-        this.sortCriteria.getSingleScopeSortOptions(),
+        this.sortCriteria.getNonSemanticSortOptions(),
       ];
       if (!this.sortCriteria.areScoresRequired()) {
         searchOptionsArr.push('"score-zero"');
@@ -1071,6 +1161,29 @@ const SearchCriteriaProcessor = class {
       }
     }
     return searchCriteriaJson;
+  }
+
+  // Single definition of which sort type gets precedence.
+  static getSortType(isMultiScope, isSemantic) {
+    let sortType = SORT_TYPE_NON_SEMANTIC;
+    if (isMultiScope) {
+      sortType = SORT_TYPE_MULTI_SCOPE;
+    } else if (isSemantic) {
+      sortType = SORT_TYPE_SEMANTIC;
+    }
+    return sortType;
+  }
+
+  static getSortTypeFromSortBinding(sortBinding) {
+    const isMultiScope = sortBinding.subSorts != null;
+    const isSemantic = sortBinding.predicate != null;
+    return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
+  }
+
+  static getSortTypeFromSortCriteria(sortCriteria) {
+    const isMultiScope = sortCriteria.hasMultiScopeSortOption();
+    const isSemantic = sortCriteria.hasSemanticSortOption();
+    return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
   }
 
   // Examples input includes cts.*Query() and cts.*Values().  The point in using this is to ensure

@@ -14,6 +14,20 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.30.0 - 2024-12-02
+
+### Added
+- Enable Sorting By Semantic Criteria and Provide Various Semantic Sort Options ([#343](https://github.com/project-lux/lux-marklogic/issues/343)).
+- Add new Non-Semantic Sorts ([#342](https://github.com/project-lux/lux-marklogic/issues/342)).
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## v1.29.2 - 2024-11-27
 
 ### Added

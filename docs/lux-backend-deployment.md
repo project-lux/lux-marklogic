@@ -162,9 +162,29 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
 6. Update your locally encrypted passwords to align with the target environment, as described in the [Gradle Passwords](#gradle-passwords) section
 
-7. Configure the SSL-related properties based on the target environment's current configuration.  The following blocks may be copied into the target environment's properties file.
+7. Configure the `mlConfigPaths` property in the target environment's properties file to align with the current or future SSL state of the environment.  Should the base-secured directory be included in a non-SSL deployment, the application servers can become disabled, leading to deployment errors.  If you find yourself in this situation, manually enable the application servers, correct the property value, and resume deployment.
 
-    For environments that are presently non-SSL:
+    If the environment is to remain non-SSL:
+
+    ```
+    # Configuration is to be deployed from the build directory. The default is the base and
+    # its secured version.  Unsecured environments (developer environments) are to change 
+    # base-secured to base-unsecured, in gradle-local.properties.
+    mlConfigPaths=build/main/ml-config/base,build/main/ml-config/base-unsecured
+    ```
+
+    If the environment is or is to become SSL:
+
+    ```
+    # Configuration is to be deployed from the build directory. The default is the base and
+    # its secured version.  Unsecured environments (developer environments) are to change 
+    # base-secured to base-unsecured, in gradle-local.properties.
+    mlConfigPaths=build/main/ml-config/base,build/main/ml-config/base-secured
+    ```
+
+8. Configure the SSL-related properties based on the target environment's current configuration.  The following blocks may be copied into the target environment's properties file.
+
+    For environments that are presently non-SSL (regardless of intent to become SSL):
 
     ```
     # Before running the enableSSL task
@@ -190,7 +210,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
     mlSimpleSsl=true
     ```
 
-8.  **Restricted to administrators:** If converting from a non-SSL environment to an SSL environment, run the following command.
+9.  **Restricted to administrators:** If converting from a non-SSL environment to an SSL environment, run the following command.
 
     `./gradlew enableSSL -i -PenvironmentName=[name]`
 
@@ -199,13 +219,13 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
     * Update one or more locally encrypted passwords.  See step no. 6, above.
     * Update the target environment's SSL properties.  See step no. 7, above.
 
-9.  **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
+10. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
 
     `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
 
     Note: The `setBanner` Gradle task is configured to run after `mlDeploySecurity` as it too requires an admin.  The `setBanner` Gradle task may also be called directly.
 
-10. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
+11. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
 
 
 11. **Restricted to administrators:** If the indexing configuration is changing, decide whether to re-load or re-index the database.

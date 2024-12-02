@@ -5,7 +5,8 @@
  * getRangeIndexValueCounts.js.
  */
 
-const previousVersion = {
+const previousVersionLabel = '2024-10-19';
+const previousVersionData = {
   'http://www.cidoc-crm.org/cidoc-crm/P106i_forms_part_of': 819541,
   'http://www.cidoc-crm.org/cidoc-crm/P107i_is_current_or_former_member_of': 585168,
   'http://www.cidoc-crm.org/cidoc-crm/P16_used_specific_object': 1199,
@@ -64,7 +65,8 @@ const previousVersion = {
   'https://lux.collections.yale.edu/ns/workClassifiedAs': 12790804,
 };
 
-const latestVersion = {
+const latestVersionLabel = '2024-11-23';
+const latestVersionData = {
   'http://www.cidoc-crm.org/cidoc-crm/P106i_forms_part_of': 819540,
   'http://www.cidoc-crm.org/cidoc-crm/P107i_is_current_or_former_member_of': 217835,
   'http://www.cidoc-crm.org/cidoc-crm/P16_used_specific_object': 1199,
@@ -123,14 +125,20 @@ const latestVersion = {
   'https://lux.collections.yale.edu/ns/workClassifiedAs': 12726639,
 };
 
-const allPredicates = Object.keys(previousVersion).concat(
-  Object.keys(latestVersion)
+const allPredicates = Object.keys(previousVersionData).concat(
+  Object.keys(latestVersionData)
 );
 
-const diffs = {};
+const diffs = {
+  note: `Counts from ${latestVersionLabel} less those from ${previousVersionLabel}`,
+};
 allPredicates.forEach((predicate) => {
-  const octCnt = previousVersion[predicate] ? previousVersion[predicate] : 0;
-  const novCnt = latestVersion[predicate] ? latestVersion[predicate] : 0;
-  diffs[predicate] = novCnt - octCnt;
+  const previousCount = previousVersionData[predicate]
+    ? previousVersionData[predicate]
+    : 0;
+  const latestCount = latestVersionData[predicate]
+    ? latestVersionData[predicate]
+    : 0;
+  diffs[predicate] = latestCount - previousCount;
 });
 diffs;

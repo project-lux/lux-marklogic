@@ -16,11 +16,12 @@
 import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
 import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
 import { getSearchScopeTypes } from '/lib/searchScope.mjs';
+import { getVersionInfo } from '/utils/utils.mjs';
 
 const searchTermsConfig = getSearchTermsConfig();
 const types = [...new Set(getSearchScopeTypes())].sort();
 
-const termToTypes = {};
+const termToTypes = { versionInfo: getVersionInfo() };
 for (const searchScope of Object.keys(searchTermsConfig).sort()) {
   if (!termToTypes[searchScope]) {
     termToTypes[searchScope] = {};

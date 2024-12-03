@@ -1,7 +1,7 @@
-const op = require('/MarkLogic/optic');
 import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
 import { BadRequestError, NotImplementedError } from '../lib/mlErrorsLib.mjs';
 import {
+  CODE_VERSION,
   FACETS_PREFIX,
   IRI_PREFIX,
   RELATED_LIST_PREFIX,
@@ -591,6 +591,25 @@ function buildScopeDescription(scopeDescriptor) {
   return `Records representing ${scopeDescriptor} that match your search.`;
 }
 
+function getVersionInfo() {
+  return {
+    codeVersion: CODE_VERSION,
+    dataVersion: getDataConversionDate(),
+    mlVersion: xdmp.version(),
+    databaseName: xdmp.databaseName(xdmp.database()),
+  };
+}
+
+function getDataConversionDate() {
+  try {
+    return fn
+      .head(cts.doc(fn.head(cts.uris())).xpath('/admin/conversion-date'))
+      .toString();
+  } catch (e) {
+    return 'error';
+  }
+}
+
 export {
   areArraysEqual,
   arrayToString,
@@ -607,6 +626,7 @@ export {
   evalInModulesDatabase,
   getArrayDiff,
   getArrayOverlap,
+  getDataConversionDate,
   getDeepCopy,
   getDocFromModulesDatabase,
   getDocPermissionsFromString,
@@ -616,6 +636,7 @@ export {
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,
+  getVersionInfo,
   includesOrEquals,
   isArray,
   isNonEmptyArray,

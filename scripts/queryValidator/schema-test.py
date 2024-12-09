@@ -44,7 +44,7 @@ lines = fh.readlines()
 fh.close()
 queries = []
 for l in lines:
-    scope, qstr = l.strip().split(';',1)
+    scope, qstr = l.decode('utf-8').strip().split(';',1)
     q = json.loads(qstr)
     queries.append({"q": q, "scope": scope})
 

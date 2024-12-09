@@ -16,28 +16,28 @@ schema = {
     "title": "Advanced Search Schema",
     "description": "LUX Advanced Search JSON Schema",
     "anyOf": [
-        {"$ref": "#/definitions/_TOP"}
+        {"$ref": "#/$defs/_TOP"}
     ],
-    "definitions": {
+    "$defs": {
         "_TOP": {
             "type": "object",
             "additionalProperties": False,
             "required": ["q"],
-            "properties": {"q": {"$ref": "#/definitions/_QUERY"}}
+            "properties": {"q": {"$ref": "#/$defs/_QUERY"}}
         },
         "_QUERY": {
             "anyOf": [
-                {"$ref": "#/definitions/_BOOLS"},
-                {"$ref": "#/definitions/_SCOPES"},
+                {"$ref": "#/$defs/_BOOLS"},
+                {"$ref": "#/$defs/_SCOPES"},
             ]
         },
         "_SCOPES": {"anyOf": []},
         "_BOOLS": {
             "title": "Boolean Operators",
             "anyOf": [
-                {"$ref": "#/definitions/_AND"},
-                {"$ref": "#/definitions/_OR"},
-                {"$ref": "#/definitions/_NOT"},
+                {"$ref": "#/$defs/_AND"},
+                {"$ref": "#/$defs/_OR"},
+                {"$ref": "#/$defs/_NOT"},
             ],
         },
         "_AND": {
@@ -49,7 +49,7 @@ schema = {
                 "AND": {
                     "type": "array",
                     "minItems": 1,
-                    "items": {"$ref": "#/definitions/_QUERY"},
+                    "items": {"$ref": "#/$defs/_QUERY"},
                 }
             },
         },
@@ -62,7 +62,7 @@ schema = {
                 "OR": {
                     "type": "array",
                     "minItems": 1,
-                    "items": {"$ref": "#/definitions/_QUERY"},
+                    "items": {"$ref": "#/$defs/_QUERY"},
                 }
             },
         },
@@ -75,7 +75,7 @@ schema = {
                 "NOT": {
                     "type": "array",
                     "minItems": 1,
-                    "items": {"$ref": "#/definitions/_QUERY"},
+                    "items": {"$ref": "#/$defs/_QUERY"},
                 }
             }
         }
@@ -85,14 +85,14 @@ schema = {
 
 scope_block = {
     "_QUERY_": {
-        "anyOf": [{"$ref": "#/definitions/_BOOLS_"}, {"$ref": "#/definitions/_SCOPE_"}]
+        "anyOf": [{"$ref": "#/$defs/_BOOLS_"}, {"$ref": "#/$defs/_SCOPE_"}]
     },
     "_BOOLS_": {
         "title": "Boolean Operators",
         "anyOf": [
-            {"$ref": "#/definitions/_AND_"},
-            {"$ref": "#/definitions/_OR_"},
-            {"$ref": "#/definitions/_NOT_"},
+            {"$ref": "#/$defs/_AND_"},
+            {"$ref": "#/$defs/_OR_"},
+            {"$ref": "#/$defs/_NOT_"},
         ],
     },
     "_AND_": {
@@ -104,7 +104,7 @@ scope_block = {
             "AND": {
                 "type": "array",
                 "minItems": 1,
-                "items": {"$ref": "#/definitions/_QUERY_"},
+                "items": {"$ref": "#/$defs/_QUERY_"},
             }
         },
     },
@@ -117,7 +117,7 @@ scope_block = {
             "OR": {
                 "type": "array",
                 "minItems": 1,
-                "items": {"$ref": "#/definitions/_QUERY_"},
+                "items": {"$ref": "#/$defs/_QUERY_"},
             }
         },
     },
@@ -130,7 +130,7 @@ scope_block = {
             "NOT": {
                 "type": "array",
                 "minItems": 1,
-                "items": {"$ref": "#/definitions/_QUERY_"},
+                "items": {"$ref": "#/$defs/_QUERY_"},
             }
         },
     },
@@ -150,22 +150,22 @@ opt_weight = {"type": "number"}
 opt_lang = {"type": "string"}
 opt_complete = {"type": "boolean"}
 
-schema["definitions"]["_OPT_KW"] = kw_options
-schema["definitions"]["_OPT_EXACT"] = exact_options
-schema["definitions"]["_OPT_WEIGHT"] = opt_weight
-schema["definitions"]["_OPT_COMPLETE"] = opt_complete
-schema["definitions"]["_OPT_COMP"] = opt_comp
-schema["definitions"]["_OPT_LANG"] = opt_lang
+schema["$defs"]["_OPT_KW"] = kw_options
+schema["$defs"]["_OPT_EXACT"] = exact_options
+schema["$defs"]["_OPT_WEIGHT"] = opt_weight
+schema["$defs"]["_OPT_COMPLETE"] = opt_complete
+schema["$defs"]["_OPT_COMP"] = opt_comp
+schema["$defs"]["_OPT_LANG"] = opt_lang
 
 
 scopes = {}
 for s in scopeList:
-    schema["definitions"]["_SCOPES"]["anyOf"].append(
-        {"$ref": "#/definitions/_SCOPE_" + s}
+    schema["$defs"]["_SCOPES"]["anyOf"].append(
+        {"$ref": "#/$defs/_SCOPE_" + s}
     )
 
-    schema['anyOf'].append({"$ref": "#/definitions/_TOP_" + s})
-    schema["definitions"]["_TOP_" + s] = {
+    schema['anyOf'].append({"$ref": "#/$defs/_TOP_" + s})
+    schema["$defs"]["_TOP_" + s] = {
         "type": "object",
         "additionalProperties": False,
         "required": ["q", "scope"],
@@ -173,7 +173,7 @@ for s in scopeList:
         {
             "q":
             {
-                "$ref": "#/definitions/_QUERY_" +s
+                "$ref": "#/$defs/_QUERY_" +s
             },
             "scope": {"type": "string", "enum": [s]}
         }
@@ -189,7 +189,7 @@ for s in scopeList:
             v2["properties"][bl]["items"]["$ref"] = (
                 v2["properties"][bl]["items"]["$ref"] + s
             )
-        schema["definitions"][k + s] = v2
+        schema["$defs"][k + s] = v2
 
     scope = {"anyOf": []}
     for k, v in config["terms"][s].items():
@@ -207,18 +207,18 @@ for s in scopeList:
             if "allowedOptionsName" in v:
                 if v["allowedOptionsName"] == "keyword":
                     # add _options with kw enum
-                    sub["properties"]["_options"] = {"$ref": "#/definitions/_OPT_KW"}
-                    sub["properties"]["_weight"] = {"$ref": "#/definitions/_OPT_WEIGHT"}
+                    sub["properties"]["_options"] = {"$ref": "#/$defs/_OPT_KW"}
+                    sub["properties"]["_weight"] = {"$ref": "#/$defs/_OPT_WEIGHT"}
                     sub["properties"]["_complete"] = {
-                        "$ref": "#/definitions/_OPT_COMPLETE"
+                        "$ref": "#/$defs/_OPT_COMPLETE"
                     }
-                    sub["properties"]["_lang"] = {"$ref": "#/definitions/_OPT_LANG"}
+                    sub["properties"]["_lang"] = {"$ref": "#/$defs/_OPT_LANG"}
                 elif v["allowedOptionsName"] == "exact":
                     # add _options with exact enum
-                    sub["properties"]["_options"] = {"$ref": "#/definitions/_OPT_EXACT"}
-                    sub["properties"]["_weight"] = {"$ref": "#/definitions/_OPT_WEIGHT"}
+                    sub["properties"]["_options"] = {"$ref": "#/$defs/_OPT_EXACT"}
+                    sub["properties"]["_weight"] = {"$ref": "#/$defs/_OPT_WEIGHT"}
                     sub["properties"]["_complete"] = {
-                        "$ref": "#/definitions/_OPT_COMPLETE"
+                        "$ref": "#/$defs/_OPT_COMPLETE"
                     }
                 else:
                     print(
@@ -229,29 +229,29 @@ for s in scopeList:
             # date string
             prop["type"] = "string"
             prop["format"] = "date-time"
-            sub["properties"]["_weight"] = {"$ref": "#/definitions/_OPT_WEIGHT"}
-            sub["properties"]["_comp"] = {"$ref": "#/definitions/_OPT_COMP"}
+            sub["properties"]["_weight"] = {"$ref": "#/$defs/_OPT_WEIGHT"}
+            sub["properties"]["_comp"] = {"$ref": "#/$defs/_OPT_COMP"}
         elif v["relation"] == "float":
             # number
             prop["type"] = "number"
-            sub["properties"]["_weight"] = {"$ref": "#/definitions/_OPT_WEIGHT"}
-            sub["properties"]["_comp"] = {"$ref": "#/definitions/_OPT_COMP"}
+            sub["properties"]["_weight"] = {"$ref": "#/$defs/_OPT_WEIGHT"}
+            sub["properties"]["_comp"] = {"$ref": "#/$defs/_OPT_COMP"}
         elif v["relation"] == "boolean":
             # bool
             prop["type"] = "number"
             prop["minimum"] = 0
             prop["maximum"] = 1
-            sub["properties"]["_weight"] = {"$ref": "#/definitions/_OPT_WEIGHT"}
+            sub["properties"]["_weight"] = {"$ref": "#/$defs/_OPT_WEIGHT"}
         elif v["relation"] in scopeList:
             # relationship to new scope
             prop["type"] = "object"
-            prop["$ref"] = "#/definitions/_QUERY_" + v["relation"]
+            prop["$ref"] = "#/$defs/_QUERY_" + v["relation"]
         else:
             print(f"Unmatched relation {v['relation']} in {k} in {s}")
             raise ValueError(v["relation"])
         sub["properties"][k] = prop
         scope["anyOf"].append(sub)
-    schema["definitions"]["_SCOPE_" + s] = scope
+    schema["$defs"]["_SCOPE_" + s] = scope
 
 outstr = json.dumps(schema)
 fh = open("generated_schema.json", "w")

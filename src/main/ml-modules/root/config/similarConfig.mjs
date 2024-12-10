@@ -88,19 +88,40 @@ const SIMILAR_CONFIG = {
           `/json[type = ('Group', 'Person')]/referred_to_by[./classified_as/equivalent/id='${IDENTIFIERS.descriptionStatement}' and ./language/equivalent/id='${IDENTIFIERS.langen}']/content`,
         ],
         ignore: ['born', 'died'],
-        weight: 1,
+        weight: 6,
         searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
       },
     },
     concept: {
+      occupation: {
+        child: 'identifier',
+        paths: [
+          "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300263369']/id",
+          "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300435108']/id	",
+        ],
+        weight: 5,
+        searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
+      },
+      // non-occupation classifiations (nationality and gender)
       classification: {
         child: 'identifier',
         // similar to agentTypeId index, but uses equivalent identifiers rather than LUX URIs
         paths: [
-          "/json[type = ('Group', 'Person')]/classified_as/equivalent/id",
+          //nationality
+          "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300379842']/id",
+          //gender
+          "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055147']/id",
         ],
-        // ignore sex/gender when looking at agent types
-        ignore: [IDENTIFIERS.female, IDENTIFIERS.intersexual, IDENTIFIERS.male],
+        // Perhaps we don't want to ignore gender?
+        // ignore: [IDENTIFIERS.female, IDENTIFIERS.intersexual, IDENTIFIERS.male],
+        weight: 1,
+        searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
+      },
+      professionalActivity: {
+        child: 'identifier',
+        paths: [
+          "/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]/id",
+        ],
         weight: 2,
         searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
       },
@@ -110,7 +131,7 @@ const SIMILAR_CONFIG = {
         child: 'id',
         paths: [...fieldPaths.agentMemberOfId],
         ignore: [],
-        weight: 2,
+        weight: 1,
         searchBuilderFunc: SIMILAR_BUILDER_CONFIG.regular,
       },
     },
@@ -119,7 +140,7 @@ const SIMILAR_CONFIG = {
         child: null,
         date: true,
         paths: [...fieldPaths.agentBornStartDateStr],
-        weight: 2,
+        weight: 1,
         searchBuilderFunc: SIMILAR_BUILDER_CONFIG.date,
       },
       endDate: {

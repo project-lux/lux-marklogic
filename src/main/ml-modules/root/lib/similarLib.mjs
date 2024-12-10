@@ -34,6 +34,10 @@ function getSimilarQuery(
     searchTerm.getProperty('include')
   );
   const searchCriteria = buildSearchCriteria(scopeName, similarValues);
+  console.dir(
+    { DEBUG_UPDATED_SIMILAR_SEARCH_CRITERIA: searchCriteria },
+    { depth: null }
+  );
   const searchCriteriaProcessor = processSearchCriteria({
     searchCriteria,
     includeTypeConstraint: false,
@@ -84,15 +88,41 @@ function getSimilarValues(scopeName, iri, aspects) {
     for (const term of terms) {
       let values = [];
       const termConfig = aspectConfig[term];
+      const ignore = termConfig.ignore || [];
       for (const path of termConfig.paths) {
         if (termConfig.date === true) {
           values.push(...getDateRanges(doc, path));
         } else {
           values.push(...getOtherValues(doc, path));
           if (term === 'text') {
-            values = getTopWords(values, termConfig.ignore);
+            // add a person's name to the ignored words
+            if (scopeName === 'agent') {
+              const type = doc
+                .xpath(
+                  "/indexedProperties[dataType=('Person', 'Group')]/dataType"
+                )
+                .toArray()[0]
+                .valueOf();
+              if (type === 'Person') {
+                const primaryNames = doc
+                  .xpath(
+                    "/json[type = ('Group', 'Person')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content"
+                  )
+                  .toArray();
+                primaryNames.forEach((primaryName) => {
+                  const tokens = primaryName
+                    .valueOf()
+                    .toLowerCase()
+                    .split(/[\s.,\-]/);
+                  tokens.forEach((token) => {
+                    ignore.push(token);
+                  });
+                });
+              }
+            }
+            values = getTopWords(values, ignore);
           } else {
-            values = removeIgnoredValues(values, termConfig.ignore);
+            values = removeIgnoredValues(values, ignore);
           }
         }
       }

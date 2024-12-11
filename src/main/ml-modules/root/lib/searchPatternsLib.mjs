@@ -718,12 +718,11 @@ function _getWordQueries(
 }
 
 function _getTripleRangeQuery(predicates, valuesQueryStr, weight = 1.0) {
-  // Depending on how the query starts, we may want to use it as is; else, use it as a
-  // constraint into cts.values.
-  //   * sem.iri: child term is an IRI vs. ID. Related lists use IRI to avoid the
-  //     Indexed Value pattern.
-  //   * cts.triples: no need to go through cts.values if we already have the IRIs.
-  //     This code presumes the ending maps triples to IRIs.
+  // The third parameter into cts.tripleRangeQuery should either use valuesQueryStr as is
+  // or wrap it in cts.values.  Cases when to use it as is:
+  //   1. Starts with 'sem.iri'.  It's already an IRI.
+  //   2. Starts with 'cts.triples'.  This code presumes the string ends by mapping the
+  //      triples to IRIs.
   const valuesQueryWithoutSpaces = valuesQueryStr.replace(/\s/g, '');
   const alreadyHaveIris =
     valuesQueryWithoutSpaces.startsWith('sem.iri(') ||

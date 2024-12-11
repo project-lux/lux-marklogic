@@ -3,7 +3,7 @@
  * configuration files.  This could be repurposed or further parameterized to
  * create a zip of other modules/documents from a modules or content database.
  *
- * Usage: paste into QC, set the database to a LUX content database, and execute.
+ * Usage: paste into QC, modify filename to match a valid path on your host machine, set the database to a LUX content database, and execute.
  */
 'use strict';
 
@@ -30,8 +30,10 @@ const javascript = `
   const manifest = [];
   const docs = [];
   cts.uriMatch('${uriPattern}').toArray().forEach((uri) => {
-    manifest.push({ path: cvt.basename(uri) });
-    docs.push(cts.doc(uri));
+    if(cvt.basename(uri) !== ''){
+      manifest.push({ path: cvt.basename(uri) });
+      docs.push(cts.doc(uri));
+    }
   });
   xdmp.save('${filename}', xdmp.zipCreate(manifest, docs));
 `;

@@ -718,21 +718,21 @@ function _getWordQueries(
 }
 
 function _getTripleRangeQuery(predicates, valuesQueryStr, weight = 1.0) {
-  // If the query starts with sem.iri or cts.triples, use it as is; else, use it as a constraint in cts.values.
-  // This accommodation was made to force use of the Hop with Field pattern when the child term
-  // is iri vs. id.  Related lists use iri in order to avoid the Indexed Value pattern.
-  // This accomodation was extended to prevent unnecessary calls to cts.values when the child term returns IRIs rather than a query
-  const valuesQueryReturnsIri =
-    valuesQueryStr.startsWith('sem.iri') ||
-    valuesQueryStr.startsWith(`cts
-    .triples(`);
+  // Depending on how the query starts, we may want to use it as is; else, use it as a
+  // constraint into cts.values.
+  //   * sem.iri: child term is an IRI vs. ID. Related lists use IRI to avoid the
+  //     Indexed Value pattern.
+  //   * cts.triples: no need to go through cts.values if we already have the IRIs.
+  //     This code presumes the ending maps triples to IRIs.
+  const valuesQueryWithoutSpaces = valuesQueryStr.replace(/\s/g, '');
+  const alreadyHaveIris =
+    valuesQueryWithoutSpaces.startsWith('sem.iri(') ||
+    valuesQueryWithoutSpaces.startsWith('cts.triples(');
   return `cts.tripleRangeQuery(
     [],
     ${utils.arrayToString(predicates, 'code')},
     ${
-      valuesQueryReturnsIri
-        ? valuesQueryStr
-        : _getAtLeastOneCtsValue(valuesQueryStr)
+      alreadyHaveIris ? valuesQueryStr : _getAtLeastOneCtsValue(valuesQueryStr)
     }, '=', [], ${weight}
   )`;
 }

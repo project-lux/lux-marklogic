@@ -7,7 +7,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
-
+- Improved performance of queries when a Hop Inverse term is nested inside a Hop With Field term ([#304](https://github.com/project-lux/lux-marklogic/issues/304)).
 ### Removed
 
 ### Fixed

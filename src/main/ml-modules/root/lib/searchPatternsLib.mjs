@@ -339,13 +339,13 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
 
     // Tread carefully.
     const wrapInDocumentQuery =
-      !isChildTerm ||
+      !isChildTerm || // if not a child term, we need to ensure this is a cts query to be fed into cts.search.
       searchTerm.getMustReturnCtsQuery() || // Could be directly in a group, such as cts.andQuery.
-      (isChildTerm &&
-        searchTerm
-          .getParentSearchTerm()
-          .getSearchTermConfig()
-          .getPatternName() != PATTERN_NAME_HOP_INVERSE);
+      ![PATTERN_NAME_HOP_INVERSE, PATTERN_NAME_HOP_WITH_FIELD].includes(
+        searchTerm.getParentSearchTerm().getSearchTermConfig().getPatternName()
+      ); // Parent HOP_WITH_FIELD and HOP_INVERSE terms don't need a document query
+    // because they use cts.tripleRangeQuery and cts.triples, respectively.
+    // Other patterns expect a cts query.
 
     const wrapStart = wrapInDocumentQuery ? 'cts.documentQuery(' : '';
     const wrapEnd = wrapInDocumentQuery ? ')' : '';
@@ -718,16 +718,20 @@ function _getWordQueries(
 }
 
 function _getTripleRangeQuery(predicates, valuesQueryStr, weight = 1.0) {
-  // If the query starts with sem.iri, use it as is; else, use it as a constraint in cts.values.
-  // This accommodation was made to force use of the Hop with Field pattern when the child term
-  // is iri vs. id.  Related lists use iri in order to avoid the Indexed Value pattern.
+  // The third parameter into cts.tripleRangeQuery should either use valuesQueryStr as is
+  // or wrap it in cts.values.  Cases when to use it as is:
+  //   1. Starts with 'sem.iri'.  It's already an IRI.
+  //   2. Starts with 'cts.triples'.  This code presumes the string ends by mapping the
+  //      triples to IRIs.
+  const valuesQueryWithoutSpaces = valuesQueryStr.replace(/\s/g, '');
+  const alreadyHaveIris =
+    valuesQueryWithoutSpaces.startsWith('sem.iri(') ||
+    valuesQueryWithoutSpaces.startsWith('cts.triples(');
   return `cts.tripleRangeQuery(
     [],
     ${utils.arrayToString(predicates, 'code')},
     ${
-      valuesQueryStr.startsWith('sem.iri')
-        ? valuesQueryStr
-        : _getAtLeastOneCtsValue(valuesQueryStr)
+      alreadyHaveIris ? valuesQueryStr : _getAtLeastOneCtsValue(valuesQueryStr)
     }, '=', [], ${weight}
   )`;
 }

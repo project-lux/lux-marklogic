@@ -5,6 +5,7 @@
  * b) triple search counts for all related lists, at the search scope level,
  * and for each related list, and c) number of related lists per search scope.
  */
+import { getVersionInfo } from '/utils/utils.mjs';
 import {
   getRelatedListKeys,
   getRelatedListConfig,
@@ -12,6 +13,7 @@ import {
 const scopesToTermNames = getRelatedListKeys();
 
 const stats = {
+  versionInfo: getVersionInfo(),
   termCount: 0,
   tripleSearches: 0,
   maxTripleSearches: -1,

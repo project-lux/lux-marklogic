@@ -133,7 +133,7 @@ const checkPredicates = () => {
   return utils.sortObj(findings);
 };
 
-const findings = {};
+const findings = { versionInfo: utils.getVersionInfo() };
 for (const username of usernames) {
   findings[username] = xdmp
     .invokeFunction(checkPredicates, { userId: xdmp.user(username) })

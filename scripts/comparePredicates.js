@@ -5,6 +5,7 @@
  * to be manually supplied using checkPredicates.js.
  */
 'use strict';
+import { getVersionInfo } from '/utils/utils.mjs';
 
 const dedup = true;
 
@@ -109,6 +110,7 @@ function getArrayDiff(configuredPredicates, allPredicates) {
     return !allPredicates.includes(item);
   });
   return {
+    versionInfo: getVersionInfo(),
     referencedButDoesNotExist,
     existsButNotReferenced,
   };

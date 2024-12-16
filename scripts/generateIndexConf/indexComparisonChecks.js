@@ -15,6 +15,7 @@
  *
  * Run as an admin or lux-endpoint-consumer to ensure getSearchTermsConfig() returns all search terms.
  */
+import { getVersionInfo } from '/utils/utils.mjs';
 
 /*
  * COLLECT: CONFIGURED
@@ -103,7 +104,9 @@ Object.keys(FACETS_CONFIG).forEach((key) => {
 });
 
 Object.keys(SORT_BINDINGS).forEach((key) => {
-  recordReference(SORT_BINDINGS[key].indexReference, true, 'sort');
+  if (SORT_BINDINGS[key].indexReference) {
+    recordReference(SORT_BINDINGS[key].indexReference, true, 'sort');
+  }
 });
 
 Object.keys(searchTermsConfig).forEach((searchScope) => {
@@ -158,6 +161,7 @@ const unusedFieldRanges = utils
   .sort();
 
 const results = {
+  versionInfo: getVersionInfo(),
   missing: {
     fields: missingFields,
     fieldRanges: missingFieldRanges,

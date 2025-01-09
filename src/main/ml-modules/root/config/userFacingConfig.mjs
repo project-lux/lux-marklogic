@@ -343,6 +343,11 @@ const searchTermText = {
       label: 'Start Date',
       helpText: 'Search for Events by the date on which they started.',
     },
+    subjectOfEvent: {
+      label: 'Subject Of',
+      helpText:
+        'Search for Events that are the subject of the specified Works.',
+    },
     text: {
       label: 'Anywhere',
       helpText:
@@ -618,8 +623,7 @@ const searchTermText = {
     },
     aboutEvent: {
       label: 'About Events',
-      helpText:
-        'Search for Works that are about the specified Events.',
+      helpText: 'Search for Works that are about the specified Events.',
     },
     aboutItem: {
       label: 'About Objects',

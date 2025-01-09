@@ -6,6 +6,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+- Added search term config for Works About an Event ([#387](https://github.com/project-lux/lux-marklogic/issues/387)).
+
 ### Changed
 
 ### Removed

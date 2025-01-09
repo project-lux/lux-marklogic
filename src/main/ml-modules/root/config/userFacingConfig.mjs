@@ -616,6 +616,11 @@ const searchTermText = {
       helpText:
         'Search for Works that are about the specified Concept or Type terms.',
     },
+    aboutEvent: {
+      label: 'About Events',
+      helpText:
+        'Search for Works that are about the specified Events.',
+    },
     aboutItem: {
       label: 'About Objects',
       helpText: 'Search for Works that are about the specified Objects.',

@@ -1210,6 +1210,24 @@
       "field-value-searches": true
     },
     {
+      "field-name": "workAboutEventId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "workPartOfId",
       "field-path": [
         {
@@ -2363,6 +2381,13 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "workAboutItemId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "workAboutEventId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

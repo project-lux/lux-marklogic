@@ -461,6 +461,14 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['conceptPrimaryName'],
       idIndexReferences: ['workAboutConceptId'],
     },
+    aboutEvent: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_activity")'],
+      targetScope: 'event',
+      hopInverseName: 'subjectOfEvent',
+      indexReferences: ['eventPrimaryName'],
+      idIndexReferences: ['workAboutEventId'],
+    },
     aboutItem: {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_object")'],

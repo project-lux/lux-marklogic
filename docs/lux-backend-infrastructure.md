@@ -138,12 +138,42 @@ Once content with your system log monitoring coverage, move on to your applicati
 
 ### Forest Reserve Requirement
 
-This requirement can be a little tricky to first understand.  The first important amount to know is the maximum merge size.  This is a database-specific setting that defaults to 48 GB.  Double that amount and compare to the individual forest's size:
+From [ML 11.3.0's release notes](https://docs.progress.com/bundle/marklogic-server-whats-new-11/page/topics/other-notes/memory-and-disk-space-requirements.html):
 
-* When the forest size is less than two times its database's maximum merge size, *that* forest's reserve amount is two times its size.
-* When the forest size is more than two times its database's maximum merge size, *that* forest's reserve amount is two times its database's maximum merge size.
+> MarkLogic Server requires 1.5 times the disk space of the total forest size. Specifically, each forest on a filesystem requires its filesystem to have at least 1.5 times the forest size in disk space (or, for each forest less than 48 GB, 3 times the forest size) when the merge max size database merge setting is set to the default of 48 GB. This translates to approximately 1.5 times the disk space of the source content after it is loaded. For example, if you plan on loading content that will result in a 200 GB database, reserve at least 300 GB of disk space. The disk space reserve is required for merges.
 
-In both cases, add some for journals.  The example provided in [Memory, Disk Space, and Swap Space Requirements](https://docs.marklogic.com/guide/installation/intro#id_11335) suggests a reserve of 100 GB for a 400 GB forest, assuming the default maximum merge size of 48 GB.  Therefore, this provides 4 GB for that forest's journals.
+Based on the above, LUX using the default merge max size of 48 GB and its forests being larger than 48 GB, LUX's forest reserve should be 1.5 times the sum of all forests on the volume (primary and replica).  Applying that to the 2024-12-14 dataset that had about 210 GB of primary forest data on each node and no replicated forests, the reserve would be 315 GB, meaning the volume would need to be 525 GB before accounting for journals, logs, and anything else on the same volume.
+
+`525 GB volume size = 210 GB forest data + (1.5 x 70 GB forest size x 3 forests per volume)`
+
+For environments that replicate the forest data once:
+
+`1,050 GB = 420 GB forest data + (1.5 x 70 GB forest size x 6 forests per volume)`
+
+But the notes also state:
+
+> You need at least 2 times the merge max size of free space per forest, regardless of the forest size. Therefore, with the default merge max size of 48 GB, you need at least 96 GB of free space. Additionally, if your journals are not yet created, you need 2 times the journal size of free disk space (if the journal space is not yet allocated). Therefore, to be safe, you need (with the default merge max size and a 2G journal size) at least 100 GB of free space for each forest, no matter what size the forest is.
+
+That would change the reserve to 300 GB, which is not much different given LUX's cited average forest size.  Unlike the first calculation, this includes 4 GB per forest for journals.
+
+`510 GB volume size = 210 GB forest data + (100 GB minimum per forest x 3 forests per volume)`
+
+For environments that replicate the forest data once:
+
+`1,020 GB = 420 GB forest data + (100 GB minimum per forest x 6 forests per volume)`
+
+Okay, so if we go with the more conservative formula, let's account for journals and logs.
+
+| Data              | Not Replicated | Unit | Replicated Once | Unit | Notes           |
+|-------------------|----------------|------|-----------------|------|-----------------|
+| Primary forests   | 210            | GB   | 210             | GB   |                 |
+| Replicated forest | 0              | GB   | 210             | GB   |                 |
+| Forest reserve    | 315            | GB   | 630             | GB   |                 |
+| Journals          | 12             | GB   | 24              | GB   | 4 GB per forest |
+| Logs              | 2              | GB   | 2               | GB   | 30 days of logs |
+| Totals            | 539            | GB   | 1076            | GB   |                 |
+
+TBD the degree in which embedded vectors may impact the above.
 
 ## Feature Configuration
 

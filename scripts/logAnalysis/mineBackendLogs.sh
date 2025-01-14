@@ -41,7 +41,7 @@ APP_ERROR_LOG_PATTERN=*800[3-4]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
-ERROR_LOG_EGREP_PATTERN_MAIN=[^0-9]-[0-9]+-ErrorLog-trimmed.txt
+ERROR_LOG_EGREP_PATTERN_MAIN=[^0-9]-[0-9]+-ErrorLog*.txt
 
 ERROR_LOG_ABOVE_INFO_FILE=$OUTPUT_DIRECTORY/errorLogEntriesAboveInfo.txt
 ALL_REQUESTS_METRICS_TSV_FILE=$OUTPUT_DIRECTORY/requestMetrics.tsv

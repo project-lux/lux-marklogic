@@ -1,4 +1,14 @@
-const DEFAULT_JOURNAL_RESERVE = 2000;
+/*
+ * This script may be used to calculate the required size of each volume in
+ * a cluster.  It accounts for the space forests are presently using on disk,
+ * reserved space for forests (e.g., merge), large data, journals, and anything
+ * else one wishes to reserve space for on the volumes, such as logs.
+ */
+const journalSizeThresholdForReserveMb = 10;
+const perJournalReserveMb = 4000;
+const perVolumeOtherReserveMb = 2000; // logs, for example.
+const reportInGb = true; // false = Mb
+const MbToGbDivisor = 1024;
 
 function keepProperties(obj, names) {
   const trimmedObj = {};
@@ -25,7 +35,7 @@ function getForestInfoByHost() {
     .toArray()
     .forEach((databaseId) => {
       xdmp
-        .forestStatus(xdmp.databaseForests(databaseId, false))
+        .forestStatus(xdmp.databaseForests(databaseId, true))
         .toArray()
         .forEach((forestInfo) => {
           forestInfo = keepProperties(forestInfo, [
@@ -62,8 +72,13 @@ function getForestInfoByHost() {
   return forestInfoByHost;
 }
 
-// Given forestInfoByHost and an expected journal reserve size, calculate the total storage used by each volume on each host
-function calculateTotals(forestInfoByHost, journalReserve) {
+// By volume, calculate the total known used and reserved for the cluster.
+function calculateTotals(
+  forestInfoByHost,
+  journalSizeThresholdForReserveMb,
+  perJournalReserveMb,
+  perVolumeOtherReserveMb
+) {
   const hostInfo = {};
   for (const host of Object.keys(forestInfoByHost)) {
     const volumes = forestInfoByHost[host];
@@ -71,69 +86,106 @@ function calculateTotals(forestInfoByHost, journalReserve) {
     for (const volume of Object.keys(volumes)) {
       const forests = volumes[volume];
       const totals = forests.reduce(
-        (totals, current, index, array) => {
+        (runningTotals, currentForest, index, array) => {
+          const isLastForest = index === array.length - 1;
+
           const {
             journalsSize,
             largeDataSize,
             forestReserve: forestReserveSize,
             deviceSpace,
             forestSize,
-          } = current;
-          let {
-            numberOfQualifiedJournals,
-            journal,
-            largeData,
-            forest,
-            forestReserve,
-            overall,
-          } = totals;
-          let journalSizeAddition = 0;
-          if (journalsSize > 10) {
-            numberOfQualifiedJournals += 1;
-            journalSizeAddition = journalReserve;
-          }
-          journal += journalSizeAddition;
-          largeData += largeDataSize;
-          forest += forestSize;
-          forestReserve += forestReserveSize;
-          overall =
-            overall +
-            journalSizeAddition +
-            largeDataSize +
-            forestSize +
-            forestReserveSize;
+          } = currentForest;
 
-          return {
-            numberOfQualifiedJournals,
-            journal,
-            largeData,
-            forest,
-            forestReserve,
-            overall,
-            deviceSpace,
-            percentUsed:
-              index === array.length - 1
-                ? (overall / deviceSpace) * 100
-                : undefined,
+          let {
+            forestsActualMb,
+            forestsReserveMb,
+            journalsActualMb,
+            journalsReserveMb,
+            largeDataActualMb,
+            totalKnownUsedMb,
+            totalReservedMb,
+          } = runningTotals;
+
+          forestsActualMb += forestSize;
+          forestsReserveMb += forestReserveSize;
+
+          const additionalJournalsReserveMb =
+            journalsSize > journalSizeThresholdForReserveMb
+              ? perJournalReserveMb - journalsSize
+              : 0;
+          journalsActualMb += journalsSize;
+          journalsReserveMb += additionalJournalsReserveMb;
+
+          largeDataActualMb += largeDataSize;
+
+          totalKnownUsedMb += forestSize + journalsSize + largeDataSize;
+          totalReservedMb +=
+            forestReserveSize +
+            additionalJournalsReserveMb +
+            (isLastForest ? perVolumeOtherReserveMb : 0);
+          const unreservedRemainingMb = deviceSpace - totalReservedMb;
+
+          const totalsMb = {
+            forestsActualMb,
+            forestsReserveMb,
+            journalsActualMb,
+            journalsReserveMb,
+            largeDataActualMb,
+            totalKnownUsedMb,
+            totalReservedMb,
+            spaceRemainingMb: deviceSpace,
+            unreservedRemainingMb,
+            // Approximate as this excludes unknown used storage (e.g., logs)
+            // Better to go by unreservedRemainingMb as it does.
+            approximateUnreservedRemainingPercent:
+              (unreservedRemainingMb / (totalKnownUsedMb + deviceSpace)) * 100,
           };
+
+          if (isLastForest && reportInGb) {
+            return {
+              forestsActualGb: totalsMb.forestsActualMb / MbToGbDivisor,
+              forestsReserveGb: totalsMb.forestsReserveMb / MbToGbDivisor,
+              journalsActualGb: totalsMb.journalsActualMb / MbToGbDivisor,
+              journalsReserveGb: totalsMb.journalsReserveMb / MbToGbDivisor,
+              largeDataActualGb: totalsMb.largeDataActualMb / MbToGbDivisor,
+              totalKnownUsedGb: totalsMb.totalKnownUsedMb / MbToGbDivisor,
+              totalReservedGb: totalsMb.totalReservedMb / MbToGbDivisor,
+              spaceRemainingGb: totalsMb.spaceRemainingMb / MbToGbDivisor,
+              unreservedRemainingGb:
+                totalsMb.unreservedRemainingMb / MbToGbDivisor,
+              // Approximate as this excludes unknown used storage (e.g., logs)
+              // Better to go by unreservedRemainingMb as it does.
+              approximateUnreservedRemainingPercent:
+                totalsMb.approximateUnreservedRemainingPercent,
+            };
+          } else {
+            return totalsMb;
+          }
         },
         // Initial Value used for the accumulator of Array.reduce()
         {
-          numberOfQualifiedJournals: 0,
-          journal: 0,
-          largeData: 0,
-          forest: 0,
-          forestReserve: 0,
-          overall: 0,
+          forestsActualMb: 0,
+          forestsReserveMb: 0,
+          journalsActualMb: 0,
+          journalsReserveMb: 0,
+          largeDataActualMb: 0,
+          totalKnownUsedMb: 0,
+          totalReservedMb: 0,
         }
       );
       volumeInfo[volume] = totals;
     }
-    hostInfo[host] = volumeInfo;
+    hostInfo[xdmp.hostName(host)] = volumeInfo;
   }
 
   return hostInfo;
 }
 
 const forestInfoByHost = getForestInfoByHost();
-calculateTotals(forestInfoByHost, DEFAULT_JOURNAL_RESERVE);
+calculateTotals(
+  forestInfoByHost,
+  journalSizeThresholdForReserveMb,
+  perJournalReserveMb,
+  perVolumeOtherReserveMb
+);

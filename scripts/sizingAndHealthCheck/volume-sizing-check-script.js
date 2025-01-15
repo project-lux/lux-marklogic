@@ -5,8 +5,8 @@
  * else one wishes to reserve space for on the volumes, such as logs.
  */
 const journalSizeThresholdForReserveMb = 10;
-const perJournalReserveMb = 4000;
-const perVolumeOtherReserveMb = 2000; // logs, for example.
+const perJournalReserveMb = 4096;
+const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
 
@@ -132,6 +132,7 @@ function calculateTotals(
             journalsActualMb,
             journalsReserveMb,
             largeDataActualMb,
+            perVolumeOtherReserveMb,
             totalKnownUsedMb,
             totalReservedMb,
             spaceRemainingMb: deviceSpace,
@@ -149,6 +150,7 @@ function calculateTotals(
               journalsActualGb: totalsMb.journalsActualMb / MbToGbDivisor,
               journalsReserveGb: totalsMb.journalsReserveMb / MbToGbDivisor,
               largeDataActualGb: totalsMb.largeDataActualMb / MbToGbDivisor,
+              perVolumeOtherReserveGb: perVolumeOtherReserveMb / MbToGbDivisor,
               totalKnownUsedGb: totalsMb.totalKnownUsedMb / MbToGbDivisor,
               totalReservedGb: totalsMb.totalReservedMb / MbToGbDivisor,
               spaceRemainingGb: totalsMb.spaceRemainingMb / MbToGbDivisor,

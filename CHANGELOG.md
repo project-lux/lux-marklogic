@@ -2,6 +2,20 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.33.0 - 2025-01-27
+
+### Added
+
+### Changed
+
+- Optimized semantic facets to produce results faster ([#365](https://github.com/project-lux/lux-marklogic/issues/365)).
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.32.1 - 2025-01-16
 
 ### Added

@@ -8,7 +8,6 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
-const VIA_SEARCH_FACET_TIMEOUT = parseInt('%%viaSearchFacetTimeout%%'.trim());
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
@@ -175,5 +174,4 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
-  VIA_SEARCH_FACET_TIMEOUT,
 };

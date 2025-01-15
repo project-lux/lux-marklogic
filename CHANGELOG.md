@@ -2,17 +2,11 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## Unreleased
-
-### Added
-
-### Changed
-
-### Removed
+## v1.32.1 - 2025-01-15
 
 ### Fixed
 
-### Security
+- Fixed search term config for Works About an Event ([#387](https://github.com/project-lux/lux-marklogic/issues/387)).
 
 ## v1.32.0 - 2025-01-13
 

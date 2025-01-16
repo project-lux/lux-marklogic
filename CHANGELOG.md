@@ -8,6 +8,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- Updated search terms config for predicate names that changed in the 2025-01-10 dataset ([#420](https://github.com/project-lux/lux-marklogic/issues/420)).
+
 ### Removed
 
 - Removed the advanced search config for Works About an Event ([#387](https://github.com/project-lux/lux-marklogic/issues/387)).

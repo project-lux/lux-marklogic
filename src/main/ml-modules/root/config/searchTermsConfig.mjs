@@ -463,7 +463,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     aboutEvent: {
       patternName: 'hopWithField',
-      predicates: ['lux("about_or_depicts_events")'],
+      predicates: ['lux("about_or_depicts_event")'],
       targetScope: 'event',
       hopInverseName: 'subjectOfEvent',
       indexReferences: ['eventPrimaryName'],

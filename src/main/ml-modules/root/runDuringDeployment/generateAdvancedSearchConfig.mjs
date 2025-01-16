@@ -49,17 +49,8 @@ function createEntry(scopeName, termName, termConfig, report) {
     ? 'boolean'
     : termConfig.getScalarType();
 
-  if (termConfig.hasLabel()) {
-    entry.label = termConfig.getLabel();
-  } else if (report) {
-    noLabel.push(`${scopeName}.${termName}`);
-  }
-
-  if (termConfig.hasHelpText()) {
-    entry.helpText = termConfig.getHelpText();
-  } else if (report) {
-    noHelpText.push(`${scopeName}.${termName}`);
-  }
+  entry.label = termConfig.getLabel();
+  entry.helpText = termConfig.getHelpText();
 
   const targetScopeName = termConfig.getTargetScopeName();
   if (targetScopeName) {
@@ -139,6 +130,8 @@ const advancedSearchConfigs = {};
               // Suppress search terms that may never be exposed via advanced search and those
               // the frontend is not yet ready for.
               let add = true;
+              const hasLabel = termConfig.hasLabel();
+              const hasHelpText = termConfig.hasHelpText();
               if (
                 [
                   'any', // Term may no longer exist.
@@ -148,9 +141,19 @@ const advancedSearchConfigs = {};
                   'recordType',
                   'subject',
                 ].includes(termName) &&
-                (!termConfig.hasLabel() || !termConfig.hasHelpText())
+                (!hasLabel || !hasHelpText)
               ) {
                 add = false;
+              } else if (!hasLabel || !hasHelpText) {
+                add = false;
+                if (report) {
+                  if (!hasLabel) {
+                    noLabel.push(`${scopeName}.${termName}`);
+                  }
+                  if (!hasHelpText) {
+                    noHelpText.push(`${scopeName}.${termName}`);
+                  }
+                }
               } else if (termName.endsWith('Id')) {
                 add = false;
               }
@@ -212,11 +215,11 @@ utils.logValues(
 );
 utils.logValues('Search terms omitted from advanced search', omittedTermNames);
 utils.logValues(
-  'Advanced search-included search terms without a label',
+  'Advanced search - omitted the following search terms because they do not have a label',
   noLabel
 );
 utils.logValues(
-  'Advanced search-included search terms without help text',
+  'Advanced search - omitted the following search terms because they do not have help text',
   noHelpText
 );
 

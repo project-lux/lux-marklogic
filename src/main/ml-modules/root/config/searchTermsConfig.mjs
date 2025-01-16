@@ -153,7 +153,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     influencedByEvent: {
       patternName: 'hopWithField',
-      predicates: ['lux("activityInfluencedCreation")'],
+      predicates: ['lux("eventInfluencedCreation")'],
       targetScope: 'event',
       hopInverseName: 'influenced',
       indexReferences: ['eventPrimaryName'],
@@ -471,7 +471,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     aboutItem: {
       patternName: 'hopWithField',
-      predicates: ['lux("about_or_depicts_object")'],
+      predicates: ['lux("about_or_depicts_item")'],
       targetScope: 'item',
       hopInverseName: 'subjectOfItem',
       indexReferences: ['itemPrimaryName'],

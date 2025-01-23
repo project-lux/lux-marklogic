@@ -5,10 +5,11 @@
  * size was large enough, it was contributing to crashing the V8 Engine in MarkLogic Server.  Adding
  * pagination restored stability to the system during performance tests.  In order to accommodate
  * the frontend's timeline functionality, it was decide to allow the frontend to request a very large
- * pageLength in order to retrieve all facet values for a given facet.  However, semantic facets are
- * very likely to timeout with a large pageLength so, semantic facets are restricted to a smaller
- * maximum pageLength than non-semantic facets.  For more details see issues #160, #161, and #162 in
- * the lux-marklogic GitHub project: https://github.com/project-lux/lux-marklogic
+ * pageLength in order to retrieve all facet values for a given facet.  Despite a semantic facet
+ * optimization in January 2025 (#365), we elected to keep the smaller semantic facet page length
+ * yet note the existing semantic facets do not have more than 100 values anyway.  For more details
+ * see issues #160, #161, and #162 in the lux-marklogic GitHub project:
+ * https://github.com/project-lux/lux-marklogic
  */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
@@ -20,7 +21,7 @@ import {
   LUX_CONTEXT,
   TRACE_NAME_FACETS as traceName,
 } from './appConstants.mjs';
-import { processSearchCriteria, search } from './searchLib.mjs';
+import { processSearchCriteria } from './searchLib.mjs';
 import { convertSecondsToDateStr } from '../utils/dateUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
@@ -74,7 +75,7 @@ function getFacet({
       // Validate pagination parameters (and impose a maximum number per request).
       utils.checkPaginationParameters(page, pageLength);
       pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
-      ({ totalItems, facetValues } = _getViaSearchFacet(
+      ({ totalItems, facetValues } = _calculateSemanticFacet(
         facetName,
         searchCriteriaProcessor,
         page,
@@ -84,7 +85,7 @@ function getFacet({
     } else {
       utils.checkPaginationParameters(page, pageLength);
       pageLength = Math.min(pageLength, MAXIMUM_NON_SEMANTIC_PAGE_LENGTH);
-      ({ totalItems, facetValues } = _getNonSemanticFacet(
+      ({ totalItems, facetValues } = _calculateNonSemanticFacet(
         facetName,
         searchCriteriaProcessor,
         page,
@@ -220,7 +221,7 @@ function _isSemanticFacet(facetName) {
 }
 
 // Support presently limited to field range indexes (via cts.fieldValues).
-function _getNonSemanticFacet(
+function _calculateNonSemanticFacet(
   facetName,
   searchCriteriaProcessor,
   page,
@@ -274,7 +275,7 @@ function _getNonSemanticFacet(
   };
 }
 
-function _getViaSearchFacet(
+function _calculateSemanticFacet(
   facetName,
   searchCriteriaProcessor,
   page,
@@ -341,7 +342,7 @@ function _throwSearchCriteriaRequiredError() {
 }
 
 function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
-  if (SEMANTIC_FACETS_CONFIG[facetName]) {
+  if (_isSemanticFacet(facetName)) {
     return SEMANTIC_FACETS_CONFIG[facetName].getFacetSelectedCriteria(
       searchCriteria,
       facetValue

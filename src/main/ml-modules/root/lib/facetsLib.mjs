@@ -305,9 +305,18 @@ function _calculateSemanticFacet(
         'score-zero',
       ]),
       1,
-      MAXIMUM_SEMANTIC_PAGE_LENGTH
+      MAXIMUM_SEMANTIC_PAGE_LENGTH + 1
     )
     .toArray();
+
+  // Warn when there were more facet values than allowed.
+  if (potentialFacetValues.length > MAXIMUM_SEMANTIC_PAGE_LENGTH) {
+    console.warn(
+      `The '${facetName}' facet exceeded the ${MAXIMUM_SEMANTIC_PAGE_LENGTH} value limit with base search criteria ${JSON.stringify(
+        baseSearchCriteria
+      )}`
+    );
+  }
 
   const facetValues = potentialFacetValues
     .map((doc) => {

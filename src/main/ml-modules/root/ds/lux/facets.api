@@ -28,11 +28,6 @@
       "name": "sort",
       "datatype": "string",
       "nullable": true
-    },
-    {
-      "name": "filterResults",
-      "datatype": "boolean",
-      "nullable": true
     }
   ],
   "return": {

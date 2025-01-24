@@ -17,7 +17,6 @@ import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
-  DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
   LUX_CONTEXT,
   TRACE_NAME_FACETS as traceName,
 } from './appConstants.mjs';
@@ -49,7 +48,6 @@ function getFacet({
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
   sort = DEFAULT_SORT,
-  filterResults = DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
 }) {
   const start = new Date();
   let requestCompleted = false;
@@ -79,8 +77,7 @@ function getFacet({
         facetName,
         searchCriteriaProcessor,
         page,
-        pageLength,
-        filterResults
+        pageLength
       ));
     } else {
       utils.checkPaginationParameters(page, pageLength);
@@ -116,9 +113,7 @@ function getFacet({
       // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
-          isSemantic === true ? filterResults : 'n/a'
-        })`
+        `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`
       );
     } else if (InvalidSearchRequestError) {
       // Not associated to a monitoring test or the log mining script.
@@ -130,9 +125,7 @@ function getFacet({
       // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength}; filterResults: ${
-          isSemantic === true ? filterResults : 'n/a'
-        })`
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`
       );
     }
   }
@@ -279,8 +272,7 @@ function _calculateSemanticFacet(
   facetName,
   searchCriteriaProcessor,
   page,
-  pageLength,
-  filterResults
+  pageLength
 ) {
   // Require search criteria.
   const baseSearchCtsQuery = searchCriteriaProcessor

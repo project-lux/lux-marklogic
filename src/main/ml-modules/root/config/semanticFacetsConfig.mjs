@@ -6,6 +6,10 @@ const la = op.prefixer('https://linked.art/ns/terms/');
 const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
 const skos = op.prefixer('http://www.w3.org/2004/02/skos/core#');
 
+// A subset of criteria defined herein are defined as CTS queries.  The preferred means is
+// with the JSON search grammar; however, we would have to research how we could do this
+// without imposing a material performance penalty.  Until then, the same optimization made
+// elsewhere in the code base may have to be made here too.
 const SEMANTIC_FACETS_CONFIG = {
   responsibleCollections: {
     potentialFacetValuesCtsQuery: cts.andQuery([

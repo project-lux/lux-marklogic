@@ -1,16 +1,3 @@
-/*
- * Welcome to the facets endpoint!
- *
- * In June 2024 it was decided that the facets endpoint should be paginated. When the facet response
- * size was large enough, it was contributing to crashing the V8 Engine in MarkLogic Server.  Adding
- * pagination restored stability to the system during performance tests.  In order to accommodate
- * the frontend's timeline functionality, it was decide to allow the frontend to request a very large
- * pageLength in order to retrieve all facet values for a given facet.  Despite a semantic facet
- * optimization in January 2025 (#365), we elected to keep the smaller semantic facet page length
- * yet note the existing semantic facets do not have more than 100 values anyway.  For more details
- * see issues #160, #161, and #162 in the lux-marklogic GitHub project:
- * https://github.com/project-lux/lux-marklogic
- */
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
@@ -33,11 +20,16 @@ import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
 const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
 
-// Pagination constants
+// Pagination defaults
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
+// A large non-semantic facet page size is in support of frontend's timeline functionality.
 const MAXIMUM_NON_SEMANTIC_PAGE_LENGTH = 10000;
-const MAXIMUM_SEMANTIC_PAGE_LENGTH = 100;
+// Semantic facet requests are subject to a maximum number of values, regardless of pagination
+// parameter values.  Courtesy of an optimization (#365), this limit could be increased.  There's
+// no point until there is a semantic facet that has more values than this limit.  A warning is
+// logged if there are more values than this limit.
+const SEMANTIC_VALUE_LIMIT = 100;
 
 const DEFAULT_SORT = 'frequency-order';
 
@@ -60,7 +52,6 @@ function getFacet({
           searchCriteria,
           searchScope,
           allowMultiScope: false,
-          // The filterResults parameter is used elsewhere, specific to semantic facet requests.
           filterResults: false,
         })
       : null;
@@ -72,7 +63,7 @@ function getFacet({
     if (isSemantic) {
       // Validate pagination parameters (and impose a maximum number per request).
       utils.checkPaginationParameters(page, pageLength);
-      pageLength = Math.min(pageLength, MAXIMUM_SEMANTIC_PAGE_LENGTH);
+      pageLength = Math.min(pageLength, SEMANTIC_VALUE_LIMIT);
       ({ totalItems, facetValues } = _calculateSemanticFacet(
         facetName,
         searchCriteriaProcessor,
@@ -297,14 +288,14 @@ function _calculateSemanticFacet(
         'score-zero',
       ]),
       1,
-      MAXIMUM_SEMANTIC_PAGE_LENGTH + 1
+      SEMANTIC_VALUE_LIMIT + 1
     )
     .toArray();
 
   // Warn when there were more facet values than allowed.
-  if (potentialFacetValues.length > MAXIMUM_SEMANTIC_PAGE_LENGTH) {
+  if (potentialFacetValues.length > SEMANTIC_VALUE_LIMIT) {
     console.warn(
-      `The '${facetName}' facet exceeded the ${MAXIMUM_SEMANTIC_PAGE_LENGTH} value limit with base search criteria ${JSON.stringify(
+      `The '${facetName}' facet exceeded the ${SEMANTIC_VALUE_LIMIT} value limit with base search criteria ${JSON.stringify(
         baseSearchCriteria
       )}`
     );

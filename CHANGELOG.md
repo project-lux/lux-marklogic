@@ -11,6 +11,9 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Optimized semantic facets to produce results faster ([#365](https://github.com/project-lux/lux-marklogic/issues/365)).
 
 ### Removed
+
+- Removed the semantic facet timeout override of 59 seconds. Semantic facet requests are now subject to the application server's default timeout of 20 seconds. Associated build property: `viaSearchFacetTimeout`. (Part of [#365](https://github.com/project-lux/lux-marklogic/issues/365))
+- Removed the ability to filter searches related to semantic facet requests. Associated facets endpoint parameter: `filterResults`. Associated build property: `filterSemanticFacetSearchResults`. (Part of [#365](https://github.com/project-lux/lux-marklogic/issues/365))
   
 ### Fixed
 

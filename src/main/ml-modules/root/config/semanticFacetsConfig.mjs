@@ -10,12 +10,7 @@ const SEMANTIC_FACETS_CONFIG = {
   responsibleCollections: {
     potentialFacetValuesCtsQuery: cts.andQuery([
       cts.jsonPropertyValueQuery('dataType', 'Set', ['exact']),
-      cts.jsonPropertyValueQuery(
-        'id',
-        'http://vocab.getty.edu/aat/300025976',
-        ['exact'],
-        1
-      ),
+      cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection, ['exact'], 1),
     ]),
     getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
       return cts.andQuery([

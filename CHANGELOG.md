@@ -9,6 +9,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 
 - Optimized semantic facets to produce results faster ([#365](https://github.com/project-lux/lux-marklogic/issues/365)).
+- Add work.aboutEvent and event.subjectOfEvent back to the advanced search config. Use updated predicate for these search terms ([#387](https://github.com/project-lux/lux-marklogic/issues/387)).
 
 ### Removed
 

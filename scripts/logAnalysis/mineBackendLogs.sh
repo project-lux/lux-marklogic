@@ -41,7 +41,7 @@ APP_ERROR_LOG_PATTERN=*800[3-4]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
-ERROR_LOG_EGREP_PATTERN_MAIN=[^0-9]-[0-9]+-ErrorLog-trimmed.txt
+ERROR_LOG_EGREP_PATTERN_MAIN=[^0-9]-[0-9]+-ErrorLog*.txt
 
 ERROR_LOG_ABOVE_INFO_FILE=$OUTPUT_DIRECTORY/errorLogEntriesAboveInfo.txt
 ALL_REQUESTS_METRICS_TSV_FILE=$OUTPUT_DIRECTORY/requestMetrics.tsv
@@ -67,7 +67,7 @@ DURATION_IN_SECS_CELL=B6
 
 # grepForLineCount [label] [regEx of all lines] [regEx of lines to count]
 function grepForLineCount() {
-  { echo -e "$1\t"; grep "$2" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -cE "$3"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "$1\t"; grep "$2" $APP_ERROR_LOG_PATTERN | grep -cE "$3"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
 # grepForSectionCounts [title] [regEx of all lines] [milliPrefix] [milliSuffix]
@@ -106,17 +106,10 @@ function addCountFromAccessLogs() {
 function addBonusLinesForSearch() {
   # At least for the time being, partOf search requests can comprise more than 75% of a performance test's
   # search requests.  Until this changes, we want to call this count out.
-  { echo -e "partOf search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -c "criteria\":{\"partOf"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "partOf search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -c "criteria\":{\"partOf"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" >> $ALL_REQUESTS_METRICS_TSV_FILE
-  { echo -e "Failed search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -c "\"requestCompleted\":false"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
+  { echo -e "Failed search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -c "\"requestCompleted\":false"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-}
-
-function addBonusLinesForFacets() {
-  # Number of searches performed while calculating facets that require their own searches.
-  # Starting in v1.0.17, this count should match the number of search requests with a context of "viaSearchFacet".
-  { echo -e "Searching for the '[a-zA-Z]*' facet values" $APP_ERROR_LOG_PATTERN | grep -c "facet"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
-  echo -e "" >> $ALL_REQUESTS_METRICS_TSV_FILE
 }
 
 function addBonusLinesForDocuments() {
@@ -163,7 +156,6 @@ grepForSectionCounts "FACET REQUESTS" "LuxFacets" "in " " milli"
 CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
-addBonusLinesForFacets
 
 grepForSectionCounts "RELATED LIST REQUESTS\tExcludes searchWillMatch calls." "LuxRelatedList" "Created .* in " " milli"
 CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
@@ -231,7 +223,6 @@ grep -e "$PATTERN_SEARCH_REQUESTS" \
      -e "$PATTERN_SEARCH_ESTIMATE_REQUESTS" \
      -e "$PATTERN_DOCUMENT_REQUESTS" \
      $APP_ERROR_LOG_PATTERN \
-     | grep -v "requestContext\":\"viaSearchFacet" \
      > $ALL_REQUESTS_FILE
 
 # Create a TSV out of the all requests file via multiple sed commands.
@@ -292,12 +283,12 @@ echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE" >> $ALL_REQUESTS_MET
 
 # Long running searches
 echo -e "   $SEARCHES_LONG_RUNNING_FILE..."
-grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -v "requestContext\":\"viaSearchFacet" | grep -E "total\":[2-9][0-9]{4}" > $SEARCHES_LONG_RUNNING_FILE
+grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -E "total\":[2-9][0-9]{4}" > $SEARCHES_LONG_RUNNING_FILE
 echo -e "See also\t$SEARCHES_LONG_RUNNING_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
-# Failed search requests that did not request facets.
+# Failed search requests.
 echo -e "   $FAILED_SEARCH_REQUESTS_FILE..."
-grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep "\"requestCompleted\":false" | grep -v "requestContext\":\"viaSearchFacet" > $FAILED_SEARCH_REQUESTS_FILE
+grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep "\"requestCompleted\":false" > $FAILED_SEARCH_REQUESTS_FILE
 echo -e "See also\t$FAILED_SEARCH_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Failed searchEstimate requests.

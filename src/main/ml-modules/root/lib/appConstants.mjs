@@ -8,7 +8,6 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
-const VIA_SEARCH_FACET_TIMEOUT = parseInt('%%viaSearchFacetTimeout%%'.trim());
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
@@ -21,8 +20,6 @@ const RELATED_LIST_PER_RELATION_MAX = parseInt(
 
 const DEFAULT_FILTER_SEARCH_RESULTS =
   '%%filterSearchResults%%'.trim() === 'true';
-const DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS =
-  '%%filterSemanticFacetSearchResults%%'.trim() === 'true';
 const DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS =
   '%%filterRelatedListSearchResults%%'.trim() === 'true';
 
@@ -140,7 +137,6 @@ export {
   BASE_URL,
   CODE_VERSION,
   DEFAULT_FILTER_SEARCH_RESULTS,
-  DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
@@ -175,5 +171,4 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
-  VIA_SEARCH_FACET_TIMEOUT,
 };

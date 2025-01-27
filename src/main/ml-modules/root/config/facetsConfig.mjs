@@ -1,3 +1,4 @@
+// These are all the non-semantic facets.
 const FACETS_CONFIG = {
   agentActiveDate: { indexReference: 'agentActiveStartDateLong' },
   agentActivePlaceId: {

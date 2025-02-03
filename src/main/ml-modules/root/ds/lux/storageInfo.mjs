@@ -1,9 +1,20 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import {
+  HIGH_STORAGE_WARNING_THRESHOLD,
+  LOW_STORAGE_CRITICAL_THRESHOLD,
+  LOW_STORAGE_WARNING_THRESHOLD,
+} from '../../lib/appConstants.mjs';
+
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;
 const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
+
+const LOW_STORAGE_CRITICAL_MESSAGE = `CRITICAL: Less than ${LOW_STORAGE_CRITICAL_THRESHOLD}% remaining space. Increase reserved space.`;
+const LOW_STORAGE_WARNING_MESSAGE = `WARNING: Less than ${LOW_STORAGE_WARNING_THRESHOLD}% remaining space. Consider increasing reserved space.`;
+const HIGH_STORAGE_WARNING_MESSAGE = `WARNING: More than ${HIGH_STORAGE_WARNING_THRESHOLD}% remaining space. Consider reducing reserved space.`;
+const NORMAL_STORAGE_MESSAGE = `Storage space is within normal limits`;
 
 function keepProperties(obj, names) {
   const trimmedObj = {};
@@ -155,6 +166,17 @@ function calculateTotals(
               // Better to go by unreservedRemainingMb as it does.
               approximateUnreservedRemainingPercent:
                 totalsMb.approximateUnreservedRemainingPercent,
+              message:
+                totalsMb.approximateUnreservedRemainingPercent <
+                LOW_STORAGE_CRITICAL_THRESHOLD
+                  ? LOW_STORAGE_CRITICAL_MESSAGE
+                  : totalsMb.approximateUnreservedRemainingPercent <
+                    LOW_STORAGE_WARNING_THRESHOLD
+                  ? LOW_STORAGE_WARNING_MESSAGE
+                  : totalsMb.approximateUnreservedRemainingPercent >
+                    HIGH_STORAGE_WARNING_THRESHOLD
+                  ? HIGH_STORAGE_WARNING_MESSAGE
+                  : NORMAL_STORAGE_MESSAGE,
             };
           } else {
             return totalsMb;

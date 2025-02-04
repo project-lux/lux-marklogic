@@ -161,12 +161,6 @@
 									"key": "pageLength",
 									"value": "6",
 									"type": "text"
-								},
-								{
-									"key": "filterResults",
-									"value": "false",
-									"description": "Only applicable to semantic facets.",
-									"type": "text"
 								}
 							]
 						},

@@ -419,7 +419,6 @@ Only the first 100 values of a semantic facet's values are accessible.
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
 | `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 10,000 for non-semantic facets and 100 for semantic facets. Via multiple requests, one may retrieve more than 10,000 values from a non-semantic facet but never more than 100 values from a semantic facet.  An error will be thrown if this value is less than 1. |
 | `sort` | `asc` | **OPTIONAL** - By default, facet values are sorted by the *number of times* (frequency) the value appears in the search results, in descending order.  This works well for string facet values, but not facets with numeric or date ranges, where it makes more sense to sort by the facet's *values*.  To sort by facet value, set this parameter's value to `asc` for ascending or `desc` for descending.  At present, this parameter is only implemented for non-semantic facets; semantic facets are only sorted by frequency. |
-| `filterResults` | `false` | **OPTIONAL** - Only applicable to semantic facet requests.  Submit `true` to instruct the system to filter the results to ensure there are no false positives.  Filtering is the process of pulling candidate search result documents from disk in order to verify they meet all search criteria.  The process can significantly slow the request and often yields the same results.  Unfiltered search results are calculated using indexes alone --the same as non-semantic facets and estimates.  This endpoint parameter's default is specified by the `filterSemanticFacetSearchResults` build property.  Initially, the default will be `true` (filtered) but it is expected to switch to `false` (unfiltered). |
 
 ### Successful Request / Response Example
 
@@ -717,7 +716,7 @@ Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `q` | `{"OR":[{"_scope":"work","partOf":{"id":"https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e"}},{"_scope":"item","memberOf":{"id":"https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e"}}]}` |
+| `q` | `{"OR":[{"_scope":"work","partOfSet":{"id":"https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e"}},{"_scope":"item","memberOf":{"id":"https://lux.collections.yale.edu/data/set/e58ae36f-1ef5-41ab-a36c-5abb5d063f5e"}}]}` |
 | `scope` | `multi` |
 | `page` | `1` |
 | `pageLength` | `20` |
@@ -733,45 +732,45 @@ Response Body:
 
 ```
 {
-    "@context": "https://linked.art/ns/v1/search.json",
-    "id": "https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=1&pageLength=20&sort=archiveSortId%3Aasc",
-    "type": "OrderedCollectionPage",
-    "partOf": [
-        {
-            "id": "https://lux.collections.yale.edu/api/search-estimate/multi?q=%7B%22OR%22%3A%5B%7B%22partOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D",
-            "type": "OrderedCollection",
-            "label": {
-                "en": [
-                    "Multiple Types"
-                ]
-            },
-            "summary": {
-                "en": [
-                    "Records representing multiple types that match your search."
-                ]
-            },
-            "totalItems": 28
-        }
-    ],
-    "orderedItems": [
-        {
-            "id": "https://lux.collections.yale.edu/data/set/ec1d5400-fb7a-4e18-9721-410c5dfecd43",
-            "type": "Set"
-        },
-        {
-            "id": "https://lux.collections.yale.edu/data/set/e7a2214b-f20f-4c2f-a127-370366307452",
-            "type": "Set"
-        },
-        {
-            "id": "https://lux.collections.yale.edu/data/digital/ce21c5d9-177a-40c3-949e-029632af4d5d",
-            "type": "DigitalObject"
-        },
-        ...more search results
-    ],
-    "next": {
-        "id": "https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=2&pageLength=20&sort=archiveSortId%3Aasc",
-        "type": "OrderedCollectionPage"
+  "@context":"https://linked.art/ns/v1/search.json",
+  "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&mayChangeScope=true&page=1&pageLength=20&sort=archiveSortId",
+  "type":"OrderedCollectionPage",
+  "partOf":[
+    {
+      "id":"https://lux.collections.yale.edu/api/search-estimate/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D",
+      "type":"OrderedCollection",
+      "label":{
+        "en":[
+          "Multiple Types"
+        ]
+      },
+      "summary":{
+        "en":[
+          "Records representing multiple types that match your search."
+        ]
+      },
+      "totalItems":28
     }
+  ],
+  "orderedItems":[
+    {
+      "id":"https://lux.collections.yale.edu/data/set/ec1d5400-fb7a-4e18-9721-410c5dfecd43",
+      "type":"Set"
+    },
+    {
+      "id":"https://lux.collections.yale.edu/data/set/e7a2214b-f20f-4c2f-a127-370366307452",
+      "type":"Set"
+    },
+    {
+      "id":"https://lux.collections.yale.edu/data/digital/ce21c5d9-177a-40c3-949e-029632af4d5d",
+      "type":"DigitalObject"
+    },
+    ...more search results
+  ],
+  "next":{
+    "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&mayChangeScope=true&page=2&pageLength=20&sort=archiveSortId",
+    "type":"OrderedCollectionPage"
+  }
 }
 ```
 
@@ -1175,16 +1174,17 @@ Response Body:
   ],
   "sortBy":[
     {
-        "name": "agentActiveDate",
-        "type": "singleScope"
+      "name":"agentActiveDate",
+      "type":"nonSemantic"
     },
     {
-        "name": "agentEndDate",
-        "type": "singleScope"
+      "name":"agentClassificationConceptName",
+      "type":"semantic"
     },
+    ...
     {
-        "name": "agentStartDate",
-        "type": "singleScope"
+      "name":"archiveSortId",
+      "type":"multi"
     },
     ...more to sort by
   ]
@@ -1219,22 +1219,23 @@ Response Body:
 
 ```
 {
-   "estimates":{
-      "searchScopes":{
-         "agent":5686344,
-         "concept":4883700,
-         "event":38178,
-         "item":17186764,
-         "place":617915,
-         "reference":11224990,
-         "set":300030,
-         "work":13233573
-      }
-   },
-   "metadata":{
-      "timestamp":"2024-02-21T02:53:03.551",
-      "milliseconds":8
-   }
+  "estimates":{
+    "searchScopes":{
+      "agent":5649718,
+      "concept":4649130,
+      "event":153318,
+      "item":17545158,
+      "multi":0,
+      "place":579366,
+      "reference":11031350,
+      "set":305353,
+      "work":13560980
+    }
+  },
+  "metadata":{
+    "timestamp":"2025-01-10T13:09:20.2",
+    "milliseconds":9
+  }
 }
 ```
 
@@ -1352,9 +1353,9 @@ Response Body:
 
 ```
 {
-    "codeVersion": "v1.24.0-6-gaf84473",
-    "dataVersion": "2024-09-04T12:45:25.112260",
-    "mlVersion": "11.3.0",
+    "codeVersion": "v1.31.0-1-g1a21a32",
+    "dataVersion": "2024-04-17T19:16:17.541447",
+    "mlVersion": "11.3.1",
     "databaseName": "lux-content"
 }
 ```

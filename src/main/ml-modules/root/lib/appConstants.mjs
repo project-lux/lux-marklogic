@@ -8,7 +8,6 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
-const VIA_SEARCH_FACET_TIMEOUT = parseInt('%%viaSearchFacetTimeout%%'.trim());
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
@@ -21,13 +20,21 @@ const RELATED_LIST_PER_RELATION_MAX = parseInt(
 
 const DEFAULT_FILTER_SEARCH_RESULTS =
   '%%filterSearchResults%%'.trim() === 'true';
-const DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS =
-  '%%filterSemanticFacetSearchResults%%'.trim() === 'true';
 const DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS =
   '%%filterRelatedListSearchResults%%'.trim() === 'true';
 
 const FULL_TEXT_SEARCH_RELATED_FIELD_NAME =
   '%%fullTextSearchRelatedFieldName%%'.trim();
+
+const LOW_STORAGE_CRITICAL_THRESHOLD = parseInt(
+  '%%lowStorageCriticalThreshold%%'.trim()
+);
+const LOW_STORAGE_WARNING_THRESHOLD = parseInt(
+  '%%lowStorageWarningThreshold%%'.trim()
+);
+const HIGH_STORAGE_WARNING_THRESHOLD = parseInt(
+  '%%highStorageWarningThreshold%%'.trim()
+);
 
 const BASE_URL = 'https://lux.collections.yale.edu';
 const FACETS_PREFIX = `${BASE_URL}/api/facets`;
@@ -140,15 +147,17 @@ export {
   BASE_URL,
   CODE_VERSION,
   DEFAULT_FILTER_SEARCH_RESULTS,
-  DEFAULT_FILTER_SEMANTIC_FACET_SEARCH_RESULTS,
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   ENVIRONMENT_NAME,
   FACETS_PREFIX,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
+  HIGH_STORAGE_WARNING_THRESHOLD,
   IRI_DOES_NOT_EXIST,
   IRI_PREFIX,
+  LOW_STORAGE_CRITICAL_THRESHOLD,
+  LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
   ML_APP_NAME,
   REG_EXP_NEAR_OPERATOR,
@@ -175,5 +184,4 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
-  VIA_SEARCH_FACET_TIMEOUT,
 };

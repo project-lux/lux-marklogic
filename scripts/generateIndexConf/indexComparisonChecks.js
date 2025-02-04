@@ -15,7 +15,7 @@
  *
  * Run as an admin or lux-endpoint-consumer to ensure getSearchTermsConfig() returns all search terms.
  */
-import { getVersionInfo } from '/utils/utils.mjs';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
 
 /*
  * COLLECT: CONFIGURED

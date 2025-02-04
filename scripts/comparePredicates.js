@@ -5,7 +5,7 @@
  * to be manually supplied using checkPredicates.js.
  */
 'use strict';
-import { getVersionInfo } from '/utils/utils.mjs';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
 
 const dedup = true;
 

@@ -6,7 +6,7 @@
 import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
 import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
 import { getSearchScopeTypes } from '/lib/searchScope.mjs';
-import { getVersionInfo } from '/utils/utils.mjs';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
 
 const searchTermsConfig = getSearchTermsConfig();
 const types = [...new Set(getSearchScopeTypes())].sort();

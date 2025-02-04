@@ -6,6 +6,13 @@
 #
 #!/bin/bash
 
+# Connection settings
+protocol=https
+host=OMITTED
+port=8004
+username=lux_consumer_dev
+password=OMITTED
+
 ZEROS_FILE=./zeros.tsv
 echo -e "Scope\tCriteria" > "$ZEROS_FILE"
 
@@ -13,20 +20,13 @@ ERRORS_FILE=./errors.tsv
 echo -e "Estimate\tScope\tCriteria" > "$ERRORS_FILE"
 
 DIFFERENCES_FILE=./differences.tsv
-echo -e "Estimate\tCount\tScope\tCriteria" > "$DIFFERENCES_FILE"
+echo -e "Difference\tEstimate\tCount\tScope\tCriteria" > "$DIFFERENCES_FILE"
 
 zeroEstimateCount=0
 errorCount=0
 matchCount=0
 noMatchCount=0
 requestCount=0
-
-# Connection settings
-protocol=https
-host=OMITTED
-port=8004
-username=lux_consumer_dev
-password=OMITTED
 
 searchEstimateUrl="$protocol://$host:$port/ds/lux/searchEstimate.mjs"
 searchUrl="$protocol://$host:$port/ds/lux/search.mjs"
@@ -41,6 +41,8 @@ while read line; do
 
   scope="${splitLine[0]}"
   q="${splitLine[1]}"
+
+  echo -e "scope: $scope"
 
   # Get estimate
   # TODO: Gracefully handle requests that time out.
@@ -100,7 +102,8 @@ while read line; do
   else
     echo "Oh no!"
     ((noMatchCount++))
-    echo -e "$estimate\t$actual\t$scope\t$q" >> "$DIFFERENCES_FILE"
+    diff=$(($estimate - $actual))
+    echo -e "$diff\t$estimate\t$actual\t$scope\t$q" >> "$DIFFERENCES_FILE"
   fi
 done < ./searchParamsAndDurations.jsonl
 

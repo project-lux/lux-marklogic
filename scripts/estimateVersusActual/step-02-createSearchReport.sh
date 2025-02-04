@@ -6,12 +6,20 @@
 #
 #!/bin/bash
 
-DIFFERENCES_FILE=./differences.tsv
-echo -e "Estimate\tCount\tCriteria" > "$DIFFERENCES_FILE"
+ZEROS_FILE=./zeros.tsv
+echo -e "Scope\tCriteria" > "$ZEROS_FILE"
 
-requestCount=0
+ERRORS_FILE=./errors.tsv
+echo -e "Estimate\tScope\tCriteria" > "$ERRORS_FILE"
+
+DIFFERENCES_FILE=./differences.tsv
+echo -e "Estimate\tCount\tScope\tCriteria" > "$DIFFERENCES_FILE"
+
+zeroEstimateCount=0
+errorCount=0
 matchCount=0
 noMatchCount=0
+requestCount=0
 
 # Connection settings
 protocol=https
@@ -24,6 +32,7 @@ searchEstimateUrl="$protocol://$host:$port/ds/lux/searchEstimate.mjs"
 searchUrl="$protocol://$host:$port/ds/lux/search.mjs"
 
 # Read input file, one line at a time
+isNumberRegEx='^[0-9]+$'
 IFS=";"
 while read line; do
   ((requestCount++))
@@ -42,6 +51,21 @@ while read line; do
     "$searchEstimateUrl" \
     | jq ".totalItems")
   echo -e "Estimate: $estimate"
+
+  # Estimates cannot include false negatives; thus, if the estimate is zero,
+  # we can presume the actual is zero as well.
+  if [ "$estimate" = "0" ]; then
+    echo -e "$scope\t$q" >> "$ZEROS_FILE"
+    ((zeroEstimateCount++))
+    continue
+  fi
+
+  # When estimate is not a number, something went wrong locally or remotely.
+  if ! [[ $estimate =~ $isNumberRegEx ]] ; then
+    echo -e "$estimate\t$scope\t$q" >> "$ERRORS_FILE"
+    ((errorCount++))
+    continue
+  fi
 
   # Calculate last page
   pageLength=20
@@ -76,11 +100,14 @@ while read line; do
   else
     echo "Oh no!"
     ((noMatchCount++))
-    echo -e "$estimate\t$actual\t$q" >> "$DIFFERENCES_FILE"
+    echo -e "$estimate\t$actual\t$scope\t$q" >> "$DIFFERENCES_FILE"
   fi
 done < ./searchParamsAndDurations.jsonl
 
-echo -e "Total no. of requests: $requestCount"
-echo -e "Count matched estimate: $matchCount"
-echo -e "Count did not match estimate: $noMatchCount"
-echo -e "See $DIFFERENCES_FILE"
+echo -e "$zeroEstimateCount: requests with an estimate of zero; see $ZEROS_FILE"
+echo -e "$errorCount: requests that errored out; see $ERRORS_FILE"
+echo -e "$noMatchCount: requests whose estimate did not match the actual; see $DIFFERENCES_FILE"
+echo -e "$matchCount: requests whose estimate matched the actual count."
+echo -e "$requestCount: total number of requests."
+echo ""
+echo -e "See $ZEROS_FILE, $ERRORS_FILE, and $DIFFERENCES_FILE"

@@ -34,15 +34,13 @@ searchUrl="$protocol://$host:$port/ds/lux/search.mjs"
 # Read input file, one line at a time
 isNumberRegEx='^[0-9]+$'
 IFS=";"
-while read line; do
+while read -r line; do
   ((requestCount++))
 
   read -ra splitLine <<< "$line"
 
   scope="${splitLine[0]}"
   q="${splitLine[1]}"
-
-  echo -e "scope: $scope"
 
   # Get estimate
   # TODO: Gracefully handle requests that time out.

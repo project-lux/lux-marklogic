@@ -36,12 +36,15 @@
   - [Stats](#stats)
     - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-9)
-  - [Translate](#translate)
+  - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Version Info](#version-info)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-11)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-11)
+    - [Failed Request / Response Example](#failed-request--response-example-12)
 
 # Introduction
 
@@ -1236,6 +1239,88 @@ Response Body:
     "timestamp":"2025-01-10T13:09:20.2",
     "milliseconds":9
   }
+}
+```
+
+### Failed Request / Response Example
+
+*Only known scenarios would be an authentication error and internal server error.*
+
+## Storage Info
+
+The `storageInfo` endpoint enables consumers to get a summary of the storage usage on the MarkLogic cluster used by LUX. 
+
+The thresholds for warnings and critical messages regarding low and high storage are configured with the following gradle properties: `lowStorageCriticalThreshold`, `lowStorageWarningThreshold`, `highStorageWarningThreshold`
+
+
+**URL** : `/ds/lux/storageInfo.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters** : None
+
+### Successful Request / Response Example
+
+Scenario: storageInfo returns a summary of the storage usage on the MarkLogic cluster used by LUX.
+
+Parameters: None
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body:
+
+```
+{
+    "host1": {
+        "/var/opt/MarkLogic": {
+            "forestsActualGb": 421.6328125,
+            "forestsReserveGb": 585.4140625,
+            "journalsActualGb": 22.142578125,
+            "journalsReserveGb": 41.884765625,
+            "largeDataActualGb": 0,
+            "perVolumeOtherReserveGb": 2,
+            "totalKnownUsedGb": 443.775390625,
+            "totalReservedGb": 629.298828125,
+            "spaceRemainingGb": 1734.7939453125,
+            "unreservedRemainingGb": 1105.4951171875,
+            "approximateUnreservedRemainingPercent": 50.7440869083827,
+            "message": "WARNING: More than 25% remaining space. Consider reducing reserved space."
+        }
+    },
+    "host2": {
+        "/var/opt/MarkLogic": {
+            "forestsActualGb": 422.1162109375,
+            "forestsReserveGb": 586.55078125,
+            "journalsActualGb": 22.3154296875,
+            "journalsReserveGb": 33.6943359375,
+            "largeDataActualGb": 0,
+            "perVolumeOtherReserveGb": 2,
+            "totalKnownUsedGb": 444.431640625,
+            "totalReservedGb": 622.2451171875,
+            "spaceRemainingGb": 1734.322265625,
+            "unreservedRemainingGb": 1112.0771484375,
+            "approximateUnreservedRemainingPercent": 51.0418889094074,
+            "message": "WARNING: More than 25% remaining space. Consider reducing reserved space."
+        }
+    },
+    "host3": {
+        "/var/opt/MarkLogic": {
+            "forestsActualGb": 417.6494140625,
+            "forestsReserveGb": 578.32421875,
+            "journalsActualGb": 21.7353515625,
+            "journalsReserveGb": 26.26953125,
+            "largeDataActualGb": 0,
+            "perVolumeOtherReserveGb": 2,
+            "totalKnownUsedGb": 439.384765625,
+            "totalReservedGb": 606.59375,
+            "spaceRemainingGb": 1739.2607421875,
+            "unreservedRemainingGb": 1132.6669921875,
+            "approximateUnreservedRemainingPercent": 51.9895039429692,
+            "message": "WARNING: More than 25% remaining space. Consider reducing reserved space."
+        }
+    }
 }
 ```
 

@@ -11,9 +11,9 @@ const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
 
-const LOW_STORAGE_CRITICAL_MESSAGE = `CRITICAL: Less than ${LOW_STORAGE_CRITICAL_THRESHOLD}% remaining space. Increase reserved space.`;
-const LOW_STORAGE_WARNING_MESSAGE = `WARNING: Less than ${LOW_STORAGE_WARNING_THRESHOLD}% remaining space. Consider increasing reserved space.`;
-const HIGH_STORAGE_WARNING_MESSAGE = `WARNING: More than ${HIGH_STORAGE_WARNING_THRESHOLD}% remaining space. Consider reducing reserved space.`;
+const LOW_STORAGE_CRITICAL_MESSAGE = `CRITICAL: Less than ${LOW_STORAGE_CRITICAL_THRESHOLD}% remaining space. Increase storage size.`;
+const LOW_STORAGE_WARNING_MESSAGE = `WARNING: Less than ${LOW_STORAGE_WARNING_THRESHOLD}% remaining space. Consider increasing storage size.`;
+const HIGH_STORAGE_WARNING_MESSAGE = `WARNING: More than ${HIGH_STORAGE_WARNING_THRESHOLD}% remaining space. Consider reducing storage size.`;
 const NORMAL_STORAGE_MESSAGE = `Storage space is within normal limits`;
 
 function keepProperties(obj, names) {

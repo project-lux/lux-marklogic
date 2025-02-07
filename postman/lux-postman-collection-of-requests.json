@@ -440,6 +440,27 @@
 					"response": []
 				},
 				{
+					"name": "Storage Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/storageInfo.mjs",
+							"protocol": "{{mlProtocol}}",
+							"host": [
+								"{{mlHost}}"
+							],
+							"port": "{{mlAppPort}}",
+							"path": [
+								"ds",
+								"lux",
+								"storageInfo.mjs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Translate to JSON Search Grammar",
 					"request": {
 						"method": "GET",

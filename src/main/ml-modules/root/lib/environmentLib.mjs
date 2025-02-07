@@ -4,6 +4,7 @@ import {
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
 } from './appConstants.mjs';
+import * as utils from '../utils/utils.mjs';
 
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;
@@ -15,22 +16,6 @@ const LOW_STORAGE_CRITICAL_MESSAGE = `CRITICAL: Less than ${LOW_STORAGE_CRITICAL
 const LOW_STORAGE_WARNING_MESSAGE = `WARNING: Less than ${LOW_STORAGE_WARNING_THRESHOLD}% remaining space. Consider increasing storage size.`;
 const HIGH_STORAGE_WARNING_MESSAGE = `WARNING: More than ${HIGH_STORAGE_WARNING_THRESHOLD}% remaining space. Consider reducing storage size.`;
 const NORMAL_STORAGE_MESSAGE = `Storage space is within normal limits`;
-
-function keepProperties(obj, names) {
-  const trimmedObj = {};
-  names.forEach((name) => {
-    trimmedObj[name] = obj[name];
-  });
-  return trimmedObj;
-}
-
-function objectToArray(obj) {
-  const arr = [];
-  for (let i = 0; i < obj.length; i++) {
-    arr.push(obj[i]);
-  }
-  return arr;
-}
 
 /*
  * Collect the forest information of every database, and organize by node and volume.
@@ -51,7 +36,7 @@ function getForestInfoByHost() {
         .forestStatus(xdmp.databaseForests(databaseId, true))
         .toArray()
         .forEach((forestInfo) => {
-          forestInfo = keepProperties(forestInfo, [
+          forestInfo = utils.keepProperties(forestInfo, [
             'forestId',
             'forestName',
             'hostId',
@@ -64,7 +49,7 @@ function getForestInfoByHost() {
             'deviceSpace',
           ]);
           // Add up the stand sizes.  Convert the stands object to an array first.
-          const standsArr = objectToArray(forestInfo.stands);
+          const standsArr = utils.toArrayFallback(forestInfo.stands);
           forestInfo.forestSize = standsArr.reduce(
             (accumulator, standInfo) => accumulator + standInfo.diskSize,
             0

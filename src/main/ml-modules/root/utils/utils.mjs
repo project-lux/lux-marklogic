@@ -391,6 +391,19 @@ function toArray(val, castTo = null, isStart = true) {
   return val;
 }
 
+/*
+ * Handle an odd case when an object is an array but needs to be convinced.
+ *
+ * Efforts to merge this into toArray failed.
+ */
+function toArrayFallback(obj) {
+  const arr = [];
+  for (let i = 0; i < obj.length; i++) {
+    arr.push(obj[i]);
+  }
+  return arr;
+}
+
 function camelCaseToWords(str, lowercase = false) {
   const words = str.match(/[^A-Z]+|([A-Z][^A-Z]*)/g).join(' ');
   return lowercase === true ? words.toLowerCase() : words;
@@ -600,6 +613,17 @@ function getDataConversionDate() {
   }
 }
 
+/*
+ * Return the given object less top-level properties whose names are not in the names array.
+ */
+function keepProperties(obj, propertyNamesToKeep) {
+  const trimmedObj = {};
+  propertyNamesToKeep.forEach((name) => {
+    trimmedObj[name] = obj[name];
+  });
+  return trimmedObj;
+}
+
 export {
   areArraysEqual,
   arrayToString,
@@ -628,10 +652,12 @@ export {
   getStartingPaginationIndexForSubsequence,
   includesOrEquals,
   isArray,
+  toArrayFallback, // for a scenario toArray doesn't handle
   isNonEmptyArray,
   isNonEmptyString,
   isObject,
   isString,
+  keepProperties,
   logValues,
   lowercaseFirstCharacter,
   removeItemByIndexFromArray,

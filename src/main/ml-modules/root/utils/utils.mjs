@@ -624,6 +624,23 @@ function keepProperties(obj, propertyNamesToKeep) {
   return trimmedObj;
 }
 
+/*
+ * Replace placeholders (%word) with provided values.  This is a partial equivalent to Java's String.format().
+ *
+ * Example:
+ *
+ * const str = "CRITICAL: Only %remaining space left, which is less than the critical low threshold of %threshold.";
+ * const args = {
+ *   "remaining": "3%",
+ *   "threshold": "10%"
+ * }
+ *
+ * Result: "CRITICAL: Only 3% space left, which is less than the critical low threshold of 10%."
+ */
+function formatString(str, args) {
+  return str.replace(/%(\w+)/g, (_, key) => args[key]);
+}
+
 export {
   areArraysEqual,
   arrayToString,
@@ -638,6 +655,7 @@ export {
   escapeCharacters,
   evalInContentDatabase,
   evalInModulesDatabase,
+  formatString,
   getArrayDiff,
   getArrayOverlap,
   getDataConversionDate,

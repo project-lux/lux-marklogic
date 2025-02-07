@@ -12,11 +12,6 @@ const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
 
-const LOW_STORAGE_CRITICAL_MESSAGE = `CRITICAL: Less than ${LOW_STORAGE_CRITICAL_THRESHOLD}% remaining space. Increase storage size.`;
-const LOW_STORAGE_WARNING_MESSAGE = `WARNING: Less than ${LOW_STORAGE_WARNING_THRESHOLD}% remaining space. Consider increasing storage size.`;
-const HIGH_STORAGE_WARNING_MESSAGE = `WARNING: More than ${HIGH_STORAGE_WARNING_THRESHOLD}% remaining space. Consider reducing storage size.`;
-const NORMAL_STORAGE_MESSAGE = `Storage space is within normal limits`;
-
 /*
  * Collect the forest information of every database, and organize by node and volume.
  *
@@ -26,7 +21,7 @@ const NORMAL_STORAGE_MESSAGE = `Storage space is within normal limits`;
  * http://marklogic.com/xdmp/privileges/status privilege offers.
  * Call getForestInfoByHostAmp for the amp'd version.
  */
-function getForestInfoByHost() {
+function _getForestInfoByHost() {
   const forestInfoByHost = {};
   xdmp
     .databases()
@@ -69,10 +64,10 @@ function getForestInfoByHost() {
     });
   return forestInfoByHost;
 }
-const getForestInfoByHostAmp = import.meta.amp(getForestInfoByHost);
+const _getForestInfoByHostAmp = import.meta.amp(_getForestInfoByHost);
 
 // By volume, calculate the total known used and reserved for the cluster.
-function calculateTotals(
+function _calculateTotals(
   forestInfoByHost,
   journalSizeThresholdForReserveMb,
   perJournalReserveMb,
@@ -109,8 +104,13 @@ function calculateTotals(
           forestsActualMb += forestSize;
           forestsReserveMb += forestReserveSize;
 
+          // Adds the diff of the per forest journals reserve and the forest's
+          // actual, when the actual falls within a range.  Nothing added to
+          // this reserve when the actual is outside the range.  Logic could
+          // be more sophisticated / inclusive.
           const additionalJournalsReserveMb =
-            journalsSize > journalSizeThresholdForReserveMb
+            journalsSize > journalSizeThresholdForReserveMb &&
+            journalsSize < perJournalReserveMb
               ? perJournalReserveMb - journalsSize
               : 0;
           journalsActualMb += journalsSize;
@@ -155,21 +155,11 @@ function calculateTotals(
               spaceRemainingGb: totalsMb.spaceRemainingMb / MbToGbDivisor,
               unreservedRemainingGb:
                 totalsMb.unreservedRemainingMb / MbToGbDivisor,
-              // Approximate as this excludes unknown used storage (e.g., logs)
-              // Better to go by unreservedRemainingMb as it does.
               approximateUnreservedRemainingPercent:
                 totalsMb.approximateUnreservedRemainingPercent,
-              message:
-                totalsMb.approximateUnreservedRemainingPercent <
-                LOW_STORAGE_CRITICAL_THRESHOLD
-                  ? LOW_STORAGE_CRITICAL_MESSAGE
-                  : totalsMb.approximateUnreservedRemainingPercent <
-                    LOW_STORAGE_WARNING_THRESHOLD
-                  ? LOW_STORAGE_WARNING_MESSAGE
-                  : totalsMb.approximateUnreservedRemainingPercent >
-                    HIGH_STORAGE_WARNING_THRESHOLD
-                  ? HIGH_STORAGE_WARNING_MESSAGE
-                  : NORMAL_STORAGE_MESSAGE,
+              message: _getStorageThresholdMessage(
+                totalsMb.approximateUnreservedRemainingPercent
+              ),
             };
           } else {
             return totalsMb;
@@ -194,6 +184,28 @@ function calculateTotals(
   return hostInfo;
 }
 
+// Determine and format storage info message.
+function _getStorageThresholdMessage(unreservedPercentRemaining) {
+  unreservedPercentRemaining = Math.round(unreservedPercentRemaining);
+  let msg =
+    'OK: There is %remaining space left, which is considered within normal limits.';
+  const args = { remaining: `${unreservedPercentRemaining}%` };
+  if (unreservedPercentRemaining < LOW_STORAGE_CRITICAL_THRESHOLD) {
+    msg =
+      'CRITICAL: Only %remaining space left, which is less than the critical low threshold of %threshold. Increase the volume size.';
+    args.threshold = `${LOW_STORAGE_CRITICAL_THRESHOLD}%`;
+  } else if (unreservedPercentRemaining < LOW_STORAGE_WARNING_THRESHOLD) {
+    msg =
+      'WARNING: Only %remaining space left, which is less than the warning low threshold of %threshold. Consider increasing the volume size.';
+    args.threshold = `${LOW_STORAGE_WARNING_THRESHOLD}%`;
+  } else if (unreservedPercentRemaining > HIGH_STORAGE_WARNING_THRESHOLD) {
+    msg =
+      'WARNING: There is %remaining space left, which is more than the warning high threshold of %threshold. Consider reducing the volume size.';
+    args.threshold = `${HIGH_STORAGE_WARNING_THRESHOLD}%`;
+  }
+  return utils.formatString(msg, args);
+}
+
 /*
  * This function is used to calculate the required size of each volume in
  * a cluster.  It accounts for the space forests are presently using on disk,
@@ -201,8 +213,8 @@ function calculateTotals(
  * else one wishes to reserve space for on the volumes, such as logs.
  */
 function getStorageInfo() {
-  return calculateTotals(
-    getForestInfoByHostAmp(),
+  return _calculateTotals(
+    _getForestInfoByHostAmp(),
     journalSizeThresholdForReserveMb,
     perJournalReserveMb,
     perVolumeOtherReserveMb

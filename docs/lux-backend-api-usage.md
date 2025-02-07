@@ -1250,8 +1250,13 @@ Response Body:
 
 The `storageInfo` endpoint enables consumers to get a summary of the storage usage within a MarkLogic cluster. 
 
-The thresholds for warnings and critical messages regarding low and high storage are configured with the following gradle properties: `lowStorageCriticalThreshold`, `lowStorageWarningThreshold`, `highStorageWarningThreshold`
+The thresholds for warnings and critical messages regarding low and high storage are configured with the following Gradle properties: `lowStorageCriticalThreshold`, `lowStorageWarningThreshold`, `highStorageWarningThreshold`
 
+The endpoint makes the following assumptions:
+
+1. When the total size of a forest's journals is between 10 MB and 4,096 MB (4 GB), the forest may need 4,096 MB (4 GB) for its journals. This targets inclusion of an application's database will surely qualify.
+2. There is up to 2,048 MB (2 GB) of logs per volume.
+3. The volumes are not being used for more than forests and logs. 
 
 **URL** : `/ds/lux/storageInfo.mjs`
 

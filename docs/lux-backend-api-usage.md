@@ -1248,7 +1248,7 @@ Response Body:
 
 ## Storage Info
 
-The `storageInfo` endpoint enables consumers to get a summary of the storage usage on the MarkLogic cluster used by LUX. 
+The `storageInfo` endpoint enables consumers to get a summary of the storage usage within a MarkLogic cluster. 
 
 The thresholds for warnings and critical messages regarding low and high storage are configured with the following gradle properties: `lowStorageCriticalThreshold`, `lowStorageWarningThreshold`, `highStorageWarningThreshold`
 

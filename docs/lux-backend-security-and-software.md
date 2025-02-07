@@ -119,7 +119,7 @@ The [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-st
 
 ## Amps
 
-The [getForestInfoByHost](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) amp allows [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs)'s `getForestInfoByHost` function to run with an additional: [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json). That role is configured with an execute privilege that is required to retrieve forest storage information.
+The [getForestInfoByHost](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) amp allows [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs)'s `getForestInfoByHost` function to run with the [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) execute role. That role is configured with an execute privilege that is required to retrieve forest storage information.
 
 # Software
 

@@ -5,7 +5,7 @@
  * Usage: make sure the database name below is correct, run, and wait about two minutes :)
  */
 'use strict';
-import { getVersionInfo } from '/utils/utils.mjs';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
 
 // START: script configuration.
 const databaseName = 'lux-content';

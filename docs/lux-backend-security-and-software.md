@@ -13,6 +13,8 @@
     - [Query Console](#query-console)
     - [Writer](#writer)
     - [Deployer](#deployer)
+    - [Status Builtins](#status-builtins)
+  - [Amps](#amps)
 - [Software](#software)
   - [Updates](#updates)
   - [Inventory](#inventory)
@@ -110,6 +112,14 @@ The [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writ
 The [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role builds upon the [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json) role by also being able to run the `performBaseDeployment` task.  This role should not be able to run the `mlDeploySecurity` task or lower level security tasks, specifically creating user accounts, changing a user account's roles and privileges, and changing a role's inherited roles and privileges.
 
 For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
+
+### Status Builtins
+
+The [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) role is only intended to be configured to amps. It was introduced to enable endpoint consumers to consume the [Storage Info](/docs/lux-backend-api-usage.md#storageInfo) endpoint without granting that role an executive privilege that offers potentially sensitive information.
+
+## Amps
+
+The [getForestInfoByHost](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) amp allows [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs)'s `getForestInfoByHost` function to run with the [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) execute role. That role is configured with an execute privilege that is required to retrieve forest storage information.
 
 # Software
 

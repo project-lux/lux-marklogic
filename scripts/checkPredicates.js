@@ -21,6 +21,7 @@ import { getSearchTermsConfig } from '/config/searchTermsConfig';
 import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
 import { START_OF_GENERATED_QUERY as prefixes } from '/lib/SearchCriteriaProcessor';
 import * as utils from '/utils/utils';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
 
 /* * * START: Script configuration * * */
 
@@ -133,7 +134,7 @@ const checkPredicates = () => {
   return utils.sortObj(findings);
 };
 
-const findings = { versionInfo: utils.getVersionInfo() };
+const findings = { versionInfo: getVersionInfo() };
 for (const username of usernames) {
   findings[username] = xdmp
     .invokeFunction(checkPredicates, { userId: xdmp.user(username) })

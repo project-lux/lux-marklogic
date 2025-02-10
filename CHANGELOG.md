@@ -2,6 +2,9 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.34.0 - 2025-02-10
+ - Added the Storage Info endpoint which enables consumers to get a summary of the storage usage within a MarkLogic cluster ([#22](https://github.com/project-lux/lux-marklogic/issues/22)).
+
 ## v1.33.0 - 2025-01-27
 
 ### Added

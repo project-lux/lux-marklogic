@@ -186,7 +186,8 @@ function _calculateTotals(
 
 // Determine and format storage info message.
 function _getStorageThresholdMessage(unreservedPercentRemaining) {
-  unreservedPercentRemaining = Math.round(unreservedPercentRemaining);
+  unreservedPercentRemaining =
+    Math.round(unreservedPercentRemaining * 100) / 100;
   let msg =
     'OK: There is %remaining space left, which is considered within normal limits.';
   const args = { remaining: `${unreservedPercentRemaining}%` };

@@ -603,16 +603,6 @@ function buildScopeDescription(scopeDescriptor) {
   return `Records representing ${scopeDescriptor} that match your search.`;
 }
 
-function getDataConversionDate() {
-  try {
-    return fn
-      .head(cts.doc(fn.head(cts.uris())).xpath('/admin/conversion-date'))
-      .toString();
-  } catch (e) {
-    return 'error';
-  }
-}
-
 /*
  * Return the given object less top-level properties whose names are not in the names array.
  */
@@ -658,7 +648,6 @@ export {
   formatString,
   getArrayDiff,
   getArrayOverlap,
-  getDataConversionDate,
   getDeepCopy,
   getDocFromModulesDatabase,
   getDocPermissionsFromString,

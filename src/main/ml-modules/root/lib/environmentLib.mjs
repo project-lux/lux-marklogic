@@ -222,16 +222,23 @@ function getStorageInfo() {
   );
 }
 
+function _getDataConversionDate() {
+  try {
+    return fn
+      .head(cts.doc(fn.head(cts.uris())).xpath('/admin/conversion-date'))
+      .toString();
+  } catch (e) {
+    return 'error';
+  }
+}
+
 function getVersionInfo() {
   return {
     codeVersion: CODE_VERSION,
-    dataVersion: getDataConversionDate(),
+    dataVersion: _getDataConversionDate(),
     mlVersion: xdmp.version(),
     databaseName: xdmp.databaseName(xdmp.database()),
   };
 }
 
-export default {
-  getStorageInfo,
-  getVersionInfo,
-};
+export { getStorageInfo, getVersionInfo };

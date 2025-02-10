@@ -1,0 +1,12 @@
+{
+  "role-name": "%%mlAppName%%-status-builtins",
+  "description": "Configured to an amp to avoid granting the status-builtins execute privilege to other roles.",
+  "role": [],
+  "privilege": [
+    {
+      "privilege-name": "status-builtins",
+      "action": "http://marklogic.com/xdmp/privileges/status",
+      "kind": "execute"
+    }
+  ]
+}

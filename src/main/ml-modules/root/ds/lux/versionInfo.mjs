@@ -1,4 +1,4 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
-import { getVersionInfo } from '../../utils/utils.mjs';
+import { getVersionInfo } from '../../lib/environmentLib.mjs';
 
 handleRequest(getVersionInfo);

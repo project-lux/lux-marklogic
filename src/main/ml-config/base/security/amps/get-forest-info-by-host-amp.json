@@ -1,0 +1,6 @@
+{
+  "local-name": "_getForestInfoByHost",
+  "document-uri": "/lib/environmentLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-status-builtins"]
+}

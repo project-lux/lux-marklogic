@@ -5,7 +5,7 @@
  * b) triple search counts for all related lists, at the search scope level,
  * and for each related list, and c) number of related lists per search scope.
  */
-import { getVersionInfo } from '/utils/utils.mjs';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
 import {
   getRelatedListKeys,
   getRelatedListConfig,

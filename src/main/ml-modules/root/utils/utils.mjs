@@ -1,7 +1,6 @@
 import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
 import { BadRequestError, NotImplementedError } from '../lib/mlErrorsLib.mjs';
 import {
-  CODE_VERSION,
   FACETS_PREFIX,
   IRI_PREFIX,
   RELATED_LIST_PREFIX,
@@ -392,6 +391,19 @@ function toArray(val, castTo = null, isStart = true) {
   return val;
 }
 
+/*
+ * Handle an odd case when an object is an array but needs to be convinced.
+ *
+ * Efforts to merge this into toArray failed.
+ */
+function toArrayFallback(obj) {
+  const arr = [];
+  for (let i = 0; i < obj.length; i++) {
+    arr.push(obj[i]);
+  }
+  return arr;
+}
+
 function camelCaseToWords(str, lowercase = false) {
   const words = str.match(/[^A-Z]+|([A-Z][^A-Z]*)/g).join(' ');
   return lowercase === true ? words.toLowerCase() : words;
@@ -591,15 +603,6 @@ function buildScopeDescription(scopeDescriptor) {
   return `Records representing ${scopeDescriptor} that match your search.`;
 }
 
-function getVersionInfo() {
-  return {
-    codeVersion: CODE_VERSION,
-    dataVersion: getDataConversionDate(),
-    mlVersion: xdmp.version(),
-    databaseName: xdmp.databaseName(xdmp.database()),
-  };
-}
-
 function getDataConversionDate() {
   try {
     return fn
@@ -608,6 +611,34 @@ function getDataConversionDate() {
   } catch (e) {
     return 'error';
   }
+}
+
+/*
+ * Return the given object less top-level properties whose names are not in the names array.
+ */
+function keepProperties(obj, propertyNamesToKeep) {
+  const trimmedObj = {};
+  propertyNamesToKeep.forEach((name) => {
+    trimmedObj[name] = obj[name];
+  });
+  return trimmedObj;
+}
+
+/*
+ * Replace placeholders (%word) with provided values.  This is a partial equivalent to Java's String.format().
+ *
+ * Example:
+ *
+ * const str = "CRITICAL: Only %remaining space left, which is less than the critical low threshold of %threshold.";
+ * const args = {
+ *   "remaining": "3%",
+ *   "threshold": "10%"
+ * }
+ *
+ * Result: "CRITICAL: Only 3% space left, which is less than the critical low threshold of 10%."
+ */
+function formatString(str, args) {
+  return str.replace(/%(\w+)/g, (_, key) => args[key]);
 }
 
 export {
@@ -624,6 +655,7 @@ export {
   escapeCharacters,
   evalInContentDatabase,
   evalInModulesDatabase,
+  formatString,
   getArrayDiff,
   getArrayOverlap,
   getDataConversionDate,
@@ -636,13 +668,14 @@ export {
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,
-  getVersionInfo,
   includesOrEquals,
   isArray,
+  toArrayFallback, // for a scenario toArray doesn't handle
   isNonEmptyArray,
   isNonEmptyString,
   isObject,
   isString,
+  keepProperties,
   logValues,
   lowercaseFirstCharacter,
   removeItemByIndexFromArray,

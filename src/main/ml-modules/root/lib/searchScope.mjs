@@ -63,7 +63,7 @@ const SEARCH_SCOPES = {
     ],
   },
   set: {
-    isUserInterfaceSearchScope: false,
+    isUserInterfaceSearchScope: true,
     fields: ['setAnyText'],
     predicates: ['lux("setAny")'],
     types: ['Set'],

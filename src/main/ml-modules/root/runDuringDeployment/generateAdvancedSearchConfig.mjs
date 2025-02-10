@@ -112,71 +112,71 @@ const advancedSearchConfigs = {};
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
     const report = unitName == UNRESTRICTED_UNIT_NAME;
 
-    getOrderedUserInterfaceSearchScopeNames()
-      .concat('set') // Multiple terms need to go through this scope; not true for the reference scope.
-      .sort()
-      .forEach((scopeName) => {
-        // Entire scopes may not apply to some units.
-        if (unitSearchTermsConfig[scopeName]) {
-          unitAdvancedSearchConfig.terms[scopeName] = {};
-          Object.keys(unitSearchTermsConfig[scopeName])
-            .sort()
-            .forEach((termName) => {
-              const termConfig = new SearchTermConfig(
-                unitSearchTermsConfig[scopeName][termName]
-              );
-              const patternName = termConfig.getPatternName();
+    getOrderedUserInterfaceSearchScopeNames().forEach((scopeName) => {
+      // Entire scopes may not apply to some units.
+      if (unitSearchTermsConfig[scopeName]) {
+        unitAdvancedSearchConfig.terms[scopeName] = {};
+        Object.keys(unitSearchTermsConfig[scopeName])
+          .sort()
+          .forEach((termName) => {
+            const termConfig = new SearchTermConfig(
+              unitSearchTermsConfig[scopeName][termName]
+            );
+            const patternName = termConfig.getPatternName();
 
-              // Suppress search terms that may never be exposed via advanced search and those
-              // the frontend is not yet ready for.
-              let add = true;
-              const hasLabel = termConfig.hasLabel();
-              const hasHelpText = termConfig.hasHelpText();
-              if (
-                [
-                  'any', // Term may no longer exist.
-                  'classificationOfReference',
-                  'classificationOfSet',
-                  'iri',
-                  'recordType',
-                  'subject',
-                ].includes(termName) &&
-                (!hasLabel || !hasHelpText)
-              ) {
-                add = false;
-              } else if (!hasLabel || !hasHelpText) {
-                add = false;
-                if (report) {
-                  if (!hasLabel) {
-                    noLabel.push(`${scopeName}.${termName}`);
-                  }
-                  if (!hasHelpText) {
-                    noHelpText.push(`${scopeName}.${termName}`);
-                  }
+            // Suppress search terms that may never be exposed via advanced search and those
+            // the frontend is not yet ready for.
+            let add = true;
+            const hasLabel = termConfig.hasLabel();
+            const hasHelpText = termConfig.hasHelpText();
+            if (
+              [
+                'any', // Term may no longer exist.
+                'classificationOfReference',
+                'iri',
+                'recordType',
+                'subject',
+              ].includes(termName) &&
+              (!hasLabel || !hasHelpText)
+            ) {
+              add = false;
+            } else if (!hasLabel || !hasHelpText) {
+              add = false;
+              if (report) {
+                if (!hasLabel) {
+                  noLabel.push(`${scopeName}.${termName}`);
                 }
-              } else if (termName.endsWith('Id')) {
-                add = false;
+                if (!hasHelpText) {
+                  noHelpText.push(`${scopeName}.${termName}`);
+                }
               }
-              // 20230420, bhartwig: asked to suppress Similar terms.
-              else if (
-                [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-                  patternName
-                )
-              ) {
-                add = false;
-              }
+            } else if (termName.endsWith('Id')) {
+              add = false;
+            }
+            // 20230420, bhartwig: asked to suppress Similar terms.
+            else if (
+              [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
+                patternName
+              )
+            ) {
+              add = false;
+            }
 
-              if (add) {
-                unitAdvancedSearchConfig.terms[scopeName][termName] =
-                  createEntry(scopeName, termName, termConfig, report);
-              } else if (report) {
-                omittedTermNames.push(
-                  `[${patternName}] ${scopeName}.${termName}`
-                );
-              }
-            });
-        }
-      });
+            if (add) {
+              unitAdvancedSearchConfig.terms[scopeName][termName] = createEntry(
+                scopeName,
+                termName,
+                termConfig,
+                report
+              );
+            } else if (report) {
+              omittedTermNames.push(
+                `[${patternName}] ${scopeName}.${termName}`
+              );
+            }
+          });
+      }
+    });
 
     // Within each scope, sort by the search term's label.
     Object.keys(unitAdvancedSearchConfig.terms).forEach((scopeName) => {

@@ -190,6 +190,11 @@ const searchTermText = {
       helpText:
         'Search for Concept and Type terms that are the category of the specified Places.',
     },
+    classificationOfSet: {
+      label: 'Category for Collections',
+      helpText:
+        'Search for Concept and Type terms that are the category of the specified Collections.',
+    },
     classificationOfWork: {
       label: 'Category for Works',
       helpText:

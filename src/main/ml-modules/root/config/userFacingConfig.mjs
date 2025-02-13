@@ -144,9 +144,14 @@ const searchTermText = {
         'Search People & Groups by the date on which they were born or formed.',
     },
     subjectOfAgent: {
-      label: 'Subject Of',
+      label: 'Subject Of Works',
       helpText:
         'Search for People & Groups that are the subject of the specified Works.',
+    },
+    subjectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for People & Groups that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',
@@ -285,9 +290,14 @@ const searchTermText = {
         'Search for records categorized as either a "Measurement Unit", "Language", "Material", "Currency" or a "General Concept". Measurement Units are Concepts that are used as the unit of a measurement, such as inches, seconds, kilograms or bytes. Languages are Concepts that represent human-spoken languages, such as English, Spanish or Latin. Materials are Concepts that represent a class of physical material, such as bronze, paper, or agate. Currencies are Concepts that represent monetary currencies, such as dollars, euros, or francs. General Concepts are Concepts that represent more general ideas or subjects, which excludes the more specific classes of Measurement Unit, Language, Material, and Currency.',
     },
     subjectOfConcept: {
-      label: 'Subject Of',
+      label: 'Subject Of Works',
       helpText:
         'Search for Concept & Type terms that are the subject of the specified Works.',
+    },
+    subjectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for Concept & Type terms that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',
@@ -349,9 +359,14 @@ const searchTermText = {
       helpText: 'Search for Events by the date on which they started.',
     },
     subjectOfEvent: {
-      label: 'Subject Of',
+      label: 'Subject Of Works',
       helpText:
         'Search for Events that are the subject of the specified Works.',
+    },
+    sujbectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for Events that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',
@@ -470,9 +485,14 @@ const searchTermText = {
         'Search for records categorized as either a "Physical Object" or a "Digital Object". Physical Objects are physical items, such as paintings, sculptures, fossils and other specimens, and archival objects. Individual physical copies of books are included in this class. Digital Object are digital items, such as internet resources (datasets, e-books, and other digital files). Digitized images of collection items that are physical objects can be found with the “Is Online” facet on Physical Objects.',
     },
     subjectOfItem: {
-      label: 'Subject Of',
+      label: 'Subject Of Works',
       helpText:
         'Search for Objects that are the subject of the specified Works.',
+    },
+    subjectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for Objects that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',
@@ -554,9 +574,14 @@ const searchTermText = {
       helpText: 'Search for Places where People & Groups were born or formed.',
     },
     subjectOfPlace: {
-      label: 'Subject Of',
+      label: 'Subject Of Works',
       helpText:
         'Search for Places that are the subject of the specified Works.',
+    },
+    subjectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for Places that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',
@@ -565,10 +590,61 @@ const searchTermText = {
     },
   },
   set: {
+    aboutAgent: {
+      label: 'About People & Groups',
+      helpText:
+        'Search for Collections that are about the specified People & Groups.',
+    },
+    aboutConcept: {
+      label: 'About Concepts',
+      helpText:
+        'Search for Collections that are about the specified Concept or Type terms.',
+    },
+    aboutEvent: {
+      label: 'About Events',
+      helpText: 'Search for Collections that are about the specified Events.',
+    },
+    aboutItem: {
+      label: 'About Objects',
+      helpText: 'Search for Collections that are about the specified Objects.',
+    },
+    aboutPlace: {
+      label: 'About Places',
+      helpText: 'Search for Collections that are about the specified Places.',
+    },
+    aboutSet: {
+      label: 'About Collections',
+      helpText:
+        'Search for Collections that are about the specified Collections.',
+    },
+    aboutWork: {
+      label: 'About Works',
+      helpText: 'Search for Collections that are about the specified Works.',
+    },
     classification: {
       label: 'Categorized As',
       helpText:
         'Search for Collections that are categorized with the specified Concept or Type terms.',
+    },
+    createdAt: {
+      label: 'Created At',
+      helpText:
+        'Search for Collections that were created at the specified Places.',
+    },
+    createdBy: {
+      label: 'Created By',
+      helpText:
+        'Search for Collections that were created by the specified People & Groups.',
+    },
+    creationCausedBy: {
+      label: 'Creation Caused By',
+      helpText:
+        'Search for Collections that were created because of the specified Events.',
+    },
+    creationInfluencedBy: {
+      label: 'Creation Influenced By',
+      helpText:
+        'Search for Collections that were created with influence by the specified Person or Group',
     },
     containingItem: {
       label: 'Containing Objects',
@@ -594,6 +670,11 @@ const searchTermText = {
       helpText:
         'Search for Collections by a string identifier or an external authority URI, such as VIAF or wikidata.',
     },
+    isPublicDomain: {
+      label: 'Are in the Public Domain',
+      helpText:
+        'Search for Collections that have been identified as public domain/no copyright materials.',
+    },
     memberOf: {
       label: 'Member of',
       helpText:
@@ -603,6 +684,16 @@ const searchTermText = {
       label: 'Name',
       helpText:
         'Enter term(s) to be found within the title or name of the Collection. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
+    },
+    subjectOfWork: {
+      label: 'Subject Of Works',
+      helpText:
+        'Search for Collections that are the subject of the specified Works.',
+    },
+    subjectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for Collections that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',
@@ -637,6 +728,10 @@ const searchTermText = {
     aboutPlace: {
       label: 'About Places',
       helpText: 'Search for Works that are about the specified Places.',
+    },
+    aboutSet: {
+      label: 'About Collections',
+      helpText: 'Search for Works that are about the specified Collections.',
     },
     aboutWork: {
       label: 'About Works',
@@ -737,8 +832,13 @@ const searchTermText = {
         'Search for records categorized as either a "Visual Work" or a "Textual Work. Visual Works are Works that are primarily visual, such as the images shown by paintings or photographs, sculptures, or other non language oriented creative expressions. Textual Works are Works that are primarily textual or otherwise convey information via human language. An Object may include both visual and textual works, such as a poster with graphics and text. In addition, Textual Works encompasses most items from the Library collections, including posters, artworks, musical scores, video and sound recordings.',
     },
     subjectOfWork: {
-      label: 'Subject Of',
+      label: 'Subject Of Works',
       helpText: 'Search for Works that are the subject of the specified Works.',
+    },
+    subjectOfSet: {
+      label: 'Subject Of Collections',
+      helpText:
+        'Search for Works that are the subject of the specified Collections.',
     },
     text: {
       label: 'Anywhere',

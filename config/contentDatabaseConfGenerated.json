@@ -163,80 +163,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "setPrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "setAnyText",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]//content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
-      "field-name": "setTypeId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/classified_as/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "setUsedForId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/used_for/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
-      "field-name": "setIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('Set')]/equivalent/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "agentAnyText",
       "field-path": [
         {
@@ -930,6 +856,251 @@
       "field-value-searches": true
     },
     {
+      "field-name": "setPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setUsedForId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/used_for/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Set')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setCreationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setAboutPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = 'Place']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutConceptId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutWorkId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutItemId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutEventId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutSetId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = 'Set']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setCreationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/created_by/part/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setCreationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Set']/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setIsOnlineBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Set']/isOnline",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setIsPublicDomainBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Set']/isPublicDomain",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setPartOfId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "workArchiveSortId",
       "field-path": [
         {
@@ -1222,6 +1393,20 @@
         },
         {
           "path": "/json[type = 'VisualItem']/represents[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutSetId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = 'Set']/id",
           "weight": 1
         }
       ],
@@ -1918,34 +2103,6 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setPrimaryName",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setTypeId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setUsedForId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setIdentifier",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "agentName",
       "range-value-positions": false,
       "invalid-values": "ignore",
@@ -2296,6 +2453,153 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setPrimaryName",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setTypeId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setUsedForId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setIdentifier",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setArchiveSortId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setCreationStartDateStr",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "",
+      "field-name": "setCreationStartDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "",
+      "field-name": "setCreationEndDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutPlaceId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutAgentId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutConceptId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutWorkId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutItemId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutEventId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setAboutSetId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setCreationAgentId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setCreationPlaceId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "",
+      "field-name": "setHasDigitalImageBoolean",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "float"
+    },
+    {
+      "collation": "",
+      "field-name": "setIsOnlineBoolean",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "float"
+    },
+    {
+      "collation": "",
+      "field-name": "setIsPublicDomainBoolean",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "float"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setPartOfId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "workArchiveSortId",
       "range-value-positions": false,
       "invalid-values": "ignore",
@@ -2388,6 +2692,13 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "workAboutEventId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "workAboutSetId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

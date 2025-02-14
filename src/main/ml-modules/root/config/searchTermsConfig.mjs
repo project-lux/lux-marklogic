@@ -527,6 +527,20 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setPrimaryName'],
       scalarType: 'string',
     },
+    publishedAt: {
+      patternName: 'hopWithField',
+      predicates: ['lux("placeOfPublication")'],
+      targetScope: 'place',
+      hopInverseName: 'setPublishedHere',
+      indexReferences: ['placePrimaryName'],
+    },
+    publishedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("agentOfPublication")'],
+      targetScope: 'agent',
+      hopInverseName: 'publishedSet',
+      indexReferences: ['agentPrimaryName'],
+    },
     text: {
       patternName: 'text',
       indexReferences: ['setAnyText'],

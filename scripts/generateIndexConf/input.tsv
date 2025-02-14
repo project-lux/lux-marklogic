@@ -109,10 +109,18 @@ set	AboutSet	Id	uri	setAboutSetId	RecordLink	Non	N		/json[type='Set']/about[./ty
 set	CreationAgent	Id	uri	setCreationAgentId	RecordLink	Non	N		/json[type='Set']/created_by/carried_out_by/id , /json[type='Set']/created_by/part/carried_out_by/id	
 set	CreationPlace	Id	uri	setCreationPlaceId	RecordLink	Non	N		/json[type='Set']/created_by/took_place_at/id	
 set	CreationPlace	Name	keyword	setCreationPlaceName	Search	Semantic	N			lux:placeOfCreation
+set	CurationAgent	Id	uri	setCurationAgentId	RecordLink	Non	N		/json[type='Set']/used_for[./classified_as/equivalent/id = 'http://vocab.getty.edu/aat/300054277']/carried_out_by/id	
 set	HasDigitalImage	Boolean	numbers	setHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/hasDigitalImage	
 set	IsOnline	Boolean	numbers	setIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/isOnline	
 set	IsPublicDomain	Boolean	numbers	setIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/isPublicDomain	
 set	PartOf	Id	uri	setPartOfId	RecordLink	Non	N	works that are part of some other work, by id of parent	/json[type='Set']/member_of/id	
+set	PublicationStart	Date	datesAsString	setPublicationStartDateStr	Search	Non	N		/json[type='Set']/used_for/timespan/begin_of_the_begin	
+set	PublicationStart	Date	datesAsLong	setPublicationStartDateLong	Search	Non	N		/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
+set	PublicationEnd	Date	datesAsLong	setPublicationEndDateLong	Search	Non	N		/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end	
+set	PublicationPlace	Id	uri	setPublicationPlaceId	RecordLink	Non	N		/json[type='Set']/used_for/took_place_at/id	
+set	PublicationPlace	Name	keyword	setPublicationPlaceName	Search	Semantic	N			lux:placeOfPublication
+set	PublicationAgent	Id	uri	setPublicationAgentId	RecordLink	Non	N		/json[type='Set']/used_for/carried_out_by/id	
+set	PublicationAgent	Name	keyword	setPublicationAgentName	Search	Semantic	N			lux:agentOfPublication
 										
 work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
 work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType ,  /indexedProperties[dataType = 'Set']/dataType	

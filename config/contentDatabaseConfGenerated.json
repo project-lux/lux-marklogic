@@ -1061,6 +1061,16 @@
       "field-value-searches": true
     },
     {
+      "field-name": "setCurationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for[./classified_as/equivalent/id = 'http://vocab.getty.edu/aat/300054277']/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
       "field-name": "setHasDigitalImageBoolean",
       "field-path": [
         {
@@ -1095,6 +1105,53 @@
       "field-path": [
         {
           "path": "/json[type='Set']/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setPublicationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setPublicationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setPublicationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/carried_out_by/id",
           "weight": 1
         }
       ],
@@ -2571,6 +2628,13 @@
       "scalar-type": "string"
     },
     {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setCurationAgentId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
       "collation": "",
       "field-name": "setHasDigitalImageBoolean",
       "range-value-positions": false,
@@ -2594,6 +2658,41 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "setPartOfId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setPublicationStartDateStr",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "",
+      "field-name": "setPublicationStartDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "",
+      "field-name": "setPublicationEndDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setPublicationPlaceId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setPublicationAgentId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

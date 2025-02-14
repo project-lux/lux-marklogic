@@ -124,9 +124,14 @@ const searchTermText = {
         'Search for people and groups that carried out professional activities of the given categorization.',
     },
     published: {
-      label: 'Published',
+      label: 'Published Work',
       helpText:
         'Search for People & Groups that published the specified Works.',
+    },
+    publishedSet: {
+      label: 'Published Collection',
+      helpText:
+        'Search for People & Groups that published the specified Collections.',
     },
     recordType: {
       label: 'Person or Group Class',
@@ -566,8 +571,13 @@ const searchTermText = {
       helpText: 'Search for Places where the specified Objects were created.',
     },
     publishedHere: {
-      label: 'Place of Publication Of',
+      label: 'Place of Publication Of Works',
       helpText: 'Search for Places where the specified Works were published.',
+    },
+    setPublishedHere: {
+      label: 'Place of Publication Of Collections',
+      helpText:
+        'Search for Places where the specified Collections were published.',
     },
     startPlaceOfAgent: {
       label: 'Place of Birth/Formation of',
@@ -684,6 +694,16 @@ const searchTermText = {
       label: 'Name',
       helpText:
         'Enter term(s) to be found within the title or name of the Collection. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
+    },
+    publishedAt: {
+      label: 'Published At',
+      helpText:
+        'Search for Collections that were published at the specified Place. Note the difference with Creation Place, which is where the text was originally created.',
+    },
+    publishedBy: {
+      label: 'Published By',
+      helpText:
+        'Search for Collections that were published by the specified People & Groups. Note the difference with Creation People & Groups that originally wrote the text or conceived the Collection.',
     },
     subjectOfWork: {
       label: 'Subject Of Works',
@@ -814,7 +834,7 @@ const searchTermText = {
     publishedAt: {
       label: 'Published At',
       helpText:
-        'Search for Works that were published by the specified People & Groups. Note the difference with Creation Place, which is where the text was originally created.',
+        'Search for Works that were published at the specified Place. Note the difference with Creation Place, which is where the text was originally created.',
     },
     publishedBy: {
       label: 'Published By',

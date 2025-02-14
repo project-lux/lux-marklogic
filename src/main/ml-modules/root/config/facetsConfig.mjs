@@ -146,10 +146,23 @@ const FACETS_CONFIG = {
     indexReference: 'setCreationPlaceId',
     searchTermName: 'createdAtId',
   },
+  setCurationAgentId: { indexReference: 'setCurationAgentId' },
   setHasDigitalImage: { indexReference: 'setHasDigitalImageBoolean' },
   setIdentifier: { indexReference: 'setIdentifier' },
   setIsOnline: { indexReference: 'setIsOnlineBoolean' },
   setPartOfId: { indexReference: 'setPartOfId' },
+  setPublicationAgentId: {
+    indexReference: 'setPublicationAgentId',
+    searchTermName: 'publishedById',
+  },
+  setPublicationDate: {
+    indexReference: 'setPublicationStartDateLong',
+    searchTermName: 'publishedDate',
+  },
+  setPublicationPlaceId: {
+    indexReference: 'setPublicationPlaceId',
+    searchTermName: 'publishedAtId',
+  },
   setTypeId: {
     indexReference: 'setTypeId',
     searchTermName: 'classificationId',

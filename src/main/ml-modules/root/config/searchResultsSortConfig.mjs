@@ -243,6 +243,21 @@ const SORT_BINDINGS = {
     indexReference: 'setHasDigitalImageBoolean',
     defaultOrder: 'desc',
   },
+  setPublicationDate: {
+    indexType: 'field',
+    indexReference: 'setPublicationStartDateLong',
+    defaultOrder: 'asc',
+  },
+  setPublicationAgentName: {
+    predicate: lux('agentOfPublication'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  setPublicationPlaceName: {
+    predicate: lux('placeOfPublication'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   workArchiveSortId: {
     indexType: 'field',
     indexReference: 'workArchiveSortId',

@@ -133,7 +133,11 @@ const FACETS_CONFIG = {
   },
   setAboutAgentId: { indexReference: 'setAboutAgentId' },
   setAboutConceptId: { indexReference: 'setAboutConceptId' },
+  setAboutEventId: { indexReference: 'setAboutEventId' },
+  setAboutItemId: { indexReference: 'setAboutItemId' },
   setAboutPlaceId: { indexReference: 'setAboutPlaceId' },
+  setAboutSetId: { indexReference: 'setAboutSetId' },
+  setAboutWorkId: { indexReference: 'setAboutWorkId' },
   setCreationAgentId: {
     indexReference: 'setCreationAgentId',
     searchTermName: 'createdById',

@@ -646,6 +646,11 @@ const searchTermText = {
       helpText:
         'Search for Collections that were created by the specified People & Groups.',
     },
+    createdDate: {
+      label: 'Created Date',
+      helpText:
+        'Search for Collections by the date on which they were created. Note the difference with Publication Date.',
+    },
     creationCausedBy: {
       label: 'Creation Caused By',
       helpText:

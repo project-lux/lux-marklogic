@@ -445,14 +445,6 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['placePrimaryName'],
       idIndexReferences: ['setAboutPlaceId'],
     },
-    aboutSet: {
-      patternName: 'hopWithField',
-      predicates: ['lux("about_or_depicts_set")'],
-      targetScope: 'set',
-      hopInverseName: 'subjectOfSet',
-      indexReferences: ['setPrimaryName'],
-      idIndexReferences: ['setAboutSetId'],
-    },
     aboutWork: {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_work")'],
@@ -488,14 +480,7 @@ const SEARCH_TERMS_CONFIG = {
       predicates: ['lux("causeOfCreation")'],
       targetScope: 'event',
       hopInverseName: 'causedCreationOfSet',
-      indexReferences: ['workCreationAgentId'],
-    },
-    creationInfluencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux("agentInfluencedCreation")'],
-      targetScope: 'agent',
-      hopInverseName: 'influencedCreationOfSet',
-      indexReferences: ['agentPrimaryName'],
+      indexReferences: ['setCreationAgentId'],
     },
     curatedBy: {
       patternName: 'hopWithField',
@@ -509,11 +494,6 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'indexedValue',
       indexReferences: ['setIdentifier'],
       scalarType: 'string',
-    },
-    isPublicDomain: {
-      patternName: 'indexedValue',
-      indexReferences: ['setIsPublicDomainBoolean'],
-      scalarType: 'number',
     },
     memberOf: {
       patternName: 'hopWithField',
@@ -587,14 +567,6 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'subjectOfPlace',
       indexReferences: ['placePrimaryName'],
       idIndexReferences: ['workAboutPlaceId'],
-    },
-    aboutSet: {
-      patternName: 'hopWithField',
-      predicates: ['lux("about_or_depicts_set")'],
-      targetScope: 'set',
-      hopInverseName: 'subjectOfWork',
-      indexReferences: ['setPrimaryName'],
-      idIndexReferences: ['workAboutSetId'],
     },
     aboutWork: {
       patternName: 'hopWithField',

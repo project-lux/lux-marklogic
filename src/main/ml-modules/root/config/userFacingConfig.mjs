@@ -622,11 +622,6 @@ const searchTermText = {
       label: 'About Places',
       helpText: 'Search for Collections that are about the specified Places.',
     },
-    aboutSet: {
-      label: 'About Collections',
-      helpText:
-        'Search for Collections that are about the specified Collections.',
-    },
     aboutWork: {
       label: 'About Works',
       helpText: 'Search for Collections that are about the specified Works.',
@@ -656,11 +651,6 @@ const searchTermText = {
       helpText:
         'Search for Collections that were created because of the specified Events.',
     },
-    creationInfluencedBy: {
-      label: 'Creation Influenced By',
-      helpText:
-        'Search for Collections that were created with influence by the specified Person or Group',
-    },
     containingItem: {
       label: 'Containing Objects',
       helpText: 'Search for Collections that contain the specified Objects.',
@@ -675,6 +665,11 @@ const searchTermText = {
       helpText:
         'Search for Collections that are maintained by the specified Groups.',
     },
+    hasDigitalImage: {
+      label: 'Have Digital Image',
+      helpText:
+        'Search for Collections for which digital images are available.',
+    },
     id: {
       label: 'ID',
       helpText:
@@ -684,11 +679,6 @@ const searchTermText = {
       label: 'Identifier',
       helpText:
         'Search for Collections by a string identifier or an external authority URI, such as VIAF or wikidata.',
-    },
-    isPublicDomain: {
-      label: 'Are in the Public Domain',
-      helpText:
-        'Search for Collections that have been identified as public domain/no copyright materials.',
     },
     memberOf: {
       label: 'Member of',
@@ -710,15 +700,10 @@ const searchTermText = {
       helpText:
         'Search for Collections that were published by the specified People & Groups. Note the difference with Creation People & Groups that originally wrote the text or conceived the Collection.',
     },
-    subjectOfWork: {
-      label: 'Subject Of Works',
+    publishedDate: {
+      label: 'Published Date',
       helpText:
-        'Search for Collections that are the subject of the specified Works.',
-    },
-    subjectOfSet: {
-      label: 'Subject Of Collections',
-      helpText:
-        'Search for Collections that are the subject of the specified Collections.',
+        'Search for Collections by the date on which they were published. Note the difference with Creation Date, which is when the collection was originally conceived by its creator.',
     },
     text: {
       label: 'Anywhere',
@@ -753,10 +738,6 @@ const searchTermText = {
     aboutPlace: {
       label: 'About Places',
       helpText: 'Search for Works that are about the specified Places.',
-    },
-    aboutSet: {
-      label: 'About Collections',
-      helpText: 'Search for Works that are about the specified Collections.',
     },
     aboutWork: {
       label: 'About Works',

@@ -233,6 +233,11 @@ const SORT_BINDINGS = {
     indexReference: 'setCreationStartDateLong',
     defaultOrder: 'asc',
   },
+  setCurationAgentName: {
+    predicate: lux('agentOfCuration'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
   setClassificationConceptName: {
     predicate: lux('setClassifiedAs'),
     indexReference: 'anySortName',

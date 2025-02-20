@@ -12,13 +12,6 @@ reference	Type	Id	uri	referenceTypeId	Search	Non	N		/json[type = ('Group', 'Pers
 reference		Identifier	string	referenceIdentifier	Search	Non	N		/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Identifier']/content ,  /json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/equivalent/id	
 										
 										
-set	Primary	Name	keyword	setPrimaryName		Non	Y		/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
-set	Any	Text	keyword	setAnyText	Search	Non	N		/json[type = ('Set')]//content	
-set	Type	Id	uri	setTypeId	Search	Non	N		/json[type = ('Set')]/classified_as/id	
-set	UsedFor	Id	uri	setUsedForId	RecordLink	Non	N		/json[type = ('Set')]/used_for/id	
-set		Identifier	string	setIdentifier	Search	Non	N		/json[type = ('Set')]/identified_by[./type='Identifier']/content ,  /json[type = ('Set')]/equivalent/id	
-										
-										
 agent	Any	Text	keyword	agentAnyText	Search	Non	N		/json[type = ('Group', 'Person')]//content	
 agent		Name	keyword	agentName	Search	Non	Y	Search for agents by keyword in name	/json[type = ('Group', 'Person')]/identified_by[./type='Name']/content	
 agent	Primary	Name	keyword	agentPrimaryName	Search	Non	Y	Search for agents by keyword in primary name	/json[type = ('Group', 'Person')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
@@ -96,6 +89,39 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 										
 	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
+set	Primary	Name	keyword	setPrimaryName		Non	Y		/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
+set	Any	Text	keyword	setAnyText	Search	Non	N		/json[type = ('Set')]//content	
+set	Type	Id	uri	setTypeId	Search	Non	N		/json[type = ('Set')]/classified_as/id	
+set	UsedFor	Id	uri	setUsedForId	RecordLink	Non	N		/json[type = ('Set')]/used_for/id	
+set		Identifier	string	setIdentifier	Search	Non	N		/json[type = ('Set')]/identified_by[./type='Identifier']/content ,  /json[type = ('Set')]/equivalent/id	
+set	ArchiveSort	Id	string	setArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
+set	CreationAgent	Name	keyword	setCreationAgentName	Search	Semantic	N			lux:agentOfCreation
+set	CreationStart	Date	datesAsString	setCreationStartDateStr	Search	Non	N		/json[type='Set']/created_by/timespan/begin_of_the_begin	
+set	CreationStart	Date	datesAsLong	setCreationStartDateLong	Search	Non	N		/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin	
+set	CreationEnd	Date	datesAsLong	setCreationEndDateLong	Search	Non	N		/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end	
+set	AboutPlace	Id	uri	setAboutPlaceId	RecordLink	Non	N		/json[type='Set']/about[./type = 'Place']/id	
+set	AboutAgent	Id	uri	setAboutAgentId	RecordLink	Non	N		/json[type='Set']/about[./type = ('Person', 'Group')]/id	
+set	AboutConcept	Id	uri	setAboutConceptId	RecordLink	Non	N		/json[type='Set']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id	
+set	AboutWork	Id	uri	setAboutWorkId	RecordLink	Non	N		/json[type='Set']/about[./type = ('LinguisticObject', 'VisualItem')]/id	
+set	AboutItem	Id	uri	setAboutItemId	RecordLink	Non	N		/json[type='Set']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id	
+set	AboutEvent	Id	uri	setAboutEventId	RecordLink	Non	N		/json[type='Set']/about[./type = ('Activity', 'Period')]/id	
+set	AboutSet	Id	uri	setAboutSetId	RecordLink	Non	N		/json[type='Set']/about[./type = 'Set']/id	
+set	CreationAgent	Id	uri	setCreationAgentId	RecordLink	Non	N		/json[type='Set']/created_by/carried_out_by/id , /json[type='Set']/created_by/part/carried_out_by/id	
+set	CreationPlace	Id	uri	setCreationPlaceId	RecordLink	Non	N		/json[type='Set']/created_by/took_place_at/id	
+set	CreationPlace	Name	keyword	setCreationPlaceName	Search	Semantic	N			lux:placeOfCreation
+set	CurationAgent	Id	uri	setCurationAgentId	RecordLink	Non	N		/json[type='Set']/used_for[./classified_as/equivalent/id = 'http://vocab.getty.edu/aat/300054277']/carried_out_by/id	
+set	HasDigitalImage	Boolean	numbers	setHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/hasDigitalImage	
+set	IsOnline	Boolean	numbers	setIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/isOnline	
+set	IsPublicDomain	Boolean	numbers	setIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/isPublicDomain	
+set	PartOf	Id	uri	setPartOfId	RecordLink	Non	N	works that are part of some other work, by id of parent	/json[type='Set']/member_of/id	
+set	PublicationStart	Date	datesAsString	setPublicationStartDateStr	Search	Non	N		/json[type='Set']/used_for/timespan/begin_of_the_begin	
+set	PublicationStart	Date	datesAsLong	setPublicationStartDateLong	Search	Non	N		/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
+set	PublicationEnd	Date	datesAsLong	setPublicationEndDateLong	Search	Non	N		/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end	
+set	PublicationPlace	Id	uri	setPublicationPlaceId	RecordLink	Non	N		/json[type='Set']/used_for/took_place_at/id	
+set	PublicationPlace	Name	keyword	setPublicationPlaceName	Search	Semantic	N			lux:placeOfPublication
+set	PublicationAgent	Id	uri	setPublicationAgentId	RecordLink	Non	N		/json[type='Set']/used_for/carried_out_by/id	
+set	PublicationAgent	Name	keyword	setPublicationAgentName	Search	Semantic	N			lux:agentOfPublication
+										
 work	ArchiveSort	Id	string	workArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
 work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType ,  /indexedProperties[dataType = 'Set']/dataType	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage ,  /indexedProperties[dataType = 'Set']/hasDigitalImage	
@@ -117,6 +143,7 @@ work	AboutConcept	Id	uri	workAboutConceptId	RecordLink	Non	N		/json[type = ('Vis
 work	AboutWork	Id	uri	workAboutWorkId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id ,  /json[type = 'VisualItem']/represents[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id	
 work	AboutItem	Id	uri	workAboutItemId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('HumanMadeObject', 'DigitalObject')]/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id ,  /json[type = 'VisualItem']/represents[./type = ('HumanMadeObject', 'DigitalObject')]/id	
 work	AboutEvent	Id	uri	workAboutEventId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Activity', 'Period')]/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Activity', 'Period')]/id ,  /json[type = 'VisualItem']/represents[./type = ('Activity', 'Period')]/id	
+work	AboutSet	Id	uri	workAboutSetId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Set']/id ,  /json[type = 'VisualItem']/represents[./type = 'Set']/id	
 work	PartOf	Id	uri	workPartOfId	RecordLink	Non	N	works that are part of some other work, by id of parent	/json[type = ('VisualItem', 'LinguisticObject')]/part_of/id ,  /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/member_of/id	
 work	PartOf	Name	keyword	workPartOfName	Search	Semantic	N			crm:P106i_forms_part_of
 work	PublicationStart	Date	datesAsString	workPublicationStartDateStr	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin , /json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/begin_of_the_begin	

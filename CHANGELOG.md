@@ -9,6 +9,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Made Sets a UI Scope ([#434](https://github.com/project-lux/lux-marklogic/issues/434)).
 - Added new indexes, search terms, facets, sorts for Sets scope. ([#435](https://github.com/project-lux/lux-marklogic/issues/435)).
 - Add new facets for Works scope (About Events, Items, Sets, Works) ([#448](https://github.com/project-lux/lux-marklogic/issues/448)).
+- Change all work.about{Scope} inverse terms to be called subjectOfWork instead of subjectOf{Scope} ([#446](https://github.com/project-lux/lux-marklogic/issues/446)).
 
 ### Removed
   

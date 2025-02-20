@@ -148,7 +148,7 @@ const searchTermText = {
       helpText:
         'Search People & Groups by the date on which they were born or formed.',
     },
-    subjectOfAgent: {
+    subjectOfWork: {
       label: 'Subject Of Works',
       helpText:
         'Search for People & Groups that are the subject of the specified Works.',
@@ -294,7 +294,7 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Measurement Unit", "Language", "Material", "Currency" or a "General Concept". Measurement Units are Concepts that are used as the unit of a measurement, such as inches, seconds, kilograms or bytes. Languages are Concepts that represent human-spoken languages, such as English, Spanish or Latin. Materials are Concepts that represent a class of physical material, such as bronze, paper, or agate. Currencies are Concepts that represent monetary currencies, such as dollars, euros, or francs. General Concepts are Concepts that represent more general ideas or subjects, which excludes the more specific classes of Measurement Unit, Language, Material, and Currency.',
     },
-    subjectOfConcept: {
+    subjectOfWork: {
       label: 'Subject Of Works',
       helpText:
         'Search for Concept & Type terms that are the subject of the specified Works.',
@@ -363,12 +363,12 @@ const searchTermText = {
       label: 'Start Date',
       helpText: 'Search for Events by the date on which they started.',
     },
-    subjectOfEvent: {
+    subjectOfWork: {
       label: 'Subject Of Works',
       helpText:
         'Search for Events that are the subject of the specified Works.',
     },
-    sujbectOfSet: {
+    subjectOfSet: {
       label: 'Subject Of Collections',
       helpText:
         'Search for Events that are the subject of the specified Collections.',
@@ -489,7 +489,7 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Physical Object" or a "Digital Object". Physical Objects are physical items, such as paintings, sculptures, fossils and other specimens, and archival objects. Individual physical copies of books are included in this class. Digital Object are digital items, such as internet resources (datasets, e-books, and other digital files). Digitized images of collection items that are physical objects can be found with the “Is Online” facet on Physical Objects.',
     },
-    subjectOfItem: {
+    subjectOfWork: {
       label: 'Subject Of Works',
       helpText:
         'Search for Objects that are the subject of the specified Works.',
@@ -583,7 +583,7 @@ const searchTermText = {
       label: 'Place of Birth/Formation of',
       helpText: 'Search for Places where People & Groups were born or formed.',
     },
-    subjectOfPlace: {
+    subjectOfWork: {
       label: 'Subject Of Works',
       helpText:
         'Search for Places that are the subject of the specified Works.',

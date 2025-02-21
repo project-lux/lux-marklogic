@@ -84,13 +84,13 @@ const SEARCH_TERMS_CONFIG = {
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToConcept: {
       patternName: 'relatedList',
       targetScope: 'concept',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToEvent: {
@@ -102,7 +102,7 @@ const SEARCH_TERMS_CONFIG = {
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     similar: { patternName: 'similar' },
@@ -175,13 +175,13 @@ const SEARCH_TERMS_CONFIG = {
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToConcept: {
       patternName: 'relatedList',
       targetScope: 'concept',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToEvent: {
@@ -193,7 +193,7 @@ const SEARCH_TERMS_CONFIG = {
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     text: {
@@ -351,13 +351,13 @@ const SEARCH_TERMS_CONFIG = {
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToConcept: {
       patternName: 'relatedList',
       targetScope: 'concept',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToEvent: {
@@ -369,7 +369,7 @@ const SEARCH_TERMS_CONFIG = {
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     text: {

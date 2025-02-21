@@ -25,6 +25,11 @@ const searchTermText = {
       helpText:
         'Search for People & Groups that authored or created the specified Works.',
     },
+    createdSet: {
+      label: 'Created Collections',
+      helpText:
+        'Search for People & Groups that created the specified Collections.',
+    },
     curated: {
       label: 'Curated',
       helpText:

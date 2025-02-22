@@ -10,6 +10,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Added new indexes, search terms, facets, sorts for Sets scope. ([#435](https://github.com/project-lux/lux-marklogic/issues/435)).
 - Add new facets for Works scope (About Events, Items, Sets, Works) ([#448](https://github.com/project-lux/lux-marklogic/issues/448)).
 - Change all work.about{Scope} inverse terms to be called subjectOfWork instead of subjectOf{Scope} ([#446](https://github.com/project-lux/lux-marklogic/issues/446)).
+- Archives are no longer considered Works, since they are now visible in the UI as Sets (Collections) ([#430](https://github.com/project-lux/lux-marklogic/issues/430)).
+- The /stats endpoint is simplified as no scopes have overlapping data types ([#436](https://github.com/project-lux/lux-marklogic/issues/436)).
 
 ### Removed
   

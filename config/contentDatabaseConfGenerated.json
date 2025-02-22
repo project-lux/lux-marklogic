@@ -1158,24 +1158,10 @@
       "field-value-searches": true
     },
     {
-      "field-name": "workArchiveSortId",
-      "field-path": [
-        {
-          "path": "/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "workDataTypeName",
       "field-path": [
         {
           "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType",
-          "weight": 1
-        },
-        {
-          "path": "/indexedProperties[dataType = 'Set']/dataType",
           "weight": 1
         }
       ],
@@ -1197,10 +1183,6 @@
         {
           "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage",
           "weight": 1
-        },
-        {
-          "path": "/indexedProperties[dataType = 'Set']/hasDigitalImage",
-          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1210,10 +1192,6 @@
       "field-path": [
         {
           "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline",
-          "weight": 1
-        },
-        {
-          "path": "/indexedProperties[dataType = 'Set']/isOnline",
           "weight": 1
         }
       ],
@@ -1235,10 +1213,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]//content",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']//content",
-          "weight": 1
         }
       ],
       "stemmed-searches": "basic",
@@ -1259,10 +1233,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Name']/content",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./type='Name']/content",
-          "weight": 1
         }
       ],
       "stemmed-searches": "basic",
@@ -1282,10 +1252,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
           "weight": 1
         }
       ],
@@ -1311,14 +1277,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/equivalent/id",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/identified_by[./type='Identifier']/content",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][./classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/equivalent/id",
-          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1328,10 +1286,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/classified_as/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/classified_as/id",
           "weight": 1
         }
       ],
@@ -1355,10 +1309,6 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = 'Place']/id",
-          "weight": 1
-        },
-        {
           "path": "/json[type = 'VisualItem']/represents[./type = 'Place']/id",
           "weight": 1
         }
@@ -1370,10 +1320,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Person', 'Group')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Person', 'Group')]/id",
           "weight": 1
         },
         {
@@ -1391,10 +1337,6 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
-          "weight": 1
-        },
-        {
           "path": "/json[type = 'VisualItem']/represents[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
           "weight": 1
         }
@@ -1406,10 +1348,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
           "weight": 1
         },
         {
@@ -1427,10 +1365,6 @@
           "weight": 1
         },
         {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
-          "weight": 1
-        },
-        {
           "path": "/json[type = 'VisualItem']/represents[./type = ('HumanMadeObject', 'DigitalObject')]/id",
           "weight": 1
         }
@@ -1442,10 +1376,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Activity', 'Period')]/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/about[./type = ('Activity', 'Period')]/id",
           "weight": 1
         },
         {
@@ -1475,10 +1405,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/part_of/id",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/member_of/id",
-          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1489,10 +1415,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/begin_of_the_begin",
-          "weight": 1
         }
       ]
     },
@@ -1501,10 +1423,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1515,10 +1433,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
-          "weight": 1
         }
       ]
     },
@@ -1527,10 +1441,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/took_place_at/id",
           "weight": 1
         }
       ],
@@ -1542,10 +1452,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/carried_out_by/id",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/used_for/carried_out_by/id",
-          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1556,10 +1462,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/begin_of_the_begin",
-          "weight": 1
         }
       ]
     },
@@ -1568,10 +1470,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1582,10 +1480,6 @@
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
-          "weight": 1
         }
       ]
     },
@@ -1594,10 +1488,6 @@
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/took_place_at/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/took_place_at/id",
           "weight": 1
         }
       ],
@@ -1612,14 +1502,6 @@
         },
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/carried_out_by/id",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set'][classified_as/equivalent/id='http://vocab.getty.edu/aat/300375748']/created_by/part/carried_out_by/id",
           "weight": 1
         }
       ],
@@ -2693,13 +2575,6 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "setPublicationAgentId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "workArchiveSortId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

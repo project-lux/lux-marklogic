@@ -35,6 +35,8 @@ const RELATION_NAMES = {
   'classificationOfSet-publishedBy':
     'Is the Category of Collections Published By',
   'created-aboutAgent': 'Created Works About',
+  'created-aboutItem-memberOf-usedForEvent':
+    'Created Works About Objects Used At',
   'created-aboutConcept': 'Created Works About',
   'created-aboutPlace': 'Created Works About',
   'createdSet-aboutAgent': 'Created Collections About',
@@ -45,6 +47,7 @@ const RELATION_NAMES = {
   'created-classification': 'Created Works Categorized As',
   'created-createdAt': 'Created Works Created At',
   'created-createdBy': 'Co-created Works With',
+  'created-creationInfluencedBy': 'Created Works Influenced By',
   'created-language': 'Created Works In',
   'created-publishedBy': 'Created Works Published By',
   'createdSet-classification': 'Created Collections Categorized As',
@@ -62,20 +65,6 @@ const RELATION_NAMES = {
   'createdHere-createdBy': 'Is the Place of Creation of Works Created By',
   'createdHere-language': 'Is the Place of Creation of Works In',
   'createdHere-publishedBy': 'Is the Place of Creation of Works Published By',
-  'setCreatedHere-aboutAgent': 'Is the Place of Creation of Collections About',
-  'setCreatedHere-aboutConcept':
-    'Is the Place of Creation of Collections About',
-  'setCreatedHere-aboutPlace': 'Is the Place of Creation of Collections About',
-  'setCreatedHere-carriedBy-memberOf-usedForEvent':
-    'Is the Place of Creation of Collections Carried By Items Used At',
-  'setCreatedHere-classification':
-    'Is the Place of Creation of Collections Categorized As',
-  'setCreatedHere-createdAt':
-    'Is the Place of Creation of Collections Created At',
-  'setCreatedHere-createdBy':
-    'Is the Place of Creation of Collections Created By',
-  'setCreatedHere-publishedBy':
-    'Is the Place of Creation of Collections Published By',
   'encountered-classification': 'Encountered Objects Categorized As',
   'encountered-encounteredAt': 'Encountered Objects Encountered At',
   'encountered-encounteredBy': 'Co-encountered Objects With',
@@ -83,6 +72,7 @@ const RELATION_NAMES = {
   'encountered-producedAt': 'Encountered Objects Created At',
   'encountered-producedBy': 'Encountered Objects Created By',
   'encountered-producedUsing': 'Encountered Objects Created Using',
+  'encountered-productionInfluencedBy': 'Encountered Objects Influenced By',
   'encounteredHere-classification':
     'Is the Place of Encounter of Objects Categorized As',
   'encounteredHere-encounteredAt':
@@ -99,6 +89,31 @@ const RELATION_NAMES = {
   'encounteredHere-producedUsing':
     'Is the Place of Encounter of Objects Created Using',
   'encountered-memberOf-usedForEvent': 'Encountered Objects Used At',
+  'influencedCreation-aboutAgent': 'Influenced Creation of Works About',
+  'influencedCreation-aboutConcept': 'Influenced Creation of Works About',
+  'influencedCreation-aboutEvent': 'Influenced Creation of Works About',
+  'influencedCreation-aboutItem-carries-aboutEvent':
+    'Influenced Creation of Works About',
+  'influencedCreation-aboutItem-carries-creationCausedBy':
+    'Influenced Creation of Works About',
+  'influencedCreation-createdBy': 'Influenced Creation of Works Created By',
+  'influencedCreation-creationInfluencedBy':
+    'Influenced Creation of Works Influenced By',
+  'influencedCreation-classification':
+    'Influenced Creation of Works Categorized As',
+  'influencedCreation-language': 'Influenced Creation of Works In',
+  'influencedCreation-publishedBy': 'Influenced Creation of Works Published By',
+  'influencedProduction-classification':
+    'Influenced Creation of Objects Categorized As',
+  'influencedProduction-encounteredBy':
+    'Influenced Creation of Objects Encountered By',
+  'influencedProduction-material': 'Influenced Creation of Objects Made Of',
+  'influencedProduction-producedBy':
+    'Influenced Creation of Objects Created By',
+  'influencedProduction-producedUsing':
+    'Influenced Creation of Objects Created Using',
+  'influencedProduction-productionInfluencedBy':
+    'Influenced Creation of Objects Influenced By',
   'languageOf-aboutAgent': 'Is the Language of Works About',
   'languageOf-aboutConcept': 'Is the Language of Works About',
   'languageOf-aboutPlace': 'Is the Language of Works About',
@@ -125,6 +140,7 @@ const RELATION_NAMES = {
   'produced-producedAt': 'Created Objects Created At',
   'produced-producedBy': 'Co-created Objects With',
   'produced-producedUsing': 'Created Objects Using',
+  'produced-productionInfluencedBy': 'Created Objects Influenced By',
   'producedHere-classification':
     'Is the Place of Creation of Objects Categorized As',
   'producedHere-encounteredAt':
@@ -146,8 +162,23 @@ const RELATION_NAMES = {
   'published-classification': 'Published Works Categorized As',
   'published-createdAt': 'Published Works Created At',
   'published-createdBy': 'Published Works Created By',
+  'published-creationInfluencedBy': 'Published Works Influenced By',
   'published-language': 'Published Works In',
   'published-publishedBy': 'Published Works With',
+  'setCreatedHere-aboutAgent': 'Is the Place of Creation of Collections About',
+  'setCreatedHere-aboutConcept':
+    'Is the Place of Creation of Collections About',
+  'setCreatedHere-aboutPlace': 'Is the Place of Creation of Collections About',
+  'setCreatedHere-carriedBy-memberOf-usedForEvent':
+    'Is the Place of Creation of Collections Carried By Items Used At',
+  'setCreatedHere-classification':
+    'Is the Place of Creation of Collections Categorized As',
+  'setCreatedHere-createdAt':
+    'Is the Place of Creation of Collections Created At',
+  'setCreatedHere-createdBy':
+    'Is the Place of Creation of Collections Created By',
+  'setCreatedHere-publishedBy':
+    'Is the Place of Creation of Collections Published By',
   'subjectOfWork-aboutAgent': 'Is the Subject of Works About',
   'subjectOfWork-aboutConcept': 'Is the Subject of Works About',
   'subjectOfWork-aboutPlace': 'Is the Subject of Works About',
@@ -156,6 +187,7 @@ const RELATION_NAMES = {
   'subjectOfWork-classification': 'Is the Subject of Works Categorized As',
   'subjectOfWork-createdAt': 'Is the Subject of Works Created At',
   'subjectOfWork-createdBy': 'Is the Subject of Works Created By',
+  'subjectOfWork-creationInfluencedBy': 'Is the Subject of Works Influenced By',
   'subjectOfWork-language': 'Is the Subject of Works In',
   'subjectOfWork-publishedBy': 'Is the Subject of Works Published By',
   'subjectOfSet-aboutAgent': 'Is the Subject of Collections About',

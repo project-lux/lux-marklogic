@@ -2,8 +2,35 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.35.0 - 2025-02-24
+### Added
+
+### Changed
+- Made Sets a UI Scope ([#434](https://github.com/project-lux/lux-marklogic/issues/434)).
+- Added new indexes, search terms, facets, sorts for Sets scope. ([#435](https://github.com/project-lux/lux-marklogic/issues/435)).
+- Add new facets for Works scope (About Events, Items, Sets, Works) ([#448](https://github.com/project-lux/lux-marklogic/issues/448)).
+- Change all work.about{Scope} inverse terms to be called subjectOfWork instead of subjectOf{Scope} ([#446](https://github.com/project-lux/lux-marklogic/issues/446)).
+- Archives are no longer considered Works, since they are now visible in the UI as Sets (Collections) ([#430](https://github.com/project-lux/lux-marklogic/issues/430)).
+- The /stats endpoint is simplified as no scopes have overlapping data types ([#436](https://github.com/project-lux/lux-marklogic/issues/436)).
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.34.0 - 2025-02-10
+
+### Added
  - Added the Storage Info endpoint which enables consumers to get a summary of the storage usage within a MarkLogic cluster ([#22](https://github.com/project-lux/lux-marklogic/issues/22)).
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
 
 ## v1.33.0 - 2025-01-27
 

@@ -84,13 +84,13 @@ const SEARCH_TERMS_CONFIG = {
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToConcept: {
       patternName: 'relatedList',
       targetScope: 'concept',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToEvent: {
@@ -102,7 +102,7 @@ const SEARCH_TERMS_CONFIG = {
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     similar: { patternName: 'similar' },
@@ -175,13 +175,13 @@ const SEARCH_TERMS_CONFIG = {
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToConcept: {
       patternName: 'relatedList',
       targetScope: 'concept',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToEvent: {
@@ -193,7 +193,7 @@ const SEARCH_TERMS_CONFIG = {
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     text: {
@@ -351,13 +351,13 @@ const SEARCH_TERMS_CONFIG = {
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToConcept: {
       patternName: 'relatedList',
       targetScope: 'concept',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     relatedToEvent: {
@@ -369,7 +369,7 @@ const SEARCH_TERMS_CONFIG = {
     relatedToPlace: {
       patternName: 'relatedList',
       targetScope: 'place',
-      inBetweenScopes: ['item', 'work'],
+      inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
     text: {
@@ -405,6 +405,54 @@ const SEARCH_TERMS_CONFIG = {
     },
   },
   set: {
+    aboutAgent: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_agent")'],
+      targetScope: 'agent',
+      hopInverseName: 'subjectOfSet',
+      indexReferences: ['agentPrimaryName'],
+      idIndexReferences: ['setAboutAgentId'],
+    },
+    aboutConcept: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_concept")'],
+      targetScope: 'concept',
+      hopInverseName: 'subjectOfSet',
+      indexReferences: ['conceptPrimaryName'],
+      idIndexReferences: ['setAboutConceptId'],
+    },
+    aboutEvent: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_event")'],
+      targetScope: 'event',
+      hopInverseName: 'subjectOfSet',
+      indexReferences: ['eventPrimaryName'],
+      idIndexReferences: ['setAboutEventId'],
+    },
+    aboutItem: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_item")'],
+      targetScope: 'item',
+      hopInverseName: 'subjectOfSet',
+      indexReferences: ['itemPrimaryName'],
+      idIndexReferences: ['setAboutItemId'],
+    },
+    aboutPlace: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_place")'],
+      targetScope: 'place',
+      hopInverseName: 'subjectOfSet',
+      indexReferences: ['placePrimaryName'],
+      idIndexReferences: ['setAboutPlaceId'],
+    },
+    aboutWork: {
+      patternName: 'hopWithField',
+      predicates: ['lux("about_or_depicts_work")'],
+      targetScope: 'work',
+      hopInverseName: 'subjectOfSet',
+      indexReferences: ['workPrimaryName'],
+      idIndexReferences: ['setAboutWorkId'],
+    },
     classification: {
       patternName: 'hopWithField',
       predicates: ['lux("setClassifiedAs")'],
@@ -412,6 +460,27 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'classificationOfSet',
       indexReferences: ['conceptPrimaryName'],
       idIndexReferences: ['setTypeId'],
+    },
+    createdAt: {
+      patternName: 'hopWithField',
+      predicates: ['lux("placeOfCreation")'],
+      targetScope: 'place',
+      hopInverseName: 'setCreatedHere',
+      indexReferences: ['placePrimaryName'],
+    },
+    createdBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("agentOfCreation")'],
+      targetScope: 'agent',
+      hopInverseName: 'createdSet',
+      indexReferences: ['agentPrimaryName'],
+    },
+    creationCausedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("causeOfCreation")'],
+      targetScope: 'event',
+      hopInverseName: 'causedCreationOfSet',
+      indexReferences: ['setCreationAgentId'],
     },
     curatedBy: {
       patternName: 'hopWithField',
@@ -438,6 +507,20 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setPrimaryName'],
       scalarType: 'string',
     },
+    publishedAt: {
+      patternName: 'hopWithField',
+      predicates: ['lux("placeOfPublication")'],
+      targetScope: 'place',
+      hopInverseName: 'setPublishedHere',
+      indexReferences: ['placePrimaryName'],
+    },
+    publishedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("agentOfPublication")'],
+      targetScope: 'agent',
+      hopInverseName: 'publishedSet',
+      indexReferences: ['agentPrimaryName'],
+    },
     text: {
       patternName: 'text',
       indexReferences: ['setAnyText'],
@@ -449,7 +532,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_agent")'],
       targetScope: 'agent',
-      hopInverseName: 'subjectOfAgent',
+      hopInverseName: 'subjectOfWork',
       indexReferences: ['agentPrimaryName'],
       idIndexReferences: ['workAboutAgentId'],
     },
@@ -457,7 +540,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_concept")'],
       targetScope: 'concept',
-      hopInverseName: 'subjectOfConcept',
+      hopInverseName: 'subjectOfWork',
       indexReferences: ['conceptPrimaryName'],
       idIndexReferences: ['workAboutConceptId'],
     },
@@ -465,7 +548,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_event")'],
       targetScope: 'event',
-      hopInverseName: 'subjectOfEvent',
+      hopInverseName: 'subjectOfWork',
       indexReferences: ['eventPrimaryName'],
       idIndexReferences: ['workAboutEventId'],
     },
@@ -473,7 +556,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_item")'],
       targetScope: 'item',
-      hopInverseName: 'subjectOfItem',
+      hopInverseName: 'subjectOfWork',
       indexReferences: ['itemPrimaryName'],
       idIndexReferences: ['workAboutItemId'],
     },
@@ -481,7 +564,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'hopWithField',
       predicates: ['lux("about_or_depicts_place")'],
       targetScope: 'place',
-      hopInverseName: 'subjectOfPlace',
+      hopInverseName: 'subjectOfWork',
       indexReferences: ['placePrimaryName'],
       idIndexReferences: ['workAboutPlaceId'],
     },
@@ -546,19 +629,13 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['workName'],
       scalarType: 'string',
     },
-    // Not the correct pattern but avoids getting child name's
-    // pattern when there's an ID child term.
-    partOfSet: {
-      patternName: 'indexedWord',
-      indexReferences: ['workPrimaryName'],
-      scalarType: 'string',
-    },
     partOfWork: {
       patternName: 'hopWithField',
       predicates: ['crm("P106i_forms_part_of")'],
       targetScope: 'work',
       hopInverseName: 'containsWork',
       indexReferences: ['workPrimaryName'],
+      idIndexReferences: ['workPartOfId'],
     },
     publishedAt: {
       patternName: 'hopWithField',

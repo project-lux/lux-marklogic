@@ -29,6 +29,7 @@ import {
   isSearchScopeName,
 } from './searchScope.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import { getSearchScopes } from './searchScope.mjs';
 
 const PATTERN_NAME_DATE_RANGE = 'dateRange';
 const PATTERN_NAME_DOCUMENT_ID = 'documentId';
@@ -402,6 +403,9 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
     const termConfig = searchTerm.getSearchTermConfig();
     const termWeight = searchTerm.getWeight();
     const termValueIsQuery = searchTerm.getValueType() !== TYPE_ATOMIC;
+    const parent = searchTerm.getParentSearchTerm();
+    const parentScope = parent ? parent.getScopeName() : null;
+
     const valuesQueryStr = termValueIsQuery
       ? termValue
       : `${_getCtsQueryFunctionName(
@@ -412,11 +416,15 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
         )}, "${termValue}", ${utils.arrayToString(
           resolvedSearchOptions
         )}, ${termWeight})`;
-    const codeStr = `${_getTripleRangeQuery(
+
+    const tripleRangeQuery = _getTripleRangeQuery(
       termConfig.getPredicates(),
       valuesQueryStr,
       termWeight
-    )}`;
+    );
+    const codeStr = parentScope
+      ? _getParentDataType(parentScope, tripleRangeQuery)
+      : tripleRangeQuery;
     return _formattedPatternResponse(codeStr);
   },
 };
@@ -715,6 +723,13 @@ function _getWordQueries(
   const andQueryStop = termValues.length > 1 ? '])' : '';
 
   return `${andQueryStart}${wordQueries.join(', ')}${andQueryStop}`;
+}
+
+function _getParentDataType(parentScope, subQuery) {
+  return `cts.andQuery([cts.jsonPropertyValueQuery('dataType', ${utils.arrayToString(
+    getSearchScopes()[parentScope].types,
+    'string'
+  )}, ['exact']),${subQuery}])`;
 }
 
 function _getTripleRangeQuery(predicates, valuesQueryStr, weight = 1.0) {

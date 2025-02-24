@@ -61,7 +61,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   archiveSortId: {
-    subSorts: ['itemArchiveSortId', 'workArchiveSortId'],
+    subSorts: ['itemArchiveSortId', 'setArchiveSortId'],
   },
   anySortName: {
     indexType: 'field',
@@ -218,9 +218,49 @@ const SORT_BINDINGS = {
     indexReference: 'placeHasDigitalImageBoolean',
     defaultOrder: 'desc',
   },
-  workArchiveSortId: {
+  setArchiveSortId: {
     indexType: 'field',
-    indexReference: 'workArchiveSortId',
+    indexReference: 'setArchiveSortId',
+    defaultOrder: 'asc',
+  },
+  setCreationAgentName: {
+    predicate: lux('agentOfCreation'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  setCreationDate: {
+    indexType: 'field',
+    indexReference: 'setCreationStartDateLong',
+    defaultOrder: 'asc',
+  },
+  setCurationAgentName: {
+    predicate: lux('agentOfCuration'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  setClassificationConceptName: {
+    predicate: lux('setClassifiedAs'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  setHasDigitalImage: {
+    indexType: 'field',
+    indexReference: 'setHasDigitalImageBoolean',
+    defaultOrder: 'desc',
+  },
+  setPublicationDate: {
+    indexType: 'field',
+    indexReference: 'setPublicationStartDateLong',
+    defaultOrder: 'asc',
+  },
+  setPublicationAgentName: {
+    predicate: lux('agentOfPublication'),
+    indexReference: 'anySortName',
+    defaultOrder: 'asc',
+  },
+  setPublicationPlaceName: {
+    predicate: lux('placeOfPublication'),
+    indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   workCreationAgentName: {

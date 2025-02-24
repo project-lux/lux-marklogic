@@ -47,7 +47,7 @@ const PRIORITY_BY_RELATION_KEY = {
   'materialOfItem-classification': 3,
   'produced-classification': 6,
   'publishedHere-classification': 4,
-  'subjectOfConcept-classification': 7,
+  'subjectOfWork-classification': 7,
   'usedToProduce-classification': 3,
 };
 

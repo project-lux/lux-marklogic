@@ -73,7 +73,7 @@ const SEARCH_SCOPES = {
     userInterfaceOrder: 2,
     fields: ['workAnyText'],
     predicates: ['lux("workAny")'],
-    types: ['LinguisticObject', 'Set', 'VisualItem'],
+    types: ['LinguisticObject', 'VisualItem'],
   },
 };
 

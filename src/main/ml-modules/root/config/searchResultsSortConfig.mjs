@@ -61,7 +61,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   archiveSortId: {
-    subSorts: ['itemArchiveSortId', 'workArchiveSortId'],
+    subSorts: ['itemArchiveSortId', 'setArchiveSortId'],
   },
   anySortName: {
     indexType: 'field',
@@ -261,11 +261,6 @@ const SORT_BINDINGS = {
   setPublicationPlaceName: {
     predicate: lux('placeOfPublication'),
     indexReference: 'anySortName',
-    defaultOrder: 'asc',
-  },
-  workArchiveSortId: {
-    indexType: 'field',
-    indexReference: 'workArchiveSortId',
     defaultOrder: 'asc',
   },
   workCreationAgentName: {

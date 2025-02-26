@@ -2,6 +2,18 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.35.1 - 2025-02-25
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Fixed responsibleUnits facet to allow it to work with Sets ([#458](https://github.com/project-lux/lux-marklogic/issues/458)).
+
+### Security
+
 ## v1.35.0 - 2025-02-24
 ### Added
 

@@ -185,7 +185,7 @@ const SEMANTIC_FACETS_CONFIG = {
         cts.andQuery([
           cts.jsonPropertyValueQuery(
             'dataType',
-            ['DigitalObject', 'HumanMadeObject'],
+            ['DigitalObject', 'HumanMadeObject', 'Set'],
             ['exact']
           ),
           cts.tripleRangeQuery(

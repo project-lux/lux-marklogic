@@ -19,6 +19,12 @@ class DataMergeError extends Error {
   }
 }
 
+class InternalConfigurationError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class InternalServerError extends Error {
   constructor(message) {
     super(message);
@@ -50,6 +56,7 @@ function isInvalidSearchRequestError(e) {
 export {
   BadRequestError,
   DataMergeError,
+  InternalConfigurationError,
   InternalServerError,
   InvalidSearchRequestError,
   NotFoundError,

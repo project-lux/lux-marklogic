@@ -1,6 +1,7 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
 import { getSearchScope, getSearchScopeNames } from '../../lib/searchScope.mjs';
 
+const serviceAccountName = external.serviceAccountName;
 handleRequest(function () {
   const start = new Date();
   const doc = {
@@ -22,4 +23,4 @@ handleRequest(function () {
   doc.metadata.timestamp = end;
   doc.metadata.milliseconds = end - start;
   return doc;
-});
+}, serviceAccountName);

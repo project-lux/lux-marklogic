@@ -1,6 +1,12 @@
 {
   "functionName": "stats",
-  "params": [],
+  "params": [
+    {
+      "name": "serviceAccountName",
+      "datatype": "string",
+      "nullable": true
+    }
+  ],
   "return": {
     "datatype": "jsonDocument",
     "$javaClass": "com.fasterxml.jackson.databind.JsonNode"

@@ -74,6 +74,11 @@ function getJSErrorResponseBody(errorBody) {
       status = 'Internal Data Merge Error';
       messageCode = 'DataMergeError';
       break;
+    case 'InternalConfigurationError':
+      statusCode = 500;
+      status = 'Internal Configuration Error';
+      messageCode = 'InternalConfigurationError';
+      break;
     case 'InternalServerError':
       statusCode = 500;
       status = 'Internal Server Error';

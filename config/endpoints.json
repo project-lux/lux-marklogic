@@ -1,0 +1,26 @@
+{
+  "/ds/lux/stats.mjs": {
+    "features": { "myCollections": false },
+    "allowInReadOnlyMode": true,
+    "functionNamePrefix": "stats",
+    "executeAsServiceAccountWhenSpecified": true
+  },
+  "/ds/myLux/createSet.mjs": {
+    "features": { "myCollections": true },
+    "allowInReadOnlyMode": false,
+    "functionNamePrefix": "createSet",
+    "executeAsServiceAccountWhenSpecified": false
+  },
+  "/ds/myLux/readSet.mjs": {
+    "features": { "myCollections": true },
+    "allowInReadOnlyMode": true,
+    "functionNamePrefix": "readSet",
+    "executeAsServiceAccountWhenSpecified": true
+  },
+  "/ds/myLux/downloadSet.mjs": {
+    "features": { "myCollections": true },
+    "allowInReadOnlyMode": true,
+    "functionNamePrefix": "downloadSet",
+    "executeAsServiceAccountWhenSpecified": true
+  }
+}

@@ -95,6 +95,38 @@ task determineCodeVersion {
   }
 }
 
+// Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
+// Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
+// literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
+// one should not expect this function to resolve those references.  Use the JSP like syntax instead.
+ext.applyTemplate = { templatePath, templateBindings ->
+  // Read template file into memory
+  def text = file(templatePath).text
+
+  // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
+  // '$1' and '${paramName}'.
+  text = text.replaceAll(/\$/, 'DOLLAR_SIGN')
+
+  // When a template variable reference immediately follows a JavaScript single line comment marker, remove the comment marker,
+  // thereby allowing the template's variable value to be uncommented code.
+  text = text.replaceAll(/\/\/\s*(?<templateVarRef><%[^>]*>)/, '${templateVarRef}')
+
+  // Resolve all template variable references: <%...%>
+  def engine = new groovy.text.SimpleTemplateEngine()
+  text = engine.createTemplate(text).make(templateBindings).toString()
+
+  // Change DOLLAR_SIGN back to the actual dollar sign symbol, such that JavaScript recognizes them.
+  text = text.replaceAll(/DOLLAR_SIGN/, '\\$')
+
+  return text
+}
+
+ext.writeToFile = { outputPath, content ->
+  new File("$outputPath").withWriter { out ->
+    out.println content
+  }
+}
+
 // This project's implementation of its custom token feature.
 //
 // This task needs to run before any ML Gradle task that references ML Gradle configuration files does.  Rather than
@@ -173,6 +205,30 @@ task copyContentDatabaseConfGenerated(){
 
 }
 mlLoadModules.dependsOn copyContentDatabaseConfGenerated
+
+// Defines amps and populates endpointsConfig.mjs and libWrapper.mjs
+task processExtendedEndpointConfiguration() {
+  doLast {
+    def config = new File('./config/endpoints.json').getText('UTF-8')
+
+    def timestamp = new Date().toString()
+
+    // Strip encapsulating curly braces, which are provided by the template.
+    def topLevelObjects = config.trim()
+    topLevelObjects = topLevelObjects.substring(1, topLevelObjects.length() - 1)
+
+    def templateBindings = [
+        timestamp       : timestamp,
+        topLevelObjects : topLevelObjects
+    ]
+    def filename = "endpointsConfig.mjs"
+    def content = applyTemplate("${project.projectDir}/src/main/templates/${filename}", templateBindings)
+    writeToFile("${project.projectDir}/src/main/ml-modules/root/config/${filename}", content)
+    println "Generated ${filename}"
+  }
+}
+mlDeploySecurity.dependsOn processExtendedEndpointConfiguration
+mlLoadModules.dependsOn processExtendedEndpointConfiguration
 
 // Developer convenience to copy a database, including from DEV to one's local environment.
 // More info in /docs/lux-backend-build-tool-and-tasks.md.

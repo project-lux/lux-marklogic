@@ -15,17 +15,17 @@ const EndpointConfig = class {
     return this.entityPath;
   }
 
-  isServiceAccountApplicable() {
-    return this.executeAsServiceAccountWhenSpecified === true;
-  }
+  // isServiceAccountApplicable() {
+  //   return this.executeAsServiceAccountWhenSpecified === true;
+  // }
 
-  hasReceivingFunctionForServiceAccount() {
-    return isDefined(this.receivingServiceAccountFunction);
-  }
+  // hasReceivingFunctionForServiceAccount() {
+  //   return isDefined(this.receivingServiceAccountFunction);
+  // }
 
-  getReceivingFunctionForServiceAccount() {
-    return this.receivingServiceAccountFunction;
-  }
+  // getReceivingFunctionForServiceAccount() {
+  //   return this.receivingServiceAccountFunction;
+  // }
 };
 
 /*
@@ -35,18 +35,21 @@ const EndpointConfig = class {
 const propertyIsRequired = true;
 const propertyIsNotRequired = false;
 function assertValidConfiguration(endpointConfig) {
-  assertValidPropertyValue(
-    endpointConfig,
-    'executeAsServiceAccountWhenSpecified',
-    propertyIsRequired,
-    [true, false]
-  );
-  assertValidPropertyValueType(
-    endpointConfig,
-    'receivingServiceAccountFunction',
-    propertyIsNotRequired,
-    'function'
-  );
+  // TODO: Replace with tests for the features and allowInReadOnlyMode properties.
+  // TBD whether we retain the executeAsServiceAccountWhenSpecified property.
+  //
+  // assertValidPropertyValue(
+  //   endpointConfig,
+  //   'executeAsServiceAccountWhenSpecified',
+  //   propertyIsRequired,
+  //   [true, false]
+  // );
+  // assertValidPropertyValueType(
+  //   endpointConfig,
+  //   'receivingServiceAccountFunction',
+  //   propertyIsNotRequired,
+  //   'function'
+  // );
 }
 
 function assertValidPropertyValue(

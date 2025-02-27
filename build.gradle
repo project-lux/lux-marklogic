@@ -33,6 +33,8 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
+ext.lineSep = System.getProperty("line.separator")
+
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
@@ -207,28 +209,49 @@ task copyContentDatabaseConfGenerated(){
 mlLoadModules.dependsOn copyContentDatabaseConfGenerated
 
 // Defines amps and populates endpointsConfig.mjs and libWrapper.mjs
-task processExtendedEndpointConfiguration() {
+task addSupportForExecutingWithServiceAccounts() {
   doLast {
-    def config = new File('./config/endpoints.json').getText('UTF-8')
-
     def timestamp = new Date().toString()
 
-    // Strip encapsulating curly braces, which are provided by the template.
-    def topLevelObjects = config.trim()
-    topLevelObjects = topLevelObjects.substring(1, topLevelObjects.length() - 1)
+    // Generate unit-specific amp configuration files, while collecting the wrapper function names.
+    def moduleFilename = "libWrapper.mjs"
+    def functionNamePrefix = "execute_with"
+    def functionNames = ["${functionNamePrefix}_${project.getProperty("mlAppName")}"];
+    project.getProperty("endpointAccessUnitNames").replaceAll("\\s", "").tokenize(",").each{ unit -> 
+      def functionName = "${functionNamePrefix}_${project.getProperty("mlAppName")}_${unit}"
+      functionNames.push(functionName)
 
+      // Amp configuration files.
+      def templateBindings = [
+          unit: unit,
+          functionName: functionName,
+          moduleFilename: moduleFilename
+      ]
+      def content = applyTemplate("${project.projectDir}/src/main/templates/execute-with-service-account-amp.json", templateBindings)
+      writeToFile("${project.projectDir}/src/main/ml-config/base/security/amps/execute-with-${unit}-amp.json", content)
+      println "Generated amp for the '${unit}' unit."
+    }
+
+    // Populate the wrapper function library.
+    def functionLines = []
+    def exportLines = ["export {"]
+    functionNames.each{ functionName ->
+      functionLines.push("const ${functionName} = (f) => { return f() };")
+      exportLines.push("  ${functionName},")
+    }
+    exportLines.push("};")
     def templateBindings = [
-        timestamp       : timestamp,
-        topLevelObjects : topLevelObjects
+        timestamp: timestamp,
+        functionLines: functionLines.join(lineSep),
+        exportLines: exportLines.reverse().join(lineSep)
     ]
-    def filename = "endpointsConfig.mjs"
-    def content = applyTemplate("${project.projectDir}/src/main/templates/${filename}", templateBindings)
-    writeToFile("${project.projectDir}/src/main/ml-modules/root/config/${filename}", content)
-    println "Generated ${filename}"
+    def content = applyTemplate("${project.projectDir}/src/main/templates/${moduleFilename}", templateBindings)
+    writeToFile("${project.projectDir}/src/main/ml-modules/root/lib/${moduleFilename}", content)
+    println "Generated ${moduleFilename}"
   }
 }
-mlDeploySecurity.dependsOn processExtendedEndpointConfiguration
-mlLoadModules.dependsOn processExtendedEndpointConfiguration
+mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts
+mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
 // Developer convenience to copy a database, including from DEV to one's local environment.
 // More info in /docs/lux-backend-build-tool-and-tasks.md.

@@ -2,5 +2,5 @@
   "local-name": "_searchWithLuxEndpointConsumerRole",
   "document-uri": "/lib/searchTest.mjs",
   "modules-database": "%%MODULES_DATABASE%%",
-  "role": ["%%mlAppName%%-endpoint-consumer", "%%mlAppName%%-user-roles"]
+  "role": ["%%mlAppName%%-endpoint-consumer"]
 }

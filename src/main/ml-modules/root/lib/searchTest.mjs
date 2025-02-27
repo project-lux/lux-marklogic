@@ -19,31 +19,30 @@ const searchWithLuxEndpointConsumerRole = import.meta.amp(
 
 // _searchWith*EndpointConsumerRole to use this.
 function _underlyingSearch() {
-  console.log(
-    `Executing search with roles: ${xdmp
+  const responseBody = {
+    username: xdmp.getCurrentUser(),
+    roles: xdmp
       .getCurrentRoles()
       .toArray()
       .map((id) => {
         return xdmp.roleName(id);
-      })
-      .join(', ')}`
-  );
-  const responseBody = {};
-  responseBody.uris = fn
-    .subsequence(
-      cts.search(
-        cts.documentQuery([
-          'https://lux.collections.yale.edu/data/set/00124abe-cf15-4497-94fb-a4ec4276bbe8', // lux-endpoint-consumer
-          'https://lux.collections.yale.edu/data/set/6p3dia4a-cf15-4497-94fb-a4ec4276bbe8.json', // bhartwig
-        ])
-      ),
-      1,
-      10
-    )
-    .toArray()
-    .map((doc) => {
-      return doc.baseURI;
-    });
+      }),
+    uris: fn
+      .subsequence(
+        cts.search(
+          cts.documentQuery([
+            'https://lux.collections.yale.edu/data/set/00124abe-cf15-4497-94fb-a4ec4276bbe8',
+            'https://lux.collections.yale.edu/data/set/6p3dia4a-cf15-4497-94fb-a4ec4276bbe8.json',
+          ])
+        ),
+        1,
+        10
+      )
+      .toArray()
+      .map((doc) => {
+        return doc.baseURI;
+      }),
+  };
   responseBody.length = responseBody.uris.length;
   return responseBody;
 }

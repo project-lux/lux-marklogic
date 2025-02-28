@@ -7,7 +7,4 @@ build
 gradle-*.properties
 !gradle-wrapper.properties
 
-# Generated files
-src/main/ml-config/base/security/amps/execute-with-*-amp.json
 src/main/ml-modules/root/config/contentDatabaseConfGenerated.mjs
-src/main/ml-modules/root/lib/libWrapper.mjs

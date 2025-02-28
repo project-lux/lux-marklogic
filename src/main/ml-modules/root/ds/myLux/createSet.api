@@ -16,7 +16,7 @@
       "nullable": true
     },
     {
-      "name": "serviceAccountName",
+      "name": "unitName",
       "datatype": "string",
       "nullable": true
     }

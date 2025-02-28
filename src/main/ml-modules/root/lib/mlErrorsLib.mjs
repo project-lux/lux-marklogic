@@ -7,6 +7,12 @@
 // Helps non-search endpoints decide whether to log they failed.
 const INVALID_SEARCH_REQUEST_LABEL = 'Invalid search request';
 
+class AccessDeniedError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class BadRequestError extends Error {
   constructor(message) {
     super(message);
@@ -36,6 +42,12 @@ class InvalidSearchRequestError extends Error {
     super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`);
   }
 }
+
+class NotAcceptingWriteRequestsError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
 class NotFoundError extends Error {
   constructor(message) {
     super(message);
@@ -54,11 +66,13 @@ function isInvalidSearchRequestError(e) {
 }
 
 export {
+  AccessDeniedError,
   BadRequestError,
   DataMergeError,
   InternalConfigurationError,
   InternalServerError,
   InvalidSearchRequestError,
+  NotAcceptingWriteRequestsError,
   NotFoundError,
   NotImplementedError,
   isInvalidSearchRequestError,

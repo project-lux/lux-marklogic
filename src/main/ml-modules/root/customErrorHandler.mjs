@@ -64,6 +64,11 @@ function getJSErrorResponseBody(errorBody) {
   let messageCode = null;
   let message = getJSMessage(errorBody);
   switch (name) {
+    case 'AccessDeniedError':
+      statusCode = 403;
+      status = 'Access Denied';
+      messageCode = 'AccessDeniedError';
+      break;
     case 'BadRequestError':
       statusCode = 400;
       status = 'Bad Request';
@@ -89,6 +94,13 @@ function getJSErrorResponseBody(errorBody) {
       statusCode = 400;
       status = 'Bad Request';
       messageCode = 'BadRequestError';
+      break;
+    case 'NotAcceptingWriteRequestsError':
+      // Avoiding 503 due to data service retries.
+      // 409 means the request conflicts with current state.
+      statusCode = 409;
+      status = 'Not Accepting Write Requests';
+      messageCode = 'NotAcceptingWriteRequestsError';
       break;
     case 'NotFoundError':
       statusCode = 404;

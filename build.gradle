@@ -33,6 +33,10 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
+ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
+ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
+ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
+
 ext.lineSep = System.getProperty("line.separator")
 
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
@@ -101,9 +105,9 @@ task determineCodeVersion {
 // Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
 // literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
 // one should not expect this function to resolve those references.  Use the JSP like syntax instead.
-ext.applyTemplate = { templatePath, templateBindings ->
+ext.applyTemplate = { sourceTemplatePath, templateBindings ->
   // Read template file into memory
-  def text = file(templatePath).text
+  def text = file(sourceTemplatePath).text
 
   // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
   // '$1' and '${paramName}'.
@@ -213,40 +217,70 @@ task addSupportForExecutingWithServiceAccounts() {
   doLast {
     def timestamp = new Date().toString()
 
-    // Generate unit-specific amp configuration files, while collecting the wrapper function names.
+    // Generate amp configuration files, while collecting the wrapper function names.
+    def mlAppName = project.getProperty("mlAppName")
     def moduleFilename = "libWrapper.mjs"
+    // Exclude leading underscore here; must add where needed below.
+    // _execute_with* are the amp'd functions.
+    // execute_with* are the exported functions.
     def functionNamePrefix = "execute_with"
-    def functionNames = ["${functionNamePrefix}_${project.getProperty("mlAppName")}"];
-    project.getProperty("endpointAccessUnitNames").replaceAll("\\s", "").tokenize(",").each{ unit -> 
-      def functionName = "${functionNamePrefix}_${project.getProperty("mlAppName")}_${unit}"
+    def functionNames = [];
+    def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
+      .replaceAll("\\s", "")
+      .tokenize(",")
+    endpointAccessUnitNames.add(mlAppName) // Include tenant owner.
+    endpointAccessUnitNames.each{ unit -> 
+      // When unit is mlAppName, we only need one represented.
+      def includeUnit = unit != mlAppName
+
+      def functionSuffix = includeUnit ? "_${unit}" : ""
+      def functionName = "${functionNamePrefix}_${mlAppName}${functionSuffix}"
       functionNames.push(functionName)
 
       // Amp configuration files.
       def templateBindings = [
-          unit: unit,
-          functionName: functionName,
+          roleNamePrefix: "${mlAppName}${includeUnit ? "-${unit}" : ""}",
+          functionName: "_${functionName}", // underscore needed
           moduleFilename: moduleFilename
       ]
-      def content = applyTemplate("${project.projectDir}/src/main/templates/execute-with-service-account-amp.json", templateBindings)
-      writeToFile("${project.projectDir}/src/main/ml-config/base/security/amps/execute-with-${unit}-amp.json", content)
+      def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
+      writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
       println "Generated amp for the '${unit}' unit."
     }
 
     // Populate the wrapper function library.
+
+    // MJS
     def functionLines = []
     def exportLines = ["export {"]
     functionNames.each{ functionName ->
-      functionLines.push("const ${functionName} = (f) => { return f() };")
+      // functionLines.push("const ${functionName} = (f) => { return f() };")
+      functionLines.push("const _${functionName} = (f) => {")
+      functionLines.push("  console.log('Roles after gaining those of service account: ' + xdmp.getCurrentRoles().toArray().map(id => { return xdmp.roleName(id) }).join(', '));")
+      functionLines.push("  console.log('Doc available ?= ' + fn.docAvailable('https://lux.collections.yale.edu/data/activity/96f72cc4-682e-4c95-baf2-36f142ce3fc1'))")
+      functionLines.push("  return f();")
+      functionLines.push("};")
+      functionLines.push("const ${functionName} = import.meta.amp(_${functionName});")
       exportLines.push("  ${functionName},")
     }
     exportLines.push("};")
+
+    // SJS
+    // def functionLines = []
+    // def exportLines = ["module.export = {"]
+    // functionNames.each{ functionName ->
+    //   functionLines.push("const ${functionName} = (f) => { return f() };")
+    //   exportLines.push("  ${functionName}: ${functionName},")
+    // }
+    // exportLines.push("};")
+
     def templateBindings = [
         timestamp: timestamp,
-        functionLines: functionLines.join(lineSep),
+        functionLines: functionLines.reverse().join(lineSep),
         exportLines: exportLines.reverse().join(lineSep)
     ]
-    def content = applyTemplate("${project.projectDir}/src/main/templates/${moduleFilename}", templateBindings)
-    writeToFile("${project.projectDir}/src/main/ml-modules/root/lib/${moduleFilename}", content)
+    def content = applyTemplate("${sourceTemplatePath}/${moduleFilename}", templateBindings)
+    writeToFile("${buildModulesPath}/lib/${moduleFilename}", content)
     println "Generated ${moduleFilename}"
   }
 }

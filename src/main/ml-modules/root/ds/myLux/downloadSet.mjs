@@ -4,7 +4,7 @@ import { handleRequest } from '../../lib/requestHandleLib.mjs';
 const uri = external.uri;
 const profile = external.profile;
 const lang = external.lang;
-const serviceAccountName = external.serviceAccountName;
+const unitName = external.unitName;
 handleRequest(function () {
   return get(uri, profile, lang);
-}, serviceAccountName);
+}, unitName);

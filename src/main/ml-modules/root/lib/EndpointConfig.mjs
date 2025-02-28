@@ -1,4 +1,10 @@
-import { getCurrentEndpointPath } from '../config/endpointsConfig.mjs';
+import {
+  getCurrentEndpointPath,
+  PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED,
+  PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
+  PROP_NAME_FEATURES,
+  PROP_NAME_MY_COLLECTIONS,
+} from '../config/endpointsConfig.mjs';
 import { InternalConfigurationError } from '../lib/mlErrorsLib.mjs';
 import { isDefined, isUndefined } from '../utils/utils.mjs';
 
@@ -7,25 +13,30 @@ const EndpointConfig = class {
     Object.keys(endpointConfig).forEach((key) => {
       this[key] = endpointConfig[key];
     });
-    this.entityPath = getCurrentEndpointPath();
+    this.endpointPath = getCurrentEndpointPath();
     assertValidConfiguration(this);
   }
 
-  getEntityPath() {
-    return this.entityPath;
+  getEndpointPath() {
+    return this.endpointPath;
   }
 
-  // isServiceAccountApplicable() {
-  //   return this.executeAsServiceAccountWhenSpecified === true;
-  // }
+  // TODO: decide if we're going to use this.
+  isServiceAccountApplicable() {
+    return this[PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED] === true;
+  }
 
-  // hasReceivingFunctionForServiceAccount() {
-  //   return isDefined(this.receivingServiceAccountFunction);
-  // }
+  mayExecuteInReadOnlyMode() {
+    return this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE] === true;
+  }
 
-  // getReceivingFunctionForServiceAccount() {
-  //   return this.receivingServiceAccountFunction;
-  // }
+  mayNotExecuteInReadOnlyMode() {
+    return !this.mayExecuteInReadOnlyMode();
+  }
+
+  isPartOfMyCollectionsFeature() {
+    return this[PROP_NAME_FEATURES][PROP_NAME_MY_COLLECTIONS] === true;
+  }
 };
 
 /*
@@ -34,22 +45,33 @@ const EndpointConfig = class {
  */
 const propertyIsRequired = true;
 const propertyIsNotRequired = false;
+const trueOrFalse = [true, false];
 function assertValidConfiguration(endpointConfig) {
-  // TODO: Replace with tests for the features and allowInReadOnlyMode properties.
-  // TBD whether we retain the executeAsServiceAccountWhenSpecified property.
-  //
-  // assertValidPropertyValue(
-  //   endpointConfig,
-  //   'executeAsServiceAccountWhenSpecified',
-  //   propertyIsRequired,
-  //   [true, false]
-  // );
-  // assertValidPropertyValueType(
-  //   endpointConfig,
-  //   'receivingServiceAccountFunction',
-  //   propertyIsNotRequired,
-  //   'function'
-  // );
+  // TODO: decide if we're going to use this.
+  assertValidPropertyValue(
+    endpointConfig,
+    PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED,
+    propertyIsRequired,
+    trueOrFalse
+  );
+  assertValidPropertyValue(
+    endpointConfig,
+    PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
+    propertyIsRequired,
+    trueOrFalse
+  );
+  assertValidPropertyValueType(
+    endpointConfig,
+    PROP_NAME_FEATURES,
+    propertyIsRequired,
+    'object'
+  );
+  assertValidPropertyValue(
+    endpointConfig.features,
+    PROP_NAME_MY_COLLECTIONS,
+    propertyIsRequired,
+    trueOrFalse
+  );
 }
 
 function assertValidPropertyValue(
@@ -64,7 +86,7 @@ function assertValidPropertyValue(
   if (isPropertyRequired || (!isPropertyRequired && isDefined(value))) {
     if (!allowedValues.includes(endpointConfig[propertyName])) {
       throw new InternalConfigurationError(
-        `The ${endpointConfig.getEntityPath()} endpoint's configuration for the '${propertyName}' property is invalid`
+        `The ${endpointConfig.getEndpointPath()} endpoint's configuration for the '${propertyName}' property is invalid`
       );
     }
   }
@@ -80,15 +102,10 @@ function assertValidPropertyValueType(
   if (isPropertyRequired) {
     assertPropertyDefined(endpointConfig, propertyName);
   }
-  console.log(
-    `assertValidPropertyValueType: ${propertyName} defined ?= ${isDefined(
-      value
-    )}`
-  );
   if (isPropertyRequired || (!isPropertyRequired && isDefined(value))) {
     if (typeof value !== valueType) {
       throw new InternalConfigurationError(
-        `The ${endpointConfig.getEntityPath()} endpoint's configuration for the '${propertyName}' property value is invalid`
+        `The ${endpointConfig.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value is invalid`
       );
     }
   }
@@ -97,7 +114,7 @@ function assertValidPropertyValueType(
 function assertPropertyDefined(endpointConfig, propertyName) {
   if (isUndefined(endpointConfig[propertyName])) {
     throw new InternalConfigurationError(
-      `The ${endpointConfig.getEntityPath()} endpoint is missing the '${propertyName}' configuration property.`
+      `The ${endpointConfig.getEndpointPath()} endpoint is missing the '${propertyName}' configuration property.`
     );
   }
 }

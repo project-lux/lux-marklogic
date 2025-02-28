@@ -1,0 +1,6 @@
+{
+  "local-name": "_handleRequest",
+  "document-uri": "/lib/requestHandleLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-invoke-as-user"]
+}

@@ -1,15 +1,12 @@
 import { UNRESTRICTED_UNIT_NAME } from './unitLib.mjs';
-import {
-  executeWithServiceAccount,
-  getServiceAccountUserId,
-  isServiceAccount,
-} from './securityLib.mjs';
+import { isServiceAccount } from './securityLib.mjs';
 import { getCurrentEndpointConfig } from '../config/endpointsConfig.mjs';
 import { inReadOnlyMode } from './tenantStatusLib.mjs';
 import {
   AccessDeniedError,
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
+import { execute_with_a_service_account } from './libWrapper.mjs';
 
 /*
  * All endpoint requests are to go through this function.
@@ -56,7 +53,7 @@ function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
     return f();
   }
   console.log('Executing request as service account.');
-  return executeWithServiceAccount(f, unitName);
+  return execute_with_a_service_account(f, unitName);
 }
 const handleRequest = import.meta.amp(_handleRequest);
 

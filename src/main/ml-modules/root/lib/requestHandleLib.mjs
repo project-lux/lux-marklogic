@@ -1,9 +1,5 @@
 import { UNRESTRICTED_UNIT_NAME } from './unitLib.mjs';
-import {
-  executeWithServiceAccount,
-  getServiceAccountUserId,
-  isServiceAccount,
-} from './securityLib.mjs';
+import { getServiceAccountUserId, isServiceAccount } from './securityLib.mjs';
 import { getCurrentEndpointConfig } from '../config/endpointsConfig.mjs';
 import { inReadOnlyMode } from './tenantStatusLib.mjs';
 import {
@@ -59,7 +55,6 @@ function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
   return xdmp.invokeFunction(f, {
     userId: getServiceAccountUserId(unitName),
   });
-  // return executeWithServiceAccount(f, unitName);
 }
 const handleRequest = import.meta.amp(_handleRequest);
 

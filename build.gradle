@@ -266,15 +266,6 @@ task addSupportForExecutingWithServiceAccounts() {
     }
     exportLines.push("};")
 
-    // SJS
-    // def functionLines = []
-    // def exportLines = ["module.export = {"]
-    // functionNames.each{ functionName ->
-    //   functionLines.push("const ${functionName} = (f) => { return f() };")
-    //   exportLines.push("  ${functionName}: ${functionName},")
-    // }
-    // exportLines.push("};")
-
     def templateBindings = [
         timestamp: timestamp,
         functionLines: functionLines.reverse().join(lineSep),

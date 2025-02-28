@@ -56,10 +56,7 @@ function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
     return f();
   }
   console.log('Executing request as service account.');
-  return xdmp.invokeFunction(f, {
-    userId: getServiceAccountUserId(unitName),
-  });
-  // return executeWithServiceAccount(f, unitName);
+  return executeWithServiceAccount(f, unitName);
 }
 const handleRequest = import.meta.amp(_handleRequest);
 

@@ -33,12 +33,6 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
-ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
-ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
-ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
-
-ext.lineSep = System.getProperty("line.separator")
-
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
@@ -98,38 +92,6 @@ task determineCodeVersion {
   } else {
     codeVersion = stdOut
     println "Applying derived code version of ${codeVersion}"
-  }
-}
-
-// Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
-// Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
-// literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
-// one should not expect this function to resolve those references.  Use the JSP like syntax instead.
-ext.applyTemplate = { sourceTemplatePath, templateBindings ->
-  // Read template file into memory
-  def text = file(sourceTemplatePath).text
-
-  // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
-  // '$1' and '${paramName}'.
-  text = text.replaceAll(/\$/, 'DOLLAR_SIGN')
-
-  // When a template variable reference immediately follows a JavaScript single line comment marker, remove the comment marker,
-  // thereby allowing the template's variable value to be uncommented code.
-  text = text.replaceAll(/\/\/\s*(?<templateVarRef><%[^>]*>)/, '${templateVarRef}')
-
-  // Resolve all template variable references: <%...%>
-  def engine = new groovy.text.SimpleTemplateEngine()
-  text = engine.createTemplate(text).make(templateBindings).toString()
-
-  // Change DOLLAR_SIGN back to the actual dollar sign symbol, such that JavaScript recognizes them.
-  text = text.replaceAll(/DOLLAR_SIGN/, '\\$')
-
-  return text
-}
-
-ext.writeToFile = { outputPath, content ->
-  new File("$outputPath").withWriter { out ->
-    out.println content
   }
 }
 

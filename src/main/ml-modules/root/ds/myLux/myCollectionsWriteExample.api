@@ -1,5 +1,5 @@
 {
-  "functionName": "readSet",
+  "functionName": "myCollectionsWriteExample",
   "params": [
     {
       "name": "uri",

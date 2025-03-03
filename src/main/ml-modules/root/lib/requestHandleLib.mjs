@@ -51,10 +51,8 @@ function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
 
   // Ignore unit name param when requesting user is already a service account.
   if (currentUserIsServiceAccount) {
-    console.log('Executing request as requesting user.');
     return f();
   }
-  console.log('Executing request as service account.');
   return getExecuteWithServiceAccountFunction(unitName)(f);
 }
 const handleRequest = import.meta.amp(_handleRequest);

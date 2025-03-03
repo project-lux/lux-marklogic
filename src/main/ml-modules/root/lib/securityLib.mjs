@@ -5,28 +5,11 @@ import {
 import * as libWrapper from './libWrapper.mjs';
 import { BadRequestError } from './mlErrorsLib.mjs';
 
-function getServiceAccountUsernames() {
-  return [UNRESTRICTED_UNIT_NAME]
-    .concat(getEndpointAccessUnitNames())
-    .map((unitName) => {
-      return getServiceAccountUsername(unitName);
-    });
-}
-
-// In this context, we're defining service accounts as the endpoint consumers subset thereof.
-function getServiceAccountUsername(unitName) {
-  return `${UNRESTRICTED_UNIT_NAME}${
-    unitName != UNRESTRICTED_UNIT_NAME ? `-${unitName}` : ''
-  }-endpoint-consumer`;
-}
-
 function getExecuteWithServiceAccountFunction(unitName) {
   const functionName = `execute_with_${UNRESTRICTED_UNIT_NAME}${
-    unitName != UNRESTRICTED_UNIT_NAME ? `_${unitName}` : ''
+    includeUnitName(unitName) ? `_${unitName}` : ''
   }`;
-  console.log(`Checking for the '${functionName}' function.`);
   if (libWrapper[functionName]) {
-    console.log('Executing it');
     return libWrapper[functionName];
   }
   throw new BadRequestError(
@@ -36,7 +19,6 @@ function getExecuteWithServiceAccountFunction(unitName) {
 
 // Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.
 function _isServiceAccount(userName) {
-  console.log(`Checking the roles of the '${userName}' user`);
   const roleNames = xdmp
     .userRoles(userName)
     .toArray()
@@ -52,8 +34,23 @@ function _isServiceAccount(userName) {
 }
 const isServiceAccount = import.meta.amp(_isServiceAccount);
 
-export {
-  getExecuteWithServiceAccountFunction,
-  getServiceAccountUsername,
-  isServiceAccount,
-};
+function getServiceAccountUsernames() {
+  return [UNRESTRICTED_UNIT_NAME]
+    .concat(getEndpointAccessUnitNames())
+    .map((unitName) => {
+      return getServiceAccountUsername(unitName);
+    });
+}
+
+// In this context, we're defining service accounts as the endpoint consumers subset thereof.
+function getServiceAccountUsername(unitName) {
+  return `${UNRESTRICTED_UNIT_NAME}${
+    includeUnitName(unitName) ? `-${unitName}` : ''
+  }-endpoint-consumer`;
+}
+
+function includeUnitName(unitName) {
+  return unitName != UNRESTRICTED_UNIT_NAME;
+}
+
+export { getExecuteWithServiceAccountFunction, isServiceAccount };

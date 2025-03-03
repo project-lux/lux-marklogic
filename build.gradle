@@ -225,7 +225,6 @@ task addSupportForExecutingWithServiceAccounts() {
     // execute_with* are the exported functions.
     def functionNamePrefix = "execute_with"
     def functionNames = [];
-    def routerFunction = ["const ${functionNamePrefix}_a_service_account = (f, unitName) => {"]
     def count = 0
     def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
       .replaceAll("\\s", "")
@@ -250,27 +249,14 @@ task addSupportForExecutingWithServiceAccounts() {
       def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
       writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
       println "Generated amp for the '${unit}' unit."
-
-      // Add router function lines for the current unit.
-      routerFunction.push("  ${count > 1 ? "} else " : ""}if (unitName == '${unit}') {")
-      routerFunction.push("    return ${functionName}(f);")
     }
-    routerFunction.push("  }") // close last else if
-    // Unit not specified in the endpointAccessUnitNames property requested.
-    routerFunction.push("  throw new BadRequestError('The \\'' + unitName + '\\' unit is not configured for its role to the added to user\\'s request.')")
-    routerFunction.push("};") // end of function
 
     // Populate the wrapper function library.
     def functionLines = []
     def exportLines = ["export {"]
-    // exportLines.push("  ${functionNamePrefix}_a_service_account,")
     functionNames.each{ functionName ->
-      functionLines.push("const _${functionName} = (f) => {")
-      functionLines.push("  console.log('Roles after gaining those of service account: ' + xdmp.getCurrentRoles().toArray().map(id => { return xdmp.roleName(id) }).join(', '));")
-      functionLines.push("  console.log('Doc available ?= ' + fn.docAvailable('https://lux.collections.yale.edu/data/activity/96f72cc4-682e-4c95-baf2-36f142ce3fc1'))")
-      functionLines.push("  return xdmp.invokeFunction(f);")
-      functionLines.push("};")
-      functionLines.push("const ${functionName} = import.meta.amp(_${functionName});")
+      functionLines.push("const _${functionName} = (f) => { return xdmp.invokeFunction(f) };")
+      functionLines.push("const  ${functionName} = import.meta.amp(_${functionName});")
       exportLines.push("  ${functionName},")
     }
     exportLines.push("};")
@@ -278,7 +264,6 @@ task addSupportForExecutingWithServiceAccounts() {
     def templateBindings = [
         timestamp: timestamp,
         functionLines: functionLines.reverse().join(lineSep),
-        // routerFunction: routerFunction.reverse().join(lineSep),
         exportLines: exportLines.reverse().join(lineSep)
     ]
     def content = applyTemplate("${sourceTemplatePath}/${moduleFilename}", templateBindings)

@@ -9,25 +9,25 @@ const PROP_NAME_FEATURES = 'features';
 const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 
 const ENDPOINTS_CONFIG = {
-  '/ds/lux/stats.mjs': {
+  '/ds/myLux/notMyCollectionsExample.mjs': {
     executeAsServiceAccountWhenSpecified: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
-  '/ds/myLux/createSet.mjs': {
+  '/ds/myLux/myCollectionsWriteExample.mjs': {
     executeAsServiceAccountWhenSpecified: false,
     allowInReadOnlyMode: false,
     features: { myCollections: true },
   },
-  '/ds/myLux/readSet.mjs': {
+  '/ds/myLux/myCollectionsReadExample.mjs': {
     executeAsServiceAccountWhenSpecified: true,
     allowInReadOnlyMode: true,
     features: { myCollections: true },
   },
-  '/ds/myLux/downloadSet.mjs': {
+  '/ds/myLux/misconfiguredExample.mjs': {
     executeAsServiceAccountWhenSpecified: true,
     allowInReadOnlyMode: true,
-    features: { myCollections: true },
+    features: {},
   },
 };
 

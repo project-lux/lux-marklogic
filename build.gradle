@@ -258,13 +258,12 @@ task addSupportForExecutingWithServiceAccounts() {
     routerFunction.push("  }") // close last else if
     // Unit not specified in the endpointAccessUnitNames property requested.
     routerFunction.push("  throw new BadRequestError('The \\'' + unitName + '\\' unit is not configured for its role to the added to user\\'s request.')")
-    // routerFunction.push("  throw new BadRequestError('Not for you')")
     routerFunction.push("};") // end of function
 
     // Populate the wrapper function library.
     def functionLines = []
     def exportLines = ["export {"]
-    exportLines.push("  ${functionNamePrefix}_a_service_account,")
+    // exportLines.push("  ${functionNamePrefix}_a_service_account,")
     functionNames.each{ functionName ->
       functionLines.push("const _${functionName} = (f) => {")
       functionLines.push("  console.log('Roles after gaining those of service account: ' + xdmp.getCurrentRoles().toArray().map(id => { return xdmp.roleName(id) }).join(', '));")
@@ -279,7 +278,7 @@ task addSupportForExecutingWithServiceAccounts() {
     def templateBindings = [
         timestamp: timestamp,
         functionLines: functionLines.reverse().join(lineSep),
-        routerFunction: routerFunction.reverse().join(lineSep),
+        // routerFunction: routerFunction.reverse().join(lineSep),
         exportLines: exportLines.reverse().join(lineSep)
     ]
     def content = applyTemplate("${sourceTemplatePath}/${moduleFilename}", templateBindings)

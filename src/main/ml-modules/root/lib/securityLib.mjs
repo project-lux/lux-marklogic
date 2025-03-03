@@ -2,6 +2,8 @@ import {
   UNRESTRICTED_UNIT_NAME,
   getEndpointAccessUnitNames,
 } from './unitLib.mjs';
+import * as libWrapper from './libWrapper.mjs';
+import { BadRequestError } from './mlErrorsLib.mjs';
 
 function getServiceAccountUsernames() {
   return [UNRESTRICTED_UNIT_NAME]
@@ -16,6 +18,20 @@ function getServiceAccountUsername(unitName) {
   return `${UNRESTRICTED_UNIT_NAME}${
     unitName != UNRESTRICTED_UNIT_NAME ? `-${unitName}` : ''
   }-endpoint-consumer`;
+}
+
+function getExecuteWithServiceAccountFunction(unitName) {
+  const functionName = `execute_with_${UNRESTRICTED_UNIT_NAME}${
+    unitName != UNRESTRICTED_UNIT_NAME ? `_${unitName}` : ''
+  }`;
+  console.log(`Checking for the '${functionName}' function.`);
+  if (libWrapper[functionName]) {
+    console.log('Executing it');
+    return libWrapper[functionName];
+  }
+  throw new BadRequestError(
+    `Unable to process the request with the '${unitName}' unit's service account; please verify the unit name.`
+  );
 }
 
 // Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.
@@ -36,4 +52,8 @@ function _isServiceAccount(userName) {
 }
 const isServiceAccount = import.meta.amp(_isServiceAccount);
 
-export { getServiceAccountUsername, isServiceAccount };
+export {
+  getExecuteWithServiceAccountFunction,
+  getServiceAccountUsername,
+  isServiceAccount,
+};

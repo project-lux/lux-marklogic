@@ -5,11 +5,6 @@
  * Generated timestamp: <%= timestamp %>
  */
 
-// Used by router function.
-import { BadRequestError } from './mlErrorsLib.mjs';
-
 // <%= functionLines %>
-
-// <%= routerFunction %>
 
 // <%= exportLines %>

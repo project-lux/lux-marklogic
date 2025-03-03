@@ -25,7 +25,7 @@ import {
  * @throws {NotAcceptingWriteRequestsError} when the request is able to modify the database but
  *    the instances is in read-only mode.
  * @throws Any other possible error the provided function can throw.
- * @returns Whatever the last function returns.
+ * @returns Whatever the given function returns.
  */
 function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
   // Get the current endpoint's configuration; error thrown if config is invalid.
@@ -33,7 +33,7 @@ function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
   const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
 
   // When in read-only mode, block requests that are not allowed to execute then.
-  if (inReadOnlyMode() && endpointConfig.mayNotExecuteInReadOnlyMode()) {
+  if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
     throw new NotAcceptingWriteRequestsError(
       'The instance is in read-only mode; try again later'
     );

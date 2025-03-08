@@ -308,7 +308,7 @@ const SearchCriteriaProcessor = class {
     const subSortPlans = subSortConfigs.map((subSortConfig) =>
       this._getSubSortPlan(subSortConfig)
     );
-    const combinedSubSortPlan = subSortPlans.reduce(
+    const unionSubSortPlan = subSortPlans.reduce(
       (combinedPlan, subSortPlan) => {
         if (combinedPlan === null) {
           return subSortPlan;
@@ -319,67 +319,14 @@ const SearchCriteriaProcessor = class {
       null
     );
 
-    const finalPlan = docPlan.joinLeftOuter(
-      combinedSubSortPlan,
-      op.on('fragmentId', 'fragmentId')
-    );
+    const finalPlan = docPlan
+      .joinLeftOuter(unionSubSortPlan, op.on('fragmentId', 'fragmentId'))
+      .joinDocUri(op.col('uri'), op.fragmentIdCol('fragmentId'));
 
     if (this.pageWith) {
-      const uriToFind = this.pageWith;
-      const planOutput = finalPlan
-        .joinDocUri(op.col('uri'), op.fragmentIdCol('fragmentId'))
-        .orderBy(
-          order === 'ascending'
-            ? op.asc(op.col('sortByMe'))
-            : op.desc(op.col('sortByMe'))
-        )
-        .limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
-        .result()
-        .toArray();
-
-      if (planOutput.length > MAXIMUM_PAGE_WITH_LENGTH) {
-        console.warn(
-          `The search exceeded the ${MAXIMUM_PAGE_WITH_LENGTH} limit with base search criteria ${JSON.stringify(
-            this.getSearchCriteria()
-          )}`
-        );
-      }
-      const foundUriIndex = planOutput.findIndex(
-        ({ uri }) => uri === uriToFind
-      );
-      if (foundUriIndex === -1) {
-        throw new InvalidSearchRequestError(
-          `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`
-        );
-      }
-      const foundUriPage = Math.ceil((foundUriIndex + 1) / this.pageLength);
-      const results = planOutput
-        .slice(
-          (foundUriPage - 1) * this.pageLength,
-          foundUriPage * this.pageLength
-        )
-        .map(({ uri }) => ({
-          id: uri,
-          type: cts.doc(uri).xpath('/json/type'),
-        }));
-      return { resultPage: foundUriPage, results };
+      return this._getOpticPageWithResults(finalPlan, order);
     } else {
-      const results = finalPlan
-        .joinDocUri(op.col('uri'), op.fragmentIdCol('fragmentId'))
-        .orderBy(
-          order === 'ascending'
-            ? op.asc(op.col('sortByMe'))
-            : op.desc(op.col('sortByMe'))
-        )
-        .offset((this.page - 1) * this.pageLength)
-        .limit(this.pageLength)
-        .result()
-        .toArray()
-        .map(({ uri }) => ({
-          id: uri,
-          type: cts.doc(uri).xpath('/json/type'),
-        }));
-      return { resultPage: this.page, results };
+      return this._getOpticPaginatedResults(finalPlan, order);
     }
   }
 
@@ -462,61 +409,65 @@ const SearchCriteriaProcessor = class {
     }
 
     if (this.pageWith) {
-      const uriToFind = this.pageWith;
-      const planOutput = Array.from(
-        semanticSortPlan
-          .orderBy(
-            order === 'ascending'
-              ? op.asc(op.col('sortByMe'))
-              : op.desc(op.col('sortByMe'))
-          )
-          .limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
-          .result()
-      );
-      if (planOutput.length > MAXIMUM_PAGE_WITH_LENGTH) {
-        console.warn(
-          `The search exceeded the ${MAXIMUM_PAGE_WITH_LENGTH} limit with base search criteria ${JSON.stringify(
-            this.getSearchCriteria()
-          )}`
-        );
-      }
-      const foundUriIndex = planOutput.findIndex(
-        ({ uri }) => uri === uriToFind
-      );
-      if (foundUriIndex === -1) {
-        throw new InvalidSearchRequestError(
-          `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`
-        );
-      }
-      const foundUriPage = Math.ceil((foundUriIndex + 1) / this.pageLength);
-      const results = planOutput
-        .slice(
-          (foundUriPage - 1) * this.pageLength,
-          foundUriPage * this.pageLength
-        )
-        .map(({ uri }) => ({
-          id: uri,
-          type: cts.doc(uri).xpath('/json/type'),
-        }));
-      return { resultPage: foundUriPage, results };
+      return this._getOpticPageWithResults(semanticSortPlan, order);
     } else {
-      // else, there is no pageWith
-      const results = Array.from(
-        semanticSortPlan
-          .orderBy(
-            order === 'ascending'
-              ? op.asc(op.col('sortByMe'))
-              : op.desc(op.col('sortByMe'))
-          )
-          .offset((this.page - 1) * this.pageLength)
-          .limit(this.pageLength)
-          .result()
-      ).map(({ uri }) => ({
+      return this._getOpticPaginatedResults(semanticSortPlan, order);
+    }
+  }
+
+  _getOpticPaginatedResults(opticPlan, order) {
+    const results = opticPlan
+      .orderBy(
+        order === 'ascending'
+          ? op.asc(op.col('sortByMe'))
+          : op.desc(op.col('sortByMe'))
+      )
+      .offset((this.page - 1) * this.pageLength)
+      .limit(this.pageLength)
+      .result()
+      .toArray()
+      .map(({ uri }) => ({
         id: uri,
         type: cts.doc(uri).xpath('/json/type'),
       }));
-      return { resultPage: this.page, results };
+    return { resultPage: this.page, results };
+  }
+
+  _getOpticPageWithResults(opticPlan, order) {
+    const uriToFind = this.pageWith;
+    const planOutput = opticPlan
+      .orderBy(
+        order === 'ascending'
+          ? op.asc(op.col('sortByMe'))
+          : op.desc(op.col('sortByMe'))
+      )
+      .limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
+      .result()
+      .toArray();
+    if (planOutput.length > MAXIMUM_PAGE_WITH_LENGTH) {
+      console.warn(
+        `The search exceeded the ${MAXIMUM_PAGE_WITH_LENGTH} limit with base search criteria ${JSON.stringify(
+          this.getSearchCriteria()
+        )}`
+      );
     }
+    const foundUriIndex = planOutput.findIndex(({ uri }) => uri === uriToFind);
+    if (foundUriIndex === -1) {
+      throw new InvalidSearchRequestError(
+        `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`
+      );
+    }
+    const foundUriPage = Math.ceil((foundUriIndex + 1) / this.pageLength);
+    const results = planOutput
+      .slice(
+        (foundUriPage - 1) * this.pageLength,
+        foundUriPage * this.pageLength
+      )
+      .map(({ uri }) => ({
+        id: uri,
+        type: cts.doc(uri).xpath('/json/type'),
+      }));
+    return { resultPage: foundUriPage, results };
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
@@ -530,6 +481,7 @@ const SearchCriteriaProcessor = class {
       searchOptionsArr.push('score-zero');
     }
     if (this.pageWith) {
+      // if pageWith is set, find the page that contains the document with the specified ID
       const docToFind = this.pageWith;
       const docs = fn
         .subsequence(
@@ -563,6 +515,7 @@ const SearchCriteriaProcessor = class {
         .map((doc) => ({ id: doc.baseURI, type: doc.xpath('/json/type') }));
       return { resultPage: foundDocPage, results };
     } else {
+      // else, pageWith is not set, paginate based on normal page and pageLength
       const docs = fn
         .subsequence(
           cts.search(

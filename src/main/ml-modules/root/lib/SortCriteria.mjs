@@ -1,5 +1,6 @@
 import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
 import * as utils from '../utils/utils.mjs';
+import { NotImplementedError } from './mlErrorsLib.mjs';
 
 const DEFAULT = 'default';
 
@@ -88,11 +89,11 @@ const SortCriteria = class {
         ) {
           this.conditionallySetScoresRequired(true);
           this.nonSemanticSortOptions = [
-            xdmp.eval(
-              `cts.scoreOrder('${this._getOrder(
+            cts.scoreOrder(
+              this._getOrder(
                 specifiedOrder,
                 'desc' // Matches when there is no sort parameter.
-              )}')`
+              )
             ),
           ];
           return false;
@@ -115,13 +116,12 @@ const SortCriteria = class {
             } else {
               this.conditionallySetScoresRequired(false);
               this.nonSemanticSortOptions.push(
-                xdmp.eval(
-                  `cts.indexOrder(cts.${sortBinding.indexType}Reference('${
+                cts.indexOrder(
+                  this._getIndexReference(
+                    sortBinding.indexType,
                     sortBinding.indexReference
-                  }'),'${this._getOrder(
-                    specifiedOrder,
-                    sortBinding.defaultOrder
-                  )}')`
+                  ),
+                  this._getOrder(specifiedOrder, sortBinding.defaultOrder)
                 )
               );
             }
@@ -136,6 +136,15 @@ const SortCriteria = class {
       }
       return true;
     }, this);
+  }
+
+  _getIndexReference(indexType, indexReference) {
+    if (indexType === 'field') {
+      return cts.fieldReference(indexReference);
+    }
+    throw new NotImplementedError(
+      `_getIndexReference does not support an indexType value of '${indexType}'.`
+    );
   }
 
   _getOrder(specifiedOrder, bindingOrder = null) {

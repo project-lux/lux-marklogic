@@ -565,7 +565,7 @@ function getRelatedListQuery(
     valuesOnly: false,
   });
 
-  return searchCriteriaProcessor.getCtsQueryStr(false);
+  return searchCriteriaProcessor.getCtsQueryStr();
 }
 
 function getRelatedListSearchInfo(criteria) {

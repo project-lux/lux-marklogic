@@ -2,6 +2,18 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.36.0 - 2025-03-10
+### Added
+ - Added pageWith parameter to the /search endpoint, which will return the page which contains a specific document id ([#350](https://github.com/project-lux/lux-marklogic/issues/350)).
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.35.1 - 2025-02-25
 ### Added
 

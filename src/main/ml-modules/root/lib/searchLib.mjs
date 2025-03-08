@@ -139,6 +139,7 @@ function _search(
   let warnings = [];
   let estimate = 0;
   let results = [];
+  let resultPage = 1;
 
   try {
     if (xdmp.traceEnabled(traceName)) {
@@ -151,6 +152,7 @@ function _search(
           mayChangeScope,
           page,
           pageLength,
+          pageWith,
           requestContext,
           mayExceedMaximumPageLength,
           mayEstimate,
@@ -193,9 +195,8 @@ function _search(
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
 
     // When evaluated as follows, need to convert the return to an array and take the first item.
-    results = searchCriteriaProcessor.getSearchResults();
+    ({ resultPage, results } = searchCriteriaProcessor.getSearchResults());
     stopWatch.lap('search');
-
     // When the requested scope has zero results and we're allowed to change the scope, do so.
     if (
       results.length == 0 &&
@@ -231,6 +232,7 @@ function _search(
               mayChangeScope: false, // avoid recursion when the unfiltered count is greater than the filtered count.
               page,
               pageLength,
+              pageWith,
               filterResults,
               requestContext,
               mayExceedMaximumPageLength,
@@ -249,7 +251,7 @@ function _search(
     if (results.length > 0 && mayEstimate) {
       estimate = _getCurrentRequestEstimate(
         searchCriteriaProcessor,
-        page,
+        resultPage,
         pageLength,
         results.length
       );
@@ -262,7 +264,7 @@ function _search(
         searchCriteria: resolvedSearchCriteria,
         scope: resolvedSearchScope,
         mayChangeScope,
-        page,
+        page: resultPage,
         pageLength,
         sortDelimitedStr,
         facetsSoon,
@@ -291,13 +293,13 @@ function _search(
       ],
       orderedItems: results,
     };
-    if (page > 1) {
+    if (resultPage > 1) {
       response.prev = {
         id: utils.buildSearchUri({
           searchCriteria: resolvedSearchCriteria,
           scope: resolvedSearchScope,
           mayChangeScope,
-          page: page - 1,
+          page: resultPage - 1,
           pageLength,
           sortDelimitedStr,
           facetsSoon,
@@ -306,13 +308,13 @@ function _search(
         type: AS_TYPE_ORDERED_COLLECTION_PAGE,
       };
     }
-    if (page < Math.ceil(estimate / pageLength)) {
+    if (resultPage < Math.ceil(estimate / pageLength)) {
       response.next = {
         id: utils.buildSearchUri({
           searchCriteria: resolvedSearchCriteria,
           scope: resolvedSearchScope,
           mayChangeScope,
-          page: page + 1,
+          page: resultPage + 1,
           pageLength,
           sortDelimitedStr,
           facetsSoon,
@@ -348,7 +350,9 @@ function _search(
         estimate: estimate,
         page,
         pageLength,
+        pageWith,
         filterResults,
+        facetsSoon,
         requestContext,
         returned: results.length,
         scope: resolvedSearchScope,
@@ -360,7 +364,7 @@ function _search(
           ? searchCriteriaProcessor.getIgnoredTerms()
           : null,
         query: searchCriteriaProcessor
-          ? searchCriteriaProcessor.getCtsQueryStr(true)
+          ? searchCriteriaProcessor.getCtsQueryStr()
           : null,
       };
       xdmp.trace(traceName, searchInfo);

@@ -296,6 +296,12 @@
 									"type": "text"
 								},
 								{
+									"key": "pageWith",
+									"value": "https://lux.collections.yale.edu/data/set/6ec47e23-211d-414d-a6ef-7127031dffa4",
+									"type": "text",
+									"disabled": true
+								},
+								{
 									"key": "sort",
 									"value": "itemProductionDate:desc",
 									"type": "text",

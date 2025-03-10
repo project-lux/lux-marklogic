@@ -6,6 +6,7 @@ const searchScope = external.scope;
 const mayChangeScope = external.mayChangeScope;
 const page = external.page;
 const pageLength = external.pageLength;
+const pageWith = external.pageWith;
 const mayExceedMaximumPageLength = false;
 const sortDelimitedStr = external.sort || '';
 const filterResults = external.filterResults;
@@ -19,6 +20,7 @@ handleRequest(function () {
     mayChangeScope,
     page,
     pageLength,
+    pageWith,
     requestContext: 'endpoint',
     mayExceedMaximumPageLength,
     sortDelimitedStr,

@@ -175,9 +175,10 @@ function getRelatedList({
         urisByRelation[searchConfig.relationKey] =
           searchCriteriaProcessor.getValues();
       } else {
-        urisByRelation[searchConfig.relationKey] = searchCriteriaProcessor
-          .getSearchResults()
-          .map((result) => result.id);
+        const { results } = searchCriteriaProcessor.getSearchResults();
+        urisByRelation[searchConfig.relationKey] = results.map(
+          (result) => result.id
+        );
       }
       // No need to log that we hit the max in the Search Will Match context; it sets this threshold very low.
       if (

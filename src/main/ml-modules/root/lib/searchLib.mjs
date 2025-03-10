@@ -573,13 +573,14 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               : 0;
         } else {
           // Given pagination parameters, 0 or 1 is expected.
-          hasOneOrMoreResult = processSearchCriteria({
+          const { results } = processSearchCriteria({
             searchCriteria: criteria,
             page: 1,
             pageLength: 1,
             filterResults: true,
             stopWatch,
-          }).getSearchResults().length;
+          }).getSearchResults();
+          hasOneOrMoreResult = results.length;
         }
 
         namedSearchesResponse[name] = {

@@ -145,6 +145,7 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 | Gradle | 8.13 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
 | MarkLogic Gradle Plugin | 5.0.0 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |
 | MarkLogic Node Module | ^3.3.0 | n/a | https://www.npmjs.com/package/marklogic | To check the version used by LUX's middle tier, check its [package.json](https://github.com/project-lux/lux-middletier/blob/main/package.json). For additional information, see [Generated Data Service Interfaces](./lux-backend-api-usage.md#generated-data-service-interfaces). |
+| MarkLogic Unit Test | 1.5.0 | `mlUnitTestVersion` | https://github.com/marklogic-community/marklogic-unit-test | [User Guide](https://marklogic-community.github.io/marklogic-unit-test/) |
 | Gradle Credentials Plugin (nu.studer.credentials) | 3.0 | `nuStuderCredentialsVersion` | https://github.com/etiennestuder/gradle-credentials-plugin | Used to avoid clear text passwords in the Gradle properties files. |
 | Gradle Properties Plugin (net.saliman.properties) | 1.5.2 | `netSalimonPropertiesVersion` | https://github.com/stevesaliman/gradle-properties-plugin | Provides support for `gradle-[name].properties` files. |
 | `org.json:json` | 20220320 | `orgJsonVersion` | https://search.maven.org/artifact/org.json/json | Provides CSV to JSON support to the `processSearchTagConfig` Gradle task. |

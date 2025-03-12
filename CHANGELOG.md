@@ -2,6 +2,44 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.37.0
+### Added
+ - Reintroduced [MarkLogic's unit test framework](https://marklogic-community.github.io/marklogic-unit-test/) ([#15](https://github.com/project-lux/lux-marklogic/issues/15)) 
+ - Introduced the `featureMyCollectionsEnabled` build property which may be used to enable or disable the feature ([#469](https://github.com/project-lux/lux-marklogic/issues/469))
+
+### Changed
+ - Upgraded build environment to Gradle 8.13 and ML Gradle 5.0.0 ([#465](https://github.com/project-lux/lux-marklogic/issues/465))
+
+### Removed
+  
+### Fixed
+
+### Security
+
+## v1.36.0 - 2025-03-10
+### Added
+ - Added pageWith parameter to the /search endpoint, which will return the page which contains a specific document id ([#350](https://github.com/project-lux/lux-marklogic/issues/350)).
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
+
+## v1.35.1 - 2025-02-25
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Fixed responsibleUnits facet to allow it to work with Sets ([#458](https://github.com/project-lux/lux-marklogic/issues/458)).
+
+### Security
+
 ## v1.35.0 - 2025-02-24
 ### Added
 

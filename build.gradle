@@ -4,7 +4,7 @@ buildscript {
   }
   dependencies {
     classpath "com.marklogic:ml-gradle:${mlGradleVersion}"
-
+    classpath "com.marklogic:marklogic-unit-test-client:${mlUnitTestVersion}"
     classpath "org.json:json:${orgJsonVersion}"
   }
 }
@@ -25,6 +25,7 @@ configurations {
 }
 
 dependencies {
+  mlBundle "com.marklogic:marklogic-unit-test-modules:${mlUnitTestVersion}"
   mlcp "com.marklogic:mlcp:${mlcpVersion}"
   mlcp "org.apache.commons:commons-csv:${orgApacheCommonsCsvVersion}"
   mlcp files("lib")
@@ -166,11 +167,24 @@ task preprocessRuntimeConfigAndModules() {
   // Clear target directory first, as there could be obsolete files therein.
   delete './build/main'
 
-  // Copy src/main/ml-config into build directory
+  // Copy src/main into build directory
   copy {
     from './src/main'
     into './build/main'
     include 'ml-config/**'
+    include 'ml-modules/**'
+    filter { line -> {
+      for (def i = 0; i < names.size(); i++) {
+        line = line.replaceAll('@@' + names[i] + '@@', texts[i])
+      }
+      return line
+    }}
+  }
+
+  // Copy src/test into build directory
+  copy {
+    from './src/test'
+    into './build/test'
     include 'ml-modules/**'
     filter { line -> {
       for (def i = 0; i < names.size(); i++) {

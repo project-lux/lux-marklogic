@@ -6,6 +6,9 @@ const ML_APP_NAME = '%%mlAppName%%';
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
+const FEATURE_MY_COLLECTIONS_ENABLED =
+  '%%featureMyCollectionsEnabled%%'.trim() === 'true';
+
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 
@@ -152,6 +155,7 @@ export {
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   ENVIRONMENT_NAME,
   FACETS_PREFIX,
+  FEATURE_MY_COLLECTIONS_ENABLED,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
   HIGH_STORAGE_WARNING_THRESHOLD,
   IRI_DOES_NOT_EXIST,

@@ -142,15 +142,16 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 | MarkLogic Server | 11.3.1 | n/a | https://developer.marklogic.com/products/marklogic-server | | 
 | MarkLogic AWS CloudFormation Template (CFT) | 11.3.1 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, maintained in a private repo. |
 | MarkLogic Content Pump (MLCP) | 11.3.1 | `mlcpVersion` | https://github.com/marklogic/marklogic-contentpump | Loading content in MarkLogic. |
-| Gradle | 7.4.2 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
-| MarkLogic Gradle Plugin | 4.3.4 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |
+| Gradle | 8.13 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
+| MarkLogic Gradle Plugin | 5.0.0 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |
 | MarkLogic Node Module | ^3.3.0 | n/a | https://www.npmjs.com/package/marklogic | To check the version used by LUX's middle tier, check its [package.json](https://github.com/project-lux/lux-middletier/blob/main/package.json). For additional information, see [Generated Data Service Interfaces](./lux-backend-api-usage.md#generated-data-service-interfaces). |
+| MarkLogic Unit Test | 1.5.0 | `mlUnitTestVersion` | https://github.com/marklogic-community/marklogic-unit-test | [User Guide](https://marklogic-community.github.io/marklogic-unit-test/) |
 | Gradle Credentials Plugin (nu.studer.credentials) | 3.0 | `nuStuderCredentialsVersion` | https://github.com/etiennestuder/gradle-credentials-plugin | Used to avoid clear text passwords in the Gradle properties files. |
 | Gradle Properties Plugin (net.saliman.properties) | 1.5.2 | `netSalimonPropertiesVersion` | https://github.com/stevesaliman/gradle-properties-plugin | Provides support for `gradle-[name].properties` files. |
 | `org.json:json` | 20220320 | `orgJsonVersion` | https://search.maven.org/artifact/org.json/json | Provides CSV to JSON support to the `processSearchTagConfig` Gradle task. |
 | `org.apache.commons:commons-csv` | 1.5.1-marklogic | `orgApacheCommonsCsvVersion` | https://search.maven.org/artifact/org.apache.commons/commons-csv | Provides/extends CSV support to MLCP. |
-| OpenJDK | 11.0.15 | n/a | https://openjdk.java.net/ | Required to run Gradle, MLCP, and CoRB. |
-| Git | 2.45.0 | n/a | https://git-scm.com/downloads | Source control. |
+| OpenJDK | 17.0.8 | n/a | https://openjdk.java.net/ | Required to run Gradle, MLCP, and CoRB. |
+| Git | 2.45.2 | n/a | https://git-scm.com/downloads | Source control. |
 | Visual Studio Code | Latest* | n/a | https://code.visualstudio.com/Download | IDE |
 | Docker Desktop | Latest* | n/a | https://www.docker.com/products/docker-desktop | Those with a Docker subscription or otherwise in compliance with their [Pricing & Subscriptions](https://www.docker.com/pricing/) may optionally create their local developer environment using Docker. |
 

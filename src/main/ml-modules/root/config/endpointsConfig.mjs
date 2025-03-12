@@ -7,6 +7,58 @@ const PROP_NAME_FEATURES = 'features';
 const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 
 const ENDPOINTS_CONFIG = {
+  '/ds/lux/advancedSearchConfig.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/autoComplete.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/document.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/facets.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/relatedList.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/search.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/searchEstimate.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/searchInfo.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/searchWillMatch.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/stats.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/storageInfo.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/translate.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/versionInfo.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
   '/ds/myLux/notMyCollectionsExample.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },

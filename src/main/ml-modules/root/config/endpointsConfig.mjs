@@ -8,22 +8,18 @@ const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 
 const ENDPOINTS_CONFIG = {
   '/ds/myLux/notMyCollectionsExample.mjs': {
-    executeAsServiceAccountWhenSpecified: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/myLux/myCollectionsWriteExample.mjs': {
-    executeAsServiceAccountWhenSpecified: false,
     allowInReadOnlyMode: false,
     features: { myCollections: true },
   },
   '/ds/myLux/myCollectionsReadExample.mjs': {
-    executeAsServiceAccountWhenSpecified: true,
     allowInReadOnlyMode: true,
     features: { myCollections: true },
   },
   '/ds/myLux/misconfiguredExample.mjs': {
-    executeAsServiceAccountWhenSpecified: true,
     allowInReadOnlyMode: true,
     features: {},
   },

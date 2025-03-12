@@ -15,5 +15,4 @@ Notes from when the research/back-to-amp-approach branch was created:
     * Consume the myCollectionsReadExample.mjs endpoint, specifying a document that `ypm` does not have access to.  Try different unit names to confirm you only get the document when expected.
     * Try any of these endpoints with an invalid unit name, such as `ypmmmm`.
     * Try any of the other endpoints and you should receive an `InternalConfigurationError`.
-11. Some consolidation may be in order, specifically [unitLib.mjs](/src/main/ml-modules/root/lib/unitLib.mjs) and [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs)
-12. Would be **great** to have automated unit tests for `handleRequest` and `EndpointConfig`.
+11. Would be **great** to have automated unit tests for `handleRequest` and `EndpointConfig`.

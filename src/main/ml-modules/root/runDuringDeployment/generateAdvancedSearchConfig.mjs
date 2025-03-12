@@ -15,7 +15,7 @@ import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
   getEndpointAccessUnitNames,
-} from '../lib/unitLib.mjs';
+} from '../lib/securityLib.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -231,7 +231,7 @@ function constructModuleNode(advancedSearchConfigs) {
  *
  * Generated timestamp: ${new Date()}
  */
-import { getCurrentUserUnitName } from '../lib/unitLib.mjs';
+import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
 import { BadRequestError } from '../lib/mlErrorsLib.mjs';
 
 const ADVANCED_SEARCH_CONFIG = ${JSON.stringify(advancedSearchConfigs)};

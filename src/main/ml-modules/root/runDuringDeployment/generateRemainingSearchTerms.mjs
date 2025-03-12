@@ -16,7 +16,7 @@ import {
   getEndpointAccessUnitNames,
   isConfiguredForUnit,
   removeUnitConfigProperties,
-} from '../lib/unitLib.mjs';
+} from '../lib/securityLib.mjs';
 
 const uri = '/config/searchTermsConfig.mjs';
 console.log(`Adding remaining search terms within ${uri}`);
@@ -347,7 +347,7 @@ function constructModuleNode(searchTermsConfig) {
  *
  * Generated timestamp: ${new Date()}
  */
-import { getCurrentUserUnitName } from '../lib/unitLib.mjs';
+import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
 import { BadRequestError } from '../lib/mlErrorsLib.mjs';
 
 const SEARCH_TERMS_CONFIG = ${JSON.stringify(searchTermsConfig)};

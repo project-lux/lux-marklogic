@@ -1,6 +1,5 @@
 import {
   getCurrentEndpointPath,
-  PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED,
   PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
   PROP_NAME_FEATURES,
   PROP_NAME_MY_COLLECTIONS,
@@ -28,11 +27,6 @@ const EndpointConfig = class {
     return this.endpointPath;
   }
 
-  // TODO: decide if we're going to use this.
-  isServiceAccountApplicable() {
-    return this[PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED] === true;
-  }
-
   mayExecuteInReadOnlyMode() {
     return this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE] === true;
   }
@@ -46,13 +40,6 @@ const EndpointConfig = class {
   }
 
   assertValidConfiguration() {
-    // TODO: decide if we're going to use this.
-    this.assertValidPropertyValue(
-      PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED,
-      this[PROP_NAME_EXECUTE_AS_SERVICE_ACCOUNT_WHEN_SPECIFIED],
-      propertyIsRequired,
-      trueOrFalse
-    );
     this.assertValidPropertyValue(
       PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
       this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE],

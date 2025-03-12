@@ -4,6 +4,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v1.37.0
 ### Added
+ - Reintroduced [MarkLogic's unit test framework](https://marklogic-community.github.io/marklogic-unit-test/) ([#15](https://github.com/project-lux/lux-marklogic/issues/15)) 
 
 ### Changed
  - Upgraded build environment to Gradle 8.13 and ML Gradle 5.0.0 ([#465](https://github.com/project-lux/lux-marklogic/issues/465))

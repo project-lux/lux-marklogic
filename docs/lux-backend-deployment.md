@@ -415,6 +415,7 @@ Available application servers and their ports may vary by environment.  The outc
 | `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
 | `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
+| `mlTestRestPort` | 8010 | REST | Yes | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |
 
 \* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.
 

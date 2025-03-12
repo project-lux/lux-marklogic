@@ -1,3 +1,4 @@
+import { FEATURE_MY_COLLECTIONS_ENABLED } from './appConstants.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
   getExecuteWithServiceAccountFunction,
@@ -28,32 +29,36 @@ import {
  * @returns Whatever the given function returns.
  */
 function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
-  // Get the current endpoint's configuration; error thrown if config is invalid.
-  const endpointConfig = getCurrentEndpointConfig();
-  const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
+  if (FEATURE_MY_COLLECTIONS_ENABLED) {
+    // Get the current endpoint's configuration; error thrown if config is invalid.
+    const endpointConfig = getCurrentEndpointConfig();
+    const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
 
-  // When in read-only mode, block requests that are not allowed to execute then.
-  if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
-    throw new NotAcceptingWriteRequestsError(
-      'The instance is in read-only mode; try again later'
-    );
-  }
+    // When in read-only mode, block requests that are not allowed to execute then.
+    if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
+      throw new NotAcceptingWriteRequestsError(
+        'The instance is in read-only mode; try again later'
+      );
+    }
 
-  // Block service accounts from using any My Collections endpoint.
-  if (
-    currentUserIsServiceAccount &&
-    endpointConfig.isPartOfMyCollectionsFeature()
-  ) {
-    throw new AccessDeniedError(
-      'Service accounts are not permitted to use this endpoint'
-    );
-  }
+    // Block service accounts from using any My Collections endpoint.
+    if (
+      currentUserIsServiceAccount &&
+      endpointConfig.isPartOfMyCollectionsFeature()
+    ) {
+      throw new AccessDeniedError(
+        'Service accounts are not permitted to use this endpoint'
+      );
+    }
 
-  // Ignore unit name param when requesting user is already a service account.
-  if (currentUserIsServiceAccount) {
-    return f();
+    // Ignore unit name param when requesting user is already a service account.
+    if (currentUserIsServiceAccount) {
+      return f();
+    }
+    return getExecuteWithServiceAccountFunction(unitName)(f);
   }
-  return getExecuteWithServiceAccountFunction(unitName)(f);
+  // Feature is disabled, just do what we used to do.
+  return f();
 }
 const handleRequest = import.meta.amp(_handleRequest);
 

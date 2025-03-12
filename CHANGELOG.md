@@ -2,6 +2,18 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.37.0
+### Added
+
+### Changed
+ - Upgraded build environment to Gradle 8.13 and ML Gradle 5.0.0 ([#465](https://github.com/project-lux/lux-marklogic/issues/465))
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.36.0 - 2025-03-10
 ### Added
  - Added pageWith parameter to the /search endpoint, which will return the page which contains a specific document id ([#350](https://github.com/project-lux/lux-marklogic/issues/350)).

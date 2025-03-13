@@ -18,6 +18,14 @@ import {
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
 
+const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
+const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
+const ADMIN_ROLE_NAME = 'admin';
+const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
+
+const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
+const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
+
 /*
  * All endpoint requests are to go through this function.
  *
@@ -62,14 +70,14 @@ function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
     if (currentUserIsServiceAccount) {
       return f();
     }
-    return getExecuteWithServiceAccountFunction(unitName)(f);
+    return _getExecuteWithServiceAccountFunction(unitName)(f);
   }
   // Feature is disabled, just do what we used to do.
   return f();
 }
 const handleRequest = import.meta.amp(_handleRequest);
 
-function getExecuteWithServiceAccountFunction(unitName) {
+function _getExecuteWithServiceAccountFunction(unitName) {
   const functionName = `execute_with_${UNRESTRICTED_UNIT_NAME}${
     includeUnitName(unitName) ? `_${unitName}` : ''
   }`;
@@ -116,14 +124,6 @@ function getServiceAccountUsername(unitName) {
 function includeUnitName(unitName) {
   return unitName != UNRESTRICTED_UNIT_NAME;
 }
-
-const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
-const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
-const ADMIN_ROLE_NAME = 'admin';
-const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
-
-const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
-const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
@@ -210,6 +210,5 @@ export {
   isServiceAccount,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
-  getExecuteWithServiceAccountFunction,
   removeUnitConfigProperties,
 };

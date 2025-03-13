@@ -4,6 +4,8 @@ import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
 import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
 import { SearchTermConfig } from '../../lib/SearchTermConfig.mjs';
+
+const unitName = external.unitName;
 handleRequest(function () {
   const searchTermsConfig = getSearchTermsConfig();
   const searchBy = {};
@@ -58,4 +60,4 @@ handleRequest(function () {
     facetBy,
     sortBy,
   };
-});
+}, unitInfo);

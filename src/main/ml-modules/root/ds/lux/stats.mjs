@@ -1,6 +1,8 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
 import { getSearchScope, getSearchScopeNames } from '../../lib/searchScope.mjs';
 
+const unitName = external.unitName;
+
 handleRequest(function () {
   const start = new Date();
   const doc = {
@@ -22,4 +24,4 @@ handleRequest(function () {
   doc.metadata.timestamp = end;
   doc.metadata.milliseconds = end - start;
   return doc;
-});
+}, unitName);

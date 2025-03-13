@@ -1,6 +1,7 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
 import { getRelatedList } from '../../lib/relatedListsLib.mjs';
 
+const unitName = external.unitName;
 const searchScopeName = external.scope;
 const relatedListName = external.name;
 const uri = external.uri;
@@ -19,4 +20,4 @@ handleRequest(function () {
     filterResults,
     relationshipsPerRelation,
   });
-});
+}, unitName);

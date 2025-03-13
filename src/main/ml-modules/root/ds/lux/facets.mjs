@@ -1,6 +1,7 @@
 import { handleRequest } from '../../lib/requestHandleLib.mjs';
 import { getFacet } from '../../lib/facetsLib.mjs';
 
+const unitName = external.unitName;
 const name = external.name;
 const searchCriteria = external.q;
 const searchScope = external.scope;
@@ -17,4 +18,4 @@ handleRequest(function () {
     pageLength,
     sort,
   });
-});
+}, unitName);

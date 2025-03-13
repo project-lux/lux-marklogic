@@ -101,6 +101,7 @@ function getRelatedList({
   filterResults = DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   relationshipsPerRelation = RELATED_LIST_PER_RELATION_DEFAULT,
   onlyCheckForOneRelatedItem = false,
+  getRelationCounts = false,
 }) {
   const start = new Date();
   let requestCompleted = false;
@@ -149,6 +150,7 @@ function getRelatedList({
 
     // Collect the URIs for each relationship.
     const urisByRelation = {};
+    const relationCounts = {};
     const relationToScope = {}; // And the scopes
     const relationToCriteria = {}; // And the resolved search criteria
     const searchConfigs = sortByPriority(relatedListConfig.searchConfigs);
@@ -266,6 +268,12 @@ function getRelatedList({
           }
           dataByUri[relatedUri].total++;
           dataByUri[relatedUri][relationKey].count++;
+          if (getRelationCounts) {
+            if (!relationCounts[relationKey]) {
+              relationCounts[relationKey] = new Set();
+            }
+            relationCounts[relationKey].add(relatedUri);
+          }
         }
       });
     });
@@ -363,6 +371,21 @@ function getRelatedList({
     orderedItems.forEach((orderedItem) => {
       delete orderedItem.totalCount;
     });
+    let relationCountsReturn = null;
+    if (getRelationCounts && Object.keys(relationCounts).length > 0) {
+      relationCountsReturn = Object.entries(relationCounts).map(
+        ([relationKey, set]) => {
+          return {
+            name: getRelationName(relationKey),
+            id: utils.buildSearchEstimateUri(
+              relationToCriteria[relationKey],
+              searchScopeName
+            ),
+            totalItems: set.size,
+          };
+        }
+      );
+    }
 
     requestCompleted = true;
     return _formatRelatedListReturn(
@@ -373,7 +396,8 @@ function getRelatedList({
       uri,
       page,
       pageLength,
-      relationshipsPerRelation
+      relationshipsPerRelation,
+      relationCountsReturn
     );
   } finally {
     const duration = new Date().getTime() - start.getTime();
@@ -444,7 +468,8 @@ function _formatRelatedListReturn(
   uri,
   page,
   pageLength,
-  relationshipsPerRelation
+  relationshipsPerRelation,
+  relationCountsReturn
 ) {
   const relatedListReturn = {
     '@context': LUX_CONTEXT,
@@ -471,6 +496,9 @@ function _formatRelatedListReturn(
       }),
       type: AS_TYPE_ORDERED_COLLECTION_PAGE,
     };
+  }
+  if (relationCountsReturn) {
+    relatedListReturn.relationCounts = relationCountsReturn;
   }
   return relatedListReturn;
 }

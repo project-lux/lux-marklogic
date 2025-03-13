@@ -32,6 +32,11 @@
       "name": "relationshipsPerRelation",
       "datatype": "int",
       "nullable": true
+    },
+    {
+      "name": "getRelationCounts",
+      "datatype": "boolean",
+      "nullable": true
     }
   ],
   "return": {

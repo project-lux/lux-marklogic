@@ -8,6 +8,7 @@ const page = external.page;
 const pageLength = external.pageLength;
 const filterResults = external.filterResults;
 const relationshipsPerRelation = external.relationshipsPerRelation;
+const getRelationCounts = external.getRelationCounts;
 
 handleRequest(function () {
   return getRelatedList({
@@ -18,5 +19,6 @@ handleRequest(function () {
     pageLength,
     filterResults,
     relationshipsPerRelation,
+    getRelationCounts,
   });
 });

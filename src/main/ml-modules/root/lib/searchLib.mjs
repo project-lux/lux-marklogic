@@ -568,6 +568,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               filterResults: true,
               relationshipsPerRelation: 2, // 1st may be self (uri)
               onlyCheckForOneRelatedItem: true,
+              getRelationCounts: false,
             }).orderedItems.length > 0
               ? 1
               : 0;

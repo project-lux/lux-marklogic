@@ -1,4 +1,4 @@
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 import { getFacet } from '../../lib/facetsLib.mjs';
 
 const unitName = external.unitName;

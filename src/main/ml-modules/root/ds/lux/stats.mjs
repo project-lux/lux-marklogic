@@ -1,4 +1,4 @@
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 import { getSearchScope, getSearchScopeNames } from '../../lib/searchScope.mjs';
 
 const unitName = external.unitName;

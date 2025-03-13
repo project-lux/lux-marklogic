@@ -1,5 +1,5 @@
 import { get } from '../../lib/crudLib.mjs';
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 
 const unitName = external.unitName;
 const uri = external.uri;

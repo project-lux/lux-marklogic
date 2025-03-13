@@ -1,5 +1,5 @@
 import { getObjectFromJson } from '../../utils/utils.mjs';
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 import { determineIfSearchWillMatch } from '../../lib/searchLib.mjs';
 
 const unitName = external.unitName;

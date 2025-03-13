@@ -1,5 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { handleRequest } from '/lib/requestHandleLib.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
 
 const assertions = [];
 

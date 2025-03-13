@@ -1,5 +1,5 @@
 import { getMatches } from '../../lib/autoComple.mjs';
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 
 const unitName = external.unitName;
 const text = external.text;

@@ -23,31 +23,35 @@
 
 ## MarkLogic Server
 
-LUX utilizes MarkLogic Server's role security, both at the REST API and document levels.  Each LUX deployment is provided a base set of roles.  These roles are specific to a tenant.  Tenants supporting unit portals are also provided a couple unit-specific roles.  For more on tenants, unit portals, and roles as implemented in LUX, read on!  To learn more about MarkLogic Server security features, please refer to the [MarkLogic Server Security Guide](https://docs.marklogic.com/guide/security).
+LUX utilizes MarkLogic Server's role security, both at the REST API and document levels.  Each LUX deployment is provided a base set of roles.  These roles are specific to a tenant.  Tenants supporting unit portals are also provided a couple unit-specific roles.  Amps are also employed to provide requesting users the ability to execute functions that would otherwise require execute privileges they do not have.  For more on tenants, unit portals, roles, and amps as implemented in LUX, read on!  To learn more about MarkLogic Server security features, please refer to the [MarkLogic Server Security Guide](https://docs.marklogic.com/guide/security).
 
 ## Tenants
 
-Each MarkLogic Server cluster has at least one tenant.  A tenant is provided a set of MarkLogic resources enabling a single environment to host multiple applications.  The set of MarkLogic resources includes a content database, modules database, at least two application servers, and security roles.  The tenant's [Reader](#reader) role is granted to the documents.  Tenant user accounts are granted roles that inherit the same [Reader](#reader) role.  This includes service accounts.  For more information on tenants, see [Tenant Configuration](/docs/lux-backend-deployment.md#tenant-configuration).
+Each MarkLogic Server cluster has at least one tenant.  Each tenant is provided a dedicated set of MarkLogic resources enabling a single environment to host multiple applications.  The set of MarkLogic resources includes a content database, modules database, at least two application servers, and security roles.  The tenant's [Reader](#reader) role is granted to the documents.  Tenant user accounts are granted roles that inherit the same [Reader](#reader) role.  This includes service accounts.  For more information on tenants, see [Tenant Configuration](/docs/lux-backend-deployment.md#tenant-configuration).
 
 ## Unit Portals
 
 A single tenant can support multiple unit portals.  A unit portal is a website that has access to a subset of data.  A more generic and supported use case is enabling a unit to consume LUX's backend endpoints while being restricted to subset of data associated to their unit.
 
-A unit's data is comprised of data provided by a single Yale library or museum (the unit) plus documents it shares with other units, such as concepts they have in common.  The unit is to authenticate into MarkLogic using a service account that is granted a unit-specific [Endpoint Consumer](#endpoint-consumer) role.  It is the endpoint consumer role that restricts access to documents and determines the applicable configuration.
+A unit's data is comprised of data provided by a single Yale library or museum (the unit) plus documents it shares with other units, such as concepts they have in common.  The unit is to authenticate into MarkLogic using a service account that is granted a unit-specific [Endpoint Consumer](#endpoint-consumer) role.  It is the endpoint consumer role that restricts access to documents and determines the applicable configuration.  The My Collections feature introduces the ability for users to optionally log in and for the portal to specify which unit's configuration and data apply when consuming a backend endpoint.
 
 Regardless of a tenant offering unit service accounts, every tenant offers a service account that has access to all of the documents and superset of configurations.  https://lux.collections.yale.edu/ uses such an account.
 
 ### Document Access
 
-When content is loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  The unit's endpoint consumer role inherits the unit's [Reader](#reader) role.  MarkLogic Server security takes it from there.
+When documents from the data pipeline are loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  The unit's endpoint consumer role inherits the unit's [Reader](#reader) role.  This configuration culminates with one of two request contexts to determine which documents are accessed:
 
-### Applicable Configuration
+1. The service account; or
+2. An authenticated user and a unit name (specified by the endpoint consumer).
+
+### Applicable Configuration 
 
 To better align with data available to the unit, several endpoints utilize configuration that may vary by endpoint consumer role.
 
 Here's how it works:
 
 * Set the `endpointAccessUnitNames` build property to the units that require unit-specific configurations.  This will likely be a subset of units represented in the `/admin/sources` array.  While a (unit-specific) reader role is required for every unit that may appear in the `/admin/sources` array, only units that intend to consume endpoints restricted to their data are required to be included in the `endpointAccessUnitNames` property's value, have an endpoint consumer role, and a service account.
+* The `addSupportForExecutingWithServiceAccounts` Gradle task generates amps and libWrapper.mjs in support of enabling logged in users to have access to the same documents a service account has access to.  Each generated function has an amp that temporarily grants the caller the associated service account's role.  At runtime, when applicable, [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs)'s `handleRequest` calls one of the service account-specific, generated functions.
 * Within [searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `onlyForUnits` and `excludedUnits` arrays control which units have access to entire search scopes and specific search terms.
 * The array values should be unit names, and should match `[unitName]` in the `%%mlAppName%%-[unitName]-endpoint-consumer` role names (case-sensitive).
 * When both arrays are set on the same search scope or search term, `onlyForUnits` takes precedence.

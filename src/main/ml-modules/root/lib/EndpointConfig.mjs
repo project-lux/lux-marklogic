@@ -75,7 +75,7 @@ const EndpointConfig = class {
     ) {
       if (!allowedValues.includes(propertyValue)) {
         throw new InternalConfigurationError(
-          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property is invalid`
+          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value is not one of the allowed values`
         );
       }
     }
@@ -96,7 +96,7 @@ const EndpointConfig = class {
     ) {
       if (typeof propertyValue !== valueType) {
         throw new InternalConfigurationError(
-          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value is invalid`
+          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value has the wrong value type`
         );
       }
     }

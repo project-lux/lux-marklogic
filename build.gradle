@@ -164,8 +164,9 @@ task preprocessRuntimeConfigAndModules() {
   println 'Resolving custom token(s): ' + names.join(", ")
   println ''
 
-  // Clear target directory first, as there could be obsolete files therein.
+  // Clear target directories first, as there could be obsolete files therein.
   delete './build/main'
+  delete './build/test'
 
   // Copy src/main into build directory
   copy {

@@ -18,13 +18,12 @@ import {
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
 
-const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
-const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
 const ADMIN_ROLE_NAME = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
-
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
+const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
+const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
 
 /*
  * All endpoint requests are to go through this function.
@@ -210,5 +209,6 @@ export {
   isServiceAccount,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
+  getServiceAccountUsernames,
   removeUnitConfigProperties,
 };

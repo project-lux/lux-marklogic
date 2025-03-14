@@ -9,7 +9,7 @@ const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 const ENDPOINTS_CONFIG = {
   '/test/default.xqy': {
     allowInReadOnlyMode: true,
-    features: { myCollections: false },
+    features: { myCollections: true },
   },
   '/ds/lux/advancedSearchConfig.mjs': {
     allowInReadOnlyMode: true,

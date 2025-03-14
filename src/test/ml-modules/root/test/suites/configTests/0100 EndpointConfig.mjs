@@ -2,6 +2,7 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 
 const LIB = '0100 EndpointConfig.mjs';
+console.log(`${LIB}: starting.`);
 
 const assertions = [];
 
@@ -92,7 +93,6 @@ const scenarios = [
   },
 ];
 
-console.log(`${LIB}: starting.`);
 for (const scenario of scenarios) {
   console.log(`Processing scenario '${scenario.name}'`);
   const errorExpected = scenario.expected.error === true;

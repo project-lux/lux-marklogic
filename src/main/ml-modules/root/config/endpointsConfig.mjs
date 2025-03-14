@@ -6,11 +6,9 @@ const PROP_NAME_ALLOW_IN_READ_ONLY_MODE = 'allowInReadOnlyMode';
 const PROP_NAME_FEATURES = 'features';
 const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 
+// Do not export this config or otherwise enable the runtime environment
+// to modify it.
 const ENDPOINTS_CONFIG = {
-  '/test/default.xqy': {
-    allowInReadOnlyMode: true,
-    features: { myCollections: true },
-  },
   '/ds/lux/advancedSearchConfig.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },

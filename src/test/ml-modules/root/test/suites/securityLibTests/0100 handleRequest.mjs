@@ -1,100 +1,178 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
+import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
   UNRESTRICTED_UNIT_NAME,
-  getServiceAccountUsernames,
-  handleRequest,
+  handleRequestV2ForUnitTesting,
+  getEndpointAccessUnitNames,
 } from '/lib/securityLib.mjs';
-import { FEATURE_MY_COLLECTIONS_ENABLED } from '/lib/appConstants.mjs';
+
+// TODO: define in a single file?
+const usernameForRegularUser = '%%mlAppName%%-unit-test-regular-user';
+const roleNameForServiceAccount = '%%mlAppName%%-endpoint-consumer';
+const usernameForServiceAccount = roleNameForServiceAccount; // presumably
+const filename = 'foo.json'; // relative to ./test-data
+const uri = `/${filename}`;
 
 const LIB = '0100 handleRequest.mjs';
 console.log(`${LIB}: starting.`);
 
 const assertions = [];
 
-const usernameForRegularUser = '%%mlAppName%%-unit-test-regular-user';
-const usernameForServiceAccount = getServiceAccountUsernames()[0];
-
-// Some functions used to verify handleRequest returns the value of
-// the function it is given.
-const funReturn10 = () => {
-  return 5 + 5;
-};
-const funReturnFoo = () => {
+// Little buddies used in more than one scenario.
+const returnFoo = () => {
   return 'foo';
 };
+const canReadDoc = () => {
+  return fn.docAvailable(uri);
+};
 
-// Verify handleRequest returns the value from the given function.
 assertions.push(
-  testHelperProxy.assertEqual(
-    funReturn10(),
-    handleRequest(funReturn10),
-    'handleRequest did not return the value of the given function'
-  )
-);
-
-// Remaining tests require the My Collections feature.
-assertions.push(
-  testHelperProxy.assertTrue(
-    FEATURE_MY_COLLECTIONS_ENABLED,
-    `The rest of the '${LIB}' assertions require the My Collections feature to be enabled.`
-  )
+  testHelperProxy.assertTrue(canReadDoc(), `Setup wasn't able to create ${uri}`)
 );
 
 const scenarios = [
   {
-    name: 'Non-service account',
+    name: 'User consuming My Collections endpoint',
     input: {
       username: usernameForRegularUser,
-      fun: funReturnFoo,
+      function: returnFoo,
       unitName: UNRESTRICTED_UNIT_NAME,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: true },
+      },
     },
-    expected: { error: false, value: funReturnFoo() },
+    expected: { error: false, value: returnFoo() },
   },
   {
-    name: 'Service account',
+    name: 'Service account consuming My Collections endpoint',
     input: {
       username: usernameForServiceAccount,
-      fun: funReturnFoo,
+      function: returnFoo,
       unitName: null,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: true },
+      },
     },
     expected: {
       error: true,
       stackToInclude: 'Service accounts are not permitted to use this endpoint',
     },
   },
+  {
+    name: 'User consuming non-My Collections endpoint',
+    input: {
+      username: usernameForRegularUser,
+      function: returnFoo,
+      unitName: UNRESTRICTED_UNIT_NAME,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: false },
+      },
+    },
+    expected: { error: false, value: returnFoo() },
+  },
+  {
+    name: 'Service account consuming non-My Collections endpoint',
+    input: {
+      username: usernameForServiceAccount,
+      function: returnFoo,
+      unitName: null,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: false },
+      },
+    },
+    expected: { error: false, value: returnFoo() },
+  },
+  {
+    name: 'User attempting to access a document with default unit',
+    input: {
+      username: usernameForRegularUser,
+      function: canReadDoc,
+      unitName: null,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: false },
+      },
+    },
+    expected: { error: false, value: true },
+  },
+  {
+    name: 'User attempting to access a document with unit',
+    input: {
+      username: usernameForRegularUser,
+      function: canReadDoc,
+      unitName: UNRESTRICTED_UNIT_NAME,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: false },
+      },
+    },
+    expected: { error: false, value: true },
+  },
+  {
+    name: 'User attempting to access a document with unit that does not have access to the doc',
+    input: {
+      username: usernameForRegularUser,
+      function: canReadDoc,
+      unitName: getEndpointAccessUnitNames()[0],
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: false },
+      },
+    },
+    expected: { error: false, value: false },
+  },
+  {
+    name: 'Service account attempting to access a document',
+    input: {
+      username: usernameForServiceAccount,
+      function: canReadDoc,
+      unitName: null,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: false },
+      },
+    },
+    expected: { error: false, value: true },
+  },
 ];
 
 for (const scenario of scenarios) {
   console.log(`Processing scenario '${scenario.name}'`);
+  // Had to jump through some hoops to support the testing function throw exceptions.
+  let actualValue;
   const errorExpected = scenario.expected.error === true;
-  // Had to jump through some hoops to get this to work (xdmp.rethrow didn't work)
   let errorExpectedButNotThrown = false;
+  let applyErrorNotExpectedAssertions = false;
   try {
-    const funWrapper = () => {
-      return handleRequest(scenario.input.fun, scenario.input.unitName);
+    const functionWrapper = () => {
+      return handleRequestV2ForUnitTesting(
+        scenario.input.function,
+        scenario.input.unitName,
+        new EndpointConfig(scenario.input.endpointConfig)
+      );
     };
-    const actualValue = xdmp.invokeFunction(funWrapper, {
+    actualValue = xdmp.invokeFunction(functionWrapper, {
       userId: xdmp.user(scenario.input.username),
     });
+    // Perform all asserts outside this try block.
     if (errorExpected) {
       errorExpectedButNotThrown = true;
     } else {
-      assertions.push(
-        testHelperProxy.assertEqual(
-          scenario.expected.value,
-          actualValue,
-          `Scenario '${scenario.name}' did not return the expected value.`
-        )
-      );
+      applyErrorNotExpectedAssertions = true;
     }
   } catch (e) {
     if (!errorExpected) {
-      fn.error(
-        xs.QName('ASSERT-THROWS-ERROR-FAILED'),
-        `Scenario '${scenario.name}' resulted in an error when one was NOT expected; e.message: '${e.message}'`
-      );
+      const msg = `Scenario '${scenario.name}' resulted in an error when one was NOT expected; e.message: '${e.message}'; see log for the stacktrace`;
+      console.log(msg);
+      console.log(e.stack);
+      fn.error(xs.QName('ASSERT-THROWS-ERROR-FAILED'), msg);
     }
 
+    // See if the expected error includes the expected text.
     const msg = `Scenario '${scenario.name}' error stacktrace does not include "${scenario.expected.stackToInclude}"; see log for the stacktrace`;
     const idx = e.stack.indexOf(scenario.expected.stackToInclude);
     if (idx == -1) {
@@ -108,6 +186,16 @@ for (const scenario of scenarios) {
     fn.error(
       xs.QName('ASSERT-THROWS-ERROR-FAILED'),
       `Scenario '${scenario.name}' didn't result in an error when one was expected.`
+    );
+  }
+
+  if (applyErrorNotExpectedAssertions) {
+    assertions.push(
+      testHelperProxy.assertEqual(
+        scenario.expected.value,
+        actualValue,
+        `Scenario '${scenario.name}' did not return the expected value.`
+      )
     );
   }
 }

@@ -9,6 +9,7 @@ import {
 import {
   includesOrEquals,
   isObject,
+  isUndefined,
   removeItemByValueFromArray,
   split,
 } from '../utils/utils.mjs';
@@ -42,39 +43,66 @@ const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function _handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
+function handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
-    // Get the current endpoint's configuration; error thrown if config is invalid.
-    const endpointConfig = getCurrentEndpointConfig();
-    const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
-
-    // When in read-only mode, block requests that are not allowed to execute then.
-    if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
-      throw new NotAcceptingWriteRequestsError(
-        'The instance is in read-only mode; try again later'
-      );
-    }
-
-    // Block service accounts from using any My Collections endpoint.
-    if (
-      currentUserIsServiceAccount &&
-      endpointConfig.isPartOfMyCollectionsFeature()
-    ) {
-      throw new AccessDeniedError(
-        'Service accounts are not permitted to use this endpoint'
-      );
-    }
-
-    // Ignore unit name param when requesting user is already a service account.
-    if (currentUserIsServiceAccount) {
-      return f();
-    }
-    return _getExecuteWithServiceAccountFunction(unitName)(f);
+    // Require the current endpoint's configuration; an error is throw upon
+    // retrieving the configuration when the configuration is invalid.
+    return handleRequestV2(f, unitName, getCurrentEndpointConfig());
   }
   // Feature is disabled, just do what we used to do.
   return f();
 }
-const handleRequest = import.meta.amp(_handleRequest);
+
+// Handle a version 2 request initiated by a unit test.  We otherwise do not want to
+// accept the endpoint configuration as a parameter.
+function handleRequestV2ForUnitTesting(
+  f,
+  unitName = UNRESTRICTED_UNIT_NAME,
+  endpointConfig
+) {
+  // TODO: add restrictions
+  return handleRequestV2(f, unitName, endpointConfig);
+}
+
+// Handle a version 2 request. Version 2 request support includes the
+// My Collections feature. This function is to be private and in support
+// of two public functions.
+function _handleRequestV2(
+  f,
+  unitName = UNRESTRICTED_UNIT_NAME,
+  endpointConfig
+) {
+  // Adjust from null
+  if (isUndefined(unitName)) {
+    unitName = UNRESTRICTED_UNIT_NAME;
+  }
+
+  const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
+
+  // When in read-only mode, block requests that are not allowed to execute then.
+  if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
+    throw new NotAcceptingWriteRequestsError(
+      'The instance is in read-only mode; try again later'
+    );
+  }
+
+  // Block service accounts from using any My Collections endpoint.
+  if (
+    currentUserIsServiceAccount &&
+    endpointConfig.isPartOfMyCollectionsFeature()
+  ) {
+    throw new AccessDeniedError(
+      'Service accounts are not permitted to use this endpoint'
+    );
+  }
+
+  // Ignore unit name param when requesting user is already a service account.
+  if (currentUserIsServiceAccount) {
+    return f();
+  }
+  return _getExecuteWithServiceAccountFunction(unitName)(f);
+}
+const handleRequestV2 = import.meta.amp(_handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
   const functionName = `execute_with_${UNRESTRICTED_UNIT_NAME}${
@@ -145,7 +173,6 @@ function getCurrentUserUnitName() {
     .toArray()
     .reduce((prev, roleId) => {
       const roleName = xdmp.roleName(roleId);
-      console.log(`Role: ${roleName}`);
       if (roleName == UNRESTRICTED_ROLE_NAME || roleName == ADMIN_ROLE_NAME) {
         return UNRESTRICTED_UNIT_NAME;
       } else if (roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH)) {
@@ -205,6 +232,7 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 export {
   UNRESTRICTED_UNIT_NAME,
   handleRequest,
+  handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
   isServiceAccount,
   getCurrentUserUnitName,

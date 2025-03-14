@@ -1,0 +1,26 @@
+{
+  "role-name": "%%mlAppName%%-unit-tester",
+  "description": "Unit tester role for the '%%mlAppName%%' tenant",
+  "role": [
+    "%%mlAppName%%-endpoint-consumer",
+    "rest-extension-user",
+    "rest-admin"
+  ],
+  "privilege": [
+    {
+      "privilege-name": "xdmp:invoke",
+      "action": "http://marklogic.com/xdmp/privileges/xdmp-invoke",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "xdmp:invoke-in",
+      "action": "http://marklogic.com/xdmp/privileges/xdmp-invoke-in",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "xdmp:login",
+      "action": "http://marklogic.com/xdmp/privileges/xdmp-login",
+      "kind": "execute"
+    }
+  ]
+}

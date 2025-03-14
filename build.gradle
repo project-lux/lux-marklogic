@@ -102,6 +102,26 @@ task determineCodeVersion {
   }
 }
 
+// Prevent unit testing configuration from reaching production.
+//
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task restrictUnitTestingDeployment {
+  def isUnitTestingConfigIncluded = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def environmentName = project.getProperty("environmentName").toLowerCase()
+  if (isUnitTestingConfigIncluded) {
+    def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
+    if (productionEnvironmentNames.contains(environmentName)) {
+      throw new GradleException("It is unsecure to deploy unit testing configuration to a production environment, of which '${environmentName}' is considered.")
+    } else {
+      println ""
+      println "Deployment to '${environmentName}' includes unit testing configuration."
+    }
+  } else {
+    println ""
+    println "Deployment to '${environmentName}' excludes unit testing configuration."
+  }
+}
+
 // Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
 // Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
 // literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
@@ -186,6 +206,7 @@ task preprocessRuntimeConfigAndModules() {
   copy {
     from './src/test'
     into './build/test'
+    include 'ml-config/**'
     include 'ml-modules/**'
     filter { line -> {
       for (def i = 0; i < names.size(); i++) {

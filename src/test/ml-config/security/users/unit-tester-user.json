@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-unit-tester",
+  "description": "Service account to run the '%%mlAppName%%' tenant unit tests",
+  "password": "%%unitTesterPassword%%",
+  "role": ["%%mlAppName%%-unit-tester"]
+}

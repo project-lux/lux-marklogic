@@ -6,6 +6,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
  - Reintroduced [MarkLogic's unit test framework](https://marklogic-community.github.io/marklogic-unit-test/) ([#15](https://github.com/project-lux/lux-marklogic/issues/15)) 
  - Introduced the `featureMyCollectionsEnabled` build property which may be used to enable or disable the feature ([#469](https://github.com/project-lux/lux-marklogic/issues/469))
+ - Add getSslMinAllowTls and setSslMinAllowTls tasks. These replace disableDeprecatedSSLProtocols and showDeprecatedSslProtocols starting with ML version 12. ([#444](https://github.com/project-lux/lux-marklogic/issues/444))
 
 ### Changed
  - Upgraded build environment to Gradle 8.13 and ML Gradle 5.0.0 ([#465](https://github.com/project-lux/lux-marklogic/issues/465))

@@ -395,14 +395,24 @@ task showAppServerCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
   xquery = new File('./build/buildSupport/showAppServerCiphers.xqy').getText('UTF-8')
 }
 
+//TODO: remove <show/disable>DeprecatedSSLProtocols tasks and scripts after LUX no longer uses ML 11
 task showDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
-  xquery = new File('./build/buildSupport/showDeprecatedSSLProtocols.xqy').getText('UTF-8')
+  javascript = new File('./build/buildSupport/showDeprecatedSSLProtocols.sjs').getText('UTF-8')
 }
 
 task disableDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
-  xquery = new File('./build/buildSupport/disableDeprecatedSSLProtocols.xqy').getText('UTF-8')
+  javascript = new File('./build/buildSupport/disableDeprecatedSSLProtocols.sjs').getText('UTF-8')
 }
 mlDeployServers.finalizedBy disableDeprecatedSSLProtocols
+
+task getSslMinAllowTls(type: com.marklogic.gradle.task.ServerEvalTask) {
+  javascript = new File('./build/buildSupport/getSslMinAllowTls.sjs').getText('UTF-8')
+}
+
+task setSslMinAllowTls(type: com.marklogic.gradle.task.ServerEvalTask) {
+  javascript = new File('./build/buildSupport/setSslMinAllowTls.sjs').getText('UTF-8')
+}
+mlDeployServers.finalizedBy setSslMinAllowTls
 
 task updateSSLCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
   xquery = new File('./build/buildSupport/updateSSLCiphers.xqy').getText('UTF-8')

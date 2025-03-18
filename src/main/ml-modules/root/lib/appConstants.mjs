@@ -9,6 +9,11 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 const FEATURE_MY_COLLECTIONS_ENABLED =
   '%%featureMyCollectionsEnabled%%'.trim() === 'true';
 
+// Unit test-related constants are primarily used to prevent use of a function
+// that allows the caller to specify the endpoint configuration to apply.
+const UNIT_TEST_ENDPOINT = '/test/default.xqy';
+const UNIT_TEST_ROLE_NAME = '%%mlAppName%%-unit-tester-asdf';
+
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 
@@ -188,4 +193,6 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
+  UNIT_TEST_ENDPOINT,
+  UNIT_TEST_ROLE_NAME,
 };

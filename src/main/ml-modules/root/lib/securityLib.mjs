@@ -1,10 +1,15 @@
 import { inReadOnlyMode } from './tenantStatusLib.mjs';
-import { getCurrentEndpointConfig } from '../config/endpointsConfig.mjs';
+import {
+  getCurrentEndpointConfig,
+  getCurrentEndpointPath,
+} from '../config/endpointsConfig.mjs';
 import * as libWrapper from './libWrapper.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   FEATURE_MY_COLLECTIONS_ENABLED,
   ML_APP_NAME,
+  UNIT_TEST_ENDPOINT,
+  UNIT_TEST_ROLE_NAME,
 } from './appConstants.mjs';
 import {
   includesOrEquals,
@@ -61,7 +66,15 @@ function handleRequestV2ForUnitTesting(
   unitName = UNRESTRICTED_UNIT_NAME,
   endpointConfig
 ) {
-  // TODO: add restrictions
+  // As this allows the caller to specify which endpoint configuration to use and is
+  // only intended to be called when running a unit test, restrict it.
+  if (
+    UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
+    !hasRole(UNIT_TEST_ROLE_NAME)
+  ) {
+    throw new AccessDeniedError(`This function is reserved for unit testing.`);
+  }
+
   return handleRequestV2(f, unitName, endpointConfig);
 }
 
@@ -231,6 +244,16 @@ function removeUnitConfigProperties(configTree, recursive = false) {
       }
     });
   }
+}
+
+function hasRole(roleName) {
+  return xdmp
+    .getCurrentRoles()
+    .toArray()
+    .map((id) => {
+      return xdmp.roleName(id);
+    })
+    .includes(roleName);
 }
 
 export {

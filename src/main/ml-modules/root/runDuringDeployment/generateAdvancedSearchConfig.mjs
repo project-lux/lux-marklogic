@@ -16,6 +16,7 @@ import {
   UNRESTRICTED_UNIT_NAME,
   getEndpointAccessUnitNames,
 } from '../lib/unitLib.mjs';
+import { STOP_WORDS } from '../data/stopWords.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -108,7 +109,11 @@ const advancedSearchConfigs = {};
 [UNRESTRICTED_UNIT_NAME]
   .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
-    const unitAdvancedSearchConfig = { terms: {}, options: {} };
+    const unitAdvancedSearchConfig = {
+      terms: {},
+      options: {},
+      stopWords: Array.from(STOP_WORDS.values()),
+    };
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
     const report = unitName == UNRESTRICTED_UNIT_NAME;
 

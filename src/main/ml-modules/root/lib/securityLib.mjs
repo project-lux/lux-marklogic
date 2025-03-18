@@ -21,10 +21,11 @@ import {
 
 const ADMIN_ROLE_NAME = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
+const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
-const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}-endpoint-consumer`;
+const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 
 /*
  * All endpoint requests are to go through this function.
@@ -126,7 +127,7 @@ function _isServiceAccount(userName) {
     });
   return (
     // Must not have the admin role.
-    !roleNames.includes('admin') &&
+    !roleNames.includes(ADMIN_ROLE_NAME) &&
     // Must be in the list of known service accounts.
     getServiceAccountUsernames().includes(userName)
   );
@@ -145,7 +146,7 @@ function getServiceAccountUsernames() {
 function getServiceAccountUsername(unitName) {
   return `${UNRESTRICTED_UNIT_NAME}${
     includeUnitName(unitName) ? `-${unitName}` : ''
-  }-endpoint-consumer`;
+  }${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 }
 
 function includeUnitName(unitName) {
@@ -175,7 +176,10 @@ function getCurrentUserUnitName() {
       const roleName = xdmp.roleName(roleId);
       if (roleName == UNRESTRICTED_ROLE_NAME || roleName == ADMIN_ROLE_NAME) {
         return UNRESTRICTED_UNIT_NAME;
-      } else if (roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH)) {
+      } else if (
+        roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH) &&
+        !roleName.endsWith(BASE_ENDPOINT_CONSUMER_ROLES_END_WITH)
+      ) {
         return roleName.slice(
           `${UNRESTRICTED_UNIT_NAME}-`.length,
           roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length

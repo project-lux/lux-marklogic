@@ -88,9 +88,18 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ### Endpoint Consumer
 
-Each tenant and unit is to have a dedicated endpoint consumer role.  The tenant's endpoint consumer role is defined by [2-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json).  Endpoint consumer roles are the first ones explicitly intended to have LUX backend capabilities.  Middle tiers may use service accounts that have one of these roles to authenticate into a tenant's application servers.  These roles should enable everything backend endpoint consumers need, including searching for and retrieving documents.  
+The `%%mlAppName%%-base-endpoint-consumer` role ([2-base-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-base-endpoint-consumer-role.json)) is to be granted to all service accounts and My Collections user accounts authorized to consume the tenant's backend endpoints.  It grants the roles and execute privileges required to consume the endpoints, less those provided by amps.
 
-Endpoint consumer roles are not to inherit another endpoint consumer role.
+There are two primary distinctions between endpoint consumer types:
+
+1. Document permissions:
+    * User accounts only have access to My Collections documents. The subset thereof varies by user account.  For example, User 1 and User 2 may share access to My Fossils Collection yet User 1 may also have access to the My Paintings Collection.
+    * Service accounts only have access to documents provided by the data pipeline.  The subset thereof varies by service account, or unit.  For example, the Yale Peabody Museum and Yale University Art Gallery may share the concept of fossils yet Yale Peabody Museum will have access to many more fossil documents than the Yale University Art Gallery.
+2. Requests from a user account can have access to the same configuration and (data pipeline-provided) documents as a service account (using the `unitName` endpoint parameter), but service accounts cannot have access to a user account's documents.  Combining the two previous examples, if the same User 1 logged into LUX through Yale Peabody Museum's portal, the user would have access to their My Collection documents *and* Yale Peabody Museum's fossil documents.  Users that access LUX through Yale Peabody Museum's portal without logging in would only be able to see Yale Peabody Museum's documents.  The [backend endpoint API documentation](/docs/lux-backend-api-usage.md) identifies which endpoints accept the `unitName` parameter.
+
+Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2a-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2a-tenant-endpoint-consumer-role.json) and serves as an example.
+
+Until there is full support for end users logging into LUX (through a unit's portal or otherwise), middle tiers should use their endpoint consumer service accounts to authenticate into a tenant's application servers.
 
 Additional endpoint consumer roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
 
@@ -105,7 +114,7 @@ Developers are encouraged to test endpoints using a user account that has one of
 
 ### Query Console
 
-The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
+The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
 
 ### Writer
 
@@ -119,7 +128,7 @@ For internal security environments, the project offers the [%%mlAppName%%-deploy
 
 ### Status Builtins
 
-The [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) role is only intended to be configured to amps. It was introduced to enable endpoint consumers to consume the [Storage Info](/docs/lux-backend-api-usage.md#storageInfo) endpoint without granting that role an executive privilege that offers potentially sensitive information.
+The [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) role is only intended to be configured to amps. It was introduced to enable endpoint consumers to consume the [Storage Info](/docs/lux-backend-api-usage.md#storage-info) endpoint without granting that role an executive privilege that offers potentially sensitive information.
 
 ## Amps
 

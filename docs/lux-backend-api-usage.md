@@ -1225,6 +1225,7 @@ The `stats` endpoint enables consumers to get document estimates by context. The
 **Endpoint Parameters**
 
 | Parameter | Example | Description |
+|-----------|---------|-------------|
 | `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 
 ### Successful Request / Response Example

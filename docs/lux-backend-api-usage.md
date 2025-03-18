@@ -27,10 +27,10 @@
   - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-6)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Info](#search-info)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-8)
   - [Stats](#stats)
@@ -906,6 +906,155 @@ Response Body:
 }
 ```
 
+## Search Info
+
+The `searchInfo` endpoint provides consumers:
+
+1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
+2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
+3. A list of facets and their associated search term names.
+4. A list of sort bindings implemented with range indexes or semantically related data.  These are in addition to the `random` and `relevance` sort options.  For each binding, this endpoint will specify the `name` to use in the [Search endpoint](#search)'s `sort` parameter as well as the binding's `type`.  There are a couple instances when the sort binding type becomes important to the endpoint consumer:
+    * When the search scope is `multi`, one of the `multiScope` sort bindings should be used to sort the results.  For example, when searching for Items and Works, `archiveSortId` may be used to sort the results.
+    * When specifying multiple sort bindings in a search request, at which point one may refer to [Search endpoint](#search)'s `sort` parameter documentation for precedence.
+
+Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
+
+**URL** : `/ds/lux/searchInfo.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+
+### Successful Request / Response Example
+
+Scenario: Successfully retrieve the data.
+
+Parameters: None
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body:
+
+*Abbreviated content shown below.*
+
+```
+{
+  "searchBy":{
+    "agent":[
+      {
+        "name":"activeAt",
+        "targetScope":"place",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      {
+        "name":"activeDate",
+        "targetScope":"agent",
+        "acceptsGroup":false,
+        "acceptsTerm":false,
+        "acceptsIdTerm":false,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":true,
+        "scalarType":"dateTime"
+      },
+      {
+        "name":"any",
+        "targetScope":"agent",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      ...more agent search terms
+    ],
+    "concept":[
+      {
+        "name":"any",
+        "targetScope":"concept",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      {
+        "name":"broader",
+        "targetScope":"concept",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      {
+        "name":"classification",
+        "targetScope":"concept",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      ...more concept search terms.
+    ],
+    ...search terms for the event, item, place, reference, set, and work.
+  },
+  "facetBy":[
+    {
+      "name":"agentActiveDate",
+      "searchTermName":"agentActiveDate",
+      "idFacet":false
+    },
+    {
+      "name":"agentActivePlaceId",
+      "searchTermName":"activeAt",
+      "idFacet":true
+    },
+    {
+      "name":"agentEndDate",
+      "searchTermName":"agentEndDate",
+      "idFacet":false
+    },
+    {
+      "name":"agentEndPlaceId",
+      "searchTermName":"endAt",
+      "idFacet":true
+    },
+    ...more facets
+  ],
+  "sortBy":[
+    {
+      "name":"agentActiveDate",
+      "type":"nonSemantic"
+    },
+    {
+      "name":"agentClassificationConceptName",
+      "type":"semantic"
+    },
+    ...
+    {
+      "name":"archiveSortId",
+      "type":"multi"
+    },
+    ...more to sort by
+  ]
+}
+```
+
+### Failed Request / Response Example
+
+*Only known scenarios would be an authentication error and internal server error.*
+
 ## Search Will Match
 
 The `searchWillMatch` endpoint may be used to determine if a search or collection of searches will return at least one result.  It differs from the [Search Estimate endpoint](#search-estimate) in that this endpoint ensures there is at least one _filtered_ search result whereas the other endpoint returns the number of _unfiltered_ results.  Unfiltered results are calculated exclusively from indexes.  There are scenarios where an estimate can be greater than zero but the search returns zero results.  When one needs to know if there is at least one filtered result and is willing to incur a performance penalty, this endpoint should be used.  For a more in-depth explanation, visit https://docs.marklogic.com/guide/performance/unfiltered as well as the "Estimate and Count" section of the [Inside MarkLogic Server whitepaper](https://www.marklogic.com/wp-content/uploads/resources/Inside-MarkLogic-Server.pdf).
@@ -1064,155 +1213,6 @@ Response Body:
   }
 }
 ```
-
-## Search Info
-
-The `searchInfo` endpoint provides consumers:
-
-1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
-2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
-3. A list of facets and their associated search term names.
-4. A list of sort bindings implemented with range indexes or semantically related data.  These are in addition to the `random` and `relevance` sort options.  For each binding, this endpoint will specify the `name` to use in the [Search endpoint](#search)'s `sort` parameter as well as the binding's `type`.  There are a couple instances when the sort binding type becomes important to the endpoint consumer:
-    * When the search scope is `multi`, one of the `multiScope` sort bindings should be used to sort the results.  For example, when searching for Items and Works, `archiveSortId` may be used to sort the results.
-    * When specifying multiple sort bindings in a search request, at which point one may refer to [Search endpoint](#search)'s `sort` parameter documentation for precedence.
-
-Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
-
-**URL** : `/ds/lux/searchInfo.mjs`
-
-**Method(s)** : `GET`, `POST`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
-
-### Successful Request / Response Example
-
-Scenario: Successfully retrieve the data.
-
-Parameters: None
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body:
-
-*Abbreviated content shown below.*
-
-```
-{
-  "searchBy":{
-    "agent":[
-      {
-        "name":"activeAt",
-        "targetScope":"place",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      {
-        "name":"activeDate",
-        "targetScope":"agent",
-        "acceptsGroup":false,
-        "acceptsTerm":false,
-        "acceptsIdTerm":false,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":true,
-        "scalarType":"dateTime"
-      },
-      {
-        "name":"any",
-        "targetScope":"agent",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      ...more agent search terms
-    ],
-    "concept":[
-      {
-        "name":"any",
-        "targetScope":"concept",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      {
-        "name":"broader",
-        "targetScope":"concept",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      {
-        "name":"classification",
-        "targetScope":"concept",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      ...more concept search terms.
-    ],
-    ...search terms for the event, item, place, reference, set, and work.
-  },
-  "facetBy":[
-    {
-      "name":"agentActiveDate",
-      "searchTermName":"agentActiveDate",
-      "idFacet":false
-    },
-    {
-      "name":"agentActivePlaceId",
-      "searchTermName":"activeAt",
-      "idFacet":true
-    },
-    {
-      "name":"agentEndDate",
-      "searchTermName":"agentEndDate",
-      "idFacet":false
-    },
-    {
-      "name":"agentEndPlaceId",
-      "searchTermName":"endAt",
-      "idFacet":true
-    },
-    ...more facets
-  ],
-  "sortBy":[
-    {
-      "name":"agentActiveDate",
-      "type":"nonSemantic"
-    },
-    {
-      "name":"agentClassificationConceptName",
-      "type":"semantic"
-    },
-    ...
-    {
-      "name":"archiveSortId",
-      "type":"multi"
-    },
-    ...more to sort by
-  ]
-}
-```
-
-### Failed Request / Response Example
-
-*Only known scenarios would be an authentication error and internal server error.*
 
 ## Stats
 

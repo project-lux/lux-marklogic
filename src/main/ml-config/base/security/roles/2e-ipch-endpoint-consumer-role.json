@@ -1,6 +1,9 @@
 {
   "role-name": "%%mlAppName%%-ipch-endpoint-consumer",
   "description": "Endpoint consumer role for IPCH in the '%%mlAppName%%' tenant",
-  "role": ["%%mlAppName%%-ipch-reader", "%%mlAppName%%-base-endpoint-consumer"],
+  "role": [
+    "%%mlAppName%%-ipch-reader",
+    "%%mlAppName%%-endpoint-consumer-service-account"
+  ],
   "privilege": []
 }

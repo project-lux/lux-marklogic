@@ -88,7 +88,7 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ### Endpoint Consumer
 
-The `%%mlAppName%%-base-endpoint-consumer` role ([2-base-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-base-endpoint-consumer-role.json)) is to be granted to all service accounts and My Collections user accounts authorized to consume the tenant's backend endpoints.  It grants the roles and execute privileges required to consume the endpoints, less those provided by amps.
+The `%%mlAppName%%-endpoint-consumer-base` role ([2-base-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-base-endpoint-consumer-role.json)) is to be granted to all service accounts and My Collections user accounts authorized to consume the tenant's backend endpoints.  It grants the roles and execute privileges required to consume the endpoints, less those provided by amps.
 
 There are two primary distinctions between endpoint consumer types:
 

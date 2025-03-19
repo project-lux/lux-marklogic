@@ -1,6 +1,6 @@
 {
-  "role-name": "%%mlAppName%%-base-endpoint-consumer",
-  "description": "Base endpoint consumer role within the '%%mlAppName%%' tenant",
+  "role-name": "%%mlAppName%%-endpoint-consumer-base",
+  "description": "Endpoint consumer base role within the '%%mlAppName%%' tenant",
   "role": ["rest-reader"],
   "privilege": [
     {

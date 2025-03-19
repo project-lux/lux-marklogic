@@ -9,7 +9,7 @@ import {
   FEATURE_MY_COLLECTIONS_ENABLED,
   ML_APP_NAME,
   UNIT_TEST_ENDPOINT,
-  UNIT_TEST_ROLE_NAME,
+  ROLE_NAME_MAY_RUN_UNIT_TESTS,
 } from './appConstants.mjs';
 import {
   includesOrEquals,
@@ -24,13 +24,17 @@ import {
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
 
-const ADMIN_ROLE_NAME = 'admin';
+const UNIT_NAME_UNRESTRICTED = ML_APP_NAME;
+
+const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
+const ROLE_NAME_UNRESTRICTED = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
+const ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT =
+  '%%mlAppName%%-endpoint-consumer-service-account';
+
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
-const UNRESTRICTED_UNIT_NAME = ML_APP_NAME;
-const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 
 /*
  * All endpoint requests are to go through this function.
@@ -49,7 +53,7 @@ const UNRESTRICTED_ROLE_NAME = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
+function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
     // Require the current endpoint's configuration; an error is throw upon
     // retrieving the configuration when the configuration is invalid.
@@ -63,14 +67,14 @@ function handleRequest(f, unitName = UNRESTRICTED_UNIT_NAME) {
 // accept the endpoint configuration as a parameter.
 function handleRequestV2ForUnitTesting(
   f,
-  unitName = UNRESTRICTED_UNIT_NAME,
+  unitName = UNIT_NAME_UNRESTRICTED,
   endpointConfig
 ) {
   // As this allows the caller to specify which endpoint configuration to use and is
   // only intended to be called when running a unit test, restrict it.
   if (
     UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
-    !hasRole(UNIT_TEST_ROLE_NAME)
+    !hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS)
   ) {
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
@@ -83,12 +87,12 @@ function handleRequestV2ForUnitTesting(
 // of two public functions.
 function _handleRequestV2(
   f,
-  unitName = UNRESTRICTED_UNIT_NAME,
+  unitName = UNIT_NAME_UNRESTRICTED,
   endpointConfig
 ) {
   // Adjust from null
   if (isUndefined(unitName)) {
-    unitName = UNRESTRICTED_UNIT_NAME;
+    unitName = UNIT_NAME_UNRESTRICTED;
   }
 
   const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
@@ -114,12 +118,13 @@ function _handleRequestV2(
   if (currentUserIsServiceAccount) {
     return f();
   }
+  console.log(`Executing with the ${unitName} service account`);
   return _getExecuteWithServiceAccountFunction(unitName)(f);
 }
 const handleRequestV2 = import.meta.amp(_handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
-  const functionName = `execute_with_${UNRESTRICTED_UNIT_NAME}${
+  const functionName = `execute_with_${UNIT_NAME_UNRESTRICTED}${
     includeUnitName(unitName) ? `_${unitName}` : ''
   }`;
   if (libWrapper[functionName]) {
@@ -132,23 +137,18 @@ function _getExecuteWithServiceAccountFunction(unitName) {
 
 // Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.
 function _isServiceAccount(userName) {
-  const roleNames = xdmp
+  return xdmp
     .userRoles(userName)
     .toArray()
     .map((id) => {
       return xdmp.roleName(id);
-    });
-  return (
-    // Must not have the admin role.
-    !roleNames.includes(ADMIN_ROLE_NAME) &&
-    // Must be in the list of known service accounts.
-    getServiceAccountUsernames().includes(userName)
-  );
+    })
+    .includes(ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT);
 }
 const isServiceAccount = import.meta.amp(_isServiceAccount);
 
 function getServiceAccountUsernames() {
-  return [UNRESTRICTED_UNIT_NAME]
+  return [UNIT_NAME_UNRESTRICTED]
     .concat(getEndpointAccessUnitNames())
     .map((unitName) => {
       return getServiceAccountUsername(unitName);
@@ -157,13 +157,13 @@ function getServiceAccountUsernames() {
 
 // In this context, we're defining service accounts as the endpoint consumers subset thereof.
 function getServiceAccountUsername(unitName) {
-  return `${UNRESTRICTED_UNIT_NAME}${
+  return `${UNIT_NAME_UNRESTRICTED}${
     includeUnitName(unitName) ? `-${unitName}` : ''
   }${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 }
 
 function includeUnitName(unitName) {
-  return unitName != UNRESTRICTED_UNIT_NAME;
+  return unitName != UNIT_NAME_UNRESTRICTED;
 }
 
 // Get an array of unit names known to this deployment.
@@ -175,7 +175,7 @@ function getEndpointAccessUnitNames() {
   }
   return removeItemByValueFromArray(
     split(ENDPOINT_ACCESS_UNIT_NAMES, ',', true),
-    UNRESTRICTED_UNIT_NAME
+    UNIT_NAME_UNRESTRICTED
   );
 }
 
@@ -187,14 +187,14 @@ function getCurrentUserUnitName() {
     .toArray()
     .reduce((prev, roleId) => {
       const roleName = xdmp.roleName(roleId);
-      if (roleName == UNRESTRICTED_ROLE_NAME || roleName == ADMIN_ROLE_NAME) {
-        return UNRESTRICTED_UNIT_NAME;
+      if (roleName == ROLE_NAME_UNRESTRICTED || roleName == ROLE_NAME_ADMIN) {
+        return UNIT_NAME_UNRESTRICTED;
       } else if (
         roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH) &&
         !roleName.endsWith(BASE_ENDPOINT_CONSUMER_ROLES_END_WITH)
       ) {
         return roleName.slice(
-          `${UNRESTRICTED_UNIT_NAME}-`.length,
+          `${UNIT_NAME_UNRESTRICTED}-`.length,
           roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length
         );
       }
@@ -213,7 +213,7 @@ function getCurrentUserUnitName() {
 // PROPERTY_NAME_EXCLUDED_UNITS properties.
 function isConfiguredForUnit(unitName, configTree) {
   // The unrestricted unit gets everything.
-  if (UNRESTRICTED_UNIT_NAME == unitName) {
+  if (UNIT_NAME_UNRESTRICTED == unitName) {
     return true;
   }
 
@@ -257,7 +257,8 @@ function hasRole(roleName) {
 }
 
 export {
-  UNRESTRICTED_UNIT_NAME,
+  ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT,
+  UNIT_NAME_UNRESTRICTED,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,

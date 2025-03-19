@@ -1,15 +1,14 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
-  UNRESTRICTED_UNIT_NAME,
+  UNIT_NAME_UNRESTRICTED,
   handleRequestV2ForUnitTesting,
   getEndpointAccessUnitNames,
 } from '/lib/securityLib.mjs';
 
 // TODO: define in a single file?
 const usernameForRegularUser = '%%mlAppName%%-unit-test-regular-user';
-const roleNameForServiceAccount = '%%mlAppName%%-endpoint-consumer';
-const usernameForServiceAccount = roleNameForServiceAccount; // presumably
+const usernameForServiceAccount = '%%mlAppName%%-unit-test-service-account';
 const filename = 'foo.json'; // relative to ./test-data
 const uri = `/${filename}`;
 
@@ -23,6 +22,17 @@ const returnFoo = () => {
   return 'foo';
 };
 const canReadDoc = () => {
+  console.log(
+    `Roles after: ${xdmp
+      .getCurrentRoles()
+      .toArray()
+      .map((id) => {
+        return xdmp.roleName(id);
+      })}`
+  );
+  console.log(
+    `Can ${xdmp.getCurrentUser()} see ${uri}? ${fn.docAvailable(uri)}`
+  );
   return fn.docAvailable(uri);
 };
 
@@ -36,7 +46,7 @@ const scenarios = [
     input: {
       username: usernameForRegularUser,
       function: returnFoo,
-      unitName: UNRESTRICTED_UNIT_NAME,
+      unitName: UNIT_NAME_UNRESTRICTED,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: true },
@@ -65,7 +75,7 @@ const scenarios = [
     input: {
       username: usernameForRegularUser,
       function: returnFoo,
-      unitName: UNRESTRICTED_UNIT_NAME,
+      unitName: UNIT_NAME_UNRESTRICTED,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
@@ -104,7 +114,7 @@ const scenarios = [
     input: {
       username: usernameForRegularUser,
       function: canReadDoc,
-      unitName: UNRESTRICTED_UNIT_NAME,
+      unitName: UNIT_NAME_UNRESTRICTED,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
@@ -149,6 +159,14 @@ for (const scenario of scenarios) {
   let applyErrorNotExpectedAssertions = false;
   try {
     const functionWrapper = () => {
+      console.log(
+        `Roles before adding those of ${scenario.input.unitName}: ${xdmp
+          .getCurrentRoles()
+          .toArray()
+          .map((id) => {
+            return xdmp.roleName(id);
+          })}`
+      );
       return handleRequestV2ForUnitTesting(
         scenario.input.function,
         scenario.input.unitName,

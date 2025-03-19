@@ -12,7 +12,7 @@ import { searchTermText } from '../config/userFacingConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
-  UNRESTRICTED_UNIT_NAME,
+  UNIT_NAME_UNRESTRICTED,
   getEndpointAccessUnitNames,
   isConfiguredForUnit,
   removeUnitConfigProperties,
@@ -30,9 +30,9 @@ const droppedTermMsgs = [];
 const facetConfigGivenPrecedenceMsgs = [];
 const overrodeTermMgs = [];
 
-const regenerate = SEARCH_TERMS_CONFIG[UNRESTRICTED_UNIT_NAME] != null;
+const regenerate = SEARCH_TERMS_CONFIG[UNIT_NAME_UNRESTRICTED] != null;
 const BASE_CONFIG = regenerate
-  ? SEARCH_TERMS_CONFIG[UNRESTRICTED_UNIT_NAME]
+  ? SEARCH_TERMS_CONFIG[UNIT_NAME_UNRESTRICTED]
   : SEARCH_TERMS_CONFIG;
 
 // Remove generated search terms.
@@ -65,10 +65,10 @@ const hasHopInverseInfo = (searchTerm) => {
 
 // Deemed safer to have a single loop for all the units versus multiple.
 const searchTermsConfig = {};
-[UNRESTRICTED_UNIT_NAME]
+[UNIT_NAME_UNRESTRICTED]
   .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
-    const isUnrestrictedUnit = unitName == UNRESTRICTED_UNIT_NAME;
+    const isUnrestrictedUnit = unitName == UNIT_NAME_UNRESTRICTED;
     const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
 
     // Drop any scopes and terms not intended for this unit.

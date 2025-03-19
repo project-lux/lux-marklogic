@@ -13,7 +13,7 @@ import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs'
 import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 import {
-  UNRESTRICTED_UNIT_NAME,
+  UNIT_NAME_UNRESTRICTED,
   getEndpointAccessUnitNames,
 } from '../lib/securityLib.mjs';
 
@@ -105,12 +105,12 @@ function createEntry(scopeName, termName, termConfig, report) {
 }
 
 const advancedSearchConfigs = {};
-[UNRESTRICTED_UNIT_NAME]
+[UNIT_NAME_UNRESTRICTED]
   .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
     const unitAdvancedSearchConfig = { terms: {}, options: {} };
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
-    const report = unitName == UNRESTRICTED_UNIT_NAME;
+    const report = unitName == UNIT_NAME_UNRESTRICTED;
 
     getOrderedUserInterfaceSearchScopeNames().forEach((scopeName) => {
       // Entire scopes may not apply to some units.

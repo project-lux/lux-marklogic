@@ -1,7 +1,8 @@
 {
   "role-name": "%%mlAppName%%-unit-tester",
-  "description": "Unit tester role for the '%%mlAppName%%' tenant",
+  "description": "Required to run all unit tests within the '%%mlAppName%%' tenant",
   "role": [
+    "%%mlAppName%%-may-run-unit-tests",
     "%%mlAppName%%-endpoint-consumer",
     "rest-extension-user",
     "rest-admin"

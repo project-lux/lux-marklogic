@@ -3,7 +3,9 @@
   "description": "Simulated 'regular' user (non-service acc) for unit testing in the '%%mlAppName%%' tenant",
   "password": "%%unitTesterPassword%%",
   "role": [
-    "%%mlAppName%%-unit-test-regular-user-read",
-    "%%mlAppName%%-unit-test-regular-user-update"
+    "%%mlAppName%%-may-run-unit-tests",
+    "%%mlAppName%%-endpoint-consumer-user",
+    "%%mlAppName%%-unit-test-regular-user-reader",
+    "%%mlAppName%%-unit-test-regular-user-updater"
   ]
 }

@@ -10,7 +10,7 @@ import {
 } from '../lib/searchPatternsLib.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
-  UNRESTRICTED_UNIT_NAME,
+  UNIT_NAME_UNRESTRICTED,
   getEndpointAccessUnitNames,
 } from '../lib/securityLib.mjs';
 
@@ -202,14 +202,14 @@ function _convertToRuntimeFormat(
   }
 }
 
-// Perform the following for LUX (all data / UNRESTRICTED_UNIT_NAME) and all known units.
+// Perform the following for LUX (all data / UNIT_NAME_UNRESTRICTED) and all known units.
 const relatedListsConfig = {};
-[UNRESTRICTED_UNIT_NAME]
+[UNIT_NAME_UNRESTRICTED]
   .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
     const unitRelatedListsConfig = {};
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
-    const report = unitName == UNRESTRICTED_UNIT_NAME;
+    const report = unitName == UNIT_NAME_UNRESTRICTED;
 
     /*
      * STEP 1: Get a list of all 'related to' search terms.

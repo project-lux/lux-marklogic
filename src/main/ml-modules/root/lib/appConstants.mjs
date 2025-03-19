@@ -13,10 +13,6 @@ const FEATURE_MY_COLLECTIONS_ENABLED =
 // that allows the caller to specify the endpoint configuration to apply.
 const UNIT_TEST_ENDPOINT = '/test/default.xqy';
 const ROLE_NAME_MAY_RUN_UNIT_TESTS = '%%mlAppName%%-may-run-unit-tests';
-const ROLE_NAME_UNIT_TESTER = '%%mlAppName%%-unit-tester';
-const ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER =
-  '%%mlAppName%%-unit-test-service-account-reader';
-const ROLE_NAME_TENANT_READER = '%%mlAppName%%-reader';
 
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
@@ -181,9 +177,6 @@ export {
   RELATED_LIST_PREFIX,
   RELATED_LIST_TIMEOUT,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
-  ROLE_NAME_TENANT_READER,
-  ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
-  ROLE_NAME_UNIT_TESTER,
   SEARCH_ESTIMATE_PREFIX,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_INVERSE_MAP,

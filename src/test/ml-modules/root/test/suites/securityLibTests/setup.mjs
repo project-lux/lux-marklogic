@@ -3,12 +3,12 @@ declareUpdate();
 import { testHelperProxy } from '/test/test-helper.mjs';
 
 import {
+  FOO_FILENAME,
+  FOO_URI,
   ROLE_NAME_TENANT_READER,
   ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
   ROLE_NAME_UNIT_TESTER,
-} from '/lib/appConstants.mjs';
-
-import { FOO_FILENAME, FOO_URI } from '/unitTestConstants.mjs';
+} from '/unitTestConstants.mjs';
 
 console.log(`Creating ${FOO_URI}`);
 

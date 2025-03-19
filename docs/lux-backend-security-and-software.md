@@ -13,7 +13,8 @@
     - [Query Console](#query-console)
     - [Writer](#writer)
     - [Deployer](#deployer)
-    - [Status Builtins](#status-builtins)
+    - [Roles for Amps](#roles-for-amps)
+    - [Roles for Unit Testing](#roles-for-unit-testing)
   - [Amps](#amps)
 - [Software](#software)
   - [Updates](#updates)
@@ -88,7 +89,7 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ### Endpoint Consumer
 
-The `%%mlAppName%%-endpoint-consumer-base` role ([2-base-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2-base-endpoint-consumer-role.json)) is to be granted to all service accounts and My Collections user accounts authorized to consume the tenant's backend endpoints.  It grants the roles and execute privileges required to consume the endpoints, less those provided by amps.
+The `%%mlAppName%%-endpoint-consumer-base` role ([2-endpoint-consumer-base-role.json](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json)) is to be granted to all service accounts and My Collections user accounts authorized to consume the tenant's backend endpoints.  It grants the roles and execute privileges required to consume the endpoints, less those provided by amps.
 
 There are two primary distinctions between endpoint consumer types:
 
@@ -97,7 +98,7 @@ There are two primary distinctions between endpoint consumer types:
     * Service accounts only have access to documents provided by the data pipeline.  The subset thereof varies by service account, or unit.  For example, the Yale Peabody Museum and Yale University Art Gallery may share the concept of fossils yet Yale Peabody Museum will have access to many more fossil documents than the Yale University Art Gallery.
 2. Requests from a user account can have access to the same configuration and (data pipeline-provided) documents as a service account (using the `unitName` endpoint parameter), but service accounts cannot have access to a user account's documents.  Combining the two previous examples, if the same User 1 logged into LUX through Yale Peabody Museum's portal, the user would have access to their My Collection documents *and* Yale Peabody Museum's fossil documents.  Users that access LUX through Yale Peabody Museum's portal without logging in would only be able to see Yale Peabody Museum's documents.  The [backend endpoint API documentation](/docs/lux-backend-api-usage.md) identifies which endpoints accept the `unitName` parameter.
 
-Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2a-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2a-tenant-endpoint-consumer-role.json) and serves as an example.
+Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2c-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.
 
 Until there is full support for end users logging into LUX (through a unit's portal or otherwise), middle tiers should use their endpoint consumer service accounts to authenticate into a tenant's application servers.
 
@@ -114,7 +115,7 @@ Developers are encouraged to test endpoints using a user account that has one of
 
 ### Query Console
 
-The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2a-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
+The [%%mlAppName%%-qconsole-user](/src/main/ml-config/base/security/roles/3-tenant-qconsole-user.json) role builds upon the [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) role by also allowing one to use Query Console.  These users are not able to modify documents in the content or modules database.
 
 ### Writer
 
@@ -126,13 +127,24 @@ The [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-de
 
 For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
 
-### Status Builtins
+### Roles for Amps
 
-The [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) role is only intended to be configured to amps. It was introduced to enable endpoint consumers to consume the [Storage Info](/docs/lux-backend-api-usage.md#storage-info) endpoint without granting that role an executive privilege that offers potentially sensitive information.
+See [Amps](#amps).
+
+### Roles for Unit Testing
+
+[/src/test/ml-config/security](/src/test/ml-config/security) includes additional roles (and users) used by unit tests.  These are not required or recommended in production environments.  See the `restrictUnitTestingDeployment` Gradle task's documentation in [LUX Backend Build Tool and Tasks](/docs/lux-backend-build-tool-and-tasks.md) for more details.
 
 ## Amps
 
-The [getForestInfoByHost](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) amp allows [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs)'s `getForestInfoByHost` function to run with the [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6-status-builtins-role.json) execute role. That role is configured with an execute privilege that is required to retrieve forest storage information.
+Amps are used to grant additional executive privileges (via roles) to specific functions.
+
+| Amp | Role(s) | Function(s) |
+| --- | ------- | ----------- |
+| [_getForestInfoByHost](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) | [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6a-status-builtins-role.json) | `_getForestInfoByHost`, defined in [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs) |
+| [_handleRequestV2](/src/main/ml-config/base/security/amps/handle-request-v2-amp.json) | [%%mlAppName%%-invoke-as-user](/src/main/ml-config/base/security/roles/6d-invoke-as-user-role.json), which inherits [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6c-invoke-role.json) | `_handleRequestV2`, defined in [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) |
+| [_isServiceAccount](/src/main/ml-config/base/security/amps/is-service-account-amp.json) | [%%mlAppName%%-user-roles](/src/main/ml-config/base/security/roles/6b-user-roles-role.json) | `_isServiceAccount`, defined in [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) |
+| `_execute_with_*` | [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6c-invoke-role.json) | `_execute_with_*` with libWrapper.mjs, generated by the `addSupportForExecutingWithServiceAccounts` Gradle task. |
 
 # Software
 

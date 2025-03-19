@@ -8,11 +8,9 @@ import {
   ROLE_NAME_UNIT_TESTER,
 } from '/lib/appConstants.mjs';
 
-// TODO: define in a single file?
-const filename = 'foo.json'; // relative to ./test-data
-const uri = `/${filename}`;
+import { FOO_FILENAME, FOO_URI } from '/unitTestConstants.mjs';
 
-console.log(`Creating ${uri}`);
+console.log(`Creating ${FOO_URI}`);
 
 try {
   // loadTestFile does not accept the return from xdmp.permission.
@@ -41,9 +39,14 @@ try {
     )
     .xpath('./root/*');
 
-  testHelperProxy.loadTestFile(filename, xdmp.database(), uri, permissionNodes);
+  testHelperProxy.loadTestFile(
+    FOO_FILENAME,
+    xdmp.database(),
+    FOO_URI,
+    permissionNodes
+  );
 } catch (e) {
-  console.error(`Unable to create ${uri}`);
+  console.error(`Unable to create ${FOO_URI}`);
   console.error(e.message);
   console.error(e.stack);
 }

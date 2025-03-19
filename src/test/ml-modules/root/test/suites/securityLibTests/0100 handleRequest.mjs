@@ -5,12 +5,11 @@ import {
   handleRequestV2ForUnitTesting,
   getEndpointAccessUnitNames,
 } from '/lib/securityLib.mjs';
-
-// TODO: define in a single file?
-const usernameForRegularUser = '%%mlAppName%%-unit-test-regular-user';
-const usernameForServiceAccount = '%%mlAppName%%-unit-test-service-account';
-const filename = 'foo.json'; // relative to ./test-data
-const uri = `/${filename}`;
+import {
+  FOO_URI,
+  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_SERVICE_ACCOUNT,
+} from '/unitTestConstants.mjs';
 
 const LIB = '0100 handleRequest.mjs';
 console.log(`${LIB}: starting.`);
@@ -18,36 +17,39 @@ console.log(`${LIB}: starting.`);
 const assertions = [];
 
 // Little buddies used in more than one scenario.
-const returnFoo = () => {
-  return 'foo';
+const returnBar = () => {
+  return 'bar';
 };
 const canReadDoc = () => {
-  return fn.docAvailable(uri);
+  return fn.docAvailable(FOO_URI);
 };
 
 assertions.push(
-  testHelperProxy.assertTrue(canReadDoc(), `Setup wasn't able to create ${uri}`)
+  testHelperProxy.assertTrue(
+    canReadDoc(),
+    `Setup wasn't able to create ${FOO_URI}`
+  )
 );
 
 const scenarios = [
   {
     name: 'User consuming My Collections endpoint',
     input: {
-      username: usernameForRegularUser,
-      function: returnFoo,
+      username: USERNAME_FOR_REGULAR_USER,
+      function: returnBar,
       unitName: UNIT_NAME_UNRESTRICTED,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: true },
       },
     },
-    expected: { error: false, value: returnFoo() },
+    expected: { error: false, value: returnBar() },
   },
   {
     name: 'Service account consuming My Collections endpoint',
     input: {
-      username: usernameForServiceAccount,
-      function: returnFoo,
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
+      function: returnBar,
       unitName: null,
       endpointConfig: {
         allowInReadOnlyMode: true,
@@ -62,33 +64,33 @@ const scenarios = [
   {
     name: 'User consuming non-My Collections endpoint',
     input: {
-      username: usernameForRegularUser,
-      function: returnFoo,
+      username: USERNAME_FOR_REGULAR_USER,
+      function: returnBar,
       unitName: UNIT_NAME_UNRESTRICTED,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: returnFoo() },
+    expected: { error: false, value: returnBar() },
   },
   {
     name: 'Service account consuming non-My Collections endpoint',
     input: {
-      username: usernameForServiceAccount,
-      function: returnFoo,
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
+      function: returnBar,
       unitName: null,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: returnFoo() },
+    expected: { error: false, value: returnBar() },
   },
   {
     name: 'User attempting to access a document with default unit',
     input: {
-      username: usernameForRegularUser,
+      username: USERNAME_FOR_REGULAR_USER,
       function: canReadDoc,
       unitName: null,
       endpointConfig: {
@@ -101,7 +103,7 @@ const scenarios = [
   {
     name: 'User attempting to access a document with unit',
     input: {
-      username: usernameForRegularUser,
+      username: USERNAME_FOR_REGULAR_USER,
       function: canReadDoc,
       unitName: UNIT_NAME_UNRESTRICTED,
       endpointConfig: {
@@ -114,7 +116,7 @@ const scenarios = [
   {
     name: 'User attempting to access a document with unit that does not have access to the doc',
     input: {
-      username: usernameForRegularUser,
+      username: USERNAME_FOR_REGULAR_USER,
       function: canReadDoc,
       unitName: getEndpointAccessUnitNames()[0],
       endpointConfig: {
@@ -127,7 +129,7 @@ const scenarios = [
   {
     name: 'Service account attempting to access a document',
     input: {
-      username: usernameForServiceAccount,
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
       function: canReadDoc,
       unitName: null,
       endpointConfig: {

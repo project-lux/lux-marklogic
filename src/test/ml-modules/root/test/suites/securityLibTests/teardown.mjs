@@ -1,10 +1,8 @@
 declareUpdate();
 
-// TODO: define in a single file?
-const filename = 'foo.json'; // relative to ./test-data
-const uri = `/${filename}`;
+import { FOO_URI } from '/unitTestConstants.mjs';
 
-if (fn.docAvailable(uri)) {
-  console.log(`Deleting '${uri}'`);
-  xdmp.documentDelete(uri);
+if (fn.docAvailable(FOO_URI)) {
+  console.log(`Deleting '${FOO_URI}'`);
+  xdmp.documentDelete(FOO_URI);
 }

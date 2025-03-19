@@ -118,7 +118,6 @@ function _handleRequestV2(
   if (currentUserIsServiceAccount) {
     return f();
   }
-  console.log(`Executing with the ${unitName} service account`);
   return _getExecuteWithServiceAccountFunction(unitName)(f);
 }
 const handleRequestV2 = import.meta.amp(_handleRequestV2);

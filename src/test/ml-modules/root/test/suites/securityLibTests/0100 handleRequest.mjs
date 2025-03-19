@@ -22,17 +22,6 @@ const returnFoo = () => {
   return 'foo';
 };
 const canReadDoc = () => {
-  console.log(
-    `Roles after: ${xdmp
-      .getCurrentRoles()
-      .toArray()
-      .map((id) => {
-        return xdmp.roleName(id);
-      })}`
-  );
-  console.log(
-    `Can ${xdmp.getCurrentUser()} see ${uri}? ${fn.docAvailable(uri)}`
-  );
   return fn.docAvailable(uri);
 };
 
@@ -159,14 +148,6 @@ for (const scenario of scenarios) {
   let applyErrorNotExpectedAssertions = false;
   try {
     const functionWrapper = () => {
-      console.log(
-        `Roles before adding those of ${scenario.input.unitName}: ${xdmp
-          .getCurrentRoles()
-          .toArray()
-          .map((id) => {
-            return xdmp.roleName(id);
-          })}`
-      );
       return handleRequestV2ForUnitTesting(
         scenario.input.function,
         scenario.input.unitName,

@@ -40,7 +40,7 @@ Regardless of a tenant offering unit service accounts, every tenant offers a ser
 
 ### Document Access
 
-When documents from the data pipeline are loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  The unit's endpoint consumer role inherits the unit's [Reader](#reader) role.  This configuration culminates with one of two request contexts to determine which documents are accessed:
+When documents from the [data pipeline](https://github.com/project-lux/data-pipeline) are loaded, [documentTransforms.sjs](/src/main/ml-modules/root/documentTransforms.sjs) is responsible for granting read permission to the documents the unit should have access to.  The unit's endpoint consumer role inherits the unit's [Reader](#reader) role.  This configuration culminates with one of two request contexts to determine which documents are accessed:
 
 1. The service account; or
 2. An authenticated user and a unit name (specified by the endpoint consumer).
@@ -52,7 +52,7 @@ To better align with data available to the unit, several endpoints utilize confi
 Here's how it works:
 
 * Set the `endpointAccessUnitNames` build property to the units that require unit-specific configurations.  This will likely be a subset of units represented in the `/admin/sources` array.  While a (unit-specific) reader role is required for every unit that may appear in the `/admin/sources` array, only units that intend to consume endpoints restricted to their data are required to be included in the `endpointAccessUnitNames` property's value, have an endpoint consumer role, and a service account.
-* The `addSupportForExecutingWithServiceAccounts` Gradle task generates amps and libWrapper.mjs in support of enabling logged in users to have access to the same documents a service account has access to.  Each generated function has an amp that temporarily grants the caller the associated service account's role.  At runtime, when applicable, [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs)'s `handleRequest` calls one of the service account-specific, generated functions.
+* The `addSupportForExecutingWithServiceAccounts` Gradle task generates amps and libWrapper.mjs in support of enabling logged in users to have access to the same documents a service account has access to.  The service account's unit needs to be included in the `endpointAccessUnitNames` build property.  Each generated function has an amp that temporarily grants the caller the associated service account's role.  At runtime, when applicable, [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs)'s `handleRequest` calls one of the service account-specific, generated functions.
 * Within [searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `onlyForUnits` and `excludedUnits` arrays control which units have access to entire search scopes and specific search terms.
 * The array values should be unit names, and should match `[unitName]` in the `%%mlAppName%%-[unitName]-endpoint-consumer` role names (case-sensitive).
 * When both arrays are set on the same search scope or search term, `onlyForUnits` takes precedence.
@@ -89,29 +89,35 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ### Endpoint Consumer
 
-The `%%mlAppName%%-endpoint-consumer-base` role ([2-endpoint-consumer-base-role.json](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json)) is to be granted to all service accounts and My Collections user accounts authorized to consume the tenant's backend endpoints.  It grants the roles and execute privileges required to consume the endpoints, less those provided by amps.
+![Endpoint consumer role hierarchy](/docs/img/endpoint-consumer-role-hierarchy.png)
 
-There are two primary distinctions between endpoint consumer types:
+The `%%mlAppName%%-endpoint-consumer-base` role ([2-endpoint-consumer-base-role.json](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json)) grants the roles and execute privileges required to consume the endpoints, less those provided by [amps](#amps).
+
+There are two roles that directly inherit the base role to differentiate the two types of endpoint consumers:
+
+1. The `%%mlAppName%%-endpoint-consumer-user` role ([2a-endpoint-consumer-user-role.json](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json)) is to be granted to My Collections user accounts.
+2. The `%%mlAppName%%-endpoint-consumer-service-account` role ([2b-endpoint-consumer-service-account-role.json](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json)) is to be granted to service accounts.
+
+Primary distinctions between the endpoint consumer types:
 
 1. Document permissions:
     * User accounts only have access to My Collections documents. The subset thereof varies by user account.  For example, User 1 and User 2 may share access to My Fossils Collection yet User 1 may also have access to the My Paintings Collection.
-    * Service accounts only have access to documents provided by the data pipeline.  The subset thereof varies by service account, or unit.  For example, the Yale Peabody Museum and Yale University Art Gallery may share the concept of fossils yet Yale Peabody Museum will have access to many more fossil documents than the Yale University Art Gallery.
+    * Service accounts only have access to documents provided by the [data pipeline](https://github.com/project-lux/data-pipeline).  The subset thereof varies by service account, or unit.  For example, the Yale Peabody Museum and Yale University Art Gallery may share the concept of fossils yet the Yale Peabody Museum service account will have access to many more fossil documents than Yale University Art Gallery's service account.
 2. Requests from a user account can have access to the same configuration and (data pipeline-provided) documents as a service account (using the `unitName` endpoint parameter), but service accounts cannot have access to a user account's documents.  Combining the two previous examples, if the same User 1 logged into LUX through Yale Peabody Museum's portal, the user would have access to their My Collection documents *and* Yale Peabody Museum's fossil documents.  Users that access LUX through Yale Peabody Museum's portal without logging in would only be able to see Yale Peabody Museum's documents.  The [backend endpoint API documentation](/docs/lux-backend-api-usage.md) identifies which endpoints accept the `unitName` parameter.
+3. Service accounts are not allowed to consume My Collection endpoints.
 
-Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2c-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.
+Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).\*  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2c-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.  
 
-Until there is full support for end users logging into LUX (through a unit's portal or otherwise), middle tiers should use their endpoint consumer service accounts to authenticate into a tenant's application servers.
-
-Additional endpoint consumer roles are configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/).
-
-Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
+Unit endpoint consumer roles may also be configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/). Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
 
 * File names: `2[alpha]-[unit]-endpoint-consumer-role.json`
 * Role names: `%%mlAppName%%-[unit]-endpoint-consumer`
 
 For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
 
-Developers are encouraged to test endpoints using a user account that has one of these roles.
+Developers are encouraged to test endpoints using an account that has one of these roles.
+
+\* See the [Applicable Configuration](#applicable-configuration) section for an additional requirement to provide a unit a service account.
 
 ### Query Console
 

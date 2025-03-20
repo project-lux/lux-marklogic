@@ -18,12 +18,13 @@ This document describes Gradle tasks written for this project, which may be foun
 | `copyContentDatabaseConfGenerated` | **Deployment task** that provides populates a JavaScript-template with the database's configuration, thereby making it available to the runtime code. |  | 
 | `copyDatabase` | Developer convenience task that enables one to copy the data from one database to another, such as from a LUX shared environment to one's local environment. It uses MLCP. | See [Alternative 2: Copy a Database](/docs/lux-backend-import-data.md#alternative-2-copy-a-database) |
 | `determineCodeVersion` | Executes a script to derive the code version from `git`. |  |
-| `disableDeprecatedSSLProtocols` | Disable deprecated SSL protocols. |  |
+| `disableDeprecatedSSLProtocols` | Disable deprecated SSL protocols. (this task is deprecated and will be replaced by `setSslMinAllowTls` in MarkLogic 12)|  |
 | `disableSSL` | Manual **deployment task** that disables SSL which then requires non-SSL connections on app serves. |  |
 | `enableSSL` | Manual **deployment task** that enables SSL which then requires SSL connections on app serves. |  |
 | `generateAdvancedSearchConfig` | **Deployment task** that generates configuration geared towards an advanced search user interface. One configuration for each unit specified by the `endpointAccessUnitNames` build property, plus the full configuration LUX (all units). This task must run after `generateRemainingSearchTerms` as its input is that task's output. |  |
 | `generateRelatedListsConfig` | **Deployment task** that generates configuration for related lists, specifically including their search criteria, in the LUX JSON Search Grammar. One configuration for each unit specified by the `endpointAccessUnitNames` build property, plus the full configuration LUX (all units). This task must run after `generateRemainingSearchTerms` as its input is that task's output. |  |
 | `generateRemainingSearchTerms` | **Deployment task** that adds facet, hop inverse, type, ID, and IRI search terms to the hard-coded ones defined in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs).  One set for each unit specified by the `endpointAccessUnitNames` build property, plus a full set for LUX (all units).  Added search terms are only in the deployed copy of searchTermsConfig.mjs.  Facet search terms are derived from [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs).  Hop inverse search terms are derived from hard-coded search terms with the `hopInverseName` property.  Type and IRI search terms are added to each search scope. |  |
+| `getSslMinAllowTls` | Show the minimum allowed TLS version | |
 | `importDataFull` | Loads data after clearing the database first. | See [Import Data](/docs/lux-backend-import-data.md) |
 | `importDataIncremental` | Loads data without clearing the database first. | See [Import Data](/docs/lux-backend-import-data.md) |
 | `importRestApiOptions` | **Deployment task** responsible for configuring the tenant's second application server with the same REST API options that are deployed by `mlLoadModules` for the tenant's first application server. See [/build.gradle](/build.gradle) for when this task will automatically run. |  |
@@ -33,8 +34,9 @@ This document describes Gradle tasks written for this project, which may be foun
 | `printCredentials` | Means to display encrypted credentials in plain text.  For your eyes only. |  |
 | `restrictUnitTestingDeployment` | **Deployment task** that automatically runs and is intended to prevent the unit testing configuration from reaching a production environment.  Set the `productionEnvironmentNames` property to all environments that can be part of a production environment (e.g., 'blue, green'). |  |
 | `setBanner` | **Deployment task** that sets the banner within the MarkLogic admin, query, and monitoring consoles. We use this to clearly identify an environment. There are three associated build properties: `bannerLabel`, `bannerHeaderColor`, and `bannerHeaderTextColor`.  This task is configured to automatically run after `mlDeploySecurity` (since `setBanner` also requires an admin). This task may also be called directly. |  |
+| `setSslMinAllowTls` | Set the minimum allowed TLS version | |
 | `showAppServerCiphers` | Display ciphers enabled on the application server. Use to ensure those that should not be enabled are not enabled. |  |
-| `showDeprecatedSSLProtocols` | Display deprecated SSL protocols. |  |
+| `showDeprecatedSSLProtocols` | Display deprecated SSL protocols. (this task is deprecated and will be replaced by `getSslMinAllowTls` in MarkLogic 12) |  |
 | `updateSSLCiphers` | Sets hard-coded ciphers on app servers. |  |
 
 # Gradle Tips & Tricks

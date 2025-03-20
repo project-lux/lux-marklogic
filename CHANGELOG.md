@@ -6,7 +6,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
  - Reintroduced [MarkLogic's unit test framework](https://marklogic-community.github.io/marklogic-unit-test/) ([#15](https://github.com/project-lux/lux-marklogic/issues/15)) 
  - Introduced the `featureMyCollectionsEnabled` build property which may be used to enable or disable the feature ([#469](https://github.com/project-lux/lux-marklogic/issues/469))
- - Add `getSslMinAllowTls` and `setSslMinAllowTls` tasks. These replace `disableDeprecatedSSLProtocols` and `showDeprecatedSslProtocols` starting with ML version 12. ([#444](https://github.com/project-lux/lux-marklogic/issues/444))
+ - Add getSslMinAllowTls and setSslMinAllowTls tasks. These replace disableDeprecatedSSLProtocols and showDeprecatedSslProtocols starting with ML version 12. ([#444](https://github.com/project-lux/lux-marklogic/issues/444))
+ - Add stop words to the advanced search config. ([#426](https://github.com/project-lux/lux-marklogic/issues/426))
 
 ### Changed
  - My Collections security and endpoint configuration ([#475](https://github.com/project-lux/lux-marklogic/issues/475)):

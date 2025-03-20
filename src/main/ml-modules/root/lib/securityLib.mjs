@@ -63,18 +63,18 @@ function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
   return f();
 }
 
-// Handle a version 2 request initiated by a unit test.  We otherwise do not want to
-// accept the endpoint configuration as a parameter.
+// Handle a version 2 request initiated by a unit test.  We otherwise do not want to accept the
+// endpoint configuration as a parameter.
 function handleRequestV2ForUnitTesting(
   f,
   unitName = UNIT_NAME_UNRESTRICTED,
   endpointConfig
 ) {
-  // As this allows the caller to specify which endpoint configuration to use and is
-  // only intended to be called when running a unit test, restrict it.
+  // As this allows the caller to specify which endpoint configuration to use and is only
+  // intended to be called when running a unit test, restrict it.
   if (
     UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
-    !hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS)
+    !_hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS)
   ) {
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
@@ -82,9 +82,8 @@ function handleRequestV2ForUnitTesting(
   return handleRequestV2(f, unitName, endpointConfig);
 }
 
-// Handle a version 2 request. Version 2 request support includes the
-// My Collections feature. This function is to be private and in support
-// of two public functions.
+// Handle a version 2 request. Version 2 request support includes the My Collections feature.
+// This function is to be private and in support of two public functions.
 function _handleRequestV2(
   f,
   unitName = UNIT_NAME_UNRESTRICTED,
@@ -124,7 +123,7 @@ const handleRequestV2 = import.meta.amp(_handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
   const functionName = `execute_with_${UNIT_NAME_UNRESTRICTED}${
-    includeUnitName(unitName) ? `_${unitName}` : ''
+    _includeUnitName(unitName) ? `_${unitName}` : ''
   }`;
   if (libWrapper[functionName]) {
     return libWrapper[functionName];
@@ -132,6 +131,10 @@ function _getExecuteWithServiceAccountFunction(unitName) {
   throw new BadRequestError(
     `Unable to process the request with the '${unitName}' unit's service account; please verify the unit name.`
   );
+}
+
+function _includeUnitName(unitName) {
+  return unitName != UNIT_NAME_UNRESTRICTED;
 }
 
 // Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.
@@ -146,25 +149,6 @@ function _isServiceAccount(userName) {
 }
 const isServiceAccount = import.meta.amp(_isServiceAccount);
 
-function getServiceAccountUsernames() {
-  return [UNIT_NAME_UNRESTRICTED]
-    .concat(getEndpointAccessUnitNames())
-    .map((unitName) => {
-      return getServiceAccountUsername(unitName);
-    });
-}
-
-// In this context, we're defining service accounts as the endpoint consumers subset thereof.
-function getServiceAccountUsername(unitName) {
-  return `${UNIT_NAME_UNRESTRICTED}${
-    includeUnitName(unitName) ? `-${unitName}` : ''
-  }${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
-}
-
-function includeUnitName(unitName) {
-  return unitName != UNIT_NAME_UNRESTRICTED;
-}
-
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
   // In case the property is not set, in which there are no endpoint consumers with
@@ -178,8 +162,8 @@ function getEndpointAccessUnitNames() {
   );
 }
 
-// Get the current user's unit name.
-// Relies on role naming convention.
+// Get the current user's unit name by checking the current roles. Relies on role naming
+// convention.
 function getCurrentUserUnitName() {
   const unitName = xdmp
     .getCurrentRoles()
@@ -245,7 +229,7 @@ function removeUnitConfigProperties(configTree, recursive = false) {
   }
 }
 
-function hasRole(roleName) {
+function _hasRole(roleName) {
   return xdmp
     .getCurrentRoles()
     .toArray()
@@ -264,6 +248,5 @@ export {
   isServiceAccount,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
-  getServiceAccountUsernames,
   removeUnitConfigProperties,
 };

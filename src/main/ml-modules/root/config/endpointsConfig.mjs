@@ -61,22 +61,6 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
-  '/ds/myLux/notMyCollectionsExample.mjs': {
-    allowInReadOnlyMode: true,
-    features: { myCollections: false },
-  },
-  '/ds/myLux/myCollectionsWriteExample.mjs': {
-    allowInReadOnlyMode: false,
-    features: { myCollections: true },
-  },
-  '/ds/myLux/myCollectionsReadExample.mjs': {
-    allowInReadOnlyMode: true,
-    features: { myCollections: true },
-  },
-  '/ds/myLux/misconfiguredExample.mjs': {
-    allowInReadOnlyMode: true,
-    features: {},
-  },
 };
 
 function getCurrentEndpointPath() {

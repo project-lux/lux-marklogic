@@ -1,7 +1,7 @@
 {
-  "role-name": "%%mlAppName%%-ypm-endpoint-consumer",
-  "description": "Endpoint consumer role for YPM in the '%%mlAppName%%' tenant",
-  "role": ["%%mlAppName%%-ypm-reader", "rest-reader"],
+  "role-name": "%%mlAppName%%-endpoint-consumer-base",
+  "description": "Endpoint consumer base role within the '%%mlAppName%%' tenant",
+  "role": ["rest-reader"],
   "privilege": [
     {
       "privilege-name": "sem-sparql",

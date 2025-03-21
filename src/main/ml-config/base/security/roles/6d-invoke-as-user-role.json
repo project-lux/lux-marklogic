@@ -1,0 +1,12 @@
+{
+  "role-name": "%%mlAppName%%-invoke-as-user",
+  "description": "Configured to an amp to avoid broadly granting the ability to invoke code as another user.",
+  "role": ["%%mlAppName%%-invoke"],
+  "privilege": [
+    {
+      "privilege-name": "xdmp:login",
+      "action": "http://marklogic.com/xdmp/privileges/xdmp-login",
+      "kind": "execute"
+    }
+  ]
+}

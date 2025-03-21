@@ -1,0 +1,6 @@
+{
+  "role-name": "%%mlAppName%%-may-run-unit-tests",
+  "description": "Role required to run unit tests in the '%%mlAppName%%' tenant",
+  "role": [],
+  "privilege": []
+}

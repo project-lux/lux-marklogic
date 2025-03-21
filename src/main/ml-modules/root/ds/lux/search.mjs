@@ -1,6 +1,7 @@
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 import { search } from '../../lib/searchLib.mjs';
 
+const unitName = external.unitName;
 const searchCriteria = external.q;
 const searchScope = external.scope;
 const mayChangeScope = external.mayChangeScope;
@@ -28,4 +29,4 @@ handleRequest(function () {
     facetsSoon,
     synonymsEnabled,
   });
-});
+}, unitName);

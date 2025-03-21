@@ -247,13 +247,13 @@ task copyContentDatabaseConfGenerated(){
 }
 mlLoadModules.dependsOn copyContentDatabaseConfGenerated
 
-// Defines amps and populates endpointsConfig.mjs and libWrapper.mjs
+// Defines amps and populates the libWrapper.mjs template.
 task addSupportForExecutingWithServiceAccounts() {
   doLast {
     def timestamp = new Date().toString()
 
     // Generate amp configuration files, while collecting the wrapper function names.
-    def mlAppName = project.getProperty("mlAppName")
+    def tenantName = project.getProperty("mlAppName")
     def moduleFilename = "libWrapper.mjs"
     // Exclude leading underscore here; must add where needed below.
     // _execute_with* are the amp'd functions.
@@ -264,20 +264,19 @@ task addSupportForExecutingWithServiceAccounts() {
     def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
       .replaceAll("\\s", "")
       .tokenize(",")
-    endpointAccessUnitNames.add(mlAppName) // Include tenant owner.
+    endpointAccessUnitNames.add(tenantName)
     endpointAccessUnitNames.each{ unit -> 
       count += 1
 
-      // When unit is mlAppName, we only need one represented.
-      def includeUnit = unit != mlAppName
-
-      def functionSuffix = includeUnit ? "_${unit}" : ""
-      def functionName = "${functionNamePrefix}_${mlAppName}${functionSuffix}"
+      def functionName = "${functionNamePrefix}_${unit}"
       functionNames.push(functionName)
 
       // Amp configuration files.
+      // 1. The modules database name provides multi-tenancy support.
+      // 2. When the unit is the tenant owner, we only need one represented.
+      def includeUnit = unit != tenantName
       def templateBindings = [
-          roleNamePrefix: "${mlAppName}${includeUnit ? "-${unit}" : ""}",
+          roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
           functionName: "_${functionName}", // underscore needed
           moduleFilename: moduleFilename
       ]

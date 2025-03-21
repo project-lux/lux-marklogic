@@ -122,19 +122,13 @@ function _handleRequestV2(
 const handleRequestV2 = import.meta.amp(_handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
-  const functionName = `execute_with_${UNIT_NAME_UNRESTRICTED}${
-    _includeUnitName(unitName) ? `_${unitName}` : ''
-  }`;
+  const functionName = `execute_with_${unitName}`;
   if (libWrapper[functionName]) {
     return libWrapper[functionName];
   }
   throw new BadRequestError(
     `Unable to process the request with the '${unitName}' unit's service account; please verify the unit name.`
   );
-}
-
-function _includeUnitName(unitName) {
-  return unitName != UNIT_NAME_UNRESTRICTED;
 }
 
 // Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.

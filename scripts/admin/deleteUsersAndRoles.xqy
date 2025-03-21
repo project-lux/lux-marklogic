@@ -18,20 +18,34 @@ xquery version "1.0-ml";
 import module namespace sec="http://marklogic.com/xdmp/security" at 
     "/MarkLogic/security.xqy";
 
+declare function local:contains-at-least-one-string($str as xs:string, $strs as xs:string) as xs:boolean {
+  let $booleans := $strs ! (
+    fn:contains($str, .)
+  )
+	return $booleans = fn:true()
+};
+
 (: START of CONFIGURATION SECTION :)
 let $preview := fn:true()
-let $deleteWhenStartsWith := ('lux')
+let $deleteWhenStartsWith := 'lux'
+let $butDoesNotContain := ('by-unit', 'dev-data')
 let $deleteUsers := fn:true()
 let $deleteRoles := fn:true()
 (: END of CONFIGURATION SECTION :)
 
 let $usernames := if ($deleteUsers) then
-    for $username in /sec:user/sec:user-name[fn:starts-with(., $deleteWhenStartsWith)]/text() 
+    for $username in /sec:user/sec:user-name[
+        fn:starts-with(., $deleteWhenStartsWith) and 
+        fn:not(local:contains-at-least-one-string(., $butDoesNotContain))
+    ]/text() 
       order by $username 
       return $username
   else ()
 let $roleNames := if ($deleteRoles) then
-    for $roleName in /sec:role/sec:role-name[fn:starts-with(., $deleteWhenStartsWith)]/text()
+    for $roleName in /sec:role/sec:role-name[
+        fn:starts-with(., $deleteWhenStartsWith) and 
+        fn:not(local:contains-at-least-one-string(., $butDoesNotContain))
+    ]/text()
       order by $roleName
       return $roleName
   else ()

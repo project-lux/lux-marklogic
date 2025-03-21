@@ -184,6 +184,16 @@ function getCurrentUserUnitName() {
   return unitName;
 }
 
+function _hasRole(roleName) {
+  return xdmp
+    .getCurrentRoles()
+    .toArray()
+    .map((id) => {
+      return xdmp.roleName(id);
+    })
+    .includes(roleName);
+}
+
 // Determine if the given scope or search term configuration is applicable to the specified unit.
 // configTree should either be an entire scope or single search term from searchTermsConfig.mjs.
 // These are the objects that are allowed to implement the PROPERTY_NAME_ONLY_FOR_UNITS and
@@ -221,16 +231,6 @@ function removeUnitConfigProperties(configTree, recursive = false) {
       }
     });
   }
-}
-
-function _hasRole(roleName) {
-  return xdmp
-    .getCurrentRoles()
-    .toArray()
-    .map((id) => {
-      return xdmp.roleName(id);
-    })
-    .includes(roleName);
 }
 
 export {

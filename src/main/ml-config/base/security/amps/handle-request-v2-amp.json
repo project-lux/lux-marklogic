@@ -1,0 +1,6 @@
+{
+  "local-name": "_handleRequestV2",
+  "document-uri": "/lib/securityLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-invoke-as-user"]
+}

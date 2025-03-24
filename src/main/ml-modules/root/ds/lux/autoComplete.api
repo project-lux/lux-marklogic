@@ -2,6 +2,11 @@
   "functionName": "autoComplete",
   "params": [
     {
+      "name": "unitName",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
       "name": "text",
       "datatype": "string"
     },

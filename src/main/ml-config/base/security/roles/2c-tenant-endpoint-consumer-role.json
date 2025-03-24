@@ -1,0 +1,9 @@
+{
+  "role-name": "%%mlAppName%%-endpoint-consumer",
+  "description": "Endpoint consumer role for the '%%mlAppName%%' tenant",
+  "role": [
+    "%%mlAppName%%-reader",
+    "%%mlAppName%%-endpoint-consumer-service-account"
+  ],
+  "privilege": []
+}

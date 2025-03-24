@@ -2,7 +2,7 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v1.37.0
+## v1.37.0 - 2025-03-24
 ### Added
  - Reintroduced [MarkLogic's unit test framework](https://marklogic-community.github.io/marklogic-unit-test/) ([#15](https://github.com/project-lux/lux-marklogic/issues/15)) 
  - Introduced the `featureMyCollectionsEnabled` build property which may be used to enable or disable the feature ([#469](https://github.com/project-lux/lux-marklogic/issues/469))

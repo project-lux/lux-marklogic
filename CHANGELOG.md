@@ -4,6 +4,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v1.38.0 - 2025-04-07
 ### Added
+- Enabled facets to reference more than one index, and created the `workCreationAndPublicationDate` facet to reference Works' creation date and publication date ([#485](https://github.com/project-lux/lux-marklogic/issues/485)) 
 
 ### Changed
 - My Collections security and endpoint configuration ([#475](https://github.com/project-lux/lux-marklogic/issues/475)):

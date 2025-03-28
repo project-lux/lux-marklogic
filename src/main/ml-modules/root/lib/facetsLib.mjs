@@ -235,7 +235,7 @@ function _calculateNonSemanticFacet(
   const ctsQuery = SearchCriteriaProcessor.evalQueryString(ctsQueryStr);
 
   const sequence = cts.fieldValues(
-    FACETS_CONFIG[facetName].indexReference,
+    FACETS_CONFIG[facetName].indexReferences,
     null,
     fieldValuesOptions,
     ctsQuery

@@ -115,15 +115,13 @@ const searchTermsConfig = {};
         return;
       }
 
-      const facetIndexReference = FACETS_CONFIG[facetName].indexReference;
+      const facetIdIndexReferences = FACETS_CONFIG[facetName].indexReferences;
       const isIdTerm = termName.endsWith('Id');
-      const isDate = facetIndexReference.endsWith('DateLong');
-      const isDimension = facetIndexReference.endsWith('DimensionValue');
+      const isDate = facetIdIndexReferences[0].endsWith('DateLong');
+      const isDimension = facetIdIndexReferences[0].endsWith('DimensionValue');
       const isZeroOrOne = ['hasDigitalImage', 'isOnline'].includes(termName);
 
-      let facetIdIndexReferences = [facetIndexReference];
       if (isDate) {
-        facetIdIndexReferences = [facetIndexReference];
         facetIdIndexReferences.push(
           facetIdIndexReferences[0].replace('Start', 'End')
         );

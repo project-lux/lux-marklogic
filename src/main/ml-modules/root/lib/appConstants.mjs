@@ -9,6 +9,11 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 const FEATURE_MY_COLLECTIONS_ENABLED =
   '%%featureMyCollectionsEnabled%%'.trim() === 'true';
 
+// Unit test-related constants are primarily used to prevent use of a function
+// that allows the caller to specify the endpoint configuration to apply.
+const UNIT_TEST_ENDPOINT = '/test/default.xqy';
+const ROLE_NAME_MAY_RUN_UNIT_TESTS = '%%mlAppName%%-may-run-unit-tests';
+
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 
@@ -153,6 +158,7 @@ export {
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
+  ENDPOINT_ACCESS_UNIT_NAMES,
   ENVIRONMENT_NAME,
   FACETS_PREFIX,
   FEATURE_MY_COLLECTIONS_ENABLED,
@@ -170,7 +176,7 @@ export {
   RELATED_LIST_PER_RELATION_MAX,
   RELATED_LIST_PREFIX,
   RELATED_LIST_TIMEOUT,
-  ENDPOINT_ACCESS_UNIT_NAMES,
+  ROLE_NAME_MAY_RUN_UNIT_TESTS,
   SEARCH_ESTIMATE_PREFIX,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_INVERSE_MAP,
@@ -188,4 +194,5 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
+  UNIT_TEST_ENDPOINT,
 };

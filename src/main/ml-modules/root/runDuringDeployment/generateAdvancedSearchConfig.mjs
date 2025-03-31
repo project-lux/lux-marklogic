@@ -13,9 +13,9 @@ import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs'
 import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 import {
-  UNRESTRICTED_UNIT_NAME,
+  UNIT_NAME_UNRESTRICTED,
   getEndpointAccessUnitNames,
-} from '../lib/unitLib.mjs';
+} from '../lib/securityLib.mjs';
 import { STOP_WORDS } from '../data/stopWords.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
@@ -106,7 +106,7 @@ function createEntry(scopeName, termName, termConfig, report) {
 }
 
 const advancedSearchConfigs = {};
-[UNRESTRICTED_UNIT_NAME]
+[UNIT_NAME_UNRESTRICTED]
   .concat(getEndpointAccessUnitNames())
   .forEach((unitName) => {
     const unitAdvancedSearchConfig = {
@@ -115,7 +115,7 @@ const advancedSearchConfigs = {};
       stopWords: Array.from(STOP_WORDS.values()),
     };
     const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
-    const report = unitName == UNRESTRICTED_UNIT_NAME;
+    const report = unitName == UNIT_NAME_UNRESTRICTED;
 
     getOrderedUserInterfaceSearchScopeNames().forEach((scopeName) => {
       // Entire scopes may not apply to some units.
@@ -236,7 +236,7 @@ function constructModuleNode(advancedSearchConfigs) {
  *
  * Generated timestamp: ${new Date()}
  */
-import { getCurrentUserUnitName } from '../lib/unitLib.mjs';
+import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
 import { BadRequestError } from '../lib/mlErrorsLib.mjs';
 
 const ADVANCED_SEARCH_CONFIG = ${JSON.stringify(advancedSearchConfigs)};

@@ -27,10 +27,10 @@
   - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-6)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Info](#search-info)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-8)
   - [Stats](#stats)
@@ -97,7 +97,11 @@ The `advancedSearchConfig` endpoint enables consumers to get a typescript-format
 
 **Method(s)** : `GET`, `POST`
 
-**Endpoint Parameters** : None
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 
 ### Successful Request / Response Example
 
@@ -178,7 +182,8 @@ In the context of servicing a single user typing in a field, endpoint consumers 
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `text` | `kra` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported.  |
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+| `text` | `kra` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported. |
 | `context` | `item.material` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
 | `fullyHonorContext` | `false` | **OPTIONAL** - Each auto complete context is configured with two constraints: a list of names and a relationship.  For example, the `itemProductionAgentId` context is configured to agent names and requires the agent have produced something.  When this parameter value is `true`, both constraints are applied.  When `false`, the relationship constraint is not applied --faster but will include false positives.  Some of the other parameters only apply when this parameter value is `true`.  Defaults to `true`. |
 | `onlyMatchOnPrimaryNames` | `false` | **OPTIONAL** - When `true`, the list of names to match on is restricted to primary names.  When `false`, the list of names includes both primary and alternative names.  Defaults to `true`. |
@@ -323,6 +328,7 @@ The `document` endpoint enables consumers to retrieve a single document's JSON-L
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `uri` | *See example below* | **REQUIRED** - The URI of the requested document. |
 | `profile` | "relationship" | **OPTIONAL** - The name of a profile that informs which subset of the JSON-LD to return. The default is to serve up the entire JSON-LD block, which is also the behavior when an invalid profile name is specified or an exception is encountered. Available profiles: "name", "location", "relationship", "results"\*, and "rights"; one may double check in the `applyProfile()` function within [/src/main/ml-modules/root/lib/profileDocLib.mjs](/src/main/ml-modules/root/lib/profileDocLib.mjs). |
 | `lang` | "en" | **OPTIONAL** - The language to serve up when there are multiple to choose from. Default is `en`. |
@@ -416,6 +422,7 @@ Only the first 100 values of a semantic facet's values are accessible.
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `name` | `agentStartDate` | **REQUIRED** - The name of the facet to calculate.  The [Search Info endpoint's](#search-info) `facetBy` response body property lists all of the available facets. |
 | `q` | *See [Search's example](#successful-request--response-example-7)* | **REQUIRED** - The query to constrain the facet's values by.  This parameter's support is nearly identical to the [Search endpoint's](#search) `q` parameter: the `multi` search scope is not supported by this endpoint. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of search scopes supported by this endpoint, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
@@ -533,6 +540,7 @@ To retrieve the full list of related documents, switch to the [Search endpoint](
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `scope` | `concept` | **REQUIRED** - The related list's search scope. For instance, when one is looking for concepts associated with an agent, the scope should be "concept". |
 | `name` | `relatedToAgent` | **REQUIRED** - The name of the related list. Using the same concepts-from-agent example, the name should be "relatedToAgent". For a complete list of available related lists, please search for "relatedTo" in the return of the [Search Info endpoint](#search-info). Note the scope you find the related list in as that will also be needed. |
 | `uri` | `https://lux.collections.yale.edu/...` | **REQUIRED** - The URI of the document to get the related documents of. For the concepts-from-agent example, this should be the agent's URI. The URI is one in the same as the document's IRI and ID. |
@@ -638,6 +646,7 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The `BOOST` property may be used to provide an array containing two search terms. The first term is used for matching results and the second term will boost the score of results that match the first term.  The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a near complete list of available search scopes, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example).
 | `mayChangeScope` | `true` | **OPTIONAL** - Submit `true` if the endpoint is allowed to change the search scope when the requested search's results estimate is zero yet another search scope's estimate is greater than zero.  Only applicable to search scopes associated with the user interface.  When the search scope is changed, the `metadata.changedScope` response body property value will be `true`.  Regardless, the `metadata.scope` parameter value will always align with the search *performed*.  The selected search scope is based on a user interface order specified in the endpoint.  No other part of the search is adjusted, specifically including the values of the `sort` and `facetNames` parameters.  Endpoint consumers are encouraged to submit `true` for search requests that do not require a specific user interface scope.  Subsequent requests that need to stick to a specific search should submit `false`.  Defaults to `false`. |
@@ -826,6 +835,7 @@ The `searchEstimate` endpoint may be used to calculate the estimated number of r
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - Unlike the [Facets](#facets) and [Search](#search) endpoints, this endpoint only supports the LUX JSON Search Grammar. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when the `_scope` property is not set in the `q` parameter value.  For a near complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example). |
 
@@ -896,6 +906,155 @@ Response Body:
 }
 ```
 
+## Search Info
+
+The `searchInfo` endpoint provides consumers:
+
+1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
+2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
+3. A list of facets and their associated search term names.
+4. A list of sort bindings implemented with range indexes or semantically related data.  These are in addition to the `random` and `relevance` sort options.  For each binding, this endpoint will specify the `name` to use in the [Search endpoint](#search)'s `sort` parameter as well as the binding's `type`.  There are a couple instances when the sort binding type becomes important to the endpoint consumer:
+    * When the search scope is `multi`, one of the `multiScope` sort bindings should be used to sort the results.  For example, when searching for Items and Works, `archiveSortId` may be used to sort the results.
+    * When specifying multiple sort bindings in a search request, at which point one may refer to [Search endpoint](#search)'s `sort` parameter documentation for precedence.
+
+Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
+
+**URL** : `/ds/lux/searchInfo.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+
+### Successful Request / Response Example
+
+Scenario: Successfully retrieve the data.
+
+Parameters: None
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body:
+
+*Abbreviated content shown below.*
+
+```
+{
+  "searchBy":{
+    "agent":[
+      {
+        "name":"activeAt",
+        "targetScope":"place",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      {
+        "name":"activeDate",
+        "targetScope":"agent",
+        "acceptsGroup":false,
+        "acceptsTerm":false,
+        "acceptsIdTerm":false,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":true,
+        "scalarType":"dateTime"
+      },
+      {
+        "name":"any",
+        "targetScope":"agent",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      ...more agent search terms
+    ],
+    "concept":[
+      {
+        "name":"any",
+        "targetScope":"concept",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      {
+        "name":"broader",
+        "targetScope":"concept",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      {
+        "name":"classification",
+        "targetScope":"concept",
+        "acceptsGroup":true,
+        "acceptsTerm":true,
+        "acceptsIdTerm":true,
+        "onlyAcceptsId":false,
+        "acceptsAtomicValue":false
+      },
+      ...more concept search terms.
+    ],
+    ...search terms for the event, item, place, reference, set, and work.
+  },
+  "facetBy":[
+    {
+      "name":"agentActiveDate",
+      "searchTermName":"agentActiveDate",
+      "idFacet":false
+    },
+    {
+      "name":"agentActivePlaceId",
+      "searchTermName":"activeAt",
+      "idFacet":true
+    },
+    {
+      "name":"agentEndDate",
+      "searchTermName":"agentEndDate",
+      "idFacet":false
+    },
+    {
+      "name":"agentEndPlaceId",
+      "searchTermName":"endAt",
+      "idFacet":true
+    },
+    ...more facets
+  ],
+  "sortBy":[
+    {
+      "name":"agentActiveDate",
+      "type":"nonSemantic"
+    },
+    {
+      "name":"agentClassificationConceptName",
+      "type":"semantic"
+    },
+    ...
+    {
+      "name":"archiveSortId",
+      "type":"multi"
+    },
+    ...more to sort by
+  ]
+}
+```
+
+### Failed Request / Response Example
+
+*Only known scenarios would be an authentication error and internal server error.*
+
 ## Search Will Match
 
 The `searchWillMatch` endpoint may be used to determine if a search or collection of searches will return at least one result.  It differs from the [Search Estimate endpoint](#search-estimate) in that this endpoint ensures there is at least one _filtered_ search result whereas the other endpoint returns the number of _unfiltered_ results.  Unfiltered results are calculated exclusively from indexes.  There are scenarios where an estimate can be greater than zero but the search returns zero results.  When one needs to know if there is at least one filtered result and is willing to incur a performance penalty, this endpoint should be used.  For a more in-depth explanation, visit https://docs.marklogic.com/guide/performance/unfiltered as well as the "Estimate and Count" section of the [Inside MarkLogic Server whitepaper](https://www.marklogic.com/wp-content/uploads/resources/Inside-MarkLogic-Server.pdf).
@@ -908,6 +1067,7 @@ The `searchWillMatch` endpoint may be used to determine if a search or collectio
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - The criteria for one or more searches. Unlike the [Facets](#facets) and [Search](#search) endpoints, this endpoint only supports the LUX JSON Search Grammar. Set the top-level property names to the name of the search and the values to the search criteria. When only wanting a single estimate, just the search criteria may be provided; the response will use `unnamed` as the search's name. All search scopes are supported, including `multi`. |
 
 **Response Body**
@@ -1054,151 +1214,6 @@ Response Body:
 }
 ```
 
-## Search Info
-
-The `searchInfo` endpoint provides consumers:
-
-1. A complete list of *individual* search scopes and search terms therein that may be used to construct and pass search criteria into any endpoint that supports the LUX JSON Search Grammar.  Some endpoints accept `multi` as the search scope; as detailed in the [Search endpoint](#search)'s documentation, this enables one to provide criteria for multiple individual search scopes.
-2. Information about each search term, including its target search scope and what it accepts (e.g, atomic value, child `id` search term).
-3. A list of facets and their associated search term names.
-4. A list of sort bindings implemented with range indexes or semantically related data.  These are in addition to the `random` and `relevance` sort options.  For each binding, this endpoint will specify the `name` to use in the [Search endpoint](#search)'s `sort` parameter as well as the binding's `type`.  There are a couple instances when the sort binding type becomes important to the endpoint consumer:
-    * When the search scope is `multi`, one of the `multiScope` sort bindings should be used to sort the results.  For example, when searching for Items and Works, `archiveSortId` may be used to sort the results.
-    * When specifying multiple sort bindings in a search request, at which point one may refer to [Search endpoint](#search)'s `sort` parameter documentation for precedence.
-
-Differences between the [Advanced Search Configuration endpoint](#advanced-search-configuration) and this endpoint include a) [Advanced Search Configuration endpoint](#advanced-search-configuration) defines each terms default search options and b) the `searchInfo` endpoint does not filter any search terms out.
-
-**URL** : `/ds/lux/searchInfo.mjs`
-
-**Method(s)** : `GET`, `POST`
-
-**Endpoint Parameters** : None
-
-### Successful Request / Response Example
-
-Scenario: Successfully retrieve the data.
-
-Parameters: None
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body:
-
-*Abbreviated content shown below.*
-
-```
-{
-  "searchBy":{
-    "agent":[
-      {
-        "name":"activeAt",
-        "targetScope":"place",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      {
-        "name":"activeDate",
-        "targetScope":"agent",
-        "acceptsGroup":false,
-        "acceptsTerm":false,
-        "acceptsIdTerm":false,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":true,
-        "scalarType":"dateTime"
-      },
-      {
-        "name":"any",
-        "targetScope":"agent",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      ...more agent search terms
-    ],
-    "concept":[
-      {
-        "name":"any",
-        "targetScope":"concept",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      {
-        "name":"broader",
-        "targetScope":"concept",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      {
-        "name":"classification",
-        "targetScope":"concept",
-        "acceptsGroup":true,
-        "acceptsTerm":true,
-        "acceptsIdTerm":true,
-        "onlyAcceptsId":false,
-        "acceptsAtomicValue":false
-      },
-      ...more concept search terms.
-    ],
-    ...search terms for the event, item, place, reference, set, and work.
-  },
-  "facetBy":[
-    {
-      "name":"agentActiveDate",
-      "searchTermName":"agentActiveDate",
-      "idFacet":false
-    },
-    {
-      "name":"agentActivePlaceId",
-      "searchTermName":"activeAt",
-      "idFacet":true
-    },
-    {
-      "name":"agentEndDate",
-      "searchTermName":"agentEndDate",
-      "idFacet":false
-    },
-    {
-      "name":"agentEndPlaceId",
-      "searchTermName":"endAt",
-      "idFacet":true
-    },
-    ...more facets
-  ],
-  "sortBy":[
-    {
-      "name":"agentActiveDate",
-      "type":"nonSemantic"
-    },
-    {
-      "name":"agentClassificationConceptName",
-      "type":"semantic"
-    },
-    ...
-    {
-      "name":"archiveSortId",
-      "type":"multi"
-    },
-    ...more to sort by
-  ]
-}
-```
-
-### Failed Request / Response Example
-
-*Only known scenarios would be an authentication error and internal server error.*
-
 ## Stats
 
 The `stats` endpoint enables consumers to get document estimates by context. The contexts align with the frontend's search contexts. Each context is associated to one or more document types. Additional information may be included in the future.
@@ -1207,7 +1222,11 @@ The `stats` endpoint enables consumers to get document estimates by context. The
 
 **Method(s)** : `GET`, `POST`
 
-**Endpoint Parameters** : None
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 
 ### Successful Request / Response Example
 

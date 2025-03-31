@@ -1,0 +1,12 @@
+{
+  "role-name": "%%mlAppName%%-user-roles",
+  "description": "Configured to an amp to avoid broadly granting the user-roles execute privilege.",
+  "role": [],
+  "privilege": [
+    {
+      "privilege-name": "xdmp:user-roles",
+      "action": "http://marklogic.com/xdmp/privileges/xdmp-user-roles",
+      "kind": "execute"
+    }
+  ]
+}

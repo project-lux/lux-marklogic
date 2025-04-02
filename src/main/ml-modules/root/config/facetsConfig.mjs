@@ -186,6 +186,9 @@ const FACETS_CONFIG = {
     indexReference: 'workCreationStartDateLong',
     searchTermName: 'createdDate',
   },
+  workCreationOrPublicationDate: {
+    subFacets: ['workCreationDate', 'workPublicationDate'],
+  },
   workCreationPlaceId: {
     indexReference: 'workCreationPlaceId',
     searchTermName: 'createdAtId',

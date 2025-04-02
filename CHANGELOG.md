@@ -4,6 +4,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v1.38.0 - 2025-04-07
 ### Added
+- Enable configuring facets that are composed of multiple sub-facets, and add a 'workCreationOrPublicationDate' facet which is a combination of 'workCreationDate' and 'workPublicationDate' ([#485](https://github.com/project-lux/lux-marklogic/issues/485))
 
 ### Changed
 - My Collections security and endpoint configuration ([#475](https://github.com/project-lux/lux-marklogic/issues/475)):

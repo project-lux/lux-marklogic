@@ -6,5 +6,6 @@ const unitName = external.unitName;
 const doc = getObjectFromJson(external.doc);
 
 handleRequest(function () {
+  declareUpdate();
   return createSet(doc);
 }, unitName);

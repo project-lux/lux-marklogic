@@ -1,11 +1,15 @@
-import { BASE_URL } from './appConstants.mjs';
-import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
+import {
+  BASE_URL,
+  COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
+} from './appConstants.mjs';
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
   getRoleNameForCurrentUser,
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
+import { getTenantRole } from './tenantStatusLib.mjs';
+import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
 
 const SET_SUB_TYPE_MY_COLLECTION = 'myCollection';
 
@@ -21,8 +25,11 @@ const MAX_ATTEMPTS_FOR_NEW_URI = 20;
  */
 function createSet(doc) {
   throwIfCurrentUserIsServiceAccount();
-  const uri = _getNewSetUri(SET_SUB_TYPE_MY_COLLECTION);
-  console.log(`New set URI: '${uri}'`);
+
+  // May become a parameter later.
+  const subTypeName = SET_SUB_TYPE_MY_COLLECTION;
+
+  const uri = _getNewSetUri(subTypeName);
 
   const mayCreate = true;
   const roleNameRead = getRoleNameForCurrentUser(CAPABILITY_READ, mayCreate);
@@ -31,12 +38,17 @@ function createSet(doc) {
     mayCreate
   );
 
-  console.log(`Read role name: '${roleNameRead}'`);
-  console.log(`Update role name: '${roleNameUpdate}'`);
-
-  // Define document permissions --auto create roles?
-  // Define collections
-  // Insert doc
+  xdmp.documentInsert(uri, doc, {
+    permissions: [
+      xdmp.permission(roleNameRead, 'read'),
+      xdmp.permission(roleNameUpdate, 'update'),
+    ],
+    collections: [
+      getTenantRole(),
+      COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
+      subTypeName,
+    ],
+  });
 
   return doc;
 }

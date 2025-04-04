@@ -35,6 +35,13 @@ const DEFAULT_MAY_CREATE_ROLE = true;
 const CAPABILITY_READ = 'read';
 const CAPABILITY_UPDATE = 'update';
 
+const PERMITTED_CAPABILITIES = [CAPABILITY_READ, CAPABILITY_UPDATE];
+
+const ROLE_SUFFIX_BY_CAPABILITY = {
+  CAPABILITY_READ: 'reader',
+  CAPABILITY_UPDATE: 'updater',
+};
+
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
@@ -46,14 +53,14 @@ function _getRoleNameForCurrentUser(
 ) {
   throwIfCurrentUserIsServiceAccount();
 
-  if (['read', 'update'].includes(capability) === false) {
+  if (PERMITTED_CAPABILITIES.includes(capability) === false) {
     throw new BadRequestError(
-      `Individual user roles do not support the '${capability}' capability.`
+      `Individual user roles do not support the '${capability}' capability`
     );
   }
 
   const username = _getCurrentUsername();
-  const roleName = `${username}-${capability}`;
+  const roleName = `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
 
   if (mayCreate === true && _hasRole(roleName) === false) {
     // Create the role when it does not exist.
@@ -69,7 +76,7 @@ function _getRoleNameForCurrentUser(
         // and http://marklogic.com/xdmp/privileges/grant-all-roles
         sec.createRole(
           roleName,
-          `A dedicated capacity role for user '${username}'`,
+          `The dedicated '${capability}' capacity role for user '${username}'`,
           inheritedRoleNames,
           defaultPermissions,
           defaultCollections

@@ -10,24 +10,22 @@ import {
 } from './securityLib.mjs';
 import {
   hasJsonLD,
+  getClassifiedAsIds,
   getIdentifiedByPrimaryName,
-  getType,
+  setCreatedBy,
   setId,
 } from './model.mjs';
+import { IDENTIFIERS } from './identifierConstants.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
-import { isUndefined } from '../utils/utils.mjs';
+import { getArrayOverlap, isUndefined } from '../utils/utils.mjs';
 
-const SET_SUB_TYPE_MY_COLLECTION = 'myCollection';
+const PERMITTED_SET_CLASSIFICATION_IDS = [IDENTIFIERS.myCollection];
 
-const PERMITTED_SET_SUB_TYPES = [SET_SUB_TYPE_MY_COLLECTION];
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
 function createSet(docNode, lang) {
   throwIfCurrentUserIsServiceAccount();
-
-  // May become a parameter later.
-  const subTypeName = SET_SUB_TYPE_MY_COLLECTION;
 
   if (!hasJsonLD(docNode)) {
     throw new BadRequestError(
@@ -35,8 +33,8 @@ function createSet(docNode, lang) {
     );
   }
 
-  // Type in JSON-LD can be the entity, which can be the sub-type.
-  _throwIfUnsupportedSubType(getType(docNode));
+  // Check the Set's classification
+  _throwIfUnsupportedSet(getClassifiedAsIds(docNode));
 
   if (isUndefined(getIdentifiedByPrimaryName(docNode, lang))) {
     throw new BadRequestError(
@@ -46,34 +44,37 @@ function createSet(docNode, lang) {
 
   const docObj = docNode.toObject();
 
-  const uri = _getNewSetUri(subTypeName);
+  const uri = _getNewSetUri();
   setId(docObj, uri);
+  setCreatedBy(docObj);
 
   const mayCreateRole = true;
-  xdmp.documentInsert(uri, docObj, {
-    permissions: [
-      xdmp.permission(
-        getRoleNameForCurrentUser(CAPABILITY_READ, mayCreateRole),
-        'read'
-      ),
-      xdmp.permission(
-        getRoleNameForCurrentUser(CAPABILITY_UPDATE, mayCreateRole),
-        'update'
-      ),
-    ],
-    collections: [
-      getTenantRole(),
-      COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
-      subTypeName,
-    ],
-  });
+  const roleNameRead = getRoleNameForCurrentUser(
+    CAPABILITY_READ,
+    mayCreateRole
+  );
+  const roleNameUpdate = getRoleNameForCurrentUser(
+    CAPABILITY_UPDATE,
+    mayCreateRole
+  );
+  // Execute the user of the roles in a separate transaction; else, when the above
+  // code creates them, they won't be available in the current (older) transaction.
+  const fun = () => {
+    declareUpdate();
+    xdmp.documentInsert(uri, docObj, {
+      permissions: [
+        xdmp.permission(roleNameRead, 'read'),
+        xdmp.permission(roleNameUpdate, 'update'),
+      ],
+      collections: [getTenantRole(), COLLECTION_NAME_MY_COLLECTIONS_FEATURE],
+    });
+  };
+  xdmp.invokeFunction(fun);
 
   return docObj;
 }
 
-function _getNewSetUri(subType, attempt = 1) {
-  _throwIfUnsupportedSubType(subType);
-
+function _getNewSetUri(attempt = 1) {
   // Insurance
   if (attempt > MAX_ATTEMPTS_FOR_NEW_URI) {
     throw new LoopDetectedError(
@@ -82,16 +83,23 @@ function _getNewSetUri(subType, attempt = 1) {
   }
 
   // We like this request.
-  const uri = `${BASE_URL}/${subType}/${sem.uuidString()}`;
+  const uri = `${BASE_URL}/set/${sem.uuidString()}`;
   if (fn.docAvailable(uri)) {
-    return _getNewSetUri(subType, ++attempt);
+    return _getNewSetUri(++attempt);
   }
   return uri;
 }
 
-function _throwIfUnsupportedSubType(subType) {
-  if (!PERMITTED_SET_SUB_TYPES.includes(subType)) {
-    throw new BadRequestError(`Invalid Set sub-type: '${subType}'`);
+function _throwIfUnsupportedSet(classificationIds) {
+  if (
+    getArrayOverlap(PERMITTED_SET_CLASSIFICATION_IDS, classificationIds)
+      .length === 0
+  ) {
+    throw new BadRequestError(
+      `Unsupported Set classification(s) for the current operation: '${classificationIds.join(
+        "', '"
+      )}'`
+    );
   }
 }
 

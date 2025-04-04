@@ -13,7 +13,7 @@
  * Conventions:
  *    1. Pass docNode (document as a Node) into the getters and has*.  After the v8 engine upgrade, we may want to
  *       switch to optional?.chaining.
- *    2. Pass docObj (docNode.toObject()) into settings.
+ *    2. Pass docObj (docNode.toObject()) into setters and add*.
  *
  * Exported functions are in alphabetical order, both where they are defined and exported.
  */
@@ -22,8 +22,11 @@ import {
   getLanguageIdentifier,
   hasLanguageIdentifier,
 } from './identifierConstants.mjs';
+import { getCurrentUsername } from './securityLib.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
-import { isDefined, toArray } from '../utils/utils.mjs';
+import { isDefined, isUndefined, toArray } from '../utils/utils.mjs';
+import { toISOStringThroughSeconds } from '../utils/dateUtils.mjs';
+import { PERSON_PREFIX } from './appConstants.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -38,8 +41,32 @@ const TYPE_MATERIAL = 'Material';
 
 const UI_TYPE_CONCEPT = 'Concept';
 
+const ID_TYPE_ALL = 'all';
+const ID_TYPE_EQUIVALENT = 'equivalent';
+const ID_TYPE_PRIMARY = 'primary';
+
 const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
 const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
+
+function _getDataIdForCurrentUser() {
+  return `${PERSON_PREFIX}${getCurrentUsername()}`;
+}
+
+// Intended for when modifies a Set.
+function addAddedToByEntry(docObj) {
+  const now = toISOStringThroughSeconds(new Date());
+  if (isUndefined(docObj.json.added_to_by)) {
+    docObj.json.added_to_by = [];
+  }
+  docObj.json.added_to_by.push({
+    type: 'Addition',
+    carried_out_by: [{ id: _getDataIdForCurrentUser(), type: 'Person' }],
+    timespan: {
+      begin_of_the_begin: now,
+      end_of_the_end: now,
+    },
+  });
+}
 
 function getBorn(docNode) {
   return _upTo('born', docNode.xpath('json/born'));
@@ -51,6 +78,18 @@ function getCarriedOutBy(docNode) {
 
 function getClassifiedAs(docNode) {
   return _upTo('classified_as', docNode.xpath('json/classified_as'));
+}
+
+function getClassifiedAsIds(docNode, idType = ID_TYPE_ALL) {
+  let idNodes;
+  if (ID_TYPE_ALL == idType) {
+    idNodes = docNode.xpath('/json/classified_as//id').toArray();
+  } else if (ID_TYPE_PRIMARY == idType) {
+    idNodes = docNode.xpath('/json/classified_as/id').toArray();
+  } else if (ID_TYPE_EQUIVALENT == idType) {
+    idNodes = docNode.xpath('/json/classified_as/equivalent/id').toArray();
+  }
+  return idNodes.map((idNode) => idNode + '');
 }
 
 // Returns null when given doc is not considered an exhibition.
@@ -109,6 +148,18 @@ function getId(docNode) {
   const node = fn.head(docNode.xpath('json/id'));
   const value = node ? node.toString() : node;
   return _upTo('id', node, value);
+}
+
+function setCreatedBy(docObj) {
+  const now = toISOStringThroughSeconds(new Date());
+  docObj.json.created_by = {
+    type: 'Creation',
+    carried_out_by: [{ id: _getDataIdForCurrentUser(), type: 'Person' }],
+    timespan: {
+      begin_of_the_begin: now,
+      end_of_the_end: now,
+    },
+  };
 }
 
 function setId(docObj, id) {
@@ -403,9 +454,11 @@ function _getPrimaryNameByLanguage(lang) {
 }
 
 export {
+  addAddedToByEntry,
   getBorn,
   getCarriedOutBy,
   getClassifiedAs,
+  getClassifiedAsIds,
   getClassifiedAsExhibition,
   getClassifiedAsNationalities,
   getClassifiedAsOccupations,
@@ -433,7 +486,11 @@ export {
   getUiType,
   hasJsonLD,
   merge,
+  setCreatedBy,
   setId,
+  ID_TYPE_ALL,
+  ID_TYPE_EQUIVALENT,
+  ID_TYPE_PRIMARY,
   PROP_NAME_BEGIN_OF_THE_BEGIN,
   PROP_NAME_END_OF_THE_END,
   TYPE_ACTIVITY,

@@ -37,10 +37,9 @@ const CAPABILITY_UPDATE = 'update';
 
 const PERMITTED_CAPABILITIES = [CAPABILITY_READ, CAPABILITY_UPDATE];
 
-const ROLE_SUFFIX_BY_CAPABILITY = {
-  CAPABILITY_READ: 'reader',
-  CAPABILITY_UPDATE: 'updater',
-};
+const ROLE_SUFFIX_BY_CAPABILITY = {};
+ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_READ] = 'reader';
+ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_UPDATE] = 'updater';
 
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
@@ -59,7 +58,7 @@ function _getRoleNameForCurrentUser(
     );
   }
 
-  const username = _getCurrentUsername();
+  const username = getCurrentUsername();
   const roleName = `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
 
   if (mayCreate === true && _hasRole(roleName) === false) {
@@ -208,7 +207,7 @@ function throwIfCurrentUserIsServiceAccount() {
   }
 }
 
-function _getCurrentUsername() {
+function getCurrentUsername() {
   return xdmp.getCurrentUser();
 }
 
@@ -306,12 +305,13 @@ export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
+  getCurrentUsername,
+  getCurrentUserUnitName,
+  getEndpointAccessUnitNames,
   getRoleNameForCurrentUser,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
-  getCurrentUserUnitName,
-  getEndpointAccessUnitNames,
   removeUnitConfigProperties,
   throwIfCurrentUserIsServiceAccount,
 };

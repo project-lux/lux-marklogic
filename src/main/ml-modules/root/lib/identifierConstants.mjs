@@ -8,6 +8,7 @@ const IDENTIFIERS = {
   female: 'http://vocab.getty.edu/aat/300189557',
   intersexual: 'http://vocab.getty.edu/aat/300417544',
   male: 'http://vocab.getty.edu/aat/300189559',
+  myCollection: 'https://github.com/project-lux/data-pipeline/issues/230', // Ticket to provide actual ID
   nationality: 'http://vocab.getty.edu/aat/300379842',
   occupation: 'http://vocab.getty.edu/aat/300263369',
   primaryName: 'http://vocab.getty.edu/aat/300404670',

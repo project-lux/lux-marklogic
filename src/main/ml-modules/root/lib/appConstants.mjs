@@ -49,6 +49,7 @@ const HIGH_STORAGE_WARNING_THRESHOLD = parseInt(
 const BASE_URL = 'https://lux.collections.yale.edu';
 const FACETS_PREFIX = `${BASE_URL}/api/facets`;
 const IRI_PREFIX = `${BASE_URL}/data/`;
+const PERSON_PREFIX = `${IRI_PREFIX}person/`;
 const RELATED_LIST_PREFIX = `${BASE_URL}/api/related-list`;
 const SEARCH_PREFIX = `${BASE_URL}/api/search`;
 const SEARCH_ESTIMATE_PREFIX = `${BASE_URL}/api/search-estimate`;
@@ -173,6 +174,7 @@ export {
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
   ML_APP_NAME,
+  PERSON_PREFIX,
   REG_EXP_NEAR_OPERATOR,
   RELATED_LIST_PAGE_LENGTH_DEFAULT,
   RELATED_LIST_PER_RELATION_DEFAULT,

@@ -9,11 +9,13 @@ import {
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
 import {
+  TYPE_SET,
   hasJsonLD,
   getClassifiedAsIds,
   getIdentifiedByPrimaryName,
   setCreatedBy,
   setId,
+  getType,
 } from './model.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
@@ -31,6 +33,11 @@ function createSet(docNode, lang) {
     throw new BadRequestError(
       'The provided document does not contain JSON-LD in the required location.'
     );
+  }
+
+  // Check the Set's type.
+  if (TYPE_SET != getType(docNode)) {
+    throw new BadRequestError('The provided document must be a Set.');
   }
 
   // Check the Set's classification

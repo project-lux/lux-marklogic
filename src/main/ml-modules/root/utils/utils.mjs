@@ -127,7 +127,7 @@ function getDocFromModulesDatabase(uri) {
   );
 }
 
-function getObjectFromJson(doc) {
+function getObjectFromNode(doc) {
   if (doc && doc.toObject) {
     doc = doc.toObject();
   }
@@ -653,7 +653,7 @@ export {
   getDocPermissionsFromString,
   getExceptionObjectElseMessage,
   getMergedArrays,
-  getObjectFromJson,
+  getObjectFromNode,
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,

@@ -1,11 +1,10 @@
-import { getObjectFromJson } from '../../../utils/utils.mjs';
 import { handleRequest } from '../../../lib/securityLib.mjs';
 import { createSet } from '../../../lib/setLib.mjs';
 
 const unitName = external.unitName;
-const doc = getObjectFromJson(external.doc);
+const docNode = external.doc; // Do not use getObjectFromNode
 
 handleRequest(function () {
   declareUpdate();
-  return createSet(doc);
+  return createSet(docNode);
 }, unitName);

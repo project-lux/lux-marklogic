@@ -11,9 +11,9 @@
  * for setting the return of an exported model function to the top-level property.
  *
  * Conventions:
- *    1. Pass docNode (document as a Node) into the getters.  After the v8 engine upgrade, we may want to
+ *    1. Pass docNode (document as a Node) into the getters and has*.  After the v8 engine upgrade, we may want to
  *       switch to optional?.chaining.
- *    2. Pass docObj (docNode.toObject()) into hasJsonLD and settings.
+ *    2. Pass docObj (docNode.toObject()) into settings.
  *
  * Exported functions are in alphabetical order, both where they are defined and exported.
  */
@@ -225,8 +225,8 @@ function getUiType(docNode) {
   return _upTo('uiType', node, value);
 }
 
-function hasJsonLD(docObj) {
-  return isDefined(docObj.json);
+function hasJsonLD(docNode) {
+  return isDefined(fn.head(docNode.xpath('json')));
 }
 
 /**

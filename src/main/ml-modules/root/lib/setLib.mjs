@@ -8,7 +8,7 @@ import {
   getRoleNameForCurrentUser,
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
-import { hasJsonLD, setId } from './model.mjs';
+import { hasJsonLD, getIdentifiedByPrimaryName, setId } from './model.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
 
@@ -17,20 +17,24 @@ const SET_SUB_TYPE_MY_COLLECTION = 'myCollection';
 const PERMITTED_SET_SUB_TYPES = [SET_SUB_TYPE_MY_COLLECTION];
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
-function createSet(docObj) {
+function createSet(docNode) {
   throwIfCurrentUserIsServiceAccount();
 
   // May become a parameter later.
   const subTypeName = SET_SUB_TYPE_MY_COLLECTION;
 
-  if (!hasJsonLD(docObj)) {
+  if (!hasJsonLD(docNode)) {
     throw new BadRequestError(
       'The provided document does not contain JSON-LD in the required location.'
     );
   }
 
+  const docObj = docNode.toObject();
+
   const uri = _getNewSetUri(subTypeName);
   setId(docObj, uri);
+
+  // console.log("getIdentifiedByPrimaryName: " + )
 
   const mayCreateRole = true;
   xdmp.documentInsert(uri, docObj, {

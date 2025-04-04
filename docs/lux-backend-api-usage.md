@@ -11,40 +11,43 @@
     - [Implementation Notes](#implementation-notes)
     - [Successful Request / Response Example](#successful-request--response-example-1)
     - [Failed Request / Response Example](#failed-request--response-example-1)
-  - [Document](#document)
+  - [Create Set](#create-set)
     - [Successful Request / Response Example](#successful-request--response-example-2)
     - [Failed Request / Response Example](#failed-request--response-example-2)
-  - [Facets](#facets)
+  - [Document](#document)
     - [Successful Request / Response Example](#successful-request--response-example-3)
     - [Failed Request / Response Example](#failed-request--response-example-3)
-  - [Related List](#related-list)
+  - [Facets](#facets)
     - [Successful Request / Response Example](#successful-request--response-example-4)
     - [Failed Request / Response Example](#failed-request--response-example-4)
+  - [Related List](#related-list)
+    - [Successful Request / Response Example](#successful-request--response-example-5)
+    - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Search](#search)
     - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
-    - [Failed Request / Response Example](#failed-request--response-example-5)
-  - [Search Estimate](#search-estimate)
-    - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-6)
-  - [Search Info](#search-info)
+  - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-8)
-  - [Stats](#stats)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-9)
-  - [Storage Info](#storage-info)
+  - [Stats](#stats)
     - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Translate](#translate)
+  - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Version Info](#version-info)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-12)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-12)
+    - [Failed Request / Response Example](#failed-request--response-example-13)
 
 # Introduction
 
@@ -313,6 +316,115 @@ Response Status Message: "Wildcarded strings must have at least three non-wildca
         "messageCode": "BadRequestError",
         "message": "Invalid search request: wildcarded strings must have at least three non-wildcard characters before or after the wildcard; 'be*' does not qualify"
     }
+}
+```
+
+## Create Set
+
+The Create Set endpoint enables users to create a Set, of allowed sub-types.  Requests by service accounts are rejected.
+
+**URL** : `/ds/myCollections/set/create.mjs`
+
+**Method(s)** : `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+| `doc` | *See example below* | **REQUIRED** - The Set document to insert. If the Set already has an ID, it will be replaced with a unique ID, facilitating copying one Set as another. |
+| `lang` | "es" | **OPTIONAL** - The language to apply as applicable. Default is `en`. |
+
+### Successful Request / Response Example
+
+Scenario: A user (not service account) submits a valid document.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `doc` | { "json": { "type": "myCollection", "identified_by": [ ... ] } } |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body is the given document plus any modifications made by the backend, including adding /json/id (bottom):
+
+*Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
+
+```
+{
+  "json": {
+    "type": "myCollection",
+    "identified_by": [
+      {
+        "type": "Name",
+        "content": "My Awesome Collection!",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Primary Name"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
+            "type": "Type",
+            "_label": "Sort Name"
+          }
+        ]
+      }
+    ],
+    "id": "https://lux.collections.yale.edu/myCollection/9d774fe5-5fb7-4f83-a2f9-53bbfea210f8"
+  }
+}
+
+```
+
+### Failed Request / Response Example
+
+Scenario: A user (not service account) submits a document without a primary name.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `doc` | { "json": { "type": "myCollection" } } |
+
+Response Status Code: 400
+
+Response Status Message: "Bad Request"
+
+Response Body:
+```
+{
+  "errorResponse":{
+    "statusCode":400,
+    "status":"Bad Request",
+    "messageCode":"BadRequestError",
+    "message":"The provided document does not contain a primary name."
+  }
 }
 ```
 

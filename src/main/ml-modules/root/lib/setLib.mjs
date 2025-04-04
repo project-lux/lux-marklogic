@@ -8,7 +8,12 @@ import {
   getRoleNameForCurrentUser,
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
-import { hasJsonLD, getIdentifiedByPrimaryName, setId } from './model.mjs';
+import {
+  hasJsonLD,
+  getIdentifiedByPrimaryName,
+  getType,
+  setId,
+} from './model.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
 import { isUndefined } from '../utils/utils.mjs';
@@ -29,6 +34,9 @@ function createSet(docNode, lang) {
       'The provided document does not contain JSON-LD in the required location.'
     );
   }
+
+  // Type in JSON-LD can be the entity, which can be the sub-type.
+  _throwIfUnsupportedSubType(getType(docNode));
 
   if (isUndefined(getIdentifiedByPrimaryName(docNode, lang))) {
     throw new BadRequestError(
@@ -64,16 +72,13 @@ function createSet(docNode, lang) {
 }
 
 function _getNewSetUri(subType, attempt = 1) {
+  _throwIfUnsupportedSubType(subType);
+
   // Insurance
   if (attempt > MAX_ATTEMPTS_FOR_NEW_URI) {
     throw new LoopDetectedError(
       `Unable to determine a unique URI for a new Set within ${MAX_ATTEMPTS_FOR_NEW_URI} attempts.`
     );
-  }
-
-  // Prevent unsupported sub types.
-  if (!PERMITTED_SET_SUB_TYPES.includes(subType)) {
-    throw new BadRequestError(`Invalid Set sub type: '${subType}'`);
   }
 
   // We like this request.
@@ -82,6 +87,12 @@ function _getNewSetUri(subType, attempt = 1) {
     return _getNewSetUri(subType, ++attempt);
   }
   return uri;
+}
+
+function _throwIfUnsupportedSubType(subType) {
+  if (!PERMITTED_SET_SUB_TYPES.includes(subType)) {
+    throw new BadRequestError(`Invalid Set sub-type: '${subType}'`);
+  }
 }
 
 export { createSet };

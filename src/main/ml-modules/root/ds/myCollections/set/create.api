@@ -10,6 +10,11 @@
       "name": "doc",
       "datatype": "jsonDocument",
       "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+    },
+    {
+      "name": "lang",
+      "datatype": "string",
+      "nullable": true
     }
   ],
   "return": {

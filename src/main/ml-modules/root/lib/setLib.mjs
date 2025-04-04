@@ -18,7 +18,7 @@ const SET_SUB_TYPE_MY_COLLECTION = 'myCollection';
 const PERMITTED_SET_SUB_TYPES = [SET_SUB_TYPE_MY_COLLECTION];
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
-function createSet(docNode) {
+function createSet(docNode, lang) {
   throwIfCurrentUserIsServiceAccount();
 
   // May become a parameter later.
@@ -30,7 +30,7 @@ function createSet(docNode) {
     );
   }
 
-  if (isUndefined(getIdentifiedByPrimaryName(docNode))) {
+  if (isUndefined(getIdentifiedByPrimaryName(docNode, lang))) {
     throw new BadRequestError(
       'The provided document does not contain a primary name.'
     );

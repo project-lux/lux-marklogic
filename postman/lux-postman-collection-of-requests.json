@@ -1,14 +1,61 @@
 {
 	"info": {
-		"_postman_id": "e4fe8b12-4e24-4065-a168-f2ab0bfcbfd2",
+		"_postman_id": "93610775-7cad-4bc3-be97-e914925a2e67",
 		"name": "LUX",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "21505844"
+		"_exporter_id": "14690471"
 	},
 	"item": [
 		{
 			"name": "Backend Custom API",
 			"item": [
+				{
+					"name": "My Collections",
+					"item": [
+						{
+							"name": "Set",
+							"item": [
+								{
+									"name": "Create",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "unitName",
+													"value": "ypm",
+													"type": "text"
+												},
+												{
+													"key": "doc",
+													"value": "{\n  \"json\": { \"type\": \"myCollection\" }\n}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/myCollections/set/create.mjs",
+											"protocol": "{{mlProtocol}}",
+											"host": [
+												"{{mlHost}}"
+											],
+											"port": "{{mlAppPort}}",
+											"path": [
+												"ds",
+												"myCollections",
+												"set",
+												"create.mjs"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
 				{
 					"name": "Advanced Search Config",
 					"request": {
@@ -463,7 +510,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/stats.mjs?unitName=ypm",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/stats.mjs",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -477,7 +524,8 @@
 							"query": [
 								{
 									"key": "unitName",
-									"value": "ypm"
+									"value": "ypm",
+									"disabled": true
 								}
 							]
 						}

@@ -95,6 +95,11 @@ function getJSErrorResponseBody(errorBody) {
       status = 'Bad Request';
       messageCode = 'BadRequestError';
       break;
+    case 'LoopDetectedError':
+      statusCode = 508;
+      status = 'Potential infinite loop prevented';
+      messageCode = 'LoopDetectedError';
+      break;
     case 'NotAcceptingWriteRequestsError':
       // Avoiding 503 due to data service retries.
       // 409 means the request conflicts with current state.

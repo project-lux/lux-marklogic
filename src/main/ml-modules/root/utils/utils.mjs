@@ -114,13 +114,6 @@ function checkPaginationParameters(page, pageLength) {
   }
 }
 
-function evalInContentDatabase(javascript, vars = {}, update = false) {
-  return xdmp.eval(javascript, vars, {
-    database: xdmp.database(),
-    update: update + '',
-  });
-}
-
 function evalInModulesDatabase(javascript, vars = {}, update = false) {
   return xdmp.eval(javascript, vars, {
     database: xdmp.modulesDatabase(),
@@ -651,7 +644,6 @@ export {
   camelCaseToWords,
   checkPaginationParameters,
   escapeCharacters,
-  evalInContentDatabase,
   evalInModulesDatabase,
   formatString,
   getArrayDiff,

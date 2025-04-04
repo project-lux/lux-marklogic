@@ -30,11 +30,68 @@ const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_UNRESTRICTED = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
-const ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT =
-  '%%mlAppName%%-endpoint-consumer-service-account';
+const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
+const DEFAULT_MAY_CREATE_ROLE = true;
+const CAPABILITY_READ = 'read';
+const CAPABILITY_UPDATE = 'update';
 
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
+
+// Get the current user's individual role for the specified capability.  If allowed to create,
+// the caller can rely on the role existing and being granted to the current user.
+function _getRoleNameForCurrentUser(
+  capability,
+  mayCreate = DEFAULT_MAY_CREATE_ROLE
+) {
+  throwIfCurrentUserIsServiceAccount();
+
+  if (['read', 'update'].includes(capability) === false) {
+    throw new BadRequestError(
+      `Individual user roles do not support the '${capability}' capability.`
+    );
+  }
+
+  const username = _getCurrentUsername();
+  const roleName = `${username}-${capability}`;
+
+  if (mayCreate === true && _hasRole(roleName) === false) {
+    // Create the role when it does not exist.
+    const createRole = () => {
+      declareUpdate();
+      const sec = require('/MarkLogic/security.xqy');
+      // Requires http://marklogic.com/xdmp/privileges/get-role
+      if (!sec.roleExists(roleName)) {
+        const inheritedRoleNames = [];
+        const defaultPermissions = [];
+        const defaultCollections = [];
+        // Requires http://marklogic.com/xdmp/privileges/create-role
+        // and http://marklogic.com/xdmp/privileges/grant-all-roles
+        sec.createRole(
+          roleName,
+          `A dedicated capacity role for user '${username}'`,
+          inheritedRoleNames,
+          defaultPermissions,
+          defaultCollections
+        );
+      }
+    };
+    xdmp.invokeFunction(createRole, { database: xdmp.securityDatabase() });
+
+    // Add the role when the user doesn't already have it.
+    const addRole = () => {
+      declareUpdate();
+      const sec = require('/MarkLogic/security.xqy');
+      // Requires http://marklogic.com/xdmp/privileges/user-add-roles
+      // and http://marklogic.com/xdmp/privileges/grant-all-roles
+      sec.userAddRoles(username, roleName);
+    };
+    xdmp.invokeFunction(addRole, { database: xdmp.securityDatabase() });
+  }
+
+  return roleName;
+}
+const getRoleNameForCurrentUser = import.meta.amp(_getRoleNameForCurrentUser);
 
 /*
  * All endpoint requests are to go through this function.
@@ -74,7 +131,7 @@ function handleRequestV2ForUnitTesting(
   // intended to be called when running a unit test, restrict it.
   if (
     UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
-    !_hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS)
+    _hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS) === false
   ) {
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
@@ -94,7 +151,7 @@ function _handleRequestV2(
     unitName = UNIT_NAME_UNRESTRICTED;
   }
 
-  const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
+  const isServiceAccount = isCurrentUserServiceAccount();
 
   // When in read-only mode, block requests that are not allowed to execute then.
   if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
@@ -104,17 +161,14 @@ function _handleRequestV2(
   }
 
   // Block service accounts from using any My Collections endpoint.
-  if (
-    currentUserIsServiceAccount &&
-    endpointConfig.isPartOfMyCollectionsFeature()
-  ) {
+  if (isServiceAccount && endpointConfig.isPartOfMyCollectionsFeature()) {
     throw new AccessDeniedError(
       'Service accounts are not permitted to use this endpoint'
     );
   }
 
   // Ignore unit name param when requesting user is already a service account.
-  if (currentUserIsServiceAccount) {
+  if (isServiceAccount) {
     return f();
   }
   return _getExecuteWithServiceAccountFunction(unitName)(f);
@@ -131,17 +185,25 @@ function _getExecuteWithServiceAccountFunction(unitName) {
   );
 }
 
-// Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.
-function _isServiceAccount(userName) {
-  return xdmp
-    .userRoles(userName)
-    .toArray()
-    .map((id) => {
-      return xdmp.roleName(id);
-    })
-    .includes(ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT);
+function _getRoleServiceAccountCannotHave() {
+  return ROLE_NAME_ENDPOINT_CONSUMER_USER;
 }
-const isServiceAccount = import.meta.amp(_isServiceAccount);
+
+function isCurrentUserServiceAccount() {
+  return _hasRole(_getRoleServiceAccountCannotHave()) === false;
+}
+
+function throwIfCurrentUserIsServiceAccount() {
+  if (isCurrentUserServiceAccount()) {
+    throw new AccessDeniedError(
+      'Service accounts may not perform this operation'
+    );
+  }
+}
+
+function _getCurrentUsername() {
+  return xdmp.getCurrentUser();
+}
 
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
@@ -234,13 +296,15 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 }
 
 export {
-  ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT,
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
+  getRoleNameForCurrentUser,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
-  isServiceAccount,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
   removeUnitConfigProperties,
+  throwIfCurrentUserIsServiceAccount,
 };

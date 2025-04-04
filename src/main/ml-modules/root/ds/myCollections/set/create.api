@@ -1,0 +1,19 @@
+{
+  "functionName": "create",
+  "params": [
+    {
+      "name": "unitName",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
+      "name": "doc",
+      "datatype": "jsonDocument",
+      "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

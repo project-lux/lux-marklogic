@@ -61,6 +61,10 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
+  '/ds/myCollections/set/create.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
 };
 
 function getCurrentEndpointPath() {

@@ -11,6 +11,7 @@ import {
 import { hasJsonLD, getIdentifiedByPrimaryName, setId } from './model.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
+import { isUndefined } from '../utils/utils.mjs';
 
 const SET_SUB_TYPE_MY_COLLECTION = 'myCollection';
 
@@ -29,12 +30,16 @@ function createSet(docNode) {
     );
   }
 
+  if (isUndefined(getIdentifiedByPrimaryName(docNode))) {
+    throw new BadRequestError(
+      'The provided document does not contain a primary name.'
+    );
+  }
+
   const docObj = docNode.toObject();
 
   const uri = _getNewSetUri(subTypeName);
   setId(docObj, uri);
-
-  // console.log("getIdentifiedByPrimaryName: " + )
 
   const mayCreateRole = true;
   xdmp.documentInsert(uri, docObj, {

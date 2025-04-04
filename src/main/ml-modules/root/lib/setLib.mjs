@@ -32,17 +32,17 @@ function createSet(docObj) {
   const uri = _getNewSetUri(subTypeName);
   setId(docObj, uri);
 
-  const mayCreate = true;
-  const roleNameRead = getRoleNameForCurrentUser(CAPABILITY_READ, mayCreate);
-  const roleNameUpdate = getRoleNameForCurrentUser(
-    CAPABILITY_UPDATE,
-    mayCreate
-  );
-
+  const mayCreateRole = true;
   xdmp.documentInsert(uri, docObj, {
     permissions: [
-      xdmp.permission(roleNameRead, 'read'),
-      xdmp.permission(roleNameUpdate, 'update'),
+      xdmp.permission(
+        getRoleNameForCurrentUser(CAPABILITY_READ, mayCreateRole),
+        'read'
+      ),
+      xdmp.permission(
+        getRoleNameForCurrentUser(CAPABILITY_UPDATE, mayCreateRole),
+        'update'
+      ),
     ],
     collections: [
       getTenantRole(),

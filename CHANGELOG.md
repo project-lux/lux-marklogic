@@ -2,6 +2,24 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.38.0 - 2025-04-07
+### Added
+- Enable configuring facets that are composed of multiple sub-facets, and add a 'workCreationOrPublicationDate' facet which is a combination of 'workCreationDate' and 'workPublicationDate' ([#485](https://github.com/project-lux/lux-marklogic/issues/485))
+
+### Changed
+- My Collections security and endpoint configuration ([#475](https://github.com/project-lux/lux-marklogic/issues/475)):
+     - Changed the endpoint consumer role hierarchy, necessitating the deletion of some user accounts, roles, and amps before running the `mlDeploySecurity` Gradle task; [deleteUsersAndRoles.xqy](/scripts/admin/deleteUsersAndRoles.xqy) and [deleteAmps.xqy](/scripts/admin/deleteAmps.xqy) can assist.
+     - The preexisting `endpointAccessUnitNames` build property is now used to generate functions and amps in support of requests from authenticated users having access to the tenant's or a unit's configuration and documents.
+     - Many endpoints now accept the `unitName` parameter.  The optional parameter is only used when the My Collections feature is enabled ([#469](https://github.com/project-lux/lux-marklogic/issues/469)) and the authenticated user is not a service account.
+     - Introduced extended endpoint configuration ([endpointsConfig.mjs](/src/main/ml-modules/root/config/endpointsConfig.mjs)), enabling us to configure which endpoints are associate to the My Collections feature and which may still be used when the instance is running in read-only mode.
+     - Restricted unit test deployments to non-production environments due to the security configuration required by some tests.  Use the new `productionEnvironmentNames` build property to specify which MarkLogic environments can be part of the production environment.
+     - See [LUX Backend API Usage](/docs/lux-backend-api-usage.md), [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md), and [LUX Backend Build Tool and Tasks](/docs/lux-backend-build-tool-and-tasks.md) for additional details.
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.37.0 - 2025-03-24
 ### Added
  - Reintroduced [MarkLogic's unit test framework](https://marklogic-community.github.io/marklogic-unit-test/) ([#15](https://github.com/project-lux/lux-marklogic/issues/15)) 

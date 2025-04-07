@@ -234,8 +234,16 @@ function _calculateNonSemanticFacet(
 
   const ctsQuery = SearchCriteriaProcessor.evalQueryString(ctsQueryStr);
 
+  const facetConfig = FACETS_CONFIG[facetName];
+
+  const indexReferences = facetConfig.subFacets
+    ? facetConfig.subFacets.map(
+        (subFacetName) => FACETS_CONFIG[subFacetName].indexReference
+      )
+    : [facetConfig.indexReference];
+
   const sequence = cts.fieldValues(
-    FACETS_CONFIG[facetName].indexReference,
+    indexReferences,
     null,
     fieldValuesOptions,
     ctsQuery
@@ -347,6 +355,15 @@ function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
 }
 
 function _convertFacetToSearchTerm(facetName, facetValue) {
+  // if this facet has subFacets, convert each subFacet to a search term
+  if (FACETS_CONFIG[facetName].subFacets) {
+    return {
+      OR: FACETS_CONFIG[facetName].subFacets.map((subFacetName) =>
+        _convertFacetToSearchTerm(subFacetName, facetValue)
+      ),
+    };
+  }
+
   let { scopeName, termName } = facetToScopeAndTermName(facetName);
   //facets ending in Id usually convert to search terms without Id
   if (termName.endsWith('Id')) {

@@ -34,6 +34,12 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
+ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
+ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
+ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
+
+ext.lineSep = System.getProperty("line.separator")
+
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
@@ -95,6 +101,58 @@ task determineCodeVersion {
   }
 }
 
+// Prevent unit testing configuration from reaching production.
+//
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task restrictUnitTestingDeployment {
+  def isUnitTestingConfigIncluded = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def environmentName = project.getProperty("environmentName").toLowerCase()
+  if (isUnitTestingConfigIncluded) {
+    def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
+    if (productionEnvironmentNames.contains(environmentName)) {
+      throw new GradleException("It is unsecure to deploy unit testing configuration to a production environment, of which '${environmentName}' is considered.")
+    } else {
+      println ""
+      println "Deployment to '${environmentName}' includes unit testing configuration."
+    }
+  } else {
+    println ""
+    println "Deployment to '${environmentName}' excludes unit testing configuration."
+  }
+}
+
+// Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
+// Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
+// literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
+// one should not expect this function to resolve those references.  Use the JSP like syntax instead.
+ext.applyTemplate = { sourceTemplatePath, templateBindings ->
+  // Read template file into memory
+  def text = file(sourceTemplatePath).text
+
+  // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
+  // '$1' and '${paramName}'.
+  text = text.replaceAll(/\$/, 'DOLLAR_SIGN')
+
+  // When a template variable reference immediately follows a JavaScript single line comment marker, remove the comment marker,
+  // thereby allowing the template's variable value to be uncommented code.
+  text = text.replaceAll(/\/\/\s*(?<templateVarRef><%[^>]*>)/, '${templateVarRef}')
+
+  // Resolve all template variable references: <%...%>
+  def engine = new groovy.text.SimpleTemplateEngine()
+  text = engine.createTemplate(text).make(templateBindings).toString()
+
+  // Change DOLLAR_SIGN back to the actual dollar sign symbol, such that JavaScript recognizes them.
+  text = text.replaceAll(/DOLLAR_SIGN/, '\\$')
+
+  return text
+}
+
+ext.writeToFile = { outputPath, content ->
+  new File("$outputPath").withWriter { out ->
+    out.println content
+  }
+}
+
 // This project's implementation of its custom token feature.
 //
 // This task needs to run before any ML Gradle task that references ML Gradle configuration files does.  Rather than
@@ -125,8 +183,9 @@ task preprocessRuntimeConfigAndModules() {
   println 'Resolving custom token(s): ' + names.join(", ")
   println ''
 
-  // Clear target directory first, as there could be obsolete files therein.
+  // Clear target directories first, as there could be obsolete files therein.
   delete './build/main'
+  delete './build/test'
 
   // Copy src/main into build directory
   copy {
@@ -146,6 +205,7 @@ task preprocessRuntimeConfigAndModules() {
   copy {
     from './src/test'
     into './build/test'
+    include 'ml-config/**'
     include 'ml-modules/**'
     filter { line -> {
       for (def i = 0; i < names.size(); i++) {
@@ -186,6 +246,67 @@ task copyContentDatabaseConfGenerated(){
 
 }
 mlLoadModules.dependsOn copyContentDatabaseConfGenerated
+
+// Defines amps and populates the libWrapper.mjs template.
+task addSupportForExecutingWithServiceAccounts() {
+  doLast {
+    def timestamp = new Date().toString()
+
+    // Generate amp configuration files, while collecting the wrapper function names.
+    def tenantName = project.getProperty("mlAppName")
+    def moduleFilename = "libWrapper.mjs"
+    // Exclude leading underscore here; must add where needed below.
+    // _execute_with* are the amp'd functions.
+    // execute_with* are the exported functions.
+    def functionNamePrefix = "execute_with"
+    def functionNames = [];
+    def count = 0
+    def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
+      .replaceAll("\\s", "")
+      .tokenize(",")
+    endpointAccessUnitNames.add(tenantName)
+    endpointAccessUnitNames.each{ unit -> 
+      count += 1
+
+      def functionName = "${functionNamePrefix}_${unit}"
+      functionNames.push(functionName)
+
+      // Amp configuration files.
+      // 1. The modules database name provides multi-tenancy support.
+      // 2. When the unit is the tenant owner, we only need one represented.
+      def includeUnit = unit != tenantName
+      def templateBindings = [
+          roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
+          functionName: "_${functionName}", // underscore needed
+          moduleFilename: moduleFilename
+      ]
+      def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
+      writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
+      println "Generated amp for the '${unit}' unit."
+    }
+
+    // Populate the wrapper function library.
+    def functionLines = []
+    def exportLines = ["export {"]
+    functionNames.each{ functionName ->
+      functionLines.push("const _${functionName} = (f) => { return xdmp.invokeFunction(f) };")
+      functionLines.push("const  ${functionName} = import.meta.amp(_${functionName});")
+      exportLines.push("  ${functionName},")
+    }
+    exportLines.push("};")
+
+    def templateBindings = [
+        timestamp: timestamp,
+        functionLines: functionLines.reverse().join(lineSep),
+        exportLines: exportLines.reverse().join(lineSep)
+    ]
+    def content = applyTemplate("${sourceTemplatePath}/${moduleFilename}", templateBindings)
+    writeToFile("${buildModulesPath}/lib/${moduleFilename}", content)
+    println "Generated ${moduleFilename}"
+  }
+}
+mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts
+mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
 // Developer convenience to copy a database, including from DEV to one's local environment.
 // More info in /docs/lux-backend-build-tool-and-tasks.md.

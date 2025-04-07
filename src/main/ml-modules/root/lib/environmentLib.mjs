@@ -225,7 +225,12 @@ function getStorageInfo() {
 function _getDataConversionDate() {
   try {
     return fn
-      .head(cts.doc(fn.head(cts.uris())).xpath('/admin/conversion-date'))
+      .head(
+        cts.search(
+          cts.jsonPropertyScopeQuery('conversion-date', cts.trueQuery())
+        )
+      )
+      .xpath('/admin/conversion-date')
       .toString();
   } catch (e) {
     return 'error';

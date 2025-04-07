@@ -10,6 +10,14 @@ import {
   RELATED_LIST_PER_RELATION_DEFAULT,
 } from '../lib/appConstants.mjs';
 
+function isDefined(value) {
+  return value !== undefined && value !== null;
+}
+
+function isUndefined(value) {
+  return !isDefined(value);
+}
+
 // When the request is already associated to an ID of the specified type, return it;
 // else, associate and return a new ID.  The intent here is not to change the request
 // ID when, for example, a Via Search Facet is requested through the search endpoint.
@@ -660,10 +668,12 @@ export {
   includesOrEquals,
   isArray,
   toArrayFallback, // for a scenario toArray doesn't handle
+  isDefined,
   isNonEmptyArray,
   isNonEmptyString,
   isObject,
   isString,
+  isUndefined,
   keepProperties,
   logValues,
   lowercaseFirstCharacter,

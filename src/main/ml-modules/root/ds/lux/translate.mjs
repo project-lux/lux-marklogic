@@ -1,4 +1,4 @@
-import { handleRequest } from '../../lib/requestHandleLib.mjs';
+import { handleRequest } from '../../lib/securityLib.mjs';
 import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
 
 const searchCriteria = external.q;

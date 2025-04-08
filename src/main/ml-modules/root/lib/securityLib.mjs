@@ -122,7 +122,9 @@ function _handleRequestV2(
 const handleRequestV2 = import.meta.amp(_handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
-  const functionName = `execute_with_${unitName}`;
+  // Javascript function and variable names cannot contain dashes, so we replace them with underscores
+  const unitNameWithUnderscores = unitName.replace(/-/g, '_');
+  const functionName = `execute_with_${unitNameWithUnderscores}`;
   if (libWrapper[functionName]) {
     return libWrapper[functionName];
   }

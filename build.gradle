@@ -268,7 +268,8 @@ task addSupportForExecutingWithServiceAccounts() {
     endpointAccessUnitNames.each{ unit -> 
       count += 1
 
-      def functionName = "${functionNamePrefix}_${unit}"
+      // Javascript function and variable names cannot contain dashes, so we replace them with underscores
+      def functionName = "${functionNamePrefix}_${unit}".replaceAll("-", "_")
       functionNames.push(functionName)
 
       // Amp configuration files.

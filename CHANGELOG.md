@@ -2,6 +2,18 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.38.1 - 2025-04-08
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Fixed naming of amp functions for tenants and units with names that contain dashes
+
+### Security
+
 ## v1.38.0 - 2025-04-07
 ### Added
 - Enable configuring facets that are composed of multiple sub-facets, and add a 'workCreationOrPublicationDate' facet which is a combination of 'workCreationDate' and 'workPublicationDate' ([#485](https://github.com/project-lux/lux-marklogic/issues/485))

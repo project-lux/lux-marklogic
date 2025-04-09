@@ -323,7 +323,7 @@ Response Status Message: "Wildcarded strings must have at least three non-wildca
 
 The Create Set endpoint enables users to create a Set, of allowed sub-types.  Requests by service accounts are rejected.
 
-**URL** : `/ds/myCollections/set/create.mjs`
+**URL** : `/ds/lux/myCollections/set/create.mjs`
 
 **Method(s)** : `POST`
 

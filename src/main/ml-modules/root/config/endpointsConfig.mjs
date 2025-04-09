@@ -25,6 +25,10 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
+  '/ds/lux/myCollections/set/create.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
   '/ds/lux/relatedList.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
@@ -60,10 +64,6 @@ const ENDPOINTS_CONFIG = {
   '/ds/lux/versionInfo.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
-  },
-  '/ds/myCollections/set/create.mjs': {
-    allowInReadOnlyMode: false,
-    features: { myCollections: true },
   },
 };
 

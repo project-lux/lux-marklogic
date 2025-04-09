@@ -41,7 +41,7 @@
 											]
 										},
 										"url": {
-											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/myCollections/set/create.mjs",
+											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/myCollections/set/create.mjs",
 											"protocol": "{{mlProtocol}}",
 											"host": [
 												"{{mlHost}}"
@@ -49,6 +49,7 @@
 											"port": "{{mlAppPort}}",
 											"path": [
 												"ds",
+												"lux",
 												"myCollections",
 												"set",
 												"create.mjs"

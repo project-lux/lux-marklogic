@@ -165,7 +165,7 @@ function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
     // Require the current endpoint's configuration; an error is throw upon
     // retrieving the configuration when the configuration is invalid.
-    return handleRequestV2(f, unitName, getCurrentEndpointConfig());
+    return _handleRequestV2(f, unitName, getCurrentEndpointConfig());
   }
   // Feature is disabled, just do what we used to do.
   return f();
@@ -187,12 +187,12 @@ function handleRequestV2ForUnitTesting(
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
 
-  return handleRequestV2(f, unitName, endpointConfig);
+  return _handleRequestV2(f, unitName, endpointConfig);
 }
 
 // Handle a version 2 request. Version 2 request support includes the My Collections feature.
 // This function is to be private and in support of two public functions.
-function _handleRequestV2(
+function __handleRequestV2(
   f,
   unitName = UNIT_NAME_UNRESTRICTED,
   endpointConfig
@@ -232,7 +232,7 @@ function _handleRequestV2(
   }
   return _getExecuteWithServiceAccountFunction(unitName)(f);
 }
-const handleRequestV2 = import.meta.amp(_handleRequestV2);
+const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
   const functionName = `execute_with_${unitName}`;

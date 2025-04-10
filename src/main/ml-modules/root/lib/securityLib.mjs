@@ -21,6 +21,7 @@ import {
 import {
   AccessDeniedError,
   BadRequestError,
+  InternalServerError,
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
 
@@ -31,7 +32,6 @@ const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_UNRESTRICTED = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
-const DEFAULT_MAY_CREATE_ROLE = true;
 const CAPABILITY_READ = 'read';
 const CAPABILITY_UPDATE = 'update';
 
@@ -44,24 +44,30 @@ ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_UPDATE] = 'updater';
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
-// Get the current user's individual role for the specified capability.  If allowed to create,
-// the caller can rely on the role existing and being granted to the current user.
-function _getRoleNameForCurrentUser(
-  capability,
-  mayCreate = DEFAULT_MAY_CREATE_ROLE
-) {
+function _doesCurrentUserHaveExclusiveRoles() {
+  let hasAll = true;
+  _getExclusiveRoleNamesForCurrentUser().forEach((roleName) => {
+    if (hasAll && _hasRole(roleName) === false) {
+      hasAll = false;
+    }
+  });
+  return hasAll;
+}
+
+function _createExclusiveRolesForCurrentUser() {
   throwIfCurrentUserIsServiceAccount();
+  _getExclusiveRoleNamesForCurrentUser().forEach((roleName) => {
+    _createAndGrantRoleToCurrentUser(roleName);
+  });
+}
 
-  if (PERMITTED_CAPABILITIES.includes(capability) === false) {
-    throw new BadRequestError(
-      `Individual user roles do not support the '${capability}' capability`
-    );
-  }
+// When this function creates and grants a role, code that executes after it must be
+// invoked in a subsequent transaction (e.g., xdmp.invokeFunction or new endpoint request).
+function __createAndGrantRoleToCurrentUser(roleName) {
+  throwIfCurrentUserIsServiceAccount();
+  if (_hasRole(roleName) === false) {
+    const username = getCurrentUsername();
 
-  const username = getCurrentUsername();
-  const roleName = `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
-
-  if (mayCreate === true && _hasRole(roleName) === false) {
     // Create the role when it does not exist.
     const createRole = () => {
       declareUpdate();
@@ -75,7 +81,7 @@ function _getRoleNameForCurrentUser(
         // and http://marklogic.com/xdmp/privileges/grant-all-roles
         sec.createRole(
           roleName,
-          `The dedicated '${capability}' capacity role for user '${username}'`,
+          `An exclusive role for user '${username}'`,
           inheritedRoleNames,
           defaultPermissions,
           defaultCollections
@@ -94,10 +100,49 @@ function _getRoleNameForCurrentUser(
     };
     xdmp.invokeFunction(addRole, { database: xdmp.securityDatabase() });
   }
-
-  return roleName;
 }
-const getRoleNameForCurrentUser = import.meta.amp(_getRoleNameForCurrentUser);
+const _createAndGrantRoleToCurrentUser = import.meta.amp(
+  __createAndGrantRoleToCurrentUser
+);
+
+function _getExclusiveRoleNamesForCurrentUser() {
+  return [
+    _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
+    _getExclusiveRoleNameForCurrentUser(CAPABILITY_UPDATE),
+  ];
+}
+
+// Get the current user's exclusive role for the specified capability.
+function _getExclusiveRoleNameForCurrentUser(capability) {
+  throwIfCurrentUserIsServiceAccount();
+
+  if (PERMITTED_CAPABILITIES.includes(capability) === false) {
+    throw new BadRequestError(
+      `Exclusive user roles do not support the '${capability}' capability`
+    );
+  }
+
+  if (isUndefined(ROLE_SUFFIX_BY_CAPABILITY[capability])) {
+    throw new InternalServerError(
+      `The role name suffix is not specified for the '${capability}' capability`
+    );
+  }
+
+  return `${getCurrentUsername()}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
+}
+
+function getExclusiveDocumentPermissionsForCurrentUser() {
+  return [
+    xdmp.permission(
+      _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
+      'read'
+    ),
+    xdmp.permission(
+      _getExclusiveRoleNameForCurrentUser(CAPABILITY_UPDATE),
+      'update'
+    ),
+  ];
+}
 
 /*
  * All endpoint requests are to go through this function.
@@ -158,6 +203,7 @@ function _handleRequestV2(
   }
 
   const isServiceAccount = isCurrentUserServiceAccount();
+  const isMyCollectionRequest = endpointConfig.isPartOfMyCollectionsFeature();
 
   // When in read-only mode, block requests that are not allowed to execute then.
   if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
@@ -167,7 +213,7 @@ function _handleRequestV2(
   }
 
   // Block service accounts from using any My Collections endpoint.
-  if (isServiceAccount && endpointConfig.isPartOfMyCollectionsFeature()) {
+  if (isMyCollectionRequest && isServiceAccount) {
     throw new AccessDeniedError(
       'Service accounts are not permitted to use this endpoint'
     );
@@ -176,6 +222,13 @@ function _handleRequestV2(
   // Ignore unit name param when requesting user is already a service account.
   if (isServiceAccount) {
     return f();
+  }
+
+  // Ensure user has their exclusive roles for My Collection requests.
+  if (isMyCollectionRequest) {
+    if (_doesCurrentUserHaveExclusiveRoles() === false) {
+      _createExclusiveRolesForCurrentUser();
+    }
   }
   return _getExecuteWithServiceAccountFunction(unitName)(f);
 }
@@ -302,13 +355,11 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 }
 
 export {
-  CAPABILITY_READ,
-  CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
   getCurrentUsername,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
-  getRoleNameForCurrentUser,
+  getExclusiveDocumentPermissionsForCurrentUser,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,

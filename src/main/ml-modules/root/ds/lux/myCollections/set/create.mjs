@@ -6,5 +6,6 @@ const docNode = external.doc; // Do not use getObjectFromNode
 const lang = external.lang;
 
 handleRequest(function () {
+  declareUpdate();
   return createSet(docNode, lang);
 }, unitName);

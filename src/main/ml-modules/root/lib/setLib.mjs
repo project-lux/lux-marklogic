@@ -3,9 +3,7 @@ import {
   COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
 } from './appConstants.mjs';
 import {
-  CAPABILITY_READ,
-  CAPABILITY_UPDATE,
-  getRoleNameForCurrentUser,
+  getExclusiveDocumentPermissionsForCurrentUser,
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
 import {
@@ -55,28 +53,10 @@ function createSet(docNode, lang) {
   setId(docObj, uri);
   setCreatedBy(docObj);
 
-  const mayCreateRole = true;
-  const roleNameRead = getRoleNameForCurrentUser(
-    CAPABILITY_READ,
-    mayCreateRole
-  );
-  const roleNameUpdate = getRoleNameForCurrentUser(
-    CAPABILITY_UPDATE,
-    mayCreateRole
-  );
-  // Execute the user of the roles in a separate transaction; else, when the above
-  // code creates them, they won't be available in the current (older) transaction.
-  const fun = () => {
-    declareUpdate();
-    xdmp.documentInsert(uri, docObj, {
-      permissions: [
-        xdmp.permission(roleNameRead, 'read'),
-        xdmp.permission(roleNameUpdate, 'update'),
-      ],
-      collections: [getTenantRole(), COLLECTION_NAME_MY_COLLECTIONS_FEATURE],
-    });
-  };
-  xdmp.invokeFunction(fun);
+  xdmp.documentInsert(uri, docObj, {
+    permissions: getExclusiveDocumentPermissionsForCurrentUser(),
+    collections: [getTenantRole(), COLLECTION_NAME_MY_COLLECTIONS_FEATURE],
+  });
 
   return docObj;
 }

@@ -540,6 +540,31 @@ task updateSSLCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
 }
 mlDeployServers.finalizedBy updateSSLCiphers
 
+task createSchematronValidators(type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Creating the schematron validators..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def scriptPath = './build/buildSupport/createSchematronValidators.sjs'
+    def script = new File(scriptPath).getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    if (result != "Success") {
+      throw new GradleException("Unable to create the schematron validators; consider running in ${scriptPath} in QC: ${result}")
+    }
+
+    println ""
+    println "The schematron validators should now be available"
+    println ""
+  }
+  dependsOn mlLoadSchemas, switchToTenantPort
+}
+mlLoadSchemas.finalizedBy createSchematronValidators
+// In case the modules database was first cleared
+mlLoadModules.finalizedBy createSchematronValidators
+
 // This is a convenience task intended for one with the tenant's deployer role to deploy most of the backend.
 // Purposely excluded:
 //
@@ -553,7 +578,7 @@ task performBaseDeployment() {
     println "Starting Base Deployment"
     println ""
   }
-  dependsOn mlDeployGroups, mlDeployDatabases, mlDeployRestApis, mlDeployServers, mlLoadModules
+  dependsOn mlDeployGroups, mlDeployDatabases, mlDeployRestApis, mlDeployServers, mlLoadModules, mlLoadSchemas
   doLast {
     println ""
     println "Base Deployment Done"

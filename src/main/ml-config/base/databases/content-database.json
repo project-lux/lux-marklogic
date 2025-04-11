@@ -1,6 +1,6 @@
 {
   "database-name": "%%DATABASE%%",
-  "schema-database": "Schemas",
+  "schema-database": "%%SCHEMAS_DATABASE%%",
   "database-backup": [
     {
       "backup-enabled": %%backupEnabled%%,

@@ -13,9 +13,10 @@
       "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
   "files.associations": {
-    "*.sjs": "javascript",
+    "*.api": "json",
     "*.mjs": "javascript",
-    "*.api": "json"
+    "*.sch": "xml",
+    "*.sjs": "javascript"
   },
   "docthis.includeDateTag": true,
   "search.exclude": {
@@ -35,4 +36,7 @@
     "wildcarded",
     "xdmp"
   ],
+  "[xml]": {
+    "editor.defaultFormatter": "mikeburgh.xml-format"
+  },
   }

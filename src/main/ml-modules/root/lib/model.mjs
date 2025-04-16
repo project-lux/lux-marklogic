@@ -80,18 +80,6 @@ function getClassifiedAs(docNode) {
   return _upTo('classified_as', docNode.xpath('json/classified_as'));
 }
 
-function getClassifiedAsIds(docNode, idType = ID_TYPE_ALL) {
-  let idNodes;
-  if (ID_TYPE_ALL == idType) {
-    idNodes = docNode.xpath('/json/classified_as//id').toArray();
-  } else if (ID_TYPE_PRIMARY == idType) {
-    idNodes = docNode.xpath('/json/classified_as/id').toArray();
-  } else if (ID_TYPE_EQUIVALENT == idType) {
-    idNodes = docNode.xpath('/json/classified_as/equivalent/id').toArray();
-  }
-  return idNodes.map((idNode) => idNode + '');
-}
-
 // Returns null when given doc is not considered an exhibition.
 function getClassifiedAsExhibition(docNode) {
   return _upTo(
@@ -276,10 +264,6 @@ function getUiType(docNode) {
   return _upTo('uiType', node, value);
 }
 
-function hasJsonLD(docNode) {
-  return isDefined(fn.head(docNode.xpath('json')));
-}
-
 /**
  * Merge two objects.  Should the objects have the same property name as the same level, their values are combined.
  *
@@ -458,7 +442,6 @@ export {
   getBorn,
   getCarriedOutBy,
   getClassifiedAs,
-  getClassifiedAsIds,
   getClassifiedAsExhibition,
   getClassifiedAsNationalities,
   getClassifiedAsOccupations,
@@ -484,7 +467,6 @@ export {
   getTookPlaceAt,
   getType,
   getUiType,
-  hasJsonLD,
   merge,
   setCreatedBy,
   setId,

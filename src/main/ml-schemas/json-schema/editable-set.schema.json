@@ -1,0 +1,207 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://lux.collections.yale.edu/schemas/editable-set.schema.json",
+  "title": "Editable Set",
+  "description": "Editable Set schema",
+  "type": "object",
+  "required": ["json"],
+  "properties": {
+    "json": {
+      "type": "object",
+      "required": ["type", "classified_as", "identified_by"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "Set",
+          "description": "/json/type must be Set"
+        },
+        "classified_as": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["equivalent"],
+            "properties": {
+              "equivalent": {
+                "type": "array",
+                "required": ["id"],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "const": "%%identifierMyCollection%%",
+                      "description": "Not an editable Set",
+                      "errorMessage": "This is the value of an errorMessage property."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "identified_by": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "content"],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "Identifier"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "content": {
+                      "maxLength": 200,
+                      "description": "If type is 'Identifier', content must not exceed 200 characters."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "description": "Collection name rules.",
+        "properties": {
+          "json": {
+            "type": "object",
+            "properties": {
+              "identified_by": {
+                "type": "array",
+                "items": {
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "Name"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "json": {
+            "type": "object",
+            "properties": {
+              "identified_by": {
+                "type": "array",
+                "items": {
+                  "properties": {
+                    "content": {
+                      "type": "string",
+                      "maxLength": 200,
+                      "description": "Set names may be no longer than 200 characters"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "description": "Collection note and label rules.",
+        "properties": {
+          "json": {
+            "type": "object",
+            "properties": {
+              "referred_to_by": {
+                "type": "array",
+                "items": {
+                  "properties": {
+                    "classified_as": {
+                      "type": "array",
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "const": "http://todo.concept.note"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "json": {
+            "type": "object",
+            "properties": {
+              "referred_to_by": {
+                "type": "array",
+                "required": ["classified_as", "content", "identified_by"],
+                "maxItems": 30,
+                "items": {
+                  "properties": {
+                    "classified_as": {
+                      "type": "array",
+                      "maxItems": 1,
+                      "description": "Notes may only have a single classification"
+                    },
+                    "content": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "description": "Notes may be no longer than 500 characters"
+                    },
+                    "identified_by": {
+                      "type": "array",
+                      "required": ["classified_as", "content"],
+                      "items": {
+                        "properties": {
+                          "classified_as": {
+                            "type": "array",
+                            "items": {
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "http://todo.concept.display.name"
+                                }
+                              }
+                            }
+                          },
+                          "content": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "description": "Label for notes may be no longer than 200 characters"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

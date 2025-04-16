@@ -6,59 +6,66 @@ import {
   getExclusiveDocumentPermissionsForCurrentUser,
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
-import {
-  TYPE_SET,
-  hasJsonLD,
-  getClassifiedAsIds,
-  getIdentifiedByPrimaryName,
-  setCreatedBy,
-  setId,
-  getType,
-} from './model.mjs';
-import { IDENTIFIERS } from './identifierConstants.mjs';
+import { addAddedToByEntry, getId, setCreatedBy, setId } from './model.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
-import { getArrayOverlap, isUndefined } from '../utils/utils.mjs';
+import { getLanguageIdentifier } from './identifierConstants.mjs';
+import { isNonEmptyArray } from '../utils/utils.mjs';
 
-const PERMITTED_SET_CLASSIFICATION_IDS = [IDENTIFIERS.myCollection];
-
+const DEFAULT_LANG = getLanguageIdentifier('en');
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
-function createSet(docNode, lang) {
+function createSet(docNode, lang = DEFAULT_LANG) {
+  return _insertSet(docNode, lang, true);
+}
+
+function updateSet(docNode, lang = DEFAULT_LANG) {
+  return _insertSet(docNode, lang, false);
+}
+
+function _insertSet(readOnlyDocNode, lang, newSet = false) {
   throwIfCurrentUserIsServiceAccount();
 
-  if (!hasJsonLD(docNode)) {
+  const report = xdmp.jsonValidateReport(
+    readOnlyDocNode,
+    '/json-schema/editable-set.schema.json',
+    ['full']
+  );
+  if (isNonEmptyArray(report.errors)) {
     throw new BadRequestError(
-      'The provided document does not contain JSON-LD in the required location.'
+      `${report.errors.length} validation error(s) found: ${report.errors
+        .map((error, idx) => {
+          return `${idx + 1}: ${error}`;
+        })
+        .join('; ')}`
     );
+  } else {
+    const editableDocObj = readOnlyDocNode.toObject();
+
+    let uri;
+    let docOptions = {};
+    if (newSet) {
+      uri = _getNewSetUri();
+      setId(editableDocObj, uri);
+      setCreatedBy(editableDocObj);
+      docOptions = {
+        permissions: getExclusiveDocumentPermissionsForCurrentUser(),
+        collections: [getTenantRole(), COLLECTION_NAME_MY_COLLECTIONS_FEATURE],
+      };
+    } else {
+      uri = getId(readOnlyDocNode);
+      if (!fn.docAvailable(uri)) {
+        throw new BadRequestError(
+          `The document with URI '${uri}' does not exist.`
+        );
+      }
+      addAddedToByEntry(editableDocObj);
+    }
+
+    xdmp.documentInsert(uri, editableDocObj, docOptions);
+
+    return editableDocObj;
   }
-
-  // Check the Set's type.
-  if (TYPE_SET != getType(docNode)) {
-    throw new BadRequestError('The provided document must be a Set.');
-  }
-
-  // Check the Set's classification
-  _throwIfUnsupportedSet(getClassifiedAsIds(docNode));
-
-  if (isUndefined(getIdentifiedByPrimaryName(docNode, lang))) {
-    throw new BadRequestError(
-      'The provided document does not contain a primary name.'
-    );
-  }
-
-  const docObj = docNode.toObject();
-
-  const uri = _getNewSetUri();
-  setId(docObj, uri);
-  setCreatedBy(docObj);
-
-  xdmp.documentInsert(uri, docObj, {
-    permissions: getExclusiveDocumentPermissionsForCurrentUser(),
-    collections: [getTenantRole(), COLLECTION_NAME_MY_COLLECTIONS_FEATURE],
-  });
-
-  return docObj;
 }
 
 function _getNewSetUri(attempt = 1) {
@@ -77,17 +84,4 @@ function _getNewSetUri(attempt = 1) {
   return uri;
 }
 
-function _throwIfUnsupportedSet(classificationIds) {
-  if (
-    getArrayOverlap(PERMITTED_SET_CLASSIFICATION_IDS, classificationIds)
-      .length === 0
-  ) {
-    throw new BadRequestError(
-      `Unsupported Set classification(s) for the current operation: '${classificationIds.join(
-        "', '"
-      )}'`
-    );
-  }
-}
-
-export { createSet };
+export { createSet, updateSet };

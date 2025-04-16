@@ -8,7 +8,7 @@
   "properties": {
     "json": {
       "type": "object",
-      "required": ["type", "classified_as", "identified_by"],
+      "required": ["type", "classified_as", "identified_by", "referred_to_by"],
       "properties": {
         "type": {
           "type": "string",
@@ -17,7 +17,31 @@
         },
         "classified_as": {
           "type": "array",
+          "description": "The classified_as array must contain exactly one object with an equivalent ID of '%%identifierMyCollection%%'.",
           "items": {
+            "type": "object",
+            "required": ["id", "equivalent"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "equivalent": {
+                "type": "array",
+                "required": ["id"],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "An equivalent ID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "contains": {
             "type": "object",
             "required": ["equivalent"],
             "properties": {
@@ -28,10 +52,7 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string",
-                      "const": "%%identifierMyCollection%%",
-                      "description": "Not an editable Set",
-                      "errorMessage": "This is the value of an errorMessage property."
+                      "const": "%%identifierMyCollection%%"
                     }
                   }
                 }
@@ -55,6 +76,25 @@
             "allOf": [
               {
                 "if": {
+                  "description": "Collection name rules",
+                  "properties": {
+                    "type": {
+                      "const": "Name"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "content": {
+                      "maxLength": 200,
+                      "description": "Set names may be no longer than 200 characters"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "description": "Collection identifier rules",
                   "properties": {
                     "type": {
                       "const": "Identifier"
@@ -65,75 +105,37 @@
                   "properties": {
                     "content": {
                       "maxLength": 200,
-                      "description": "If type is 'Identifier', content must not exceed 200 characters."
+                      "description": "Set identifiers may be no longer than 200 characters."
                     }
                   }
                 }
               }
             ]
           }
-        }
-      }
-    }
-  },
-  "allOf": [
-    {
-      "if": {
-        "description": "Collection name rules.",
-        "properties": {
-          "json": {
+        },
+        "referred_to_by": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
             "type": "object",
+            "required": ["classified_as", "content", "identified_by"],
             "properties": {
+              "classified_as": {
+                "type": "array"
+              },
+              "content": {
+                "type": "string"
+              },
               "identified_by": {
-                "type": "array",
-                "items": {
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "const": "Name"
-                    }
-                  }
-                }
+                "type": "array"
               }
-            }
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "json": {
-            "type": "object",
-            "properties": {
-              "identified_by": {
-                "type": "array",
-                "items": {
-                  "properties": {
-                    "content": {
-                      "type": "string",
-                      "maxLength": 200,
-                      "description": "Set names may be no longer than 200 characters"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "description": "Collection note and label rules.",
-        "properties": {
-          "json": {
-            "type": "object",
-            "properties": {
-              "referred_to_by": {
-                "type": "array",
-                "items": {
+            },
+            "allOf": [
+              {
+                "if": {
+                  "description": "Collection note and label rules",
                   "properties": {
                     "classified_as": {
-                      "type": "array",
                       "items": {
                         "properties": {
                           "id": {
@@ -144,35 +146,18 @@
                       }
                     }
                   }
-                }
-              }
-            }
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "json": {
-            "type": "object",
-            "properties": {
-              "referred_to_by": {
-                "type": "array",
-                "required": ["classified_as", "content", "identified_by"],
-                "maxItems": 30,
-                "items": {
+                },
+                "then": {
                   "properties": {
                     "classified_as": {
-                      "type": "array",
                       "maxItems": 1,
                       "description": "Notes may only have a single classification"
                     },
                     "content": {
-                      "type": "string",
                       "maxLength": 500,
                       "description": "Notes may be no longer than 500 characters"
                     },
                     "identified_by": {
-                      "type": "array",
                       "required": ["classified_as", "content"],
                       "items": {
                         "properties": {
@@ -198,10 +183,10 @@
                   }
                 }
               }
-            }
+            ]
           }
         }
       }
     }
-  ]
+  }
 }

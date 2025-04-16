@@ -343,7 +343,7 @@ Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `doc` | { "json": { "type": "myCollection", "identified_by": [ ... ] } } |
+| `doc` | { "json": { "type": "Set", "identified_by": [ ... ], ... } } |
 
 Response Status Code: 200
 
@@ -355,62 +355,90 @@ Response Body is the given document plus any modifications made by the backend, 
 
 ```
 {
-  "json": {
-    "type": "myCollection",
-    "identified_by": [
+  "json":{
+    "type":"Set",
+    "identified_by":[
       {
-        "type": "Name",
-        "content": "My Awesome Collection!",
-        "language": [
+        "type":"Name",
+        "content":"The My Collection's name, which may be up to 200 characters",
+        "language":[
           {
-            "id": "https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
-            "type": "Language",
-            "_label": "English",
-            "equivalent": [
+            "id":"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
+            "type":"Language",
+            "_label":"English",
+            "equivalent":[
               {
-                "id": "http://vocab.getty.edu/aat/300388277",
-                "type": "Language",
-                "_label": "English"
+                "id":"http://vocab.getty.edu/aat/300388277",
+                "type":"Language",
+                "_label":"English"
               }
             ]
           }
         ],
-        "classified_as": [
+        "classified_as":[
           {
-            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
-            "type": "Type",
-            "_label": "Primary Name",
-            "equivalent": [
+            "id":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type":"Type",
+            "_label":"Primary Name",
+            "equivalent":[
               {
-                "id": "http://vocab.getty.edu/aat/300404670",
-                "type": "Type",
-                "_label": "Primary Name"
+                "id":"http://vocab.getty.edu/aat/300404670",
+                "type":"Type",
+                "_label":"Primary Name"
               }
             ]
           },
           {
-            "id": "https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
-            "type": "Type",
-            "_label": "Sort Name"
+            "id":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
+            "type":"Type",
+            "_label":"Sort Name"
           }
         ]
       }
     ],
-    "id": "https://lux.collections.yale.edu/myCollection/9d774fe5-5fb7-4f83-a2f9-53bbfea210f8"
+    "classified_as":[
+      {
+        "id":"https://some.id.that.is.not.validated",
+        "equivalent":[
+          {
+            "id":"https://todo.concept.my.collection"
+          }
+        ]
+      }
+    ],
+    "referred_to_by":[
+      {
+        "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
+        "classified_as":[
+          {
+            "id":"https://todo.concept.note"
+          }
+        ],
+        "identified_by":[
+          {
+            "classified_as":[
+              {
+                "id":"https://todo.concept.display.name"
+              }
+            ],
+            "content":"This is the label to the note, which supports up to 200 characters."
+          }
+        ]
+      }
+    ]
   }
 }
-
 ```
 
 ### Failed Request / Response Example
 
-Scenario: A user (not service account) submits a document without a primary name.
+Scenario: A user (not service account) submits the same document as above, but without a primary name.
 
 Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `doc` | { "json": { "type": "myCollection" } } |
+| `doc` | { "json": { "type": "Set", "classified_as": [ ... ], ... } } |
 
 Response Status Code: 400
 
@@ -423,7 +451,7 @@ Response Body:
     "statusCode":400,
     "status":"Bad Request",
     "messageCode":"BadRequestError",
-    "message":"The provided document does not contain a primary name."
+    "message":"2 validation error(s) found: 1: XDMP-JSVALIDATEMISSING: Missing property: Required identified_by property not found at json:ObjectNode({\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}) using schema \"/json-schema/editable-set.schema.json\"; 2: XDMP-JSVALIDATEINVNODE: Invalid node: Node ObjectNode({\"json\":{\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}}) not valid against property 'properties' expected {type: object, properties: {json:{...}}, required: [json]} using schema \"/json-schema/editable-set.schema.json\""
   }
 }
 ```

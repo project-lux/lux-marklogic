@@ -8,7 +8,7 @@
   "properties": {
     "json": {
       "type": "object",
-      "required": ["type", "classified_as", "identified_by", "referred_to_by"],
+      "required": ["type", "classified_as", "identified_by"],
       "properties": {
         "type": {
           "type": "string",

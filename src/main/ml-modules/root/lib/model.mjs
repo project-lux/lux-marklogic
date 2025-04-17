@@ -41,10 +41,6 @@ const TYPE_MATERIAL = 'Material';
 
 const UI_TYPE_CONCEPT = 'Concept';
 
-const ID_TYPE_ALL = 'all';
-const ID_TYPE_EQUIVALENT = 'equivalent';
-const ID_TYPE_PRIMARY = 'primary';
-
 const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
 const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
 
@@ -470,9 +466,6 @@ export {
   merge,
   setCreatedBy,
   setId,
-  ID_TYPE_ALL,
-  ID_TYPE_EQUIVALENT,
-  ID_TYPE_PRIMARY,
   PROP_NAME_BEGIN_OF_THE_BEGIN,
   PROP_NAME_END_OF_THE_END,
   TYPE_ACTIVITY,

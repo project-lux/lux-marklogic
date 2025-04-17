@@ -138,9 +138,16 @@
                     "classified_as": {
                       "items": {
                         "properties": {
-                          "id": {
-                            "type": "string",
-                            "const": "http://todo.concept.note"
+                          "equivalent": {
+                            "type": "array",
+                            "items": {
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "https://todo.concept.note"
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -165,9 +172,16 @@
                             "type": "array",
                             "items": {
                               "properties": {
-                                "id": {
-                                  "type": "string",
-                                  "const": "http://todo.concept.display.name"
+                                "equivalent": {
+                                  "type": "array",
+                                  "items": {
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "const": "https://todo.concept.display.name"
+                                      }
+                                    }
+                                  }
                                 }
                               }
                             }

@@ -397,7 +397,7 @@ Response Body is the given document plus any modifications made by the backend, 
   ],
   "classified_as":[
     {
-      "id":"https://some.id.that.is.not.validated",
+      "id":"https://not.checked",
       "equivalent":[
         {
           "id":"https://todo.concept.my.collection"
@@ -410,22 +410,32 @@ Response Body is the given document plus any modifications made by the backend, 
       "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
       "classified_as":[
         {
-          "id":"https://todo.concept.note"
+          "id":"https://not.checked",
+          "equivalent":[
+            {
+              "id":"https://todo.concept.note"
+            }
+          ]
         }
       ],
       "identified_by":[
         {
+          "content":"This is the label to the note, which supports up to 200 characters.",
           "classified_as":[
             {
-              "id":"https://todo.concept.display.name"
+              "id":"https://not.checked",
+              "equivalent":[
+                {
+                  "id":"https://todo.concept.display.name"
+                }
+              ]
             }
-          ],
-          "content":"This is the label to the note, which supports up to 200 characters."
+          ]
         }
       ]
     }
   ],
-  "id":"https://lux.collections.yale.edu/set/3fb9fcfb-1262-47b1-a3ba-a9ea855bc88f",
+  "id":"https://lux.collections.yale.edu/set/21c5550d-7cd5-4a75-8343-8e56335e3957",
   "created_by":{
     "type":"Creation",
     "carried_out_by":[
@@ -435,8 +445,8 @@ Response Body is the given document plus any modifications made by the backend, 
       }
     ],
     "timespan":{
-      "begin_of_the_begin":"2025-04-17T12:50:47",
-      "end_of_the_end":"2025-04-17T12:50:47"
+      "begin_of_the_begin":"2025-04-17T16:04:58",
+      "end_of_the_end":"2025-04-17T16:04:58"
     }
   }
 }

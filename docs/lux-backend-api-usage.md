@@ -333,7 +333,7 @@ The Create Set endpoint enables users to create a Set, of allowed sub-types.  Re
 |-----------|---------|-------------|
 | `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `doc` | *See example below* | **REQUIRED** - The Set document to insert. If the Set already has an ID, it will be replaced with a unique ID, facilitating copying one Set as another. |
-| `lang` | "es" | **OPTIONAL** - The language to apply as applicable. Default is `en`. |
+| `lang` | "es" | **OPTIONAL** - Reserved for future use. |
 
 ### Successful Request / Response Example
 

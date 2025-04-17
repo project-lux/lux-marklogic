@@ -118,16 +118,13 @@
           "maxItems": 30,
           "items": {
             "type": "object",
-            "required": ["classified_as", "content", "identified_by"],
+            "required": ["classified_as", "content"],
             "properties": {
               "classified_as": {
                 "type": "array"
               },
               "content": {
                 "type": "string"
-              },
-              "identified_by": {
-                "type": "array"
               }
             },
             "allOf": [

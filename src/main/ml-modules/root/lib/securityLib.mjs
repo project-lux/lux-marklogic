@@ -162,10 +162,15 @@ function getExclusiveDocumentPermissionsForCurrentUser() {
  * @returns Whatever the given function returns.
  */
 function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
+  const endpointConfig = getCurrentEndpointConfig(
+    FEATURE_MY_COLLECTIONS_ENABLED
+  );
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
     // Require the current endpoint's configuration; an error is throw upon
     // retrieving the configuration when the configuration is invalid.
-    return _handleRequestV2(f, unitName, getCurrentEndpointConfig());
+    return _handleRequestV2(f, unitName, endpointConfig);
+  } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
+    throw new BadRequestError('The My Collections feature is disabled.');
   }
   // Feature is disabled, just do what we used to do.
   return f();

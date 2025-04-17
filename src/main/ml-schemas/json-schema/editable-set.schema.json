@@ -133,7 +133,7 @@
             "allOf": [
               {
                 "if": {
-                  "description": "Collection note and label rules",
+                  "description": "Collection note rules",
                   "properties": {
                     "classified_as": {
                       "items": {
@@ -163,9 +163,32 @@
                     "content": {
                       "maxLength": 500,
                       "description": "Notes may be no longer than 500 characters"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "description": "Collection note *label* rules",
+                  "properties": {
+                    "classified_as": {
+                      "items": {
+                        "properties": {
+                          "equivalent": {
+                            "type": "array",
+                            "items": {
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "https://todo.concept.note"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     },
                     "identified_by": {
-                      "required": ["classified_as", "content"],
                       "items": {
                         "properties": {
                           "classified_as": {
@@ -185,7 +208,18 @@
                                 }
                               }
                             }
-                          },
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "identified_by": {
+                      "required": ["content"],
+                      "items": {
+                        "properties": {
                           "content": {
                             "type": "string",
                             "maxLength": 200,

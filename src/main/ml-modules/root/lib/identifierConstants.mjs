@@ -1,3 +1,4 @@
+// Build properties are used when the value is used outside JS, such as in a JSON schema.
 const IDENTIFIERS = {
   biographyStatement: 'http://vocab.getty.edu/aat/300435422',
   collection: 'http://vocab.getty.edu/aat/300025976',
@@ -8,10 +9,12 @@ const IDENTIFIERS = {
   female: 'http://vocab.getty.edu/aat/300189557',
   intersexual: 'http://vocab.getty.edu/aat/300417544',
   male: 'http://vocab.getty.edu/aat/300189559',
-  myCollection: '%%identifierMyCollection%%', // Also used in JSON schema.
+  myCollection: '%%identifierMyCollection%%',
   nationality: 'http://vocab.getty.edu/aat/300379842',
   occupation: 'http://vocab.getty.edu/aat/300263369',
   primaryName: 'http://vocab.getty.edu/aat/300404670',
+  setNote: '%%identifierSetNote%%',
+  setNoteLabel: '%%identifierSetNoteLabel%%',
   typeOfWork: 'http://vocab.getty.edu/aat/300435443',
 
   langaa: 'http://vocab.getty.edu/aat/300387779',

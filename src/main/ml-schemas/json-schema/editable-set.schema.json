@@ -141,7 +141,7 @@
                               "properties": {
                                 "id": {
                                   "type": "string",
-                                  "const": "https://todo.concept.note"
+                                  "const": "%%identifierSetNote%%"
                                 }
                               }
                             }
@@ -177,7 +177,7 @@
                               "properties": {
                                 "id": {
                                   "type": "string",
-                                  "const": "https://todo.concept.note"
+                                  "const": "%%identifierSetNote%%"
                                 }
                               }
                             }
@@ -198,7 +198,7 @@
                                     "properties": {
                                       "id": {
                                         "type": "string",
-                                        "const": "https://todo.concept.display.name"
+                                        "const": "%%identifierSetNoteLabel%%"
                                       }
                                     }
                                   }

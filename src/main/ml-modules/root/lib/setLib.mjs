@@ -64,7 +64,7 @@ function _insertSet(readOnlyDocNode, lang, newSet = false) {
 
     xdmp.documentInsert(uri, editableDocObj, docOptions);
 
-    return editableDocObj;
+    return editableDocObj.json;
   }
 }
 

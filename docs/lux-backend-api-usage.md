@@ -349,83 +349,95 @@ Response Status Code: 200
 
 Response Status Message: OK
 
-Response Body is the given document plus any modifications made by the backend, including adding /json/id (bottom):
+Response Body is the given document plus any modifications made by the backend, specifically the addition of /id and /created_by (bottom):
 
 *Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
 
 ```
 {
-  "json":{
-    "type":"Set",
-    "identified_by":[
+  "type":"Set",
+  "identified_by":[
+    {
+      "type":"Name",
+      "content":"The My Collection's name, which may be up to 200 characters",
+      "language":[
+        {
+          "id":"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
+          "type":"Language",
+          "_label":"English",
+          "equivalent":[
+            {
+              "id":"http://vocab.getty.edu/aat/300388277",
+              "type":"Language",
+              "_label":"English"
+            }
+          ]
+        }
+      ],
+      "classified_as":[
+        {
+          "id":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+          "type":"Type",
+          "_label":"Primary Name",
+          "equivalent":[
+            {
+              "id":"http://vocab.getty.edu/aat/300404670",
+              "type":"Type",
+              "_label":"Primary Name"
+            }
+          ]
+        },
+        {
+          "id":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
+          "type":"Type",
+          "_label":"Sort Name"
+        }
+      ]
+    }
+  ],
+  "classified_as":[
+    {
+      "id":"https://some.id.that.is.not.validated",
+      "equivalent":[
+        {
+          "id":"https://todo.concept.my.collection"
+        }
+      ]
+    }
+  ],
+  "referred_to_by":[
+    {
+      "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
+      "classified_as":[
+        {
+          "id":"https://todo.concept.note"
+        }
+      ],
+      "identified_by":[
+        {
+          "classified_as":[
+            {
+              "id":"https://todo.concept.display.name"
+            }
+          ],
+          "content":"This is the label to the note, which supports up to 200 characters."
+        }
+      ]
+    }
+  ],
+  "id":"https://lux.collections.yale.edu/set/3fb9fcfb-1262-47b1-a3ba-a9ea855bc88f",
+  "created_by":{
+    "type":"Creation",
+    "carried_out_by":[
       {
-        "type":"Name",
-        "content":"The My Collection's name, which may be up to 200 characters",
-        "language":[
-          {
-            "id":"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
-            "type":"Language",
-            "_label":"English",
-            "equivalent":[
-              {
-                "id":"http://vocab.getty.edu/aat/300388277",
-                "type":"Language",
-                "_label":"English"
-              }
-            ]
-          }
-        ],
-        "classified_as":[
-          {
-            "id":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
-            "type":"Type",
-            "_label":"Primary Name",
-            "equivalent":[
-              {
-                "id":"http://vocab.getty.edu/aat/300404670",
-                "type":"Type",
-                "_label":"Primary Name"
-              }
-            ]
-          },
-          {
-            "id":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
-            "type":"Type",
-            "_label":"Sort Name"
-          }
-        ]
+        "id":"https://lux.collections.yale.edu/data/person/joe",
+        "type":"Person"
       }
     ],
-    "classified_as":[
-      {
-        "id":"https://some.id.that.is.not.validated",
-        "equivalent":[
-          {
-            "id":"https://todo.concept.my.collection"
-          }
-        ]
-      }
-    ],
-    "referred_to_by":[
-      {
-        "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
-        "classified_as":[
-          {
-            "id":"https://todo.concept.note"
-          }
-        ],
-        "identified_by":[
-          {
-            "classified_as":[
-              {
-                "id":"https://todo.concept.display.name"
-              }
-            ],
-            "content":"This is the label to the note, which supports up to 200 characters."
-          }
-        ]
-      }
-    ]
+    "timespan":{
+      "begin_of_the_begin":"2025-04-17T12:50:47",
+      "end_of_the_end":"2025-04-17T12:50:47"
+    }
   }
 }
 ```

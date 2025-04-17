@@ -8,7 +8,7 @@ import {
   ROLE_NAME_TENANT_READER,
   ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
   ROLE_NAME_UNIT_TESTER,
-} from '/unitTestConstants.mjs';
+} from '/test/unitTestConstants.mjs';
 
 console.log(`Creating ${FOO_URI}`);
 

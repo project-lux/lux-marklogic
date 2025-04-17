@@ -9,7 +9,7 @@ import {
   FOO_URI,
   USERNAME_FOR_REGULAR_USER,
   USERNAME_FOR_SERVICE_ACCOUNT,
-} from '/unitTestConstants.mjs';
+} from '/test/unitTestConstants.mjs';
 
 const LIB = '0100 handleRequest.mjs';
 console.log(`${LIB}: starting.`);

@@ -1,3 +1,7 @@
+/*
+ * This suite is also dependent on ml-config dirs to provide users and some roles,
+ * such as ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER.
+ */
 declareUpdate();
 
 import { testHelperProxy } from '/test/test-helper.mjs';
@@ -11,7 +15,6 @@ import {
 } from '/test/unitTestConstants.mjs';
 
 console.log(`Creating ${FOO_URI}`);
-
 try {
   // loadTestFile does not accept the return from xdmp.permission.
   const permissionNodes = fn

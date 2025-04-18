@@ -2,9 +2,12 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
   handleRequestV2ForUnitTesting,
   getEndpointAccessUnitNames,
+  getExclusiveRoleNameForUser,
 } from '/lib/securityLib.mjs';
 import {
   FOO_URI,
@@ -32,6 +35,11 @@ assertions.push(
   )
 );
 
+const regularUserRoleNames = [
+  getExclusiveRoleNameForUser(USERNAME_FOR_REGULAR_USER, CAPABILITY_READ),
+  getExclusiveRoleNameForUser(USERNAME_FOR_REGULAR_USER, CAPABILITY_UPDATE),
+];
+
 const scenarios = [
   {
     name: 'User consuming My Collections endpoint',
@@ -44,7 +52,11 @@ const scenarios = [
         features: { myCollections: true },
       },
     },
-    expected: { error: false, value: returnBar() },
+    expected: {
+      error: false,
+      value: returnBar(),
+      roleNames: regularUserRoleNames,
+    },
   },
   {
     name: 'Service account consuming My Collections endpoint',
@@ -73,7 +85,11 @@ const scenarios = [
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: returnBar() },
+    expected: {
+      error: false,
+      value: returnBar(),
+      roleNames: regularUserRoleNames,
+    },
   },
   {
     name: 'Service account consuming non-My Collections endpoint',
@@ -86,7 +102,11 @@ const scenarios = [
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: returnBar() },
+    expected: {
+      error: false,
+      value: returnBar(),
+      roleNames: regularUserRoleNames,
+    },
   },
   {
     name: 'User attempting to access a document with default unit',
@@ -99,7 +119,7 @@ const scenarios = [
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: true },
+    expected: { error: false, value: true, roleNames: regularUserRoleNames },
   },
   {
     name: 'User attempting to access a document with unit',
@@ -112,7 +132,7 @@ const scenarios = [
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: true },
+    expected: { error: false, value: true, roleNames: regularUserRoleNames },
   },
   {
     name: 'User attempting to access a document with unit that does not have access to the doc',
@@ -125,7 +145,7 @@ const scenarios = [
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: false },
+    expected: { error: false, value: false, roleNames: regularUserRoleNames },
   },
   {
     name: 'Service account attempting to access a document',
@@ -138,7 +158,7 @@ const scenarios = [
         features: { myCollections: false },
       },
     },
-    expected: { error: false, value: true },
+    expected: { error: false, value: true, roleNames: regularUserRoleNames },
   },
 ];
 
@@ -171,6 +191,22 @@ for (const scenario of scenarios) {
         `Scenario '${scenario.name}' did not return the expected value.`
       )
     );
+    // Need to run in its own transaction as the call to handleRequest could have created the roles.
+    // Not really necessary for scenarios that share the same user but :shrug:
+    const fun = () => {
+      return scenario.expected.roleNames.map((roleName) => {
+        try {
+          xdmp.role(roleName);
+          return testHelperProxy.assertTrue(true);
+        } catch (e) {
+          return testHelperProxy.assertTrue(
+            false,
+            `Scenario '${scenario.name}' expected role ${roleName} to exist but it didn't.`
+          );
+        }
+      });
+    };
+    assertions = assertions.concat(xdmp.invokeFunction(fun));
   }
 }
 console.log(

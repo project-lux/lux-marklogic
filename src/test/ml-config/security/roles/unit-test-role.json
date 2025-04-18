@@ -1,6 +1,6 @@
 {
   "role-name": "%%mlAppName%%-unit-tester",
-  "description": "Required to run all unit tests within the '%%mlAppName%%' tenant",
+  "description": "CAUTION! This role contains privileges that allow it to run unit tests. It should be granted for any other purpose and not even exist in a production environment.",
   "role": [
     "%%mlAppName%%-may-run-unit-tests",
     "%%mlAppName%%-endpoint-consumer",
@@ -8,6 +8,16 @@
     "rest-admin"
   ],
   "privilege": [
+    {
+      "privilege-name": "remove-role",
+      "action": "http://marklogic.com/xdmp/privileges/remove-role",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "role-exists",
+      "action": "http://marklogic.com/xdmp/privileges/get-role",
+      "kind": "execute"
+    },
     {
       "privilege-name": "xdmp:invoke",
       "action": "http://marklogic.com/xdmp/privileges/xdmp-invoke",

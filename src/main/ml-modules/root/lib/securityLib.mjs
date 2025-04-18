@@ -105,6 +105,14 @@ const _createAndGrantRoleToCurrentUser = import.meta.amp(
   __createAndGrantRoleToCurrentUser
 );
 
+function getExclusiveRoleNamesForUser(username) {
+  return [
+    getExclusiveRoleNameForUser(username, CAPABILITY_READ),
+    getExclusiveRoleNameForUser(username, CAPABILITY_UPDATE),
+  ];
+}
+
+// Electing not to pass current user into getExclusiveRoleNamesForUser, despite the repetition.
 function _getExclusiveRoleNamesForCurrentUser() {
   return [
     _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
@@ -112,23 +120,29 @@ function _getExclusiveRoleNamesForCurrentUser() {
   ];
 }
 
-// Get the current user's exclusive role for the specified capability.
-function _getExclusiveRoleNameForCurrentUser(capability) {
-  throwIfCurrentUserIsServiceAccount();
-
+function getExclusiveRoleNameForUser(username, capability) {
+  if (isUndefined(username)) {
+    throw new InternalServerError(
+      'The username for the exclusive role was not specified.'
+    );
+  }
   if (PERMITTED_CAPABILITIES.includes(capability) === false) {
     throw new BadRequestError(
       `Exclusive user roles do not support the '${capability}' capability`
     );
   }
-
   if (isUndefined(ROLE_SUFFIX_BY_CAPABILITY[capability])) {
     throw new InternalServerError(
       `The role name suffix is not specified for the '${capability}' capability`
     );
   }
+  return `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
+}
 
-  return `${getCurrentUsername()}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
+// Get the current user's exclusive role for the specified capability.
+function _getExclusiveRoleNameForCurrentUser(capability) {
+  throwIfCurrentUserIsServiceAccount();
+  return getExclusiveRoleNameForUser(getCurrentUsername(), capability);
 }
 
 function getExclusiveDocumentPermissionsForCurrentUser() {
@@ -362,11 +376,15 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 }
 
 export {
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
   getCurrentUsername,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
   getExclusiveDocumentPermissionsForCurrentUser,
+  getExclusiveRoleNameForUser,
+  getExclusiveRoleNamesForUser,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,

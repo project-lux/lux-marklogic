@@ -1,6 +1,11 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
-import { getExclusiveDocumentPermissionsForCurrentUser } from '/lib/securityLib.mjs';
+import {
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
+  getExclusiveDocumentPermissionsForCurrentUser,
+  getExclusiveRoleNameForUser,
+} from '/lib/securityLib.mjs';
 import {
   USERNAME_FOR_REGULAR_USER,
   USERNAME_FOR_SERVICE_ACCOUNT,
@@ -20,9 +25,21 @@ const scenarios = [
     expected: {
       error: false,
       value: [
-        // Indirectly, "0100 handleRequest.mjs" ensures these roles exist.
-        xdmp.permission(`${USERNAME_FOR_REGULAR_USER}-reader`, 'read'),
-        xdmp.permission(`${USERNAME_FOR_REGULAR_USER}-updater`, 'update'),
+        // Will fail if "0100 handleRequest.mjs" doesn't run first.
+        xdmp.permission(
+          getExclusiveRoleNameForUser(
+            USERNAME_FOR_REGULAR_USER,
+            CAPABILITY_READ
+          ),
+          'read'
+        ),
+        xdmp.permission(
+          getExclusiveRoleNameForUser(
+            USERNAME_FOR_REGULAR_USER,
+            CAPABILITY_UPDATE
+          ),
+          'update'
+        ),
       ],
     },
   },

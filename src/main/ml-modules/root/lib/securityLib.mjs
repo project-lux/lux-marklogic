@@ -388,6 +388,7 @@ export {
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
+  isCurrentUserServiceAccount,
   removeUnitConfigProperties,
   throwIfCurrentUserIsServiceAccount,
 };

@@ -1,4 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
+import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
   UNIT_NAME_UNRESTRICTED,
@@ -14,7 +15,7 @@ import {
 const LIB = '0100 handleRequest.mjs';
 console.log(`${LIB}: starting.`);
 
-const assertions = [];
+let assertions = [];
 
 // Little buddies used in more than one scenario.
 const returnBar = () => {
@@ -142,59 +143,31 @@ const scenarios = [
 ];
 
 for (const scenario of scenarios) {
-  console.log(`Processing scenario '${scenario.name}'`);
-  // Had to jump through some hoops to support the testing function throw exceptions.
-  let actualValue;
-  const errorExpected = scenario.expected.error === true;
-  let errorExpectedButNotThrown = false;
-  let applyErrorNotExpectedAssertions = false;
-  try {
-    const functionWrapper = () => {
-      return handleRequestV2ForUnitTesting(
-        scenario.input.function,
-        scenario.input.unitName,
-        new EndpointConfig(scenario.input.endpointConfig)
-      );
-    };
-    actualValue = xdmp.invokeFunction(functionWrapper, {
-      userId: xdmp.user(scenario.input.username),
-    });
-    // Perform all asserts outside this try block.
-    if (errorExpected) {
-      errorExpectedButNotThrown = true;
-    } else {
-      applyErrorNotExpectedAssertions = true;
-    }
-  } catch (e) {
-    if (!errorExpected) {
-      const msg = `Scenario '${scenario.name}' resulted in an error when one was NOT expected; e.message: '${e.message}'; see log for the stacktrace`;
-      console.log(msg);
-      console.log(e.stack);
-      fn.error(xs.QName('ASSERT-THROWS-ERROR-FAILED'), msg);
-    }
-
-    // See if the expected error includes the expected text.
-    const msg = `Scenario '${scenario.name}' error stacktrace does not include "${scenario.expected.stackToInclude}"; see log for the stacktrace`;
-    const idx = e.stack.indexOf(scenario.expected.stackToInclude);
-    if (idx == -1) {
-      console.log(msg);
-      console.log(e.stack);
-    }
-    assertions.push(testHelperProxy.assertNotEqual(-1, idx, msg));
-  }
-
-  if (errorExpectedButNotThrown) {
-    fn.error(
-      xs.QName('ASSERT-THROWS-ERROR-FAILED'),
-      `Scenario '${scenario.name}' didn't result in an error when one was expected.`
+  const zeroArityFun = () => {
+    return handleRequestV2ForUnitTesting(
+      scenario.input.function,
+      scenario.input.unitName,
+      new EndpointConfig(scenario.input.endpointConfig)
     );
+  };
+
+  const scenarioResults = executeErrorSupportedScenario(
+    scenario,
+    zeroArityFun,
+    {
+      userId: xdmp.user(scenario.input.username),
+    }
+  );
+
+  if (scenarioResults.assertions.length > 0) {
+    assertions = assertions.concat(scenarioResults.assertions);
   }
 
-  if (applyErrorNotExpectedAssertions) {
+  if (scenarioResults.applyErrorNotExpectedAssertions) {
     assertions.push(
       testHelperProxy.assertEqual(
         scenario.expected.value,
-        actualValue,
+        scenarioResults.actualValue,
         `Scenario '${scenario.name}' did not return the expected value.`
       )
     );

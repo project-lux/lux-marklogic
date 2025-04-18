@@ -15,7 +15,7 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 function executeErrorSupportedScenario(
   scenario,
   zeroArityFun,
-  invokeFunOptions
+  invokeFunOptions = {}
 ) {
   console.log(`Processing scenario '${scenario.name}'`);
   let actualValue;
@@ -24,7 +24,8 @@ function executeErrorSupportedScenario(
   const errorExpected = scenario.expected.error === true;
   const assertions = [];
   try {
-    actualValue = xdmp.invokeFunction(zeroArityFun, invokeFunOptions);
+    actualValue = fn.head(xdmp.invokeFunction(zeroArityFun, invokeFunOptions));
+    // Better to do all of the asserts outside the try/catch.
     if (errorExpected) {
       errorExpectedButNotThrown = true;
     } else {

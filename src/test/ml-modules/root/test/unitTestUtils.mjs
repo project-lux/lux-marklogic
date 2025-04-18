@@ -56,6 +56,11 @@ function executeErrorSupportedScenario(
     );
   }
 
+  // Ya get a point for not throwing an error, given one wasn't expected.
+  if (applyErrorNotExpectedAssertions) {
+    assertions.push(testHelperProxy.success());
+  }
+
   return {
     actualValue,
     applyErrorNotExpectedAssertions,

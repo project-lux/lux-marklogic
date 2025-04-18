@@ -4,8 +4,6 @@
   "password": "%%unitTesterPassword%%",
   "role": [
     "%%mlAppName%%-may-run-unit-tests",
-    "%%mlAppName%%-endpoint-consumer-user",
-    "%%mlAppName%%-unit-test-regular-user-reader",
-    "%%mlAppName%%-unit-test-regular-user-updater"
+    "%%mlAppName%%-endpoint-consumer-user"
   ]
 }

@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://lux.collections.yale.edu/schemas/editable-set.schema.json",
+  "title": "Editable Set",
+  "description": "Editable Set schema",
+  "type": "object",
+  "required": ["json"],
+  "properties": {
+    "json": {
+      "type": "object",
+      "required": ["type", "classified_as", "identified_by"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "Set",
+          "description": "/json/type must be Set"
+        },
+        "classified_as": {
+          "type": "array",
+          "description": "The classified_as array must contain exactly one object with an equivalent ID of '%%identifierMyCollection%%'.",
+          "items": {
+            "type": "object",
+            "required": ["id", "equivalent"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "equivalent": {
+                "type": "array",
+                "required": ["id"],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "An equivalent ID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "contains": {
+            "type": "object",
+            "required": ["equivalent"],
+            "properties": {
+              "equivalent": {
+                "type": "array",
+                "required": ["id"],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "const": "%%identifierMyCollection%%"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "identified_by": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "content"],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "description": "Collection name rules",
+                  "properties": {
+                    "type": {
+                      "const": "Name"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "content": {
+                      "maxLength": 200,
+                      "description": "Set names may be no longer than 200 characters"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "description": "Collection identifier rules",
+                  "properties": {
+                    "type": {
+                      "const": "Identifier"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "content": {
+                      "maxLength": 200,
+                      "description": "Set identifiers may be no longer than 200 characters."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "referred_to_by": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "required": ["classified_as", "content"],
+            "properties": {
+              "classified_as": {
+                "type": "array"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "description": "Collection note rules",
+                  "properties": {
+                    "classified_as": {
+                      "items": {
+                        "properties": {
+                          "equivalent": {
+                            "type": "array",
+                            "items": {
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "%%identifierSetNote%%"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "classified_as": {
+                      "maxItems": 1,
+                      "description": "Notes may only have a single classification"
+                    },
+                    "content": {
+                      "maxLength": 500,
+                      "description": "Notes may be no longer than 500 characters"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "description": "Collection note *label* rules",
+                  "properties": {
+                    "classified_as": {
+                      "items": {
+                        "properties": {
+                          "equivalent": {
+                            "type": "array",
+                            "items": {
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "%%identifierSetNote%%"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "identified_by": {
+                      "items": {
+                        "properties": {
+                          "classified_as": {
+                            "type": "array",
+                            "items": {
+                              "properties": {
+                                "equivalent": {
+                                  "type": "array",
+                                  "items": {
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "const": "%%identifierSetNoteLabel%%"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "identified_by": {
+                      "required": ["content"],
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "description": "Label for notes may be no longer than 200 characters"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

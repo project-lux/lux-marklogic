@@ -1,6 +1,0 @@
-{
-  "role-name": "%%mlAppName%%-unit-test-regular-user-reader",
-  "description": "Reader role for the simulated 'regular' user (non-service acc) for unit testing in the '%%mlAppName%%' tenant",
-  "role": [],
-  "privilege": []
-}

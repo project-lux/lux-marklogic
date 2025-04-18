@@ -1,14 +1,67 @@
 {
 	"info": {
-		"_postman_id": "e4fe8b12-4e24-4065-a168-f2ab0bfcbfd2",
+		"_postman_id": "93610775-7cad-4bc3-be97-e914925a2e67",
 		"name": "LUX",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "21505844"
+		"_exporter_id": "14690471"
 	},
 	"item": [
 		{
 			"name": "Backend Custom API",
 			"item": [
+				{
+					"name": "My Collections",
+					"item": [
+						{
+							"name": "Set",
+							"item": [
+								{
+									"name": "Create",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "unitName",
+													"value": "ypm",
+													"type": "text"
+												},
+												{
+													"key": "doc",
+													"value": "{\n  \"json\": {\n    \"type\": \"Set\",\n    \"identified_by\": [\n      {\n        \"type\": \"Name\",\n        \"content\": \"The My Collection's name, which may be up to 200 characters\",\n        \"language\": [\n          {\n            \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n            \"type\": \"Language\",\n            \"_label\": \"English\",\n            \"equivalent\": [\n              {\n                \"id\": \"http://vocab.getty.edu/aat/300388277\",\n                \"type\": \"Language\",\n                \"_label\": \"English\"\n              }\n            ]\n          }\n        ],\n        \"classified_as\": [\n          {\n            \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n            \"type\": \"Type\",\n            \"_label\": \"Primary Name\",\n            \"equivalent\": [\n              {\n                \"id\": \"http://vocab.getty.edu/aat/300404670\",\n                \"type\": \"Type\",\n                \"_label\": \"Primary Name\"\n              }\n            ]\n          },\n          {\n            \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n            \"type\": \"Type\",\n            \"_label\": \"Sort Name\"\n          }\n        ]\n      }\n    ],\n    \"classified_as\": [\n      {\n        \"id\": \"https://not.checked\",\n        \"equivalent\": [\n          {\n            \"id\": \"https://todo.concept.my.collection\"\n          }\n        ]\n      }\n    ],\n    \"referred_to_by\": [\n      {\n        \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n        \"classified_as\": [\n          {\n            \"id\": \"https://not.checked\",\n            \"equivalent\": [\n              {\n                \"id\": \"https://todo.concept.note\"\n              }\n            ]\n          }\n        ],\n        \"identified_by\": [\n          {\n            \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n            \"classified_as\": [\n              {\n                \"id\": \"https://not.checked\",\n                \"equivalent\": [\n                  {\n                    \"id\": \"https://todo.concept.display.name\"\n                  }\n                ]\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+													"type": "text"
+												},
+												{
+													"key": "lang",
+													"value": "en",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/myCollections/set/create.mjs",
+											"protocol": "{{mlProtocol}}",
+											"host": [
+												"{{mlHost}}"
+											],
+											"port": "{{mlAppPort}}",
+											"path": [
+												"ds",
+												"lux",
+												"myCollections",
+												"set",
+												"create.mjs"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
 				{
 					"name": "Advanced Search Config",
 					"request": {
@@ -463,7 +516,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/stats.mjs?unitName=ypm",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/stats.mjs",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -477,7 +530,8 @@
 							"query": [
 								{
 									"key": "unitName",
-									"value": "ypm"
+									"value": "ypm",
+									"disabled": true
 								}
 							]
 						}

@@ -1,0 +1,27 @@
+{
+  "role-name": "%%mlAppName%%-user-management",
+  "description": "CAUTION! Configured to an amp to avoid broadly granting several abilities including granting ANY role to ANY user.",
+  "role": ["%%mlAppName%%-invoke-in"],
+  "privilege": [
+    {
+      "privilege-name": "create-role",
+      "action": "http://marklogic.com/xdmp/privileges/create-role",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "role-exists",
+      "action": "http://marklogic.com/xdmp/privileges/get-role",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "grant-all-roles",
+      "action": "http://marklogic.com/xdmp/privileges/grant-all-roles",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "user-add-roles",
+      "action": "http://marklogic.com/xdmp/privileges/user-add-roles",
+      "kind": "execute"
+    }
+  ]
+}

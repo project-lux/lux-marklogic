@@ -21,6 +21,7 @@ import {
 import {
   AccessDeniedError,
   BadRequestError,
+  InternalServerError,
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
 
@@ -30,11 +31,132 @@ const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_UNRESTRICTED = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
-const ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT =
-  '%%mlAppName%%-endpoint-consumer-service-account';
+const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
+const CAPABILITY_READ = 'read';
+const CAPABILITY_UPDATE = 'update';
+
+const PERMITTED_CAPABILITIES = [CAPABILITY_READ, CAPABILITY_UPDATE];
+
+const ROLE_SUFFIX_BY_CAPABILITY = {};
+ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_READ] = 'reader';
+ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_UPDATE] = 'updater';
 
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
+
+function _doesCurrentUserHaveExclusiveRoles() {
+  let hasAll = true;
+  _getExclusiveRoleNamesForCurrentUser().forEach((roleName) => {
+    if (hasAll && _hasRole(roleName) === false) {
+      hasAll = false;
+    }
+  });
+  return hasAll;
+}
+
+function _createExclusiveRolesForCurrentUser() {
+  throwIfCurrentUserIsServiceAccount();
+  _getExclusiveRoleNamesForCurrentUser().forEach((roleName) => {
+    _createAndGrantRoleToCurrentUser(roleName);
+  });
+}
+
+// When this function creates and grants a role, code that executes after it must be
+// invoked in a subsequent transaction (e.g., xdmp.invokeFunction or new endpoint request).
+function __createAndGrantRoleToCurrentUser(roleName) {
+  throwIfCurrentUserIsServiceAccount();
+  if (_hasRole(roleName) === false) {
+    const username = getCurrentUsername();
+
+    // Create the role when it does not exist.
+    const createRole = () => {
+      declareUpdate();
+      const sec = require('/MarkLogic/security.xqy');
+      // Requires http://marklogic.com/xdmp/privileges/get-role
+      if (!sec.roleExists(roleName)) {
+        const inheritedRoleNames = [];
+        const defaultPermissions = [];
+        const defaultCollections = [];
+        // Requires http://marklogic.com/xdmp/privileges/create-role
+        // and http://marklogic.com/xdmp/privileges/grant-all-roles
+        sec.createRole(
+          roleName,
+          `An exclusive role for user '${username}'`,
+          inheritedRoleNames,
+          defaultPermissions,
+          defaultCollections
+        );
+      }
+    };
+    xdmp.invokeFunction(createRole, { database: xdmp.securityDatabase() });
+
+    // Add the role when the user doesn't already have it.
+    const addRole = () => {
+      declareUpdate();
+      const sec = require('/MarkLogic/security.xqy');
+      // Requires http://marklogic.com/xdmp/privileges/user-add-roles
+      // and http://marklogic.com/xdmp/privileges/grant-all-roles
+      sec.userAddRoles(username, roleName);
+    };
+    xdmp.invokeFunction(addRole, { database: xdmp.securityDatabase() });
+  }
+}
+const _createAndGrantRoleToCurrentUser = import.meta.amp(
+  __createAndGrantRoleToCurrentUser
+);
+
+function getExclusiveRoleNamesForUser(username) {
+  return [
+    getExclusiveRoleNameForUser(username, CAPABILITY_READ),
+    getExclusiveRoleNameForUser(username, CAPABILITY_UPDATE),
+  ];
+}
+
+// Electing not to pass current user into getExclusiveRoleNamesForUser, despite the repetition.
+function _getExclusiveRoleNamesForCurrentUser() {
+  return [
+    _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
+    _getExclusiveRoleNameForCurrentUser(CAPABILITY_UPDATE),
+  ];
+}
+
+function getExclusiveRoleNameForUser(username, capability) {
+  if (isUndefined(username)) {
+    throw new InternalServerError(
+      'The username for the exclusive role was not specified.'
+    );
+  }
+  if (PERMITTED_CAPABILITIES.includes(capability) === false) {
+    throw new BadRequestError(
+      `Exclusive user roles do not support the '${capability}' capability`
+    );
+  }
+  if (isUndefined(ROLE_SUFFIX_BY_CAPABILITY[capability])) {
+    throw new InternalServerError(
+      `The role name suffix is not specified for the '${capability}' capability`
+    );
+  }
+  return `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
+}
+
+// Get the current user's exclusive role for the specified capability.
+function _getExclusiveRoleNameForCurrentUser(capability) {
+  throwIfCurrentUserIsServiceAccount();
+  return getExclusiveRoleNameForUser(getCurrentUsername(), capability);
+}
+
+function getExclusiveDocumentPermissionsForCurrentUser() {
+  return [
+    xdmp.permission(
+      _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
+      'read'
+    ),
+    xdmp.permission(
+      _getExclusiveRoleNameForCurrentUser(CAPABILITY_UPDATE),
+      'update'
+    ),
+  ];
+}
 
 /*
  * All endpoint requests are to go through this function.
@@ -54,10 +176,15 @@ const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
  * @returns Whatever the given function returns.
  */
 function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
+  const endpointConfig = getCurrentEndpointConfig(
+    FEATURE_MY_COLLECTIONS_ENABLED
+  );
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
     // Require the current endpoint's configuration; an error is throw upon
     // retrieving the configuration when the configuration is invalid.
-    return handleRequestV2(f, unitName, getCurrentEndpointConfig());
+    return _handleRequestV2(f, unitName, endpointConfig);
+  } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
+    throw new BadRequestError('The My Collections feature is disabled.');
   }
   // Feature is disabled, just do what we used to do.
   return f();
@@ -74,17 +201,17 @@ function handleRequestV2ForUnitTesting(
   // intended to be called when running a unit test, restrict it.
   if (
     UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
-    !_hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS)
+    _hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS) === false
   ) {
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
 
-  return handleRequestV2(f, unitName, endpointConfig);
+  return _handleRequestV2(f, unitName, endpointConfig);
 }
 
 // Handle a version 2 request. Version 2 request support includes the My Collections feature.
 // This function is to be private and in support of two public functions.
-function _handleRequestV2(
+function __handleRequestV2(
   f,
   unitName = UNIT_NAME_UNRESTRICTED,
   endpointConfig
@@ -94,7 +221,8 @@ function _handleRequestV2(
     unitName = UNIT_NAME_UNRESTRICTED;
   }
 
-  const currentUserIsServiceAccount = isServiceAccount(xdmp.getCurrentUser());
+  const isServiceAccount = isCurrentUserServiceAccount();
+  const isMyCollectionRequest = endpointConfig.isPartOfMyCollectionsFeature();
 
   // When in read-only mode, block requests that are not allowed to execute then.
   if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
@@ -104,22 +232,26 @@ function _handleRequestV2(
   }
 
   // Block service accounts from using any My Collections endpoint.
-  if (
-    currentUserIsServiceAccount &&
-    endpointConfig.isPartOfMyCollectionsFeature()
-  ) {
+  if (isMyCollectionRequest && isServiceAccount) {
     throw new AccessDeniedError(
       'Service accounts are not permitted to use this endpoint'
     );
   }
 
   // Ignore unit name param when requesting user is already a service account.
-  if (currentUserIsServiceAccount) {
+  if (isServiceAccount) {
     return f();
+  }
+
+  // Ensure user has their exclusive roles for My Collection requests.
+  if (isMyCollectionRequest) {
+    if (_doesCurrentUserHaveExclusiveRoles() === false) {
+      _createExclusiveRolesForCurrentUser();
+    }
   }
   return _getExecuteWithServiceAccountFunction(unitName)(f);
 }
-const handleRequestV2 = import.meta.amp(_handleRequestV2);
+const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
 function _getExecuteWithServiceAccountFunction(unitName) {
   // Javascript function and variable names cannot contain dashes, so we replace them with underscores
@@ -133,17 +265,25 @@ function _getExecuteWithServiceAccountFunction(unitName) {
   );
 }
 
-// Requires amp for the http://marklogic.com/xdmp/privileges/xdmp-user-roles executive privilege.
-function _isServiceAccount(userName) {
-  return xdmp
-    .userRoles(userName)
-    .toArray()
-    .map((id) => {
-      return xdmp.roleName(id);
-    })
-    .includes(ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT);
+function _getRoleServiceAccountCannotHave() {
+  return ROLE_NAME_ENDPOINT_CONSUMER_USER;
 }
-const isServiceAccount = import.meta.amp(_isServiceAccount);
+
+function isCurrentUserServiceAccount() {
+  return _hasRole(_getRoleServiceAccountCannotHave()) === false;
+}
+
+function throwIfCurrentUserIsServiceAccount() {
+  if (isCurrentUserServiceAccount()) {
+    throw new AccessDeniedError(
+      'Service accounts may not perform this operation'
+    );
+  }
+}
+
+function getCurrentUsername() {
+  return xdmp.getCurrentUser();
+}
 
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
@@ -236,13 +376,19 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 }
 
 export {
-  ROLE_NAME_ENDPOINT_CONSUMER_SERVICE_ACCOUNT,
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
+  getCurrentUsername,
+  getCurrentUserUnitName,
+  getEndpointAccessUnitNames,
+  getExclusiveDocumentPermissionsForCurrentUser,
+  getExclusiveRoleNameForUser,
+  getExclusiveRoleNamesForUser,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
-  isServiceAccount,
-  getCurrentUserUnitName,
-  getEndpointAccessUnitNames,
+  isCurrentUserServiceAccount,
   removeUnitConfigProperties,
+  throwIfCurrentUserIsServiceAccount,
 };

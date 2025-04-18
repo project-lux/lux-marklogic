@@ -43,6 +43,11 @@ class InvalidSearchRequestError extends Error {
   }
 }
 
+class LoopDetectedError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
 class NotAcceptingWriteRequestsError extends Error {
   constructor(message) {
     super(message);
@@ -72,6 +77,7 @@ export {
   InternalConfigurationError,
   InternalServerError,
   InvalidSearchRequestError,
+  LoopDetectedError,
   NotAcceptingWriteRequestsError,
   NotFoundError,
   NotImplementedError,

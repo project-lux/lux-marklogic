@@ -9,6 +9,8 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 const FEATURE_MY_COLLECTIONS_ENABLED =
   '%%featureMyCollectionsEnabled%%'.trim() === 'true';
 
+const COLLECTION_NAME_MY_COLLECTIONS_FEATURE = 'myCollectionsFeature';
+
 // Unit test-related constants are primarily used to prevent use of a function
 // that allows the caller to specify the endpoint configuration to apply.
 const UNIT_TEST_ENDPOINT = '/test/default.xqy';
@@ -47,6 +49,7 @@ const HIGH_STORAGE_WARNING_THRESHOLD = parseInt(
 const BASE_URL = 'https://lux.collections.yale.edu';
 const FACETS_PREFIX = `${BASE_URL}/api/facets`;
 const IRI_PREFIX = `${BASE_URL}/data/`;
+const PERSON_PREFIX = `${IRI_PREFIX}person/`;
 const RELATED_LIST_PREFIX = `${BASE_URL}/api/related-list`;
 const SEARCH_PREFIX = `${BASE_URL}/api/search`;
 const SEARCH_ESTIMATE_PREFIX = `${BASE_URL}/api/search-estimate`;
@@ -154,6 +157,7 @@ export {
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   BASE_URL,
   CODE_VERSION,
+  COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
   DEFAULT_FILTER_SEARCH_RESULTS,
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
@@ -170,6 +174,7 @@ export {
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
   ML_APP_NAME,
+  PERSON_PREFIX,
   REG_EXP_NEAR_OPERATOR,
   RELATED_LIST_PAGE_LENGTH_DEFAULT,
   RELATED_LIST_PER_RELATION_DEFAULT,

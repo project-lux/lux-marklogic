@@ -114,13 +114,6 @@ function checkPaginationParameters(page, pageLength) {
   }
 }
 
-function evalInContentDatabase(javascript, vars = {}, update = false) {
-  return xdmp.eval(javascript, vars, {
-    database: xdmp.database(),
-    update: update + '',
-  });
-}
-
 function evalInModulesDatabase(javascript, vars = {}, update = false) {
   return xdmp.eval(javascript, vars, {
     database: xdmp.modulesDatabase(),
@@ -134,7 +127,7 @@ function getDocFromModulesDatabase(uri) {
   );
 }
 
-function getObjectFromJson(doc) {
+function getObjectFromNode(doc) {
   if (doc && doc.toObject) {
     doc = doc.toObject();
   }
@@ -651,7 +644,6 @@ export {
   camelCaseToWords,
   checkPaginationParameters,
   escapeCharacters,
-  evalInContentDatabase,
   evalInModulesDatabase,
   formatString,
   getArrayDiff,
@@ -661,7 +653,7 @@ export {
   getDocPermissionsFromString,
   getExceptionObjectElseMessage,
   getMergedArrays,
-  getObjectFromJson,
+  getObjectFromNode,
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,

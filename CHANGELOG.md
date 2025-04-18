@@ -2,6 +2,21 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.39.0 - TODO
+### Added
+- Added the [Create Set endpoint](/docs/lux-backend-api-usage.md#create-set). Only available when the My Collections feature is enabled. Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486))
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
+- As part of [#486](https://github.com/project-lux/lux-marklogic/issues/486) (above):
+    - Deleted, modified, and added additional [amps](/docs/lux-backend-security-and-software.md#amps).
+    - Modified [#475](https://github.com/project-lux/lux-marklogic/issues/475)'s definition of a service account.
+
 ## v1.38.1 - 2025-04-08
 ### Added
 
@@ -10,7 +25,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
   
 ### Fixed
-- Fixed naming of amp functions for tenants and units with names that contain dashes
+- Fixed naming of amp functions for tenants and units with names that contain dashes; related to ([#475](https://github.com/project-lux/lux-marklogic/issues/475)).
 
 ### Security
 

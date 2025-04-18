@@ -5,6 +5,11 @@ const MIN_SUPPORTED_FULL_DATE_IN_SECONDS =
 const MAX_SUPPORTED_FULL_DATE_IN_SECONDS =
   new Date('9999-12-31T23:59:59.000Z').getTime() / 1000;
 
+function toISOStringThroughSeconds(d) {
+  const str = d.toISOString();
+  return str.substring(0, str.indexOf('.'));
+}
+
 /**
  * Convert the given number to a String. Years in the range [-9999:9999] will support the full ISO 8601 format. Outside of that range, only return the year
  *
@@ -107,4 +112,8 @@ function _convertDateTimeToSeconds(dateTimeStr) {
   return roundedTotalSeconds;
 }
 
-export { convertSecondsToDateStr, convertPartialDateTimeToSeconds };
+export {
+  convertSecondsToDateStr,
+  convertPartialDateTimeToSeconds,
+  toISOStringThroughSeconds,
+};

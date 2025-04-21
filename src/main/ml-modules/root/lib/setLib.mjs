@@ -20,7 +20,7 @@ import {
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
 import { getLanguageIdentifier } from './identifierConstants.mjs';
-import { isNonEmptyArray } from '../utils/utils.mjs';
+import { isNonEmptyArray, isUndefined } from '../utils/utils.mjs';
 
 const DEFAULT_LANG = getLanguageIdentifier('en');
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
@@ -109,6 +109,16 @@ function _insertSet(readOnlyDocNode, lang, newSet = false) {
   }
 }
 
+function deleteSet(uri) {
+  throwIfCurrentUserIsServiceAccount();
+
+  if (isUndefined(uri)) {
+    throw new BadRequestError('The URI is required.');
+  }
+
+  xdmp.documentDelete(uri, { ifNotExists: 'error' });
+}
+
 function _getNewSetUri(attempt = 1) {
   // Insurance
   if (attempt > MAX_ATTEMPTS_FOR_NEW_URI) {
@@ -125,4 +135,4 @@ function _getNewSetUri(attempt = 1) {
   return uri;
 }
 
-export { createSet, updateSet };
+export { createSet, deleteSet, updateSet };

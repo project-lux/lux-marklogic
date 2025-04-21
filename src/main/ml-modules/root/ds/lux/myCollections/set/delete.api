@@ -1,0 +1,9 @@
+{
+  "functionName": "delete",
+  "params": [
+    {
+      "name": "uri",
+      "datatype": "string"
+    }
+  ]
+}

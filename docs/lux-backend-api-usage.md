@@ -37,21 +37,24 @@
     - [Create Set](#create-set)
       - [Successful Request / Response Example](#successful-request--response-example-8)
       - [Failed Request / Response Example](#failed-request--response-example-9)
-    - [Update Set](#update-set)
+    - [Delete Set](#delete-set)
       - [Successful Request / Response Example](#successful-request--response-example-9)
       - [Failed Request / Response Example](#failed-request--response-example-10)
+    - [Update Set](#update-set)
+      - [Successful Request / Response Example](#successful-request--response-example-10)
+      - [Failed Request / Response Example](#failed-request--response-example-11)
   - [Stats](#stats)
-    - [Successful Request / Response Example](#successful-request--response-example-10)
-    - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-12)
-  - [Translate](#translate)
+  - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-12)
     - [Failed Request / Response Example](#failed-request--response-example-13)
-  - [Version Info](#version-info)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-13)
     - [Failed Request / Response Example](#failed-request--response-example-14)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-14)
+    - [Failed Request / Response Example](#failed-request--response-example-15)
 
 # Introduction
 
@@ -1381,6 +1384,59 @@ Response Body:
   }
 }
 ```
+
+### Delete Set
+
+The Delete Set endpoint enables users to delete an existing Set.  Requests by service accounts are rejected.
+
+**URL** : `/ds/lux/myCollections/set/delete.mjs`
+
+**Method(s)** : `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `uri` | "https://lux.collections.yale.edu/set/9c198a56-f1d3-45b8-8475-59d8bc4484e1" | **REQUIRED** - The URI of the set to delete. |
+
+#### Successful Request / Response Example
+
+Scenario: User deletes one of their sets.
+
+| Parameter | Value |
+|-----------|-------|
+| `uri` | "https://lux.collections.yale.edu/set/9c198a56-f1d3-45b8-8475-59d8bc4484e1" |
+
+Response Status Code: 200
+
+Response Status Message: "OK"
+
+Response Body: Empty
+
+#### Failed Request / Response Example
+
+Scenario: User attempts to delete a set they do not have sufficient permission to.
+
+| Parameter | Value |
+|-----------|-------|
+| `uri` | "https://lux.collections.yale.edu/set/9c198a56-f1d3-45b8-8475-59d8bc4484e1" |
+
+Response Status Code: 500
+
+Response Status Message: "Internal Server Error"
+
+Response Body:
+```
+{
+  "errorResponse":{
+    "statusCode":500,
+    "status":"Internal Server Error",
+    "messageCode":"SEC-PERMDENIED",
+    "message":"Permission denied"
+  }
+}
+```
+
 
 ### Update Set
 

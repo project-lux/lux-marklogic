@@ -59,6 +59,39 @@
 									"response": []
 								},
 								{
+									"name": "Delete",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "uri",
+													"value": "https://lux.collections.yale.edu/set/d136945d-ac68-468f-84d2-b99ed5536f95",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/myCollections/set/delete.mjs",
+											"protocol": "{{mlProtocol}}",
+											"host": [
+												"{{mlHost}}"
+											],
+											"port": "{{mlAppPort}}",
+											"path": [
+												"ds",
+												"lux",
+												"myCollections",
+												"set",
+												"delete.mjs"
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Update",
 									"request": {
 										"method": "POST",

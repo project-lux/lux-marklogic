@@ -61,12 +61,13 @@ function _insertSet(readOnlyDocNode, lang, newSet = false) {
     let givenMembers = getSetMembers(readOnlyDocNode);
     if (givenMembers) {
       const self = getId(readOnlyDocNode);
-      const revisedMembersMap = new Map(
-        givenMembers
-          .filter((member) => member.id + '' !== self)
-          .map((member) => [member.id + '', member])
+      const revisedMembers = Array.from(
+        new Map(
+          givenMembers
+            .filter((member) => member.id + '' !== self)
+            .map((member) => [member.id + '', member])
+        ).values()
       );
-      const revisedMembers = Array.from(revisedMembersMap);
       setSetMembers(editableDocObj, revisedMembers);
     }
 

@@ -29,6 +29,10 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: false,
     features: { myCollections: true },
   },
+  '/ds/lux/myCollections/set/update.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
   '/ds/lux/relatedList.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },

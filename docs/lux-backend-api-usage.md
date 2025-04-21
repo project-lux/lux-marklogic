@@ -11,43 +11,47 @@
     - [Implementation Notes](#implementation-notes)
     - [Successful Request / Response Example](#successful-request--response-example-1)
     - [Failed Request / Response Example](#failed-request--response-example-1)
-  - [Create Set](#create-set)
+  - [Document](#document)
     - [Successful Request / Response Example](#successful-request--response-example-2)
     - [Failed Request / Response Example](#failed-request--response-example-2)
-  - [Document](#document)
+  - [Facets](#facets)
     - [Successful Request / Response Example](#successful-request--response-example-3)
     - [Failed Request / Response Example](#failed-request--response-example-3)
-  - [Facets](#facets)
+  - [Related List](#related-list)
     - [Successful Request / Response Example](#successful-request--response-example-4)
     - [Failed Request / Response Example](#failed-request--response-example-4)
-  - [Related List](#related-list)
-    - [Successful Request / Response Example](#successful-request--response-example-5)
-    - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Search](#search)
     - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
-    - [Failed Request / Response Example](#failed-request--response-example-6)
+    - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Search Estimate](#search-estimate)
+    - [Successful Request / Response Example](#successful-request--response-example-5)
+    - [Failed Request / Response Example](#failed-request--response-example-6)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
-  - [Search Info](#search-info)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-8)
-  - [Search Will Match](#search-will-match)
-    - [Successful Request / Response Example](#successful-request--response-example-8)
-    - [Failed Request / Response Example](#failed-request--response-example-9)
+  - [Set](#set)
+    - [Create Set](#create-set)
+      - [Successful Request / Response Example](#successful-request--response-example-8)
+      - [Failed Request / Response Example](#failed-request--response-example-9)
+    - [Update Set](#update-set)
+      - [Successful Request / Response Example](#successful-request--response-example-9)
+      - [Failed Request / Response Example](#failed-request--response-example-10)
   - [Stats](#stats)
-    - [Successful Request / Response Example](#successful-request--response-example-9)
-    - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Translate](#translate)
+  - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-12)
-  - [Version Info](#version-info)
+  - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-12)
     - [Failed Request / Response Example](#failed-request--response-example-13)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-13)
+    - [Failed Request / Response Example](#failed-request--response-example-14)
 
 # Introduction
 
@@ -316,165 +320,6 @@ Response Status Message: "Wildcarded strings must have at least three non-wildca
         "messageCode": "BadRequestError",
         "message": "Invalid search request: wildcarded strings must have at least three non-wildcard characters before or after the wildcard; 'be*' does not qualify"
     }
-}
-```
-
-## Create Set
-
-The Create Set endpoint enables users to create a Set, of allowed sub-types.  Requests by service accounts are rejected.
-
-**URL** : `/ds/lux/myCollections/set/create.mjs`
-
-**Method(s)** : `POST`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
-| `doc` | *See example below* | **REQUIRED** - The Set document to insert. If the Set already has an ID, it will be replaced with a unique ID, facilitating copying one Set as another. |
-| `lang` | "es" | **OPTIONAL** - Reserved for future use. |
-
-### Successful Request / Response Example
-
-Scenario: A user (not service account) submits a valid document.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `doc` | { "json": { "type": "Set", "identified_by": [ ... ], ... } } |
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body is the given document plus any modifications made by the backend, specifically the addition of /id and /created_by (bottom):
-
-*Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
-
-```
-{
-  "type":"Set",
-  "identified_by":[
-    {
-      "type":"Name",
-      "content":"The My Collection's name, which may be up to 200 characters",
-      "language":[
-        {
-          "id":"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
-          "type":"Language",
-          "_label":"English",
-          "equivalent":[
-            {
-              "id":"http://vocab.getty.edu/aat/300388277",
-              "type":"Language",
-              "_label":"English"
-            }
-          ]
-        }
-      ],
-      "classified_as":[
-        {
-          "id":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
-          "type":"Type",
-          "_label":"Primary Name",
-          "equivalent":[
-            {
-              "id":"http://vocab.getty.edu/aat/300404670",
-              "type":"Type",
-              "_label":"Primary Name"
-            }
-          ]
-        },
-        {
-          "id":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
-          "type":"Type",
-          "_label":"Sort Name"
-        }
-      ]
-    }
-  ],
-  "classified_as":[
-    {
-      "id":"https://not.checked",
-      "equivalent":[
-        {
-          "id":"https://todo.concept.my.collection"
-        }
-      ]
-    }
-  ],
-  "referred_to_by":[
-    {
-      "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
-      "classified_as":[
-        {
-          "id":"https://not.checked",
-          "equivalent":[
-            {
-              "id":"https://todo.concept.note"
-            }
-          ]
-        }
-      ],
-      "identified_by":[
-        {
-          "content":"This is the label to the note, which supports up to 200 characters.",
-          "classified_as":[
-            {
-              "id":"https://not.checked",
-              "equivalent":[
-                {
-                  "id":"https://todo.concept.display.name"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "id":"https://lux.collections.yale.edu/set/21c5550d-7cd5-4a75-8343-8e56335e3957",
-  "created_by":{
-    "type":"Creation",
-    "carried_out_by":[
-      {
-        "id":"https://lux.collections.yale.edu/data/person/joe",
-        "type":"Person"
-      }
-    ],
-    "timespan":{
-      "begin_of_the_begin":"2025-04-17T16:04:58",
-      "end_of_the_end":"2025-04-17T16:04:58"
-    }
-  }
-}
-```
-
-### Failed Request / Response Example
-
-Scenario: A user (not service account) submits the same document as above, but without a primary name.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `doc` | { "json": { "type": "Set", "classified_as": [ ... ], ... } } |
-
-Response Status Code: 400
-
-Response Status Message: "Bad Request"
-
-Response Body:
-```
-{
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"BadRequestError",
-    "message":"2 validation error(s) found: 1: XDMP-JSVALIDATEMISSING: Missing property: Required identified_by property not found at json:ObjectNode({\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}) using schema \"/json-schema/editable-set.schema.json\"; 2: XDMP-JSVALIDATEINVNODE: Invalid node: Node ObjectNode({\"json\":{\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}}) not valid against property 'properties' expected {type: object, properties: {json:{...}}, required: [json]} using schema \"/json-schema/editable-set.schema.json\""
-  }
 }
 ```
 
@@ -1375,6 +1220,189 @@ Response Body:
   }
 }
 ```
+
+## Set
+
+### Create Set
+
+The Create Set endpoint enables users to create a Set, of allowed sub-types.  Requests by service accounts are rejected.
+
+**URL** : `/ds/lux/myCollections/set/create.mjs`
+
+**Method(s)** : `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+| `doc` | *See example below* | **REQUIRED** - The Set document to insert. Only send the contents of /json; example top-level property names include `type` and `member`. If the Set already has an ID, it will be replaced with a unique ID, facilitating copying one Set as another. |
+| `lang` | "es" | **OPTIONAL** - Reserved for future use. |
+
+#### Successful Request / Response Example
+
+Scenario: A user (not service account) submits a valid document.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `doc` | { "type": "Set", "identified_by": [ ... ], ... } |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body is the given document plus any modifications made by the backend, specifically the addition of /id and /created_by (bottom):
+
+*Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
+
+```
+{
+  "type":"Set",
+  "identified_by":[
+    {
+      "type":"Name",
+      "content":"The My Collection's name, which may be up to 200 characters",
+      "language":[
+        {
+          "id":"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
+          "type":"Language",
+          "_label":"English",
+          "equivalent":[
+            {
+              "id":"http://vocab.getty.edu/aat/300388277",
+              "type":"Language",
+              "_label":"English"
+            }
+          ]
+        }
+      ],
+      "classified_as":[
+        {
+          "id":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+          "type":"Type",
+          "_label":"Primary Name",
+          "equivalent":[
+            {
+              "id":"http://vocab.getty.edu/aat/300404670",
+              "type":"Type",
+              "_label":"Primary Name"
+            }
+          ]
+        },
+        {
+          "id":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
+          "type":"Type",
+          "_label":"Sort Name"
+        }
+      ]
+    }
+  ],
+  "classified_as":[
+    {
+      "id":"https://not.checked",
+      "equivalent":[
+        {
+          "id":"https://todo.concept.my.collection"
+        }
+      ]
+    }
+  ],
+  "referred_to_by":[
+    {
+      "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
+      "classified_as":[
+        {
+          "id":"https://not.checked",
+          "equivalent":[
+            {
+              "id":"https://todo.concept.note"
+            }
+          ]
+        }
+      ],
+      "identified_by":[
+        {
+          "content":"This is the label to the note, which supports up to 200 characters.",
+          "classified_as":[
+            {
+              "id":"https://not.checked",
+              "equivalent":[
+                {
+                  "id":"https://todo.concept.display.name"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "id":"https://lux.collections.yale.edu/set/21c5550d-7cd5-4a75-8343-8e56335e3957",
+  "created_by":{
+    "type":"Creation",
+    "carried_out_by":[
+      {
+        "id":"https://lux.collections.yale.edu/data/person/joe",
+        "type":"Person"
+      }
+    ],
+    "timespan":{
+      "begin_of_the_begin":"2025-04-17T16:04:58",
+      "end_of_the_end":"2025-04-17T16:04:58"
+    }
+  }
+}
+```
+
+#### Failed Request / Response Example
+
+Scenario: A user (not service account) submits the same document as above, but without a primary name.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `doc` | { "type": "Set", "classified_as": [ ... ], ... } |
+
+Response Status Code: 400
+
+Response Status Message: "Bad Request"
+
+Response Body:
+```
+{
+  "errorResponse":{
+    "statusCode":400,
+    "status":"Bad Request",
+    "messageCode":"BadRequestError",
+    "message":"2 validation error(s) found: 1: XDMP-JSVALIDATEMISSING: Missing property: Required identified_by property not found at json:ObjectNode({\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}) using schema \"/json-schema/editable-set.schema.json\"; 2: XDMP-JSVALIDATEINVNODE: Invalid node: Node ObjectNode({\"json\":{\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}}) not valid against property 'properties' expected {type: object, properties: {json:{...}}, required: [json]} using schema \"/json-schema/editable-set.schema.json\""
+  }
+}
+```
+
+### Update Set
+
+The Update Set endpoint enables users to update an existing Set.  Requests by service accounts are rejected.
+
+The Update Set only varies from [Create Set](#create-set) in that this one requires /json/id identify an existing Set in the database --one that the requesting user has permission to edit.
+
+**URL** : `/ds/lux/myCollections/set/update.mjs`
+
+**Method(s)** : `POST`
+
+**Endpoint Parameters**
+
+See [Create Set](#create-set).
+
+#### Successful Request / Response Example
+
+See [Create Set](#create-set).
+
+#### Failed Request / Response Example
+
+See [Create Set](#create-set).
 
 ## Stats
 

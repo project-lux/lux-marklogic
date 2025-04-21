@@ -64,6 +64,10 @@ function addAddedToByEntry(docObj) {
   });
 }
 
+function getAddedToBy(docNode) {
+  return _upTo('added_to_by', docNode.xpath('json/added_to_by'));
+}
+
 function getBorn(docNode) {
   return _upTo('born', docNode.xpath('json/born'));
 }
@@ -105,6 +109,10 @@ function getClassifiedAsOccupations(docNode) {
   );
 }
 
+function getCreatedBy(docNode) {
+  return _upTo('created_by', docNode.xpath('json/created_by'));
+}
+
 function getCreatedByCarriedOutBy(docNode) {
   const noPart = docNode.xpath('json/created_by/carried_out_by');
   if (!fn.empty(noPart)) {
@@ -132,22 +140,6 @@ function getId(docNode) {
   const node = fn.head(docNode.xpath('json/id'));
   const value = node ? node.toString() : node;
   return _upTo('id', node, value);
-}
-
-function setCreatedBy(docObj) {
-  const now = toISOStringThroughSeconds(new Date());
-  docObj.json.created_by = {
-    type: 'Creation',
-    carried_out_by: [{ id: _getDataIdForCurrentUser(), type: 'Person' }],
-    timespan: {
-      begin_of_the_begin: now,
-      end_of_the_end: now,
-    },
-  };
-}
-
-function setId(docObj, id) {
-  docObj.json.id = id;
 }
 
 function getIdentifiedByIdentifier(docNode) {
@@ -227,6 +219,10 @@ function getRepresentationImage(docNode) {
   );
 }
 
+function getSetMembers(docNode) {
+  return _upTo('member', docNode.xpath('/json/member'));
+}
+
 function getSubjectTo(docNode) {
   return _upTo('subject_to', docNode.xpath('/json/subject_to'));
 }
@@ -258,6 +254,42 @@ function getUiType(docNode) {
   const node = fn.head(docNode.xpath('indexedProperties/uiType'));
   const value = node ? node.toString() : node;
   return _upTo('uiType', node, value);
+}
+
+// @param addedToBy - send null to delete existing property.
+function setAddedToBy(docObj, addedToBy) {
+  if (isDefined(addedToBy)) {
+    docObj.json.added_to_by = addedToBy.xpath
+      ? addedToBy.toObject()
+      : addedToBy;
+  } else if (isDefined(docObj.json.added_to_by)) {
+    delete docObj.json.added_to_by;
+  }
+}
+
+// @param createdBy - submit null to have a new entry created.
+function setCreatedBy(docObj, createdBy = null) {
+  if (createdBy) {
+    docObj.json.created_by = createdBy.xpath ? createdBy.toObject() : createdBy;
+  } else {
+    const now = toISOStringThroughSeconds(new Date());
+    docObj.json.created_by = {
+      type: 'Creation',
+      carried_out_by: [{ id: _getDataIdForCurrentUser(), type: 'Person' }],
+      timespan: {
+        begin_of_the_begin: now,
+        end_of_the_end: now,
+      },
+    };
+  }
+}
+
+function setId(docObj, id) {
+  docObj.json.id = id;
+}
+
+function setSetMembers(docObj, members) {
+  docObj.json.member = members;
 }
 
 /**
@@ -435,12 +467,14 @@ function _getPrimaryNameByLanguage(lang) {
 
 export {
   addAddedToByEntry,
+  getAddedToBy,
   getBorn,
   getCarriedOutBy,
   getClassifiedAs,
   getClassifiedAsExhibition,
   getClassifiedAsNationalities,
   getClassifiedAsOccupations,
+  getCreatedBy,
   getCreatedByCarriedOutBy,
   getCreatedByTimespan,
   getDefinedBy,
@@ -457,6 +491,7 @@ export {
   getReferredToBy,
   getRepresentation,
   getRepresentationImage,
+  getSetMembers,
   getSubjectTo,
   getSupertypes,
   getTimespan,
@@ -464,8 +499,10 @@ export {
   getType,
   getUiType,
   merge,
+  setAddedToBy,
   setCreatedBy,
   setId,
+  setSetMembers,
   PROP_NAME_BEGIN_OF_THE_BEGIN,
   PROP_NAME_END_OF_THE_END,
   TYPE_ACTIVITY,

@@ -6,7 +6,17 @@ import {
   getExclusiveDocumentPermissionsForCurrentUser,
   throwIfCurrentUserIsServiceAccount,
 } from './securityLib.mjs';
-import { addAddedToByEntry, getId, setCreatedBy, setId } from './model.mjs';
+import {
+  addAddedToByEntry,
+  getAddedToBy,
+  getCreatedBy,
+  getId,
+  getSetMembers,
+  setAddedToBy,
+  setCreatedBy,
+  setId,
+  setSetMembers,
+} from './model.mjs';
 import { getTenantRole } from './tenantStatusLib.mjs';
 import { BadRequestError, LoopDetectedError } from './mlErrorsLib.mjs';
 import { getLanguageIdentifier } from './identifierConstants.mjs';
@@ -26,6 +36,11 @@ function updateSet(docNode, lang = DEFAULT_LANG) {
 function _insertSet(readOnlyDocNode, lang, newSet = false) {
   throwIfCurrentUserIsServiceAccount();
 
+  // We're to receive the contents of /json but need the full context going forward.
+  readOnlyDocNode = xdmp.toJSON({
+    json: readOnlyDocNode.toObject(),
+  });
+
   const report = xdmp.jsonValidateReport(
     readOnlyDocNode,
     '/json-schema/editable-set.schema.json',
@@ -42,12 +57,26 @@ function _insertSet(readOnlyDocNode, lang, newSet = false) {
   } else {
     const editableDocObj = readOnlyDocNode.toObject();
 
+    // Deduplicate and drop references to self.
+    let givenMembers = getSetMembers(readOnlyDocNode);
+    if (givenMembers) {
+      const self = getId(readOnlyDocNode);
+      const revisedMembersMap = new Map(
+        givenMembers
+          .filter((member) => member.id + '' !== self)
+          .map((member) => [member.id + '', member])
+      );
+      const revisedMembers = Array.from(revisedMembersMap);
+      setSetMembers(editableDocObj, revisedMembers);
+    }
+
     let uri;
     let docOptions = {};
     if (newSet) {
       uri = _getNewSetUri();
       setId(editableDocObj, uri);
       setCreatedBy(editableDocObj);
+      setAddedToBy(editableDocObj, null);
       docOptions = {
         permissions: getExclusiveDocumentPermissionsForCurrentUser(),
         collections: [getTenantRole(), COLLECTION_NAME_MY_COLLECTIONS_FEATURE],
@@ -59,7 +88,18 @@ function _insertSet(readOnlyDocNode, lang, newSet = false) {
           `The document with URI '${uri}' does not exist.`
         );
       }
+
+      // Preserve creation and modification histories.
+      const existingDocNode = cts.doc(uri);
+      setCreatedBy(editableDocObj, getCreatedBy(existingDocNode));
+      setAddedToBy(editableDocObj, getAddedToBy(existingDocNode));
+
       addAddedToByEntry(editableDocObj);
+
+      docOptions = {
+        permissions: xdmp.documentGetPermissions(uri),
+        collections: xdmp.documentGetCollections(uri),
+      };
     }
 
     xdmp.documentInsert(uri, editableDocObj, docOptions);

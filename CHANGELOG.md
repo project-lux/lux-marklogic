@@ -5,6 +5,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## v1.39.0 - TODO
 ### Added
 - Added the [Create Set endpoint](/docs/lux-backend-api-usage.md#create-set). Only available when the My Collections feature is enabled. Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486))
+- Added the [Update Set endpoint](/docs/lux-backend-api-usage.md#update-set). Only available when the My Collections feature is enabled. Never available to service accounts. ([#493](https://github.com/project-lux/lux-marklogic/issues/493))
+- Added the [Delete Set endpoint](/docs/lux-backend-api-usage.md#delete-set). Only available when the My Collections feature is enabled. Never available to service accounts. ([#494](https://github.com/project-lux/lux-marklogic/issues/494))
 
 ### Changed
 

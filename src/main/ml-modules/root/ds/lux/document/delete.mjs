@@ -1,9 +1,9 @@
 import { handleRequest } from '../../../lib/securityLib.mjs';
-import { deleteSet } from '../../../lib/setLib.mjs';
+import { deleteDocument } from '../../../lib/crudLib.mjs';
 
 const uri = external.uri;
 
 handleRequest(function () {
   declareUpdate();
-  return deleteSet(uri);
+  return deleteDocument(uri);
 });

@@ -10,131 +10,165 @@
 			"name": "Backend Custom API",
 			"item": [
 				{
-					"name": "My Collections",
+					"name": "Document",
 					"item": [
 						{
-							"name": "Set",
-							"item": [
-								{
-									"name": "Create",
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "formdata",
-											"formdata": [
-												{
-													"key": "unitName",
-													"value": "ypm",
-													"type": "text"
-												},
-												{
-													"key": "doc",
-													"value": "{\n  \"type\": \"Set\",\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.my.collection\"\n        }\n      ]\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n",
-													"type": "text"
-												},
-												{
-													"key": "lang",
-													"value": "en",
-													"type": "text"
-												}
-											]
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "unitName",
+											"value": "ypm",
+											"type": "text"
 										},
-										"url": {
-											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/myCollections/set/create.mjs",
-											"protocol": "{{mlProtocol}}",
-											"host": [
-												"{{mlHost}}"
-											],
-											"port": "{{mlAppPort}}",
-											"path": [
-												"ds",
-												"lux",
-												"myCollections",
-												"set",
-												"create.mjs"
-											]
+										{
+											"key": "doc",
+											"value": "{\n  \"type\": \"Set\",\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.my.collection\"\n        }\n      ]\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n",
+											"type": "text"
+										},
+										{
+											"key": "lang",
+											"value": "en",
+											"type": "text"
 										}
-									},
-									"response": []
+									]
 								},
-								{
-									"name": "Delete",
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "formdata",
-											"formdata": [
-												{
-													"key": "uri",
-													"value": "https://lux.collections.yale.edu/set/d136945d-ac68-468f-84d2-b99ed5536f95",
-													"type": "text"
-												}
-											]
-										},
-										"url": {
-											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/myCollections/set/delete.mjs",
-											"protocol": "{{mlProtocol}}",
-											"host": [
-												"{{mlHost}}"
-											],
-											"port": "{{mlAppPort}}",
-											"path": [
-												"ds",
-												"lux",
-												"myCollections",
-												"set",
-												"delete.mjs"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Update",
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "formdata",
-											"formdata": [
-												{
-													"key": "unitName",
-													"value": "ypm",
-													"type": "text"
-												},
-												{
-													"key": "doc",
-													"value": "{\n  \"id\": \"https://lux.collections.yale.edu/set/26edf8c3-e3b6-4742-8ef4-1e01d46e2258\",\n  \"type\": \"Set\",\n  \"member\": [\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-4b47-9af5-476e41a5f38c\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-4b47-9af5-333333\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-4b47-9af5-476e41a5f38c\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/set/26edf8c3-e3b6-4742-8ef4-1e01d46e2258\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-5555-9af5-476e41a5f38c\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    }\n  ],\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.my.collection\"\n        }\n      ]\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"added_to_by\": [\n    {\n      \"type\": \"Addition\",\n      \"carried_out_by\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/person/joe\",\n          \"type\": \"Person\"\n        }\n      ],\n      \"timespan\": {\n        \"begin_of_the_begin\": \"2025-04-21T15:32:06\",\n        \"end_of_the_end\": \"2025-04-21T15:32:06\"\n      }\n    }\n  ],\n  \"created_by\": {\n    \"type\": \"Creation\",\n    \"carried_out_by\": [\n      {\n        \"id\": \"https://lux.collections.yale.edu/data/person/joe\",\n        \"type\": \"Person\"\n      }\n    ],\n    \"timespan\": {\n      \"begin_of_the_begin\": \"2025-04-21T15:32:06\",\n      \"end_of_the_end\": \"2025-04-21T15:32:06\"\n    }\n  }\n}\n",
-													"type": "text"
-												},
-												{
-													"key": "lang",
-													"value": "en",
-													"type": "text"
-												}
-											]
-										},
-										"url": {
-											"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/myCollections/set/update.mjs",
-											"protocol": "{{mlProtocol}}",
-											"host": [
-												"{{mlHost}}"
-											],
-											"port": "{{mlAppPort}}",
-											"path": [
-												"ds",
-												"lux",
-												"myCollections",
-												"set",
-												"update.mjs"
-											]
-										}
-									},
-									"response": []
+								"url": {
+									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/create.mjs",
+									"protocol": "{{mlProtocol}}",
+									"host": [
+										"{{mlHost}}"
+									],
+									"port": "{{mlAppPort}}",
+									"path": [
+										"ds",
+										"lux",
+										"document",
+										"create.mjs"
+									]
 								}
-							]
+							},
+							"response": []
+						},
+						{
+							"name": "Read",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/read.mjs?uri=https://lux.collections.yale.edu/data/concept/4b259837-ea0c-4b28-8035-ec1144de7231&profile=name",
+									"protocol": "{{mlProtocol}}",
+									"host": [
+										"{{mlHost}}"
+									],
+									"port": "{{mlAppPort}}",
+									"path": [
+										"ds",
+										"lux",
+										"document",
+										"read.mjs"
+									],
+									"query": [
+										{
+											"key": "unitName",
+											"value": "ypm",
+											"disabled": true
+										},
+										{
+											"key": "uri",
+											"value": "https://lux.collections.yale.edu/data/concept/4b259837-ea0c-4b28-8035-ec1144de7231"
+										},
+										{
+											"key": "profile",
+											"value": "name"
+										},
+										{
+											"key": "lang",
+											"value": "fr",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "unitName",
+											"value": "ypm",
+											"type": "text"
+										},
+										{
+											"key": "doc",
+											"value": "{\n  \"id\": \"https://lux.collections.yale.edu/set/2cacc07f-81d2-4684-b748-802979cf6339\",\n  \"type\": \"Set\",\n  \"member\": [\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-4b47-9af5-476e41a5f38c\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/set/2cacc07f-81d2-4684-b748-802979cf6339\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-4b47-9af5-476e41a5f38c\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/set/26edf8c3-e3b6-4742-8ef4-1e01d46e2258\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/set/4b2b3586-7eaf-5555-9af5-476e41a5f38c\",\n      \"type\": \"Set\",\n      \"_label\": \"Offsite Storage, Yale University Library\"\n    }\n  ],\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.my.collection\"\n        }\n      ]\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"added_to_by\": [\n    {\n      \"type\": \"Addition\",\n      \"carried_out_by\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/person/joe\",\n          \"type\": \"Person\"\n        }\n      ],\n      \"timespan\": {\n        \"begin_of_the_begin\": \"2025-04-21T15:32:06\",\n        \"end_of_the_end\": \"2025-04-21T15:32:06\"\n      }\n    }\n  ],\n  \"created_by\": {\n    \"type\": \"Creation\",\n    \"carried_out_by\": [\n      {\n        \"id\": \"https://lux.collections.yale.edu/data/person/joe\",\n        \"type\": \"Person\"\n      }\n    ],\n    \"timespan\": {\n      \"begin_of_the_begin\": \"2025-04-21T15:32:06\",\n      \"end_of_the_end\": \"2025-04-21T15:32:06\"\n    }\n  }\n}\n",
+											"type": "text"
+										},
+										{
+											"key": "lang",
+											"value": "en",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/update.mjs",
+									"protocol": "{{mlProtocol}}",
+									"host": [
+										"{{mlHost}}"
+									],
+									"port": "{{mlAppPort}}",
+									"path": [
+										"ds",
+										"lux",
+										"document",
+										"update.mjs"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "uri",
+											"value": "https://lux.collections.yale.edu/set/2cacc07f-81d2-4684-b748-802979cf6339",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/delete.mjs",
+									"protocol": "{{mlProtocol}}",
+									"host": [
+										"{{mlHost}}"
+									],
+									"port": "{{mlAppPort}}",
+									"path": [
+										"ds",
+										"lux",
+										"document",
+										"delete.mjs"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
@@ -226,46 +260,6 @@
 								{
 									"key": "timeoutInMilliseconds",
 									"value": "500"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Document",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document.mjs?unitName=ypm&uri=https://lux.collections.yale.edu/data/activity/96f72cc4-682e-4c95-baf2-36f142ce3fc1&profile=name",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlAppPort}}",
-							"path": [
-								"ds",
-								"lux",
-								"document.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								},
-								{
-									"key": "uri",
-									"value": "https://lux.collections.yale.edu/data/activity/96f72cc4-682e-4c95-baf2-36f142ce3fc1"
-								},
-								{
-									"key": "profile",
-									"value": "name"
-								},
-								{
-									"key": "lang",
-									"value": "fr",
-									"disabled": true
 								}
 							]
 						}

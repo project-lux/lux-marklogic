@@ -17,25 +17,25 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
-  '/ds/lux/document.mjs': {
+  '/ds/lux/document/create.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
+  '/ds/lux/document/delete.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
+  '/ds/lux/document/read.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
+  },
+  '/ds/lux/document/update.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
   },
   '/ds/lux/facets.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
-  },
-  '/ds/lux/myCollections/set/create.mjs': {
-    allowInReadOnlyMode: false,
-    features: { myCollections: true },
-  },
-  '/ds/lux/myCollections/set/delete.mjs': {
-    allowInReadOnlyMode: false,
-    features: { myCollections: true },
-  },
-  '/ds/lux/myCollections/set/update.mjs': {
-    allowInReadOnlyMode: false,
-    features: { myCollections: true },
   },
   '/ds/lux/relatedList.mjs': {
     allowInReadOnlyMode: true,

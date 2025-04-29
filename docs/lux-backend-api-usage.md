@@ -13,47 +13,48 @@
     - [Failed Request / Response Example](#failed-request--response-example-1)
   - [Document](#document)
     - [Create Document](#create-document)
-      - [Successful Request / Response Example](#successful-request--response-example-2)
+      - [Create My Collection Successful Request / Response Example](#create-my-collection-successful-request--response-example)
+      - [Create User Profile Successful Request / Response Example](#create-user-profile-successful-request--response-example)
       - [Failed Request / Response Example](#failed-request--response-example-2)
     - [Delete Document](#delete-document)
-      - [Successful Request / Response Example](#successful-request--response-example-3)
+      - [Successful Request / Response Example](#successful-request--response-example-2)
       - [Failed Request / Response Example](#failed-request--response-example-3)
     - [Read Document](#read-document)
-      - [Successful Request / Response Example](#successful-request--response-example-4)
+      - [Successful Request / Response Example](#successful-request--response-example-3)
       - [Failed Request / Response Example](#failed-request--response-example-4)
     - [Update Document](#update-document)
-      - [Successful Request / Response Example](#successful-request--response-example-5)
+      - [Successful Request / Response Example](#successful-request--response-example-4)
       - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Facets](#facets)
-    - [Successful Request / Response Example](#successful-request--response-example-6)
+    - [Successful Request / Response Example](#successful-request--response-example-5)
     - [Failed Request / Response Example](#failed-request--response-example-6)
   - [Related List](#related-list)
-    - [Successful Request / Response Example](#successful-request--response-example-7)
+    - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
   - [Search](#search)
     - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
     - [Failed Request / Response Example](#failed-request--response-example-8)
   - [Search Estimate](#search-estimate)
-    - [Successful Request / Response Example](#successful-request--response-example-8)
+    - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-9)
   - [Search Info](#search-info)
-    - [Successful Request / Response Example](#successful-request--response-example-9)
+    - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-10)
   - [Search Will Match](#search-will-match)
-    - [Successful Request / Response Example](#successful-request--response-example-10)
+    - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-11)
   - [Stats](#stats)
-    - [Successful Request / Response Example](#successful-request--response-example-11)
+    - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-12)
   - [Storage Info](#storage-info)
-    - [Successful Request / Response Example](#successful-request--response-example-12)
+    - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-13)
   - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-13)
+    - [Successful Request / Response Example](#successful-request--response-example-12)
     - [Failed Request / Response Example](#failed-request--response-example-14)
   - [Version Info](#version-info)
-    - [Successful Request / Response Example](#successful-request--response-example-14)
+    - [Successful Request / Response Example](#successful-request--response-example-13)
     - [Failed Request / Response Example](#failed-request--response-example-15)
 
 # Introduction
@@ -344,7 +345,7 @@ The Create Document endpoint enables users to select documents, specifically My 
 | `doc` | *See example below* | **REQUIRED** - The document to insert. Only send the contents of /json; example top-level property names include `type` and `member`. If the document already has an ID, it will be replaced with a unique ID, facilitating copying one document as another. |
 | `lang` | "es" | **OPTIONAL** - Reserved for future use. |
 
-#### Successful Request / Response Example
+#### Create My Collection Successful Request / Response Example
 
 Scenario: A user (not service account) submits a valid My Collection (i.e., a Set classified as a My Collection).
 
@@ -456,6 +457,67 @@ Response Body is the given document plus any modifications made by the backend, 
     "timespan":{
       "begin_of_the_begin":"2025-04-17T16:04:58",
       "end_of_the_end":"2025-04-17T16:04:58"
+    }
+  }
+}
+```
+
+#### Create User Profile Successful Request / Response Example
+
+Scenario: A user (not service account) submits a valid user profile, and their user profile does not already exist.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `doc` | { "type": "Person", "classified_as": [ ... ], ... } |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body is the given document plus any modifications made by the backend, specifically the addition of /id and /created_by (bottom):
+
+*Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
+
+```
+{
+  "type":"Person",
+  "classified_as":[
+    {
+      "id":"https://not.checked",
+      "equivalent":[
+        {
+          "id":"https://todo.concept.user.profile"
+        }
+      ]
+    }
+  ],
+  "identified_by":[
+    {
+      "type":"Identifier",
+      "content":"joe",
+      "classified_as":[
+        {
+          "id":"http://www.wikidata.org/entity/Q15901043",
+          "type":"Type",
+          "_label":"username"
+        }
+      ]
+    }
+  ],
+  "id":"https://lux.collections.yale.edu/person/b45bd251-9d46-4257-ae37-513ad5068c16",
+  "created_by":{
+    "type":"Creation",
+    "carried_out_by":[
+      {
+        "id":"https://lux.collections.yale.edu/person/b45bd251-9d46-4257-ae37-513ad5068c16",
+        "type":"Person"
+      }
+    ],
+    "timespan":{
+      "begin_of_the_begin":"2025-04-29T16:29:01",
+      "end_of_the_end":"2025-04-29T16:29:01"
     }
   }
 }

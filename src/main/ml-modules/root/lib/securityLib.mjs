@@ -4,6 +4,7 @@ import {
   getCurrentEndpointPath,
 } from '../config/endpointsConfig.mjs';
 import * as libWrapper from './libWrapper.mjs';
+import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   FEATURE_MY_COLLECTIONS_ENABLED,
@@ -44,29 +45,29 @@ ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_UPDATE] = 'updater';
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
 
-function _doesCurrentUserHaveExclusiveRoles() {
+function _hasExclusiveRoles(user) {
   let hasAll = true;
-  _getExclusiveRoleNamesForCurrentUser().forEach((roleName) => {
-    if (hasAll && _hasRole(roleName) === false) {
+  _getExclusiveRoleNames(user).forEach((roleName) => {
+    if (hasAll && user.hasRole(roleName) === false) {
       hasAll = false;
     }
   });
   return hasAll;
 }
 
-function _createExclusiveRolesForCurrentUser() {
-  throwIfCurrentUserIsServiceAccount();
-  _getExclusiveRoleNamesForCurrentUser().forEach((roleName) => {
-    _createAndGrantRoleToCurrentUser(roleName);
+function _createExclusiveRoles(user) {
+  throwIfUserIsServiceAccount(user);
+  _getExclusiveRoleNames(user).forEach((roleName) => {
+    _createAndGrantRole(user, roleName);
   });
 }
 
 // When this function creates and grants a role, code that executes after it must be
 // invoked in a subsequent transaction (e.g., xdmp.invokeFunction or new endpoint request).
-function __createAndGrantRoleToCurrentUser(roleName) {
-  throwIfCurrentUserIsServiceAccount();
-  if (_hasRole(roleName) === false) {
-    const username = getCurrentUsername();
+function __createAndGrantRole(user, roleName) {
+  throwIfUserIsServiceAccount(user);
+  if (user.hasRole(roleName) === false) {
+    const username = user.getUsername();
 
     // Create the role when it does not exist.
     const createRole = () => {
@@ -101,26 +102,16 @@ function __createAndGrantRoleToCurrentUser(roleName) {
     xdmp.invokeFunction(addRole, { database: xdmp.securityDatabase() });
   }
 }
-const _createAndGrantRoleToCurrentUser = import.meta.amp(
-  __createAndGrantRoleToCurrentUser
-);
+const _createAndGrantRole = import.meta.amp(__createAndGrantRole);
 
-function getExclusiveRoleNamesForUser(username) {
+function getExclusiveRoleNamesByUsername(username) {
   return [
-    getExclusiveRoleNameForUser(username, CAPABILITY_READ),
-    getExclusiveRoleNameForUser(username, CAPABILITY_UPDATE),
+    getExclusiveRoleNameByUsername(username, CAPABILITY_READ),
+    getExclusiveRoleNameByUsername(username, CAPABILITY_UPDATE),
   ];
 }
 
-// Electing not to pass current user into getExclusiveRoleNamesForUser, despite the repetition.
-function _getExclusiveRoleNamesForCurrentUser() {
-  return [
-    _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
-    _getExclusiveRoleNameForCurrentUser(CAPABILITY_UPDATE),
-  ];
-}
-
-function getExclusiveRoleNameForUser(username, capability) {
+function getExclusiveRoleNameByUsername(username, capability) {
   if (isUndefined(username)) {
     throw new InternalServerError(
       'The username for the exclusive role was not specified.'
@@ -139,22 +130,23 @@ function getExclusiveRoleNameForUser(username, capability) {
   return `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
 }
 
-// Get the current user's exclusive role for the specified capability.
-function _getExclusiveRoleNameForCurrentUser(capability) {
-  throwIfCurrentUserIsServiceAccount();
-  return getExclusiveRoleNameForUser(getCurrentUsername(), capability);
+function _getExclusiveRoleNames(user) {
+  return [
+    _getExclusiveRoleName(user, CAPABILITY_READ),
+    _getExclusiveRoleName(user, CAPABILITY_UPDATE),
+  ];
 }
 
-function getExclusiveDocumentPermissionsForCurrentUser() {
+// Get the user's exclusive role for the specified capability.
+function _getExclusiveRoleName(user, capability) {
+  throwIfUserIsServiceAccount(user);
+  return getExclusiveRoleNameByUsername(user.getUsername(), capability);
+}
+
+function getExclusiveDocumentPermissions(user) {
   return [
-    xdmp.permission(
-      _getExclusiveRoleNameForCurrentUser(CAPABILITY_READ),
-      'read'
-    ),
-    xdmp.permission(
-      _getExclusiveRoleNameForCurrentUser(CAPABILITY_UPDATE),
-      'update'
-    ),
+    xdmp.permission(_getExclusiveRoleName(user, CAPABILITY_READ), 'read'),
+    xdmp.permission(_getExclusiveRoleName(user, CAPABILITY_UPDATE), 'update'),
   ];
 }
 
@@ -199,9 +191,10 @@ function handleRequestV2ForUnitTesting(
 ) {
   // As this allows the caller to specify which endpoint configuration to use and is only
   // intended to be called when running a unit test, restrict it.
+  const user = new User();
   if (
     UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
-    _hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS) === false
+    user.hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS) === false
   ) {
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
@@ -221,7 +214,8 @@ function __handleRequestV2(
     unitName = UNIT_NAME_UNRESTRICTED;
   }
 
-  const isServiceAccount = isCurrentUserServiceAccount();
+  const user = new User();
+  const isServiceAccount = _isUserServiceAccount(user);
   const isMyCollectionRequest = endpointConfig.isPartOfMyCollectionsFeature();
 
   // When in read-only mode, block requests that are not allowed to execute then.
@@ -245,8 +239,8 @@ function __handleRequestV2(
 
   // Ensure user has their exclusive roles for My Collection requests.
   if (isMyCollectionRequest) {
-    if (_doesCurrentUserHaveExclusiveRoles() === false) {
-      _createExclusiveRolesForCurrentUser();
+    if (_hasExclusiveRoles(user) === false) {
+      _createExclusiveRoles(user);
     }
   }
   return _getExecuteWithServiceAccountFunction(unitName)(f);
@@ -269,20 +263,24 @@ function _getRoleServiceAccountCannotHave() {
   return ROLE_NAME_ENDPOINT_CONSUMER_USER;
 }
 
-function isCurrentUserServiceAccount() {
-  return _hasRole(_getRoleServiceAccountCannotHave()) === false;
+function _isUserServiceAccount(user) {
+  return user.hasRole(_getRoleServiceAccountCannotHave()) === false;
 }
 
-function throwIfCurrentUserIsServiceAccount() {
-  if (isCurrentUserServiceAccount()) {
+function throwIfUserIsServiceAccount(user) {
+  if (_isUserServiceAccount(user)) {
     throw new AccessDeniedError(
       'Service accounts may not perform this operation'
     );
   }
 }
 
-function getCurrentUsername() {
-  return xdmp.getCurrentUser();
+function isCurrentUserServiceAccount() {
+  return _isUserServiceAccount(new User());
+}
+
+function throwIfCurrentUserIsServiceAccount() {
+  throwIfUserIsServiceAccount(new User());
 }
 
 // Get an array of unit names known to this deployment.
@@ -324,16 +322,6 @@ function getCurrentUserUnitName() {
     throw new BadRequestError('Unable to determine unit from roles.');
   }
   return unitName;
-}
-
-function _hasRole(roleName) {
-  return xdmp
-    .getCurrentRoles()
-    .toArray()
-    .map((id) => {
-      return xdmp.roleName(id);
-    })
-    .includes(roleName);
 }
 
 // Determine if the given scope or search term configuration is applicable to the specified unit.
@@ -379,16 +367,16 @@ export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
   UNIT_NAME_UNRESTRICTED,
-  getCurrentUsername,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
-  getExclusiveDocumentPermissionsForCurrentUser,
-  getExclusiveRoleNameForUser,
-  getExclusiveRoleNamesForUser,
+  getExclusiveDocumentPermissions,
+  getExclusiveRoleNameByUsername,
+  getExclusiveRoleNamesByUsername,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
   removeUnitConfigProperties,
   throwIfCurrentUserIsServiceAccount,
+  throwIfUserIsServiceAccount,
 };

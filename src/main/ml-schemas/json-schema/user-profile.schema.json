@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://lux.collections.yale.edu/schemas/user-profile.schema.json",
+  "title": "User Profile",
+  "description": "User Profile schema",
+  "type": "object",
+  "required": ["json"],
+  "properties": {
+    "json": {
+      "type": "object",
+      "required": ["type", "classified_as"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "Person",
+          "description": "/json/type must be Person"
+        },
+        "classified_as": {
+          "type": "array",
+          "description": "The classified_as array must contain exactly one object with an equivalent ID of '%%identifierUserProfile%%'.",
+          "items": {
+            "type": "object",
+            "required": ["id", "equivalent"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "equivalent": {
+                "type": "array",
+                "required": ["id"],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "An equivalent ID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "contains": {
+            "type": "object",
+            "required": ["equivalent"],
+            "properties": {
+              "equivalent": {
+                "type": "array",
+                "required": ["id"],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "const": "%%identifierUserProfile%%"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -16,6 +16,8 @@ const IDENTIFIERS = {
   setNote: '%%identifierSetNote%%',
   setNoteLabel: '%%identifierSetNoteLabel%%',
   typeOfWork: 'http://vocab.getty.edu/aat/300435443',
+  username: 'http://www.wikidata.org/entity/Q15901043',
+  userProfile: '%%identifierUserProfile%%',
 
   langaa: 'http://vocab.getty.edu/aat/300387779',
   langaar: 'http://vocab.getty.edu/aat/300387779',

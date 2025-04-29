@@ -22,11 +22,14 @@ import {
   getLanguageIdentifier,
   hasLanguageIdentifier,
 } from './identifierConstants.mjs';
-import { getCurrentUsername } from './securityLib.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
-import { isDefined, isUndefined, toArray } from '../utils/utils.mjs';
+import {
+  isDefined,
+  isNonEmptyString,
+  isUndefined,
+  toArray,
+} from '../utils/utils.mjs';
 import { toISOStringThroughSeconds } from '../utils/dateUtils.mjs';
-import { PERSON_PREFIX } from './appConstants.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -44,24 +47,26 @@ const UI_TYPE_CONCEPT = 'Concept';
 const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
 const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
 
-function _getDataIdForCurrentUser() {
-  return `${PERSON_PREFIX}${getCurrentUsername()}`;
-}
-
 // Intended for when modifies a Set.
-function addAddedToByEntry(docObj) {
-  const now = toISOStringThroughSeconds(new Date());
-  if (isUndefined(docObj.json.added_to_by)) {
-    docObj.json.added_to_by = [];
+function addAddedToByEntry(docObj, userIri) {
+  if (isNonEmptyString(userIri)) {
+    const now = toISOStringThroughSeconds(new Date());
+    if (isUndefined(docObj.json.added_to_by)) {
+      docObj.json.added_to_by = [];
+    }
+    docObj.json.added_to_by.push({
+      type: 'Addition',
+      carried_out_by: [{ id: userIri, type: 'Person' }],
+      timespan: {
+        begin_of_the_begin: now,
+        end_of_the_end: now,
+      },
+    });
+  } else {
+    throw new InternalServerError(
+      'model.addAddedToByEntry requires a non-empty string for the user IRI.'
+    );
   }
-  docObj.json.added_to_by.push({
-    type: 'Addition',
-    carried_out_by: [{ id: _getDataIdForCurrentUser(), type: 'Person' }],
-    timespan: {
-      begin_of_the_begin: now,
-      end_of_the_end: now,
-    },
-  });
 }
 
 function getAddedToBy(docNode) {
@@ -256,6 +261,22 @@ function getUiType(docNode) {
   return _upTo('uiType', node, value);
 }
 
+function isMyCollection(docNode) {
+  return fn.exists(
+    docNode.xpath(
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.myCollection}"]`
+    )
+  );
+}
+
+function isUserProfile(docNode) {
+  return fn.exists(
+    docNode.xpath(
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.userProfile}"]`
+    )
+  );
+}
+
 // @param addedToBy - send null to delete existing property.
 function setAddedToBy(docObj, addedToBy) {
   if (isDefined(addedToBy)) {
@@ -268,19 +289,24 @@ function setAddedToBy(docObj, addedToBy) {
 }
 
 // @param createdBy - submit null to have a new entry created.
-function setCreatedBy(docObj, createdBy = null) {
+// User IRI only used when createdBy is null.
+function setCreatedBy(docObj, userIri, createdBy = null) {
   if (createdBy) {
     docObj.json.created_by = createdBy.xpath ? createdBy.toObject() : createdBy;
-  } else {
+  } else if (isNonEmptyString(userIri)) {
     const now = toISOStringThroughSeconds(new Date());
     docObj.json.created_by = {
       type: 'Creation',
-      carried_out_by: [{ id: _getDataIdForCurrentUser(), type: 'Person' }],
+      carried_out_by: [{ id: userIri, type: 'Person' }],
       timespan: {
         begin_of_the_begin: now,
         end_of_the_end: now,
       },
     };
+  } else {
+    throw new InternalServerError(
+      'model.setCreatedBy requires a non-empty string for the user IRI'
+    );
   }
 }
 
@@ -288,8 +314,49 @@ function setId(docObj, id) {
   docObj.json.id = id;
 }
 
+function setIndexedProperties(docObj, indexedProperties) {
+  docObj.indexedProperties = indexedProperties;
+}
+
 function setSetMembers(docObj, members) {
   docObj.json.member = members;
+}
+
+// Sets the username in a (presumed) user profile.
+function setUsername(docObj, username) {
+  if (isUndefined(docObj.json.identified_by)) {
+    docObj.json.identified_by = [];
+  }
+
+  // If there's already a username entry, update it.
+  let add = true;
+  outerLoop: for (const idObj of docObj.json.identified_by) {
+    if (idObj.type === 'Identifier') {
+      for (const classObj of idObj.classified_as) {
+        if (classObj.id === IDENTIFIERS.username) {
+          idObj.content = username;
+          add = false;
+          break outerLoop;
+        }
+      }
+    }
+  }
+
+  // Else, add a new entry.
+  if (add) {
+    // Add a new entry.
+    docObj.json.identified_by.push({
+      type: 'Identifier',
+      content: username,
+      classified_as: [
+        {
+          id: IDENTIFIERS.username,
+          type: 'Type',
+          _label: 'username',
+        },
+      ],
+    });
+  }
 }
 
 /**
@@ -499,10 +566,14 @@ export {
   getType,
   getUiType,
   merge,
+  isMyCollection,
+  isUserProfile,
   setAddedToBy,
   setCreatedBy,
   setId,
+  setIndexedProperties,
   setSetMembers,
+  setUsername,
   PROP_NAME_BEGIN_OF_THE_BEGIN,
   PROP_NAME_END_OF_THE_END,
   TYPE_ACTIVITY,

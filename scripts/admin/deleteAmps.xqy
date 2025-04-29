@@ -23,6 +23,10 @@ let $ampLibrary := "/lib/wrapperLib.mjs"
 (: Includes since deleted and renamed amps. :)
 let $deleteTheseToo := (
   <amp>
+    <name>__createAndGrantRole</name>
+    <library>/lib/securityLib.mjs</library>
+  </amp>,
+  <amp>
     <name>__createAndGrantRoleToCurrentUser</name>
     <library>/lib/securityLib.mjs</library>
   </amp>,

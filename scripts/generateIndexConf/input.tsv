@@ -47,6 +47,8 @@ agent	MemberOf	Name	keyword	agentMemberOfName	Search	Semantic	N	Agents that are 
 agent	HasDigitalImage	Boolean	numbers	agentHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage	
 agent	ProfessionalActivity	Id	uri	agentProfessionalActivityId	RecordLink	Non	N		/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]/id	
 agent	ProfessionalActivity	Name	keyword	agentProfessionalActivityName	Search	Semantic	N			lux:agentProfessionallyActive
+agent	User	Id	uri	agentUserId		Non	N		/json[type = 'Person'][identified_by[type='Identifier'][classified_as/id = 'http://www.wikidata.org/entity/Q15901043']]/id	
+agent	User	Name	keyword	agentUserName		Non	N		/json[type = 'Person']/identified_by[type='Identifier'][classified_as/id = 'http://www.wikidata.org/entity/Q15901043']/content	
 										
 item	ArchiveSort	Id	string	itemArchiveSortId	Search	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
 item	DataType	Name	keyword	itemDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType	

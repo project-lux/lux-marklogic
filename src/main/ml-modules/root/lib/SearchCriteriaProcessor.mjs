@@ -49,8 +49,6 @@ import * as utils from '../utils/utils.mjs';
 // Once supported, we want to stop calculating scores.
 const FROM_SEARCH_OPTIONS = { scoreMethod: 'simple' };
 
-const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
-
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
 const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
@@ -68,6 +66,8 @@ const SearchCriteriaProcessor = class {
       facetsAreLikely,
       synonymsEnabled,
     };
+
+    this.searchTermsConfig = getSearchTermsConfig();
 
     // Given to process()
     this.scopeName;
@@ -820,10 +820,7 @@ const SearchCriteriaProcessor = class {
     }
     searchTerm.setValue(termValue);
 
-    const searchTermConfig = SearchCriteriaProcessor._getSearchTermConfig(
-      scopeName,
-      termName
-    );
+    const searchTermConfig = this._getSearchTermConfig(scopeName, termName);
     searchTerm.setSearchTermConfig(searchTermConfig);
 
     // Determine the object type of the value, whether it is allowed by the pattern, and whether
@@ -880,7 +877,7 @@ const SearchCriteriaProcessor = class {
         // There are a couple contexts where we need to know a little about the child term.
         const targetScopeName = searchTermConfig.getTargetScopeName();
         searchTerm.addChildInfo(
-          SearchCriteriaProcessor._getPartialChildSearchTermInfo(
+          this._getPartialChildSearchTermInfo(
             targetScopeName || scopeName,
             termValue
           )
@@ -930,7 +927,7 @@ const SearchCriteriaProcessor = class {
     return searchTerm;
   }
 
-  static _getPartialChildSearchTermInfo(scopeName, termValue) {
+  _getPartialChildSearchTermInfo(scopeName, termValue) {
     const hasGroup = SearchCriteriaProcessor._hasGroup(termValue);
 
     // May override when not a group.
@@ -941,10 +938,7 @@ const SearchCriteriaProcessor = class {
     if (!hasGroup) {
       const termName =
         SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue);
-      const searchTermConfig = SearchCriteriaProcessor._getSearchTermConfig(
-        scopeName,
-        termName
-      );
+      const searchTermConfig = this._getSearchTermConfig(scopeName, termName);
       patternName = searchTermConfig.getPatternName();
       willReturnCtsQuery = returnsCtsQuery(patternName);
       valueType =
@@ -961,8 +955,8 @@ const SearchCriteriaProcessor = class {
   }
 
   // Get a search term's configuration by scope name and term name.  Exception thrown when an invalid combination.
-  static _getSearchTermConfig(scopeName, termName) {
-    const scopedTerms = SEARCH_TERMS_CONFIG[scopeName];
+  _getSearchTermConfig(scopeName, termName) {
+    const scopedTerms = this.searchTermsConfig[scopeName];
     if (!scopedTerms) {
       throw new InternalServerError(
         `No terms are configured to the '${scopeName}' search scope.`

@@ -33,11 +33,14 @@ import {
   NotFoundError,
 } from './mlErrorsLib.mjs';
 import { getLanguageIdentifier } from './identifierConstants.mjs';
-import { isNonEmptyArray, isUndefined } from '../utils/utils.mjs';
+import { isNonEmptyArray, isDefined } from '../utils/utils.mjs';
 
 const DEFAULT_LANG = getLanguageIdentifier('en');
 const DEFAULT_NEW_DOCUMENT = false;
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
+
+const DOCUMENT_TYPE_MY_COLLECTION = 'My Collection';
+const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
 
 function createDocument(docNode, lang = DEFAULT_LANG) {
   return _insertDocument(docNode, lang, true);
@@ -47,7 +50,7 @@ function readDocument(uri, profile = null, lang = 'en') {
   if (fn.docAvailable(uri)) {
     return applyProfile(cts.doc(uri), profile, lang);
   } else {
-    throw new NotFoundError(`Document '${uri}' Not Found`);
+    throw new NotFoundError(`Document '${uri}' not found`);
   }
 }
 
@@ -58,11 +61,24 @@ function updateDocument(docNode, lang = DEFAULT_LANG) {
 function deleteDocument(uri) {
   throwIfCurrentUserIsServiceAccount();
 
-  if (isUndefined(uri)) {
+  if (isDefined(uri)) {
+    if (fn.docAvailable(uri)) {
+      // We're purposely blocking the deletion of user profiles as they are used in My Collection
+      // documents and are not deterministic.
+      const doc = cts.doc(uri);
+      if (isMyCollection(doc)) {
+        xdmp.documentDelete(uri);
+      } else {
+        throw new BadRequestError(
+          `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION}.`
+        );
+      }
+    } else {
+      throw new NotFoundError(`Document '${uri}' not found`);
+    }
+  } else {
     throw new BadRequestError('The URI is required.');
   }
-
-  xdmp.documentDelete(uri, { ifNotExists: 'error' });
 }
 
 function _insertDocument(
@@ -86,7 +102,7 @@ function _insertDocument(
     config = _getMyCollectionConfig(user, readOnlyDocNode, lang, newDocument);
   } else {
     throw new BadRequestError(
-      `The document type is not supported. The document must be a My Collection or User Profile.`
+      `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION} or ${DOCUMENT_TYPE_USER_PROFILE}.`
     );
   }
 

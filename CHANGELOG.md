@@ -4,9 +4,10 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v1.39.0 - TODO
 ### Added
-- Added the [Create Document endpoint](/docs/lux-backend-api-usage.md#create-document). Only available when the My Collections feature is enabled. Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
-- Added the [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document). Only available when the My Collections feature is enabled. Never available to service accounts. ([#493](https://github.com/project-lux/lux-marklogic/issues/493), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
-- Added the [Delete Document endpoint](/docs/lux-backend-api-usage.md#delete-document). Only available when the My Collections feature is enabled. Never available to service accounts. ([#494](https://github.com/project-lux/lux-marklogic/issues/494), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the [Create Document endpoint](/docs/lux-backend-api-usage.md#create-document). Only available when the My Collections feature is enabled. Supports My Collection and User Profile documents.  Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document). Only available when the My Collections feature is enabled. Supports My Collection and User Profile documents.  Never available to service accounts. ([#493](https://github.com/project-lux/lux-marklogic/issues/493), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the [Delete Document endpoint](/docs/lux-backend-api-usage.md#delete-document). Only available when the My Collections feature is enabled. Supports My Collection documents only.  Never available to service accounts. ([#494](https://github.com/project-lux/lux-marklogic/issues/494), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the `userId` and `username` search terms and underlying indexes, within the agent search scope. (Part of [#501](https://github.com/project-lux/lux-marklogic/issues/501))
 
 ### Changed
 - Changed the Document endpoint (/ds/lux/document.mjs) to the [Read Document endpoint](/docs/lux-backend-api-usage.md#read-document) (/ds/lux/document/read.mjs). This is a **backwards-incompatible** change. ([#512](https://github.com/project-lux/lux-marklogic/issues/512))
@@ -16,7 +17,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Fixed
 
 ### Security
-- As part of [#486](https://github.com/project-lux/lux-marklogic/issues/486) (above):
+- As part of [#486](https://github.com/project-lux/lux-marklogic/issues/486) and [#501](https://github.com/project-lux/lux-marklogic/issues/501) (above):
     - Deleted, modified, and added additional [amps](/docs/lux-backend-security-and-software.md#amps).
     - Modified [#475](https://github.com/project-lux/lux-marklogic/issues/475)'s definition of a service account.
 

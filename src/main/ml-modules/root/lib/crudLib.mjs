@@ -5,7 +5,9 @@ import {
   COLLECTION_NAME_USER_PROFILE,
 } from './appConstants.mjs';
 import {
+  CAPABILITY_UPDATE,
   getExclusiveDocumentPermissions,
+  getExclusiveRoleNameByUsername,
   throwIfCurrentUserIsServiceAccount,
   throwIfUserIsServiceAccount,
 } from './securityLib.mjs';
@@ -33,7 +35,7 @@ import {
   NotFoundError,
 } from './mlErrorsLib.mjs';
 import { getLanguageIdentifier } from './identifierConstants.mjs';
-import { isNonEmptyArray, isDefined } from '../utils/utils.mjs';
+import { isNonEmptyArray, isDefined, isUndefined } from '../utils/utils.mjs';
 
 const DEFAULT_LANG = getLanguageIdentifier('en');
 const DEFAULT_NEW_DOCUMENT = false;
@@ -143,13 +145,30 @@ function _insertDocument(
     setIndexedProperties(editableDocObj, config.indexedProperties);
   } else {
     uri = getId(readOnlyDocNode);
-    if (!fn.docAvailable(uri)) {
+
+    // Searching for the document and requiring the user be able to update the document in order
+    // to provide a better error message (for an edge case of trying to use a My Collection or
+    // user profile IRI to update a pipeline-provided document).
+    const existingDocNode = fn.head(
+      cts.search(
+        cts.andQuery([
+          cts.documentQuery(uri),
+          cts.documentPermissionQuery(
+            getExclusiveRoleNameByUsername(
+              user.getUsername(),
+              CAPABILITY_UPDATE
+            ),
+            CAPABILITY_UPDATE
+          ),
+        ])
+      )
+    );
+
+    if (isUndefined(existingDocNode)) {
       throw new BadRequestError(
-        `The document with URI '${uri}' does not exist.`
+        'Either the document does not exist or you do not have permission to update it.'
       );
     }
-
-    const existingDocNode = cts.doc(uri);
 
     // Preserve anything outside of /json
     for (const prop in existingDocNode) {

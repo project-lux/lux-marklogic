@@ -1,4 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
+import { getExclusiveRoleNamesByUsername } from '/lib/securityLib.mjs';
+
+const sec = require('/MarkLogic/security.xqy');
 
 /**
  * Invoke a zero arity function whereby the scenario may expect an error.  This utility handles the
@@ -68,4 +71,37 @@ function executeErrorSupportedScenario(
   };
 }
 
-export { executeErrorSupportedScenario };
+// Call this before deleting the user's roles that could be on the documents in the specified collections.
+function removeCollections(collections, username) {
+  const zeroArityFun = () => {
+    declareUpdate();
+    collections.forEach((name) => {
+      console.log(
+        `User ${xdmp.getCurrentUser()} is attempting to delete the '${name}' collection from the ${xdmp.databaseName(
+          xdmp.database()
+        )} database...`
+      );
+      xdmp.collectionDelete(name);
+    });
+  };
+  xdmp.invokeFunction(zeroArityFun, { userId: xdmp.user(username) });
+}
+
+function removeExclusiveRolesByUsername(username) {
+  const zeroArityFun = () => {
+    declareUpdate();
+    getExclusiveRoleNamesByUsername(username).forEach((roleName) => {
+      if (sec.roleExists(roleName)) {
+        console.log(`Deleting the ${roleName} role...`);
+        sec.removeRole(roleName);
+      }
+    });
+  };
+  xdmp.invokeFunction(zeroArityFun, { database: xdmp.securityDatabase() });
+}
+
+export {
+  executeErrorSupportedScenario,
+  removeCollections,
+  removeExclusiveRolesByUsername,
+};

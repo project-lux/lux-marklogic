@@ -33,7 +33,7 @@ const User = class {
       const results = searchCriteriaProcessor.getSearchResults().results;
       if (results.length > 1) {
         throw new InternalServerError(
-          `Multiple user profiles found for username '${getUsername()}'.`
+          `Multiple user profiles found for username '${this.getUsername()}'.`
         );
       } else if (results.length === 1) {
         this.userProfile = cts.doc(results[0].id);

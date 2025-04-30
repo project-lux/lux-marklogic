@@ -1,17 +1,18 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
+import { User } from '/lib/User.mjs';
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  getExclusiveDocumentPermissionsForCurrentUser,
-  getExclusiveRoleNameForUser,
+  getExclusiveDocumentPermissions,
+  getExclusiveRoleNameByUsername,
 } from '/lib/securityLib.mjs';
 import {
   USERNAME_FOR_REGULAR_USER,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 
-const LIB = '0200 getExclusiveDocumentPermissionsForCurrentUser.mjs';
+const LIB = '0200 getExclusiveDocumentPermissions.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
@@ -27,14 +28,14 @@ const scenarios = [
       value: [
         // Will fail if "0100 handleRequest.mjs" doesn't run first.
         xdmp.permission(
-          getExclusiveRoleNameForUser(
+          getExclusiveRoleNameByUsername(
             USERNAME_FOR_REGULAR_USER,
             CAPABILITY_READ
           ),
           'read'
         ),
         xdmp.permission(
-          getExclusiveRoleNameForUser(
+          getExclusiveRoleNameByUsername(
             USERNAME_FOR_REGULAR_USER,
             CAPABILITY_UPDATE
           ),
@@ -56,9 +57,12 @@ const scenarios = [
 ];
 
 for (const scenario of scenarios) {
+  const zeroArityFun = () => {
+    return getExclusiveDocumentPermissions(new User());
+  };
   const scenarioResults = executeErrorSupportedScenario(
     scenario,
-    getExclusiveDocumentPermissionsForCurrentUser,
+    zeroArityFun,
     {
       userId: xdmp.user(scenario.input.username),
     }

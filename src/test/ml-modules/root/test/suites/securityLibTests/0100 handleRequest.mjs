@@ -7,7 +7,7 @@ import {
   UNIT_NAME_UNRESTRICTED,
   handleRequestV2ForUnitTesting,
   getEndpointAccessUnitNames,
-  getExclusiveRoleNameForUser,
+  getExclusiveRoleNameByUsername,
 } from '/lib/securityLib.mjs';
 import {
   FOO_URI,
@@ -36,8 +36,8 @@ assertions.push(
 );
 
 const regularUserRoleNames = [
-  getExclusiveRoleNameForUser(USERNAME_FOR_REGULAR_USER, CAPABILITY_READ),
-  getExclusiveRoleNameForUser(USERNAME_FOR_REGULAR_USER, CAPABILITY_UPDATE),
+  getExclusiveRoleNameByUsername(USERNAME_FOR_REGULAR_USER, CAPABILITY_READ),
+  getExclusiveRoleNameByUsername(USERNAME_FOR_REGULAR_USER, CAPABILITY_UPDATE),
 ];
 
 const scenarios = [

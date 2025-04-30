@@ -65,8 +65,8 @@ function deleteDocument(uri) {
 
   if (isDefined(uri)) {
     if (fn.docAvailable(uri)) {
-      // We're purposely blocking the deletion of user profiles as they are used in My Collection
-      // documents and are not deterministic.
+      // We're purposely blocking the deletion of user profiles as user IRIs  are used in
+      // My Collection documents and are not deterministic.
       const doc = cts.doc(uri);
       if (isMyCollection(doc)) {
         xdmp.documentDelete(uri);

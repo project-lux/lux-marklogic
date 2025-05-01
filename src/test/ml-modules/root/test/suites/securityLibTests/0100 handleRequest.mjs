@@ -1,5 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
   CAPABILITY_READ,
@@ -171,13 +171,9 @@ for (const scenario of scenarios) {
     );
   };
 
-  const scenarioResults = executeErrorSupportedScenario(
-    scenario,
-    zeroArityFun,
-    {
-      userId: xdmp.user(scenario.input.username),
-    }
-  );
+  const scenarioResults = executeScenario(scenario, zeroArityFun, {
+    userId: xdmp.user(scenario.input.username),
+  });
 
   if (scenarioResults.assertions.length > 0) {
     assertions = assertions.concat(scenarioResults.assertions);

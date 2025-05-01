@@ -1,5 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
 import { throwIfCurrentUserIsServiceAccount } from '/lib/securityLib.mjs';
 import {
   USERNAME_FOR_REGULAR_USER,
@@ -34,7 +34,7 @@ const scenarios = [
 ];
 
 for (const scenario of scenarios) {
-  const scenarioResults = executeErrorSupportedScenario(
+  const scenarioResults = executeScenario(
     scenario,
     throwIfCurrentUserIsServiceAccount,
     {

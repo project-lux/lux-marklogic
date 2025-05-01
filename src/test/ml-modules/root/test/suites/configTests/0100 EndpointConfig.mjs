@@ -1,5 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 
 const LIB = '0100 EndpointConfig.mjs';
@@ -98,7 +98,7 @@ for (const scenario of scenarios) {
     return new EndpointConfig(scenario.input);
   };
 
-  const scenarioResults = executeErrorSupportedScenario(scenario, zeroArityFun);
+  const scenarioResults = executeScenario(scenario, zeroArityFun);
 
   if (scenarioResults.assertions.length > 0) {
     assertions = assertions.concat(scenarioResults.assertions);

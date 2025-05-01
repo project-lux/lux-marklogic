@@ -1,27 +1,27 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { getExclusiveRoleNamesByUsername } from '/lib/securityLib.mjs';
-import { toArray } from '/utils/utils.mjs';
+import { isArray, toArray } from '/utils/utils.mjs';
 
 const sec = require('/MarkLogic/security.xqy');
 
 /**
- * Invoke a zero arity function whereby the scenario may expect an error.  This utility handles the
- * error handling portion of the checks.  When it returns a value (vs. throws), the function behaved
- * as expected with regard to whether it was supposed to (or not supposed to) throw an error.
+ * Invoke a zero arity function configured by the provided scenario.
  *
- * @param {Object} scenario is to define name, expected.error, and --when expected.error is true--
- *    expected.stackToInclude.  If scenario defines executeBeforehand, the value will be executed as
- *    a function before the zeroArityFun is executed.
- * @param {Function} zeroArityFun is the function to be invoked.  It must be zero arity.
+ * @param {Object} Properties:
+ *    name: Name of scenario.
+ *    executeBeforehand: Optional function to execute before the function to test.  Must be zero arity.
+ *    expected.error: Boolean indicating whether an error is expected.
+ *    expected.stackToInclude: String to look for in the error stack trace; used when error is expected.
+ *    expected.nodeAssertions: Optional array of assertions to apply to the result of the function. Only
+ *       applicable when the function being tested returns an object, which this function then creates a
+ *       node out of and applies the assertions to.  There are three types of assertions: equality, xpath,
+ *       and function.  See the implementation for examples and utilized properties of each.
+ * @param {Function} zeroArityFun is the function to be tested.  It must be zero arity.
  * @param {Object} invokeFunOptions is the options to be passed to the xdmp.invokeFunction call.
  * @returns object with the following top-level properties: actualValue, applyErrorNotExpectedAssertions,
  *    assertions.
  */
-function executeErrorSupportedScenario(
-  scenario,
-  zeroArityFun,
-  invokeFunOptions = {}
-) {
+function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
   console.log(`Processing scenario '${scenario.name}'`);
   let actualValue;
   let errorExpectedButNotThrown = false;
@@ -67,6 +67,56 @@ function executeErrorSupportedScenario(
   // Ya get a point for not throwing an error, given one wasn't expected.
   if (applyErrorNotExpectedAssertions) {
     assertions.push(testHelperProxy.success());
+
+    // Let's see if the scenario provided node assertions to apply.
+    if (isArray(scenario.expected.nodeAssertions)) {
+      const docNode = xdmp.toJSON(actualValue);
+      scenario.expected.nodeAssertions.forEach((assertion) => {
+        if (assertion.type === 'equality') {
+          /*
+              {
+                type: 'equality',
+                xpath: `created_by`,
+                expected: existingUserProfile.xpath('json/created_by'),
+                message: 'The created_by property was not restored.',
+              },
+          */
+          assertions.push(
+            testHelperProxy.assertEqual(
+              assertion.expected,
+              docNode.xpath(assertion.xpath),
+              assertion.message
+            )
+          );
+        } else if (assertion.type === 'xpath') {
+          /*
+              {
+                type: 'xpath',
+                xpath: 'exists(id)',
+                expected: true,
+                message: 'The id property was not added.',
+              },
+          */
+          assertions.push(
+            testHelperProxy.assertEqual(
+              assertion.expected,
+              docNode.xpath(assertion.xpath),
+              assertion.message
+            )
+          );
+        } else {
+          /*
+              { 
+                type: 'function', 
+                function: (docNode, username) => {
+                  return testHelperProxy.assert...
+                }
+              },
+          */
+          assertions.push(assertion.function(docNode, scenario.input.username));
+        }
+      });
+    }
   }
 
   return {
@@ -105,8 +155,4 @@ function removeExclusiveRolesByUsername(username) {
   xdmp.invokeFunction(zeroArityFun, { database: xdmp.securityDatabase() });
 }
 
-export {
-  executeErrorSupportedScenario,
-  removeCollections,
-  removeExclusiveRolesByUsername,
-};
+export { executeScenario, removeCollections, removeExclusiveRolesByUsername };

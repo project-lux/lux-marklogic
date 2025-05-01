@@ -3,10 +3,7 @@ import {
   USERNAME_FOR_REGULAR_USER,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
-import {
-  executeErrorSupportedScenario,
-  removeCollections,
-} from '/test/unitTestUtils.mjs';
+import { executeScenario, removeCollections } from '/test/unitTestUtils.mjs';
 import { createDocument } from '/lib/crudLib.mjs';
 import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
@@ -19,7 +16,7 @@ console.log(`${LIB}: starting.`);
 let assertions = [];
 
 const endpointConfig = new EndpointConfig({
-  allowInReadOnlyMode: true,
+  allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
 
@@ -201,7 +198,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      assertions: [
+      nodeAssertions: [
         {
           type: 'xpath',
           xpath: 'id = "https://should.be.overwritten"',
@@ -221,7 +218,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      assertions: newDocAssertions,
+      nodeAssertions: newDocAssertions,
     },
   },
   {
@@ -254,7 +251,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      assertions: [
+      nodeAssertions: [
         {
           type: 'xpath',
           xpath: 'exists(id)',
@@ -316,7 +313,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      assertions: [
+      nodeAssertions: [
         {
           type: 'xpath',
           xpath: 'id = "https://should.be.overwritten"',
@@ -364,33 +361,12 @@ for (const scenario of scenarios) {
       endpointConfig
     );
   };
-  const scenarioResults = executeErrorSupportedScenario(
-    scenario,
-    zeroArityFun,
-    {
-      userId: xdmp.user(scenario.input.username),
-    }
-  );
+  const scenarioResults = executeScenario(scenario, zeroArityFun, {
+    userId: xdmp.user(scenario.input.username),
+  });
 
   if (scenarioResults.assertions.length > 0) {
     assertions = assertions.concat(scenarioResults.assertions);
-  }
-
-  if (scenarioResults.applyErrorNotExpectedAssertions) {
-    const docNode = xdmp.toJSON(scenarioResults.actualValue);
-    scenario.expected.assertions.forEach((assertion) => {
-      if (assertion.type === 'xpath') {
-        assertions.push(
-          testHelperProxy.assertEqual(
-            assertion.expected,
-            docNode.xpath(assertion.xpath),
-            assertion.message
-          )
-        );
-      } else {
-        assertions.push(assertion.function(docNode, scenario.input.username));
-      }
-    });
   }
 }
 console.log(

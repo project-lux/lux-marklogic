@@ -39,6 +39,11 @@
       "kind": "execute"
     },
     {
+      "privilege-name": "user-remove-roles",
+      "action": "http://marklogic.com/xdmp/privileges/user-remove-roles",
+      "kind": "execute"
+    },
+    {
       "privilege-name": "xdmp:invoke",
       "action": "http://marklogic.com/xdmp/privileges/xdmp-invoke",
       "kind": "execute"

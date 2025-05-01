@@ -9,6 +9,11 @@
   ],
   "privilege": [
     {
+      "privilege-name": "grant-my-roles",
+      "action": "http://marklogic.com/xdmp/privileges/grant-my-roles",
+      "kind": "execute"
+    },
+    {
       "privilege-name": "remove-role",
       "action": "http://marklogic.com/xdmp/privileges/remove-role",
       "kind": "execute"
@@ -16,6 +21,21 @@
     {
       "privilege-name": "role-exists",
       "action": "http://marklogic.com/xdmp/privileges/get-role",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "unprotected-collections",
+      "action": "http://marklogic.com/xdmp/privileges/unprotected-collections",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "unprotected-uri",
+      "action": "http://marklogic.com/xdmp/privileges/unprotected-uri",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "user-add-roles",
+      "action": "http://marklogic.com/xdmp/privileges/user-add-roles",
       "kind": "execute"
     },
     {
@@ -31,16 +51,6 @@
     {
       "privilege-name": "xdmp:login",
       "action": "http://marklogic.com/xdmp/privileges/xdmp-login",
-      "kind": "execute"
-    },
-    {
-      "privilege-name": "unprotected-collections",
-      "action": "http://marklogic.com/xdmp/privileges/unprotected-collections",
-      "kind": "execute"
-    },
-    {
-      "privilege-name": "unprotected-uri",
-      "action": "http://marklogic.com/xdmp/privileges/unprotected-uri",
       "kind": "execute"
     }
   ]

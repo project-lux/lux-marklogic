@@ -150,16 +150,15 @@ const newDocAssertions = [
   },
 ];
 
+function removeUserProfileCollection() {
+  removeCollections(COLLECTION_NAME_USER_PROFILE, USERNAME_FOR_REGULAR_USER);
+}
+
 const scenarios = [
   {
     name: 'Regular user providing an invalid user profile',
     // Make sure this user doesn't already have a profile.
-    executeBeforehand: () => {
-      removeCollections(
-        COLLECTION_NAME_USER_PROFILE,
-        USERNAME_FOR_REGULAR_USER
-      );
-    },
+    executeBeforehand: removeUserProfileCollection,
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       doc: {
@@ -215,12 +214,7 @@ const scenarios = [
   // Leave this user profile around for the My Collection tests.
   {
     name: 'Regular user providing a valid user profile',
-    executeBeforehand: () => {
-      removeCollections(
-        COLLECTION_NAME_USER_PROFILE,
-        USERNAME_FOR_REGULAR_USER
-      );
-    },
+    executeBeforehand: removeUserProfileCollection,
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       doc: validUserProfile,
@@ -381,8 +375,6 @@ for (const scenario of scenarios) {
   if (scenarioResults.assertions.length > 0) {
     assertions = assertions.concat(scenarioResults.assertions);
   }
-
-  console.dir(scenarioResults.actualValue);
 
   if (scenarioResults.applyErrorNotExpectedAssertions) {
     const docNode = xdmp.toJSON(scenarioResults.actualValue);

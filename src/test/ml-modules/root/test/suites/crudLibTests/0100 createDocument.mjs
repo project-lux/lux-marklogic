@@ -179,6 +179,7 @@ const scenarios = [
   },
   {
     name: 'Overwrite ID provided in user profile',
+    executeBeforehand: removeUserProfileCollection,
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       doc: {

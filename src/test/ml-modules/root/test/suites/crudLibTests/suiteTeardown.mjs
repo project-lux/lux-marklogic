@@ -1,4 +1,9 @@
-import { USERNAME_FOR_REGULAR_USER } from '/test/unitTestConstants.mjs';
+//declareUpdate();
+
+import {
+  HMO_URI,
+  USERNAME_FOR_REGULAR_USER,
+} from '/test/unitTestConstants.mjs';
 import {
   removeCollections,
   removeExclusiveRolesByUsername,
@@ -15,6 +20,12 @@ try {
     USERNAME_FOR_REGULAR_USER
   );
   removeExclusiveRolesByUsername(USERNAME_FOR_REGULAR_USER);
+
+  // Delete our sample doc.
+  if (fn.docAvailable(HMO_URI)) {
+    console.log(`Deleting '${HMO_URI}'...`);
+    xdmp.documentDelete(HMO_URI);
+  }
 } catch (e) {
   console.error(
     `crudLibTests/suiteTeardown.mjs encountered an error: ${e.message}`

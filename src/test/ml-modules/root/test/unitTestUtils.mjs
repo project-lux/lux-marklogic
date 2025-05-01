@@ -1,6 +1,11 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { getExclusiveRoleNamesByUsername } from '/lib/securityLib.mjs';
 import { isArray, toArray } from '/utils/utils.mjs';
+import {
+  ROLE_NAME_TENANT_READER,
+  ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
+  ROLE_NAME_UNIT_TESTER,
+} from '/test/unitTestConstants.mjs';
 
 const sec = require('/MarkLogic/security.xqy');
 
@@ -126,6 +131,48 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
   };
 }
 
+function loadTestFile(uri, filename) {
+  console.log(`Creating ${uri}`);
+  try {
+    // testHelperProxy.loadTestFile does not accept the return from xdmp.permission.
+    const permissionNodes = fn
+      .head(
+        xdmp.unquote(
+          `<root><sec:permission xmlns:sec="http://marklogic.com/xdmp/security">
+        <sec:capability>read</sec:capability>
+        <sec:role-id>${xdmp.role(ROLE_NAME_UNIT_TESTER)}</sec:role-id>
+      </sec:permission>
+      <sec:permission xmlns:sec="http://marklogic.com/xdmp/security">
+        <sec:capability>update</sec:capability>
+        <sec:role-id>${xdmp.role(ROLE_NAME_UNIT_TESTER)}</sec:role-id>
+      </sec:permission>
+      <sec:permission xmlns:sec="http://marklogic.com/xdmp/security">
+        <sec:capability>read</sec:capability>
+        <sec:role-id>${xdmp.role(ROLE_NAME_TENANT_READER)}</sec:role-id>
+      </sec:permission>
+      <sec:permission xmlns:sec="http://marklogic.com/xdmp/security">
+        <sec:capability>read</sec:capability>
+        <sec:role-id>${xdmp.role(
+          ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER
+        )}</sec:role-id>
+      </sec:permission></root>`
+        )
+      )
+      .xpath('./root/*');
+
+    testHelperProxy.loadTestFile(
+      filename,
+      xdmp.database(),
+      uri,
+      permissionNodes
+    );
+  } catch (e) {
+    console.error(`Unable to create ${uri}`);
+    console.error(e.message);
+    console.error(e.stack);
+  }
+}
+
 // Call this before deleting the user's roles that could be on the documents in the specified collections.
 function removeCollections(collections, username) {
   const zeroArityFun = () => {
@@ -155,4 +202,9 @@ function removeExclusiveRolesByUsername(username) {
   xdmp.invokeFunction(zeroArityFun, { database: xdmp.securityDatabase() });
 }
 
-export { executeScenario, removeCollections, removeExclusiveRolesByUsername };
+export {
+  executeScenario,
+  loadTestFile,
+  removeCollections,
+  removeExclusiveRolesByUsername,
+};

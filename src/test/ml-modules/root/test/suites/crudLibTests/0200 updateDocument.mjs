@@ -1,16 +1,17 @@
+import { COLLECTION_NAME_MY_COLLECTION } from '/lib/appConstants.mjs';
+import { updateDocument } from '/lib/crudLib.mjs';
+import { EndpointConfig } from '/lib/EndpointConfig.mjs';
+import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
+import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
+import { User } from '/lib/User.mjs';
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
+  HMO_URI,
   ROLE_NAME_TENANT_ENDPOINT_CONSUMER,
   USERNAME_FOR_REGULAR_USER,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
-import { executeScenario, removeCollections } from '/test/unitTestUtils.mjs';
-import { updateDocument } from '/lib/crudLib.mjs';
-import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
-import { EndpointConfig } from '/lib/EndpointConfig.mjs';
-import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
-import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
-import { User } from '/lib/User.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
 
 const LIB = '0200 updateDocument.mjs';
 console.log(`${LIB}: starting.`);
@@ -18,7 +19,9 @@ console.log(`${LIB}: starting.`);
 let assertions = [];
 
 //
-// START: Get the User instance for the regular user.  Need to temporarily grant the tenant endpoint consumer role.
+// START: Collect a few bits the tests require.  Need to jump through some hoops to get them,
+//        including temporarily granting the regular user the tenant endpoint consumer role
+//        (which handleRequest does for us while executing the tests).
 //
 xdmp.invokeFunction(
   () => {
@@ -49,6 +52,24 @@ assertions.push(
   )
 );
 
+// Get a record whose type should not be accepted by updateDocument.
+const hmoDocNode = fn.head(
+  xdmp.invokeFunction(
+    () => {
+      return cts.doc(HMO_URI);
+    },
+    {
+      userId: xdmp.user(USERNAME_FOR_REGULAR_USER),
+    }
+  )
+);
+assertions.push(
+  testHelperProxy.assertExists(
+    hmoDocNode,
+    `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
+  )
+);
+
 xdmp.invokeFunction(
   () => {
     declareUpdate();
@@ -60,6 +81,28 @@ xdmp.invokeFunction(
   },
   { database: xdmp.securityDatabase() }
 );
+
+// Get an existing My Collection for this user.
+const myCollectionDocNode = fn.head(
+  xdmp.invokeFunction(
+    () => {
+      return fn.head(
+        cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION))
+      );
+    },
+    {
+      userId: xdmp.user(USERNAME_FOR_REGULAR_USER),
+    }
+  )
+);
+assertions.push(
+  testHelperProxy.assertExists(
+    myCollectionDocNode,
+    `The updateDocument tests are dependent on the createDocument tests creating a My Collection document '${USERNAME_FOR_REGULAR_USER}' can access`
+  )
+);
+const myCollectionUri = myCollectionDocNode.baseURI;
+
 //
 // END: OK, let's get on with the tests.
 //
@@ -68,6 +111,10 @@ const endpointConfig = new EndpointConfig({
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
+
+const newPropertyName = `name${xdmp.random()}`;
+const newProperty = {};
+newProperty[newPropertyName] = `value${xdmp.random()}`;
 
 const scenarios = [
   {
@@ -87,18 +134,148 @@ const scenarios = [
             ],
           },
         ],
+        ...newProperty,
       },
     },
     expected: {
       error: false,
       nodeAssertions: [
         {
+          type: 'xpath',
+          xpath: `id = '${existingUser.getUserIri()}'`,
+          expected: true,
+          message: 'The ID property changed',
+        },
+        {
+          type: 'xpath',
+          xpath: `exists(added_to_by)`,
+          expected: true,
+          message: 'The added_to_by property is missing',
+        },
+        {
           type: 'equality',
           xpath: `created_by`,
           expected: existingUserProfile.xpath('json/created_by'),
-          message: 'The created_by property was not restored.',
+          message: 'The created_by property was not restored',
+        },
+        {
+          type: 'equality',
+          xpath: newPropertyName,
+          expected: xdmp.toJSON(newProperty).xpath(newPropertyName),
+          message: `The ${newPropertyName} property was not retained as given`,
         },
       ],
+    },
+  },
+  {
+    name: 'Service account attempting to update a profile',
+    input: {
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
+      doc: {
+        id: existingUser.getUserIri(),
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `Service accounts are not permitted to use this endpoint`,
+    },
+  },
+  {
+    name: 'Regular user updating one of their My Collection documents',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: {
+        id: myCollectionUri,
+        type: 'Set',
+        identified_by: [],
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.myCollection,
+              },
+            ],
+          },
+        ],
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: false,
+      nodeAssertions: [
+        {
+          type: 'xpath',
+          xpath: `id = '${myCollectionUri}'`,
+          expected: true,
+          message: 'The ID property changed',
+        },
+        {
+          type: 'xpath',
+          xpath: `exists(added_to_by)`,
+          expected: true,
+          message: 'The added_to_by property is missing',
+        },
+        {
+          type: 'equality',
+          xpath: `created_by`,
+          expected: myCollectionDocNode.xpath('json/created_by'),
+          message: 'The created_by property was not restored',
+        },
+        {
+          type: 'equality',
+          xpath: newPropertyName,
+          expected: xdmp.toJSON(newProperty).xpath(newPropertyName),
+          message: `The ${newPropertyName} property was not retained as given`,
+        },
+      ],
+    },
+  },
+  {
+    name: 'Service account attempting to update a My Collection',
+    input: {
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
+      doc: {
+        id: myCollectionUri,
+        type: 'Set',
+        identified_by: [],
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.myCollection,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `Service accounts are not permitted to use this endpoint`,
+    },
+  },
+  {
+    name: 'Invalid document type',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: hmoDocNode,
+    },
+    expected: {
+      error: true,
+      stackToInclude: `The document type is not supported`,
     },
   },
 ];

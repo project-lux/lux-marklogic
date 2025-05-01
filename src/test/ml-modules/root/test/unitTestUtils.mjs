@@ -1,5 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { getExclusiveRoleNamesByUsername } from '/lib/securityLib.mjs';
+import { toArray } from '/utils/utils.mjs';
 
 const sec = require('/MarkLogic/security.xqy');
 
@@ -9,7 +10,8 @@ const sec = require('/MarkLogic/security.xqy');
  * as expected with regard to whether it was supposed to (or not supposed to) throw an error.
  *
  * @param {Object} scenario is to define name, expected.error, and --when expected.error is true--
- *    expected.stackToInclude.
+ *    expected.stackToInclude.  If scenario defines executeBeforehand, the value will be executed as
+ *    a function before the zeroArityFun is executed.
  * @param {Function} zeroArityFun is the function to be invoked.  It must be zero arity.
  * @param {Object} invokeFunOptions is the options to be passed to the xdmp.invokeFunction call.
  * @returns object with the following top-level properties: actualValue, applyErrorNotExpectedAssertions,
@@ -27,6 +29,9 @@ function executeErrorSupportedScenario(
   const errorExpected = scenario.expected.error === true;
   const assertions = [];
   try {
+    if (scenario.executeBeforehand) {
+      scenario.executeBeforehand();
+    }
     actualValue = fn.head(xdmp.invokeFunction(zeroArityFun, invokeFunOptions));
     // Better to do all of the asserts outside the try/catch.
     if (errorExpected) {
@@ -75,7 +80,7 @@ function executeErrorSupportedScenario(
 function removeCollections(collections, username) {
   const zeroArityFun = () => {
     declareUpdate();
-    collections.forEach((name) => {
+    toArray(collections).forEach((name) => {
       console.log(
         `User ${xdmp.getCurrentUser()} is attempting to delete the '${name}' collection from the ${xdmp.databaseName(
           xdmp.database()

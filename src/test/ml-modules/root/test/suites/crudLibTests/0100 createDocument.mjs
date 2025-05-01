@@ -1,10 +1,17 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { USERNAME_FOR_REGULAR_USER } from '/test/unitTestConstants.mjs';
-import { executeErrorSupportedScenario } from '/test/unitTestUtils.mjs';
+import {
+  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_SERVICE_ACCOUNT,
+} from '/test/unitTestConstants.mjs';
+import {
+  executeErrorSupportedScenario,
+  removeCollections,
+} from '/test/unitTestUtils.mjs';
 import { createDocument } from '/lib/crudLib.mjs';
 import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
+import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
 
 const LIB = '0100 createDocument.mjs';
 console.log(`${LIB}: starting.`);
@@ -76,7 +83,7 @@ const validMyCollection = {
       id: 'https://not.checked',
       equivalent: [
         {
-          id: 'https://todo.concept.my.collection',
+          id: IDENTIFIERS.myCollection,
         },
       ],
     },
@@ -90,7 +97,7 @@ const validMyCollection = {
           id: 'https://not.checked',
           equivalent: [
             {
-              id: 'https://todo.concept.note',
+              id: IDENTIFIERS.setNote,
             },
           ],
         },
@@ -104,7 +111,7 @@ const validMyCollection = {
               id: 'https://not.checked',
               equivalent: [
                 {
-                  id: 'https://todo.concept.display.name',
+                  id: IDENTIFIERS.setNoteLabel,
                 },
               ],
             },
@@ -115,30 +122,167 @@ const validMyCollection = {
   ],
 };
 
+function assertIdIsUri(docNode, username) {
+  const zeroArityFun = () => {
+    return testHelperProxy.assertTrue(
+      fn.docAvailable(docNode.xpath('id')),
+      `The document's ID '${docNode.xpath(
+        'id'
+      )}' is not a document in the database`
+    );
+  };
+  return xdmp.invokeFunction(zeroArityFun, { userId: xdmp.user(username) });
+}
+
+const newDocAssertions = [
+  {
+    type: 'xpath',
+    xpath: 'exists(id)',
+    expected: true,
+    message: 'The id property was not added.',
+  },
+  { type: 'function', function: assertIdIsUri },
+  {
+    type: 'xpath',
+    xpath: 'exists(created_by)',
+    expected: true,
+    message: 'The created_by property was not added.',
+  },
+];
+
 const scenarios = [
   {
-    // TODO: after #495 is implemented, change this to expect the user profile already exists, as we are going through handleRequest.
-    name: 'Regular user creating their user profile',
+    name: 'Regular user providing an invalid user profile',
+    // Make sure this user doesn't already have a profile.
+    executeBeforehand: () => {
+      removeCollections(
+        COLLECTION_NAME_USER_PROFILE,
+        USERNAME_FOR_REGULAR_USER
+      );
+    },
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: {
+        type: 'Group', // the invalid part
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile, // enough to get past model.isUserProfile
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `validation error(s) found`,
+    },
+  },
+  // We want this test to run after the invalid attempt as the My Collection tests require the user to have a profile.
+  {
+    name: 'Regular user providing a valid user profile',
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       doc: validUserProfile,
     },
     expected: {
       error: false,
-      sameTopLevelPropertyValues: [],
-      newTopLevelPropertyValues: [],
+      assertions: newDocAssertions,
     },
   },
   {
-    name: 'Regular user with valid My Collection document',
+    name: 'Try to create a second user profile for the same user',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: validUserProfile,
+    },
+    expected: {
+      error: true,
+      stackToInclude: `The user '${USERNAME_FOR_REGULAR_USER}' already has a profile`,
+    },
+  },
+  {
+    name: 'Service account attempting to create a user profile',
+    input: {
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
+      doc: validUserProfile,
+    },
+    expected: {
+      error: true,
+      stackToInclude: `Service accounts are not permitted to use this endpoint`,
+    },
+  },
+  {
+    name: 'Regular user providing valid a My Collection document',
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       doc: validMyCollection,
     },
     expected: {
       error: false,
-      sameTopLevelPropertyValues: [],
-      newTopLevelPropertyValues: [],
+      assertions: [
+        {
+          type: 'xpath',
+          xpath: 'exists(id)',
+          expected: true,
+          message: 'The id property was not added.',
+        },
+        { type: 'function', function: assertIdIsUri },
+        {
+          type: 'xpath',
+          xpath: 'exists(created_by)',
+          expected: true,
+          message: 'The created_by property was not added.',
+        },
+      ],
+    },
+  },
+  {
+    name: 'Regular user providing an invalid My Collection',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: {
+        type: 'HumanMadeObject', // an invalid part; identified_by is also missing.
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.myCollection, // enough to get past model.isMyCollection
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `validation error(s) found`,
+    },
+  },
+  {
+    name: 'Service account attempting to create a My Collection document',
+    input: {
+      username: USERNAME_FOR_SERVICE_ACCOUNT,
+      doc: validMyCollection,
+    },
+    expected: {
+      error: true,
+      stackToInclude: `Service accounts are not permitted to use this endpoint`,
+    },
+  },
+  {
+    name: 'Regular user with unsupported document type',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: { type: 'Place' },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `The document type is not supported`,
     },
   },
 ];
@@ -172,13 +316,20 @@ for (const scenario of scenarios) {
   console.dir(scenarioResults.actualValue);
 
   if (scenarioResults.applyErrorNotExpectedAssertions) {
-    // assertions.push(
-    //   testHelperProxy.assertEqual(
-    //     scenario.expected.value,
-    //     scenarioResults.actualValue,
-    //     `Scenario '${scenario.name}' did not return the expected value.`
-    //   )
-    // );
+    const docNode = xdmp.toJSON(scenarioResults.actualValue);
+    scenario.expected.assertions.forEach((assertion) => {
+      if (assertion.type === 'xpath') {
+        assertions.push(
+          testHelperProxy.assertEqual(
+            assertion.expected,
+            docNode.xpath(assertion.xpath),
+            assertion.message
+          )
+        );
+      } else {
+        assertions.push(assertion.function(docNode, scenario.input.username));
+      }
+    });
   }
 }
 console.log(

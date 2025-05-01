@@ -181,9 +181,46 @@ const scenarios = [
       stackToInclude: `validation error(s) found`,
     },
   },
-  // We want this test to run after the invalid attempt as the My Collection tests require the user to have a profile.
+  {
+    name: 'Overwrite ID provided in user profile',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: {
+        id: 'https://should.be.overwritten',
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      assertions: [
+        {
+          type: 'xpath',
+          xpath: 'id = "https://should.be.overwritten"',
+          expected: false,
+          message: 'The given ID should have been overwritten.',
+        },
+      ],
+    },
+  },
+  // Leave this user profile around for the My Collection tests.
   {
     name: 'Regular user providing a valid user profile',
+    executeBeforehand: () => {
+      removeCollections(
+        COLLECTION_NAME_USER_PROFILE,
+        USERNAME_FOR_REGULAR_USER
+      );
+    },
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       doc: validUserProfile,
@@ -261,6 +298,38 @@ const scenarios = [
     expected: {
       error: true,
       stackToInclude: `validation error(s) found`,
+    },
+  },
+  {
+    name: 'Overwrite ID provided in My Collection',
+    input: {
+      username: USERNAME_FOR_REGULAR_USER,
+      doc: {
+        id: 'https://should.be.overwritten',
+        type: 'Set',
+        identified_by: [],
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.myCollection,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      assertions: [
+        {
+          type: 'xpath',
+          xpath: 'id = "https://should.be.overwritten"',
+          expected: false,
+          message: 'The given ID should have been overwritten.',
+        },
+      ],
     },
   },
   {

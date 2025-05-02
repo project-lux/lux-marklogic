@@ -1,0 +1,4 @@
+{
+  "endpointDirectory": "/ds/lux/document",
+  "$javaClass": "edu.yale.collections.lux.marklogic.services.Document"
+}

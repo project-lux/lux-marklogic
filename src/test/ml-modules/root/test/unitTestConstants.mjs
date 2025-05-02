@@ -16,7 +16,7 @@ const FOO_FILENAME = 'foo.json';
 const FOO_URI = `/${FOO_FILENAME}`;
 
 const HMO_FILENAME = 'humanMadeObject.json';
-const HMO_URI = '/${HMO_FILENAME}';
+const HMO_URI = `/${HMO_FILENAME}`;
 
 export {
   FOO_FILENAME,

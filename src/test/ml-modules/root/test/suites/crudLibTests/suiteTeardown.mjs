@@ -22,9 +22,13 @@ try {
   removeExclusiveRolesByUsername(USERNAME_FOR_REGULAR_USER);
 
   // Delete our sample doc.
+  // Using invoke as this module is not otherwise happy declaring the update.
   if (fn.docAvailable(HMO_URI)) {
-    console.log(`Deleting '${HMO_URI}'...`);
-    xdmp.documentDelete(HMO_URI);
+    xdmp.invokeFunction(() => {
+      declareUpdate();
+      console.log(`Deleting '${HMO_URI}'...`);
+      xdmp.documentDelete(HMO_URI);
+    });
   }
 } catch (e) {
   console.error(

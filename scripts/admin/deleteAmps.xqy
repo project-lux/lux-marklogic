@@ -20,10 +20,27 @@ let $preview := fn:true()
 let $tenantName := "lux"
 let $ampPrefix := "_execute_with_"
 let $ampLibrary := "/lib/wrapperLib.mjs"
+(: Includes since deleted and renamed amps. :)
 let $deleteTheseToo := (
+  <amp>
+    <name>__createAndGrantRole</name>
+    <library>/lib/securityLib.mjs</library>
+  </amp>,
+  <amp>
+    <name>__createAndGrantRoleToCurrentUser</name>
+    <library>/lib/securityLib.mjs</library>
+  </amp>,
+  <amp>
+    <name>__getForestInfoByHost</name>
+    <library>/lib/environmentLib.mjs</library>
+  </amp>,
   <amp>
     <name>_getForestInfoByHost</name>
     <library>/lib/environmentLib.mjs</library>
+  </amp>,
+  <amp>
+    <name>__handleRequestV2</name>
+    <library>/lib/securityLib.mjs</library>
   </amp>,
   <amp>
     <name>_handleRequestV2</name>

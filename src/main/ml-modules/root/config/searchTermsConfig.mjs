@@ -118,6 +118,16 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['agentAnyText'],
       scalarType: 'string',
     },
+    userId: {
+      patternName: 'indexedValue',
+      indexReferences: ['agentUserId'],
+      scalarType: 'string',
+    },
+    username: {
+      patternName: 'indexedValue',
+      indexReferences: ['agentUserName'],
+      scalarType: 'string',
+    },
   },
   concept: {
     broader: {

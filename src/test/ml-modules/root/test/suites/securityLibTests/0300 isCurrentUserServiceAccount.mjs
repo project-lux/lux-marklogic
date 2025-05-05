@@ -1,14 +1,14 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { isServiceAccount } from '/lib/securityLib.mjs';
+import { isCurrentUserServiceAccount } from '/lib/securityLib.mjs';
 import {
   USERNAME_FOR_REGULAR_USER,
   USERNAME_FOR_SERVICE_ACCOUNT,
-} from '/unitTestConstants.mjs';
+} from '/test/unitTestConstants.mjs';
 
-const LIB = '0200 isServiceAccount.mjs';
+const LIB = '0300 isCurrentUserServiceAccount.mjs';
 console.log(`${LIB}: starting.`);
 
-const assertions = [];
+let assertions = [];
 
 const scenarios = [
   {
@@ -16,25 +16,30 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_REGULAR_USER,
     },
-    expected: { value: false },
+    expected: {
+      value: false,
+    },
   },
   {
     name: 'Service account',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
     },
-    expected: { value: true },
+    expected: {
+      value: true,
+    },
   },
 ];
 
 for (const scenario of scenarios) {
-  console.log(`Processing scenario '${scenario.name}'`);
-  const actualValue = isServiceAccount(scenario.input.username);
+  const actualResult = xdmp.invokeFunction(isCurrentUserServiceAccount, {
+    userId: xdmp.user(scenario.input.username),
+  });
   assertions.push(
     testHelperProxy.assertEqual(
       scenario.expected.value,
-      actualValue,
-      `Scenario '${scenario.name}' did not return the expected value.`
+      actualResult,
+      `Scenario '${scenario.name}'`
     )
   );
 }

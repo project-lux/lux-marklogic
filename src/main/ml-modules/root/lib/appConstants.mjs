@@ -9,6 +9,10 @@ const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 const FEATURE_MY_COLLECTIONS_ENABLED =
   '%%featureMyCollectionsEnabled%%'.trim() === 'true';
 
+const COLLECTION_NAME_MY_COLLECTIONS_FEATURE = 'myCollectionsFeature';
+const COLLECTION_NAME_MY_COLLECTION = 'myCollection';
+const COLLECTION_NAME_USER_PROFILE = 'userProfile';
+
 // Unit test-related constants are primarily used to prevent use of a function
 // that allows the caller to specify the endpoint configuration to apply.
 const UNIT_TEST_ENDPOINT = '/test/default.xqy';
@@ -154,6 +158,9 @@ export {
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   BASE_URL,
   CODE_VERSION,
+  COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
+  COLLECTION_NAME_MY_COLLECTION,
+  COLLECTION_NAME_USER_PROFILE,
   DEFAULT_FILTER_SEARCH_RESULTS,
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,

@@ -484,6 +484,36 @@
       "field-value-searches": true
     },
     {
+      "field-name": "agentUserId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Person'][identified_by[type='Identifier'][classified_as/id = 'http://www.wikidata.org/entity/Q15901043']]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentUserName",
+      "field-path": [
+        {
+          "path": "/json[type = 'Person']/identified_by[type='Identifier'][classified_as/id = 'http://www.wikidata.org/entity/Q15901043']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
       "field-name": "itemArchiveSortId",
       "field-path": [
         {
@@ -2204,6 +2234,13 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "agentProfessionalActivityId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "agentUserId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

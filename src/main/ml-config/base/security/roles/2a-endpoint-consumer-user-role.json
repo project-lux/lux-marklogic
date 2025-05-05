@@ -2,5 +2,16 @@
   "role-name": "%%mlAppName%%-endpoint-consumer-user",
   "description": "Endpoint consumer role for users within the '%%mlAppName%%' tenant",
   "role": ["%%mlAppName%%-endpoint-consumer-base"],
-  "privilege": []
+  "privilege": [
+    {
+      "privilege-name": "unprotected-collections",
+      "action": "http://marklogic.com/xdmp/privileges/unprotected-collections",
+      "kind": "execute"
+    },
+    {
+      "privilege-name": "unprotected-uri",
+      "action": "http://marklogic.com/xdmp/privileges/unprotected-uri",
+      "kind": "execute"
+    }
+  ]
 }

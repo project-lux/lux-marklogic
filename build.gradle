@@ -554,7 +554,7 @@ task performBaseDeployment() {
     println "Starting Base Deployment"
     println ""
   }
-  dependsOn mlDeployGroups, mlDeployDatabases, mlDeployRestApis, mlDeployServers, mlLoadModules
+  dependsOn mlDeployGroups, mlDeployDatabases, mlDeployRestApis, mlDeployServers, mlLoadSchemas, mlLoadModules
   doLast {
     println ""
     println "Base Deployment Done"

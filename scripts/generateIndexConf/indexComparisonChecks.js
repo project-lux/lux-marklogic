@@ -16,6 +16,7 @@
  * Run as an admin or lux-endpoint-consumer to ensure getSearchTermsConfig() returns all search terms.
  */
 import { getVersionInfo } from '/lib/environmentLib.mjs';
+import { isUndefined } from '/utils/utils.mjs';
 
 /*
  * COLLECT: CONFIGURED
@@ -100,7 +101,9 @@ if (includeAutoComplete) {
 }
 
 Object.keys(FACETS_CONFIG).forEach((key) => {
-  recordReference(FACETS_CONFIG[key].indexReference, true, 'facet');
+  if (isUndefined(FACETS_CONFIG[key].subFacets)) {
+    recordReference(FACETS_CONFIG[key].indexReference, true, 'facet');
+  }
 });
 
 Object.keys(SORT_BINDINGS).forEach((key) => {

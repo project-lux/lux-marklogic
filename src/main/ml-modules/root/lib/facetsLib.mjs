@@ -18,8 +18,6 @@ import {
 import { SEMANTIC_FACETS_CONFIG } from '../config/semanticFacetsConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
-const SEARCH_TERMS_CONFIG = getSearchTermsConfig();
-
 // Pagination defaults
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
@@ -355,6 +353,8 @@ function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
 }
 
 function _convertFacetToSearchTerm(facetName, facetValue) {
+  const searchTermsConfig = getSearchTermsConfig();
+
   // if this facet has subFacets, convert each subFacet to a search term
   if (FACETS_CONFIG[facetName].subFacets) {
     return {
@@ -368,16 +368,16 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   //facets ending in Id usually convert to search terms without Id
   if (termName.endsWith('Id')) {
     const termNameWithoutId = termName.substring(0, termName.length - 2);
-    if (SEARCH_TERMS_CONFIG[scopeName][termNameWithoutId]) {
+    if (searchTermsConfig[scopeName][termNameWithoutId]) {
       termName = termNameWithoutId;
     }
   }
-  if (!SEARCH_TERMS_CONFIG[scopeName][termName]) {
+  if (!searchTermsConfig[scopeName][termName]) {
     throw new InternalServerError(
       `Unable to convert '${facetName}' to a search term`
     );
   }
-  const searchTermInfo = SEARCH_TERMS_CONFIG[scopeName][termName];
+  const searchTermInfo = searchTermsConfig[scopeName][termName];
   const { scalarType } = searchTermInfo;
   if (!scalarType) {
     return { [termName]: { id: facetValue } };

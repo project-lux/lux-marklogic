@@ -9,7 +9,7 @@ const SORT_TYPE_SEMANTIC = 'semantic';
 const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';
 
 const SortCriteria = class {
-  // Excepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
+  // Accepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
   // When name is 'random', we are to use a random score for each search result.
   // When name is 'relevance', we are to sort by score (highest to lowest, depending on direction).

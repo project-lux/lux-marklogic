@@ -1,0 +1,4 @@
+{
+  "database-name": "%%mlAppName%%-test-content",
+  "schema-database": "%%SCHEMAS_DATABASE%%"
+}

@@ -10,11 +10,10 @@
  * structure between the top-level JSON-LD property and the selected value.  The caller is responsible
  * for setting the return of an exported model function to the top-level property.
  *
- * For performance and consistency reasons, please only use XPath expressions.  An alternative is to
- * convert the document (Node) to an object, then use dot notation.  And while that might prove faster
- * (e.g., sufficient properties are being accessed to cover the cost of Node.toObject()), it also entails
- * quite a bit more code and error checking, at least until ML upgrades to version 8 or later of the V8
- * engine, when support for optional chaining was introduced.
+ * Conventions:
+ *    1. Pass docNode (document as a Node) into the getters and has*.  After the v8 engine upgrade, we may want to
+ *       switch to optional?.chaining.
+ *    2. Pass docObj (docNode.toObject()) into setters and add*.
  *
  * Exported functions are in alphabetical order, both where they are defined and exported.
  */
@@ -24,7 +23,13 @@ import {
   hasLanguageIdentifier,
 } from './identifierConstants.mjs';
 import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
-import { toArray } from '../utils/utils.mjs';
+import {
+  isDefined,
+  isNonEmptyString,
+  isUndefined,
+  toArray,
+} from '../utils/utils.mjs';
+import { toISOStringThroughSeconds } from '../utils/dateUtils.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -42,181 +47,316 @@ const UI_TYPE_CONCEPT = 'Concept';
 const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
 const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
 
-function getBorn(doc) {
-  return _upTo('born', doc.xpath('json/born'));
+// Intended for when modifies a Set.
+function addAddedToByEntry(docObj, userIri) {
+  if (isNonEmptyString(userIri)) {
+    const now = toISOStringThroughSeconds(new Date());
+    if (isUndefined(docObj.json.added_to_by)) {
+      docObj.json.added_to_by = [];
+    }
+    docObj.json.added_to_by.push({
+      type: 'Addition',
+      carried_out_by: [{ id: userIri, type: 'Person' }],
+      timespan: {
+        begin_of_the_begin: now,
+        end_of_the_end: now,
+      },
+    });
+  } else {
+    throw new InternalServerError(
+      'model.addAddedToByEntry requires a non-empty string for the user IRI.'
+    );
+  }
 }
 
-function getCarriedOutBy(doc) {
-  return _upTo('carried_out_by', doc.xpath('json/carried_out_by'));
+function getAddedToBy(docNode) {
+  return _upTo('added_to_by', docNode.xpath('json/added_to_by'));
 }
 
-function getClassifiedAs(doc) {
-  return _upTo('classified_as', doc.xpath('json/classified_as'));
+function getBorn(docNode) {
+  return _upTo('born', docNode.xpath('json/born'));
+}
+
+function getCarriedOutBy(docNode) {
+  return _upTo('carried_out_by', docNode.xpath('json/carried_out_by'));
+}
+
+function getClassifiedAs(docNode) {
+  return _upTo('classified_as', docNode.xpath('json/classified_as'));
 }
 
 // Returns null when given doc is not considered an exhibition.
-function getClassifiedAsExhibition(doc) {
+function getClassifiedAsExhibition(docNode) {
   return _upTo(
     'classified_as',
-    doc.xpath(
+    docNode.xpath(
       `json/classified_as[equivalent/id = "${IDENTIFIERS.exhibition}"]`
     ),
     null
   );
 }
 
-function getClassifiedAsNationalities(doc) {
+function getClassifiedAsNationalities(docNode) {
   return _upTo(
     'classified_as',
-    doc.xpath(
+    docNode.xpath(
       `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.nationality}"]]`
     )
   );
 }
 
-function getClassifiedAsOccupations(doc) {
+function getClassifiedAsOccupations(docNode) {
   return _upTo(
     'classified_as',
-    doc.xpath(
+    docNode.xpath(
       `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.occupation}}"]]`
     )
   );
 }
 
-function getCreatedByCarriedOutBy(doc) {
-  const noPart = doc.xpath('json/created_by/carried_out_by');
+function getCreatedBy(docNode) {
+  return _upTo('created_by', docNode.xpath('json/created_by'));
+}
+
+function getCreatedByCarriedOutBy(docNode) {
+  const noPart = docNode.xpath('json/created_by/carried_out_by');
   if (!fn.empty(noPart)) {
     return _upTo('created_by', noPart);
   }
-  return _upTo('created_by', doc.xpath('json/created_by/part/carried_out_by'));
+  return _upTo(
+    'created_by',
+    docNode.xpath('json/created_by/part/carried_out_by')
+  );
 }
 
-function getCreatedByTimespan(doc) {
-  return _upTo('created_by', doc.xpath(`json/created_by/timespan`));
+function getCreatedByTimespan(docNode) {
+  return _upTo('created_by', docNode.xpath(`json/created_by/timespan`));
 }
 
-function getDefinedBy(doc) {
-  return _upTo('defined_by', doc.xpath('json/defined_by'));
+function getDefinedBy(docNode) {
+  return _upTo('defined_by', docNode.xpath('json/defined_by'));
 }
 
-function getDied(doc) {
-  return _upTo('died', doc.xpath('json/died'));
+function getDied(docNode) {
+  return _upTo('died', docNode.xpath('json/died'));
 }
 
-function getId(doc) {
-  const node = fn.head(doc.xpath('json/id'));
+function getId(docNode) {
+  const node = fn.head(docNode.xpath('json/id'));
   const value = node ? node.toString() : node;
   return _upTo('id', node, value);
 }
 
-function getIdentifiedByIdentifier(doc) {
+function getIdentifiedByIdentifier(docNode) {
   return _upTo(
     'identified_by',
-    doc.xpath('json/identified_by[type="Identifier"]')
+    docNode.xpath('json/identified_by[type="Identifier"]')
   );
 }
 
-function getIdentifiedByPrimaryName(doc, lang) {
+function getIdentifiedByPrimaryName(docNode, lang) {
   let seq = null;
 
   // Ideal: requested language
   if (hasLanguageIdentifier(lang)) {
-    seq = doc.xpath(_getPrimaryNameByLanguage(lang));
+    seq = docNode.xpath(_getPrimaryNameByLanguage(lang));
   }
   // Fallback #1: primary name in English
   if (fn.empty(seq)) {
-    seq = doc.xpath(_getPrimaryNameByLanguage(LANGUAGE_EN));
+    seq = docNode.xpath(_getPrimaryNameByLanguage(LANGUAGE_EN));
   }
   // Fallback #2: the first name, primary or otherwise.
   if (fn.empty(seq)) {
-    seq = doc.xpath('json/identified_by[type = "Name"][1]');
+    seq = docNode.xpath('json/identified_by[type = "Name"][1]');
   }
 
   return _upTo('identified_by', fn.head(seq));
 }
 
-function getMadeOf(doc) {
-  return _upTo('made_of', doc.xpath('json/made_of'));
+function getMadeOf(docNode) {
+  return _upTo('made_of', docNode.xpath('json/made_of'));
 }
 
-function getMemberOf(doc) {
-  return _upTo('member_of', doc.xpath('json/member_of'));
+function getMemberOf(docNode) {
+  return _upTo('member_of', docNode.xpath('json/member_of'));
 }
 
-function getPartOf(doc) {
-  return _upTo('part_of', doc.xpath('json/part_of'));
+function getPartOf(docNode) {
+  return _upTo('part_of', docNode.xpath('json/part_of'));
 }
 
-function getProducedBy(doc) {
-  return _upTo('produced_by', doc.xpath('json/produced_by'));
+function getProducedBy(docNode) {
+  return _upTo('produced_by', docNode.xpath('json/produced_by'));
 }
 
-function getProducedByCarriedOutBy(doc) {
-  const noPart = doc.xpath('json/produced_by/carried_out_by');
+function getProducedByCarriedOutBy(docNode) {
+  const noPart = docNode.xpath('json/produced_by/carried_out_by');
   if (!fn.empty(noPart)) {
     return _upTo('produced_by', noPart);
   }
   return _upTo(
     'produced_by',
-    doc.xpath('json/produced_by/part/carried_out_by')
+    docNode.xpath('json/produced_by/part/carried_out_by')
   );
 }
 
-function getProducedByTimespan(doc) {
-  return _upTo('produced_by', doc.xpath(`json/produced_by/timespan`));
+function getProducedByTimespan(docNode) {
+  return _upTo('produced_by', docNode.xpath(`json/produced_by/timespan`));
 }
 
-function getReferredToBy(doc) {
+function getReferredToBy(docNode) {
   return _upTo(
     'referred_to_by',
-    doc.xpath(
+    docNode.xpath(
       `json/referred_to_by/classified_as[equivalent/id = "${IDENTIFIERS.descriptionStatement}"]`
     )
   );
 }
 
-function getRepresentation(doc) {
-  return _upTo('representation', doc.xpath('json/representation'));
+function getRepresentation(docNode) {
+  return _upTo('representation', docNode.xpath('json/representation'));
 }
 
-function getRepresentationImage(doc) {
+function getRepresentationImage(docNode) {
   return _upTo(
     'representation',
-    doc.xpath('json/representation/digitally_shown_by')
+    docNode.xpath('json/representation/digitally_shown_by')
   );
 }
 
-function getSubjectTo(doc) {
-  return _upTo('subject_to', doc.xpath('/json/subject_to'));
+function getSetMembers(docNode) {
+  return _upTo('member', docNode.xpath('/json/member'));
 }
 
-function getSupertypes(doc) {
+function getSubjectTo(docNode) {
+  return _upTo('subject_to', docNode.xpath('/json/subject_to'));
+}
+
+function getSupertypes(docNode) {
   return _upTo(
     'classified_as',
-    doc.xpath(
+    docNode.xpath(
       `json/classified_as[./classified_as/equivalent/id = "${IDENTIFIERS.typeOfWork}"]`
     )
   );
 }
 
-function getTimespan(doc) {
-  return _upTo('timespan', doc.xpath(`json/timespan`));
+function getTimespan(docNode) {
+  return _upTo('timespan', docNode.xpath(`json/timespan`));
 }
 
-function getTookPlaceAt(doc) {
-  return _upTo('took_place_at', doc.xpath('json/took_place_at'));
+function getTookPlaceAt(docNode) {
+  return _upTo('took_place_at', docNode.xpath('json/took_place_at'));
 }
 
-function getType(doc) {
-  const node = fn.head(doc.xpath('json/type'));
+function getType(docNode) {
+  const node = fn.head(docNode.xpath('json/type'));
   const value = node ? node.toString() : node;
   return _upTo('type', node, value);
 }
 
-function getUiType(doc) {
-  const node = fn.head(doc.xpath('indexedProperties/uiType'));
+function getUiType(docNode) {
+  const node = fn.head(docNode.xpath('indexedProperties/uiType'));
   const value = node ? node.toString() : node;
   return _upTo('uiType', node, value);
+}
+
+function isMyCollection(docNode) {
+  return fn.exists(
+    docNode.xpath(
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.myCollection}"]`
+    )
+  );
+}
+
+function isUserProfile(docNode) {
+  return fn.exists(
+    docNode.xpath(
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.userProfile}"]`
+    )
+  );
+}
+
+// @param addedToBy - send null to delete existing property.
+function setAddedToBy(docObj, addedToBy) {
+  if (isDefined(addedToBy)) {
+    docObj.json.added_to_by = addedToBy.xpath
+      ? addedToBy.toObject()
+      : addedToBy;
+  } else if (isDefined(docObj.json.added_to_by)) {
+    delete docObj.json.added_to_by;
+  }
+}
+
+// @param createdBy - submit null to have a new entry created.
+// User IRI only used when createdBy is null.
+function setCreatedBy(docObj, userIri, createdBy = null) {
+  if (createdBy) {
+    docObj.json.created_by = createdBy.xpath ? createdBy.toObject() : createdBy;
+  } else if (isNonEmptyString(userIri)) {
+    const now = toISOStringThroughSeconds(new Date());
+    docObj.json.created_by = {
+      type: 'Creation',
+      carried_out_by: [{ id: userIri, type: 'Person' }],
+      timespan: {
+        begin_of_the_begin: now,
+        end_of_the_end: now,
+      },
+    };
+  } else {
+    throw new InternalServerError(
+      'model.setCreatedBy requires a non-empty string for the user IRI'
+    );
+  }
+}
+
+function setId(docObj, id) {
+  docObj.json.id = id;
+}
+
+function setIndexedProperties(docObj, indexedProperties) {
+  docObj.indexedProperties = indexedProperties;
+}
+
+function setSetMembers(docObj, members) {
+  docObj.json.member = members;
+}
+
+// Sets the username in a (presumed) user profile.
+function setUsername(docObj, username) {
+  if (isUndefined(docObj.json.identified_by)) {
+    docObj.json.identified_by = [];
+  }
+
+  // If there's already a username entry, update it.
+  let add = true;
+  outerLoop: for (const idObj of docObj.json.identified_by) {
+    if (idObj.type === 'Identifier') {
+      for (const classObj of idObj.classified_as) {
+        if (classObj.id === IDENTIFIERS.username) {
+          idObj.content = username;
+          add = false;
+          break outerLoop;
+        }
+      }
+    }
+  }
+
+  // Else, add a new entry.
+  if (add) {
+    // Add a new entry.
+    docObj.json.identified_by.push({
+      type: 'Identifier',
+      content: username,
+      classified_as: [
+        {
+          id: IDENTIFIERS.username,
+          type: 'Type',
+          _label: 'username',
+        },
+      ],
+    });
+  }
 }
 
 /**
@@ -393,12 +533,15 @@ function _getPrimaryNameByLanguage(lang) {
 }
 
 export {
+  addAddedToByEntry,
+  getAddedToBy,
   getBorn,
   getCarriedOutBy,
   getClassifiedAs,
   getClassifiedAsExhibition,
   getClassifiedAsNationalities,
   getClassifiedAsOccupations,
+  getCreatedBy,
   getCreatedByCarriedOutBy,
   getCreatedByTimespan,
   getDefinedBy,
@@ -415,6 +558,7 @@ export {
   getReferredToBy,
   getRepresentation,
   getRepresentationImage,
+  getSetMembers,
   getSubjectTo,
   getSupertypes,
   getTimespan,
@@ -422,6 +566,14 @@ export {
   getType,
   getUiType,
   merge,
+  isMyCollection,
+  isUserProfile,
+  setAddedToBy,
+  setCreatedBy,
+  setId,
+  setIndexedProperties,
+  setSetMembers,
+  setUsername,
   PROP_NAME_BEGIN_OF_THE_BEGIN,
   PROP_NAME_END_OF_THE_END,
   TYPE_ACTIVITY,

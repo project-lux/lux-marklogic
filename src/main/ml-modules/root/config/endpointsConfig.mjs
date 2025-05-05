@@ -17,9 +17,21 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
-  '/ds/lux/document.mjs': {
+  '/ds/lux/document/create.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
+  '/ds/lux/document/delete.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
+  },
+  '/ds/lux/document/read.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
+  },
+  '/ds/lux/document/update.mjs': {
+    allowInReadOnlyMode: false,
+    features: { myCollections: true },
   },
   '/ds/lux/facets.mjs': {
     allowInReadOnlyMode: true,
@@ -67,12 +79,15 @@ function getCurrentEndpointPath() {
   return xdmp.getRequestPath();
 }
 
-function getCurrentEndpointConfig() {
+function getCurrentEndpointConfig(myCollectionsFeatureEnabled = true) {
   const endpointConfig = ENDPOINTS_CONFIG[getCurrentEndpointPath()];
   if (isUndefined(endpointConfig)) {
-    throw new InternalConfigurationError(
-      `The ${getCurrentEndpointPath()} endpoint is not configured.`
-    );
+    if (myCollectionsFeatureEnabled) {
+      throw new InternalConfigurationError(
+        `The ${getCurrentEndpointPath()} endpoint is not configured.`
+      );
+    }
+    return null;
   }
   return new EndpointConfig(endpointConfig);
 }

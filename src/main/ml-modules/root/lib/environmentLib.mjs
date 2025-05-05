@@ -21,7 +21,7 @@ const MbToGbDivisor = 1024;
  * http://marklogic.com/xdmp/privileges/status privilege offers.
  * Call getForestInfoByHostAmp for the amp'd version.
  */
-function _getForestInfoByHost() {
+function __getForestInfoByHost() {
   const forestInfoByHost = {};
   xdmp
     .databases()
@@ -64,7 +64,7 @@ function _getForestInfoByHost() {
     });
   return forestInfoByHost;
 }
-const _getForestInfoByHostAmp = import.meta.amp(_getForestInfoByHost);
+const _getForestInfoByHost = import.meta.amp(__getForestInfoByHost);
 
 // By volume, calculate the total known used and reserved for the cluster.
 function _calculateTotals(
@@ -215,7 +215,7 @@ function _getStorageThresholdMessage(unreservedPercentRemaining) {
  */
 function getStorageInfo() {
   return _calculateTotals(
-    _getForestInfoByHostAmp(),
+    _getForestInfoByHost(),
     journalSizeThresholdForReserveMb,
     perJournalReserveMb,
     perVolumeOtherReserveMb

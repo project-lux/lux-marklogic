@@ -1,0 +1,12 @@
+{
+  "role-name": "%%mlAppName%%-invoke-in",
+  "description": "CAUTION! Configured to an amp to avoid broadly granting the ability to invoke code against another database.",
+  "role": [],
+  "privilege": [
+    {
+      "privilege-name": "xdmp:invoke-in",
+      "action": "http://marklogic.com/xdmp/privileges/xdmp-invoke-in",
+      "kind": "execute"
+    }
+  ]
+}

@@ -1,10 +1,11 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 
 const LIB = '0100 EndpointConfig.mjs';
 console.log(`${LIB}: starting.`);
 
-const assertions = [];
+let assertions = [];
 
 const scenarios = [
   {
@@ -30,7 +31,7 @@ const scenarios = [
     },
     expected: {
       error: true,
-      messageToInclude:
+      stackToInclude:
         "is missing the 'allowInReadOnlyMode' configuration property",
     },
   },
@@ -42,7 +43,7 @@ const scenarios = [
     },
     expected: {
       error: true,
-      messageToInclude:
+      stackToInclude:
         "the 'allowInReadOnlyMode' property value is not one of the allowed values",
     },
   },
@@ -53,7 +54,7 @@ const scenarios = [
     },
     expected: {
       error: true,
-      messageToInclude: "is missing the 'features' configuration property",
+      stackToInclude: "is missing the 'features' configuration property",
     },
   },
   {
@@ -64,8 +65,7 @@ const scenarios = [
     },
     expected: {
       error: true,
-      messageToInclude:
-        "the 'features' property value has the wrong value type",
+      stackToInclude: "the 'features' property value has the wrong value type",
     },
   },
   {
@@ -76,7 +76,7 @@ const scenarios = [
     },
     expected: {
       error: true,
-      messageToInclude: "is missing the 'myCollections' configuration property",
+      stackToInclude: "is missing the 'myCollections' configuration property",
     },
   },
   {
@@ -87,66 +87,46 @@ const scenarios = [
     },
     expected: {
       error: true,
-      messageToInclude:
+      stackToInclude:
         "the 'myCollections' property value is not one of the allowed values",
     },
   },
 ];
 
 for (const scenario of scenarios) {
-  console.log(`Processing scenario '${scenario.name}'`);
-  const errorExpected = scenario.expected.error === true;
-  // Had to jump through some hoops to get this to work (xdmp.rethrow didn't work)
-  let errorExpectedButNotThrown = false;
-  try {
-    const endpointConfig = new EndpointConfig(scenario.input);
-    if (errorExpected) {
-      errorExpectedButNotThrown = true;
-    } else {
-      assertions.push(
-        testHelperProxy.assertEqual(
-          scenario.expected.readOnly,
-          endpointConfig.mayExecuteInReadOnlyMode(),
-          `Scenario '${scenario.name}' expected ${scenario.expected.readOnly} from mayExecuteInReadOnlyMode but didn't get it.`
-        )
-      );
-      assertions.push(
-        testHelperProxy.assertEqual(
-          !scenario.expected.readOnly,
-          endpointConfig.mayNotExecuteInReadOnlyMode(),
-          `Scenario '${scenario.name}' expected ${!scenario.expected
-            .readOnly} from mayNotExecuteInReadOnlyMode but didn't get it.`
-        )
-      );
-      assertions.push(
-        testHelperProxy.assertEqual(
-          scenario.expected.myCollections,
-          endpointConfig.isPartOfMyCollectionsFeature(),
-          `Scenario '${scenario.name}' expected ${scenario.expected.isPartOfMyCollectionsFeature} from isPartOfMyCollectionsFeature but didn't get it.`
-        )
-      );
-    }
-  } catch (e) {
-    if (!errorExpected) {
-      fn.error(
-        xs.QName('ASSERT-THROWS-ERROR-FAILED'),
-        `Scenario '${scenario.name}' resulted in an error when one was NOT expected.`
-      );
-    }
-    // Unable to also check the error code (e.g., InternalConfigurationError)
-    assertions.push(
-      testHelperProxy.assertNotEqual(
-        -1,
-        e.message.indexOf(scenario.expected.messageToInclude),
-        `Scenario '${scenario.name}' error message reads "${e.message}" but should have included "${scenario.expected.messageToInclude}"`
-      )
-    );
+  const zeroArityFun = () => {
+    return new EndpointConfig(scenario.input);
+  };
+
+  const scenarioResults = executeScenario(scenario, zeroArityFun);
+
+  if (scenarioResults.assertions.length > 0) {
+    assertions = assertions.concat(scenarioResults.assertions);
   }
 
-  if (errorExpectedButNotThrown) {
-    fn.error(
-      xs.QName('ASSERT-THROWS-ERROR-FAILED'),
-      `Scenario '${scenario.name}' didn't result in an error when one was expected.`
+  if (scenarioResults.applyErrorNotExpectedAssertions) {
+    const endpointConfig = scenarioResults.actualValue;
+    assertions.push(
+      testHelperProxy.assertEqual(
+        scenario.expected.readOnly,
+        endpointConfig.mayExecuteInReadOnlyMode(),
+        `Scenario '${scenario.name}' expected ${scenario.expected.readOnly} from mayExecuteInReadOnlyMode but didn't get it.`
+      )
+    );
+    assertions.push(
+      testHelperProxy.assertEqual(
+        !scenario.expected.readOnly,
+        endpointConfig.mayNotExecuteInReadOnlyMode(),
+        `Scenario '${scenario.name}' expected ${!scenario.expected
+          .readOnly} from mayNotExecuteInReadOnlyMode but didn't get it.`
+      )
+    );
+    assertions.push(
+      testHelperProxy.assertEqual(
+        scenario.expected.myCollections,
+        endpointConfig.isPartOfMyCollectionsFeature(),
+        `Scenario '${scenario.name}' expected ${scenario.expected.isPartOfMyCollectionsFeature} from isPartOfMyCollectionsFeature but didn't get it.`
+      )
     );
   }
 }

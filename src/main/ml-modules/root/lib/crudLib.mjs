@@ -108,11 +108,6 @@ function _insertDocument(
     );
   }
 
-  // The pre validation callback may be used to perform additional checks.
-  if (config.preValidationCallback) {
-    config.preValidationCallback(readOnlyDocNode);
-  }
-
   const report = xdmp.jsonValidateReport(readOnlyDocNode, config.schemaPath, [
     'full',
   ]);
@@ -194,13 +189,26 @@ function _getUserProfileConfig(
   lang,
   newDocument = DEFAULT_NEW_DOCUMENT
 ) {
-  const preValidationCallback = (readOnlyDocNode) => {
-    if (newDocument && fn.docAvailable(user.getUserIri())) {
+  // Pre-validation checks.
+  const userId = user.getUserIri();
+  const userProfileExists = fn.docAvailable(userId);
+  if (newDocument && userProfileExists) {
+    throw new BadRequestError(
+      `The user '${user.getUsername()}' already has a profile.`
+    );
+  } else if (!newDocument) {
+    const docId = getId(readOnlyDocNode);
+    if (docId !== userId) {
       throw new BadRequestError(
-        `The user '${user.getUsername()}' already has a profile.`
+        `The ID in the provided document, '${docId}', does not match that of user '${user.getUsername()}'.`
+      );
+    } else if (!userProfileExists) {
+      // Unlikely as the user IRI comes from the profile.
+      throw new BadRequestError(
+        `User '${user.getUsername()}' does not have a profile.`
       );
     }
-  };
+  }
 
   const postValidationCallback = (readOnlyDocNode, editableDocObj) => {
     // Force this for new and updated user profiles.
@@ -218,7 +226,7 @@ function _getUserProfileConfig(
       ],
     };
   } else {
-    const uri = getId(readOnlyDocNode);
+    const uri = userId;
     docOptions = {
       permissions: xdmp.documentGetPermissions(uri),
       collections: xdmp.documentGetCollections(uri),
@@ -227,7 +235,6 @@ function _getUserProfileConfig(
 
   return {
     recordType: 'person',
-    preValidationCallback,
     schemaPath: '/json-schema/user-profile.schema.json',
     postValidationCallback,
     indexedProperties: {
@@ -283,7 +290,6 @@ function _getMyCollectionConfig(
 
   return {
     recordType: 'set',
-    preValidationCallback: null,
     schemaPath: '/json-schema/editable-set.schema.json',
     postValidationCallback,
     indexedProperties: {

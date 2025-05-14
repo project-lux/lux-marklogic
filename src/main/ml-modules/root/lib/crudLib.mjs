@@ -50,7 +50,8 @@ function createDocument(docNode, lang = DEFAULT_LANG_IRI) {
   return _insertDocument(docNode, lang, true);
 }
 
-// This function has access
+// This function has access to all user profiles and is responsible for restricting access
+// to the name profile when the requesting user is not the owner of the profile.
 function _readDocument(uri, profile = null, lang = 'en') {
   if (fn.docAvailable(uri)) {
     const docNode = cts.doc(uri);

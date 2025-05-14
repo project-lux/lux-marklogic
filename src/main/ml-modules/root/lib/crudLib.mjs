@@ -39,14 +39,14 @@ import {
 import { getLanguageIdentifier } from './identifierConstants.mjs';
 import { isNonEmptyArray, isDefined, isUndefined } from '../utils/utils.mjs';
 
-const DEFAULT_LANG = getLanguageIdentifier('en');
+const DEFAULT_LANG_IRI = getLanguageIdentifier('en');
 const DEFAULT_NEW_DOCUMENT = false;
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
 const DOCUMENT_TYPE_MY_COLLECTION = 'My Collection';
 const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
 
-function createDocument(docNode, lang = DEFAULT_LANG) {
+function createDocument(docNode, lang = DEFAULT_LANG_IRI) {
   return _insertDocument(docNode, lang, true);
 }
 
@@ -67,7 +67,7 @@ function _readDocument(uri, profile = null, lang = 'en') {
 }
 const readDocument = import.meta.amp(_readDocument);
 
-function updateDocument(docNode, lang = DEFAULT_LANG) {
+function updateDocument(docNode, lang = DEFAULT_LANG_IRI) {
   return _insertDocument(docNode, lang, false);
 }
 

@@ -9,29 +9,26 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import {
   HMO_URI,
   ROLE_NAME_TENANT_ENDPOINT_CONSUMER,
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 
-const LIB = '0300 deleteDocument.mjs';
+const LIB = '0400 deleteDocument.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
 //
 // START: Collect a few bits the tests require.  Need to jump through some hoops to get them,
-//        including temporarily granting the regular user the tenant endpoint consumer role
+//        including temporarily granting Bonnie the tenant endpoint consumer role
 //        (which handleRequest does for us while executing the tests).
 //
 xdmp.invokeFunction(
   () => {
     declareUpdate();
     const sec = require('/MarkLogic/security.xqy');
-    sec.userAddRoles(
-      USERNAME_FOR_REGULAR_USER,
-      ROLE_NAME_TENANT_ENDPOINT_CONSUMER
-    );
+    sec.userAddRoles(USERNAME_FOR_BONNIE, ROLE_NAME_TENANT_ENDPOINT_CONSUMER);
   },
   { database: xdmp.securityDatabase() }
 );
@@ -55,20 +52,20 @@ const { myCollectionUri, userProfileUri, hmoUri } = fn.head(
       };
     },
     {
-      userId: xdmp.user(USERNAME_FOR_REGULAR_USER),
+      userId: xdmp.user(USERNAME_FOR_BONNIE),
     }
   )
 );
 assertions.push(
   testHelperProxy.assertExists(
     myCollectionUri,
-    `The deleteDocument tests are dependent on the create/updateDocument tests creating a My Collection document '${USERNAME_FOR_REGULAR_USER}' can access`
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a My Collection document '${USERNAME_FOR_BONNIE}' can access`
   )
 );
 assertions.push(
   testHelperProxy.assertExists(
     userProfileUri,
-    `The deleteDocument tests are dependent on the create/updateDocument tests creating a user profile for '${USERNAME_FOR_REGULAR_USER}'`
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
   )
 );
 assertions.push(
@@ -83,7 +80,7 @@ xdmp.invokeFunction(
     declareUpdate();
     const sec = require('/MarkLogic/security.xqy');
     sec.userRemoveRoles(
-      USERNAME_FOR_REGULAR_USER,
+      USERNAME_FOR_BONNIE,
       ROLE_NAME_TENANT_ENDPOINT_CONSUMER
     );
   },
@@ -139,7 +136,7 @@ const scenarios = [
   {
     name: 'Regular user attempting to delete a HMO document',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       uri: hmoUri,
     },
     expected: {
@@ -150,7 +147,7 @@ const scenarios = [
   {
     name: 'Regular user attempting to delete a My Collection of theirs',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       uri: myCollectionUri,
     },
     expected: {
@@ -160,7 +157,7 @@ const scenarios = [
   {
     name: 'Regular user attempting to delete their user profile',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       uri: userProfileUri,
     },
     expected: {
@@ -171,7 +168,7 @@ const scenarios = [
   {
     name: 'Regular user attempting to delete an unidentified document',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       uri: null,
     },
     expected: {

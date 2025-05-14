@@ -2,6 +2,18 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.40.0 - 2025-05-19
+### Added
+
+### Changed
+- The [Read Document endpoint](#read-document) will now allow any user or service account to access the portion of another user's profile included by the 'name' profile. ([#502](https://github.com/project-lux/lux-marklogic/issues/502))
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.39.0 - 2025-05-05
 ### Added
 - Added the [Create Document endpoint](/docs/lux-backend-api-usage.md#create-document). Only available when the My Collections feature is enabled. Supports My Collection and User Profile documents.  Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))

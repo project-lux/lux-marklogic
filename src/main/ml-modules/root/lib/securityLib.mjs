@@ -26,16 +26,19 @@ import {
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
 
-const UNIT_NAME_UNRESTRICTED = ML_APP_NAME;
+const TENANT_OWNER = ML_APP_NAME;
 
 const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
-const ROLE_NAME_UNRESTRICTED = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
+const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
+
+const ROLE_NAME_ALL_USER_PROFILES_READER =
+  '%%mlAppName%%-all-user-profiles-reader';
+
 const CAPABILITY_READ = 'read';
 const CAPABILITY_UPDATE = 'update';
-
 const PERMITTED_CAPABILITIES = [CAPABILITY_READ, CAPABILITY_UPDATE];
 
 const ROLE_SUFFIX_BY_CAPABILITY = {};
@@ -145,8 +148,14 @@ function _getExclusiveRoleName(user, capability) {
 
 function getExclusiveDocumentPermissions(user) {
   return [
-    xdmp.permission(_getExclusiveRoleName(user, CAPABILITY_READ), 'read'),
-    xdmp.permission(_getExclusiveRoleName(user, CAPABILITY_UPDATE), 'update'),
+    xdmp.permission(
+      _getExclusiveRoleName(user, CAPABILITY_READ),
+      CAPABILITY_READ
+    ),
+    xdmp.permission(
+      _getExclusiveRoleName(user, CAPABILITY_UPDATE),
+      CAPABILITY_UPDATE
+    ),
   ];
 }
 
@@ -167,7 +176,7 @@ function getExclusiveDocumentPermissions(user) {
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
+function handleRequest(f, unitName = TENANT_OWNER) {
   const endpointConfig = getCurrentEndpointConfig(
     FEATURE_MY_COLLECTIONS_ENABLED
   );
@@ -186,7 +195,7 @@ function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
 // endpoint configuration as a parameter.
 function handleRequestV2ForUnitTesting(
   f,
-  unitName = UNIT_NAME_UNRESTRICTED,
+  unitName = TENANT_OWNER,
   endpointConfig
 ) {
   // As this allows the caller to specify which endpoint configuration to use and is only
@@ -204,14 +213,10 @@ function handleRequestV2ForUnitTesting(
 
 // Handle a version 2 request. Version 2 request support includes the My Collections feature.
 // This function is to be private and in support of two public functions.
-function __handleRequestV2(
-  f,
-  unitName = UNIT_NAME_UNRESTRICTED,
-  endpointConfig
-) {
+function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
   // Adjust from null
   if (isUndefined(unitName)) {
-    unitName = UNIT_NAME_UNRESTRICTED;
+    unitName = TENANT_OWNER;
   }
 
   const user = new User();
@@ -292,7 +297,7 @@ function getEndpointAccessUnitNames() {
   }
   return removeItemByValueFromArray(
     split(ENDPOINT_ACCESS_UNIT_NAMES, ',', true),
-    UNIT_NAME_UNRESTRICTED
+    TENANT_OWNER
   );
 }
 
@@ -304,14 +309,17 @@ function getCurrentUserUnitName() {
     .toArray()
     .reduce((prev, roleId) => {
       const roleName = xdmp.roleName(roleId);
-      if (roleName == ROLE_NAME_UNRESTRICTED || roleName == ROLE_NAME_ADMIN) {
-        return UNIT_NAME_UNRESTRICTED;
+      if (
+        roleName == ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER ||
+        roleName == ROLE_NAME_ADMIN
+      ) {
+        return TENANT_OWNER;
       } else if (
         roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH) &&
         !roleName.endsWith(BASE_ENDPOINT_CONSUMER_ROLES_END_WITH)
       ) {
         return roleName.slice(
-          `${UNIT_NAME_UNRESTRICTED}-`.length,
+          `${TENANT_OWNER}-`.length,
           roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length
         );
       }
@@ -330,7 +338,7 @@ function getCurrentUserUnitName() {
 // PROPERTY_NAME_EXCLUDED_UNITS properties.
 function isConfiguredForUnit(unitName, configTree) {
   // The unrestricted unit gets everything.
-  if (UNIT_NAME_UNRESTRICTED == unitName) {
+  if (TENANT_OWNER == unitName) {
     return true;
   }
 
@@ -366,7 +374,8 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  UNIT_NAME_UNRESTRICTED,
+  ROLE_NAME_ALL_USER_PROFILES_READER,
+  TENANT_OWNER,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
   getExclusiveDocumentPermissions,

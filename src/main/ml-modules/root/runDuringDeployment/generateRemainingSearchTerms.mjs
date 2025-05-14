@@ -12,7 +12,7 @@ import { searchTermText } from '../config/userFacingConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
-  UNIT_NAME_UNRESTRICTED,
+  TENANT_OWNER,
   getEndpointAccessUnitNames,
   isConfiguredForUnit,
   removeUnitConfigProperties,
@@ -30,9 +30,9 @@ const droppedTermMsgs = [];
 const facetConfigGivenPrecedenceMsgs = [];
 const overrodeTermMgs = [];
 
-const regenerate = SEARCH_TERMS_CONFIG[UNIT_NAME_UNRESTRICTED] != null;
+const regenerate = SEARCH_TERMS_CONFIG[TENANT_OWNER] != null;
 const BASE_CONFIG = regenerate
-  ? SEARCH_TERMS_CONFIG[UNIT_NAME_UNRESTRICTED]
+  ? SEARCH_TERMS_CONFIG[TENANT_OWNER]
   : SEARCH_TERMS_CONFIG;
 
 // Remove generated search terms.
@@ -65,256 +65,251 @@ const hasHopInverseInfo = (searchTerm) => {
 
 // Deemed safer to have a single loop for all the units versus multiple.
 const searchTermsConfig = {};
-[UNIT_NAME_UNRESTRICTED]
-  .concat(getEndpointAccessUnitNames())
-  .forEach((unitName) => {
-    const isUnrestrictedUnit = unitName == UNIT_NAME_UNRESTRICTED;
-    const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
+[TENANT_OWNER].concat(getEndpointAccessUnitNames()).forEach((unitName) => {
+  const isUnrestrictedUnit = unitName == TENANT_OWNER;
+  const unitConfig = JSON.parse(JSON.stringify(BASE_CONFIG));
 
-    // Drop any scopes and terms not intended for this unit.
-    const droppedScopes = [];
-    const droppedTerms = {};
-    Object.keys(unitConfig).forEach((scopeName) => {
-      if (isConfiguredForUnit(unitName, unitConfig[scopeName])) {
-        Object.keys(unitConfig[scopeName]).forEach((termName) => {
-          const searchTerm = unitConfig[scopeName][termName];
-          // Drop if term itself or its target scope is not for this unit.
-          if (
-            !isConfiguredForUnit(unitName, searchTerm) ||
-            (hasHopInverseInfo(searchTerm) &&
-              !isConfiguredForUnit(
-                unitName,
-                BASE_CONFIG[searchTerm.targetScope] // Could have been deleted from unitConfig.
-              ))
-          ) {
-            droppedTermMsgs.push(
-              `${unitName}.${scopeName}.${termName} (targetScope: ${
-                hasHopInverseInfo(searchTerm) ? searchTerm.targetScope : 'N/A'
-              })`
-            );
-            if (!droppedTerms[scopeName]) {
-              droppedTerms[scopeName] = [];
-            }
-            droppedTerms[scopeName].push(termName);
-            delete unitConfig[scopeName][termName];
+  // Drop any scopes and terms not intended for this unit.
+  const droppedScopes = [];
+  const droppedTerms = {};
+  Object.keys(unitConfig).forEach((scopeName) => {
+    if (isConfiguredForUnit(unitName, unitConfig[scopeName])) {
+      Object.keys(unitConfig[scopeName]).forEach((termName) => {
+        const searchTerm = unitConfig[scopeName][termName];
+        // Drop if term itself or its target scope is not for this unit.
+        if (
+          !isConfiguredForUnit(unitName, searchTerm) ||
+          (hasHopInverseInfo(searchTerm) &&
+            !isConfiguredForUnit(
+              unitName,
+              BASE_CONFIG[searchTerm.targetScope] // Could have been deleted from unitConfig.
+            ))
+        ) {
+          droppedTermMsgs.push(
+            `${unitName}.${scopeName}.${termName} (targetScope: ${
+              hasHopInverseInfo(searchTerm) ? searchTerm.targetScope : 'N/A'
+            })`
+          );
+          if (!droppedTerms[scopeName]) {
+            droppedTerms[scopeName] = [];
           }
-        });
+          droppedTerms[scopeName].push(termName);
+          delete unitConfig[scopeName][termName];
+        }
+      });
 
-        removeUnitConfigProperties(unitConfig[scopeName], true);
-      } else {
-        droppedScopeMsgs.push(`${unitName}.${scopeName}`);
-        droppedScopes.push(scopeName);
-        delete unitConfig[scopeName];
-      }
-    });
+      removeUnitConfigProperties(unitConfig[scopeName], true);
+    } else {
+      droppedScopeMsgs.push(`${unitName}.${scopeName}`);
+      droppedScopes.push(scopeName);
+      delete unitConfig[scopeName];
+    }
+  });
 
-    // Generate facet search terms.
-    Object.keys(FACETS_CONFIG).forEach((facetName) => {
-      if (FACETS_CONFIG[facetName].subFacets) {
-        return; // do not generate search terms for facets that have sub-facets.
-      }
-      let { scopeName, termName } = facetToScopeAndTermName(facetName);
-      if (isDroppedSearchScope(droppedScopes, scopeName)) {
+  // Generate facet search terms.
+  Object.keys(FACETS_CONFIG).forEach((facetName) => {
+    if (FACETS_CONFIG[facetName].subFacets) {
+      return; // do not generate search terms for facets that have sub-facets.
+    }
+    let { scopeName, termName } = facetToScopeAndTermName(facetName);
+    if (isDroppedSearchScope(droppedScopes, scopeName)) {
+      return;
+    }
+
+    const facetIndexReference = FACETS_CONFIG[facetName].indexReference;
+    const isIdTerm = termName.endsWith('Id');
+    const isDate = facetIndexReference.endsWith('DateLong');
+    const isDimension = facetIndexReference.endsWith('DimensionValue');
+    const isZeroOrOne = ['hasDigitalImage', 'isOnline'].includes(termName);
+
+    let facetIdIndexReferences = [facetIndexReference];
+    if (isDate) {
+      facetIdIndexReferences = [facetIndexReference];
+      facetIdIndexReferences.push(
+        facetIdIndexReferences[0].replace('Start', 'End')
+      );
+    }
+
+    let scalarType = 'string';
+    if (isDate) {
+      scalarType = 'dateTime';
+    } else if (isDimension) {
+      scalarType = 'float';
+    } else if (isZeroOrOne) {
+      scalarType = 'number';
+    }
+
+    // Get ready to add
+    if (!unitConfig[scopeName]) {
+      unitConfig[scopeName] = {};
+    }
+
+    if (isIdTerm) {
+      const parentTermName = termName.substring(0, termName.length - 2);
+      if (isDroppedSearchTerm(droppedTerms, scopeName, parentTermName)) {
         return;
       }
 
-      const facetIndexReference = FACETS_CONFIG[facetName].indexReference;
-      const isIdTerm = termName.endsWith('Id');
-      const isDate = facetIndexReference.endsWith('DateLong');
-      const isDimension = facetIndexReference.endsWith('DimensionValue');
-      const isZeroOrOne = ['hasDigitalImage', 'isOnline'].includes(termName);
-
-      let facetIdIndexReferences = [facetIndexReference];
-      if (isDate) {
-        facetIdIndexReferences = [facetIndexReference];
-        facetIdIndexReferences.push(
-          facetIdIndexReferences[0].replace('Start', 'End')
-        );
-      }
-
-      let scalarType = 'string';
-      if (isDate) {
-        scalarType = 'dateTime';
-      } else if (isDimension) {
-        scalarType = 'float';
-      } else if (isZeroOrOne) {
-        scalarType = 'number';
-      }
-
-      // Get ready to add
-      if (!unitConfig[scopeName]) {
-        unitConfig[scopeName] = {};
-      }
-
-      if (isIdTerm) {
-        const parentTermName = termName.substring(0, termName.length - 2);
-        if (isDroppedSearchTerm(droppedTerms, scopeName, parentTermName)) {
-          return;
-        }
-
-        if (!unitConfig[scopeName][parentTermName]) {
-          unitConfig[scopeName][parentTermName] = {
-            idIndexReferences: facetIdIndexReferences,
-          };
-        } else {
-          // Try to add our indexes.
-          const searchTermIdIndexReferences =
-            unitConfig[scopeName][parentTermName].idIndexReferences;
-          if (searchTermIdIndexReferences == null) {
-            unitConfig[scopeName][parentTermName].idIndexReferences =
-              facetIdIndexReferences;
-          } else if (
-            utils.getArrayDiff(
-              facetIdIndexReferences,
-              searchTermIdIndexReferences
-            ).length > 0
-          ) {
-            // Merge the ID index arrays
-            const mergedArrays = utils.getMergedArrays(
-              searchTermIdIndexReferences,
-              facetIdIndexReferences
+      if (!unitConfig[scopeName][parentTermName]) {
+        unitConfig[scopeName][parentTermName] = {
+          idIndexReferences: facetIdIndexReferences,
+        };
+      } else {
+        // Try to add our indexes.
+        const searchTermIdIndexReferences =
+          unitConfig[scopeName][parentTermName].idIndexReferences;
+        if (searchTermIdIndexReferences == null) {
+          unitConfig[scopeName][parentTermName].idIndexReferences =
+            facetIdIndexReferences;
+        } else if (
+          utils.getArrayDiff(
+            facetIdIndexReferences,
+            searchTermIdIndexReferences
+          ).length > 0
+        ) {
+          // Merge the ID index arrays
+          const mergedArrays = utils.getMergedArrays(
+            searchTermIdIndexReferences,
+            facetIdIndexReferences
+          );
+          unitConfig[scopeName][parentTermName].idIndexReferences =
+            mergedArrays;
+          if (isUnrestrictedUnit) {
+            mergedTermMsgs.push(
+              `${scopeName}.${parentTermName}: ['${mergedArrays.join("', '")}']`
             );
-            unitConfig[scopeName][parentTermName].idIndexReferences =
-              mergedArrays;
-            if (isUnrestrictedUnit) {
-              mergedTermMsgs.push(
-                `${scopeName}.${parentTermName}: ['${mergedArrays.join(
-                  "', '"
-                )}']`
-              );
-            }
-          } else if (isUnrestrictedUnit) {
-            matchedIdIndexConfigMsgs.push(`${scopeName}.${parentTermName}`);
           }
+        } else if (isUnrestrictedUnit) {
+          matchedIdIndexConfigMsgs.push(`${scopeName}.${parentTermName}`);
         }
-      } else if (!isDroppedSearchTerm(droppedTerms, scopeName, termName)) {
-        if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
-          facetConfigGivenPrecedenceMsgs.push(`${scopeName}.${termName}`);
+      }
+    } else if (!isDroppedSearchTerm(droppedTerms, scopeName, termName)) {
+      if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
+        facetConfigGivenPrecedenceMsgs.push(`${scopeName}.${termName}`);
+      }
+
+      const patternName = isDate
+        ? PATTERN_NAME_DATE_RANGE
+        : isDimension
+        ? PATTERN_NAME_INDEXED_RANGE
+        : PATTERN_NAME_INDEXED_VALUE;
+
+      unitConfig[scopeName][termName] = {
+        patternName: patternName,
+        indexReferences: facetIdIndexReferences,
+        scalarType,
+        generated: true,
+      };
+
+      if (isDate) {
+        unitConfig[scopeName][termName].isStartDate =
+          termName.indexOf('Start') > -1 ? true : false;
+      }
+    }
+  });
+
+  // Generate the hop inverse search terms.
+  Object.keys(unitConfig).forEach((scopeName) => {
+    Object.keys(unitConfig[scopeName]).forEach((termName) => {
+      if (hasHopInverseInfo(unitConfig[scopeName][termName])) {
+        const newScopeName = unitConfig[scopeName][termName].targetScope;
+        const newTermName = unitConfig[scopeName][termName].hopInverseName;
+        if (unitConfig[newScopeName][newTermName]) {
+          const msg = `Search term '${newTermName}' in the '${newScopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
+          console.error(msg);
+          throw new Error(msg);
         }
-
-        const patternName = isDate
-          ? PATTERN_NAME_DATE_RANGE
-          : isDimension
-          ? PATTERN_NAME_INDEXED_RANGE
-          : PATTERN_NAME_INDEXED_VALUE;
-
-        unitConfig[scopeName][termName] = {
-          patternName: patternName,
-          indexReferences: facetIdIndexReferences,
-          scalarType,
+        if (!unitConfig[newScopeName]) {
+          unitConfig[newScopeName] = {};
+        }
+        unitConfig[newScopeName][newTermName] = {
+          patternName: PATTERN_NAME_HOP_INVERSE,
+          predicates: unitConfig[scopeName][termName].predicates,
+          targetScope: scopeName,
+          hopInverseName: termName, // added for getInverseSearchTermInfo
           generated: true,
         };
-
-        if (isDate) {
-          unitConfig[scopeName][termName].isStartDate =
-            termName.indexOf('Start') > -1 ? true : false;
-        }
       }
     });
-
-    // Generate the hop inverse search terms.
-    Object.keys(unitConfig).forEach((scopeName) => {
-      Object.keys(unitConfig[scopeName]).forEach((termName) => {
-        if (hasHopInverseInfo(unitConfig[scopeName][termName])) {
-          const newScopeName = unitConfig[scopeName][termName].targetScope;
-          const newTermName = unitConfig[scopeName][termName].hopInverseName;
-          if (unitConfig[newScopeName][newTermName]) {
-            const msg = `Search term '${newTermName}' in the '${newScopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
-            console.error(msg);
-            throw new Error(msg);
-          }
-          if (!unitConfig[newScopeName]) {
-            unitConfig[newScopeName] = {};
-          }
-          unitConfig[newScopeName][newTermName] = {
-            patternName: PATTERN_NAME_HOP_INVERSE,
-            predicates: unitConfig[scopeName][termName].predicates,
-            targetScope: scopeName,
-            hopInverseName: termName, // added for getInverseSearchTermInfo
-            generated: true,
-          };
-        }
-      });
-    });
-
-    // Add a type search term to each scope (even though a couple scopes only have one type).
-    Object.keys(unitConfig).forEach((scopeName) => {
-      const termName = 'recordType'; // 'type' is already used by facets for classification type.
-      if (
-        isUnrestrictedUnit &&
-        unitConfig[scopeName][termName] &&
-        // Generated check shouldn't be necessary but I found it to be.
-        unitConfig[scopeName][termName].generated !== true
-      ) {
-        overrodeTermMgs.push(`${scopeName}.${termName}`);
-      }
-      if (!unitConfig[scopeName]) {
-        unitConfig[scopeName] = {};
-      }
-      unitConfig[scopeName][termName] = {
-        patternName: PATTERN_NAME_PROPERTY_VALUE,
-        propertyNames: ['dataType'],
-        scalarType: 'string',
-        forceExactMatch: true,
-        generated: true,
-      };
-    });
-
-    // Add an iri search term to each scope.
-    Object.keys(unitConfig).forEach((scopeName) => {
-      const termName = 'iri';
-      if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
-        overrodeTermMgs.push(`${scopeName}.${termName}`);
-      }
-      unitConfig[scopeName][termName] = {
-        patternName: 'iri',
-        generated: true,
-      };
-    });
-
-    // Add one ID search term per type per scope that has the associated property.
-    Object.keys(unitConfig).forEach((scopeName) => {
-      getSearchScopeTypes(scopeName).forEach((type) => {
-        // Require data backing this search term be in the dataset.
-        const termName = `${utils.lowercaseFirstCharacter(type)}Id`;
-        if (
-          cts.estimate(cts.jsonPropertyScopeQuery(termName, cts.trueQuery())) >
-          0
-        ) {
-          if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
-            overrodeTermMgs.push(`${scopeName}.${termName}`);
-          }
-          unitConfig[scopeName][termName] = {
-            patternName: PATTERN_NAME_PROPERTY_VALUE,
-            propertyNames: [termName],
-            scalarType: 'string',
-            forceExactMatch: true,
-            generated: true,
-          };
-        } else if (isUnrestrictedUnit) {
-          skippedTypeTermMsgs.push(`${scopeName}.${termName}`);
-        }
-      });
-    });
-
-    // Add labels and help text.
-    Object.keys(searchTermText).forEach((scopeName) => {
-      Object.keys(searchTermText[scopeName]).forEach((termName) => {
-        if (unitConfig[scopeName] && unitConfig[scopeName][termName]) {
-          unitConfig[scopeName][termName] = {
-            ...unitConfig[scopeName][termName],
-            ...searchTermText[scopeName][termName],
-          };
-        }
-      });
-    });
-
-    // Sort by key within each scope.
-    Object.keys(unitConfig).forEach((scopeName) => {
-      unitConfig[scopeName] = utils.sortObj(unitConfig[scopeName]);
-    });
-    searchTermsConfig[unitName] = utils.sortObj(unitConfig);
   });
+
+  // Add a type search term to each scope (even though a couple scopes only have one type).
+  Object.keys(unitConfig).forEach((scopeName) => {
+    const termName = 'recordType'; // 'type' is already used by facets for classification type.
+    if (
+      isUnrestrictedUnit &&
+      unitConfig[scopeName][termName] &&
+      // Generated check shouldn't be necessary but I found it to be.
+      unitConfig[scopeName][termName].generated !== true
+    ) {
+      overrodeTermMgs.push(`${scopeName}.${termName}`);
+    }
+    if (!unitConfig[scopeName]) {
+      unitConfig[scopeName] = {};
+    }
+    unitConfig[scopeName][termName] = {
+      patternName: PATTERN_NAME_PROPERTY_VALUE,
+      propertyNames: ['dataType'],
+      scalarType: 'string',
+      forceExactMatch: true,
+      generated: true,
+    };
+  });
+
+  // Add an iri search term to each scope.
+  Object.keys(unitConfig).forEach((scopeName) => {
+    const termName = 'iri';
+    if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
+      overrodeTermMgs.push(`${scopeName}.${termName}`);
+    }
+    unitConfig[scopeName][termName] = {
+      patternName: 'iri',
+      generated: true,
+    };
+  });
+
+  // Add one ID search term per type per scope that has the associated property.
+  Object.keys(unitConfig).forEach((scopeName) => {
+    getSearchScopeTypes(scopeName).forEach((type) => {
+      // Require data backing this search term be in the dataset.
+      const termName = `${utils.lowercaseFirstCharacter(type)}Id`;
+      if (
+        cts.estimate(cts.jsonPropertyScopeQuery(termName, cts.trueQuery())) > 0
+      ) {
+        if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
+          overrodeTermMgs.push(`${scopeName}.${termName}`);
+        }
+        unitConfig[scopeName][termName] = {
+          patternName: PATTERN_NAME_PROPERTY_VALUE,
+          propertyNames: [termName],
+          scalarType: 'string',
+          forceExactMatch: true,
+          generated: true,
+        };
+      } else if (isUnrestrictedUnit) {
+        skippedTypeTermMsgs.push(`${scopeName}.${termName}`);
+      }
+    });
+  });
+
+  // Add labels and help text.
+  Object.keys(searchTermText).forEach((scopeName) => {
+    Object.keys(searchTermText[scopeName]).forEach((termName) => {
+      if (unitConfig[scopeName] && unitConfig[scopeName][termName]) {
+        unitConfig[scopeName][termName] = {
+          ...unitConfig[scopeName][termName],
+          ...searchTermText[scopeName][termName],
+        };
+      }
+    });
+  });
+
+  // Sort by key within each scope.
+  Object.keys(unitConfig).forEach((scopeName) => {
+    unitConfig[scopeName] = utils.sortObj(unitConfig[scopeName]);
+  });
+  searchTermsConfig[unitName] = utils.sortObj(unitConfig);
+});
 
 // Consolidated log entries
 utils.logValues(

@@ -4,7 +4,7 @@ import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  UNIT_NAME_UNRESTRICTED,
+  TENANT_OWNER,
   handleRequestV2ForUnitTesting,
   getEndpointAccessUnitNames,
   getExclusiveRoleNameByUsername,
@@ -46,7 +46,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       function: returnBar,
-      unitName: UNIT_NAME_UNRESTRICTED,
+      unitName: TENANT_OWNER,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: true },
@@ -79,7 +79,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       function: returnBar,
-      unitName: UNIT_NAME_UNRESTRICTED,
+      unitName: TENANT_OWNER,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
@@ -126,7 +126,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_REGULAR_USER,
       function: canReadDoc,
-      unitName: UNIT_NAME_UNRESTRICTED,
+      unitName: TENANT_OWNER,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },

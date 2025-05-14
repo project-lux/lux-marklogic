@@ -5,7 +5,9 @@ import {
   COLLECTION_NAME_USER_PROFILE,
 } from './appConstants.mjs';
 import {
+  CAPABILITY_READ,
   CAPABILITY_UPDATE,
+  ROLE_NAME_ALL_USER_PROFILES_READER,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
   throwIfCurrentUserIsServiceAccount,
@@ -48,13 +50,22 @@ function createDocument(docNode, lang = DEFAULT_LANG) {
   return _insertDocument(docNode, lang, true);
 }
 
-function readDocument(uri, profile = null, lang = 'en') {
+// This function has access
+function _readDocument(uri, profile = null, lang = 'en') {
   if (fn.docAvailable(uri)) {
-    return applyProfile(cts.doc(uri), profile, lang);
+    const docNode = cts.doc(uri);
+
+    // If a user profile but not the current user's profile, restrict to the name profile.
+    if (isUserProfile(docNode) && new User(true).getUserIri() !== uri) {
+      profile = 'name';
+    }
+
+    return applyProfile(docNode, profile, lang);
   } else {
     throw new NotFoundError(`Document '${uri}' not found`);
   }
 }
+const readDocument = import.meta.amp(_readDocument);
 
 function updateDocument(docNode, lang = DEFAULT_LANG) {
   return _insertDocument(docNode, lang, false);
@@ -218,7 +229,9 @@ function _getUserProfileConfig(
   let docOptions;
   if (newDocument) {
     docOptions = {
-      permissions: getExclusiveDocumentPermissions(user),
+      permissions: getExclusiveDocumentPermissions(user).concat(
+        xdmp.permission(ROLE_NAME_ALL_USER_PROFILES_READER, CAPABILITY_READ)
+      ),
       collections: [
         getTenantRole(),
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,

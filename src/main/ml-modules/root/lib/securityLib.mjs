@@ -25,6 +25,8 @@ import {
   InternalServerError,
   NotAcceptingWriteRequestsError,
 } from './mlErrorsLib.mjs';
+import { IDENTIFIERS } from './identifierConstants.mjs';
+import { createDocument, updateDocument } from './crudLib.mjs';
 
 const UNIT_NAME_UNRESTRICTED = ML_APP_NAME;
 
@@ -44,6 +46,70 @@ ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_UPDATE] = 'updater';
 
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
+
+const DEFAULT_COLLECTION_TEMPLATE = {
+  type: 'Set',
+  classified_as: [
+    {
+      id: 'https://not.checked',
+      type: 'Type',
+      _label: 'My Collection',
+      equivalent: [
+        {
+          id: IDENTIFIERS.myCollection,
+          type: 'Type',
+          _label: 'My Collection',
+        },
+      ],
+    },
+  ],
+  identified_by: [
+    {
+      type: 'Name',
+      content: 'Default Collection',
+      classified_as: [
+        {
+          id: 'https://not.checked',
+          type: 'Type',
+          _label: 'Primary Name',
+          equivalent: [
+            {
+              id: IDENTIFIERS.primaryName,
+              type: 'Type',
+              _label: 'Primary Name',
+            },
+          ],
+        },
+        {
+          id: 'https://not.checked',
+          type: 'Type',
+          _label: 'Sort Name',
+          equivalent: [
+            {
+              id: IDENTIFIERS.sortName,
+              type: 'Type',
+              _label: 'Sort Name',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+const USER_PROFILE_TEMPLATE = {
+  type: 'Person',
+  classified_as: [
+    {
+      id: 'https://not.checked',
+      equivalent: [
+        {
+          id: IDENTIFIERS.userProfile,
+        },
+      ],
+    },
+  ],
+};
 
 function _hasExclusiveRoles(user) {
   let hasAll = true;
@@ -237,15 +303,60 @@ function __handleRequestV2(
     return f();
   }
 
-  // Ensure user has their exclusive roles for My Collection requests.
   if (isMyCollectionRequest) {
-    if (_hasExclusiveRoles(user) === false) {
+    // Ensure user has their exclusive roles for My Collection requests.
+    if (!_hasExclusiveRoles(user)) {
       _createExclusiveRoles(user);
     }
+
+    // if the user does not have a user profile, we need to create a user profile (and default collection)
+    if (!user.hasUserProfile()) {
+      // Create the user profile (and default collection)
+      _createUserProfileAndDefaultCollection();
+    }
   }
-  return _getExecuteWithServiceAccountFunction(unitName)(f);
+
+  // If we don't start a new transaction here, create document does not have the user id
+  return xdmp.invokeFunction(
+    () => {
+      return _getExecuteWithServiceAccountFunction(unitName)(f);
+    },
+    {
+      userId: xdmp.getCurrentUserid(),
+    }
+  );
 }
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
+
+function _createUserProfileAndDefaultCollection() {
+  const userProfileDocument = xdmp
+    .invokeFunction(_createUserProfile, {
+      userId: xdmp.getCurrentUserid(),
+    })
+    .toArray()[0];
+
+  xdmp.invokeFunction(
+    () => _createDefaultCollectionAndUpdateUserProfile(userProfileDocument),
+    {
+      userId: xdmp.getCurrentUserid(),
+    }
+  );
+}
+
+// create a user profile
+function _createUserProfile() {
+  declareUpdate();
+  return createDocument(USER_PROFILE_TEMPLATE);
+}
+
+function _createDefaultCollectionAndUpdateUserProfile(userProfileDocument) {
+  declareUpdate();
+  const defaultCollectionDocument = createDocument(DEFAULT_COLLECTION_TEMPLATE);
+  updateDocument({
+    ...userProfileDocument,
+    _lux_default_collection: defaultCollectionDocument.id,
+  });
+}
 
 function _getExecuteWithServiceAccountFunction(unitName) {
   // Javascript function and variable names cannot contain dashes, so we replace them with underscores

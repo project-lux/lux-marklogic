@@ -136,7 +136,7 @@ For internal security environments, the project offers the [%%mlAppName%%-deploy
 
 ### My Collections Data Updater
 
-The [%%mlAppName%%-my-collections-data-updater](/src/main/ml-config/base/security/roles/8-my-collections-data-updater-role.json) is able to consume the REST API and is granted the read and update permissions to all My Collection and User Profile documents, for two reasons:
+The [%%mlAppName%%-my-collections-data-updater](/src/main/ml-config/base/security/roles/8-my-collections-data-updater-role.json) role is granted the read and update permissions to all My Collection and User Profile documents for two reasons:
 
 1. Support the Blue/Green switch, which needs the ability to get the latest production data from the outgoing instance to the incoming instance.
 2. Support backups of My Collections data that are independent of backing up the entire database, for better RPO and RTO.

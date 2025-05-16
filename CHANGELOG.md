@@ -13,6 +13,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Fixed
 
 ### Security
+- In support of backing up My Collections data ([#518](https://github.com/project-lux/lux-marklogic/issues/518)) and future Blue/Green needs, added the [%%mlAppName%%-my-collections-data-updater role](/docs/lux-backend-security-and-software.md#my-collections-data-updater).
 
 ## v1.39.0 - 2025-05-05
 ### Added

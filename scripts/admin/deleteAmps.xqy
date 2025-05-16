@@ -49,6 +49,10 @@ let $deleteTheseToo := (
   <amp>
     <name>_isServiceAccount</name>
     <library>/lib/securityLib.mjs</library>
+  </amp>,
+  <amp>
+    <name>_readDocument</name>
+    <library>/lib/crudLib.mjs</library>
   </amp>
 )
 (: END of CONFIGURATION SECTION :)

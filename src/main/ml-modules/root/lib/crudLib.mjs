@@ -7,7 +7,8 @@ import {
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  ROLE_NAME_ALL_USER_PROFILES_READER,
+  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_USER_PROFILE_DATA_READER,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
   throwIfCurrentUserIsServiceAccount,
@@ -230,9 +231,14 @@ function _getUserProfileConfig(
   let docOptions;
   if (newDocument) {
     docOptions = {
-      permissions: getExclusiveDocumentPermissions(user).concat(
-        xdmp.permission(ROLE_NAME_ALL_USER_PROFILES_READER, CAPABILITY_READ)
-      ),
+      permissions: getExclusiveDocumentPermissions(user).concat([
+        xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
+        xdmp.permission(
+          ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+          CAPABILITY_UPDATE
+        ),
+        xdmp.permission(ROLE_NAME_USER_PROFILE_DATA_READER, CAPABILITY_READ),
+      ]),
       collections: [
         getTenantRole(),
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
@@ -287,7 +293,13 @@ function _getMyCollectionConfig(
   let docOptions;
   if (newDocument) {
     docOptions = {
-      permissions: getExclusiveDocumentPermissions(user),
+      permissions: getExclusiveDocumentPermissions(user).concat([
+        xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
+        xdmp.permission(
+          ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+          CAPABILITY_UPDATE
+        ),
+      ]),
       collections: [
         getTenantRole(),
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,

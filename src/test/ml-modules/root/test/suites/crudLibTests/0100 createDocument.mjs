@@ -1,6 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
-  USERNAME_FOR_REGULAR_USER,
+  USER_PROFILE_BONNIE,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 import { executeScenario, removeCollections } from '/test/unitTestUtils.mjs';
@@ -19,20 +20,6 @@ const endpointConfig = new EndpointConfig({
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
-
-const validUserProfile = {
-  type: 'Person',
-  classified_as: [
-    {
-      id: 'https://not.checked',
-      equivalent: [
-        {
-          id: IDENTIFIERS.userProfile,
-        },
-      ],
-    },
-  ],
-};
 
 const validMyCollection = {
   type: 'Set',
@@ -148,7 +135,7 @@ const newDocAssertions = [
 ];
 
 function removeUserProfileCollection() {
-  removeCollections(COLLECTION_NAME_USER_PROFILE, USERNAME_FOR_REGULAR_USER);
+  removeCollections(COLLECTION_NAME_USER_PROFILE, USERNAME_FOR_BONNIE);
 }
 
 const scenarios = [
@@ -157,7 +144,7 @@ const scenarios = [
     // Make sure this user doesn't already have a profile.
     executeBeforehand: removeUserProfileCollection,
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
         type: 'Group', // the invalid part
         classified_as: [
@@ -181,7 +168,7 @@ const scenarios = [
     name: 'Overwrite ID provided in user profile',
     executeBeforehand: removeUserProfileCollection,
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
         id: 'https://should.be.overwritten',
         type: 'Person',
@@ -214,8 +201,8 @@ const scenarios = [
     name: 'Regular user providing a valid user profile',
     executeBeforehand: removeUserProfileCollection,
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
-      doc: validUserProfile,
+      username: USERNAME_FOR_BONNIE,
+      doc: USER_PROFILE_BONNIE,
     },
     expected: {
       error: false,
@@ -225,19 +212,19 @@ const scenarios = [
   {
     name: 'Try to create a second user profile for the same user',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
-      doc: validUserProfile,
+      username: USERNAME_FOR_BONNIE,
+      doc: USER_PROFILE_BONNIE,
     },
     expected: {
       error: true,
-      stackToInclude: `The user '${USERNAME_FOR_REGULAR_USER}' already has a profile`,
+      stackToInclude: `The user '${USERNAME_FOR_BONNIE}' already has a profile`,
     },
   },
   {
     name: 'Service account attempting to create a user profile',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
-      doc: validUserProfile,
+      doc: USER_PROFILE_BONNIE,
     },
     expected: {
       error: true,
@@ -247,7 +234,7 @@ const scenarios = [
   {
     name: 'Regular user providing valid a My Collection document',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: validMyCollection,
     },
     expected: {
@@ -272,7 +259,7 @@ const scenarios = [
   {
     name: 'Regular user providing an invalid My Collection',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
         type: 'HumanMadeObject', // an invalid part; identified_by is also missing.
         classified_as: [
@@ -295,7 +282,7 @@ const scenarios = [
   {
     name: 'Overwrite ID provided in My Collection',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
         id: 'https://should.be.overwritten',
         type: 'Set',
@@ -338,7 +325,7 @@ const scenarios = [
   {
     name: 'Regular user with unsupported document type',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: { type: 'Place' },
     },
     expected: {

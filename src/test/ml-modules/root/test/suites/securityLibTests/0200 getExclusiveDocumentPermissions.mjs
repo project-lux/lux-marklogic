@@ -8,7 +8,7 @@ import {
   getExclusiveRoleNameByUsername,
 } from '/lib/securityLib.mjs';
 import {
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 
@@ -21,22 +21,19 @@ const scenarios = [
   {
     name: 'Regular user',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
     },
     expected: {
       error: false,
       value: [
         // Will fail if "0100 handleRequest.mjs" doesn't run first.
         xdmp.permission(
-          getExclusiveRoleNameByUsername(
-            USERNAME_FOR_REGULAR_USER,
-            CAPABILITY_READ
-          ),
+          getExclusiveRoleNameByUsername(USERNAME_FOR_BONNIE, CAPABILITY_READ),
           'read'
         ),
         xdmp.permission(
           getExclusiveRoleNameByUsername(
-            USERNAME_FOR_REGULAR_USER,
+            USERNAME_FOR_BONNIE,
             CAPABILITY_UPDATE
           ),
           'update'

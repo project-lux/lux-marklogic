@@ -1,7 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { isCurrentUserServiceAccount } from '/lib/securityLib.mjs';
 import {
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 
@@ -14,7 +14,7 @@ const scenarios = [
   {
     name: 'Regular user',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
     },
     expected: {
       value: false,

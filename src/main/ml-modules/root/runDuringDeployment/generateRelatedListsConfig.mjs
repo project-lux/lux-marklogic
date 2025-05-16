@@ -10,7 +10,7 @@ import {
 } from '../lib/searchPatternsLib.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
-  UNIT_NAME_UNRESTRICTED,
+  TENANT_OWNER,
   getEndpointAccessUnitNames,
 } from '../lib/securityLib.mjs';
 
@@ -202,90 +202,88 @@ function _convertToRuntimeFormat(
   }
 }
 
-// Perform the following for LUX (all data / UNIT_NAME_UNRESTRICTED) and all known units.
+// Perform the following for LUX (all data / TENANT_OWNER) and all known units.
 const relatedListsConfig = {};
-[UNIT_NAME_UNRESTRICTED]
-  .concat(getEndpointAccessUnitNames())
-  .forEach((unitName) => {
-    const unitRelatedListsConfig = {};
-    const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
-    const report = unitName == UNIT_NAME_UNRESTRICTED;
+[TENANT_OWNER].concat(getEndpointAccessUnitNames()).forEach((unitName) => {
+  const unitRelatedListsConfig = {};
+  const unitSearchTermsConfig = SEARCH_TERMS_CONFIG[unitName];
+  const report = unitName == TENANT_OWNER;
 
-    /*
-     * STEP 1: Get a list of all 'related to' search terms.
-     */
-    const relatedListTermsInfo = [];
-    Object.keys(unitSearchTermsConfig).forEach((scopeName) => {
-      Object.keys(unitSearchTermsConfig[scopeName]).forEach((termName) => {
-        if (termName.startsWith('relatedTo')) {
-          relatedListTermsInfo.push({
-            toScope: unitSearchTermsConfig[scopeName][termName].targetScope,
-            termName,
-            fromScope: scopeName,
-            inBetweenScopes:
-              unitSearchTermsConfig[scopeName][termName].inBetweenScopes,
-            maxLevel: unitSearchTermsConfig[scopeName][termName].maxLevel,
-          });
-        }
-      });
-    });
-
-    /*
-     * STEP 2: Collect information on each related list, starting from the scope to return results of, working towards the scope
-     * we will be given an ID of.  For example, for the agent to place list, we will be given an agent ID.  We need to start with
-     * place, and find all paths to agent IDs.  This is not yet the runtime format.
-     */
-    relatedListTermsInfo.forEach((termInfo) => {
-      const searchConfigEntries = _getSearchConfigEntries(
-        unitSearchTermsConfig,
-        termInfo.fromScope,
-        termInfo.toScope,
-        termInfo.inBetweenScopes,
-        termInfo.maxLevel,
-        1,
-        report
-      );
-      if (utils.isNonEmptyArray(searchConfigEntries)) {
-        if (!unitRelatedListsConfig[termInfo.fromScope]) {
-          unitRelatedListsConfig[termInfo.fromScope] = {};
-        }
-        unitRelatedListsConfig[termInfo.fromScope][termInfo.termName] = {
-          scopeName: termInfo.toScope,
-          searchConfigEntries,
-        };
+  /*
+   * STEP 1: Get a list of all 'related to' search terms.
+   */
+  const relatedListTermsInfo = [];
+  Object.keys(unitSearchTermsConfig).forEach((scopeName) => {
+    Object.keys(unitSearchTermsConfig[scopeName]).forEach((termName) => {
+      if (termName.startsWith('relatedTo')) {
+        relatedListTermsInfo.push({
+          toScope: unitSearchTermsConfig[scopeName][termName].targetScope,
+          termName,
+          fromScope: scopeName,
+          inBetweenScopes:
+            unitSearchTermsConfig[scopeName][termName].inBetweenScopes,
+          maxLevel: unitSearchTermsConfig[scopeName][termName].maxLevel,
+        });
       }
     });
-
-    /*
-     * STEP 3: Convert to the runtime format.  The outer structure is the same as the search term configuration whereby the
-     * top-level properties are scope names and the next level down are search term names.  But, this is only for related list
-     * search terms.  An example is `concept.relatedToAgent`.  The value of each search term property is an object that defines
-     * the target scope and an array of search configurations.  See _convertToRuntimeFormat for lower level data model details.
-     */
-    Object.keys(unitRelatedListsConfig).forEach((toScope) => {
-      Object.keys(unitRelatedListsConfig[toScope]).forEach((termName) => {
-        const searchConfigs = [];
-        const relatedListConfig = unitRelatedListsConfig[toScope][termName];
-        relatedListConfig.searchConfigEntries.forEach((searchConfigEntry) => {
-          const runtimeConfig = _convertToRuntimeFormat(
-            toScope,
-            termName,
-            searchConfigEntry,
-            report
-          );
-          if (runtimeConfig) {
-            searchConfigs.push(runtimeConfig);
-          }
-        });
-        unitRelatedListsConfig[toScope][termName] = {
-          targetScope: toScope,
-          searchConfigs,
-        };
-      });
-    });
-
-    relatedListsConfig[unitName] = unitRelatedListsConfig;
   });
+
+  /*
+   * STEP 2: Collect information on each related list, starting from the scope to return results of, working towards the scope
+   * we will be given an ID of.  For example, for the agent to place list, we will be given an agent ID.  We need to start with
+   * place, and find all paths to agent IDs.  This is not yet the runtime format.
+   */
+  relatedListTermsInfo.forEach((termInfo) => {
+    const searchConfigEntries = _getSearchConfigEntries(
+      unitSearchTermsConfig,
+      termInfo.fromScope,
+      termInfo.toScope,
+      termInfo.inBetweenScopes,
+      termInfo.maxLevel,
+      1,
+      report
+    );
+    if (utils.isNonEmptyArray(searchConfigEntries)) {
+      if (!unitRelatedListsConfig[termInfo.fromScope]) {
+        unitRelatedListsConfig[termInfo.fromScope] = {};
+      }
+      unitRelatedListsConfig[termInfo.fromScope][termInfo.termName] = {
+        scopeName: termInfo.toScope,
+        searchConfigEntries,
+      };
+    }
+  });
+
+  /*
+   * STEP 3: Convert to the runtime format.  The outer structure is the same as the search term configuration whereby the
+   * top-level properties are scope names and the next level down are search term names.  But, this is only for related list
+   * search terms.  An example is `concept.relatedToAgent`.  The value of each search term property is an object that defines
+   * the target scope and an array of search configurations.  See _convertToRuntimeFormat for lower level data model details.
+   */
+  Object.keys(unitRelatedListsConfig).forEach((toScope) => {
+    Object.keys(unitRelatedListsConfig[toScope]).forEach((termName) => {
+      const searchConfigs = [];
+      const relatedListConfig = unitRelatedListsConfig[toScope][termName];
+      relatedListConfig.searchConfigEntries.forEach((searchConfigEntry) => {
+        const runtimeConfig = _convertToRuntimeFormat(
+          toScope,
+          termName,
+          searchConfigEntry,
+          report
+        );
+        if (runtimeConfig) {
+          searchConfigs.push(runtimeConfig);
+        }
+      });
+      unitRelatedListsConfig[toScope][termName] = {
+        targetScope: toScope,
+        searchConfigs,
+      };
+    });
+  });
+
+  relatedListsConfig[unitName] = unitRelatedListsConfig;
+});
 
 // Consolidated logging
 utils.logValues(

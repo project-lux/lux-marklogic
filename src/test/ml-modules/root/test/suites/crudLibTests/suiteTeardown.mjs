@@ -2,7 +2,8 @@
 
 import {
   HMO_URI,
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
+  USERNAME_FOR_CLYDE,
 } from '/test/unitTestConstants.mjs';
 import {
   removeCollections,
@@ -17,9 +18,15 @@ try {
   // Delete collections before the user's roles!
   removeCollections(
     [COLLECTION_NAME_MY_COLLECTION, COLLECTION_NAME_USER_PROFILE],
-    USERNAME_FOR_REGULAR_USER
+    USERNAME_FOR_BONNIE
   );
-  removeExclusiveRolesByUsername(USERNAME_FOR_REGULAR_USER);
+  removeExclusiveRolesByUsername(USERNAME_FOR_BONNIE);
+
+  removeCollections(
+    [COLLECTION_NAME_MY_COLLECTION, COLLECTION_NAME_USER_PROFILE],
+    USERNAME_FOR_CLYDE
+  );
+  removeExclusiveRolesByUsername(USERNAME_FOR_CLYDE);
 
   // Delete our sample doc.
   // Using invoke as this module is not otherwise happy declaring the update.

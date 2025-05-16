@@ -5,7 +5,9 @@ import {
   COLLECTION_NAME_USER_PROFILE,
 } from './appConstants.mjs';
 import {
+  CAPABILITY_READ,
   CAPABILITY_UPDATE,
+  ROLE_NAME_ALL_USER_PROFILES_READER,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
   throwIfCurrentUserIsServiceAccount,
@@ -37,26 +39,36 @@ import {
 import { getLanguageIdentifier } from './identifierConstants.mjs';
 import { isNonEmptyArray, isDefined, isUndefined } from '../utils/utils.mjs';
 
-const DEFAULT_LANG = getLanguageIdentifier('en');
+const DEFAULT_LANG_IRI = getLanguageIdentifier('en');
 const DEFAULT_NEW_DOCUMENT = false;
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
 const DOCUMENT_TYPE_MY_COLLECTION = 'My Collection';
 const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
 
-function createDocument(docNode, lang = DEFAULT_LANG) {
+function createDocument(docNode, lang = DEFAULT_LANG_IRI) {
   return _insertDocument(docNode, lang, true);
 }
 
-function readDocument(uri, profile = null, lang = 'en') {
+// This function has access to all user profiles and is responsible for restricting access
+// to the name profile when the requesting user is not the owner of the profile.
+function _readDocument(uri, profile = null, lang = 'en') {
   if (fn.docAvailable(uri)) {
-    return applyProfile(cts.doc(uri), profile, lang);
+    const docNode = cts.doc(uri);
+
+    // If a user profile but not the current user's profile, restrict to the name profile.
+    if (isUserProfile(docNode) && new User(true).getUserIri() !== uri) {
+      profile = 'name';
+    }
+
+    return applyProfile(docNode, profile, lang);
   } else {
     throw new NotFoundError(`Document '${uri}' not found`);
   }
 }
+const readDocument = import.meta.amp(_readDocument);
 
-function updateDocument(docNode, lang = DEFAULT_LANG) {
+function updateDocument(docNode, lang = DEFAULT_LANG_IRI) {
   return _insertDocument(docNode, lang, false);
 }
 
@@ -218,7 +230,9 @@ function _getUserProfileConfig(
   let docOptions;
   if (newDocument) {
     docOptions = {
-      permissions: getExclusiveDocumentPermissions(user),
+      permissions: getExclusiveDocumentPermissions(user).concat(
+        xdmp.permission(ROLE_NAME_ALL_USER_PROFILES_READER, CAPABILITY_READ)
+      ),
       collections: [
         getTenantRole(),
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,

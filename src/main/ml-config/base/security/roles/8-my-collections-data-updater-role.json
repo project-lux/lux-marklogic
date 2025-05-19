@@ -1,0 +1,5 @@
+{
+  "role-name": "%%mlAppName%%-my-collections-data-updater",
+  "description": "CAUTION! This role may read, update, and delete any My Collections data and is to be used by the Blue/Green switch process and independent backups.",
+  "role": ["rest-reader"]
+}

@@ -1,0 +1,22 @@
+docker compose up -d
+winpty docker exec -it ml518 bash
+alias ll='ls -l' >> /etc/profile
+aws configure
+[enter info]
+
+cd /opt
+curl -L https://github.com/marklogic/flux/releases/download/1.3.0/marklogic-flux-1.3.0.zip > marklogic-flux-1.3.0.zip
+unzip marklogic-flux-1.3.0.zip
+export FLUX_HOME=/opt/marklogic-flux-1.3.0
+
+cd /host/code
+
+[configure backup-options.txt]
+[You will need a MarkLogic user that has the "%%mlAppName%%-my-collections-data-updater" (preferred) or admin role.]
+
+sh backup-mc.sh backup-options.txt
+
+[If all went well, you can download the newly created zip, uncompress, and check the contents.]
+
+exit
+docker compose down

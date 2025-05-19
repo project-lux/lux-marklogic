@@ -34,8 +34,10 @@ const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END
 const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
 
-const ROLE_NAME_ALL_USER_PROFILES_READER =
-  '%%mlAppName%%-all-user-profiles-reader';
+const ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER =
+  '%%mlAppName%%-my-collections-data-updater';
+const ROLE_NAME_USER_PROFILE_DATA_READER =
+  '%%mlAppName%%-user-profile-data-reader';
 
 const CAPABILITY_READ = 'read';
 const CAPABILITY_UPDATE = 'update';
@@ -374,7 +376,8 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  ROLE_NAME_ALL_USER_PROFILES_READER,
+  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_USER_PROFILE_DATA_READER,
   TENANT_OWNER,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,

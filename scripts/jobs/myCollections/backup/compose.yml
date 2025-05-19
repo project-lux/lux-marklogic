@@ -1,0 +1,13 @@
+# Only used for testing purposes
+services:
+  tools:
+    image: amazon/aws-cli:latest
+    container_name: ml518
+    tty: true
+    command: sleep infinity
+    volumes:
+      - ./:/host/code
+      - c:/tmp:/host/tmp
+    environment:
+      - TZ=UTC
+    entrypoint: ["/bin/sh", "-c", "yum install -y curl java-17-amazon-corretto tar unzip which && echo \"alias ll='ls -l'\" >> /etc/profile && sleep infinity"]

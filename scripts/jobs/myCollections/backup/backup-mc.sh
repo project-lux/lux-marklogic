@@ -53,6 +53,7 @@ findExecutable() {
     fi
 
     # Check if the filename is in PATH
+    # Note that Flux uses `which` and if not installed, will tell you it can't find Java.
     if command -v "$fileName" >/dev/null 2>&1; then
         echo "$fileName"
         return 0

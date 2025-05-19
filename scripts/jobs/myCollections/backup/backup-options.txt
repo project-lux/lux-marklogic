@@ -1,5 +1,5 @@
 # Flux documentation: https://marklogic.github.io/flux/
---host                 "localhost"
+--host                 "host.docker.internal"
 --port                 "8003"
 --auth-type            "DIGEST"
 --database             "lux-content"

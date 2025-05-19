@@ -2,6 +2,11 @@
 #
 # The script may be used to backup the My Collections data from a MarkLogic database.
 #
+# It may be run interactively or headless.  If an error is encountered, the script will
+# append an error message to /var/opt/MarkLogic/Logs/ErrorLog.txt, which this script 
+# presumes is being monitored and would result in a system administrator being notified.
+# The unique string included is "My Collections backup failed".
+#
 # The script requires one parameter: the Flux options file to use.
 #
 # Prerequisites:
@@ -20,6 +25,9 @@
 #
 
 die () {
+    # Write error message to a monitored MarkLogic log file.
+    echo "$(date '+%Y-%m-%d %H:%M:%S') My Collections backup failed: $1" >> /var/opt/MarkLogic/Logs/ErrorLog.txt
+
     script=`basename "$0"`
     echo >&2 ""
     echo >&2 "$1"
@@ -76,5 +84,5 @@ javaExec=$(findExecutable "$JAVA_HOME" "bin" "java")  || exit 1
 fluxExec=$(findExecutable "$FLUX_HOME" "bin" "flux")  || exit 1
 
 echo "Backing up My Collections data..."
-$fluxExec export-files @"$fluxOptionsFile" || die "Flux export failed." true
+output=$($fluxExec export-files @"$fluxOptionsFile" 2>&1) || die "Flux export failed: $output" true
 

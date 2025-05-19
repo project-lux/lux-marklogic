@@ -1,28 +1,26 @@
 #!/bin/bash
 #
-# The script may be used to backup the My Collections data from a MarkLogic database.
+# This script backs up My Collections data from a MarkLogic database.
 #
-# It may be run interactively or headless.  If an error is encountered, the script will
-# append an error message to /var/opt/MarkLogic/Logs/ErrorLog.txt, which this script 
-# presumes is being monitored and would result in a system administrator being notified.
-# The unique string included is "My Collections backup failed".
+# It can be run interactively or headless. If an error occurs, the script appends an error
+# message to /var/opt/MarkLogic/Logs/ErrorLog.txt. This log should be monitored so a system
+# administrator is notified. The unique string included is "My Collections backup failed".
 #
 # The script requires one parameter: the Flux options file to use.
 #
 # Prerequisites:
 #
-# - Flux must be within FLUX_HOME/bin or, when not set, PATH.
-#   Flux 1.3.0 was used during development.
-#   Flux may be downloaded from https://github.com/marklogic/flux/releases.
-# - Flux requires Java and first checks in JAVA_HOME/bin; else needs it in PATH.
+# - Flux must be in FLUX_HOME/bin or, if not set, in PATH. Flux 1.3.0 was used for development.
+#   Download Flux from https://github.com/marklogic/flux/releases.
+#   Or: curl -L https://github.com/marklogic/flux/releases/download/1.3.0/marklogic-flux-1.3.0.zip > marklogic-flux-1.3.0.zip
+# - Flux requires Java and first checks JAVA_HOME/bin; else Java must be in PATH (found via `which`).
 #   Java 17.0.8 was used during development.
-# - When Flux's options file uses the --s3-add-credentials option, the AWS CLI
-#   must be installed and configured with the correct credentials.
-# - Define MarkLogic connection details in the Flux options file, as well as the
-#   S3 bucket path.
+# - If Flux's options file uses --s3-add-credentials, AWS CLI must be installed and configured.
+# - Define MarkLogic connection details in the Flux options file, as well as the S3 bucket path.
+#   The MarkLogic user must have the "%%mlAppName%%-my-collections-data-updater" (preferred)
+#   or admin role.
 #
-# To retain the output, send stdout and/or stderr to a file.
-#
+
 
 die () {
     # Write error message to a monitored MarkLogic log file.

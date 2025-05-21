@@ -58,7 +58,7 @@ function _readDocument(uri, profile = null, lang = 'en') {
     const docNode = cts.doc(uri);
 
     // If a user profile but not the current user's profile, restrict to the name profile.
-    if (isUserProfile(docNode) && new User(true).getUserIri() !== uri) {
+    if (isUserProfile(docNode) && new User().getUserIri() !== uri) {
       profile = 'name';
     }
 

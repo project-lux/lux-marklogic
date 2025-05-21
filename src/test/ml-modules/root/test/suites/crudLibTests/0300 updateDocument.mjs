@@ -36,7 +36,7 @@ const existingUser = fn.head(
   xdmp.invokeFunction(
     () => {
       console.log(`Creating user instance for ${xdmp.getCurrentUser()}`);
-      return new User(true); // retrieve user profile as this user.
+      return new User(); // retrieve user profile as this user.
     },
     { userId: xdmp.user(USERNAME_FOR_BONNIE) }
   )

@@ -330,9 +330,7 @@ function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
     {
       // If we needed to create a user profile, we'll need to execute the requested function in a
       // new transaction.
-      isolation: createUserProfile
-        ? 'different-transaction'
-        : 'same-transaction',
+      isolation: createUserProfile ? 'different-transaction' : 'same-statement',
     }
   );
 }

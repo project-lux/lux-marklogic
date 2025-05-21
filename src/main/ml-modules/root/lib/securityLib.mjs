@@ -139,6 +139,7 @@ function __createExclusiveRoles(user) {
 
   if (neededRoleNames.length > 0) {
     const username = user.getUsername();
+    const isLocalUser = User.isLocalUser(username);
 
     // Create the roles that do not yet exist.
     const createRoles = () => {
@@ -150,6 +151,9 @@ function __createExclusiveRoles(user) {
           const inheritedRoleNames = [];
           const defaultPermissions = [];
           const defaultCollections = [];
+          const compartment = null;
+          // Cognito pseudo-group names match are to match the ML role names.
+          const externalNames = isLocalUser ? [] : [roleName];
           // Requires http://marklogic.com/xdmp/privileges/create-role
           // and http://marklogic.com/xdmp/privileges/grant-all-roles
           sec.createRole(
@@ -157,24 +161,28 @@ function __createExclusiveRoles(user) {
             `An exclusive role for user '${username}'`,
             inheritedRoleNames,
             defaultPermissions,
-            defaultCollections
+            defaultCollections,
+            compartment,
+            externalNames
           );
         }
       });
     };
     xdmp.invokeFunction(createRoles, { database: xdmp.securityDatabase() });
 
-    // Add the role when the user doesn't already have it.
-    const addRoles = () => {
-      declareUpdate();
-      const sec = require('/MarkLogic/security.xqy');
-      neededRoleNames.forEach((roleName) => {
-        // Requires http://marklogic.com/xdmp/privileges/user-add-roles
-        // and http://marklogic.com/xdmp/privileges/grant-all-roles
-        sec.userAddRoles(username, roleName);
-      });
-    };
-    xdmp.invokeFunction(addRoles, { database: xdmp.securityDatabase() });
+    if (isLocalUser) {
+      // Add the role when the user doesn't already have it.
+      const addRoles = () => {
+        declareUpdate();
+        const sec = require('/MarkLogic/security.xqy');
+        neededRoleNames.forEach((roleName) => {
+          // Requires http://marklogic.com/xdmp/privileges/user-add-roles
+          // and http://marklogic.com/xdmp/privileges/grant-all-roles
+          sec.userAddRoles(username, roleName);
+        });
+      };
+      xdmp.invokeFunction(addRoles, { database: xdmp.securityDatabase() });
+    }
 
     // Whether it be a local or temporary user, the endpoint consumer needs to retry the current
     // request as the system will not yet acknowledge the user's new role --even with xdmp.invoke.

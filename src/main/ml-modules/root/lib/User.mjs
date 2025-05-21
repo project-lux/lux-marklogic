@@ -59,6 +59,17 @@ const User = class {
       return null;
     }
   }
+
+  // Return false for temporary / OAuth users.
+  static isLocalUser(username) {
+    // Elected for try/catch over executing sec.userExists in the security database and an additional execute privilege.
+    try {
+      xdmp.user(username);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 };
 
 export { User };

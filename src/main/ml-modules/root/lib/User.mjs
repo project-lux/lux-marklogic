@@ -1,4 +1,3 @@
-import { processSearchCriteria } from './searchLib.mjs';
 import { isDefined, isUndefined } from '../utils/utils.mjs';
 import { InternalServerError } from './mlErrorsLib.mjs';
 import { COLLECTION_NAME_USER_PROFILE } from './appConstants.mjs';
@@ -7,6 +6,8 @@ const User = class {
   constructor(eagerLoad = false) {
     // For the benefit of unit tests, capture at the time of instantiation.
     this.username = xdmp.getCurrentUser();
+
+    // TBD if a good idea to cache the role names.
     this.roleNames = xdmp
       .getCurrentRoles()
       .toArray()
@@ -44,11 +45,11 @@ const User = class {
 
   // Given document permissions, neither a service account nor a user should be able to access another user's profile.
   static searchForUserProfile(username) {
-    const results = fn
-      .subsequence(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)),
-        1,
-        2
+    const results = cts
+      .uris(
+        '',
+        ['limit=2', 'score-zero'],
+        cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)
       )
       .toArray();
     if (results.length > 1) {

@@ -310,44 +310,41 @@ function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
     return f();
   }
 
-  if (isMyCollectionRequest) {
-    // Ensure user has their exclusive roles for My Collection requests.
+  // If the user does not have a user profile, create it and their default collection.
+  const createUserProfile = !user.hasUserProfile();
+  if (createUserProfile) {
+    // If they don't have a user profile, they may not yet have their exclusive roles.
     if (!_hasExclusiveRoles(user)) {
+      console.log(`Creating exclusive roles for user '${user.getUsername()}'`);
       _createExclusiveRoles(user);
     }
 
-    // if the user does not have a user profile, we need to create a user profile (and default collection)
-    if (!user.hasUserProfile()) {
-      // Create the user profile (and default collection)
-      _createUserProfileAndDefaultCollection();
-    }
+    console.log(`Creating user profile+ for user '${user.getUsername()}'`);
+    _createUserProfileAndDefaultCollection();
   }
 
-  // If we don't start a new transaction here, create document does not have the user id
   return xdmp.invokeFunction(
     () => {
       return _getExecuteWithServiceAccountFunction(unitName)(f);
     },
     {
-      userId: xdmp.getCurrentUserid(),
+      // If we needed to create a user profile, we'll need to execute the requested function in a
+      // new transaction.
+      isolation: createUserProfile
+        ? 'different-transaction'
+        : 'same-transaction',
     }
   );
 }
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
 function _createUserProfileAndDefaultCollection() {
-  const userProfileDocument = xdmp
-    .invokeFunction(_createUserProfile, {
-      userId: xdmp.getCurrentUserid(),
-    })
-    .toArray()[0];
+  const userProfileDocument = fn.head(xdmp.invokeFunction(_createUserProfile));
+  console.log(`User profile created: ${JSON.stringify(userProfileDocument)}`);
 
-  xdmp.invokeFunction(
-    () => _createDefaultCollectionAndUpdateUserProfile(userProfileDocument),
-    {
-      userId: xdmp.getCurrentUserid(),
-    }
-  );
+  xdmp.invokeFunction(() => {
+    _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
+  });
 }
 
 // create a user profile
@@ -359,7 +356,7 @@ function _createUserProfile() {
 function _createDefaultCollectionAndUpdateUserProfile(userProfileDocument) {
   declareUpdate();
   const defaultCollectionDocument = createDocument(DEFAULT_COLLECTION_TEMPLATE);
-  updateDocument({
+  return updateDocument({
     ...userProfileDocument,
     _lux_default_collection: defaultCollectionDocument.id,
   });

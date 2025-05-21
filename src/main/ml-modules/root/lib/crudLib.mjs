@@ -148,6 +148,7 @@ function _insertDocument(
     setId(editableDocObj, uri);
     // When creating a new user profile, the user object will not yet be able to serve up the IRI.
     const userIri = docIsUserProfile ? uri : user.getUserIri();
+    console.log(`User ${userIri} is attempted to create ${uri}`);
     setCreatedBy(editableDocObj, userIri);
     setAddedToBy(editableDocObj, null);
     setIndexedProperties(editableDocObj, config.indexedProperties);

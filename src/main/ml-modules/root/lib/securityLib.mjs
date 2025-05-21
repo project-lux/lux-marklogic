@@ -214,6 +214,10 @@ function getExclusiveDocumentPermissions(user) {
   return [
     xdmp.permission(
       _getExclusiveRoleName(user, CAPABILITY_UPDATE),
+      CAPABILITY_READ
+    ),
+    xdmp.permission(
+      _getExclusiveRoleName(user, CAPABILITY_UPDATE),
       CAPABILITY_UPDATE
     ),
   ];

@@ -106,7 +106,7 @@ function _insertDocument(
 
   // We're to receive the contents of /json but need the full context going forward.
   readOnlyDocNode = xdmp.toJSON({
-    json: readOnlyDocNode.toObject(),
+    json: readOnlyDocNode,
   });
 
   let config;

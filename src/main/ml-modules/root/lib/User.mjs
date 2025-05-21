@@ -1,6 +1,7 @@
 import { processSearchCriteria } from './searchLib.mjs';
 import { isDefined, isUndefined } from '../utils/utils.mjs';
 import { InternalServerError } from './mlErrorsLib.mjs';
+import { COLLECTION_NAME_USER_PROFILE } from './appConstants.mjs';
 
 const User = class {
   constructor(eagerLoad = false) {
@@ -37,27 +38,28 @@ const User = class {
     return this.userProfile;
   }
 
+  hasUserProfile() {
+    return isDefined(this.getUserProfile());
+  }
+
   // Given document permissions, neither a service account nor a user should be able to access another user's profile.
   static searchForUserProfile(username) {
-    const searchCriteriaProcessor = processSearchCriteria({
-      searchCriteria: {
-        username,
-      },
-      searchScope: 'agent',
-      allowMultiScope: false,
-      page: 1,
-      pageLength: 2,
-      filterResults: false,
-    });
-    const results = searchCriteriaProcessor.getSearchResults().results;
+    const results = fn
+      .subsequence(
+        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)),
+        1,
+        2
+      )
+      .toArray();
     if (results.length > 1) {
       throw new InternalServerError(
         `Multiple user profiles found for username '${username}'.`
       );
     } else if (results.length === 1) {
-      return cts.doc(results[0].id);
+      return results[0];
+    } else {
+      return null;
     }
-    return null;
   }
 
   hasRole(roleName) {

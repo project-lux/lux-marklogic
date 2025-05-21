@@ -65,6 +65,12 @@ class NotImplementedError extends Error {
   }
 }
 
+class ServerConfigurationChangedError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 // Because e.name isn't InvalidSearchRequestError within a catch block :(
 function isInvalidSearchRequestError(e) {
   return e.message && e.message.includes(INVALID_SEARCH_REQUEST_LABEL);
@@ -81,5 +87,6 @@ export {
   NotAcceptingWriteRequestsError,
   NotFoundError,
   NotImplementedError,
+  ServerConfigurationChangedError,
   isInvalidSearchRequestError,
 };

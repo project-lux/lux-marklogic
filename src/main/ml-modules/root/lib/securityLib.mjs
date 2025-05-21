@@ -24,6 +24,7 @@ import {
   BadRequestError,
   InternalServerError,
   NotAcceptingWriteRequestsError,
+  ServerConfigurationChangedError,
 } from './mlErrorsLib.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
 import { createDocument, updateDocument } from './crudLib.mjs';
@@ -126,56 +127,63 @@ function _hasExclusiveRoles(user) {
   return hasAll;
 }
 
-function _createExclusiveRoles(user) {
+function __createExclusiveRoles(user) {
   throwIfUserIsServiceAccount(user);
-  // Upon the introduction of a second exclusive role, considering changing _createAndGrantRole
-  // to accept multiple and process in fewer transactions.
-  _getExclusiveRoleNames(user).forEach((roleName) => {
-    _createAndGrantRole(user, roleName);
-  });
-}
 
-// When this function creates and grants a role, code that executes after it must be
-// invoked in a subsequent transaction (e.g., xdmp.invokeFunction or new endpoint request).
-function __createAndGrantRole(user, roleName) {
-  throwIfUserIsServiceAccount(user);
-  if (user.hasRole(roleName) === false) {
+  const neededRoleNames = [];
+  _getExclusiveRoleNames(user).forEach((roleName) => {
+    if (user.hasRole(roleName) === false) {
+      neededRoleNames.push(roleName);
+    }
+  });
+
+  if (neededRoleNames.length > 0) {
     const username = user.getUsername();
 
-    // Create the role when it does not exist.
-    const createRole = () => {
+    // Create the roles that do not yet exist.
+    const createRoles = () => {
       declareUpdate();
       const sec = require('/MarkLogic/security.xqy');
-      // Requires http://marklogic.com/xdmp/privileges/get-role
-      if (!sec.roleExists(roleName)) {
-        const inheritedRoleNames = [];
-        const defaultPermissions = [];
-        const defaultCollections = [];
-        // Requires http://marklogic.com/xdmp/privileges/create-role
-        // and http://marklogic.com/xdmp/privileges/grant-all-roles
-        sec.createRole(
-          roleName,
-          `An exclusive role for user '${username}'`,
-          inheritedRoleNames,
-          defaultPermissions,
-          defaultCollections
-        );
-      }
+      neededRoleNames.forEach((roleName) => {
+        // Requires http://marklogic.com/xdmp/privileges/get-role
+        if (!sec.roleExists(roleName)) {
+          const inheritedRoleNames = [];
+          const defaultPermissions = [];
+          const defaultCollections = [];
+          // Requires http://marklogic.com/xdmp/privileges/create-role
+          // and http://marklogic.com/xdmp/privileges/grant-all-roles
+          sec.createRole(
+            roleName,
+            `An exclusive role for user '${username}'`,
+            inheritedRoleNames,
+            defaultPermissions,
+            defaultCollections
+          );
+        }
+      });
     };
-    xdmp.invokeFunction(createRole, { database: xdmp.securityDatabase() });
+    xdmp.invokeFunction(createRoles, { database: xdmp.securityDatabase() });
 
     // Add the role when the user doesn't already have it.
-    const addRole = () => {
+    const addRoles = () => {
       declareUpdate();
       const sec = require('/MarkLogic/security.xqy');
-      // Requires http://marklogic.com/xdmp/privileges/user-add-roles
-      // and http://marklogic.com/xdmp/privileges/grant-all-roles
-      sec.userAddRoles(username, roleName);
+      neededRoleNames.forEach((roleName) => {
+        // Requires http://marklogic.com/xdmp/privileges/user-add-roles
+        // and http://marklogic.com/xdmp/privileges/grant-all-roles
+        sec.userAddRoles(username, roleName);
+      });
     };
-    xdmp.invokeFunction(addRole, { database: xdmp.securityDatabase() });
+    xdmp.invokeFunction(addRoles, { database: xdmp.securityDatabase() });
+
+    // Whether it be a local or temporary user, the endpoint consumer needs to retry the current
+    // request as the system will not yet acknowledge the user's new role --even with xdmp.invoke.
+    throw new ServerConfigurationChangedError(
+      "The requesting user's security profile changed; retry the request to enable the changes to take effect."
+    );
   }
 }
-const _createAndGrantRole = import.meta.amp(__createAndGrantRole);
+const _createExclusiveRoles = import.meta.amp(__createExclusiveRoles);
 
 function getExclusiveRoleNamesByUsername(username) {
   return [getExclusiveRoleNameByUsername(username, CAPABILITY_UPDATE)];
@@ -311,11 +319,10 @@ function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
   if (createUserProfile) {
     // If they don't have a user profile, they may not yet have their exclusive roles.
     if (!_hasExclusiveRoles(user)) {
-      console.log(`Creating exclusive roles for user '${user.getUsername()}'`);
+      // This function could throw an error requesting the endpoint consumer to retry.
       _createExclusiveRoles(user);
     }
 
-    console.log(`Creating user profile+ for user '${user.getUsername()}'`);
     _createUserProfileAndDefaultCollection();
   }
 
@@ -334,8 +341,6 @@ const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
 function _createUserProfileAndDefaultCollection() {
   const userProfileDocument = fn.head(xdmp.invokeFunction(_createUserProfile));
-  console.log(`User profile created: ${JSON.stringify(userProfileDocument)}`);
-
   xdmp.invokeFunction(() => {
     _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
   });

@@ -57,7 +57,7 @@ const User = class {
         `Multiple user profiles found for username '${username}'.`
       );
     } else if (results.length === 1) {
-      return results[0];
+      return cts.doc(results[0]);
     } else {
       return null;
     }

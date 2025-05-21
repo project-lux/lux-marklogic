@@ -176,11 +176,13 @@ function __createExclusiveRoles(user) {
     };
     xdmp.invokeFunction(addRoles, { database: xdmp.securityDatabase() });
 
-    // Whether it be a local or temporary user, the endpoint consumer needs to retry the current
-    // request as the system will not yet acknowledge the user's new role --even with xdmp.invoke.
-    throw new ServerConfigurationChangedError(
-      "The requesting user's security profile changed; retry the request to enable the changes to take effect."
-    );
+    // This error is not needed when we pass { userId: xdmp.getCurrentUserid() } to xdmp.invokeFunction
+
+    // // Whether it be a local or temporary user, the endpoint consumer needs to retry the current
+    // // request as the system will not yet acknowledge the user's new role --even with xdmp.invoke.
+    // throw new ServerConfigurationChangedError(
+    //   "The requesting user's security profile changed; retry the request to enable the changes to take effect."
+    // );
   }
 }
 const _createExclusiveRoles = import.meta.amp(__createExclusiveRoles);
@@ -340,10 +342,15 @@ function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
 function _createUserProfileAndDefaultCollection() {
-  const userProfileDocument = fn.head(xdmp.invokeFunction(_createUserProfile));
-  xdmp.invokeFunction(() => {
-    _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
-  });
+  const userProfileDocument = fn.head(
+    xdmp.invokeFunction(_createUserProfile, { userId: xdmp.getCurrentUserid() })
+  );
+  xdmp.invokeFunction(
+    () => {
+      _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
+    },
+    { userId: xdmp.getCurrentUserid() }
+  );
 }
 
 // create a user profile

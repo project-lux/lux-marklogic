@@ -36,7 +36,6 @@ assertions.push(
 );
 
 const regularUserRoleNames = [
-  getExclusiveRoleNameByUsername(USERNAME_FOR_BONNIE, CAPABILITY_READ),
   getExclusiveRoleNameByUsername(USERNAME_FOR_BONNIE, CAPABILITY_UPDATE),
 ];
 

@@ -2,7 +2,6 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { User } from '/lib/User.mjs';
 import {
-  CAPABILITY_READ,
   CAPABILITY_UPDATE,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
@@ -27,10 +26,6 @@ const scenarios = [
       error: false,
       value: [
         // Will fail if "0100 handleRequest.mjs" doesn't run first.
-        xdmp.permission(
-          getExclusiveRoleNameByUsername(USERNAME_FOR_BONNIE, CAPABILITY_READ),
-          'read'
-        ),
         xdmp.permission(
           getExclusiveRoleNameByUsername(
             USERNAME_FOR_BONNIE,

@@ -128,6 +128,8 @@ function _hasExclusiveRoles(user) {
 
 function _createExclusiveRoles(user) {
   throwIfUserIsServiceAccount(user);
+  // Upon the introduction of a second exclusive role, considering changing _createAndGrantRole
+  // to accept multiple and process in fewer transactions.
   _getExclusiveRoleNames(user).forEach((roleName) => {
     _createAndGrantRole(user, roleName);
   });
@@ -176,10 +178,7 @@ function __createAndGrantRole(user, roleName) {
 const _createAndGrantRole = import.meta.amp(__createAndGrantRole);
 
 function getExclusiveRoleNamesByUsername(username) {
-  return [
-    getExclusiveRoleNameByUsername(username, CAPABILITY_READ),
-    getExclusiveRoleNameByUsername(username, CAPABILITY_UPDATE),
-  ];
+  return [getExclusiveRoleNameByUsername(username, CAPABILITY_UPDATE)];
 }
 
 function getExclusiveRoleNameByUsername(username, capability) {
@@ -202,10 +201,7 @@ function getExclusiveRoleNameByUsername(username, capability) {
 }
 
 function _getExclusiveRoleNames(user) {
-  return [
-    _getExclusiveRoleName(user, CAPABILITY_READ),
-    _getExclusiveRoleName(user, CAPABILITY_UPDATE),
-  ];
+  return [_getExclusiveRoleName(user, CAPABILITY_UPDATE)];
 }
 
 // Get the user's exclusive role for the specified capability.
@@ -216,10 +212,6 @@ function _getExclusiveRoleName(user, capability) {
 
 function getExclusiveDocumentPermissions(user) {
   return [
-    xdmp.permission(
-      _getExclusiveRoleName(user, CAPABILITY_READ),
-      CAPABILITY_READ
-    ),
     xdmp.permission(
       _getExclusiveRoleName(user, CAPABILITY_UPDATE),
       CAPABILITY_UPDATE

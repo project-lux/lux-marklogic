@@ -152,7 +152,7 @@ function __createExclusiveRoles(user) {
           const defaultPermissions = [];
           const defaultCollections = [];
           const compartment = null;
-          // Cognito pseudo-group names match are to match the ML role names.
+          // Cognito pseudo-group names match the ML role names.
           const externalNames = isLocalUser ? [] : [roleName];
           // Requires http://marklogic.com/xdmp/privileges/create-role
           // and http://marklogic.com/xdmp/privileges/grant-all-roles

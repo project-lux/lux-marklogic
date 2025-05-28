@@ -140,77 +140,18 @@ function removeUserProfileCollection() {
 
 const scenarios = [
   {
-    name: 'Regular user providing an invalid user profile',
-    // Make sure this user doesn't already have a profile.
-    executeBeforehand: removeUserProfileCollection,
+    name: 'Regular user who needs their exclusive role(s) created',
     input: {
       username: USERNAME_FOR_BONNIE,
-      doc: {
-        type: 'Group', // the invalid part
-        classified_as: [
-          {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.userProfile, // enough to get past model.isUserProfile
-              },
-            ],
-          },
-        ],
-      },
+      doc: validMyCollection,
     },
     expected: {
       error: true,
-      stackToInclude: `validation error(s) found`,
+      stackToInclude: 'retry the request to enable the changes to take effect',
     },
   },
   {
-    name: 'Overwrite ID provided in user profile',
-    executeBeforehand: removeUserProfileCollection,
-    input: {
-      username: USERNAME_FOR_BONNIE,
-      doc: {
-        id: 'https://should.be.overwritten',
-        type: 'Person',
-        classified_as: [
-          {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.userProfile,
-              },
-            ],
-          },
-        ],
-      },
-    },
-    expected: {
-      error: false,
-      nodeAssertions: [
-        {
-          type: 'xpath',
-          xpath: 'id = "https://should.be.overwritten"',
-          expected: false,
-          message: 'The given ID should have been overwritten.',
-        },
-      ],
-    },
-  },
-  // Leave this user profile around for the My Collection tests.
-  {
-    name: 'Regular user providing a valid user profile',
-    executeBeforehand: removeUserProfileCollection,
-    input: {
-      username: USERNAME_FOR_BONNIE,
-      doc: USER_PROFILE_BONNIE,
-    },
-    expected: {
-      error: false,
-      nodeAssertions: newDocAssertions,
-    },
-  },
-  {
-    name: 'Try to create a second user profile for the same user',
+    name: 'Try to create a user profile even though it is automatically created',
     input: {
       username: USERNAME_FOR_BONNIE,
       doc: USER_PROFILE_BONNIE,

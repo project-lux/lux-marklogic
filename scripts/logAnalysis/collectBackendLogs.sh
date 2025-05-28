@@ -29,7 +29,7 @@ inputBasenamesCnt=${#inputBasenames[@]}
 for (( s=0; s<${ipAddressCnt}; s++ )); do
   ipAddress=${ipAddresses[$s]}
 
-  # Interate through the filenames
+  # Iterate through the filenames
   for (( t=0; t<${inputBasenamesCnt}; t++ )); do
     # Underscores in the output filenames were problematic; switched to hyphens.
     inputBasename=${inputBasenames[$t]}

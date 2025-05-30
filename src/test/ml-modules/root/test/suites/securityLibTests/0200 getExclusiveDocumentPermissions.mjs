@@ -31,6 +31,13 @@ const scenarios = [
             USERNAME_FOR_BONNIE,
             CAPABILITY_UPDATE
           ),
+          'read'
+        ),
+        xdmp.permission(
+          getExclusiveRoleNameByUsername(
+            USERNAME_FOR_BONNIE,
+            CAPABILITY_UPDATE
+          ),
           'update'
         ),
       ],

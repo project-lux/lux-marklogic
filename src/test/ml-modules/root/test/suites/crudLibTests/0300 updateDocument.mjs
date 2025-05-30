@@ -1,9 +1,11 @@
-import { COLLECTION_NAME_MY_COLLECTION } from '/lib/appConstants.mjs';
+import {
+  COLLECTION_NAME_MY_COLLECTION,
+  COLLECTION_NAME_USER_PROFILE,
+} from '/lib/appConstants.mjs';
 import { updateDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
 import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
-import { User } from '/lib/User.mjs';
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
   HMO_URI,
@@ -33,22 +35,25 @@ xdmp.invokeFunction(
   { database: xdmp.securityDatabase() }
 );
 
-const existingUser = fn.head(
+const userProfileDocNode = fn.head(
   xdmp.invokeFunction(
     () => {
-      console.log(`Creating user instance for ${xdmp.getCurrentUser()}`);
-      return new User(); // retrieve user profile as this user.
+      return fn.head(
+        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
+      );
     },
-    { userId: xdmp.user(USERNAME_FOR_BONNIE) }
+    {
+      userId: xdmp.user(USERNAME_FOR_BONNIE),
+    }
   )
 );
-const existingUserProfile = existingUser.getUserProfile();
 assertions.push(
   testHelperProxy.assertExists(
-    existingUserProfile,
+    userProfileDocNode,
     `The updateDocument tests are dependent on the createDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
   )
 );
+const userProfileUri = fn.baseUri(userProfileDocNode) + '';
 
 // Get a record whose type should not be accepted by updateDocument.
 const hmoDocNode = fn.head(
@@ -120,7 +125,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_BONNIE,
       doc: {
-        id: existingUser.getUserIri(),
+        id: userProfileUri,
         type: 'Person',
         classified_as: [
           {
@@ -140,7 +145,7 @@ const scenarios = [
       nodeAssertions: [
         {
           type: 'xpath',
-          xpath: `id = '${existingUser.getUserIri()}'`,
+          xpath: `id = '${userProfileUri}'`,
           expected: true,
           message: 'The ID property changed',
         },
@@ -153,7 +158,7 @@ const scenarios = [
         {
           type: 'equality',
           xpath: `created_by`,
-          expected: existingUserProfile.xpath('json/created_by'),
+          expected: userProfileDocNode.xpath('json/created_by'),
           message: 'The created_by property was not restored',
         },
         {
@@ -170,7 +175,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
       doc: {
-        id: existingUser.getUserIri(),
+        id: userProfileUri,
         type: 'Person',
         classified_as: [
           {

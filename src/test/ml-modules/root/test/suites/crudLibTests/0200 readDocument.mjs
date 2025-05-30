@@ -72,11 +72,23 @@ const scenarios = [
         },
         {
           type: 'xpath',
-          xpath: 'exists(default_collection)',
+          xpath: 'exists(_lux_default_collection)',
           expected: true,
-          message: 'The default_collection property is missing',
+          message: 'The _lux_default_collection property is missing',
         },
       ],
+    },
+  },
+  {
+    name: 'Clyde making his first request',
+    input: {
+      username: USERNAME_FOR_CLYDE,
+      uri: userProfileUri,
+      profileName: null,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'retry the request to enable the changes to take effect',
     },
   },
   {

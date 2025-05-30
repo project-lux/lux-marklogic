@@ -34,6 +34,18 @@ assertions.push(
     `The readDocument tests are dependent on the createDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
   )
 );
+assertions.push(
+  testHelperProxy.assertTrue(
+    userProfileDocNode.xpath('exists(indexedProperties)'),
+    'The indexedProperties property is missing from the user profile document'
+  )
+);
+assertions.push(
+  testHelperProxy.assertFalse(
+    userProfileDocNode.xpath('exists(root) or exists(baseURI)'),
+    'Regression: the document node was saved rather than just its JSON'
+  )
+);
 const userProfileUri = fn.baseUri(userProfileDocNode) + '';
 
 const endpointConfig = new EndpointConfig({

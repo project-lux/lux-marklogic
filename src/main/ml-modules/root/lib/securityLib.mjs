@@ -13,6 +13,7 @@ import {
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
 } from './appConstants.mjs';
 import {
+  getNodeFromObject,
   includesOrEquals,
   isObject,
   isUndefined,
@@ -28,6 +29,7 @@ import {
 } from './mlErrorsLib.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
 import { createDocument, updateDocument } from './crudLib.mjs';
+import { setDefaultCollection } from './model.mjs';
 
 const TENANT_OWNER = ML_APP_NAME;
 
@@ -360,13 +362,18 @@ function _createUserProfile() {
   return createDocument(USER_PROFILE_TEMPLATE);
 }
 
-function _createDefaultCollectionAndUpdateUserProfile(userProfileDocument) {
+function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
   declareUpdate();
-  const defaultCollectionDocument = createDocument(DEFAULT_COLLECTION_TEMPLATE);
-  return updateDocument({
-    ...userProfileDocument,
-    _lux_default_collection: defaultCollectionDocument.id,
-  });
+  const defaultCollectionDocObj = createDocument(DEFAULT_COLLECTION_TEMPLATE);
+
+  const expectJsonProperty = false;
+  setDefaultCollection(
+    userProfileDocObj,
+    defaultCollectionDocObj.id,
+    expectJsonProperty
+  );
+
+  return updateDocument(getNodeFromObject(userProfileDocObj));
 }
 
 function _getExecuteWithServiceAccountFunction(unitName) {

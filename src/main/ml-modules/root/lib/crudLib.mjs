@@ -38,7 +38,12 @@ import {
   NotFoundError,
 } from './mlErrorsLib.mjs';
 import { getLanguageIdentifier } from './identifierConstants.mjs';
-import { isNonEmptyArray, isDefined, isUndefined } from '../utils/utils.mjs';
+import {
+  getNodeFromObject,
+  isNonEmptyArray,
+  isDefined,
+  isUndefined,
+} from '../utils/utils.mjs';
 
 const DEFAULT_LANG_IRI = getLanguageIdentifier('en');
 const DEFAULT_NEW_DOCUMENT = false;
@@ -105,7 +110,7 @@ function _insertDocument(
   throwIfUserIsServiceAccount(user);
 
   // We're to receive the contents of /json but need the full context going forward.
-  readOnlyDocNode = xdmp.toJSON({
+  readOnlyDocNode = getNodeFromObject({
     json: readOnlyDocNode,
   });
 
@@ -179,9 +184,10 @@ function _insertDocument(
     }
 
     // Preserve anything outside of /json
-    for (const prop in existingDocNode) {
+    const existingDocObj = existingDocNode.toObject();
+    for (const prop in existingDocObj) {
       if (prop !== 'json') {
-        editableDocObj[prop] = existingDocNode[prop];
+        editableDocObj[prop] = existingDocObj[prop];
       }
     }
 

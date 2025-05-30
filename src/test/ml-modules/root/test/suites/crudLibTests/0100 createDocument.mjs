@@ -1,6 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
-  USER_PROFILE_BONNIE,
   USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
@@ -10,6 +9,7 @@ import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
 import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
+import { getNodeFromObject } from '/utils/utils.mjs';
 
 const LIB = '0100 createDocument.mjs';
 console.log(`${LIB}: starting.`);
@@ -154,7 +154,19 @@ const scenarios = [
     name: 'Try to create a user profile even though it is automatically created',
     input: {
       username: USERNAME_FOR_BONNIE,
-      doc: USER_PROFILE_BONNIE,
+      doc: {
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+      },
     },
     expected: {
       error: true,
@@ -165,7 +177,19 @@ const scenarios = [
     name: 'Service account attempting to create a user profile',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
-      doc: USER_PROFILE_BONNIE,
+      doc: {
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+      },
     },
     expected: {
       error: true,
@@ -280,7 +304,7 @@ for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
       declareUpdate();
-      return createDocument(xdmp.toJSON(scenario.input.doc));
+      return createDocument(getNodeFromObject(scenario.input.doc));
     };
     const unitName = null;
     // These tests are dependent on handleRequest creating the user's exclusive roles.

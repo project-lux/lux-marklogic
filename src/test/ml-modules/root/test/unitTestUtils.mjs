@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { getExclusiveRoleNamesByUsername } from '/lib/securityLib.mjs';
-import { isArray, toArray } from '/utils/utils.mjs';
+import { getNodeFromObject, isArray, toArray } from '/utils/utils.mjs';
 import {
   ROLE_NAME_TENANT_READER,
   ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
@@ -75,7 +75,7 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
 
     // Let's see if the scenario provided node assertions to apply.
     if (isArray(scenario.expected.nodeAssertions)) {
-      const docNode = xdmp.toJSON(actualValue);
+      const docNode = getNodeFromObject(actualValue);
       scenario.expected.nodeAssertions.forEach((assertion) => {
         if (assertion.type === 'equality') {
           /*

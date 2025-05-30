@@ -12,6 +12,7 @@ import {
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
+import { getNodeFromObject } from '/utils/utils.mjs';
 
 const LIB = '0300 updateDocument.mjs';
 console.log(`${LIB}: starting.`);
@@ -158,7 +159,7 @@ const scenarios = [
         {
           type: 'equality',
           xpath: newPropertyName,
-          expected: xdmp.toJSON(newProperty).xpath(newPropertyName),
+          expected: getNodeFromObject(newProperty).xpath(newPropertyName),
           message: `The ${newPropertyName} property was not retained as given`,
         },
       ],
@@ -233,7 +234,7 @@ const scenarios = [
         {
           type: 'equality',
           xpath: newPropertyName,
-          expected: xdmp.toJSON(newProperty).xpath(newPropertyName),
+          expected: getNodeFromObject(newProperty).xpath(newPropertyName),
           message: `The ${newPropertyName} property was not retained as given`,
         },
       ],
@@ -281,7 +282,7 @@ for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
       declareUpdate();
-      return updateDocument(xdmp.toJSON(scenario.input.doc));
+      return updateDocument(getNodeFromObject(scenario.input.doc));
     };
     const unitName = null;
     // These tests are dependent on handleRequest creating the user's exclusive roles.

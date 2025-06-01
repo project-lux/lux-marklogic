@@ -5,6 +5,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## v1.40.0 - 2025-06-02
 ### Added
 - Automatically create user profile and default collection for new users ([#495](https://github.com/project-lux/lux-marklogic/issues/495))
+- Added new sets facet that combines setCreationDate and setPublicationDate [#497](https://github.com/project-lux/lux-marklogic/issues/497)
 
 ### Changed
 - The [Read Document endpoint](#read-document) will now allow any user or service account to access the portion of another user's profile included by the 'name' profile. ([#502](https://github.com/project-lux/lux-marklogic/issues/502))

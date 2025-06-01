@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-my-collections-backuper",
+  "description": "Service account for backing up My Collections data",
+  "password": "%%backupPassword%%",
+  "role": ["%%mlAppName%%-my-collections-data-updater"]
+}

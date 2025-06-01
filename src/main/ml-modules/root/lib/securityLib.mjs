@@ -13,6 +13,7 @@ import {
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
 } from './appConstants.mjs';
 import {
+  getNodeFromObject,
   includesOrEquals,
   isObject,
   isUndefined,
@@ -24,18 +25,27 @@ import {
   BadRequestError,
   InternalServerError,
   NotAcceptingWriteRequestsError,
+  ServerConfigurationChangedError,
 } from './mlErrorsLib.mjs';
+import { IDENTIFIERS } from './identifierConstants.mjs';
+import { createDocument, updateDocument } from './crudLib.mjs';
+import { setDefaultCollection } from './model.mjs';
 
-const UNIT_NAME_UNRESTRICTED = ML_APP_NAME;
+const TENANT_OWNER = ML_APP_NAME;
 
 const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
-const ROLE_NAME_UNRESTRICTED = `${ML_APP_NAME}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
+const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
+
+const ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER =
+  '%%mlAppName%%-my-collections-data-updater';
+const ROLE_NAME_USER_PROFILE_DATA_READER =
+  '%%mlAppName%%-user-profile-data-reader';
+
 const CAPABILITY_READ = 'read';
 const CAPABILITY_UPDATE = 'update';
-
 const PERMITTED_CAPABILITIES = [CAPABILITY_READ, CAPABILITY_UPDATE];
 
 const ROLE_SUFFIX_BY_CAPABILITY = {};
@@ -44,6 +54,70 @@ ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_UPDATE] = 'updater';
 
 const PROPERTY_NAME_ONLY_FOR_UNITS = 'onlyForUnits';
 const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
+
+const DEFAULT_COLLECTION_TEMPLATE = {
+  type: 'Set',
+  classified_as: [
+    {
+      id: 'https://not.checked',
+      type: 'Type',
+      _label: 'My Collection',
+      equivalent: [
+        {
+          id: IDENTIFIERS.myCollection,
+          type: 'Type',
+          _label: 'My Collection',
+        },
+      ],
+    },
+  ],
+  identified_by: [
+    {
+      type: 'Name',
+      content: 'Default Collection',
+      classified_as: [
+        {
+          id: 'https://not.checked',
+          type: 'Type',
+          _label: 'Primary Name',
+          equivalent: [
+            {
+              id: IDENTIFIERS.primaryName,
+              type: 'Type',
+              _label: 'Primary Name',
+            },
+          ],
+        },
+        {
+          id: 'https://not.checked',
+          type: 'Type',
+          _label: 'Sort Name',
+          equivalent: [
+            {
+              id: IDENTIFIERS.sortName,
+              type: 'Type',
+              _label: 'Sort Name',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+const USER_PROFILE_TEMPLATE = {
+  type: 'Person',
+  classified_as: [
+    {
+      id: 'https://not.checked',
+      equivalent: [
+        {
+          id: IDENTIFIERS.userProfile,
+        },
+      ],
+    },
+  ],
+};
 
 function _hasExclusiveRoles(user) {
   let hasAll = true;
@@ -55,60 +129,74 @@ function _hasExclusiveRoles(user) {
   return hasAll;
 }
 
-function _createExclusiveRoles(user) {
+function __createExclusiveRoles(user) {
   throwIfUserIsServiceAccount(user);
+
+  const neededRoleNames = [];
   _getExclusiveRoleNames(user).forEach((roleName) => {
-    _createAndGrantRole(user, roleName);
+    if (user.hasRole(roleName) === false) {
+      neededRoleNames.push(roleName);
+    }
   });
-}
 
-// When this function creates and grants a role, code that executes after it must be
-// invoked in a subsequent transaction (e.g., xdmp.invokeFunction or new endpoint request).
-function __createAndGrantRole(user, roleName) {
-  throwIfUserIsServiceAccount(user);
-  if (user.hasRole(roleName) === false) {
+  if (neededRoleNames.length > 0) {
     const username = user.getUsername();
+    const isLocalUser = User.isLocalUser(username);
 
-    // Create the role when it does not exist.
-    const createRole = () => {
+    // Create the roles that do not yet exist.
+    const createRoles = () => {
       declareUpdate();
       const sec = require('/MarkLogic/security.xqy');
-      // Requires http://marklogic.com/xdmp/privileges/get-role
-      if (!sec.roleExists(roleName)) {
-        const inheritedRoleNames = [];
-        const defaultPermissions = [];
-        const defaultCollections = [];
-        // Requires http://marklogic.com/xdmp/privileges/create-role
-        // and http://marklogic.com/xdmp/privileges/grant-all-roles
-        sec.createRole(
-          roleName,
-          `An exclusive role for user '${username}'`,
-          inheritedRoleNames,
-          defaultPermissions,
-          defaultCollections
-        );
-      }
+      neededRoleNames.forEach((roleName) => {
+        // Requires http://marklogic.com/xdmp/privileges/get-role
+        if (!sec.roleExists(roleName)) {
+          const inheritedRoleNames = [];
+          const defaultPermissions = [];
+          const defaultCollections = [];
+          const compartment = null;
+          // Cognito pseudo-group names match the ML role names.
+          const externalNames = isLocalUser ? [] : [roleName];
+          // Requires http://marklogic.com/xdmp/privileges/create-role
+          // and http://marklogic.com/xdmp/privileges/grant-all-roles
+          sec.createRole(
+            roleName,
+            `An exclusive role for user '${username}'`,
+            inheritedRoleNames,
+            defaultPermissions,
+            defaultCollections,
+            compartment,
+            externalNames
+          );
+        }
+      });
     };
-    xdmp.invokeFunction(createRole, { database: xdmp.securityDatabase() });
+    xdmp.invokeFunction(createRoles, { database: xdmp.securityDatabase() });
 
-    // Add the role when the user doesn't already have it.
-    const addRole = () => {
-      declareUpdate();
-      const sec = require('/MarkLogic/security.xqy');
-      // Requires http://marklogic.com/xdmp/privileges/user-add-roles
-      // and http://marklogic.com/xdmp/privileges/grant-all-roles
-      sec.userAddRoles(username, roleName);
-    };
-    xdmp.invokeFunction(addRole, { database: xdmp.securityDatabase() });
+    if (isLocalUser) {
+      // Add the role when the user doesn't already have it.
+      const addRoles = () => {
+        declareUpdate();
+        const sec = require('/MarkLogic/security.xqy');
+        neededRoleNames.forEach((roleName) => {
+          // Requires http://marklogic.com/xdmp/privileges/user-add-roles
+          // and http://marklogic.com/xdmp/privileges/grant-all-roles
+          sec.userAddRoles(username, roleName);
+        });
+      };
+      xdmp.invokeFunction(addRoles, { database: xdmp.securityDatabase() });
+    }
+
+    // Whether it be a local or temporary user, the endpoint consumer needs to retry the current
+    // request as the system will not yet acknowledge the user's new role --even with xdmp.invoke.
+    throw new ServerConfigurationChangedError(
+      "The requesting user's security profile changed; retry the request to enable the changes to take effect."
+    );
   }
 }
-const _createAndGrantRole = import.meta.amp(__createAndGrantRole);
+const _createExclusiveRoles = import.meta.amp(__createExclusiveRoles);
 
 function getExclusiveRoleNamesByUsername(username) {
-  return [
-    getExclusiveRoleNameByUsername(username, CAPABILITY_READ),
-    getExclusiveRoleNameByUsername(username, CAPABILITY_UPDATE),
-  ];
+  return [getExclusiveRoleNameByUsername(username, CAPABILITY_UPDATE)];
 }
 
 function getExclusiveRoleNameByUsername(username, capability) {
@@ -131,10 +219,7 @@ function getExclusiveRoleNameByUsername(username, capability) {
 }
 
 function _getExclusiveRoleNames(user) {
-  return [
-    _getExclusiveRoleName(user, CAPABILITY_READ),
-    _getExclusiveRoleName(user, CAPABILITY_UPDATE),
-  ];
+  return [_getExclusiveRoleName(user, CAPABILITY_UPDATE)];
 }
 
 // Get the user's exclusive role for the specified capability.
@@ -145,8 +230,14 @@ function _getExclusiveRoleName(user, capability) {
 
 function getExclusiveDocumentPermissions(user) {
   return [
-    xdmp.permission(_getExclusiveRoleName(user, CAPABILITY_READ), 'read'),
-    xdmp.permission(_getExclusiveRoleName(user, CAPABILITY_UPDATE), 'update'),
+    xdmp.permission(
+      _getExclusiveRoleName(user, CAPABILITY_UPDATE),
+      CAPABILITY_READ
+    ),
+    xdmp.permission(
+      _getExclusiveRoleName(user, CAPABILITY_UPDATE),
+      CAPABILITY_UPDATE
+    ),
   ];
 }
 
@@ -167,7 +258,7 @@ function getExclusiveDocumentPermissions(user) {
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
+function handleRequest(f, unitName = TENANT_OWNER) {
   const endpointConfig = getCurrentEndpointConfig(
     FEATURE_MY_COLLECTIONS_ENABLED
   );
@@ -186,7 +277,7 @@ function handleRequest(f, unitName = UNIT_NAME_UNRESTRICTED) {
 // endpoint configuration as a parameter.
 function handleRequestV2ForUnitTesting(
   f,
-  unitName = UNIT_NAME_UNRESTRICTED,
+  unitName = TENANT_OWNER,
   endpointConfig
 ) {
   // As this allows the caller to specify which endpoint configuration to use and is only
@@ -204,14 +295,10 @@ function handleRequestV2ForUnitTesting(
 
 // Handle a version 2 request. Version 2 request support includes the My Collections feature.
 // This function is to be private and in support of two public functions.
-function __handleRequestV2(
-  f,
-  unitName = UNIT_NAME_UNRESTRICTED,
-  endpointConfig
-) {
+function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
   // Adjust from null
   if (isUndefined(unitName)) {
-    unitName = UNIT_NAME_UNRESTRICTED;
+    unitName = TENANT_OWNER;
   }
 
   const user = new User();
@@ -237,15 +324,57 @@ function __handleRequestV2(
     return f();
   }
 
-  // Ensure user has their exclusive roles for My Collection requests.
-  if (isMyCollectionRequest) {
-    if (_hasExclusiveRoles(user) === false) {
+  // If the user does not have a user profile, create it and their default collection.
+  const createUserProfile = !user.hasUserProfile();
+  if (createUserProfile) {
+    // If they don't have a user profile, they may not yet have their exclusive roles.
+    if (!_hasExclusiveRoles(user)) {
+      // This function could throw an error requesting the endpoint consumer to retry.
       _createExclusiveRoles(user);
     }
+
+    _createUserProfileAndDefaultCollection();
   }
-  return _getExecuteWithServiceAccountFunction(unitName)(f);
+
+  return xdmp.invokeFunction(
+    () => {
+      return _getExecuteWithServiceAccountFunction(unitName)(f);
+    },
+    {
+      // If we needed to create a user profile, we'll need to execute the requested function in a
+      // new transaction.
+      isolation: createUserProfile ? 'different-transaction' : 'same-statement',
+    }
+  );
 }
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
+
+function _createUserProfileAndDefaultCollection() {
+  const userProfileDocument = fn.head(xdmp.invokeFunction(_createUserProfile));
+  xdmp.invokeFunction(() => {
+    _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
+  });
+}
+
+// create a user profile
+function _createUserProfile() {
+  declareUpdate();
+  return createDocument(USER_PROFILE_TEMPLATE);
+}
+
+function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
+  declareUpdate();
+  const defaultCollectionDocObj = createDocument(DEFAULT_COLLECTION_TEMPLATE);
+
+  const expectJsonProperty = false;
+  setDefaultCollection(
+    userProfileDocObj,
+    defaultCollectionDocObj.id,
+    expectJsonProperty
+  );
+
+  return updateDocument(getNodeFromObject(userProfileDocObj));
+}
 
 function _getExecuteWithServiceAccountFunction(unitName) {
   // Javascript function and variable names cannot contain dashes, so we replace them with underscores
@@ -292,7 +421,7 @@ function getEndpointAccessUnitNames() {
   }
   return removeItemByValueFromArray(
     split(ENDPOINT_ACCESS_UNIT_NAMES, ',', true),
-    UNIT_NAME_UNRESTRICTED
+    TENANT_OWNER
   );
 }
 
@@ -304,14 +433,17 @@ function getCurrentUserUnitName() {
     .toArray()
     .reduce((prev, roleId) => {
       const roleName = xdmp.roleName(roleId);
-      if (roleName == ROLE_NAME_UNRESTRICTED || roleName == ROLE_NAME_ADMIN) {
-        return UNIT_NAME_UNRESTRICTED;
+      if (
+        roleName == ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER ||
+        roleName == ROLE_NAME_ADMIN
+      ) {
+        return TENANT_OWNER;
       } else if (
         roleName.endsWith(ENDPOINT_CONSUMER_ROLES_END_WITH) &&
         !roleName.endsWith(BASE_ENDPOINT_CONSUMER_ROLES_END_WITH)
       ) {
         return roleName.slice(
-          `${UNIT_NAME_UNRESTRICTED}-`.length,
+          `${TENANT_OWNER}-`.length,
           roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length
         );
       }
@@ -330,7 +462,7 @@ function getCurrentUserUnitName() {
 // PROPERTY_NAME_EXCLUDED_UNITS properties.
 function isConfiguredForUnit(unitName, configTree) {
   // The unrestricted unit gets everything.
-  if (UNIT_NAME_UNRESTRICTED == unitName) {
+  if (TENANT_OWNER == unitName) {
     return true;
   }
 
@@ -366,7 +498,9 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  UNIT_NAME_UNRESTRICTED,
+  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_USER_PROFILE_DATA_READER,
+  TENANT_OWNER,
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
   getExclusiveDocumentPermissions,

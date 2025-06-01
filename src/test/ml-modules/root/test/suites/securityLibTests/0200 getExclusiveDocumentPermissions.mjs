@@ -2,13 +2,12 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { User } from '/lib/User.mjs';
 import {
-  CAPABILITY_READ,
   CAPABILITY_UPDATE,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
 } from '/lib/securityLib.mjs';
 import {
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 
@@ -21,7 +20,7 @@ const scenarios = [
   {
     name: 'Regular user',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
     },
     expected: {
       error: false,
@@ -29,14 +28,14 @@ const scenarios = [
         // Will fail if "0100 handleRequest.mjs" doesn't run first.
         xdmp.permission(
           getExclusiveRoleNameByUsername(
-            USERNAME_FOR_REGULAR_USER,
-            CAPABILITY_READ
+            USERNAME_FOR_BONNIE,
+            CAPABILITY_UPDATE
           ),
           'read'
         ),
         xdmp.permission(
           getExclusiveRoleNameByUsername(
-            USERNAME_FOR_REGULAR_USER,
+            USERNAME_FOR_BONNIE,
             CAPABILITY_UPDATE
           ),
           'update'

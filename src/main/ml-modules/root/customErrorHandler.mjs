@@ -117,6 +117,11 @@ function getJSErrorResponseBody(errorBody) {
       status = 'Not Implemented';
       messageCode = 'NotImplementedError';
       break;
+    case 'ServerConfigurationChangedError':
+      statusCode = 503; // We want the data service proxy to immediately retry.
+      status = 'Server Configuration Changed';
+      messageCode = 'ServerConfigurationChangedError';
+      break;
     default:
       // When the error is thrown from within a catch block, we do not get the thrown error's name.
       // But if we have a message, we can be fairly certain the LUX code through it (vs. MarkLogic).

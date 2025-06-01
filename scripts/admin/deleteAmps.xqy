@@ -31,6 +31,10 @@ let $deleteTheseToo := (
     <library>/lib/securityLib.mjs</library>
   </amp>,
   <amp>
+    <name>__createExclusiveRoles</name>
+    <library>/lib/securityLib.mjs</library>
+  </amp>,
+  <amp>
     <name>__getForestInfoByHost</name>
     <library>/lib/environmentLib.mjs</library>
   </amp>,
@@ -49,6 +53,10 @@ let $deleteTheseToo := (
   <amp>
     <name>_isServiceAccount</name>
     <library>/lib/securityLib.mjs</library>
+  </amp>,
+  <amp>
+    <name>_readDocument</name>
+    <library>/lib/crudLib.mjs</library>
   </amp>
 )
 (: END of CONFIGURATION SECTION :)

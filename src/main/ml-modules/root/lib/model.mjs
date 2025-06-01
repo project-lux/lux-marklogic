@@ -22,7 +22,11 @@ import {
   getLanguageIdentifier,
   hasLanguageIdentifier,
 } from './identifierConstants.mjs';
-import { DataMergeError, InternalServerError } from './mlErrorsLib.mjs';
+import {
+  BadRequestError,
+  DataMergeError,
+  InternalServerError,
+} from './mlErrorsLib.mjs';
 import {
   isDefined,
   isNonEmptyString,
@@ -131,6 +135,13 @@ function getCreatedByCarriedOutBy(docNode) {
 
 function getCreatedByTimespan(docNode) {
   return _upTo('created_by', docNode.xpath(`json/created_by/timespan`));
+}
+
+function getDefaultCollection(docNode) {
+  return _upTo(
+    '_lux_default_collection',
+    docNode.xpath('json/_lux_default_collection')
+  );
 }
 
 function getDefinedBy(docNode) {
@@ -307,6 +318,22 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
     throw new InternalServerError(
       'model.setCreatedBy requires a non-empty string for the user IRI'
     );
+  }
+}
+
+function setDefaultCollection(
+  docObj,
+  collectionIri,
+  expectJsonProperty = true // Enables a special accommodation when automatically creating user profiles.
+) {
+  if (isNonEmptyString(collectionIri)) {
+    if (docObj.json || expectJsonProperty) {
+      docObj.json._lux_default_collection = collectionIri;
+    } else if (!expectJsonProperty) {
+      docObj._lux_default_collection = collectionIri;
+    }
+  } else {
+    throw new BadRequestError('The default collection is required.');
   }
 }
 
@@ -544,6 +571,7 @@ export {
   getCreatedBy,
   getCreatedByCarriedOutBy,
   getCreatedByTimespan,
+  getDefaultCollection,
   getDefinedBy,
   getDied,
   getId,
@@ -570,6 +598,7 @@ export {
   isUserProfile,
   setAddedToBy,
   setCreatedBy,
+  setDefaultCollection,
   setId,
   setIndexedProperties,
   setSetMembers,

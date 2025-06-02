@@ -1,22 +1,20 @@
-import { processSearchCriteria } from './searchLib.mjs';
 import { isDefined, isUndefined } from '../utils/utils.mjs';
 import { InternalServerError } from './mlErrorsLib.mjs';
+import { COLLECTION_NAME_USER_PROFILE } from './appConstants.mjs';
 
 const User = class {
-  constructor(eagerLoad = false) {
-    // For the benefit of unit tests, capture at the time of instantiation.
+  constructor() {
     this.username = xdmp.getCurrentUser();
+
+    this.userIri = null;
+
+    // TBD if a good idea to cache the role names.
     this.roleNames = xdmp
       .getCurrentRoles()
       .toArray()
       .map((id) => {
         return xdmp.roleName(id);
       });
-
-    // Outside the unit test context, we can wait to retrieve the user profile until requested.
-    this.userProfile = eagerLoad
-      ? User.searchForUserProfile(this.username)
-      : null;
   }
 
   getUsername() {
@@ -26,42 +24,51 @@ const User = class {
   // Electing to use "user IRI" instead of "user ID" to avoid confusion with the user ID in the
   // security database. User IRI should match the document's URI and /json/id.
   getUserIri() {
-    const userProfile = this.getUserProfile();
-    return isDefined(userProfile) ? fn.baseUri(userProfile) + '' : null;
+    // In case we're operating in the same request that created the user profile (yet later
+    // transaction), be willing to check the URI lexicon again.
+    if (isUndefined(this.userIri)) {
+      this.userIri = User.determineUserIri(this.getUsername());
+    }
+    return this.userIri;
   }
 
-  getUserProfile() {
-    if (isUndefined(this.userProfile)) {
-      this.userProfile = User.searchForUserProfile(this.username);
-    }
-    return this.userProfile;
+  hasUserProfile() {
+    return isDefined(this.getUserIri());
+  }
+
+  hasRole(roleName) {
+    return this.roleNames.includes(roleName);
   }
 
   // Given document permissions, neither a service account nor a user should be able to access another user's profile.
-  static searchForUserProfile(username) {
-    const searchCriteriaProcessor = processSearchCriteria({
-      searchCriteria: {
-        username,
-      },
-      searchScope: 'agent',
-      allowMultiScope: false,
-      page: 1,
-      pageLength: 2,
-      filterResults: false,
-    });
-    const results = searchCriteriaProcessor.getSearchResults().results;
+  static determineUserIri(username) {
+    const results = cts
+      .uris(
+        '',
+        ['limit=2', 'score-zero'],
+        cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)
+      )
+      .toArray();
     if (results.length > 1) {
       throw new InternalServerError(
         `Multiple user profiles found for username '${username}'.`
       );
     } else if (results.length === 1) {
-      return cts.doc(results[0].id);
+      return results[0] + '';
+    } else {
+      return null;
     }
-    return null;
   }
 
-  hasRole(roleName) {
-    return this.roleNames.includes(roleName);
+  // Return false for temporary / OAuth users.
+  static isLocalUser(username) {
+    // Elected for try/catch over executing sec.userExists in the security database and an additional execute privilege.
+    try {
+      xdmp.user(username);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 };
 

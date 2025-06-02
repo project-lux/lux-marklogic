@@ -19,8 +19,8 @@ assertions.push(
   )
 );
 assertions.push(
-  testHelperProxy.assertNotExists(
-    user.getUserProfile(),
+  testHelperProxy.assertFalse(
+    user.hasUserProfile(),
     `Unit tester is not expected to have a user profile yet.`
   )
 );

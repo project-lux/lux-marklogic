@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 import { executeScenario, removeCollections } from '/test/unitTestUtils.mjs';
@@ -9,6 +9,7 @@ import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
 import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
+import { getNodeFromObject } from '/utils/utils.mjs';
 
 const LIB = '0100 createDocument.mjs';
 console.log(`${LIB}: starting.`);
@@ -19,20 +20,6 @@ const endpointConfig = new EndpointConfig({
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
-
-const validUserProfile = {
-  type: 'Person',
-  classified_as: [
-    {
-      id: 'https://not.checked',
-      equivalent: [
-        {
-          id: IDENTIFIERS.userProfile,
-        },
-      ],
-    },
-  ],
-};
 
 const validMyCollection = {
   type: 'Set',
@@ -148,42 +135,26 @@ const newDocAssertions = [
 ];
 
 function removeUserProfileCollection() {
-  removeCollections(COLLECTION_NAME_USER_PROFILE, USERNAME_FOR_REGULAR_USER);
+  removeCollections(COLLECTION_NAME_USER_PROFILE, USERNAME_FOR_BONNIE);
 }
 
 const scenarios = [
   {
-    name: 'Regular user providing an invalid user profile',
-    // Make sure this user doesn't already have a profile.
-    executeBeforehand: removeUserProfileCollection,
+    name: 'Regular user who needs their exclusive role(s) created',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
-      doc: {
-        type: 'Group', // the invalid part
-        classified_as: [
-          {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.userProfile, // enough to get past model.isUserProfile
-              },
-            ],
-          },
-        ],
-      },
+      username: USERNAME_FOR_BONNIE,
+      doc: validMyCollection,
     },
     expected: {
       error: true,
-      stackToInclude: `validation error(s) found`,
+      stackToInclude: 'retry the request to enable the changes to take effect',
     },
   },
   {
-    name: 'Overwrite ID provided in user profile',
-    executeBeforehand: removeUserProfileCollection,
+    name: 'Try to create a user profile even though it is automatically created',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
-        id: 'https://should.be.overwritten',
         type: 'Person',
         classified_as: [
           {
@@ -198,46 +169,27 @@ const scenarios = [
       },
     },
     expected: {
-      error: false,
-      nodeAssertions: [
-        {
-          type: 'xpath',
-          xpath: 'id = "https://should.be.overwritten"',
-          expected: false,
-          message: 'The given ID should have been overwritten.',
-        },
-      ],
-    },
-  },
-  // Leave this user profile around for the My Collection tests.
-  {
-    name: 'Regular user providing a valid user profile',
-    executeBeforehand: removeUserProfileCollection,
-    input: {
-      username: USERNAME_FOR_REGULAR_USER,
-      doc: validUserProfile,
-    },
-    expected: {
-      error: false,
-      nodeAssertions: newDocAssertions,
-    },
-  },
-  {
-    name: 'Try to create a second user profile for the same user',
-    input: {
-      username: USERNAME_FOR_REGULAR_USER,
-      doc: validUserProfile,
-    },
-    expected: {
       error: true,
-      stackToInclude: `The user '${USERNAME_FOR_REGULAR_USER}' already has a profile`,
+      stackToInclude: `The user '${USERNAME_FOR_BONNIE}' already has a profile`,
     },
   },
   {
     name: 'Service account attempting to create a user profile',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
-      doc: validUserProfile,
+      doc: {
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+      },
     },
     expected: {
       error: true,
@@ -247,7 +199,7 @@ const scenarios = [
   {
     name: 'Regular user providing valid a My Collection document',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: validMyCollection,
     },
     expected: {
@@ -272,7 +224,7 @@ const scenarios = [
   {
     name: 'Regular user providing an invalid My Collection',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
         type: 'HumanMadeObject', // an invalid part; identified_by is also missing.
         classified_as: [
@@ -295,7 +247,7 @@ const scenarios = [
   {
     name: 'Overwrite ID provided in My Collection',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: {
         id: 'https://should.be.overwritten',
         type: 'Set',
@@ -338,7 +290,7 @@ const scenarios = [
   {
     name: 'Regular user with unsupported document type',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       doc: { type: 'Place' },
     },
     expected: {
@@ -352,7 +304,7 @@ for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
       declareUpdate();
-      return createDocument(xdmp.toJSON(scenario.input.doc));
+      return createDocument(getNodeFromObject(scenario.input.doc));
     };
     const unitName = null;
     // These tests are dependent on handleRequest creating the user's exclusive roles.

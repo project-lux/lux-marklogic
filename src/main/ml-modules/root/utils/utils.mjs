@@ -127,11 +127,18 @@ function getDocFromModulesDatabase(uri) {
   );
 }
 
-function getObjectFromNode(doc) {
-  if (doc && doc.toObject) {
-    doc = doc.toObject();
+function getNodeFromObject(possibleDocObj) {
+  if (possibleDocObj && !possibleDocObj.toObject) {
+    return xdmp.toJSON(possibleDocObj);
   }
-  return doc;
+  return possibleDocObj;
+}
+
+function getObjectFromNode(possibleDocNode) {
+  if (possibleDocNode && possibleDocNode.toObject) {
+    possibleDocNode = possibleDocNode.toObject();
+  }
+  return possibleDocNode;
 }
 
 function _getUnadjustedStartingSearchResultIndex(page, pageLength) {
@@ -653,6 +660,7 @@ export {
   getDocPermissionsFromString,
   getExceptionObjectElseMessage,
   getMergedArrays,
+  getNodeFromObject,
   getObjectFromNode,
   getStartingPaginationIndexForOffset,
   getStartingPaginationIndexForSplice,

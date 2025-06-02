@@ -4,14 +4,14 @@ import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  UNIT_NAME_UNRESTRICTED,
+  TENANT_OWNER,
   handleRequestV2ForUnitTesting,
   getEndpointAccessUnitNames,
   getExclusiveRoleNameByUsername,
 } from '/lib/securityLib.mjs';
 import {
   FOO_URI,
-  USERNAME_FOR_REGULAR_USER,
+  USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 
@@ -36,17 +36,32 @@ assertions.push(
 );
 
 const regularUserRoleNames = [
-  getExclusiveRoleNameByUsername(USERNAME_FOR_REGULAR_USER, CAPABILITY_READ),
-  getExclusiveRoleNameByUsername(USERNAME_FOR_REGULAR_USER, CAPABILITY_UPDATE),
+  getExclusiveRoleNameByUsername(USERNAME_FOR_BONNIE, CAPABILITY_UPDATE),
 ];
 
 const scenarios = [
   {
+    name: 'Bonnie making her first request',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      function: returnBar,
+      unitName: TENANT_OWNER,
+      endpointConfig: {
+        allowInReadOnlyMode: true,
+        features: { myCollections: true },
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'retry the request to enable the changes to take effect',
+    },
+  },
+  {
     name: 'User consuming My Collections endpoint',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       function: returnBar,
-      unitName: UNIT_NAME_UNRESTRICTED,
+      unitName: TENANT_OWNER,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: true },
@@ -77,9 +92,9 @@ const scenarios = [
   {
     name: 'User consuming non-My Collections endpoint',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       function: returnBar,
-      unitName: UNIT_NAME_UNRESTRICTED,
+      unitName: TENANT_OWNER,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
@@ -111,7 +126,7 @@ const scenarios = [
   {
     name: 'User attempting to access a document with default unit',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       function: canReadDoc,
       unitName: null,
       endpointConfig: {
@@ -124,9 +139,9 @@ const scenarios = [
   {
     name: 'User attempting to access a document with unit',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       function: canReadDoc,
-      unitName: UNIT_NAME_UNRESTRICTED,
+      unitName: TENANT_OWNER,
       endpointConfig: {
         allowInReadOnlyMode: true,
         features: { myCollections: false },
@@ -137,7 +152,7 @@ const scenarios = [
   {
     name: 'User attempting to access a document with unit that does not have access to the doc',
     input: {
-      username: USERNAME_FOR_REGULAR_USER,
+      username: USERNAME_FOR_BONNIE,
       function: canReadDoc,
       unitName: getEndpointAccessUnitNames()[0],
       endpointConfig: {

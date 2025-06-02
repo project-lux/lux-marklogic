@@ -1,0 +1,6 @@
+{
+  "local-name": "_readDocument",
+  "document-uri": "/lib/crudLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-user-profile-data-reader"]
+}

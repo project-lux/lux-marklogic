@@ -1002,6 +1002,10 @@
         {
           "path": "/json[type='Set']/about[./type = 'Place']/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = 'Place']/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1011,6 +1015,10 @@
       "field-path": [
         {
           "path": "/json[type='Set']/about[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('Person', 'Group')]/id",
           "weight": 1
         }
       ],
@@ -1022,6 +1030,10 @@
         {
           "path": "/json[type='Set']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1031,6 +1043,10 @@
       "field-path": [
         {
           "path": "/json[type='Set']/about[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('LinguisticObject', 'VisualItem')]/id",
           "weight": 1
         }
       ],
@@ -1042,6 +1058,10 @@
         {
           "path": "/json[type='Set']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1052,6 +1072,10 @@
         {
           "path": "/json[type='Set']/about[./type = ('Activity', 'Period')]/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('Activity', 'Period')]/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1061,6 +1085,10 @@
       "field-path": [
         {
           "path": "/json[type='Set']/about[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = 'Set']/id",
           "weight": 1
         }
       ],
@@ -1341,6 +1369,14 @@
         {
           "path": "/json[type = 'VisualItem']/represents[./type = 'Place']/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = 'Place']/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1354,6 +1390,14 @@
         },
         {
           "path": "/json[type = 'VisualItem']/represents[./type = ('Person','Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('Person', 'Group')]/id",
           "weight": 1
         }
       ],
@@ -1369,6 +1413,14 @@
         {
           "path": "/json[type = 'VisualItem']/represents[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1377,11 +1429,19 @@
       "field-name": "workAboutWorkId",
       "field-path": [
         {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('LinguisticObject', 'VisualItem')]/id",
           "weight": 1
         },
         {
-          "path": "/json[type = 'VisualItem']/represents[./type = ('LinguisticObject', 'VisualItem', 'Set')]/id",
+          "path": "/json[type = 'VisualItem']/represents[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('LinguisticObject', 'VisualItem')]/id",
           "weight": 1
         }
       ],
@@ -1397,6 +1457,14 @@
         {
           "path": "/json[type = 'VisualItem']/represents[./type = ('HumanMadeObject', 'DigitalObject')]/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1411,6 +1479,14 @@
         {
           "path": "/json[type = 'VisualItem']/represents[./type = ('Activity', 'Period')]/id",
           "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('Activity', 'Period')]/id",
+          "weight": 1
         }
       ],
       "field-value-searches": true
@@ -1424,6 +1500,14 @@
         },
         {
           "path": "/json[type = 'VisualItem']/represents[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = 'Set']/id",
           "weight": 1
         }
       ],

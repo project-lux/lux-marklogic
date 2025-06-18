@@ -1,0 +1,24 @@
+{
+  "template": {
+    "context": "/json[./classified_as/equivalent/id = '%%identifierMyCollection%%']/about/created_by/influenced_by/id",
+    "vars": [
+      {
+        "name": "scope",
+        "val": "fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(../type,'Person|Group','agent'),'Type|MeasurementUnit|Language|Currency|Material','concept'),'Activity|Period','event'),'HumanMadeObject|DigitalObject','item'),'Place','place'),'Set','set'),'VisualItem|LinguisticObject','work')"
+      }
+    ],
+    "triples": [
+      {
+        "subject": {
+          "val": "sem:iri(../../../../../../id)"
+        },
+        "predicate": {
+          "val": "sem:iri('https://lux.collections.yale.edu/ns/about_or_depicts_' || $scope)"
+        },
+        "object": {
+          "val": "sem:iri(.)"
+        }
+      }
+    ]
+  }
+}

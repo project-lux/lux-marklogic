@@ -1,0 +1,18 @@
+{
+  "template": {
+    "context": "/json[./classified_as/equivalent/id = '%%identifierMyCollection%%']/containing/id",
+    "triples": [
+      {
+        "subject": {
+          "val": "sem:iri(.)"
+        },
+        "predicate": {
+          "val": "sem:iri('https://linked.art/ns/terms/member_of')"
+        },
+        "object": {
+          "val": "sem:iri(../../../id)"
+        }
+      }
+    ]
+  }
+}

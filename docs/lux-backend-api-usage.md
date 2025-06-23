@@ -699,7 +699,7 @@ Response Body:
 
 The Update Document endpoint enables users to update select documents, specifically My Collection and User Profile documents.  Requests by service accounts are rejected.
 
-The Update Document only varies from [Create Document](#create-document) in that this one requires /json/id identify an existing document in the database --one that the requesting user has permission to edit.
+The Update Document endpoint varies from [Create Document](#create-document) in that this one requires the `uri` parameter and that the value match the top-level `id` property within the provided document.  An error is thrown if the document does not exist in the database or the user is not allowed to modify it.
 
 **URL** : `/ds/lux/document/update.mjs`
 
@@ -707,7 +707,7 @@ The Update Document only varies from [Create Document](#create-document) in that
 
 **Endpoint Parameters**
 
-See [Create Document](#create-document).
+See [Create Document](#create-document) and specify the `uri` parameter.
 
 #### Successful Request / Response Example
 

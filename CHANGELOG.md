@@ -2,6 +2,19 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v1.42.0 - 2025-06-30
+### Added
+
+### Changed
+- The [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document) now requires the `uri` parameter ([#546](https://github.com/project-lux/lux-marklogic/issues/546))
+- Corrected the URIs of My Collections documents to include "data/" ([#547](https://github.com/project-lux/lux-marklogic/issues/547))
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.41.0 - 2025-06-16
 ### Added
 - Added a script which lists roles configured with external names.

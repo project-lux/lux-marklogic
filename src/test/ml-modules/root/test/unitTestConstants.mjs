@@ -2,11 +2,6 @@
  * Constants used exclusively within /src/test
  */
 
-import {
-  IDENTIFIERS,
-  getLanguageIdentifier,
-} from '/lib/identifierConstants.mjs';
-
 const ROLE_NAME_UNIT_TESTER = '%%mlAppName%%-unit-tester';
 const ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER =
   '%%mlAppName%%-unit-test-service-account-reader';

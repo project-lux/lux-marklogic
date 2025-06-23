@@ -4,7 +4,7 @@
     "triples": [
       {
         "subject": {
-          "val": "sem:iri(../../../id)"
+          "val": "sem:iri(/json/id)"
         },
         "predicate": {
           "val": "sem:iri('https://lux.collections.yale.edu/ns/setClassifiedAs')"

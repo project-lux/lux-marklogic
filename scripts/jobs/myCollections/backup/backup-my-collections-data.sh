@@ -84,5 +84,5 @@ javaExec=$(findExecutable "$JAVA_HOME" "bin" "java")  || exit 1
 fluxExec=$(findExecutable "$FLUX_HOME" "bin" "flux")  || exit 1
 
 echo "Backing up My Collections data..."
-output=$($fluxExec export-archive-files @"$fluxOptionsFile" 2>&1 | tee /dev/tty) || die "Flux export failed: $output" true
+output=$($fluxExec export-archive-files @"$fluxOptionsFile" 2>&1 | tee /dev/stderr) || die "Flux export failed: $output" true
 

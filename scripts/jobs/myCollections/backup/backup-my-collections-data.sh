@@ -10,6 +10,8 @@
 #
 # Prerequisites:
 #
+# - Set up on one node in a MarkLogic cluster (else, the script cannot write to the log).
+# - Speaking of which, make sure the process owner can write to the log file.
 # - Flux must be in FLUX_HOME/bin or, if not set, in PATH. Flux 1.3.0 was used for development.
 #   Download Flux from https://github.com/marklogic/flux/releases.
 #   Or: curl -L https://github.com/marklogic/flux/releases/download/1.3.0/marklogic-flux-1.3.0.zip > marklogic-flux-1.3.0.zip
@@ -17,7 +19,7 @@
 #   Java 17.0.8 was used during development.
 # - If Flux's options file uses --s3-add-credentials, AWS CLI must be installed and configured.
 # - Define MarkLogic connection details in the Flux options file, as well as the S3 bucket path.
-#   The MarkLogic user must have the "%%mlAppName%%-my-collections-data-updater" (preferred)
+#   The MarkLogic user must have the "%%mlAppName%%-my-collections-data-updater" role (preferred)
 #   or admin role.
 #
 
@@ -33,7 +35,7 @@ die () {
     if [ "$2" = true ]; then
         echo >&2 "Usage: $script [fluxOptionsFile]"
         echo >&2 ""
-        echo >&2 "Example: $script backup-options.txt"
+        echo >&2 "Example: $script backup-options.txt [other Flux options not in options file]"
         echo >&2 ""
     fi
     exit 1
@@ -82,5 +84,5 @@ javaExec=$(findExecutable "$JAVA_HOME" "bin" "java")  || exit 1
 fluxExec=$(findExecutable "$FLUX_HOME" "bin" "flux")  || exit 1
 
 echo "Backing up My Collections data..."
-output=$($fluxExec export-files @"$fluxOptionsFile" 2>&1) || die "Flux export failed: $output" true
+output=$($fluxExec export-archive-files @"$fluxOptionsFile" 2>&1 | tee /dev/stderr) || die "Flux export failed: $output" true
 

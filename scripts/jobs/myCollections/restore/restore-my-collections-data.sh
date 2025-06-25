@@ -84,5 +84,5 @@ javaExec=$(findExecutable "$JAVA_HOME" "bin" "java")  || exit 1
 fluxExec=$(findExecutable "$FLUX_HOME" "bin" "flux")  || exit 1
 
 echo "Restoring My Collections data..."
-output=$($fluxExec import-archive-files @"$fluxOptionsFile" 2>&1 | tee /dev/tty) || die "Flux import failed: $output" true
+output=$($fluxExec import-archive-files @"$fluxOptionsFile" 2>&1 | tee /dev/stderr) || die "Flux import failed: $output" true
 

@@ -14,6 +14,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Fixed
 
 ### Security
+- In support of restoring My Collections data ([#519](https://github.com/project-lux/lux-marklogic/issues/519)) and future Blue/Green needs, changed the [%%mlAppName%%-my-collections-data-updater role](/docs/lux-backend-security-and-software.md#my-collections-data-updater) to have the rest-writer role instead of just the rest-reader role.
 
 ## v1.41.0 - 2025-06-16
 ### Added
@@ -33,7 +34,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Added new sets facet that combines setCreationDate and setPublicationDate [#497](https://github.com/project-lux/lux-marklogic/issues/497)
 
 ### Changed
-- The [Read Document endpoint](#read-document) will now allow any user or service account to access the portion of another user's profile included by the 'name' profile. ([#502](https://github.com/project-lux/lux-marklogic/issues/502))
+- The [Read Document endpoint](/docs/lux-backend-api-usage.md#read-document) will now allow any user or service account to access the portion of another user's profile included by the 'name' profile. ([#502](https://github.com/project-lux/lux-marklogic/issues/502))
 
 ### Removed
   

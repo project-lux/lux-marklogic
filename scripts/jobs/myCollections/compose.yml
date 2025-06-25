@@ -2,7 +2,7 @@
 services:
   tools:
     image: amazon/aws-cli:latest
-    container_name: ml518
+    container_name: my-collections-data
     tty: true
     command: sleep infinity
     volumes:

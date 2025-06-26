@@ -1,0 +1,6 @@
+{
+  "user-name": "%%mlAppName%%-my-collections-data-updater",
+  "description": "Service account for Blue/Green support of My Collections data",
+  "password": "%%manageMyCollectionsDataPassword%%",
+  "role": ["%%mlAppName%%-my-collections-data-updater"]
+}

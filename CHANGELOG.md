@@ -13,6 +13,21 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Security
 
+## v1.42.0 - 2025-06-30
+### Added
+
+### Changed
+- The [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document) now requires the `uri` parameter ([#546](https://github.com/project-lux/lux-marklogic/issues/546))
+- Corrected the URIs of My Collections documents to include "data/" ([#547](https://github.com/project-lux/lux-marklogic/issues/547))
+
+### Removed
+  
+### Fixed
+
+### Security
+- In support of restoring My Collections data ([#519](https://github.com/project-lux/lux-marklogic/issues/519)) and future Blue/Green needs, changed the [%%mlAppName%%-my-collections-data-updater role](/docs/lux-backend-security-and-software.md#my-collections-data-updater) to have the rest-writer role instead of just the rest-reader role.
+- In support of deleting My Collections data ([#520](https://github.com/project-lux/lux-marklogic/issues/520)) and future Blue/Green needs, granted the [%%mlAppName%%-my-collections-data-updater role](/docs/lux-backend-security-and-software.md#my-collections-data-updater) the xdbc:eval privilege.
+
 ## v1.41.0 - 2025-06-16
 ### Added
 - Added a script which lists roles configured with external names.
@@ -31,7 +46,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Added new sets facet that combines setCreationDate and setPublicationDate [#497](https://github.com/project-lux/lux-marklogic/issues/497)
 
 ### Changed
-- The [Read Document endpoint](#read-document) will now allow any user or service account to access the portion of another user's profile included by the 'name' profile. ([#502](https://github.com/project-lux/lux-marklogic/issues/502))
+- The [Read Document endpoint](/docs/lux-backend-api-usage.md#read-document) will now allow any user or service account to access the portion of another user's profile included by the 'name' profile. ([#502](https://github.com/project-lux/lux-marklogic/issues/502))
 
 ### Removed
   

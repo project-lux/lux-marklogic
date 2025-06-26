@@ -1,6 +1,17 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v1.42.0 - 2025-06-30
+### Added
+- Added TDEs to create triples for My Collections documents ([#503](https://github.com/project-lux/lux-marklogic/issues/503))
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
 
 ## v1.42.0 - 2025-06-30
 ### Added

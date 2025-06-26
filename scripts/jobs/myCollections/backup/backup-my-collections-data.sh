@@ -1,8 +1,10 @@
 #!/bin/bash
 #
-# This script deletes 'prod' or 'nonProd' My Collections data from a MarkLogic database using 
-# Flux's export-archive-files command.  This script's restriction on collection aligns with 
-# Blue/Green's support of My Collections.
+# This script backs up all or a subset set of My Collections data from a MarkLogic database 
+# using Flux's export-archive-files command.  This script's restriction on MarkLogic collection
+# name aligns with backup and Blue/Green requirements.  Backup is expected to specify the
+# myCollectionsFeature collection.  The Blue/Green switch is expected to specify the prod or
+# nonProd collection.
 #
 # It can be run interactively or headless. If an error occurs, the script appends an error
 # message to /var/opt/MarkLogic/Logs/ErrorLog.txt. This log should be monitored so a system
@@ -81,9 +83,10 @@ if [ -z "$collectionName" ]; then
     die "Collection name is required as the second parameter." true
 fi
 
-# Collection name restriction.
-[ "$collectionName" = "prod" ] || [ "$collectionName" = "nonProd" ] || \
-    die "The collectionName parameter must be 'prod' or 'nonProd'." true
+# Collection name restriction: allow all or a subset of My Collections data.
+[ "$collectionName" = "myCollectionsFeature" ] || \
+    [ "$collectionName" = "prod" ] || [ "$collectionName" = "nonProd" ] || \
+    die "The collectionName parameter must be 'myCollectionsFeature', 'prod', or 'nonProd'." true
 
 # Support *_HOME environment variables, falling back on PATH.
 echo "Locating executables..."

@@ -80,7 +80,7 @@ if [ -z "$collectionName" ]; then
     die "Collection name is required as the second parameter." true
 fi
 
-# Collection name restriction.
+# Collection name restriction: restrict to these two.
 [ "$collectionName" = "prod" ] || [ "$collectionName" = "nonProd" ] || \
     die "The collectionName parameter must be 'prod' or 'nonProd'." true
 

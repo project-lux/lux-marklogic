@@ -4,7 +4,3 @@
 --auth-type            "DIGEST"
 --database             "lux-content"
 --username             ""
---s3-add-credentials
---uri-template         "{/json/id}"
-# MLE-22714: to be supported in Flux 1.4; until then, files without file extensions are loaded as binary files.
-#--document-type        "JSON"

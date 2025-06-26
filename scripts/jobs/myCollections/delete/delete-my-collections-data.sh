@@ -1,12 +1,11 @@
 #!/bin/bash
 #
-# This script restores a specified archive into a MarkLogic database using Flux's 
-# import-archive-files command.
+# This script deletes 'prod' or 'nonProd' My Collections data from a MarkLogic database using 
+# Flux's reprocess command.
 #
 # It can be run interactively or headless. If an error occurs, the script appends an error
-# message to /var/opt/MarkLogic/Logs/ErrorLog.txt. While a restore is probably a manual op
-# or checked by the orchestrating system, a system monitoring test could be configured to 
-# alert an administrator when "My Collections restore failed" appears in the log.
+# message to /var/opt/MarkLogic/Logs/ErrorLog.txt. This log should be monitored so a system
+# administrator is notified. The unique string included is "My Collections delete failed".
 #
 # The script requires one parameter: the Flux options file to use.
 #
@@ -27,16 +26,16 @@
 
 die () {
     # Write error message to a monitored MarkLogic log file.
-    echo "$(date '+%Y-%m-%d %H:%M:%S') My Collections restore failed: $1" >> /var/opt/MarkLogic/Logs/ErrorLog.txt
+    echo "$(date '+%Y-%m-%d %H:%M:%S') My Collections delete failed: $1" >> /var/opt/MarkLogic/Logs/ErrorLog.txt
 
     script=`basename "$0"`
     echo >&2 ""
     echo >&2 "$1"
     echo >&2 ""
     if [ "$2" = true ]; then
-        echo >&2 "Usage: $script [fluxOptionsFile] [additional Flux options]"
+        echo >&2 "Usage: $script [fluxOptionsFile] [collectionName] [additional Flux options]"
         echo >&2 ""
-        echo >&2 "Example: $script restore-options.txt --path \"s3a://myBucket/myDirectory/myArchive.zip\" --password \"batman\""
+        echo >&2 "Example: $script delete-options.txt nonProd --password \"batman\""
         echo >&2 ""
     fi
     exit 1
@@ -76,13 +75,27 @@ if [ ! -f "$fluxOptionsFile" ]; then
     die "Flux options file not found: $fluxOptionsFile" true
 fi
 
+collectionName="$2"
+if [ -z "$collectionName" ]; then
+    die "Collection name is required as the second parameter." true
+fi
+
+# Collection name restriction: restrict to these two.
+[ "$collectionName" = "prod" ] || [ "$collectionName" = "nonProd" ] || \
+    die "The collectionName parameter must be 'prod' or 'nonProd'." true
+
+readJavaScript="cts.uris('', null, cts.collectionQuery('$collectionName'))"
+writeJavaScript="declareUpdate(); var URI; xdmp.documentDelete(URI);"
+
 # Support *_HOME environment variables, falling back on PATH.
 echo "Locating executables..."
 awsCliExec=$(findExecutable "$AWS_CLI_HOME" "" "aws") || exit 1
 javaExec=$(findExecutable "$JAVA_HOME" "bin" "java")  || exit 1
 fluxExec=$(findExecutable "$FLUX_HOME" "bin" "flux")  || exit 1
 
-echo "Restoring My Collections data..."
-output=$($fluxExec import-archive-files @"$fluxOptionsFile" "${@:2}" 2>&1 | tee /dev/stderr) || \
-    die "Flux import failed: $output" true
-
+echo "Deleting My Collections data..."
+output=$($fluxExec reprocess @"$fluxOptionsFile" \
+    --read-javascript "$readJavaScript" \
+    --write-javascript "$writeJavaScript" \
+    "${@:3}" 2>&1 | tee /dev/stderr) || \
+    die "Flux reprocess failed: $output" true

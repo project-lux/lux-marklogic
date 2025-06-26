@@ -1,6 +1,10 @@
 #!/bin/bash
 #
-# This script backs up My Collections data from a MarkLogic database.
+# This script backs up all or a subset set of My Collections data from a MarkLogic database 
+# using Flux's export-archive-files command.  This script's restriction on MarkLogic collection
+# name aligns with backup and Blue/Green requirements.  Backup is expected to specify the
+# myCollectionsFeature collection.  The Blue/Green switch is expected to specify the prod or
+# nonProd collection.
 #
 # It can be run interactively or headless. If an error occurs, the script appends an error
 # message to /var/opt/MarkLogic/Logs/ErrorLog.txt. This log should be monitored so a system
@@ -23,7 +27,6 @@
 #   or admin role.
 #
 
-
 die () {
     # Write error message to a monitored MarkLogic log file.
     echo "$(date '+%Y-%m-%d %H:%M:%S') My Collections backup failed: $1" >> /var/opt/MarkLogic/Logs/ErrorLog.txt
@@ -33,9 +36,9 @@ die () {
     echo >&2 "$1"
     echo >&2 ""
     if [ "$2" = true ]; then
-        echo >&2 "Usage: $script [fluxOptionsFile]"
+        echo >&2 "Usage: $script [fluxOptionsFile] [collectionName] [additional Flux options]"
         echo >&2 ""
-        echo >&2 "Example: $script backup-options.txt [other Flux options not in options file]"
+        echo >&2 "Example: $script backup-options.txt nonProd --path \"s3a://myBucket/myDirectory\" --password \"batman\""
         echo >&2 ""
     fi
     exit 1
@@ -70,12 +73,20 @@ findExecutable() {
     die "Executable not found using environment variable or in PATH: $fileName" false
 }
 
-[ "$#" -eq 1 ] || die "Exactly one parameter is required: the Flux options file to use." true
-
 fluxOptionsFile="$1"
 if [ ! -f "$fluxOptionsFile" ]; then
     die "Flux options file not found: $fluxOptionsFile" true
 fi
+
+collectionName="$2"
+if [ -z "$collectionName" ]; then
+    die "Collection name is required as the second parameter." true
+fi
+
+# Collection name restriction: allow all or a subset of My Collections data.
+[ "$collectionName" = "myCollectionsFeature" ] || \
+    [ "$collectionName" = "prod" ] || [ "$collectionName" = "nonProd" ] || \
+    die "The collectionName parameter must be 'myCollectionsFeature', 'prod', or 'nonProd'." true
 
 # Support *_HOME environment variables, falling back on PATH.
 echo "Locating executables..."
@@ -84,5 +95,8 @@ javaExec=$(findExecutable "$JAVA_HOME" "bin" "java")  || exit 1
 fluxExec=$(findExecutable "$FLUX_HOME" "bin" "flux")  || exit 1
 
 echo "Backing up My Collections data..."
-output=$($fluxExec export-archive-files @"$fluxOptionsFile" 2>&1 | tee /dev/stderr) || die "Flux export failed: $output" true
+output=$($fluxExec export-archive-files @"$fluxOptionsFile" \
+    --collections "$collectionName" "${@:3}" 2>&1 | \
+    tee /dev/stderr) || \
+    die "Flux export failed: $output" true
 

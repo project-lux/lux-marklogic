@@ -4,9 +4,6 @@
 --auth-type            "DIGEST"
 --database             "lux-content"
 --username             ""
---password             ""
---path                 ""
 --s3-add-credentials
---collections          "myCollectionsFeature"
 --categories           "collections,permissions"
 --file-count           "1"

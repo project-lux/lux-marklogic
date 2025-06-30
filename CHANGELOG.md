@@ -19,6 +19,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 - The [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document) now requires the `uri` parameter ([#546](https://github.com/project-lux/lux-marklogic/issues/546))
 - Corrected the URIs of My Collections documents to include "data/" ([#547](https://github.com/project-lux/lux-marklogic/issues/547))
+- Updated user facing advanced search labels to improve sentence structure ([#522](https://github.com/project-lux/lux-marklogic/issues/522))
 
 ### Removed
   

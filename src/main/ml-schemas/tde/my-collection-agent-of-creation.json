@@ -1,0 +1,18 @@
+{
+  "template": {
+    "context": "/json[./classified_as/equivalent/id = '%%identifierMyCollection%%']/created_by/carried_out_by/id",
+    "triples": [
+      {
+        "subject": {
+          "val": "sem:iri(/json/id)"
+        },
+        "predicate": {
+          "val": "sem:iri('https://lux.collections.yale.edu/ns/agentOfCreation')"
+        },
+        "object": {
+          "val": "sem:iri(.)"
+        }
+      }
+    ]
+  }
+}

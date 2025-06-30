@@ -14,7 +14,11 @@ import {
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { getNodeFromObject } from '/utils/utils.mjs';
+import {
+  getNodeFromObject,
+  getObjectFromNode,
+  isDefined,
+} from '/utils/utils.mjs';
 
 const LIB = '0300 updateDocument.mjs';
 console.log(`${LIB}: starting.`);
@@ -72,6 +76,9 @@ assertions.push(
     `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
   )
 );
+// Add the ID
+const hmoDocObj = getObjectFromNode(hmoDocNode);
+hmoDocObj.id = HMO_URI;
 
 xdmp.invokeFunction(
   () => {
@@ -246,6 +253,33 @@ const scenarios = [
     },
   },
   {
+    name: 'ID mismatch',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      idOverride: myCollectionUri + '-different-uri',
+      doc: {
+        id: myCollectionUri,
+        type: 'Set',
+        identified_by: [],
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.myCollection,
+              },
+            ],
+          },
+        ],
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `does not match the document ID`,
+    },
+  },
+  {
     name: 'Service account attempting to update a My Collection',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
@@ -274,7 +308,7 @@ const scenarios = [
     name: 'Invalid document type',
     input: {
       username: USERNAME_FOR_BONNIE,
-      doc: hmoDocNode,
+      doc: hmoDocObj,
     },
     expected: {
       error: true,
@@ -287,7 +321,12 @@ for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
       declareUpdate();
-      return updateDocument(getNodeFromObject(scenario.input.doc));
+      return updateDocument(
+        isDefined(scenario.input.idOverride)
+          ? scenario.input.idOverride
+          : scenario.input.doc.id,
+        getNodeFromObject(scenario.input.doc)
+      );
     };
     const unitName = null;
     // These tests are dependent on handleRequest creating the user's exclusive roles.

@@ -373,7 +373,10 @@ function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
     expectJsonProperty
   );
 
-  return updateDocument(getNodeFromObject(userProfileDocObj));
+  return updateDocument(
+    userProfileDocObj.id,
+    getNodeFromObject(userProfileDocObj)
+  );
 }
 
 function _getExecuteWithServiceAccountFunction(unitName) {

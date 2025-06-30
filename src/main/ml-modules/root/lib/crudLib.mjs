@@ -53,7 +53,8 @@ const DOCUMENT_TYPE_MY_COLLECTION = 'My Collection';
 const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
 
 function createDocument(docNode, lang = DEFAULT_LANG_IRI) {
-  return _insertDocument(docNode, lang, true);
+  const uri = null; // determined later
+  return _insertDocument(uri, docNode, lang, true);
 }
 
 // This function has access to all user profiles and is responsible for restricting access
@@ -74,8 +75,8 @@ function _readDocument(uri, profile = null, lang = 'en') {
 }
 const readDocument = import.meta.amp(_readDocument);
 
-function updateDocument(docNode, lang = DEFAULT_LANG_IRI) {
-  return _insertDocument(docNode, lang, false);
+function updateDocument(uri, docNode, lang = DEFAULT_LANG_IRI) {
+  return _insertDocument(uri, docNode, lang, false);
 }
 
 function deleteDocument(uri) {
@@ -102,6 +103,7 @@ function deleteDocument(uri) {
 }
 
 function _insertDocument(
+  uri,
   readOnlyDocNode,
   lang,
   newDocument = DEFAULT_NEW_DOCUMENT
@@ -114,12 +116,37 @@ function _insertDocument(
     json: readOnlyDocNode,
   });
 
+  // When updating a document, require the given URI match the document's ID.
+  if (!newDocument) {
+    if (isUndefined(uri)) {
+      throw new BadRequestError('The URI is required for updating a document.');
+    }
+    const docId = getId(readOnlyDocNode);
+    if (uri !== docId) {
+      throw new BadRequestError(
+        `The URI '${uri}' does not match the document ID '${docId}'.`
+      );
+    }
+  } // Update mode may now rely on the value of the uri parameter.
+
   let config;
   const docIsUserProfile = isUserProfile(readOnlyDocNode);
   if (docIsUserProfile) {
-    config = _getUserProfileConfig(user, readOnlyDocNode, lang, newDocument);
+    config = _getUserProfileConfig(
+      user,
+      uri,
+      readOnlyDocNode,
+      lang,
+      newDocument
+    );
   } else if (isMyCollection(readOnlyDocNode)) {
-    config = _getMyCollectionConfig(user, readOnlyDocNode, lang, newDocument);
+    config = _getMyCollectionConfig(
+      user,
+      uri,
+      readOnlyDocNode,
+      lang,
+      newDocument
+    );
   } else {
     throw new BadRequestError(
       `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION} or ${DOCUMENT_TYPE_USER_PROFILE}.`
@@ -147,7 +174,6 @@ function _insertDocument(
     config.postValidationCallback(readOnlyDocNode, editableDocObj);
   }
 
-  let uri;
   if (newDocument) {
     uri = _getNewDocumentUri(config.recordType);
     setId(editableDocObj, uri);
@@ -157,8 +183,6 @@ function _insertDocument(
     setAddedToBy(editableDocObj, null);
     setIndexedProperties(editableDocObj, config.indexedProperties);
   } else {
-    uri = getId(readOnlyDocNode);
-
     // Searching for the document and requiring the user be able to update the document in order
     // to provide a better error message (for an edge case of trying to use a My Collection or
     // user profile IRI to update a pipeline-provided document).
@@ -204,6 +228,7 @@ function _insertDocument(
 
 function _getUserProfileConfig(
   user,
+  uri,
   readOnlyDocNode,
   lang,
   newDocument = DEFAULT_NEW_DOCUMENT
@@ -216,10 +241,9 @@ function _getUserProfileConfig(
       `The user '${user.getUsername()}' already has a profile.`
     );
   } else if (!newDocument) {
-    const docId = getId(readOnlyDocNode);
-    if (docId !== userId) {
+    if (uri !== userId) {
       throw new BadRequestError(
-        `The ID in the provided document, '${docId}', does not match that of user '${user.getUsername()}'.`
+        `The ID in the provided document, '${uri}', does not match that of user '${user.getUsername()}'.`
       );
     } else if (!userProfileExists) {
       // Unlikely as the user IRI comes from the profile.
@@ -276,6 +300,7 @@ function _getUserProfileConfig(
 
 function _getMyCollectionConfig(
   user,
+  uri,
   readOnlyDocNode,
   lang,
   newDocument = DEFAULT_NEW_DOCUMENT
@@ -284,11 +309,10 @@ function _getMyCollectionConfig(
     // Deduplicate and drop references to self.
     let givenMembers = getSetMembers(readOnlyDocNode);
     if (givenMembers) {
-      const self = getId(readOnlyDocNode);
       const revisedMembers = Array.from(
         new Map(
           givenMembers
-            .filter((member) => member.id + '' !== self)
+            .filter((member) => member.id + '' !== uri)
             .map((member) => [member.id + '', member])
         ).values()
       );
@@ -313,7 +337,6 @@ function _getMyCollectionConfig(
       ],
     };
   } else {
-    const uri = getId(readOnlyDocNode);
     docOptions = {
       permissions: xdmp.documentGetPermissions(uri),
       collections: xdmp.documentGetCollections(uri),
@@ -344,7 +367,7 @@ function _getNewDocumentUri(recordType, attempt = 1) {
   }
 
   // We like this request.
-  const uri = `${BASE_URL}/${recordType}/${sem.uuidString()}`;
+  const uri = `${BASE_URL}/data/${recordType}/${sem.uuidString()}`;
   if (fn.docAvailable(uri)) {
     return _getNewDocumentUri(recordType, ++attempt);
   }

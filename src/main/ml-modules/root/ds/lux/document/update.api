@@ -7,6 +7,10 @@
       "nullable": true
     },
     {
+      "name": "uri",
+      "datatype": "string"
+    },
+    {
       "name": "doc",
       "datatype": "jsonDocument",
       "$javaClass": "com.fasterxml.jackson.databind.JsonNode"

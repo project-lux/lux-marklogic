@@ -1,0 +1,29 @@
+docker compose up -d
+winpty docker exec -it my-collections-data bash
+alias ll='ls -l' >> /etc/profile
+aws configure
+[enter info]
+
+cd /opt
+curl -L https://github.com/marklogic/flux/releases/download/1.3.0/marklogic-flux-1.3.0.zip > marklogic-flux-1.3.0.zip
+unzip marklogic-flux-1.3.0.zip
+export FLUX_HOME=/opt/marklogic-flux-1.3.0
+
+Based on the operation, swap out [verb] for:
+  backup
+  restore
+  ...
+
+cd /host/code/[verb]
+
+Configure [verb]-options.txt
+You will need a MarkLogic user that has the "%%mlAppName%%-my-collections-data-updater" (preferred) or admin role.
+
+sh [verb]-my-collections-data.sh [verb]-options.txt
+
+Validation:
+  backup: If all went well, you can download the newly created zip, uncompress, and check the contents.
+  restore: Between backup and restore, change a My Collection document in the database; after restore, see if the edit is gone.
+
+exit
+docker compose down

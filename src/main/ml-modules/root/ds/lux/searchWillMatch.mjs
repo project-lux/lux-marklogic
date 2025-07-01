@@ -5,6 +5,8 @@ import { determineIfSearchWillMatch } from '../../lib/searchLib.mjs';
 const unitName = external.unitName;
 const multipleSearchCriteria = getObjectFromNode(external.q);
 
-handleRequest(function () {
+const response = handleRequest(function () {
   return determineIfSearchWillMatch(multipleSearchCriteria);
 }, unitName);
+
+export default response;

@@ -5,7 +5,9 @@ const unitName = external.unitName;
 const docNode = external.doc; // Do not use getObjectFromNode
 const lang = external.lang;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   declareUpdate();
   return createDocument(docNode, lang);
 }, unitName);
+
+export default response;

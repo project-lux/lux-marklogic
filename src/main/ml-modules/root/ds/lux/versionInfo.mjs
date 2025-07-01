@@ -1,4 +1,6 @@
 import { handleRequest } from '../../lib/securityLib.mjs';
 import { getVersionInfo } from '../../lib/environmentLib.mjs';
 
-handleRequest(getVersionInfo);
+const response = handleRequest(getVersionInfo);
+
+export default response;

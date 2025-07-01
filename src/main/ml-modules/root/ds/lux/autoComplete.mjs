@@ -12,7 +12,7 @@ const pageLength = external.pageLength;
 const filterIndex = external.filterIndex;
 const previouslyFiltered = external.previouslyFiltered;
 const timeoutInMilliseconds = external.timeoutInMilliseconds;
-handleRequest(function () {
+const response = handleRequest(function () {
   return getMatches(
     text,
     context,
@@ -26,3 +26,5 @@ handleRequest(function () {
     timeoutInMilliseconds
   );
 }, unitName);
+
+export default response;

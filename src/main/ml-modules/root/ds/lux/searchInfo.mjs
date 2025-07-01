@@ -6,7 +6,7 @@ import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
 import { SearchTermConfig } from '../../lib/SearchTermConfig.mjs';
 
 const unitName = external.unitName;
-handleRequest(function () {
+const response = handleRequest(function () {
   const searchTermsConfig = getSearchTermsConfig();
   const searchBy = {};
   for (const searchScope of Object.keys(searchTermsConfig).sort()) {
@@ -61,3 +61,5 @@ handleRequest(function () {
     sortBy,
   };
 }, unitName);
+
+export default response;

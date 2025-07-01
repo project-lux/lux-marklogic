@@ -3,7 +3,7 @@ import { getSearchScope, getSearchScopeNames } from '../../lib/searchScope.mjs';
 
 const unitName = external.unitName;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   const start = new Date();
   const doc = {
     estimates: {
@@ -25,3 +25,5 @@ handleRequest(function () {
   doc.metadata.milliseconds = end - start;
   return doc;
 }, unitName);
+
+export default response;

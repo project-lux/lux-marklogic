@@ -175,4 +175,4 @@ const results = {
   },
 };
 
-results;
+export default results;

@@ -337,6 +337,11 @@ function _getMyCollectionConfig(
       ],
     };
   } else {
+    if (isUndefined(uri)) {
+      throw new BadRequestError(
+        'The document must have an ID in order to update it.'
+      );
+    }
     docOptions = {
       permissions: xdmp.documentGetPermissions(uri),
       collections: xdmp.documentGetCollections(uri),

@@ -68,17 +68,41 @@ function setTenantStatus(roleName, readOnly) {
 }
 
 function getTenantStatus() {
-  // TODO
+  // No need to return the entire tenant status document.
+  return {
+    roleName: getTenantRoleName(),
+    readOnly: inReadOnlyMode(),
+    ...getVersionInfo(),
+  };
+}
+
+function getTenantRoleName() {
+  const roleName = getTenantStatusDocObj().roleName;
+  if (roleName !== ROLE_PROD && roleName !== ROLE_NON_PROD) {
+    throw new InternalServerError(
+      `Tenant status is corrupt: roleName must be '${ROLE_PROD}' or '${ROLE_NON_PROD}', but was: '${roleName}'`
+    );
+  }
+  return roleName;
 }
 
 function inReadOnlyMode() {
-  // TODO: update once we have a tenant status doc.
-  return false;
+  const isReadOnly = getTenantStatusDocObj().readOnly;
+  if (typeof isReadOnly !== 'boolean') {
+    throw new InternalServerError(
+      `Tenant status is corrupt: the readOnly property must be a boolean, but has type: ${typeof isReadOnly}`
+    );
+  }
+  return isReadOnly;
 }
 
-function getTenantRole() {
-  // TODO: update once we have a tenant status doc.
-  return ROLE_NON_PROD;
+function getTenantStatusDocObj() {
+  if (fn.docAvailable(TENANT_STATUS_URI)) {
+    return cts.doc(TENANT_STATUS_URI).toObject();
+  }
+  throw new InternalServerError(
+    `Tenant status document does not exist but is required.`
+  );
 }
 
 /*
@@ -318,7 +342,7 @@ function getVersionInfo() {
 export {
   getStorageInfo,
   getTenantStatus,
-  getTenantRole,
+  getTenantRoleName,
   getVersionInfo, // subset of getTenantInfo
   inReadOnlyMode,
   setTenantStatus,

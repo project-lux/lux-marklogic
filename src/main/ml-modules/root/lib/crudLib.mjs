@@ -31,7 +31,7 @@ import {
   setUsername,
 } from './model.mjs';
 import { applyProfile } from './profileDocLib.mjs';
-import { getTenantRole } from './environmentLib.mjs';
+import { getTenantRoleName } from './environmentLib.mjs';
 import {
   BadRequestError,
   LoopDetectedError,
@@ -270,7 +270,7 @@ function _getUserProfileConfig(
         xdmp.permission(ROLE_NAME_USER_PROFILE_DATA_READER, CAPABILITY_READ),
       ]),
       collections: [
-        getTenantRole(),
+        getTenantRoleName(),
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
         COLLECTION_NAME_USER_PROFILE,
       ],
@@ -331,7 +331,7 @@ function _getMyCollectionConfig(
         ),
       ]),
       collections: [
-        getTenantRole(),
+        getTenantRoleName(),
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
         COLLECTION_NAME_MY_COLLECTION,
       ],

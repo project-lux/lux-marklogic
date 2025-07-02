@@ -1,8 +1,8 @@
 const CODE_VERSION = '@@codeVersion@@';
 
-const ENVIRONMENT_NAME = '%%environmentName%%';
-
 const ML_APP_NAME = '%%mlAppName%%';
+const TENANT_NAME = '%%environmentName%%';
+const TENANT_STATUS_URI = '%%environmentStatusUri%%'.trim();
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
@@ -166,7 +166,6 @@ export {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   ENDPOINT_ACCESS_UNIT_NAMES,
-  ENVIRONMENT_NAME,
   FACETS_PREFIX,
   FEATURE_MY_COLLECTIONS_ENABLED,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
@@ -201,5 +200,7 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
+  TENANT_NAME,
+  TENANT_STATUS_URI,
   UNIT_TEST_ENDPOINT,
 };

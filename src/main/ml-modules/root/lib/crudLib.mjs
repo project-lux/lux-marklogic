@@ -31,7 +31,7 @@ import {
   setUsername,
 } from './model.mjs';
 import { applyProfile } from './profileDocLib.mjs';
-import { getTenantRole } from './tenantStatusLib.mjs';
+import { getTenantRole } from './environmentLib.mjs';
 import {
   BadRequestError,
   LoopDetectedError,

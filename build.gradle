@@ -422,6 +422,94 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   args = ["-ssl_protocol", "tlsv1.2"]
 }
 
+task checkAndCreateTenantStatus() {
+  doFirst {
+    def tenantStatusUri = project.getProperty("environmentStatusUri")
+
+    // Only used if the tenant status document does not exist.
+    def appName = project.getProperty("mlAppName")
+    def tenantName = project.getProperty("environmentName")
+    def tenantRole = project.getProperty("environmentRole")
+    def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
+
+    def protocol = project.getProperty("mlAppServicesScheme") // assumption: if one is https, all are.
+    def host = project.getProperty("mlHost")
+    def port = project.getProperty("mlRestPortGroup1")
+    def getUrl = "${protocol}://${host}:${port}/ds/lux/document/read.mjs"
+    def postUrl = "${protocol}://${host}:${port}/ds/lux/document/create.mjs"
+
+    try {
+      // See if the tenant status document exists.
+      def getConnection = new URL(getUrl + "?uri=" + URLEncoder.encode(tenantStatusUri, "UTF-8")).openConnection()
+      getConnection.setRequestMethod("GET")
+      def responseCode = getConnection.getResponseCode()
+      
+      println "GET response code: ${responseCode}"
+
+      def checkStream = getConnection.getErrorStream()
+      if (checkStream) {
+        def responseBody = checkStream.getText('UTF-8')
+        println "GET error response body: ${responseBody}"
+      }
+
+      if (responseCode == 404) {
+        println "The tenant status document was not found; creating..."
+        
+        // Prepare JSON data for POST
+        def jsonData = [
+          json: [
+            id: tenantStatusUri,
+            type: "Status",
+            appName: appName,
+            tenantName: tenantName,
+            role: tenantRole,
+            readOnly: isReadOnly,
+            created: new Date().toString()
+          ]
+        ]
+        
+        def jsonString = groovy.json.JsonBuilder(jsonData).toString()
+        
+        // Create POST request with form-data
+        def postConnection = new URL(postUrl).openConnection()
+        postConnection.setRequestMethod("POST")
+        postConnection.setDoOutput(true)
+        postConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+        
+        def formData = "doc=" + URLEncoder.encode(jsonString, "UTF-8")
+        
+        // Send the request
+        def outputStream = postConnection.getOutputStream()
+        outputStream.write(formData.getBytes("UTF-8"))
+        outputStream.close()
+        
+        def postResponseCode = postConnection.getResponseCode()
+        println "POST response code: ${postResponseCode}"
+        
+        if (postResponseCode >= 200 && postResponseCode < 300) {
+          println "Tenant status document created successfully"
+        } else {
+          println "Failed to create tenant status document"
+          def errorStream = postConnection.getErrorStream()
+          if (errorStream) {
+            println "Error: ${errorStream.text}"
+          }
+          throw new GradleException("Failed to create tenant status document with response code ${postResponseCode} and message: ${postConnection.getResponseMessage()}")
+        }
+      } else {
+        println "The tenant status document already exists; no action taken."
+      }
+      
+    } catch (Exception e) {
+      println "Error occurred: ${e.message}"
+      throw e
+    }
+  }
+}
+mlDeploy.finalizedBy checkAndCreateTenantStatus
+mlLoadModules.finalizedBy checkAndCreateTenantStatus
+copyDatabase.finalizedBy checkAndCreateTenantStatus
+
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask) {
@@ -439,9 +527,7 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println ""
   }
 }
-mlDeploy.finalizedBy generateRemainingSearchTerms
-mlLoadModules.finalizedBy generateRemainingSearchTerms
-copyDatabase.finalizedBy generateRemainingSearchTerms
+// checkAndCreateTenantStatus.finalizedBy generateRemainingSearchTerms
 
 // Runs the related lists configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -460,7 +546,7 @@ task generateRelatedListsConfig (type: com.marklogic.gradle.task.MarkLogicTask) 
     println ""
   }
 }
-generateRemainingSearchTerms.finalizedBy generateRelatedListsConfig
+// checkAndCreateTenantStatus.finalizedBy generateRelatedListsConfig
 
 // Runs the advanced search configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -479,7 +565,7 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
     println ""
   }
 }
-generateRemainingSearchTerms.finalizedBy generateAdvancedSearchConfig
+// checkAndCreateTenantStatus.finalizedBy generateAdvancedSearchConfig
 
 task importRestApiOptions(type: com.marklogic.gradle.task.MlcpTask) {
   //check if SSL is enabled and use the properties value
@@ -563,7 +649,7 @@ task performBaseDeployment() {
 }
 // It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
 // could result in an error if the tenant's modules database didn't exist in time.
-performBaseDeployment.finalizedBy mlDeployForestReplicas, generateRemainingSearchTerms
+performBaseDeployment.finalizedBy mlDeployForestReplicas, checkAndCreateTenantStatus
 
 // Enables SSL on the builtin servers
 // And create the certificate intended for the non-builtin servers

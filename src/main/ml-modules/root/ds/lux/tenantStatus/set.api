@@ -1,0 +1,17 @@
+{
+  "functionName": "tenantInfo",
+  "params": [
+    {
+      "name": "roleName",
+      "datatype": "string"
+    },
+    {
+      "name": "readOnly",
+      "datatype": "boolean"
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

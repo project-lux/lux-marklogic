@@ -3,14 +3,83 @@ import {
   HIGH_STORAGE_WARNING_THRESHOLD,
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
+  ML_APP_NAME,
+  TENANT_NAME,
+  TENANT_STATUS_URI,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
+import {
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
+  ROLE_NAME_DEPLOYER,
+  getAllReaderRoleNames,
+  requireUserMayUpdateTenantStatus,
+} from './securityLib.mjs';
+import { BadRequestError } from './mlErrorsLib.mjs';
+import { User } from './User.mjs';
+
+const ROLE_PROD = 'prod';
+const ROLE_NON_PROD = 'nonProd';
 
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;
 const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
+
+function setTenantStatus(roleName, readOnly) {
+  requireUserMayUpdateTenantStatus();
+
+  // Validate parameter values.
+  if (roleName !== ROLE_PROD && roleName !== ROLE_NON_PROD) {
+    throw new BadRequestError(
+      `Invalid roleName: ${roleName}. Must be either '${ROLE_PROD}' or '${ROLE_NON_PROD}'.`
+    );
+  }
+  if (readOnly !== true && readOnly !== false) {
+    throw new BadRequestError(
+      `Invalid readOnly: ${readOnly}. Must be either a boolean.`
+    );
+  }
+
+  const doc = {
+    appName: ML_APP_NAME,
+    tenantName: TENANT_NAME,
+    roleName,
+    readOnly,
+    lastSetBy: new User().getUsername(),
+    lastSetOn: fn.currentDateTime(),
+  };
+
+  const options = {
+    permissions: [
+      xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_READ),
+      xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_UPDATE),
+    ].concat(
+      getAllReaderRoleNames().map((roleName) =>
+        xdmp.permission(roleName, CAPABILITY_READ)
+      )
+    ),
+    // Do *not* include in collections backed up and restored during a blue/green switch.
+    collections: [],
+  };
+
+  xdmp.documentInsert(TENANT_STATUS_URI, doc, options);
+}
+
+function getTenantStatus() {
+  // TODO
+}
+
+function inReadOnlyMode() {
+  // TODO: update once we have a tenant status doc.
+  return false;
+}
+
+function getTenantRole() {
+  // TODO: update once we have a tenant status doc.
+  return ROLE_NON_PROD;
+}
 
 /*
  * Collect the forest information of every database, and organize by node and volume.
@@ -246,4 +315,11 @@ function getVersionInfo() {
   };
 }
 
-export { getStorageInfo, getVersionInfo };
+export {
+  getStorageInfo,
+  getTenantStatus,
+  getTenantRole,
+  getVersionInfo, // subset of getTenantInfo
+  inReadOnlyMode,
+  setTenantStatus,
+};

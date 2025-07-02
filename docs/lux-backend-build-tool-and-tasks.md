@@ -15,6 +15,7 @@ This document describes Gradle tasks written for this project, which may be foun
 | Task | Description | More Info |
 | ---- | ----------- | --------- |
 | `addSupportForExecutingWithServiceAccounts` | **Deployment task** that generates amps and libWrapper.mjs in support of enabling logged in users to have access to the same documents a service account has access to. This is part of the ability enabling users to log in yet be restricted to a unit portal's data. The `endpointAccessUnitNames` build property determines which units this support is added for. |  |
+| `checkAndCreateTenantStatus` | **Deployment task** responsible for creating the tenant status document _if and only if_ the tenant status document does not already exist.  Of the build properties used, `environmentRole` and `environmentReadOnly` may be the most important. |  |
 | `copyContentDatabaseConfGenerated` | **Deployment task** that provides populates a JavaScript-template with the database's configuration, thereby making it available to the runtime code. |  | 
 | `copyDatabase` | Developer convenience task that enables one to copy the data from one database to another, such as from a LUX shared environment to one's local environment. It uses MLCP. | See [Alternative 2: Copy a Database](/docs/lux-backend-import-data.md#alternative-2-copy-a-database) |
 | `determineCodeVersion` | Executes a script to derive the code version from `git`. |  |

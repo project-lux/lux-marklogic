@@ -65,6 +65,14 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
+  '/ds/lux/tenantStatus/get.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/tenantStatus/set.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
   '/ds/lux/translate.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },

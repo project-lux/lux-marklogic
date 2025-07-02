@@ -15,7 +15,7 @@ import {
   getAllReaderRoleNames,
   requireUserMayUpdateTenantStatus,
 } from './securityLib.mjs';
-import { BadRequestError } from './mlErrorsLib.mjs';
+import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
 import { User } from './User.mjs';
 
 const ROLE_PROD = 'prod';
@@ -79,7 +79,7 @@ function getTenantStatus() {
 function getTenantRoleName() {
   const roleName = getTenantStatusDocObj().roleName;
   if (roleName !== ROLE_PROD && roleName !== ROLE_NON_PROD) {
-    throw new InternalServerError(
+    throw new InternalConfigurationError(
       `Tenant status is corrupt: roleName must be '${ROLE_PROD}' or '${ROLE_NON_PROD}', but was: '${roleName}'`
     );
   }
@@ -89,7 +89,7 @@ function getTenantRoleName() {
 function inReadOnlyMode() {
   const isReadOnly = getTenantStatusDocObj().readOnly;
   if (typeof isReadOnly !== 'boolean') {
-    throw new InternalServerError(
+    throw new InternalConfigurationError(
       `Tenant status is corrupt: the readOnly property must be a boolean, but has type: ${typeof isReadOnly}`
     );
   }
@@ -100,7 +100,7 @@ function getTenantStatusDocObj() {
   if (fn.docAvailable(TENANT_STATUS_URI)) {
     return cts.doc(TENANT_STATUS_URI).toObject();
   }
-  throw new InternalServerError(
+  throw new InternalConfigurationError(
     `Tenant status document does not exist but is required.`
   );
 }

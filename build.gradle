@@ -546,7 +546,7 @@ task generateRelatedListsConfig (type: com.marklogic.gradle.task.MarkLogicTask) 
     println ""
   }
 }
-// checkAndCreateTenantStatus.finalizedBy generateRelatedListsConfig
+generateRemainingSearchTerms.finalizedBy generateRelatedListsConfig
 
 // Runs the advanced search configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -565,7 +565,7 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
     println ""
   }
 }
-// checkAndCreateTenantStatus.finalizedBy generateAdvancedSearchConfig
+generateRelatedListsConfig.finalizedBy generateAdvancedSearchConfig
 
 task importRestApiOptions(type: com.marklogic.gradle.task.MlcpTask) {
   //check if SSL is enabled and use the properties value

@@ -422,7 +422,7 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   args = ["-ssl_protocol", "tlsv1.2"]
 }
 
-task checkAndCreateTenantStatus() {
+task ensureTenantStatusDocumentExists() {
   doFirst {
     // Only used if the tenant status document does not exist.
     def tenantRole = project.getProperty("environmentRole")
@@ -491,9 +491,9 @@ task checkAndCreateTenantStatus() {
     }
   }
 }
-mlDeploy.finalizedBy checkAndCreateTenantStatus
-mlLoadModules.finalizedBy checkAndCreateTenantStatus
-copyDatabase.finalizedBy checkAndCreateTenantStatus
+mlDeploy.finalizedBy ensureTenantStatusDocumentExists
+mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
+copyDatabase.finalizedBy ensureTenantStatusDocumentExists
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -636,7 +636,7 @@ task performBaseDeployment() {
 }
 // It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
 // could result in an error if the tenant's modules database didn't exist in time.
-performBaseDeployment.finalizedBy mlDeployForestReplicas, checkAndCreateTenantStatus
+performBaseDeployment.finalizedBy mlDeployForestReplicas
 
 // Enables SSL on the builtin servers
 // And create the certificate intended for the non-builtin servers

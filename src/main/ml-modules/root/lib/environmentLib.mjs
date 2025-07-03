@@ -29,7 +29,13 @@ const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
 
+// This function purposely does not log using a trace event as trace events can be disabled.
 function setTenantStatus(roleName, readOnly) {
+  const username = new User().getUsername();
+  console.log(
+    `User '${username}' is attempting to set the tenant role to '${roleName}' and readOnly to '${readOnly}'.`
+  );
+
   requireUserMayUpdateTenantStatus();
 
   // Validate parameter values.
@@ -44,12 +50,20 @@ function setTenantStatus(roleName, readOnly) {
     );
   }
 
+  if (fn.docAvailable(TENANT_STATUS_URI)) {
+    console.log(
+      `The current tenant status role is '${getTenantRoleName()}' and readOnly is '${inReadOnlyMode()}'`
+    );
+  } else {
+    console.log('The tenant status document does not yet exist.');
+  }
+
   const doc = {
     appName: ML_APP_NAME,
     tenantName: TENANT_NAME,
     roleName,
     readOnly,
-    lastSetBy: new User().getUsername(),
+    lastSetBy: username,
     lastSetOn: fn.currentDateTime(),
   };
 
@@ -67,6 +81,7 @@ function setTenantStatus(roleName, readOnly) {
   };
 
   xdmp.documentInsert(TENANT_STATUS_URI, doc, options);
+  console.log('Changes accepted to the tenant status document.');
 }
 
 function getTenantStatus() {

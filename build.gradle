@@ -425,7 +425,7 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
 task ensureTenantStatusDocumentExists() {
   doFirst {
     // Only used if the tenant status document does not exist.
-    def tenantRole = project.getProperty("environmentRole")
+    def isProd = project.getProperty("environmentProd").toBoolean()
     def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
 
     def protocol = project.getProperty("mlAppServicesScheme") // assumption: if one is https, all are.
@@ -460,7 +460,7 @@ task ensureTenantStatusDocumentExists() {
         postConnection.setDoOutput(true)
         postConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
 
-        def formData = "roleName=${tenantRole}&readOnly=${isReadOnly}"
+        def formData = "prod=${isProd}&readOnly=${isReadOnly}"
 
         // Send the request
         def outputStream = postConnection.getOutputStream()

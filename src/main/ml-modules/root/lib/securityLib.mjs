@@ -6,12 +6,12 @@ import {
 import * as libWrapper from './libWrapper.mjs';
 import { User } from './User.mjs';
 import {
-  BASE_URL,
   ENDPOINT_ACCESS_UNIT_NAMES,
   FEATURE_MY_COLLECTIONS_ENABLED,
   ML_APP_NAME,
-  UNIT_TEST_ENDPOINT,
+  PRIVILEGES_PREFIX,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
+  UNIT_TEST_ENDPOINT,
 } from './appConstants.mjs';
 import {
   getNodeFromObject,
@@ -40,7 +40,7 @@ const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END
 const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
 
-const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${BASE_URL}/%%mlAppName%%-update-tenant-status`;
+const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${PRIVILEGES_PREFIX}/%%mlAppName%%-update-tenant-status`;
 const ROLE_NAME_DEPLOYER = '%%mlAppName%%-deployer';
 
 const ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER =

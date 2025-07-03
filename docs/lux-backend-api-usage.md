@@ -1697,7 +1697,7 @@ Response Body:
 
 ```
 {
-  "roleName":"nonProd",
+  "prod":false,
   "readOnly":false,
   "codeVersion":"v1.42.0-6-g89577f6",
   "dataVersion":"2025-06-21T04:19:28.635285",
@@ -1722,8 +1722,8 @@ The Set Tenant Status endpoint enables one to change the tenant's role and read-
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `roleName` | `prod` | **REQUIRED** - Specify whether the tenant is in production (`prod`) or non-production (`nonProd`) mode. Of all the environments and tenants, only one tenant should ever be in production mode. During a blue/green switch, the roles of each are to change. |
-| `readOnly` | `true` | **REQUIRED** - Specify whether the instance should accept updates (`false`) or not (`true`). When in read-only mode, the tenant is to still service read-only requests. The only write exception is this endpoint. |
+| `prod` | `false` | **REQUIRED** - Specify whether the tenant is in production (`true`) or non-production (`false`) mode. Of all the environments and tenants, only one tenant should ever be in production mode. During a blue/green switch, the roles of each are to change. |
+| `readOnly` | `false` | **REQUIRED** - Specify whether the instance should accept updates (`false`) or not (`true`). When in read-only mode, the tenant is to still service read-only requests. The only write exception is this endpoint. |
 
 #### Successful Request / Response Example
 
@@ -1733,7 +1733,7 @@ Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `roleName` | `prod` |
+| `prod` | `prod` |
 | `readOnly` | `true` |
 
 Response Status Code: 200
@@ -1744,14 +1744,14 @@ Response Body: Empty
 
 #### Failed Request / Response Example
 
-Scenario: An invalid role name is provided.
+Scenario: A value that cannot be interpreted as a boolean is given.
 
 Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `roleName` | `batman` |
-| `readOnly` | `true` |
+| `prod` | `yes` |
+| `readOnly` | `no` |
 
 Response Status Code: 400
 
@@ -1763,8 +1763,8 @@ Response Body:
   "errorResponse":{
     "statusCode":400,
     "status":"Bad Request",
-    "messageCode":"BadRequestError",
-    "message":"Invalid roleName: 'batman'. Must be either 'prod' or 'nonProd'."
+    "messageCode":"XDMP-LEXVAL",
+    "message":"Invalid lexical value"
   }
 }
 ```

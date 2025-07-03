@@ -2,8 +2,8 @@
   "functionName": "tenantInfo",
   "params": [
     {
-      "name": "roleName",
-      "datatype": "string"
+      "name": "prod",
+      "datatype": "boolean"
     },
     {
       "name": "readOnly",

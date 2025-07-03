@@ -2,6 +2,8 @@ import {
   BASE_URL,
   COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
   COLLECTION_NAME_MY_COLLECTION,
+  COLLECTION_NAME_NON_PRODUCTION,
+  COLLECTION_NAME_PRODUCTION,
   COLLECTION_NAME_USER_PROFILE,
 } from './appConstants.mjs';
 import {
@@ -31,7 +33,7 @@ import {
   setUsername,
 } from './model.mjs';
 import { applyProfile } from './profileDocLib.mjs';
-import { getTenantRoleName } from './environmentLib.mjs';
+import { isProduction } from './environmentLib.mjs';
 import {
   BadRequestError,
   LoopDetectedError,
@@ -270,7 +272,9 @@ function _getUserProfileConfig(
         xdmp.permission(ROLE_NAME_USER_PROFILE_DATA_READER, CAPABILITY_READ),
       ]),
       collections: [
-        getTenantRoleName(),
+        isProduction()
+          ? COLLECTION_NAME_PRODUCTION
+          : COLLECTION_NAME_NON_PRODUCTION,
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
         COLLECTION_NAME_USER_PROFILE,
       ],
@@ -331,7 +335,9 @@ function _getMyCollectionConfig(
         ),
       ]),
       collections: [
-        getTenantRoleName(),
+        isProduction()
+          ? COLLECTION_NAME_PRODUCTION
+          : COLLECTION_NAME_NON_PRODUCTION,
         COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
         COLLECTION_NAME_MY_COLLECTION,
       ],

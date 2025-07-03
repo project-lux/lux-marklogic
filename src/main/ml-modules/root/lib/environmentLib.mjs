@@ -20,9 +20,6 @@ import { User } from './User.mjs';
 // Not needed outside this library.
 const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
-const ROLE_PROD = 'prod';
-const ROLE_NON_PROD = 'nonProd';
-
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;
 const perVolumeOtherReserveMb = 2048; // logs, for example.
@@ -30,18 +27,18 @@ const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
 
 // This function purposely does not log using a trace event as trace events can be disabled.
-function setTenantStatus(roleName, readOnly) {
+function setTenantStatus(prod, readOnly) {
   const username = new User().getUsername();
   console.log(
-    `User '${username}' is attempting to set the tenant role to '${roleName}' and readOnly to '${readOnly}'.`
+    `User '${username}' is attempting to set the tenant's production mode to '${prod}' and read-only state to '${readOnly}'.`
   );
 
   requireUserMayUpdateTenantStatus();
 
   // Validate parameter values.
-  if (roleName !== ROLE_PROD && roleName !== ROLE_NON_PROD) {
+  if (prod !== true && prod !== false) {
     throw new BadRequestError(
-      `Invalid roleName: '${roleName}'. Must be either '${ROLE_PROD}' or '${ROLE_NON_PROD}'.`
+      `Invalid prod: '${prod}'. Must be either a boolean.`
     );
   }
   if (readOnly !== true && readOnly !== false) {
@@ -51,14 +48,14 @@ function setTenantStatus(roleName, readOnly) {
   }
 
   if (fn.docAvailable(TENANT_STATUS_URI)) {
-    if (getTenantRoleName() === roleName && inReadOnlyMode() === readOnly) {
+    if (isProduction() === prod && inReadOnlyMode() === readOnly) {
       console.log(
         'The current tenant status matches the requested values; no action taken.'
       );
       return;
     }
     console.log(
-      `The current tenant status role is '${getTenantRoleName()}' and readOnly is '${inReadOnlyMode()}'`
+      `The current tenant's production mode is '${isProduction()}' and read-only state is '${inReadOnlyMode()}'`
     );
   } else {
     console.log('The tenant status document does not yet exist.');
@@ -67,7 +64,7 @@ function setTenantStatus(roleName, readOnly) {
   const doc = {
     appName: ML_APP_NAME,
     tenantName: TENANT_NAME,
-    roleName,
+    prod,
     readOnly,
     lastSetBy: username,
     lastSetOn: fn.currentDateTime(),
@@ -93,27 +90,27 @@ function setTenantStatus(roleName, readOnly) {
 function getTenantStatus() {
   // No need to return the entire tenant status document.
   return {
-    roleName: getTenantRoleName(),
+    prod: isProduction(),
     readOnly: inReadOnlyMode(),
     ...getVersionInfo(),
   };
 }
 
-function getTenantRoleName() {
-  const roleName = getTenantStatusDocObj().roleName;
-  if (roleName !== ROLE_PROD && roleName !== ROLE_NON_PROD) {
+function isProduction() {
+  const prod = getTenantStatusDocObj().prod;
+  if (typeof prod !== 'boolean') {
     throw new InternalConfigurationError(
-      `Tenant status is corrupt: roleName must be '${ROLE_PROD}' or '${ROLE_NON_PROD}', but was: '${roleName}'`
+      `Tenant status is corrupt: the prod property must be a boolean, but has type '${typeof prod}'`
     );
   }
-  return roleName;
+  return prod;
 }
 
 function inReadOnlyMode() {
   const isReadOnly = getTenantStatusDocObj().readOnly;
   if (typeof isReadOnly !== 'boolean') {
     throw new InternalConfigurationError(
-      `Tenant status is corrupt: the readOnly property must be a boolean, but has type: ${typeof isReadOnly}`
+      `Tenant status is corrupt: the readOnly property must be a boolean, but has type '${typeof isReadOnly}'`
     );
   }
   return isReadOnly;
@@ -365,8 +362,8 @@ function getVersionInfo() {
 export {
   getStorageInfo,
   getTenantStatus,
-  getTenantRoleName,
   getVersionInfo, // subset of getTenantInfo
   inReadOnlyMode,
+  isProduction,
   setTenantStatus,
 };

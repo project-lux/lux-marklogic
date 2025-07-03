@@ -1,7 +1,7 @@
 import { handleRequest } from '../../../lib/securityLib.mjs';
 import { setTenantStatus } from '../../../lib/environmentLib.mjs';
 
-const roleName = external.roleName;
+const prod = external.prod;
 const readOnly = external.readOnly;
 
 const unitName = null; // Irrelevant for this operation.
@@ -11,7 +11,7 @@ const forceInvoke = true; // Required.
 handleRequest(
   function () {
     declareUpdate();
-    return setTenantStatus(roleName, readOnly);
+    return setTenantStatus(prod, readOnly);
   },
   unitName,
   forceInvoke

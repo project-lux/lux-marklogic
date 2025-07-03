@@ -51,6 +51,12 @@ function setTenantStatus(roleName, readOnly) {
   }
 
   if (fn.docAvailable(TENANT_STATUS_URI)) {
+    if (getTenantRoleName() === roleName && inReadOnlyMode() === readOnly) {
+      console.log(
+        'The current tenant status matches the requested values; no action taken.'
+      );
+      return;
+    }
     console.log(
       `The current tenant status role is '${getTenantRoleName()}' and readOnly is '${inReadOnlyMode()}'`
     );

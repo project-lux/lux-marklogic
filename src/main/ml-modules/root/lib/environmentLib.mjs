@@ -17,7 +17,8 @@ import {
 import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
 import { User } from './User.mjs';
 
-// Not needed outside this library.
+// Not needed outside this library. If requested via Read Document endpoint, an empty response
+// body is given (no json property).
 const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
 const journalSizeThresholdForReserveMb = 10;

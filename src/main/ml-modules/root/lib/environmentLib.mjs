@@ -5,7 +5,6 @@ import {
   LOW_STORAGE_WARNING_THRESHOLD,
   ML_APP_NAME,
   TENANT_NAME,
-  TENANT_STATUS_URI,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
@@ -17,6 +16,9 @@ import {
 } from './securityLib.mjs';
 import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
 import { User } from './User.mjs';
+
+// Not needed outside this library.
+const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
 const ROLE_PROD = 'prod';
 const ROLE_NON_PROD = 'nonProd';
@@ -33,12 +35,12 @@ function setTenantStatus(roleName, readOnly) {
   // Validate parameter values.
   if (roleName !== ROLE_PROD && roleName !== ROLE_NON_PROD) {
     throw new BadRequestError(
-      `Invalid roleName: ${roleName}. Must be either '${ROLE_PROD}' or '${ROLE_NON_PROD}'.`
+      `Invalid roleName: '${roleName}'. Must be either '${ROLE_PROD}' or '${ROLE_NON_PROD}'.`
     );
   }
   if (readOnly !== true && readOnly !== false) {
     throw new BadRequestError(
-      `Invalid readOnly: ${readOnly}. Must be either a boolean.`
+      `Invalid readOnly: '${readOnly}'. Must be either a boolean.`
     );
   }
 

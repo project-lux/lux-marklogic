@@ -1,16 +1,18 @@
-import {
-  handleRequest,
-  requireUserMayUpdateTenantStatus,
-} from '../../../lib/securityLib.mjs';
+import { handleRequest } from '../../../lib/securityLib.mjs';
 import { setTenantStatus } from '../../../lib/environmentLib.mjs';
 
 const roleName = external.roleName;
 const readOnly = external.readOnly;
 
-// No harm in asserting here and in the library.
-requireUserMayUpdateTenantStatus();
+const unitName = null; // Irrelevant for this operation.
+const forceInvoke = true; // Required.
 
 // No need to support unitName.
-handleRequest(function () {
-  return setTenantStatus(roleName, readOnly);
-});
+handleRequest(
+  function () {
+    declareUpdate();
+    return setTenantStatus(roleName, readOnly);
+  },
+  unitName,
+  forceInvoke
+);

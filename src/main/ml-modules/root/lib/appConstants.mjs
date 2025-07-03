@@ -2,7 +2,6 @@ const CODE_VERSION = '@@codeVersion@@';
 
 const ML_APP_NAME = '%%mlAppName%%';
 const TENANT_NAME = '%%environmentName%%';
-const TENANT_STATUS_URI = '%%environmentStatusUri%%'.trim();
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
@@ -201,6 +200,5 @@ export {
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
   TENANT_NAME,
-  TENANT_STATUS_URI,
   UNIT_TEST_ENDPOINT,
 };

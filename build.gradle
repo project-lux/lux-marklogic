@@ -424,60 +424,44 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
 
 task checkAndCreateTenantStatus() {
   doFirst {
-    def tenantStatusUri = project.getProperty("environmentStatusUri")
-
     // Only used if the tenant status document does not exist.
-    def appName = project.getProperty("mlAppName")
-    def tenantName = project.getProperty("environmentName")
     def tenantRole = project.getProperty("environmentRole")
     def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
 
     def protocol = project.getProperty("mlAppServicesScheme") // assumption: if one is https, all are.
     def host = project.getProperty("mlHost")
     def port = project.getProperty("mlRestPortGroup1")
-    def getUrl = "${protocol}://${host}:${port}/ds/lux/document/read.mjs"
-    def postUrl = "${protocol}://${host}:${port}/ds/lux/document/create.mjs"
+    def username = project.getProperty("mlUsername")
+    def password = credentials.forKey('mlPassword')
+    def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
+    def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
+
+    // Set up digest authentication
+    Authenticator.setDefault(new Authenticator() {
+      @Override
+      protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication(username, password.toCharArray())
+      }
+    })
 
     try {
       // See if the tenant status document exists.
-      def getConnection = new URL(getUrl + "?uri=" + URLEncoder.encode(tenantStatusUri, "UTF-8")).openConnection()
+      def getConnection = new URL(getUrl).openConnection()
       getConnection.setRequestMethod("GET")
       def responseCode = getConnection.getResponseCode()
-      
-      println "GET response code: ${responseCode}"
 
-      def checkStream = getConnection.getErrorStream()
-      if (checkStream) {
-        def responseBody = checkStream.getText('UTF-8')
-        println "GET error response body: ${responseBody}"
-      }
-
-      if (responseCode == 404) {
+      if (responseCode >= 200 && responseCode < 300) {
+        println "Tenant status document was found; no action taken."
+      } else {
         println "The tenant status document was not found; creating..."
         
-        // Prepare JSON data for POST
-        def jsonData = [
-          json: [
-            id: tenantStatusUri,
-            type: "Status",
-            appName: appName,
-            tenantName: tenantName,
-            role: tenantRole,
-            readOnly: isReadOnly,
-            created: new Date().toString()
-          ]
-        ]
-        
-        def jsonString = groovy.json.JsonBuilder(jsonData).toString()
-        
-        // Create POST request with form-data
         def postConnection = new URL(postUrl).openConnection()
         postConnection.setRequestMethod("POST")
         postConnection.setDoOutput(true)
         postConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-        
-        def formData = "doc=" + URLEncoder.encode(jsonString, "UTF-8")
-        
+
+        def formData = "roleName=${tenantRole}&readOnly=${isReadOnly}"
+
         // Send the request
         def outputStream = postConnection.getOutputStream()
         outputStream.write(formData.getBytes("UTF-8"))
@@ -496,13 +480,14 @@ task checkAndCreateTenantStatus() {
           }
           throw new GradleException("Failed to create tenant status document with response code ${postResponseCode} and message: ${postConnection.getResponseMessage()}")
         }
-      } else {
-        println "The tenant status document already exists; no action taken."
       }
       
     } catch (Exception e) {
       println "Error occurred: ${e.message}"
       throw e
+    } finally {
+      // Clean up the authenticator
+      Authenticator.setDefault(null)
     }
   }
 }
@@ -527,7 +512,9 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
     println ""
   }
 }
-// checkAndCreateTenantStatus.finalizedBy generateRemainingSearchTerms
+mlDeploy.finalizedBy generateRemainingSearchTerms
+mlLoadModules.finalizedBy generateRemainingSearchTerms
+copyDatabase.finalizedBy generateRemainingSearchTerms
 
 // Runs the related lists configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md

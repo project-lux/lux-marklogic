@@ -3,6 +3,7 @@
   "description": "CAUTION! This role contains privileges that allow it to run unit tests. It should not be granted for any other purpose and not even exist in a production environment.",
   "role": [
     "%%mlAppName%%-may-run-unit-tests",
+    "%%mlAppName%%-deployer",
     "%%mlAppName%%-endpoint-consumer",
     "rest-extension-user",
     "rest-admin"

@@ -11,14 +11,12 @@ import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
   ROLE_NAME_DEPLOYER,
-  getAllReaderRoleNames,
+  ROLE_NAME_ENDPOINT_CONSUMER_BASE,
   requireUserMayUpdateTenantStatus,
 } from './securityLib.mjs';
 import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
 import { User } from './User.mjs';
 
-// Not needed outside this library. If requested via Read Document endpoint, an empty response
-// body is given (no json property).
 const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
 const journalSizeThresholdForReserveMb = 10;
@@ -75,11 +73,8 @@ function setTenantStatus(prod, readOnly) {
     permissions: [
       xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_READ),
       xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_UPDATE),
-    ].concat(
-      getAllReaderRoleNames().map((roleName) =>
-        xdmp.permission(roleName, CAPABILITY_READ)
-      )
-    ),
+      xdmp.permission(ROLE_NAME_ENDPOINT_CONSUMER_BASE, CAPABILITY_READ),
+    ],
     // Do *not* include in collections backed up and restored during a blue/green switch.
     collections: [],
   };
@@ -361,6 +356,7 @@ function getVersionInfo() {
 }
 
 export {
+  TENANT_STATUS_URI, // for unit tests
   getStorageInfo,
   getTenantStatus,
   getVersionInfo, // subset of getTenantInfo

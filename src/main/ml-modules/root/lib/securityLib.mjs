@@ -38,6 +38,7 @@ const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
+const ROLE_NAME_ENDPOINT_CONSUMER_BASE = '%%mlAppName%%-endpoint-consumer-base'; // users and service accounts
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
 
 const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${PRIVILEGES_PREFIX}/%%mlAppName%%-update-tenant-status`;
@@ -519,33 +520,11 @@ function removeUnitConfigProperties(configTree, recursive = false) {
   }
 }
 
-const unitReaderRolePattern = new RegExp(
-  `^${TENANT_OWNER}-\\w+-${ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_READ]}$`
-);
-function getAllReaderRoleNames() {
-  const qualifyingRoles = [];
-  xdmp
-    .roles()
-    .toArray()
-    .forEach((roleId) => {
-      const roleName = xdmp.roleName(roleId);
-      // In support of multi-tenant deployments, require zero or one word
-      // between the prefix and the suffix.
-      if (
-        roleName ==
-          `${TENANT_OWNER}-${ROLE_SUFFIX_BY_CAPABILITY[CAPABILITY_READ]}` ||
-        unitReaderRolePattern.test(roleName)
-      ) {
-        qualifyingRoles.push(roleName);
-      }
-    });
-  return qualifyingRoles;
-}
-
 export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
   ROLE_NAME_DEPLOYER,
+  ROLE_NAME_ENDPOINT_CONSUMER_BASE,
   ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
   ROLE_NAME_USER_PROFILE_DATA_READER,
   TENANT_OWNER,
@@ -554,7 +533,6 @@ export {
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
   getExclusiveRoleNamesByUsername,
-  getAllReaderRoleNames,
   handleRequest,
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,

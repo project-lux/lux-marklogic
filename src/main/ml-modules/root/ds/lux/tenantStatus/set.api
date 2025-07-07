@@ -1,5 +1,5 @@
 {
-  "functionName": "tenantInfo",
+  "functionName": "set",
   "params": [
     {
       "name": "prod",

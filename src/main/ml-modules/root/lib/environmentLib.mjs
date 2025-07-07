@@ -359,7 +359,7 @@ export {
   TENANT_STATUS_URI, // for unit tests
   getStorageInfo,
   getTenantStatus,
-  getVersionInfo, // subset of getTenantInfo
+  getVersionInfo, // subset of getTenantStatus
   inReadOnlyMode,
   isProduction,
   setTenantStatus,

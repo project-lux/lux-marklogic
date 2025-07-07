@@ -1,9 +1,6 @@
 // Unlike most test files, this one tests multiple functions --all related to tenant status.
 import { testHelperProxy } from '/test/test-helper.mjs';
-import {
-  USERNAME_FOR_BONNIE,
-  USERNAME_FOR_SERVICE_ACCOUNT,
-} from '/test/unitTestConstants.mjs';
+import { USERNAME_FOR_BONNIE } from '/test/unitTestConstants.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import {
   getTenantStatus,

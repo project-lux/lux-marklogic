@@ -173,6 +173,51 @@ function loadTestFile(uri, filename) {
   }
 }
 
+function permissionArrayContains(actual, expectedCapability, expectedRoleId) {
+  let found = false;
+  actual.every((entry) => {
+    if (
+      entry.capability === expectedCapability &&
+      // Force role IDs to be numbers.
+      Number(entry.roleId) === Number(expectedRoleId)
+    ) {
+      found = true;
+      return false;
+    }
+    return true;
+  });
+  return found;
+}
+
+function assertPermissionArraysMatch(
+  docType,
+  assertions,
+  expectedPermissions,
+  actualPermissions
+) {
+  expectedPermissions.forEach((entry) => {
+    assertions.push(
+      testHelperProxy.assertTrue(
+        permissionArrayContains(
+          actualPermissions,
+          entry.capability,
+          entry.roleId
+        ),
+        `The '${docType}' is missing the '${
+          entry.capability
+        }' capability for the '${xdmp.roleName(entry.roleId)}' role.`
+      )
+    );
+  });
+  assertions.push(
+    testHelperProxy.assertEqual(
+      expectedPermissions.length,
+      actualPermissions.length,
+      `Unexpected number of permissions in '${docType}' document`
+    )
+  );
+}
+
 // Call this before deleting the user's roles that could be on the documents in the specified collections.
 function removeCollections(collections, username) {
   const zeroArityFun = () => {
@@ -203,8 +248,10 @@ function removeExclusiveRolesByUsername(username) {
 }
 
 export {
+  assertPermissionArraysMatch,
   executeScenario,
   loadTestFile,
+  permissionArrayContains,
   removeCollections,
   removeExclusiveRolesByUsername,
 };

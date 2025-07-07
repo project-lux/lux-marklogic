@@ -1,7 +1,14 @@
 declareUpdate();
 
 import { FOO_URI, USERNAME_FOR_BONNIE } from '/test/unitTestConstants.mjs';
-import { removeExclusiveRolesByUsername } from '/test/unitTestUtils.mjs';
+import {
+  removeCollections,
+  removeExclusiveRolesByUsername,
+} from '/test/unitTestUtils.mjs';
+import {
+  COLLECTION_NAME_MY_COLLECTION,
+  COLLECTION_NAME_USER_PROFILE,
+} from '/lib/appConstants.mjs';
 import { TENANT_STATUS_URI } from '/lib/environmentLib.mjs';
 
 try {
@@ -17,7 +24,11 @@ try {
     xdmp.documentDelete(TENANT_STATUS_URI);
   }
 
-  // Delete Bonnie's exclusive roles.
+  // Delete collections before the user's roles!
+  removeCollections(
+    [COLLECTION_NAME_MY_COLLECTION, COLLECTION_NAME_USER_PROFILE],
+    USERNAME_FOR_BONNIE
+  );
   removeExclusiveRolesByUsername(USERNAME_FOR_BONNIE);
 } catch (e) {
   console.error(

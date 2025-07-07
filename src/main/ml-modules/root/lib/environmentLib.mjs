@@ -36,13 +36,11 @@ function setTenantStatus(prod, readOnly) {
 
   // Validate parameter values.
   if (prod !== true && prod !== false) {
-    throw new BadRequestError(
-      `Invalid prod: '${prod}'. Must be either a boolean.`
-    );
+    throw new BadRequestError(`Invalid prod: '${prod}'. Must be a boolean.`);
   }
   if (readOnly !== true && readOnly !== false) {
     throw new BadRequestError(
-      `Invalid readOnly: '${readOnly}'. Must be either a boolean.`
+      `Invalid readOnly: '${readOnly}'. Must be a boolean.`
     );
   }
 

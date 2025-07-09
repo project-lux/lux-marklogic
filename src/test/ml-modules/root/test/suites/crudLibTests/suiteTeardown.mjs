@@ -1,5 +1,3 @@
-//declareUpdate();
-
 import {
   HMO_URI,
   USERNAME_FOR_BONNIE,
@@ -13,6 +11,7 @@ import {
   COLLECTION_NAME_MY_COLLECTION,
   COLLECTION_NAME_USER_PROFILE,
 } from '/lib/appConstants.mjs';
+import { TENANT_STATUS_URI } from '/lib/environmentLib.mjs';
 
 try {
   // Delete collections before the user's roles!
@@ -35,6 +34,15 @@ try {
       declareUpdate();
       console.log(`Deleting '${HMO_URI}'...`);
       xdmp.documentDelete(HMO_URI);
+    });
+  }
+
+  // Delete the tenant status document.
+  if (fn.docAvailable(TENANT_STATUS_URI)) {
+    xdmp.invokeFunction(() => {
+      declareUpdate();
+      console.log(`Deleting '${TENANT_STATUS_URI}'...`);
+      xdmp.documentDelete(TENANT_STATUS_URI);
     });
   }
 } catch (e) {

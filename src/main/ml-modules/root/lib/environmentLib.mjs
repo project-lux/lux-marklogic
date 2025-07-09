@@ -3,14 +3,121 @@ import {
   HIGH_STORAGE_WARNING_THRESHOLD,
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
+  ML_APP_NAME,
+  TENANT_NAME,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
+import {
+  CAPABILITY_READ,
+  CAPABILITY_UPDATE,
+  ROLE_NAME_DEPLOYER,
+  ROLE_NAME_ENDPOINT_CONSUMER_BASE,
+  requireUserMayUpdateTenantStatus,
+} from './securityLib.mjs';
+import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
+import { User } from './User.mjs';
+
+const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;
 const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
+
+// This function purposely does not log using a trace event as trace events can be disabled.
+function setTenantStatus(prod, readOnly) {
+  const username = new User().getUsername();
+  console.log(
+    `User '${username}' is attempting to set the tenant's production mode to '${prod}' and read-only state to '${readOnly}'.`
+  );
+
+  requireUserMayUpdateTenantStatus();
+
+  // Validate parameter values.
+  if (prod !== true && prod !== false) {
+    throw new BadRequestError(`Invalid prod: '${prod}'. Must be a boolean.`);
+  }
+  if (readOnly !== true && readOnly !== false) {
+    throw new BadRequestError(
+      `Invalid readOnly: '${readOnly}'. Must be a boolean.`
+    );
+  }
+
+  if (fn.docAvailable(TENANT_STATUS_URI)) {
+    if (isProduction() === prod && inReadOnlyMode() === readOnly) {
+      console.log(
+        'The current tenant status matches the requested values; no action taken.'
+      );
+      return;
+    }
+    console.log(
+      `The current tenant's production mode is '${isProduction()}' and read-only state is '${inReadOnlyMode()}'`
+    );
+  } else {
+    console.log('The tenant status document does not yet exist.');
+  }
+
+  const doc = {
+    appName: ML_APP_NAME,
+    tenantName: TENANT_NAME,
+    prod,
+    readOnly,
+    lastSetBy: username,
+    lastSetOn: fn.currentDateTime(),
+  };
+
+  const options = {
+    permissions: [
+      xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_READ),
+      xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_UPDATE),
+      xdmp.permission(ROLE_NAME_ENDPOINT_CONSUMER_BASE, CAPABILITY_READ),
+    ],
+    // Do *not* include in collections backed up and restored during a blue/green switch.
+    collections: [],
+  };
+
+  xdmp.documentInsert(TENANT_STATUS_URI, doc, options);
+  console.log('Changes accepted to the tenant status document.');
+}
+
+function getTenantStatus() {
+  // No need to return the entire tenant status document.
+  return {
+    prod: isProduction(),
+    readOnly: inReadOnlyMode(),
+    ...getVersionInfo(),
+  };
+}
+
+function isProduction() {
+  const prod = getTenantStatusDocObj().prod;
+  if (typeof prod !== 'boolean') {
+    throw new InternalConfigurationError(
+      `Tenant status is corrupt: the prod property must be a boolean, but has type '${typeof prod}'`
+    );
+  }
+  return prod;
+}
+
+function inReadOnlyMode() {
+  const isReadOnly = getTenantStatusDocObj().readOnly;
+  if (typeof isReadOnly !== 'boolean') {
+    throw new InternalConfigurationError(
+      `Tenant status is corrupt: the readOnly property must be a boolean, but has type '${typeof isReadOnly}'`
+    );
+  }
+  return isReadOnly;
+}
+
+function getTenantStatusDocObj() {
+  if (fn.docAvailable(TENANT_STATUS_URI)) {
+    return cts.doc(TENANT_STATUS_URI).toObject();
+  }
+  throw new InternalConfigurationError(
+    `Tenant status document does not exist but is required.`
+  );
+}
 
 /*
  * Collect the forest information of every database, and organize by node and volume.
@@ -246,4 +353,12 @@ function getVersionInfo() {
   };
 }
 
-export { getStorageInfo, getVersionInfo };
+export {
+  TENANT_STATUS_URI, // for unit tests
+  getStorageInfo,
+  getTenantStatus,
+  getVersionInfo, // subset of getTenantStatus
+  inReadOnlyMode,
+  isProduction,
+  setTenantStatus,
+};

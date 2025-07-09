@@ -1,0 +1,6 @@
+{
+  "privilege-name": "%%mlAppName%%-update-tenant-status",
+  "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-update-tenant-status",
+  "role": [],
+  "kind": "execute"
+}

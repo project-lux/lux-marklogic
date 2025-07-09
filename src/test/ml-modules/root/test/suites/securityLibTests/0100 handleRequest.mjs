@@ -2,7 +2,6 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
-  CAPABILITY_READ,
   CAPABILITY_UPDATE,
   TENANT_OWNER,
   handleRequestV2ForUnitTesting,
@@ -14,11 +13,23 @@ import {
   USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
+import { getTenantStatus } from '/lib/environmentLib.mjs';
 
 const LIB = '0100 handleRequest.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
+
+try {
+  getTenantStatus();
+} catch (e) {
+  assertions.push(
+    testHelperProxy.assertTrue(
+      false,
+      `The handleRequests tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`
+    )
+  );
+}
 
 // Little buddies used in more than one scenario.
 const returnBar = () => {

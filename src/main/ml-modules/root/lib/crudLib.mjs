@@ -21,6 +21,7 @@ import {
   addAddedToByEntry,
   getAddedToBy,
   getCreatedBy,
+  getDefaultCollection,
   getId,
   getSetMembers,
   isMyCollection,
@@ -90,6 +91,15 @@ function deleteDocument(uri) {
       // My Collection documents and are not deterministic.
       const doc = cts.doc(uri);
       if (isMyCollection(doc)) {
+        // Do not allow deletion of a user's default My Collection.
+        const defaultMyCollectionIri =
+          getDefaultCollection(cts.doc(new User().getUserIri())) + '';
+        if (uri === defaultMyCollectionIri) {
+          throw new BadRequestError(
+            `Default personal collections may not be deleted.`
+          );
+        }
+        // Delete the document.
         xdmp.documentDelete(uri);
       } else {
         throw new BadRequestError(

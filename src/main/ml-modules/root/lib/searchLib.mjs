@@ -160,6 +160,11 @@ function _search(
           filterResults,
           facetsSoon,
           synonymsEnabled,
+          userName: xdmp.getCurrentUser(),
+          userRoles: xdmp
+            .getCurrentRoles()
+            .toArray()
+            .map((roleId) => xdmp.roleName(roleId)),
         })}`
       );
     }

@@ -55,6 +55,13 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'memberOfInverse',
       indexReferences: ['agentPrimaryName'],
     },
+    memberOfSet: {
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containingAgent',
+      indexReferences: ['setPrimaryName'],
+    },
     name: {
       patternName: 'indexedWord',
       indexReferences: ['agentName'],
@@ -177,6 +184,13 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['placePrimaryName'],
       idIndexReferences: ['conceptInfluencedByPlaceId'],
     },
+    memberOf: {
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containingConcept',
+      indexReferences: ['setPrimaryName'],
+    },
     name: {
       patternName: 'indexedWord',
       indexReferences: ['conceptName'],
@@ -228,6 +242,13 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['conceptPrimaryName'],
     },
     id: { patternName: 'documentId' },
+    memberOf: {
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containingEvent',
+      indexReferences: ['setPrimaryName'],
+    },
     name: {
       patternName: 'indexedWord',
       indexReferences: ['eventName'],
@@ -347,6 +368,13 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['conceptPrimaryName'],
     },
     id: { patternName: 'documentId' },
+    memberOf: {
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containingPlace',
+      indexReferences: ['setPrimaryName'],
+    },
     name: {
       patternName: 'indexedWord',
       indexReferences: ['placeName'],
@@ -633,6 +661,13 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'concept',
       hopInverseName: 'languageOf',
       indexReferences: ['conceptPrimaryName'],
+    },
+    memberOf: {
+      patternName: 'hopWithField',
+      predicates: ['la("member_of")'],
+      targetScope: 'set',
+      hopInverseName: 'containingWork',
+      indexReferences: ['setPrimaryName'],
     },
     name: {
       patternName: 'indexedWord',

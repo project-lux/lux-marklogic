@@ -43,7 +43,7 @@ const searchTermText = {
     endAt: {
       label: 'died or dissolved at',
       helpText:
-        'Search for People & Groups that died or were dissolved in the specified Place.',
+        'Search for People & Groups that died or were dissolved in the specified Places.',
     },
     endDate: {
       label: 'died or dissolved on',
@@ -63,7 +63,7 @@ const searchTermText = {
     gender: {
       label: 'have a gender categorized as',
       helpText:
-        'Search for People by the specified Gender. This information comes from external sources, and gender information may not match expected results.',
+        'Search for People by the specified Genders. This information comes from external sources, and gender information may not match expected results.',
     },
     hasDigitalImage: {
       label: 'have a digital image available',
@@ -104,6 +104,11 @@ const searchTermText = {
       helpText:
         'Search for Groups that have the specified People & Groups as members.',
     },
+    memberOf: {
+      label: 'are a member of',
+      helpText:
+        'Search for People & Groups that are members of the specified Personal Collections.',
+    },
     name: {
       label: 'are named',
       helpText:
@@ -111,12 +116,12 @@ const searchTermText = {
     },
     nationality: {
       label: 'have a nationality categorized as',
-      helpText: 'Search for People & Groups with the specified Nationality.',
+      helpText: 'Search for People & Groups with the specified Nationalities.',
     },
     occupation: {
       label: 'have an occupation or role categorized as',
       helpText:
-        'Search for People & Groups with the specified Occupation or Role.',
+        'Search for People & Groups with the specified Occupations or Roles.',
     },
     produced: {
       label: 'created',
@@ -146,7 +151,7 @@ const searchTermText = {
     startAt: {
       label: 'were born or formed at',
       helpText:
-        'Search for People & Groups that were born or formed in the specified Place.',
+        'Search for People & Groups that were born or formed in the specified Places.',
     },
     startDate: {
       label: 'were born or formed on',
@@ -262,12 +267,17 @@ const searchTermText = {
     languageOf: {
       label: 'are the language of',
       helpText:
-        'Search for Concept terms that describe the Language of the specified Work.',
+        'Search for Concept terms that describe the Language of the specified Works.',
     },
     materialOfItem: {
       label: 'are the material of',
       helpText:
-        'Search for Concepts that are the material of the specified Object (used primarily for art works).',
+        'Search for Concepts that are the material of the specified Objects (used primarily for art works).',
+    },
+    memberOf: {
+      label: 'are a member of',
+      helpText:
+        'Search for Concepts that are members of the specified Personal Collections.',
     },
     name: {
       label: 'are named',
@@ -354,6 +364,11 @@ const searchTermText = {
       label: 'influenced the creation of',
       helpText: 'Search for Events that influenced the specified Concepts.',
     },
+    memberOf: {
+      label: 'are a member of',
+      helpText:
+        'Search for Events that are members of the specified Personal Collections.',
+    },
     name: {
       label: 'are named',
       helpText:
@@ -385,7 +400,7 @@ const searchTermText = {
     },
     tookPlaceAt: {
       label: 'took place at',
-      helpText: 'Search for Events which occurred at the specified Place.',
+      helpText: 'Search for Events which occurred at the specified Places.',
     },
     used: {
       label: 'used',
@@ -416,7 +431,7 @@ const searchTermText = {
     encounteredAt: {
       label: 'were encountered at',
       helpText:
-        'Search for Objects that were encountered or found at the specified Place. This is primarily used for Specimens.',
+        'Search for Objects that were encountered or found at the specified Places. This is primarily used for Specimens.',
     },
     encounteredBy: {
       label: 'were encountered by',
@@ -459,7 +474,12 @@ const searchTermText = {
     memberOf: {
       label: 'are a member of',
       helpText:
-        'Search for Objects that are members of the specified Collection, Exhibition or Archive.',
+        'Search for Objects that are members of the specified Collections, Exhibitions or Archives.',
+    },
+    memberOf: {
+      label: 'are a member of',
+      helpText:
+        'Search for Objects that are members of the specified Personal Collections.',
     },
     name: {
       label: 'are named',
@@ -482,12 +502,12 @@ const searchTermText = {
     producedUsing: {
       label: 'were created using a technique',
       helpText:
-        'Search for Objects that were created using the specified Technique.',
+        'Search for Objects that were created using the specified Techniques.',
     },
     productionInfluencedBy: {
       label: 'have creation influenced by',
       helpText:
-        'Search for Objects that were created with influence by the specified Person or Group',
+        'Search for Objects that were created with influence by the specified People or Groups',
     },
     recordType: {
       label: 'have an object class of',
@@ -558,6 +578,11 @@ const searchTermText = {
       label: 'influenced the creation of',
       helpText: 'Search for Places that influenced the specified Concepts.',
     },
+    memberOf: {
+      label: 'are a member of',
+      helpText:
+        'Search for Places that are members of the specified Personal Collections.',
+    },
     name: {
       label: 'are named',
       helpText:
@@ -565,7 +590,7 @@ const searchTermText = {
     },
     partOf: {
       label: 'are within',
-      helpText: 'Search for Places that are within the specified Place.',
+      helpText: 'Search for Places that are within the specified Places.',
     },
     placeOfEvent: {
       label: 'are the location of',
@@ -656,14 +681,40 @@ const searchTermText = {
       helpText:
         'Search for Collections that were created because of the specified Events.',
     },
+    containingAgent: {
+      label: 'contain',
+      helpText:
+        'Search for Personal Collections that contain the specified People & Groups.',
+    },
+    containingConcept: {
+      label: 'contain',
+      helpText:
+        'Search for Personal Collections that contain the specified Concepts.',
+    },
+    containingEvent: {
+      label: 'contain',
+      helpText:
+        'Search for Personal Collections that contain the specified Events.',
+    },
     containingItem: {
       label: 'contain',
       helpText: 'Search for Collections that contain the specified Objects.',
+    },
+
+    containingPlace: {
+      label: 'contain',
+      helpText:
+        'Search for Personal Collections that contain the specified Places.',
     },
     containingSet: {
       label: 'contain',
       helpText:
         'Search for Collections that contain the specified Collections.',
+    },
+    containingWork: {
+      label: 'contain',
+      helpText:
+        'Search for Personal Collections that contain the specified Works.',
     },
     curatedBy: {
       label: 'are curated by',
@@ -784,7 +835,7 @@ const searchTermText = {
     creationInfluencedBy: {
       label: 'have a creation influenced by',
       helpText:
-        'Search for Works that were created with influence by the specified Person or Group',
+        'Search for Works that were created with influence by the specified People or Groups',
     },
     hasDigitalImage: {
       label: 'have a digital image available',
@@ -811,7 +862,12 @@ const searchTermText = {
     },
     language: {
       label: 'have a language of',
-      helpText: 'Search for Works in the specified Language.',
+      helpText: 'Search for Works in the specified Languages.',
+    },
+    memberOf: {
+      label: 'are a member of',
+      helpText:
+        'Search for Works that are members of the specified Personal Collections',
     },
     name: {
       label: 'are named',
@@ -825,7 +881,7 @@ const searchTermText = {
     publishedAt: {
       label: 'were published at',
       helpText:
-        'Search for Works that were published at the specified Place. Note the difference with Creation Place, which is where the text was originally created.',
+        'Search for Works that were published at the specified Places. Note the difference with Creation Place, which is where the text was originally created.',
     },
     publishedBy: {
       label: 'were published by',

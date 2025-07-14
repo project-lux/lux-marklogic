@@ -7,3 +7,5 @@
 --s3-add-credentials
 --categories           "collections,permissions"
 --file-count           "1"
+# Needed for shared environments but not local developer environments.
+#--ssl-protocol         "TLSv1.2"

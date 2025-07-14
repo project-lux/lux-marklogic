@@ -4,3 +4,5 @@
 --auth-type            "DIGEST"
 --database             "lux-content"
 --username             ""
+# Needed for shared environments but not local developer environments.
+#--ssl-protocol         "TLSv1.2"

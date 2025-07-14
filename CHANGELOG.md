@@ -1,9 +1,8 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
-## v1.42.0 - 2025-06-30
+## v1.43.0 - 2025-07-14
 ### Added
-- Added TDEs to create triples for My Collections documents ([#503](https://github.com/project-lux/lux-marklogic/issues/503))
 
 ### Changed
 
@@ -12,9 +11,11 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Fixed
 
 ### Security
+- In support of restoring the correct document permissions on My Collections data ([#551](https://github.com/project-lux/lux-marklogic/issues/551)), changed the [%%mlAppName%%-my-collections-data-updater role](/docs/lux-backend-security-and-software.md#my-collections-data-updater) to have the rest-reader and rest-writer privileges as opposed to the rest-writer role.
 
 ## v1.42.0 - 2025-06-30
 ### Added
+- Added TDEs to create triples for My Collections documents ([#503](https://github.com/project-lux/lux-marklogic/issues/503))
 
 ### Changed
 - The [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document) now requires the `uri` parameter ([#546](https://github.com/project-lux/lux-marklogic/issues/546))

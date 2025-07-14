@@ -7,11 +7,11 @@
   "editor.defaultFormatter": "vscode.css-language-features",
   "prettier.singleQuote": true,
   "[json]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[javascript]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "files.associations": {
     "*.sjs": "javascript",
     "*.mjs": "javascript",
@@ -35,4 +35,7 @@
     "wildcarded",
     "xdmp"
   ],
+  "[xml]": {
+    "editor.defaultFormatter": "mikeburgh.xml-format"
   }
+}

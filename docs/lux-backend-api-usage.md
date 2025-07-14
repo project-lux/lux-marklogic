@@ -50,12 +50,19 @@
   - [Storage Info](#storage-info)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-13)
+  - [Tenant Status](#tenant-status)
+    - [Get](#get)
+      - [Successful Request / Response Example](#successful-request--response-example-12)
+      - [Failed Request / Response Example](#failed-request--response-example-14)
+    - [Set](#set)
+      - [Successful Request / Response Example](#successful-request--response-example-13)
+      - [Failed Request / Response Example](#failed-request--response-example-15)
   - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-12)
-    - [Failed Request / Response Example](#failed-request--response-example-14)
+    - [Successful Request / Response Example](#successful-request--response-example-14)
+    - [Failed Request / Response Example](#failed-request--response-example-16)
   - [Version Info](#version-info)
-    - [Successful Request / Response Example](#successful-request--response-example-13)
-    - [Failed Request / Response Example](#failed-request--response-example-15)
+    - [Successful Request / Response Example](#successful-request--response-example-15)
+    - [Failed Request / Response Example](#failed-request--response-example-17)
 
 # Introduction
 
@@ -1664,6 +1671,104 @@ Response Body:
 
 *Only known scenarios would be an authentication error and internal server error.*
 
+## Tenant Status
+
+### Get
+
+The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.
+
+**URL** : `/ds/lux/tenantStatus/get.mjs`
+
+**Method(s)** : `GET`
+
+**Endpoint Parameters** : None
+
+#### Successful Request / Response Example
+
+Scenario: endpoint returns the tenant's status.
+
+Parameters: None
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body:
+
+```
+{
+  "prod":false,
+  "readOnly":false,
+  "codeVersion":"v1.42.0-6-g89577f6",
+  "dataVersion":"2025-06-21T04:19:28.635285",
+  "mlVersion":"11.3.1",
+  "databaseName":"lux-content"
+}
+```
+
+#### Failed Request / Response Example
+
+*Only known scenarios would be an authentication error or when the tenant status document does not exist yet.*
+
+### Set
+
+The Set Tenant Status endpoint enables one to change the tenant's role and read-only state. Users must have the `https://lux.collections.yale.edu/%%mlAppName%%-update-tenant-status` execute privilege.
+
+**URL** : `/ds/lux/tenantStatus/set.mjs`
+
+**Method(s)** : `GET`, `POST`, `PUT`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `prod` | `false` | **REQUIRED** - Specify whether the tenant is in production (`true`) or non-production (`false`) mode. Of all the environments and tenants, only one tenant should ever be in production mode. During a blue/green switch, the roles of each are to change. |
+| `readOnly` | `false` | **REQUIRED** - Specify whether the instance should accept updates (`false`) or not (`true`). When in read-only mode, the tenant is to still service read-only requests. The only write exception is this endpoint. |
+
+#### Successful Request / Response Example
+
+Scenario: The blue/green switch changes an instance to read only.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `prod` | `prod` |
+| `readOnly` | `true` |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body: Empty
+
+#### Failed Request / Response Example
+
+Scenario: A value that cannot be interpreted as a boolean is given.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `prod` | `yes` |
+| `readOnly` | `no` |
+
+Response Status Code: 400
+
+Response Status Message: "Bad Request"
+
+Response Body:
+```
+{
+  "errorResponse":{
+    "statusCode":400,
+    "status":"Bad Request",
+    "messageCode":"XDMP-LEXVAL",
+    "message":"Invalid lexical value"
+  }
+}
+```
+
 ## Translate
 
 The `translate` endpoint enables consumers to convert search criteria from the LUX String Search Grammar to the LUX JSON Search Grammar.  
@@ -1752,6 +1857,8 @@ Response Body:
 
 ## Version Info
 
+_**DEPRECATED:** use the [Get Tenant Status](#get) endpoint instead. The `versionInfo` endpoint will be removed in a future release._
+
 The `versionInfo` endpoint enables consumers to get the current versions of the code, data, and ML server. It also returns the name of the content database being used by this tenant.
 
 **URL** : `/ds/lux/versionInfo.mjs`
@@ -1774,10 +1881,10 @@ Response Body:
 
 ```
 {
-    "codeVersion": "v1.31.0-1-g1a21a32",
-    "dataVersion": "2024-04-17T19:16:17.541447",
-    "mlVersion": "11.3.1",
-    "databaseName": "lux-content"
+  "codeVersion":"v1.42.0-6-g89577f6",
+  "dataVersion":"2025-06-21T04:19:28.635285",
+  "mlVersion":"11.3.1",
+  "databaseName":"lux-content"
 }
 ```
 

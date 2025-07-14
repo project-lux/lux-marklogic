@@ -1,4 +1,4 @@
-import { inReadOnlyMode } from './tenantStatusLib.mjs';
+import { inReadOnlyMode } from './environmentLib.mjs';
 import {
   getCurrentEndpointConfig,
   getCurrentEndpointPath,
@@ -9,8 +9,9 @@ import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   FEATURE_MY_COLLECTIONS_ENABLED,
   ML_APP_NAME,
-  UNIT_TEST_ENDPOINT,
+  PRIVILEGES_PREFIX,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
+  UNIT_TEST_ENDPOINT,
 } from './appConstants.mjs';
 import {
   getNodeFromObject,
@@ -37,7 +38,11 @@ const ROLE_NAME_ADMIN = 'admin';
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
+const ROLE_NAME_ENDPOINT_CONSUMER_BASE = '%%mlAppName%%-endpoint-consumer-base'; // users and service accounts
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
+
+const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${PRIVILEGES_PREFIX}/%%mlAppName%%-update-tenant-status`;
+const ROLE_NAME_DEPLOYER = '%%mlAppName%%-deployer';
 
 const ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER =
   '%%mlAppName%%-my-collections-data-updater';
@@ -249,6 +254,10 @@ function getExclusiveDocumentPermissions(user) {
  *    This is optional and intended to enable users to log into unit portals, utilize functionality
  *    restricted to individual users (vs. service accounts), yet restrict the results to what the
  *    specified (unit portal's) service account can see.
+ * @param {boolean} forceInvoke If true, the function is to be invoked via xdmp.invokeFunction
+ *    versus simply called f(). This is needed when the a service account needs to make a change
+ *    to the database, such as updating the tenant status document.  Only applicable when the
+ *    My Collections feature is enabled.
  * @throws {AccessDeniedError} when a service account attempts to use a My Collections endpoint.
  * @throws {BadRequestError} bubbles up when the specified unit name is not associated with a
  *    service account.
@@ -258,14 +267,14 @@ function getExclusiveDocumentPermissions(user) {
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function handleRequest(f, unitName = TENANT_OWNER) {
+function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
   const endpointConfig = getCurrentEndpointConfig(
     FEATURE_MY_COLLECTIONS_ENABLED
   );
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
     // Require the current endpoint's configuration; an error is throw upon
     // retrieving the configuration when the configuration is invalid.
-    return _handleRequestV2(f, unitName, endpointConfig);
+    return _handleRequestV2(f, unitName, endpointConfig, forceInvoke);
   } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
     throw new BadRequestError('The My Collections feature is disabled.');
   }
@@ -273,7 +282,7 @@ function handleRequest(f, unitName = TENANT_OWNER) {
   return f();
 }
 
-// Handle a version 2 request initiated by a unit test.  We otherwise do not want to accept the
+// Handle a version 2 request initiated by a unit test. We otherwise do not want to accept the
 // endpoint configuration as a parameter.
 function handleRequestV2ForUnitTesting(
   f,
@@ -295,7 +304,12 @@ function handleRequestV2ForUnitTesting(
 
 // Handle a version 2 request. Version 2 request support includes the My Collections feature.
 // This function is to be private and in support of two public functions.
-function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
+function __handleRequestV2(
+  f,
+  unitName = TENANT_OWNER,
+  endpointConfig,
+  forceInvoke = false
+) {
   // Adjust from null
   if (isUndefined(unitName)) {
     unitName = TENANT_OWNER;
@@ -321,7 +335,11 @@ function __handleRequestV2(f, unitName = TENANT_OWNER, endpointConfig) {
 
   // Ignore unit name param when requesting user is already a service account.
   if (isServiceAccount) {
-    return f();
+    if (forceInvoke) {
+      return xdmp.invokeFunction(f);
+    } else {
+      return f();
+    }
   }
 
   // If the user does not have a user profile, create it and their default collection.
@@ -415,6 +433,10 @@ function throwIfCurrentUserIsServiceAccount() {
   throwIfUserIsServiceAccount(new User());
 }
 
+function requireUserMayUpdateTenantStatus() {
+  xdmp.securityAssert(PRIVILEGE_NAME_UPDATE_TENANT_STATUS, 'execute');
+}
+
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
   // In case the property is not set, in which there are no endpoint consumers with
@@ -501,6 +523,8 @@ function removeUnitConfigProperties(configTree, recursive = false) {
 export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
+  ROLE_NAME_DEPLOYER,
+  ROLE_NAME_ENDPOINT_CONSUMER_BASE,
   ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
   ROLE_NAME_USER_PROFILE_DATA_READER,
   TENANT_OWNER,
@@ -514,6 +538,7 @@ export {
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
   removeUnitConfigProperties,
+  requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,
   throwIfUserIsServiceAccount,
 };

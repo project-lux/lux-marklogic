@@ -3,18 +3,29 @@ import {
   USERNAME_FOR_BONNIE,
   USERNAME_FOR_SERVICE_ACCOUNT,
 } from '/test/unitTestConstants.mjs';
-import { executeScenario, removeCollections } from '/test/unitTestUtils.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
 import { createDocument } from '/lib/crudLib.mjs';
 import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
-import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
 import { getNodeFromObject } from '/utils/utils.mjs';
+import { getTenantStatus } from '/lib/environmentLib.mjs';
 
 const LIB = '0100 createDocument.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
+
+try {
+  getTenantStatus();
+} catch (e) {
+  assertions.push(
+    testHelperProxy.assertTrue(
+      false,
+      `The createDocument tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`
+    )
+  );
+}
 
 const endpointConfig = new EndpointConfig({
   allowInReadOnlyMode: false,
@@ -116,26 +127,6 @@ function assertIdIsUri(docNode, username) {
     );
   };
   return xdmp.invokeFunction(zeroArityFun, { userId: xdmp.user(username) });
-}
-
-const newDocAssertions = [
-  {
-    type: 'xpath',
-    xpath: 'exists(id)',
-    expected: true,
-    message: 'The id property was not added.',
-  },
-  { type: 'function', function: assertIdIsUri },
-  {
-    type: 'xpath',
-    xpath: 'exists(created_by)',
-    expected: true,
-    message: 'The created_by property was not added.',
-  },
-];
-
-function removeUserProfileCollection() {
-  removeCollections(COLLECTION_NAME_USER_PROFILE, USERNAME_FOR_BONNIE);
 }
 
 const scenarios = [

@@ -7,7 +7,7 @@
     - [Document Access](#document-access)
     - [Applicable Configuration](#applicable-configuration)
     - [Connecting to MarkLogic](#connecting-to-marklogic)
-  - [Security Roles](#security-roles)
+  - [Roles](#roles)
     - [Reader](#reader)
     - [Endpoint Consumer](#endpoint-consumer)
     - [Query Console](#query-console)
@@ -16,6 +16,7 @@
     - [My Collections Data Updater](#my-collections-data-updater)
     - [Roles for Amps](#roles-for-amps)
     - [Roles for Unit Testing](#roles-for-unit-testing)
+  - [Privileges](#privileges)
   - [Amps](#amps)
 - [Software](#software)
   - [Updates](#updates)
@@ -67,7 +68,7 @@ Here's how it works:
 
 Each participating unit is to provide a frontend and configure their middle tier to two MarkLogic application servers, accessible via load balancer (provided).  The unit is to use its service account to authenticate into the application servers.  
 
-## Security Roles
+## Roles
 
 Each LUX-based tenant within a shared environment is to have a set of tenant-specific roles.  The configuration files use `%%mlAppName%%` to achieve this.
 
@@ -152,6 +153,10 @@ See [Amps](#amps).
 ### Roles for Unit Testing
 
 [/src/test/ml-config/security](/src/test/ml-config/security) includes additional roles (and users) used by unit tests.  These are not required or recommended in production environments.  See the `restrictUnitTestingDeployment` Gradle task's documentation in [LUX Backend Build Tool and Tasks](/docs/lux-backend-build-tool-and-tasks.md) for more details.
+
+## Privileges
+
+The project has one custom executive privilege: [%%mlAppName%%-update-tenant-status](/src/main/ml-config/base/security/privileges/app-update-tenant-status.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Set Tenant Status endpoint](./lux-backend-api-usage.md#set).
 
 ## Amps
 

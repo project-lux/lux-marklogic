@@ -3,8 +3,12 @@
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 ## v1.43.0 - 2025-07-14
 ### Added
+- During deployment, a tenant's status document is created using new build properties and the [`ensureTenantStatusDocumentExists` Gradle task](/docs/lux-backend-build-tool-and-tasks.md#lux-gradle-tasks), provided the document does not already exist ([#508](https://github.com/project-lux/lux-marklogic/issues/508))
+- Added the [Set Tenant Status endpoint](/docs/lux-backend-api-usage.md#set). It requires the `https://lux.collections.yale.edu/privileges/%%mlAppName%%-update-tenant-status` privilege which is presently only granted to the [%%mlAppName%%-deployer role](/docs/lux-backend-security-and-software.md#deployer).  ([#509](https://github.com/project-lux/lux-marklogic/issues/509))
+- Added the [Get Tenant Status endpoint](/docs/lux-backend-api-usage.md#get). Any authenticated user or service account may consume. ([#510](https://github.com/project-lux/lux-marklogic/issues/510))
 
 ### Changed
+- Deprecated the [Version Info endpoint](/docs/lux-backend-api-usage.md#version-info). Use the [Get Tenant Status endpoint](/docs/lux-backend-api-usage.md#get) instead. ([#510](https://github.com/project-lux/lux-marklogic/issues/510))
 
 ### Removed
   

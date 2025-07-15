@@ -384,12 +384,7 @@ function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
   declareUpdate();
   const defaultCollectionDocObj = createDocument(DEFAULT_COLLECTION_TEMPLATE);
 
-  const expectJsonProperty = false;
-  setDefaultCollection(
-    userProfileDocObj,
-    defaultCollectionDocObj.id,
-    expectJsonProperty
-  );
+  setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
 
   return updateDocument(
     userProfileDocObj.id,

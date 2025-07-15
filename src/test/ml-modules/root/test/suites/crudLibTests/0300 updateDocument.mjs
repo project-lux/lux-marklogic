@@ -1,7 +1,5 @@
-import {
-  COLLECTION_NAME_MY_COLLECTION,
-  COLLECTION_NAME_USER_PROFILE,
-} from '/lib/appConstants.mjs';
+import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
+import { getDefaultCollection } from '/lib/model.mjs';
 import { updateDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
@@ -39,46 +37,52 @@ xdmp.invokeFunction(
   { database: xdmp.securityDatabase() }
 );
 
-const userProfileDocNode = fn.head(
+// Get values required by these tests.
+const { hmoDocObj, userProfileDocNode, defaultMyCollectionDocNode } = fn.head(
   xdmp.invokeFunction(
     () => {
-      return fn.head(
+      // Get a record whose type should not be accepted by updateDocument.
+      const hmoDocObj = getObjectFromNode(cts.doc(HMO_URI));
+      hmoDocObj.id = HMO_URI; // Ensure the ID is set for the test.
+
+      const userProfileDocNode = fn.head(
         cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
       );
+      const defaultMyCollectionDocNode = cts.doc(
+        getDefaultCollection(userProfileDocNode) + ''
+      );
+
+      return {
+        hmoDocObj,
+        userProfileDocNode,
+        defaultMyCollectionDocNode,
+      };
     },
     {
       userId: xdmp.user(USERNAME_FOR_BONNIE),
     }
+  )
+);
+assertions.push(
+  testHelperProxy.assertExists(
+    hmoDocObj,
+    `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
   )
 );
 assertions.push(
   testHelperProxy.assertExists(
     userProfileDocNode,
-    `The updateDocument tests are dependent on the createDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
+    `The updateDocument tests are dependent on the createDocument tests creating a User Profile document for '${USERNAME_FOR_BONNIE}'`
   )
 );
-const userProfileUri = fn.baseUri(userProfileDocNode) + '';
-
-// Get a record whose type should not be accepted by updateDocument.
-const hmoDocNode = fn.head(
-  xdmp.invokeFunction(
-    () => {
-      return cts.doc(HMO_URI);
-    },
-    {
-      userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
-);
+const userProfileUri = userProfileDocNode.baseURI;
 assertions.push(
   testHelperProxy.assertExists(
-    hmoDocNode,
-    `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
+    defaultMyCollectionDocNode,
+    `The updateDocument tests are dependent on the createDocument tests creating a default for '${USERNAME_FOR_BONNIE}'`
   )
 );
-// Add the ID
-const hmoDocObj = getObjectFromNode(hmoDocNode);
-hmoDocObj.id = HMO_URI;
+const defaultMyCollectionUri = defaultMyCollectionDocNode.baseURI;
 
 xdmp.invokeFunction(
   () => {
@@ -91,28 +95,6 @@ xdmp.invokeFunction(
   },
   { database: xdmp.securityDatabase() }
 );
-
-// Get an existing My Collection for this user.
-const myCollectionDocNode = fn.head(
-  xdmp.invokeFunction(
-    () => {
-      return fn.head(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION))
-      );
-    },
-    {
-      userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
-);
-assertions.push(
-  testHelperProxy.assertExists(
-    myCollectionDocNode,
-    `The updateDocument tests are dependent on the createDocument tests creating a My Collection document '${USERNAME_FOR_BONNIE}' can access`
-  )
-);
-const myCollectionUri = myCollectionDocNode.baseURI;
-
 //
 // END: OK, let's get on with the tests.
 //
@@ -134,6 +116,7 @@ const scenarios = [
       doc: {
         id: userProfileUri,
         type: 'Person',
+        defaultMyCollectionUri,
         classified_as: [
           {
             id: 'https://not.checked',
@@ -178,6 +161,31 @@ const scenarios = [
     },
   },
   {
+    name: 'Regular user updating their profile but omitting their default My Collection',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      doc: {
+        id: userProfileUri,
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `Default collection is required`,
+    },
+  },
+  {
     name: 'Service account attempting to update a profile',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
@@ -206,7 +214,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_BONNIE,
       doc: {
-        id: myCollectionUri,
+        id: defaultMyCollectionUri,
         type: 'Set',
         identified_by: [],
         classified_as: [
@@ -227,7 +235,7 @@ const scenarios = [
       nodeAssertions: [
         {
           type: 'xpath',
-          xpath: `id = '${myCollectionUri}'`,
+          xpath: `id = '${defaultMyCollectionUri}'`,
           expected: true,
           message: 'The ID property changed',
         },
@@ -240,7 +248,7 @@ const scenarios = [
         {
           type: 'equality',
           xpath: `created_by`,
-          expected: myCollectionDocNode.xpath('json/created_by'),
+          expected: defaultMyCollectionDocNode.xpath('json/created_by'),
           message: 'The created_by property was not restored',
         },
         {
@@ -256,9 +264,9 @@ const scenarios = [
     name: 'ID mismatch',
     input: {
       username: USERNAME_FOR_BONNIE,
-      idOverride: myCollectionUri + '-different-uri',
+      idOverride: defaultMyCollectionUri + '-different-uri',
       doc: {
-        id: myCollectionUri,
+        id: defaultMyCollectionUri,
         type: 'Set',
         identified_by: [],
         classified_as: [
@@ -284,7 +292,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
       doc: {
-        id: myCollectionUri,
+        id: defaultMyCollectionUri,
         type: 'Set',
         identified_by: [],
         classified_as: [

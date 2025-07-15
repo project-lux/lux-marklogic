@@ -262,6 +262,8 @@ function _getUserProfileConfig(
       throw new BadRequestError(
         `User '${user.getUsername()}' does not have a profile.`
       );
+    } else if (isUndefined(getDefaultCollection(readOnlyDocNode))) {
+      throw new BadRequestError(`Default collection is required.`);
     }
   }
 

@@ -321,15 +321,12 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
   }
 }
 
-function setDefaultCollection(
-  docObj,
-  collectionIri,
-  expectJsonProperty = true // Enables a special accommodation when automatically creating user profiles.
-) {
+function setDefaultCollection(docObj, collectionIri) {
   if (isNonEmptyString(collectionIri)) {
-    if (docObj.json || expectJsonProperty) {
+    if (docObj.json) {
       docObj.json._lux_default_collection = collectionIri;
-    } else if (!expectJsonProperty) {
+    } else {
+      // When initially creating a user's profile, the json property will not exist.
       docObj._lux_default_collection = collectionIri;
     }
   } else {

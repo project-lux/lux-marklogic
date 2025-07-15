@@ -1,0 +1,17 @@
+{
+  "functionName": "set",
+  "params": [
+    {
+      "name": "prod",
+      "datatype": "boolean"
+    },
+    {
+      "name": "readOnly",
+      "datatype": "boolean"
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

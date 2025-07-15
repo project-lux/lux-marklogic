@@ -32,6 +32,11 @@
       "privilege-name": "xdmp:invoke-modules-change",
       "action": "http://marklogic.com/xdmp/privileges/xdmp-invoke-modules-change",
       "kind": "execute"
+    },
+    {
+      "privilege-name": "%%mlAppName%%-update-tenant-status",
+      "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-update-tenant-status",
+      "kind": "execute"
     }
   ]
 }

@@ -1,3 +1,6 @@
+import javax.net.ssl.*
+import java.security.cert.X509Certificate
+
 buildscript {
   repositories {
     mavenCentral()
@@ -435,6 +438,29 @@ task ensureTenantStatusDocumentExists() {
     def password = credentials.forKey('mlPassword')
     def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
     def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
+
+    // Configure SSL settings for HTTPS
+    if (protocol == "https") {
+      // Create a trust-all SSL context (for development/testing)
+      def trustAllCerts = [
+        new X509TrustManager() {
+          public X509Certificate[] getAcceptedIssuers() { return null }
+          public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+          public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+        }
+      ] as X509TrustManager[]
+
+      def sslContext = SSLContext.getInstance("SSL")
+      sslContext.init(null, trustAllCerts, new java.security.SecureRandom())
+      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory())
+      
+      // Disable hostname verification (for development/testing)
+      HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+        public boolean verify(String hostname, SSLSession session) {
+          return true
+        }
+      })
+    }
 
     // Set up digest authentication
     Authenticator.setDefault(new Authenticator() {

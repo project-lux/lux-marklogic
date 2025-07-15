@@ -1,6 +1,19 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v1.43.1 - 2025-07-15
+### Added
+
+### Changed
+- Added TLS support to the `ensureTenantStatusDocumentExists` Gradle task.
+- Adjusted the [Set Tenant Status endpoint](/docs/lux-backend-api-usage.md#set) endpoint to avoid a `declareUpdate` error.
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.43.0 - 2025-07-14
 ### Added
 - During deployment, a tenant's status document is created using new build properties and the [`ensureTenantStatusDocumentExists` Gradle task](/docs/lux-backend-build-tool-and-tasks.md#lux-gradle-tasks), provided the document does not already exist ([#508](https://github.com/project-lux/lux-marklogic/issues/508))

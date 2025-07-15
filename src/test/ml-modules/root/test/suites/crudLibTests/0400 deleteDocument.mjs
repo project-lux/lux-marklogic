@@ -47,7 +47,6 @@ const {
       const userProfileDoc = fn.head(
         cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
       );
-      console.log(`User profile doc: ${JSON.stringify(userProfileDoc)}`);
       const defaultMyCollectionUri = getDefaultCollection(userProfileDoc) + '';
       const nonDefaultMyCollection = fn
         .subsequence(
@@ -57,7 +56,6 @@ const {
         )
         .toArray()
         .filter((doc) => {
-          console.log(`Comparing ${doc.baseURI} to ${defaultMyCollectionUri}`);
           return doc.baseURI !== defaultMyCollectionUri;
         })[0];
 

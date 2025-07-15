@@ -1,6 +1,18 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v1.44.0 - 2025-07-28
+### Added
+
+### Changed
+- Default user profiles may no longer be deleted or disassociated with a user's profile ([#533](https://github.com/project-lux/lux-marklogic/issues/533))
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.43.1 - 2025-07-15
 ### Added
 

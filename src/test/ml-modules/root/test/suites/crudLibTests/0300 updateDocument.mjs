@@ -116,7 +116,6 @@ const scenarios = [
       doc: {
         id: userProfileUri,
         type: 'Person',
-        defaultMyCollectionUri,
         classified_as: [
           {
             id: 'https://not.checked',
@@ -127,6 +126,7 @@ const scenarios = [
             ],
           },
         ],
+        _lux_default_collection: defaultMyCollectionUri,
         ...newProperty,
       },
     },
@@ -144,6 +144,12 @@ const scenarios = [
           xpath: `exists(added_to_by)`,
           expected: true,
           message: 'The added_to_by property is missing',
+        },
+        {
+          type: 'xpath',
+          xpath: 'exists(_lux_default_collection)',
+          expected: true,
+          message: 'The _lux_default_collection property is missing',
         },
         {
           type: 'equality',
@@ -182,7 +188,7 @@ const scenarios = [
     },
     expected: {
       error: true,
-      stackToInclude: `Default collection is required`,
+      stackToInclude: `The default collection is required`,
     },
   },
   {

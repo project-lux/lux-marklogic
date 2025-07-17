@@ -964,7 +964,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux-request-group-1/properties?format=json&group-id=Default",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux/properties?format=json&group-id=Default",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -974,7 +974,7 @@
 								"manage",
 								"v2",
 								"servers",
-								"lux-request-group-1",
+								"lux",
 								"properties"
 							],
 							"query": [
@@ -1269,7 +1269,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux-request-group-1?format=json&group-id=Default",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/servers/lux?format=json&group-id=Default",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -1279,7 +1279,7 @@
 								"manage",
 								"v2",
 								"servers",
-								"lux-request-group-1"
+								"lux"
 							],
 							"query": [
 								{

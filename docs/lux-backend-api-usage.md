@@ -3,7 +3,7 @@
 - [Introduction](#introduction)
 - [Authentication](#authentication)
 - [Generated Data Service Interfaces](#generated-data-service-interfaces)
-- [Custom MarkLogic Data Services](#custom-marklogic-data-services)
+- [LUX Backend API](#lux-backend-api)
   - [Advanced Search Configuration](#advanced-search-configuration)
     - [Successful Request / Response Example](#successful-request--response-example)
     - [Failed Request / Response Example](#failed-request--response-example)
@@ -107,7 +107,7 @@ The generated data service proxies require an instance of the `DatabaseClient`. 
 
 *Note to backend endpoint developers: generated Data Service interfaces do not play nicely with hyphens in the Data Service file names.  Use camelCase instead.*
 
-# Custom MarkLogic Data Services
+# LUX Backend API
 
 To better align with data available to the endpoint consumer, several endpoints utilize configuration that may vary by unit, or more precisely, endpoint consumer role.  Thus, when consuming endpoints with users that have different roles, different configurations may be applied.  This includes the search term, advanced search, and related list configurations.  When the user has the `%%mlAppName%%-endpoint-consumer` role, the superset of all of these configurations apply.  For more on how this works, see [Unit Portals](/docs/lux-backend-security-and-software.md#unit-portals).
 

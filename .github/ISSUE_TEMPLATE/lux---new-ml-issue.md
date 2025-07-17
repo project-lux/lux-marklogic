@@ -24,7 +24,8 @@ If an item on the list is not needed, it should be crossed off but not removed.
 - [ ] Committee discussions - Sarah
 - [ ] Feasibility/Team discussion - Sarah
 - [ ] Backend requirements - TBD
-- [ ] Frontend requirements- TBD
+- [ ] Middle tier requirements - TBD
+- [ ] Frontend requirements - TBD
 - [ ] Are new regression tests required for QA - Amy
 - [ ] Questions
 - List of questions for discussions. Answers should be documented within the issue.

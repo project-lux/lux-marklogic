@@ -1,5 +1,6 @@
 import { USERNAME_FOR_CLYDE } from '../../unitTestConstants.mjs';
 import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
+import { PROP_NAME_DEFAULT_COLLECTION } from '/lib/model.mjs';
 import { readDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
@@ -72,9 +73,9 @@ const scenarios = [
         },
         {
           type: 'xpath',
-          xpath: 'exists(_lux_default_collection)',
+          xpath: `exists(${PROP_NAME_DEFAULT_COLLECTION})`,
           expected: true,
-          message: 'The _lux_default_collection property is missing',
+          message: `The '${PROP_NAME_DEFAULT_COLLECTION}' property is missing`,
         },
       ],
     },

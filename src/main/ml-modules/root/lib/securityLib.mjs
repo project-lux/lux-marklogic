@@ -377,18 +377,24 @@ function _createUserProfileAndDefaultCollection() {
 // create a user profile
 function _createUserProfile() {
   declareUpdate();
-  return createDocument(USER_PROFILE_TEMPLATE);
+  const newUserMode = true;
+  return createDocument(USER_PROFILE_TEMPLATE, newUserMode);
 }
 
 function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
   declareUpdate();
-  const defaultCollectionDocObj = createDocument(DEFAULT_COLLECTION_TEMPLATE);
+  const newUserMode = true;
+  const defaultCollectionDocObj = createDocument(
+    DEFAULT_COLLECTION_TEMPLATE,
+    newUserMode
+  );
 
   setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
 
   return updateDocument(
     userProfileDocObj.id,
-    getNodeFromObject(userProfileDocObj)
+    getNodeFromObject(userProfileDocObj),
+    newUserMode
   );
 }
 

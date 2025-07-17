@@ -47,7 +47,7 @@ const {
       const userProfileDoc = fn.head(
         cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
       );
-      const defaultMyCollectionUri = getDefaultCollection(userProfileDoc) + '';
+      const defaultMyCollectionUri = getDefaultCollection(userProfileDoc);
       const nonDefaultMyCollection = fn
         .subsequence(
           cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION)),

@@ -1,5 +1,8 @@
 import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
-import { getDefaultCollection } from '/lib/model.mjs';
+import {
+  PROP_NAME_DEFAULT_COLLECTION,
+  getDefaultCollection,
+} from '/lib/model.mjs';
 import { updateDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
@@ -49,7 +52,7 @@ const { hmoDocObj, userProfileDocNode, defaultMyCollectionDocNode } = fn.head(
         cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
       );
       const defaultMyCollectionDocNode = cts.doc(
-        getDefaultCollection(userProfileDocNode) + ''
+        getDefaultCollection(userProfileDocNode)
       );
 
       return {
@@ -69,6 +72,7 @@ assertions.push(
     `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
   )
 );
+const hmoUri = hmoDocObj.id;
 assertions.push(
   testHelperProxy.assertExists(
     userProfileDocNode,
@@ -126,7 +130,7 @@ const scenarios = [
             ],
           },
         ],
-        _lux_default_collection: defaultMyCollectionUri,
+        [PROP_NAME_DEFAULT_COLLECTION]: defaultMyCollectionUri,
         ...newProperty,
       },
     },
@@ -147,9 +151,9 @@ const scenarios = [
         },
         {
           type: 'xpath',
-          xpath: 'exists(_lux_default_collection)',
+          xpath: `exists(${PROP_NAME_DEFAULT_COLLECTION})`,
           expected: true,
-          message: 'The _lux_default_collection property is missing',
+          message: `The '${PROP_NAME_DEFAULT_COLLECTION}' property is missing`,
         },
         {
           type: 'equality',
@@ -189,6 +193,60 @@ const scenarios = [
     expected: {
       error: true,
       stackToInclude: `The default collection is required`,
+    },
+  },
+  {
+    name: 'Regular user updating their profile with a default collection that does not exist',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      doc: {
+        id: userProfileUri,
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+        [PROP_NAME_DEFAULT_COLLECTION]: '/does/not/exist',
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'The document specified as the default collection does not exist',
+    },
+  },
+  {
+    name: 'Regular user updating their profile with a valid URI but not of a My Collection',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      doc: {
+        id: userProfileUri,
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+        [PROP_NAME_DEFAULT_COLLECTION]: hmoUri,
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'The document specified as the default collection exists but is not a qualifying collection',
     },
   },
   {
@@ -331,6 +389,7 @@ const scenarios = [
   },
 ];
 
+const newUserMode = false;
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
@@ -339,7 +398,8 @@ for (const scenario of scenarios) {
         isDefined(scenario.input.idOverride)
           ? scenario.input.idOverride
           : scenario.input.doc.id,
-        getNodeFromObject(scenario.input.doc)
+        getNodeFromObject(scenario.input.doc),
+        newUserMode
       );
     };
     const unitName = null;

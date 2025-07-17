@@ -283,7 +283,7 @@ function _getUserProfileConfig(
     }
     if (!isMyCollection(cts.doc(defaultMyCollectionUri))) {
       throw new BadRequestError(
-        'The document specified as the default collection exists but is not a qualifying collection'
+        'The document specified as the default collection exists but is not a qualifying collection.'
       );
     }
   }

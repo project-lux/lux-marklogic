@@ -34,7 +34,6 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 - Deprecated the [Version Info endpoint](/docs/lux-backend-api-usage.md#version-info). Use the [Get Tenant Status endpoint](/docs/lux-backend-api-usage.md#get) instead. ([#510](https://github.com/project-lux/lux-marklogic/issues/510))
-- Users are no longer able to delete their default personal collection ([#533](https://github.com/project-lux/lux-marklogic/issues/533))
 
 ### Removed
   

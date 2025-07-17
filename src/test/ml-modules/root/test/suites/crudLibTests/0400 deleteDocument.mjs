@@ -2,6 +2,7 @@ import {
   COLLECTION_NAME_MY_COLLECTION,
   COLLECTION_NAME_USER_PROFILE,
 } from '/lib/appConstants.mjs';
+import { getDefaultCollection } from '/lib/model.mjs';
 import { deleteDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
@@ -34,21 +35,37 @@ xdmp.invokeFunction(
 );
 
 // Get the URIs of documents required by these tests.
-const { myCollectionUri, userProfileUri, hmoUri } = fn.head(
+const {
+  hmoUri,
+  userProfileUri,
+  defaultMyCollectionUri,
+  nonDefaultMyCollectionUri,
+} = fn.head(
   xdmp.invokeFunction(
     () => {
-      const myCollectionDoc = fn.head(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION))
-      );
+      const hmoDoc = cts.doc(HMO_URI);
       const userProfileDoc = fn.head(
         cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
       );
-      const hmoDoc = cts.doc(HMO_URI);
+      const defaultMyCollectionUri = getDefaultCollection(userProfileDoc);
+      const nonDefaultMyCollection = fn
+        .subsequence(
+          cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION)),
+          1,
+          2
+        )
+        .toArray()
+        .filter((doc) => {
+          return doc.baseURI !== defaultMyCollectionUri;
+        })[0];
 
       return {
-        myCollectionUri: myCollectionDoc ? myCollectionDoc.baseURI : null,
-        userProfileUri: userProfileDoc ? userProfileDoc.baseURI : null,
         hmoUri: hmoDoc ? hmoDoc.baseURI : null,
+        userProfileUri: userProfileDoc ? userProfileDoc.baseURI : null,
+        defaultMyCollectionUri,
+        nonDefaultMyCollectionUri: nonDefaultMyCollection
+          ? nonDefaultMyCollection.baseURI
+          : null,
       };
     },
     {
@@ -58,8 +75,8 @@ const { myCollectionUri, userProfileUri, hmoUri } = fn.head(
 );
 assertions.push(
   testHelperProxy.assertExists(
-    myCollectionUri,
-    `The deleteDocument tests are dependent on the create/updateDocument tests creating a My Collection document '${USERNAME_FOR_BONNIE}' can access`
+    hmoUri,
+    `The deleteDocument tests are dependent on finding a document with a type that the function should not accept.`
   )
 );
 assertions.push(
@@ -70,8 +87,14 @@ assertions.push(
 );
 assertions.push(
   testHelperProxy.assertExists(
-    hmoUri,
-    `The deleteDocument tests are dependent on finding a document with a type that the function should not accept.`
+    defaultMyCollectionUri,
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a default My Collection document '${USERNAME_FOR_BONNIE}' can access`
+  )
+);
+assertions.push(
+  testHelperProxy.assertExists(
+    nonDefaultMyCollectionUri,
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a non-default My Collection document '${USERNAME_FOR_BONNIE}' can access`
   )
 );
 
@@ -115,7 +138,7 @@ const scenarios = [
     name: 'Service account attempting to delete a My Collection',
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
-      uri: myCollectionUri,
+      uri: defaultMyCollectionUri,
     },
     expected: {
       error: true,
@@ -145,13 +168,24 @@ const scenarios = [
     },
   },
   {
-    name: 'Regular user attempting to delete a My Collection of theirs',
+    name: 'Regular user attempting to delete a non-default My Collection of theirs',
     input: {
       username: USERNAME_FOR_BONNIE,
-      uri: myCollectionUri,
+      uri: nonDefaultMyCollectionUri,
     },
     expected: {
       error: false,
+    },
+  },
+  {
+    name: 'Regular user attempting to delete their default My Collection',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      uri: defaultMyCollectionUri,
+    },
+    expected: {
+      error: true,
+      stackToInclude: `Default personal collections may not be deleted`,
     },
   },
   {

@@ -7,5 +7,6 @@ const lang = external.lang;
 
 handleRequest(function () {
   declareUpdate();
-  return createDocument(docNode, lang);
+  const newUserMode = false;
+  return createDocument(docNode, newUserMode, lang);
 }, unitName);

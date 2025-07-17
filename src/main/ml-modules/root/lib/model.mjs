@@ -50,6 +50,7 @@ const UI_TYPE_CONCEPT = 'Concept';
 
 const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
 const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
+const PROP_NAME_DEFAULT_COLLECTION = '_lux_default_collection';
 
 // Intended for when modifies a Set.
 function addAddedToByEntry(docObj, userIri) {
@@ -138,9 +139,10 @@ function getCreatedByTimespan(docNode) {
 }
 
 function getDefaultCollection(docNode) {
-  return _upTo(
-    '_lux_default_collection',
-    docNode.xpath('json/_lux_default_collection')
+  return _getFirstStringValueUpTo(
+    docNode,
+    `json/${PROP_NAME_DEFAULT_COLLECTION}`,
+    PROP_NAME_DEFAULT_COLLECTION
   );
 }
 
@@ -153,9 +155,7 @@ function getDied(docNode) {
 }
 
 function getId(docNode) {
-  const node = fn.head(docNode.xpath('json/id'));
-  const value = node ? node.toString() : node;
-  return _upTo('id', node, value);
+  return _getFirstStringValueUpTo(docNode, 'json/id', 'id');
 }
 
 function getIdentifiedByIdentifier(docNode) {
@@ -261,15 +261,15 @@ function getTookPlaceAt(docNode) {
 }
 
 function getType(docNode) {
-  const node = fn.head(docNode.xpath('json/type'));
-  const value = node ? node.toString() : node;
-  return _upTo('type', node, value);
+  return _getFirstStringValueUpTo(docNode, 'json/type', 'type');
 }
 
 function getUiType(docNode) {
-  const node = fn.head(docNode.xpath('indexedProperties/uiType'));
-  const value = node ? node.toString() : node;
-  return _upTo('uiType', node, value);
+  return _getFirstStringValueUpTo(
+    docNode,
+    'indexedProperties/uiType',
+    'uiType'
+  );
 }
 
 function isMyCollection(docNode) {
@@ -321,16 +321,13 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
   }
 }
 
-function setDefaultCollection(
-  docObj,
-  collectionIri,
-  expectJsonProperty = true // Enables a special accommodation when automatically creating user profiles.
-) {
+function setDefaultCollection(docObj, collectionIri) {
   if (isNonEmptyString(collectionIri)) {
-    if (docObj.json || expectJsonProperty) {
-      docObj.json._lux_default_collection = collectionIri;
-    } else if (!expectJsonProperty) {
-      docObj._lux_default_collection = collectionIri;
+    if (docObj.json) {
+      docObj.json[PROP_NAME_DEFAULT_COLLECTION] = collectionIri;
+    } else {
+      // When initially creating a user's profile, the json property will not exist.
+      docObj[PROP_NAME_DEFAULT_COLLECTION] = collectionIri;
     }
   } else {
     throw new BadRequestError('The default collection is required.');
@@ -440,6 +437,14 @@ function merge(o1, o2) {
 
   // This will return the first non-null, or null when both are null;
   return o1 || o2;
+}
+
+// A convenience wrapper around _upTo() that restricts the return to the first string value found
+// at the end of the XPath expression, yet still be able to include the ancestor lineage.
+function _getFirstStringValueUpTo(docNode, xpath, ancestorName) {
+  const node = fn.head(docNode.xpath(xpath));
+  const value = node ? node.toString() : node;
+  return _upTo(ancestorName, node, value);
 }
 
 /**
@@ -604,6 +609,7 @@ export {
   setSetMembers,
   setUsername,
   PROP_NAME_BEGIN_OF_THE_BEGIN,
+  PROP_NAME_DEFAULT_COLLECTION,
   PROP_NAME_END_OF_THE_END,
   TYPE_ACTIVITY,
   TYPE_DIGITAL_OBJECT,

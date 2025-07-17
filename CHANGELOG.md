@@ -1,6 +1,18 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v1.44.0 - 2025-07-28
+### Added
+
+### Changed
+- Default user profiles may no longer be deleted or disassociated with a user's profile ([#533](https://github.com/project-lux/lux-marklogic/issues/533))
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.43.1 - 2025-07-15
 ### Added
 
@@ -32,7 +44,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v1.42.0 - 2025-06-30
 ### Added
-- Added TDEs to create triples for My Collections documents ([#503](https://github.com/project-lux/lux-marklogic/issues/503))
+- Added TDEs to create triples for Personal Collection documents ([#503](https://github.com/project-lux/lux-marklogic/issues/503))
 
 ### Changed
 - The [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document) now requires the `uri` parameter ([#546](https://github.com/project-lux/lux-marklogic/issues/546))
@@ -76,9 +88,9 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v1.39.0 - 2025-05-05
 ### Added
-- Added the [Create Document endpoint](/docs/lux-backend-api-usage.md#create-document). Only available when the My Collections feature is enabled. Supports My Collection and User Profile documents.  Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
-- Added the [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document). Only available when the My Collections feature is enabled. Supports My Collection and User Profile documents.  Never available to service accounts. ([#493](https://github.com/project-lux/lux-marklogic/issues/493), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
-- Added the [Delete Document endpoint](/docs/lux-backend-api-usage.md#delete-document). Only available when the My Collections feature is enabled. Supports My Collection documents only.  Never available to service accounts. ([#494](https://github.com/project-lux/lux-marklogic/issues/494), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the [Create Document endpoint](/docs/lux-backend-api-usage.md#create-document). Only available when the My Collections feature is enabled. Supports Personal Collection and User Profile documents.  Never available to service accounts. ([#486](https://github.com/project-lux/lux-marklogic/issues/486), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the [Update Document endpoint](/docs/lux-backend-api-usage.md#update-document). Only available when the My Collections feature is enabled. Supports Personal Collection and User Profile documents.  Never available to service accounts. ([#493](https://github.com/project-lux/lux-marklogic/issues/493), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
+- Added the [Delete Document endpoint](/docs/lux-backend-api-usage.md#delete-document). Only available when the My Collections feature is enabled. Supports Personal Collection documents only.  Never available to service accounts. ([#494](https://github.com/project-lux/lux-marklogic/issues/494), [#501](https://github.com/project-lux/lux-marklogic/issues/501), [#512](https://github.com/project-lux/lux-marklogic/issues/512))
 - Added the `userId` and `username` search terms and underlying indexes, within the agent search scope. (Part of [#501](https://github.com/project-lux/lux-marklogic/issues/501))
 
 ### Changed

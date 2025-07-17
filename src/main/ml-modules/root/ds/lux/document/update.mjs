@@ -8,5 +8,6 @@ const lang = external.lang;
 
 handleRequest(function () {
   declareUpdate();
-  return updateDocument(uri, docNode, lang);
+  const newUserMode = false;
+  return updateDocument(uri, docNode, newUserMode, lang);
 }, unitName);

@@ -1,0 +1,29 @@
+{
+  "external-security-name": "%%oauthName%%",
+  "description": "External security configuration into LUX Backend using OAuth via Cognito.",
+  "authentication": "oauth",
+  "cache-timeout": 300,
+  "authorization": "oauth",
+  "oauth-server": {
+    "oauth-vendor": "Amazon Cognito",
+    "oauth-flow-type": "Resource server",
+    "oauth-client-id": "%%oauthClientId%%",
+    "oauth-jwt-issuer-uri": "%%oauthIssuerUri%%",
+    "oauth-token-type": "JSON Web Tokens",
+    "oauth-username-attribute": "username",
+    "oauth-role-attribute": "lux:groups",
+    "oauth-privilege-attribute": "",
+    "oauth-jwt-alg": "RS256",
+    "oauth-jwks-uri": "",
+    "oauth-jwt-secret": [
+      {
+        "oauth-jwt-key-id": "%%oauthKey1%%",
+        "oauth-jwt-secret-value": "%%oauthPublicKey1%%"
+      },
+      {
+        "oauth-jwt-key-id": "%%oauthKey2%%",
+        "oauth-jwt-secret-value": "%%oauthPublicKey2%%"
+      }
+    ]
+  }
+}

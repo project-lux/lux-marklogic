@@ -1,6 +1,6 @@
 {
   "server-name": "App-Services",
   "enabled": "true",
-  "authentication": "%%mlAppServicesAuthentication%%",
+  "authentication": "digest",
   "internal-security": "true"
 }

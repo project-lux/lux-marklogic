@@ -37,9 +37,11 @@ tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
 
+ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
+ext.publicKeysPath = "${project.projectDir}/src/main/public-keys"
 ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
 ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
-ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
+ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oauth/security/external-security"
 
 ext.lineSep = System.getProperty("line.separator")
 
@@ -151,7 +153,9 @@ ext.applyTemplate = { sourceTemplatePath, templateBindings ->
 }
 
 ext.writeToFile = { outputPath, content ->
-  new File("$outputPath").withWriter { out ->
+  def file = new File("$outputPath")
+  file.getParentFile().mkdirs() // Create parent directories if they don't exist
+  file.withWriter { out ->
     out.println content
   }
 }
@@ -191,6 +195,7 @@ task preprocessRuntimeConfigAndModules() {
   delete './build/test'
 
   // Copy src/main into build directory
+  println "Copying src/main into the build directory."
   copy {
     from './src/main'
     into './build/main'
@@ -205,6 +210,7 @@ task preprocessRuntimeConfigAndModules() {
   }
 
   // Copy src/test into build directory
+  println "Copying src/test into the build directory."
   copy {
     from './src/test'
     into './build/test'
@@ -222,6 +228,7 @@ task preprocessRuntimeConfigAndModules() {
 // Code herein automatically executes.
 task preprocessBuildSupportScripts() {
   // Resolve property references while copying into the build dir.
+  println "Copying build support scripts into the build directory."
   copy {
     from './scripts/buildSupport'
     into './build/buildSupport'
@@ -233,6 +240,26 @@ task preprocessBuildSupportScripts() {
       }
       return line
     }}
+  }
+}
+
+task addOAuthPublicKeys() {
+  if (project.getProperty("mlConfigPaths").contains("oauth")) {
+    def environmentName = project.getProperty("environmentName").toLowerCase()
+    def publicKeysFilePath = "${publicKeysPath}/oauth-${environmentName}.xml"
+    if (!file(publicKeysFilePath).exists()) {
+      throw new GradleException("OAuth is enabled yet the public keys file '${publicKeysFilePath}' does not exist.")
+    }
+
+    def externalSecurityFilename = "lux-cognito-external-security.xml"
+    def templateBindings = [
+        oauthPublicKeys: file(publicKeysFilePath).text
+    ]
+    def content = applyTemplate("${sourceTemplatePath}/${externalSecurityFilename}", templateBindings)
+    writeToFile("${buildExternalSecurityPath}/${externalSecurityFilename}", content)
+    println "Added OAuth public keys to a copy of '${externalSecurityFilename}', within the build directory."
+  } else {
+    println "Skipping OAuth public keys addition as mlConfigPaths does not include 'oauth'."
   }
 }
 

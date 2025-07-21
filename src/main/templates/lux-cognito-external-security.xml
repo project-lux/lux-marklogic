@@ -1,0 +1,20 @@
+<external-security-properties xmlns="http://marklogic.com/manage">
+  <external-security-name>%%oauthName%%</external-security-name>
+  <description>External security configuration into LUX Backend using OAuth via Cognito.</description>
+  <authentication>oauth</authentication>
+  <cache-timeout>300</cache-timeout>
+  <authorization>oauth</authorization>
+  <oauth-server>
+    <oauth-vendor>Amazon Cognito</oauth-vendor>
+    <oauth-flow-type>Resource server</oauth-flow-type>
+    <oauth-client-id>%%oauthClientId%%</oauth-client-id>
+    <oauth-jwt-issuer-uri>%%oauthIssuerUri%%</oauth-jwt-issuer-uri>
+    <oauth-token-type>JSON Web Tokens</oauth-token-type>
+    <oauth-username-attribute>username</oauth-username-attribute>
+    <oauth-role-attribute>lux:groups</oauth-role-attribute>
+    <oauth-privilege-attribute/>
+    <oauth-jwt-alg>RS256</oauth-jwt-alg>
+    <oauth-jwks-uri/>
+    <%= oauthPublicKeys %>
+    </oauth-server>
+  </external-security-properties>

@@ -160,6 +160,30 @@ ext.writeToFile = { outputPath, content ->
   }
 }
 
+// More info in /docs/lux-backend-build-tool-and-tasks.md
+task addOAuthPublicKeys() {
+  doLast {
+    if (project.getProperty("mlConfigPaths").contains("oauth")) {
+      def environmentName = project.getProperty("environmentName").toLowerCase()
+      def publicKeysFilePath = "${publicKeysPath}/oauth-${environmentName}.xml"
+      if (!file(publicKeysFilePath).exists()) {
+        throw new GradleException("OAuth is enabled yet the public keys file '${publicKeysFilePath}' does not exist.")
+      }
+
+      def externalSecurityFilename = "lux-cognito-external-security.xml"
+      def templateBindings = [
+          oauthPublicKeys: file(publicKeysFilePath).text
+      ]
+      def content = applyTemplate("${sourceTemplatePath}/${externalSecurityFilename}", templateBindings)
+      print "Writing to ${buildExternalSecurityPath}/${externalSecurityFilename}"
+      writeToFile("${buildExternalSecurityPath}/${externalSecurityFilename}", content)
+      println "Added OAuth public keys to a copy of '${externalSecurityFilename}', within the build directory."
+    } else {
+      println "Skipping OAuth public keys addition as mlConfigPaths does not include 'oauth'."
+    }
+  }
+}
+
 // This project's implementation of its custom token feature.
 //
 // This task needs to run before any ML Gradle task that references ML Gradle configuration files does.  Rather than
@@ -224,6 +248,7 @@ task preprocessRuntimeConfigAndModules() {
     }}
   }
 }
+preprocessRuntimeConfigAndModules.finalizedBy addOAuthPublicKeys
 
 // Code herein automatically executes.
 task preprocessBuildSupportScripts() {
@@ -240,26 +265,6 @@ task preprocessBuildSupportScripts() {
       }
       return line
     }}
-  }
-}
-
-task addOAuthPublicKeys() {
-  if (project.getProperty("mlConfigPaths").contains("oauth")) {
-    def environmentName = project.getProperty("environmentName").toLowerCase()
-    def publicKeysFilePath = "${publicKeysPath}/oauth-${environmentName}.xml"
-    if (!file(publicKeysFilePath).exists()) {
-      throw new GradleException("OAuth is enabled yet the public keys file '${publicKeysFilePath}' does not exist.")
-    }
-
-    def externalSecurityFilename = "lux-cognito-external-security.xml"
-    def templateBindings = [
-        oauthPublicKeys: file(publicKeysFilePath).text
-    ]
-    def content = applyTemplate("${sourceTemplatePath}/${externalSecurityFilename}", templateBindings)
-    writeToFile("${buildExternalSecurityPath}/${externalSecurityFilename}", content)
-    println "Added OAuth public keys to a copy of '${externalSecurityFilename}', within the build directory."
-  } else {
-    println "Skipping OAuth public keys addition as mlConfigPaths does not include 'oauth'."
   }
 }
 

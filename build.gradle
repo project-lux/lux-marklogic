@@ -175,7 +175,6 @@ task addOAuthPublicKeys() {
           oauthPublicKeys: file(publicKeysFilePath).text
       ]
       def content = applyTemplate("${sourceTemplatePath}/${externalSecurityFilename}", templateBindings)
-      print "Writing to ${buildExternalSecurityPath}/${externalSecurityFilename}"
       writeToFile("${buildExternalSecurityPath}/${externalSecurityFilename}", content)
       println "Added OAuth public keys to a copy of '${externalSecurityFilename}', within the build directory."
     } else {

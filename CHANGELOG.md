@@ -14,6 +14,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Fixed
 
 ### Security
+- Configured the `%%mlAppName%%-endpoint-consumer` (tenant owner) and `%%mlAppName%%-ypm-endpoint-consumer` (YPM unit) MarkLogic roles to the "my-collections-service" Cognito group. Configured the `%%mlAppName%%-endpoint-consumer-user` (all users) MarkLogic role to the "user" Cognito group. ([#517](https://github.com/project-lux/lux-marklogic/issues/517))
 
 ## v1.43.1 - 2025-07-15
 ### Added

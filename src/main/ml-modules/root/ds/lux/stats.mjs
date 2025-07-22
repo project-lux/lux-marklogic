@@ -12,7 +12,8 @@ handleRequest(function () {
     metadata: {},
   };
 
-  getSearchScopeNames().forEach((name) => {
+  const statsOnly = true;
+  getSearchScopeNames(statsOnly).forEach((name) => {
     doc.estimates.searchScopes[name] = cts.estimate(
       cts.jsonPropertyValueQuery('dataType', getSearchScope(name).types, [
         'exact',

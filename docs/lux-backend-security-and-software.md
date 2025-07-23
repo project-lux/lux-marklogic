@@ -93,31 +93,37 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ![Endpoint consumer role hierarchy](/docs/img/endpoint-consumer-role-hierarchy.png)
 
-The `%%mlAppName%%-endpoint-consumer-base` role ([2-endpoint-consumer-base-role.json](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json)) grants the roles and execute privileges required to consume the endpoints, less those provided by [amps](#amps).
+The [%%mlAppName%%-endpoint-consumer-base](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json) role grants the roles and execute privileges required to consume the endpoints, less those provided by [amps](#amps).
 
-There are two roles that directly inherit the base role to differentiate the two types of endpoint consumers:
+There are two roles that directly inherit the base role, which serve to differentiate two types of endpoint consumers:
 
-1. The `%%mlAppName%%-endpoint-consumer-user` role ([2a-endpoint-consumer-user-role.json](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json)) is to be granted to My Collections user accounts.
-2. The `%%mlAppName%%-endpoint-consumer-service-account` role ([2b-endpoint-consumer-service-account-role.json](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json)) is to be granted to service accounts.
+1. The [%%mlAppName%%-endpoint-consumer-user](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json) role is to be granted to My Collections *user* accounts.
+2. The [%%mlAppName%%-endpoint-consumer-service-account](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json) role is to be granted to *service* accounts.
 
-Primary distinctions between the endpoint consumer types:
+Primary distinctions between user and service accounts:
 
 1. Document permissions:
-    * User accounts only have access to My Collections documents. The subset thereof varies by user account.  For example, User 1 and User 2 may share access to My Fossils Collection yet User 1 may also have access to the My Paintings Collection.
+    * User accounts only have access to My Collections documents. The subset thereof varies by user account.  For example and once sharing is supported, User 1 and User 2 may share access to My Fossils Collection yet User 1 may also have access to the My Paintings Collection.
     * Service accounts only have access to documents provided by the [data pipeline](https://github.com/project-lux/data-pipeline).  The subset thereof varies by service account, or unit.  For example, the Yale Peabody Museum and Yale University Art Gallery may share the concept of fossils yet the Yale Peabody Museum service account will have access to many more fossil documents than Yale University Art Gallery's service account.
 2. Requests from a user account can have access to the same configuration and (data pipeline-provided) documents as a service account (using the `unitName` endpoint parameter), but service accounts cannot have access to a user account's documents.  Combining the two previous examples, if the same User 1 logged into LUX through Yale Peabody Museum's portal, the user would have access to their My Collection documents *and* Yale Peabody Museum's fossil documents.  Users that access LUX through Yale Peabody Museum's portal without logging in would only be able to see Yale Peabody Museum's documents.  The [backend endpoint API documentation](/docs/lux-backend-api-usage.md) identifies which endpoints accept the `unitName` parameter.
 3. Service accounts are not allowed to consume My Collection endpoints.
 
-Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).\*  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2c-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.  
+Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).\*  Dedicated endpoint consumer service account roles are to inherit [%%mlAppName%%-endpoint-consumer-service-account](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json).  The tenant's endpoint consumer role is defined by [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.  
 
-Unit endpoint consumer roles may also be configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/). Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
+Unit endpoint consumer roles may also be configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/). Endpoint consumer naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
 
 * File names: `2[alpha]-[unit]-endpoint-consumer-role.json`
 * Role names: `%%mlAppName%%-[unit]-endpoint-consumer`
 
-For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+A subset of roles is configured with external group names, in support of OAuth:
 
-Developers are encouraged to test endpoints using an account that has one of these roles.
+* [%%mlAppName%%-endpoint-consumer-user](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json) is configured to the "user" group, thereby allowing any authenticated My Collections user to consume endpoints.
+* The tenant owner, [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json), is configured to the "my-collections-service" group.
+* Units with unit portals also have their endpoint consumer service account role configured to the "my-collections-service" group.  This includes [%%mlAppName%%-ypm-endpoint-consumer](/src/main/ml-config/base/security/roles/2d-ypm-endpoint-consumer-role.json).
+
+Intended for local developer environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+
+Developers are encouraged to test endpoints using endpoint consumer user accounts and endpoint consumer service accounts.
 
 \* See the [Applicable Configuration](#applicable-configuration) section for an additional requirement to provide a unit a service account.
 
@@ -133,7 +139,7 @@ The [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writ
 
 The [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role builds upon the [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json) role by also being able to run the `performBaseDeployment` task.  This role should not be able to run the `mlDeploySecurity` task or lower level security tasks, specifically creating user accounts, changing a user account's roles and privileges, and changing a role's inherited roles and privileges.
 
-For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
+Intended for local developer environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
 
 ### My Collections Data Updater
 

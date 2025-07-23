@@ -9,7 +9,8 @@ import {
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTION_DATA_READER,
   ROLE_NAME_USER_PROFILE_DATA_READER,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
@@ -297,9 +298,12 @@ function _getUserProfileConfig(
   if (newDocumentMode) {
     docOptions = {
       permissions: getExclusiveDocumentPermissions(user).concat([
-        xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
         xdmp.permission(
-          ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+          CAPABILITY_READ
+        ),
+        xdmp.permission(
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
           CAPABILITY_UPDATE
         ),
         xdmp.permission(ROLE_NAME_USER_PROFILE_DATA_READER, CAPABILITY_READ),
@@ -362,11 +366,15 @@ function _getMyCollectionConfig(
   if (newDocumentMode) {
     docOptions = {
       permissions: getExclusiveDocumentPermissions(user).concat([
-        xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
         xdmp.permission(
-          ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+          CAPABILITY_READ
+        ),
+        xdmp.permission(
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
           CAPABILITY_UPDATE
         ),
+        xdmp.permission(ROLE_NAME_MY_COLLECTION_DATA_READER, CAPABILITY_READ),
       ]),
       collections: [
         isProduction()

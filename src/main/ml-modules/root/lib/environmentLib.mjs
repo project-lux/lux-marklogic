@@ -1,5 +1,9 @@
 import {
   CODE_VERSION,
+  COLLECTION_NAME_MY_COLLECTION,
+  COLLECTION_NAME_NON_PRODUCTION,
+  COLLECTION_NAME_PRODUCTION,
+  COLLECTION_NAME_USER_PROFILE,
   HIGH_STORAGE_WARNING_THRESHOLD,
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
@@ -116,6 +120,40 @@ function getTenantStatusDocObj() {
   }
   throw new InternalConfigurationError(
     `Tenant status document does not exist but is required.`
+  );
+}
+
+function _getMyCollectionDocumentCount(restrictByProductionMode = true) {
+  return cts.estimate(
+    _getCollectionQuery(COLLECTION_NAME_MY_COLLECTION, restrictByProductionMode)
+  );
+}
+const getMyCollectionDocumentCount = import.meta.amp(
+  _getMyCollectionDocumentCount
+);
+
+function _getUserProfileDocumentCount(restrictByProductionMode = true) {
+  return cts.estimate(
+    _getCollectionQuery(COLLECTION_NAME_USER_PROFILE, restrictByProductionMode)
+  );
+}
+const getUserProfileDocumentCount = import.meta.amp(
+  _getUserProfileDocumentCount
+);
+
+// Collections can be a single collection name or an array of them.
+// When restrictByProductionMode is true, an additional collection constraint is included.
+function _getCollectionQuery(collections, restrictByProductionMode = true) {
+  collections = utils.toArray(collections);
+  if (restrictByProductionMode) {
+    collections.push(
+      isProduction()
+        ? COLLECTION_NAME_PRODUCTION
+        : COLLECTION_NAME_NON_PRODUCTION
+    );
+  }
+  return cts.andQuery(
+    collections.map((collection) => cts.collectionQuery(collection))
   );
 }
 
@@ -355,8 +393,10 @@ function getVersionInfo() {
 
 export {
   TENANT_STATUS_URI, // for unit tests
+  getMyCollectionDocumentCount,
   getStorageInfo,
   getTenantStatus,
+  getUserProfileDocumentCount,
   getVersionInfo, // subset of getTenantStatus
   inReadOnlyMode,
   isProduction,

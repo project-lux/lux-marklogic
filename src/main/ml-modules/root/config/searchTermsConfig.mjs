@@ -505,6 +505,11 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setIdentifier'],
       scalarType: 'string',
     },
+    lastModifiedBy: {
+      patternName: 'indexedWord',
+      indexReferences: ['agentName'],
+      scalarType: 'string',
+    },
     memberOf: {
       patternName: 'hopWithField',
       predicates: ['la("member_of")'],

@@ -157,6 +157,8 @@ const FACETS_CONFIG = {
   setHasDigitalImage: { indexReference: 'setHasDigitalImageBoolean' },
   setIdentifier: { indexReference: 'setIdentifier' },
   setIsOnline: { indexReference: 'setIsOnlineBoolean' },
+  setLastModifiedById: { indexReference: 'setLastModifiedByAgentId' },
+  setLastModifiedDate: { indexReference: 'setLastModifiedStartDateLong' },
   setPartOfId: { indexReference: 'setPartOfId' },
   setPublicationAgentId: {
     indexReference: 'setPublicationAgentId',

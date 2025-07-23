@@ -1216,6 +1216,43 @@
       "field-value-searches": true
     },
     {
+      "field-name": "setLastModifiedByAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setLastModifiedStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setLastModifiedStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setLastModifiedEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
       "field-name": "workDataTypeName",
       "field-path": [
         {
@@ -2699,6 +2736,34 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setLastModifiedByAgentId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setLastModifiedStartDateStr",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "",
+      "field-name": "setLastModifiedStartDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "",
+      "field-name": "setLastModifiedEndDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",

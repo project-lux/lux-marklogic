@@ -123,6 +123,10 @@ set	PublicationPlace	Id	uri	setPublicationPlaceId	RecordLink	Non	N		/json[type='
 set	PublicationPlace	Name	keyword	setPublicationPlaceName	Search	Semantic	N			lux:placeOfPublication
 set	PublicationAgent	Id	uri	setPublicationAgentId	RecordLink	Non	N		/json[type='Set']/used_for/carried_out_by/id	
 set	PublicationAgent	Name	keyword	setPublicationAgentName	Search	Semantic	N			lux:agentOfPublication
+set	LastModifiedByAgent	Id	uri	setLastModifiedByAgentId	RecordLink	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/carried_out_by/id	
+set	LastModifiedStart	Date	datesAsString	setLastModifiedStartDateStr	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/begin_of_the_begin	
+set	LastModifiedStart	Date	datesAsLong	setLastModifiedStartDateLong	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_begin_of_the_begin	
+set	LastModifiedEnd	Date	datesAsLong	setLastModifiedEndDateLong	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_end_of_the_end	
 										
 work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage	

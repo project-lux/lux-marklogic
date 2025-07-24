@@ -44,8 +44,10 @@ const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
 const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${PRIVILEGES_PREFIX}/%%mlAppName%%-update-tenant-status`;
 const ROLE_NAME_DEPLOYER = '%%mlAppName%%-deployer';
 
-const ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER =
+const ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER =
   '%%mlAppName%%-my-collections-data-updater';
+const ROLE_NAME_MY_COLLECTION_DATA_READER =
+  '%%mlAppName%%-my-collection-data-reader';
 const ROLE_NAME_USER_PROFILE_DATA_READER =
   '%%mlAppName%%-user-profile-data-reader';
 
@@ -526,7 +528,8 @@ export {
   CAPABILITY_UPDATE,
   ROLE_NAME_DEPLOYER,
   ROLE_NAME_ENDPOINT_CONSUMER_BASE,
-  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTION_DATA_READER,
   ROLE_NAME_USER_PROFILE_DATA_READER,
   TENANT_OWNER,
   getCurrentUserUnitName,

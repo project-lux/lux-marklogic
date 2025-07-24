@@ -1,0 +1,4 @@
+{
+  "role-name": "%%mlAppName%%-my-collection-data-reader",
+  "description": "Only to be used by an amp in support of returning the total number of My Collection documents."
+}

@@ -685,6 +685,16 @@ const searchTermText = {
       helpText:
         'Search for Collections by a string identifier or an external authority URI, such as VIAF or wikidata.',
     },
+    lastModifiedBy: {
+      label: 'last modified by',
+      helpText:
+        'Search for Collections by the People & Groups who last modified them.',
+    },
+    lastModifiedDate: {
+      label: 'last modified on',
+      helpText:
+        'Search for Collections by the date on which they were last modified.',
+    },
     memberOf: {
       label: 'are a member of',
       helpText:

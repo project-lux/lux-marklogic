@@ -10,8 +10,8 @@ import {
 } from '../config/similarConfig.mjs';
 import { STOP_WORDS } from '../data/stopWords.mjs';
 import {
-  PROP_NAME_BEGIN_OF_THE_BEGIN,
-  PROP_NAME_END_OF_THE_END,
+  PROP_NAME_BEGIN_OF_THE_BEGIN_STR,
+  PROP_NAME_END_OF_THE_END_STR,
   getType,
 } from './model.mjs';
 import { doesSearchScopeHaveType } from '../lib/searchScope.mjs';
@@ -145,15 +145,15 @@ function buildSearchCriteria(scope, similarValues) {
 
 function getDateRanges(doc, path) {
   let timeSpanPath = null;
-  if (path.endsWith(`/${PROP_NAME_BEGIN_OF_THE_BEGIN}`)) {
+  if (path.endsWith(`/${PROP_NAME_BEGIN_OF_THE_BEGIN_STR}`)) {
     timeSpanPath = path.substring(
       0,
-      path.length - PROP_NAME_BEGIN_OF_THE_BEGIN.length - 1
+      path.length - PROP_NAME_BEGIN_OF_THE_BEGIN_STR.length - 1
     );
-  } else if (path.endsWith(`/${PROP_NAME_END_OF_THE_END}`)) {
+  } else if (path.endsWith(`/${PROP_NAME_END_OF_THE_END_STR}`)) {
     timeSpanPath = path.substring(
       0,
-      path.length - PROP_NAME_END_OF_THE_END.length - 1
+      path.length - PROP_NAME_END_OF_THE_END_STR.length - 1
     );
   } else {
     throw new InternalServerError(
@@ -170,12 +170,12 @@ function getDateRanges(doc, path) {
       const defaultValue = '';
       const startDateStr = getFirstValue(
         timeSpanNode,
-        './' + PROP_NAME_BEGIN_OF_THE_BEGIN,
+        './' + PROP_NAME_BEGIN_OF_THE_BEGIN_STR,
         defaultValue
       );
       const endDateStr = getFirstValue(
         timeSpanNode,
-        './' + PROP_NAME_END_OF_THE_END,
+        './' + PROP_NAME_END_OF_THE_END_STR,
         defaultValue
       );
       if (

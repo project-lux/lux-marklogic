@@ -248,6 +248,16 @@ const SORT_BINDINGS = {
     indexReference: 'setHasDigitalImageBoolean',
     defaultOrder: 'desc',
   },
+  setLastModifiedById: {
+    indexType: 'field',
+    indexReference: 'setLastModifiedByAgentId',
+    defaultOrder: 'asc',
+  },
+  setLastModifiedDate: {
+    indexType: 'field',
+    indexReference: 'setLastModifiedStartDateLong',
+    defaultOrder: 'asc',
+  },
   setPublicationDate: {
     indexType: 'field',
     indexReference: 'setPublicationStartDateLong',

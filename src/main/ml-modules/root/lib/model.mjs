@@ -33,7 +33,10 @@ import {
   isUndefined,
   toArray,
 } from '../utils/utils.mjs';
-import { toISOStringThroughSeconds } from '../utils/dateUtils.mjs';
+import {
+  convertPartialDateTimeToSeconds,
+  toISOStringThroughSeconds,
+} from '../utils/dateUtils.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -48,24 +51,23 @@ const TYPE_MATERIAL = 'Material';
 
 const UI_TYPE_CONCEPT = 'Concept';
 
-const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
-const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
+const PROP_NAME_BEGIN_OF_THE_BEGIN_STR = 'begin_of_the_begin';
+const PROP_NAME_END_OF_THE_END_STR = 'end_of_the_end';
+const PROP_NAME_BEGIN_OF_THE_BEGIN_LONG =
+  '_seconds_since_epoch_begin_of_the_begin';
+const PROP_NAME_END_OF_THE_END_LONG = '_seconds_since_epoch_end_of_the_end';
 const PROP_NAME_DEFAULT_COLLECTION = '_lux_default_collection';
 
 // Intended for when modifies a Set.
 function addAddedToByEntry(docObj, userIri) {
   if (isNonEmptyString(userIri)) {
-    const now = toISOStringThroughSeconds(new Date());
     if (isUndefined(docObj.json.added_to_by)) {
       docObj.json.added_to_by = [];
     }
     docObj.json.added_to_by.push({
       type: 'Addition',
       carried_out_by: [{ id: userIri, type: 'Person' }],
-      timespan: {
-        begin_of_the_begin: now,
-        end_of_the_end: now,
-      },
+      ..._getNewTimespan(toISOStringThroughSeconds(new Date())),
     });
   } else {
     throw new InternalServerError(
@@ -305,14 +307,10 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
   if (createdBy) {
     docObj.json.created_by = createdBy.xpath ? createdBy.toObject() : createdBy;
   } else if (isNonEmptyString(userIri)) {
-    const now = toISOStringThroughSeconds(new Date());
     docObj.json.created_by = {
       type: 'Creation',
       carried_out_by: [{ id: userIri, type: 'Person' }],
-      timespan: {
-        begin_of_the_begin: now,
-        end_of_the_end: now,
-      },
+      ..._getNewTimespan(toISOStringThroughSeconds(new Date())),
     };
   } else {
     throw new InternalServerError(
@@ -381,6 +379,18 @@ function setUsername(docObj, username) {
       ],
     });
   }
+}
+
+function _getNewTimespan(dateStr) {
+  const dateLong = convertPartialDateTimeToSeconds(dateStr);
+  return {
+    timespan: {
+      [PROP_NAME_BEGIN_OF_THE_BEGIN_STR]: dateStr,
+      [PROP_NAME_END_OF_THE_END_STR]: dateStr,
+      [PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]: dateLong,
+      [PROP_NAME_END_OF_THE_END_LONG]: dateLong,
+    },
+  };
 }
 
 /**
@@ -608,9 +618,9 @@ export {
   setIndexedProperties,
   setSetMembers,
   setUsername,
-  PROP_NAME_BEGIN_OF_THE_BEGIN,
+  PROP_NAME_BEGIN_OF_THE_BEGIN_STR,
   PROP_NAME_DEFAULT_COLLECTION,
-  PROP_NAME_END_OF_THE_END,
+  PROP_NAME_END_OF_THE_END_STR,
   TYPE_ACTIVITY,
   TYPE_DIGITAL_OBJECT,
   TYPE_HUMAN_MADE_OBJECT,

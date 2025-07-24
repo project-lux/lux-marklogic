@@ -3,6 +3,7 @@
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 ## v1.44.0 - 2025-07-28
 ### Added
+- Added support for searching, sorting, and faceting by who and when last modified a Personal Collection; the search terms are `lastModifiedBy` and `lastModifiedDate` ([#511](https://github.com/project-lux/lux-marklogic/issues/511)).
 
 ### Changed
 - Default user profiles may no longer be deleted or disassociated with a user's profile ([#533](https://github.com/project-lux/lux-marklogic/issues/533))

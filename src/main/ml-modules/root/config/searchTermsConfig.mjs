@@ -505,6 +505,8 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setIdentifier'],
       scalarType: 'string',
     },
+    // Only useful when including the `id` child term.  The name is not in the Set,
+    // and there is no lastModifiedBy triple.
     lastModifiedBy: {
       patternName: 'indexedWord',
       indexReferences: ['agentName'],

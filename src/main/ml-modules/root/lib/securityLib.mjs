@@ -16,6 +16,7 @@ import {
 import {
   getNodeFromObject,
   includesOrEquals,
+  isDefined,
   isObject,
   isUndefined,
   removeItemByValueFromArray,
@@ -385,19 +386,35 @@ function _createUserProfile() {
 
 function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
   declareUpdate();
-  const newUserMode = true;
-  const defaultCollectionDocObj = createDocument(
-    DEFAULT_COLLECTION_TEMPLATE,
-    newUserMode
-  );
+  let defaultCollectionDocObj;
+  try {
+    const newUserMode = true;
 
-  setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
+    defaultCollectionDocObj = createDocument(
+      DEFAULT_COLLECTION_TEMPLATE,
+      newUserMode
+    );
 
-  return updateDocument(
-    userProfileDocObj.id,
-    getNodeFromObject(userProfileDocObj),
-    newUserMode
-  );
+    setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
+
+    return updateDocument(
+      userProfileDocObj.id,
+      getNodeFromObject(userProfileDocObj),
+      newUserMode
+    );
+  } catch (e) {
+    let userMsg;
+    if (isDefined(defaultCollectionDocObj)) {
+      userMsg = `Unable to update the user profile with '${defaultCollectionDocObj.id}' as the default collection.`;
+    } else {
+      userMsg = 'Unable to create a default collection for the user.';
+    }
+    // Alerts are sent if this prefix appears in the logs.
+    // Electing not to use a trace event.
+    console.log(`User account initialization error: ${userMsg}`);
+    console.log(`Underlying error: ${e.message}`);
+    throw new InternalServerError(userMsg);
+  }
 }
 
 function _getExecuteWithServiceAccountFunction(unitName) {

@@ -6,6 +6,7 @@
 
 const SEARCH_SCOPES = {
   agent: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 4,
     fields: ['agentAnyText'],
@@ -13,6 +14,7 @@ const SEARCH_SCOPES = {
     types: ['Person', 'Group'],
   },
   concept: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 6,
     fields: ['conceptAnyText'],
@@ -20,6 +22,7 @@ const SEARCH_SCOPES = {
     types: ['Currency', 'Language', 'Material', 'MeasurementUnit', 'Type'],
   },
   event: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 7,
     fields: ['eventAnyText'],
@@ -28,6 +31,7 @@ const SEARCH_SCOPES = {
   },
   // "item" and "object" are synonyms; but backend uses "item"
   item: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 1,
     fields: ['itemAnyText'],
@@ -35,12 +39,14 @@ const SEARCH_SCOPES = {
     types: ['DigitalObject', 'HumanMadeObject'],
   },
   multi: {
+    includeInStats: false,
     isUserInterfaceSearchScope: false,
     fields: [],
     predicates: [],
     types: [],
   },
   place: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 5,
     fields: ['placeAnyText'],
@@ -48,6 +54,7 @@ const SEARCH_SCOPES = {
     types: ['Place'],
   },
   reference: {
+    includeInStats: true,
     isUserInterfaceSearchScope: false,
     fields: ['referenceAnyText'],
     predicates: ['lux("referenceAny")'],
@@ -63,6 +70,7 @@ const SEARCH_SCOPES = {
     ],
   },
   set: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 3,
     fields: ['setAnyText'],
@@ -70,6 +78,7 @@ const SEARCH_SCOPES = {
     types: ['Set'],
   },
   work: {
+    includeInStats: true,
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 2,
     fields: ['workAnyText'],
@@ -83,9 +92,11 @@ function getSearchScopes() {
   return SEARCH_SCOPES;
 }
 
-// Get the names of all the search scopes
-function getSearchScopeNames() {
-  return Object.keys(SEARCH_SCOPES);
+// Get the names of all the search scopes, or just those that are included in stats.
+function getSearchScopeNames(statsOnly = false) {
+  return Object.keys(SEARCH_SCOPES).filter(
+    (name) => (statsOnly && SEARCH_SCOPES[name].includeInStats) || !statsOnly
+  );
 }
 
 // Get a search scope's object by name; returns null when name isn't the name of a search scope.

@@ -1534,7 +1534,7 @@ Response Body:
 
 ## Stats
 
-The `stats` endpoint enables consumers to get document estimates by context. The contexts align with the frontend's search contexts. Each context is associated to one or more document types. Additional information may be included in the future.
+The `stats` endpoint enables consumers to get document estimates by context. The context mostly aligns with search scopes, such as Item and Work.  There are also estimates for My Collection and User Profile documents.  Despite those documents belonging to the Set and Agent search scopes, they are excluded from those estimates.  Further, while the other estimates can vary based on the specified unit, these estimates will not.
 
 **URL** : `/ds/lux/stats.mjs`
 
@@ -1544,7 +1544,7 @@ The `stats` endpoint enables consumers to get document estimates by context. The
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. The My Collection and User Profile estimates are not subject to the unit restriction. |
 
 ### Successful Request / Response Example
 
@@ -1566,10 +1566,11 @@ Response Body:
       "concept":4649130,
       "event":153318,
       "item":17545158,
-      "multi":0,
+      "myCollection":1227,
       "place":579366,
       "reference":11031350,
       "set":305353,
+      "userProfile":911,
       "work":13560980
     }
   },

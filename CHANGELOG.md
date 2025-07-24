@@ -7,6 +7,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 - Default user profiles may no longer be deleted or disassociated with a user's profile ([#533](https://github.com/project-lux/lux-marklogic/issues/533))
+- Changed the [Stats endpoint](/docs/lux-backend-api-usage.md#stats)'s response to include two new counts: the number of My Collection documents and user profiles. These counts are for all of those documents in the database, regardless of the requesting user having access to them. The counts are excluded from all other counts. ([#521](https://github.com/project-lux/lux-marklogic/issues/521))
 
 ### Removed
 - Removed the second REST application server (part of [#507](https://github.com/project-lux/lux-marklogic/issues/507))

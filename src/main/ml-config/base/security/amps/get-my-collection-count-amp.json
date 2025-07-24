@@ -1,0 +1,6 @@
+{
+  "local-name": "_getMyCollectionDocumentCount",
+  "document-uri": "/lib/environmentLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-my-collection-data-reader"]
+}

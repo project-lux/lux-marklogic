@@ -1,4 +1,4 @@
 {
   "role-name": "%%mlAppName%%-user-profile-data-reader",
-  "description": "Only to be used by an amp in support or resolving a user's IRI to their name, without exposing the rest of the user's profile."
+  "description": "Only to be used by amps in support of returning the entire number of user profiles and resolving a user's IRI to their name, without exposing the rest of the user's profile."
 }

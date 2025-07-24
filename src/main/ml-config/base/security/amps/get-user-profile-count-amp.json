@@ -1,0 +1,6 @@
+{
+  "local-name": "_getUserProfileDocumentCount",
+  "document-uri": "/lib/environmentLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-user-profile-data-reader"]
+}

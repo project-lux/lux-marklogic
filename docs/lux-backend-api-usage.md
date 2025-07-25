@@ -418,12 +418,7 @@ Response Body is the given document plus any modifications made by the backend, 
   ],
   "classified_as":[
     {
-      "id":"https://not.checked",
-      "equivalent":[
-        {
-          "id":"https://todo.concept.my.collection"
-        }
-      ]
+      "id":"https://todo.concept.my.collection"
     }
   ],
   "referred_to_by":[

@@ -56,7 +56,9 @@ const {
         )
         .toArray()
         .filter((doc) => {
-          return doc.baseURI !== defaultMyCollectionUri;
+          return (
+            defaultMyCollectionUri && doc.baseURI !== defaultMyCollectionUri
+          );
         })[0];
 
       return {

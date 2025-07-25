@@ -340,7 +340,7 @@ task addSupportForExecutingWithServiceAccounts() {
     println "Generated ${moduleFilename}"
   }
 }
-mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts
+mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
 // Developer convenience to copy a database, including from DEV to one's local environment.

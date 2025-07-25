@@ -67,16 +67,9 @@ const DEFAULT_COLLECTION_TEMPLATE = {
   type: 'Set',
   classified_as: [
     {
-      id: 'https://not.checked',
+      id: IDENTIFIERS.myCollection,
       type: 'Type',
       _label: 'My Collection',
-      equivalent: [
-        {
-          id: IDENTIFIERS.myCollection,
-          type: 'Type',
-          _label: 'My Collection',
-        },
-      ],
     },
   ],
   identified_by: [

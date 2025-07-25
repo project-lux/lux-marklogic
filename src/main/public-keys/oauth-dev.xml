@@ -1,0 +1,26 @@
+<oauth-jwt-secrets>
+  <oauth-jwt-secret>
+    <oauth-jwt-key-id>KF9L47S82OYUdwlG7/jGJPkJzcIF8MLk3jxn/0dpSp0=</oauth-jwt-key-id>
+    <oauth-jwt-secret-value>-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsLD9JhSHV593UykLmeDS
+QXOLDUtrCWyLv4srx9ZP0MWFIhcjCou41Fmh2PjdyholWUgtLGGDTJ7879bAWE4+
+nOITTQ6ZUbs3MfFM1dxlPojD9A1syec7dq5FrO7eNUwrxIvyImoTkX+o3PslTzjH
+fTYg7a+t3SraIt/G7NoZcPQztPAQBQFBKlFnQOe3kbPBSGiEDJlVA7CS78+dmHqk
+leamXRZtn8LopiQvb02ZvSDPbd089Bh+1njwDEJ04xWyEFt91ExytgpN7IaSC0Sr
+4Y8YZCP7kpjk+mfm7rhNMwamdBqLSlYdtRVgFa5qL6me+QxUpkwIQTbBaQbcgKau
+7wIDAQAB
+-----END PUBLIC KEY-----</oauth-jwt-secret-value>
+  </oauth-jwt-secret>
+  <oauth-jwt-secret>
+    <oauth-jwt-key-id>CKlGTdwjD50NzRwrfZcpaEW+nsdQGPyJeZ1tElVv0AI=</oauth-jwt-key-id>
+    <oauth-jwt-secret-value>-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCCfoSGOw9ALheRt+ZaR
++DSa9RCw07e9gGjzBMNSHxvRoOqQtsEim+Nvc0vCM9SiFHLcDwgzOm8noojKWBsp
+EuA347S9PaTaMm0s1ntV3+iK0mOYtPcvGmn+fh5jhSrwnKyzuVk+pG5rmC28UcNF
+HmBr+WvgCdA40sFy0W2N9qVWBmndsg/NsAxCio0GmfrMghBXywF8GKFtYgG3jlin
+CD5dRoWEjwGYXesflsuTZ4CKeckU4mUIOB7uWnl06fPrl0ZuyDq5m23wTAFEBM1k
+hMwhk1FrP5DcT0MmqyP5rzPyymySkFZ3UrSM2CGarsYracpGfgv8dYwHNiDYB7aM
+JQIDAQAB
+-----END PUBLIC KEY-----</oauth-jwt-secret-value>
+  </oauth-jwt-secret>
+</oauth-jwt-secrets>

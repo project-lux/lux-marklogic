@@ -3,16 +3,19 @@
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 ## v1.44.0 - 2025-07-28
 ### Added
+- Added the ability to deploy the remaining REST application server with Digest or OAuth authentication (part of [#507](https://github.com/project-lux/lux-marklogic/issues/507))
 
 ### Changed
 - Default user profiles may no longer be deleted or disassociated with a user's profile ([#533](https://github.com/project-lux/lux-marklogic/issues/533))
 - Changed the [Stats endpoint](/docs/lux-backend-api-usage.md#stats)'s response to include two new counts: the number of My Collection documents and user profiles. These counts are for all of those documents in the database, regardless of the requesting user having access to them. The counts are excluded from all other counts. ([#521](https://github.com/project-lux/lux-marklogic/issues/521))
 
 ### Removed
+- Removed the second REST application server (part of [#507](https://github.com/project-lux/lux-marklogic/issues/507))
   
 ### Fixed
 
 ### Security
+- Configured the `%%mlAppName%%-endpoint-consumer` (tenant owner) and `%%mlAppName%%-ypm-endpoint-consumer` (YPM unit) MarkLogic roles to the "my-collections-service" Cognito group. Configured the `%%mlAppName%%-endpoint-consumer-user` (all users) MarkLogic role to the "user" Cognito group. ([#517](https://github.com/project-lux/lux-marklogic/issues/517))
 
 ## v1.43.1 - 2025-07-15
 ### Added

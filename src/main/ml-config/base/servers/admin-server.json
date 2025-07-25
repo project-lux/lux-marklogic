@@ -1,6 +1,6 @@
 {
   "server-name": "Admin",
   "enabled": "true",
-  "authentication": "%%mlAdminAuthentication%%",
+  "authentication": "digest",
   "internal-security": "true"
 }

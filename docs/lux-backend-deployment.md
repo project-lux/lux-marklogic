@@ -66,8 +66,8 @@ Next, open the tenant's properties file and replace all instances of `YOUR_TENAN
 
 Specify the tenant's ports using these properties:
 
-* `mlRestPortGroup1`
-* `mlRestPortGroup2`
+* `mlRestPort`
+* `mlTestRestPort`
 * `mlXdbcPort`
 
 Now review all of the other properties, updating those that are not correct.  Additional notes:
@@ -373,8 +373,8 @@ There is no need to delete the ML Gradle configuration files for the group or pr
 Within `gradle-[name].properties`, check the following property values.  **Triple-check for multi-tenant environments.**
 
 1. `mlAppName`
-2. `mlRestPortGroup1`
-3. `mlRestPortGroup2`
+2. `mlRestPort`
+3. `mlTestRestPort`
 4. `mlXdbcPort`
 5. `tenantContentDatabase`
 6. `tenantModulesDatabase`
@@ -414,8 +414,7 @@ Available application servers and their ports may vary by environment.  The outc
 | n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
 | n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
 | n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPortGroup1` | 8003 | REST | Yes | 1 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all requests here ***except*** `search` and `relatedList` requests.  The application server does not presently reject `search` and `relatedList` requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
-| `mlRestPortGroup2` | 8004 | REST | Yes | 2 of 2 HTTP application servers intended for a group of request types.  The middle tier is expected to send all `search` and `relatedList` requests to this application server.  The application server does not presently reject other requests but may in the future.  Other configuration may vary from the other request group's application server.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlRestPort` | 8003 | REST | Yes | Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  The middle tier is expected to send all requests here.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 | `mlTestRestPort` | 8010 | REST | Yes | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |
 

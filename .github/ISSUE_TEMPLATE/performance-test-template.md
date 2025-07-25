@@ -25,12 +25,6 @@ List changes or differences in the code, configuration, environment, etc. that a
 - Frontend**TODO**
 - Dataset produced on **TODO**
 
-### Backend Application Server Configuration
-
-- lux-request-group-1 on port 8003: The middle tier is expected to send all requests here **except** search and relatedList requests.  Maximum of 6 concurrent requests.
-- lux-request-group-2 on port 8004: The middle tier is expected to send all search and relatedList requests to this application server.  Maximum of 12 concurrent requests.
-- Maximum of 18 concurrent requests per node.
-
 ## Tasks
 
 For more information please see the documentation: [LUX Performance Testing Procedure](https://github.com/project-lux/lux-marklogic/blob/main/docs/lux-performance-testing.md)

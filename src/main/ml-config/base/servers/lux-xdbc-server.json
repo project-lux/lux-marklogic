@@ -7,6 +7,6 @@
   "port": %%mlXdbcPort%%,
   "content-database": "%%DATABASE%%",
   "modules-database": "%%MODULES_DATABASE%%",
-  "authentication": "%%mlXdbcAuthentication%%",
+  "authentication": "digest",
   "internal-security": "true"
 }

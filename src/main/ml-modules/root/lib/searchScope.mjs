@@ -8,7 +8,7 @@ const SEARCH_SCOPES = {
   agent: {
     includeInStats: true,
     isUserInterfaceSearchScope: true,
-    userInterfaceOrder: 3,
+    userInterfaceOrder: 4,
     fields: ['agentAnyText'],
     predicates: ['lux("agentAny")'],
     types: ['Person', 'Group'],
@@ -16,7 +16,7 @@ const SEARCH_SCOPES = {
   concept: {
     includeInStats: true,
     isUserInterfaceSearchScope: true,
-    userInterfaceOrder: 5,
+    userInterfaceOrder: 6,
     fields: ['conceptAnyText'],
     predicates: ['lux("conceptAny")'],
     types: ['Currency', 'Language', 'Material', 'MeasurementUnit', 'Type'],
@@ -24,7 +24,7 @@ const SEARCH_SCOPES = {
   event: {
     includeInStats: true,
     isUserInterfaceSearchScope: true,
-    userInterfaceOrder: 6,
+    userInterfaceOrder: 7,
     fields: ['eventAnyText'],
     predicates: ['lux("eventAny")'],
     types: ['Activity', 'Period'],
@@ -48,7 +48,7 @@ const SEARCH_SCOPES = {
   place: {
     includeInStats: true,
     isUserInterfaceSearchScope: true,
-    userInterfaceOrder: 4,
+    userInterfaceOrder: 5,
     fields: ['placeAnyText'],
     predicates: ['lux("placeAny")'],
     types: ['Place'],
@@ -72,6 +72,7 @@ const SEARCH_SCOPES = {
   set: {
     includeInStats: true,
     isUserInterfaceSearchScope: true,
+    userInterfaceOrder: 3,
     fields: ['setAnyText'],
     predicates: ['lux("setAny")'],
     types: ['Set'],

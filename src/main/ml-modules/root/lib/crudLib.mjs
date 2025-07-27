@@ -27,6 +27,7 @@ import {
   getSetMembers,
   isMyCollection,
   isUserProfile,
+  removeAddedToBy,
   setAddedToBy,
   setCreatedBy,
   setId,

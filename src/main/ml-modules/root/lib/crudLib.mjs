@@ -196,8 +196,8 @@ function _insertDocument(
     setId(editableDocObj, uri);
     // When creating a new user profile, the user object will not yet be able to serve up the IRI.
     const userIri = docIsUserProfile ? uri : user.getUserIri();
-    setCreatedBy(editableDocObj, userIri);
-    setAddedToBy(editableDocObj, null);
+    removeAddedToBy(editableDocObj); // execute before setCreatedBy.
+    setCreatedBy(editableDocObj, userIri); // duplicates created by in added to by.
     setIndexedProperties(editableDocObj, config.indexedProperties);
   } else {
     // Searching for the document and requiring the user be able to update the document in order

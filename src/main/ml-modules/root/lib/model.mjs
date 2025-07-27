@@ -290,14 +290,17 @@ function isUserProfile(docNode) {
   );
 }
 
-// @param addedToBy - send null to delete existing property.
+function removeAddedToBy(docObj) {
+  if (isDefined(docObj.json.added_to_by)) {
+    delete docObj.json.added_to_by;
+  }
+}
+
 function setAddedToBy(docObj, addedToBy) {
   if (isDefined(addedToBy)) {
     docObj.json.added_to_by = addedToBy.xpath
       ? addedToBy.toObject()
       : addedToBy;
-  } else if (isDefined(docObj.json.added_to_by)) {
-    delete docObj.json.added_to_by;
   }
 }
 
@@ -312,6 +315,9 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
       carried_out_by: [{ id: userIri, type: 'Person' }],
       ..._getNewTimespan(toISOStringThroughSeconds(new Date())),
     };
+    // Practically duplicate the creation entry as a modification entry in support of last modified
+    // by/on falling back on the created by/on info, as that is considered a modification too.
+    addAddedToByEntry(docObj, userIri);
   } else {
     throw new InternalServerError(
       'model.setCreatedBy requires a non-empty string for the user IRI'
@@ -611,6 +617,7 @@ export {
   merge,
   isMyCollection,
   isUserProfile,
+  removeAddedToBy,
   setAddedToBy,
   setCreatedBy,
   setDefaultCollection,

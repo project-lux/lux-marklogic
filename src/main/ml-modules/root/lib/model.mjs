@@ -58,17 +58,36 @@ const PROP_NAME_BEGIN_OF_THE_BEGIN_LONG =
 const PROP_NAME_END_OF_THE_END_LONG = '_seconds_since_epoch_end_of_the_end';
 const PROP_NAME_DEFAULT_COLLECTION = '_lux_default_collection';
 
-// Intended for when modifies a Set.
+// To be used when a Set is modified.
 function addAddedToByEntry(docObj, userIri) {
   if (isNonEmptyString(userIri)) {
     if (isUndefined(docObj.json.added_to_by)) {
       docObj.json.added_to_by = [];
     }
-    docObj.json.added_to_by.push({
-      type: 'Addition',
-      carried_out_by: [{ id: userIri, type: 'Person' }],
-      ..._getNewTimespan(toISOStringThroughSeconds(new Date())),
-    });
+
+    // Only add an entry when it will not be a duplicate.
+    const timespanProps = _getNewTimespanProperties(
+      toISOStringThroughSeconds(new Date())
+    );
+    const addedToByArr = docObj.json.added_to_by;
+    const previousEntry =
+      addedToByArr.length > 0 ? addedToByArr[addedToByArr.length - 1] : null;
+    let previousStartLong = isDefined(previousEntry)
+      ? previousEntry.timespan[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
+      : null;
+    const previousUserIri = isDefined(previousEntry)
+      ? previousEntry.carried_out_by[0].id
+      : null;
+    if (
+      previousUserIri != userIri ||
+      previousStartLong != timespanProps[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
+    ) {
+      addedToByArr.push({
+        type: 'Addition',
+        carried_out_by: [{ id: userIri, type: 'Person' }],
+        timespan: timespanProps,
+      });
+    }
   } else {
     throw new InternalServerError(
       'model.addAddedToByEntry requires a non-empty string for the user IRI.'
@@ -313,7 +332,9 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
     docObj.json.created_by = {
       type: 'Creation',
       carried_out_by: [{ id: userIri, type: 'Person' }],
-      ..._getNewTimespan(toISOStringThroughSeconds(new Date())),
+      timespan: _getNewTimespanProperties(
+        toISOStringThroughSeconds(new Date())
+      ),
     };
     // Practically duplicate the creation entry as a modification entry in support of last modified
     // by/on falling back on the created by/on info, as that is considered a modification too.
@@ -387,15 +408,13 @@ function setUsername(docObj, username) {
   }
 }
 
-function _getNewTimespan(dateStr) {
+function _getNewTimespanProperties(dateStr) {
   const dateLong = convertPartialDateTimeToSeconds(dateStr);
   return {
-    timespan: {
-      [PROP_NAME_BEGIN_OF_THE_BEGIN_STR]: dateStr,
-      [PROP_NAME_END_OF_THE_END_STR]: dateStr,
-      [PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]: dateLong,
-      [PROP_NAME_END_OF_THE_END_LONG]: dateLong,
-    },
+    [PROP_NAME_BEGIN_OF_THE_BEGIN_STR]: dateStr,
+    [PROP_NAME_END_OF_THE_END_STR]: dateStr,
+    [PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]: dateLong,
+    [PROP_NAME_END_OF_THE_END_LONG]: dateLong,
   };
 }
 

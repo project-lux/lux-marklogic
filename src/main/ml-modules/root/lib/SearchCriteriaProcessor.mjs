@@ -1256,8 +1256,13 @@ const SearchCriteriaProcessor = class {
   // Examples input includes cts.*Query() and cts.*Values().  The point in using this is to ensure
   // search-related constants are defined.
   static evalQueryString(queryStr) {
+    console.log('DEBUG - queryStr:', queryStr);
     return fn.head(xdmp.eval(`${START_OF_GENERATED_QUERY}${queryStr}`));
   }
 };
 
-export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };
+export {
+  FROM_SEARCH_OPTIONS,
+  START_OF_GENERATED_QUERY,
+  SearchCriteriaProcessor,
+};

@@ -28,7 +28,10 @@ import {
   getSearchScopeTypes,
   isSearchScopeName,
 } from './searchScope.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import {
+  FROM_SEARCH_OPTIONS,
+  SearchCriteriaProcessor,
+} from './SearchCriteriaProcessor.mjs';
 import { getSearchScopes } from './searchScope.mjs';
 
 const PATTERN_NAME_DATE_RANGE = 'dateRange';
@@ -362,7 +365,9 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
       searchTermConfig.getPredicates(),
       searchTerm.getChildWillReturnCtsQuery(),
       false,
-      eagerEvaluation
+      eagerEvaluation,
+      -1,
+      true
     )}${wrapEnd}`;
     let values = null;
 
@@ -378,7 +383,8 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
         searchTerm.getChildWillReturnCtsQuery(),
         true,
         eagerEvaluation,
-        maximumNumberOfValues
+        maximumNumberOfValues,
+        true
       )}`;
       values = SearchCriteriaProcessor.evalQueryString(codeStr);
     }
@@ -390,42 +396,82 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   allowedChildren: TYPE_GROUP + TYPE_TERM,
   isConvertIdChildToIri: false,
-  allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
-  defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
-  returnsCtsQuery: true,
+  allowedOptionsName: null,
+  defaultOptionsName: null,
+  // This pattern conditionally returns a CTS query, but not believed when this setting is relied upon by nested terms;
+  // should this become an issue, perhaps we need to make this a function that determines what it returns by context.
+  returnsCtsQuery: false,
   function: (
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
     requestOptions
   ) => {
-    const termValue = searchTerm.getValue();
-    const termConfig = searchTerm.getSearchTermConfig();
-    const termWeight = searchTerm.getWeight();
-    const termValueIsQuery = searchTerm.getValueType() !== TYPE_ATOMIC;
-    const parent = searchTerm.getParentSearchTerm();
-    const parentScope = parent ? parent.getScopeName() : null;
-
-    const valuesQueryStr = termValueIsQuery
-      ? termValue
-      : `${_getCtsQueryFunctionName(
-          'field',
-          searchTerm.isCompleteMatch()
-        )}(${utils.arrayToString(
-          termConfig.getIndexReferences()
-        )}, "${termValue}", ${utils.arrayToString(
-          resolvedSearchOptions
-        )}, ${termWeight})`;
-
-    const tripleRangeQuery = _getTripleRangeQuery(
-      termConfig.getPredicates(),
-      valuesQueryStr,
-      termWeight
+    /*
+     * When request is for values, we need to create a values query and a CTS query.  We always
+     * need to make a CTS query, which should be the same regardless of creating a values query.
+     * The values query has a couple differences, specifically not wrapping a top-level term's
+     * cts.triples call within cts.documentQuery.
+     */
+    const requestIsForValues = searchPatternOptions.get(
+      OPTION_NAME_RETURN_VALUES,
+      false
     );
-    const codeStr = parentScope
-      ? _getParentDataType(parentScope, tripleRangeQuery)
-      : tripleRangeQuery;
-    return _formattedPatternResponse(codeStr);
+    // While the overall request may be for values, we need to return a query when this term instance
+    // is a child of another.
+    const isChildTerm = searchTerm.hasParentSearchTerm();
+    // Final determination
+    const returnValues = requestIsForValues && !isChildTerm;
+
+    // Tread carefully.
+    const wrapInDocumentQuery =
+      !isChildTerm || // if not a child term, we need to ensure this is a cts query to be fed into cts.search.
+      searchTerm.getMustReturnCtsQuery() || // Could be directly in a group, such as cts.andQuery.
+      ![PATTERN_NAME_HOP_INVERSE, PATTERN_NAME_HOP_WITH_FIELD].includes(
+        searchTerm.getParentSearchTerm().getSearchTermConfig().getPatternName()
+      ); // Parent HOP_WITH_FIELD and HOP_INVERSE terms don't need a document query
+    // because they use cts.tripleRangeQuery and cts.triples, respectively.
+    // Other patterns expect a cts query.
+
+    const wrapStart = wrapInDocumentQuery ? 'cts.documentQuery(' : '';
+    const wrapEnd = wrapInDocumentQuery ? ')' : '';
+    const searchTermConfig = searchTerm.getSearchTermConfig();
+
+    const eagerEvaluation = searchPatternOptions.get(
+      OPTION_NAME_EAGER_EVALUATION,
+      true
+    );
+
+    const ctsQueryStr = `${wrapStart}${_getAtLeastOneCtsTriple(
+      searchTerm.getValue(),
+      searchTermConfig.getPredicates(),
+      searchTerm.getChildWillReturnCtsQuery(),
+      false,
+      eagerEvaluation,
+      -1,
+      false
+    )}${wrapEnd}`;
+    let values = null;
+
+    if (returnValues) {
+      // A request may specify the maximum number of values to return.
+      const maximumNumberOfValues = searchPatternOptions.get(
+        OPTION_NAME_MAXIMUM_VALUES,
+        -1
+      );
+      const codeStr = `${_getAtLeastOneCtsTriple(
+        searchTerm.getValue(),
+        searchTermConfig.getPredicates(),
+        searchTerm.getChildWillReturnCtsQuery(),
+        true,
+        eagerEvaluation,
+        maximumNumberOfValues,
+        false
+      )}`;
+      values = SearchCriteriaProcessor.evalQueryString(codeStr);
+    }
+
+    return _formattedPatternResponse(ctsQueryStr, values);
   },
 };
 
@@ -767,7 +813,7 @@ function _getAtLeastOneCtsValue(valuesQueryStr) {
 /**
  * Get a string that, when evaluated, when return at least one value from cts.triples.
  *
- * @param {String} termValue Could be be code that may be passed into the subject IRIs parameter of
+ * @param {String} termValue Could be code that may be passed into the subject IRIs parameter of
  *                 cts.triples, or could be a Cts Query
  * @param {String} predicates Array of predicates to use in the cts.triples call.
  * @param {Boolean} childReturnsCtsQuery Boolean which represents whether termValue is a ctsQuery
@@ -783,28 +829,46 @@ function _getAtLeastOneCtsTriple(
   childReturnsCtsQuery,
   castToString = false,
   eagerEvaluation = true,
-  max = -1
+  max = -1,
+  inverse = false
 ) {
-  const needWrap = max > -1;
-  const maxWrapStart = needWrap ? 'fn.subsequence(' : '';
-  const maxWrapEnd = needWrap ? `, 1, ${max})` : '';
-  const eagerOrLazy = eagerEvaluation ? 'eager' : 'lazy';
-  return `${maxWrapStart}cts
-    .triples(
-      ${childReturnsCtsQuery ? '[]' : termValue},
+  return `
+  op.fromTriples(
+    op.pattern(
+      ${!childReturnsCtsQuery && inverse ? termValue : 'op.col("subject")'},
       ${utils.arrayToString(predicates, 'code')},
-      [],
-      '=',
-      ['${eagerOrLazy}', 'concurrent'],
-      ${childReturnsCtsQuery ? termValue : 'undefined'}
-    )${maxWrapEnd}
-    .toArray()
-    .map((x) => sem.tripleObject(x)${castToString ? ' + ""' : ''})
-    .concat(${
-      castToString
-        ? `'${IRI_DOES_NOT_EXIST}'`
-        : `sem.iri('${IRI_DOES_NOT_EXIST}')`
-    })`;
+      ${!childReturnsCtsQuery && !inverse ? termValue : 'op.col("object")'}
+    )
+  )${
+    childReturnsCtsQuery
+      ? `.joinInner(
+            op.fromSearch(${termValue},
+              ['fragmentId'],
+              null,
+              // Once supported, we want to stop calculating scores.
+              { scoreMethod: 'simple' }
+            )
+            .joinInner(
+              op.fromLexicons(
+                {iri: cts.iriReference()},
+                null,
+                ['fragmentId']
+              ),
+              op.on('fragmentId', 'fragmentId')
+            ),
+            op.on('iri', ${inverse ? "'subject'" : "'object'"})
+          )`
+      : ''
+  }
+  ${max > -1 ? `.limit(${max})` : ''}
+  .result()
+  .toArray()
+  .map(${inverse ? '({object}) => object' : '({subject}) => subject'})
+      .concat(${
+        castToString
+          ? `'${IRI_DOES_NOT_EXIST}'`
+          : `sem.iri('${IRI_DOES_NOT_EXIST}')`
+      })`;
 }
 
 function _getDateFieldRangeQuery(

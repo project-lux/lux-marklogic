@@ -38,6 +38,7 @@ const SEARCH_SCOPES = {
     predicates: ['lux("itemAny")'],
     types: ['DigitalObject', 'HumanMadeObject'],
   },
+  // Reserved word for searching across multiple scopes; see API usage documentation.
   multi: {
     includeInStats: false,
     isUserInterfaceSearchScope: false,

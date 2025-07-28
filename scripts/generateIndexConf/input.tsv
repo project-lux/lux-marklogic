@@ -91,7 +91,8 @@ item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 										
 	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
-set	Primary	Name	keyword	setPrimaryName		Non	Y		/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
+set		Name	keyword	setName	Search	Non	Y		/json[type = ('Set')]/identified_by[./type='Name']/content	
+set	Primary	Name	keyword	setPrimaryName	Search	Non	Y		/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
 set	Any	Text	keyword	setAnyText	Search	Non	N		/json[type = ('Set')]//content	
 set	Type	Id	uri	setTypeId	Search	Non	N		/json[type = ('Set')]/classified_as/id	
 set	UsedFor	Id	uri	setUsedForId	RecordLink	Non	N		/json[type = ('Set')]/used_for/id	

@@ -521,7 +521,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['setPrimaryName'],
+      indexReferences: ['setName'],
       scalarType: 'string',
     },
     publishedAt: {

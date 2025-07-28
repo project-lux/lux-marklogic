@@ -72,7 +72,7 @@ function addAddedToByEntry(docObj, userIri) {
     const addedToByArr = docObj.json.added_to_by;
     const previousEntry =
       addedToByArr.length > 0 ? addedToByArr[addedToByArr.length - 1] : null;
-    let previousStartLong = isDefined(previousEntry)
+    const previousStartLong = isDefined(previousEntry)
       ? previousEntry.timespan[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
       : null;
     const previousUserIri = isDefined(previousEntry)

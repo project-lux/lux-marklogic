@@ -505,6 +505,13 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setIdentifier'],
       scalarType: 'string',
     },
+    // Only useful when including the `id` child term.  The name is not in the Set,
+    // and there is no lastModifiedBy triple.
+    lastModifiedBy: {
+      patternName: 'indexedWord',
+      indexReferences: ['agentName'],
+      scalarType: 'string',
+    },
     memberOf: {
       patternName: 'hopWithField',
       predicates: ['la("member_of")'],
@@ -514,7 +521,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     name: {
       patternName: 'indexedWord',
-      indexReferences: ['setPrimaryName'],
+      indexReferences: ['setName'],
       scalarType: 'string',
     },
     publishedAt: {

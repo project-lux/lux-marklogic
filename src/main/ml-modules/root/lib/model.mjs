@@ -33,7 +33,10 @@ import {
   isUndefined,
   toArray,
 } from '../utils/utils.mjs';
-import { toISOStringThroughSeconds } from '../utils/dateUtils.mjs';
+import {
+  convertPartialDateTimeToSeconds,
+  toISOStringThroughSeconds,
+} from '../utils/dateUtils.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -48,25 +51,43 @@ const TYPE_MATERIAL = 'Material';
 
 const UI_TYPE_CONCEPT = 'Concept';
 
-const PROP_NAME_BEGIN_OF_THE_BEGIN = 'begin_of_the_begin';
-const PROP_NAME_END_OF_THE_END = 'end_of_the_end';
+const PROP_NAME_BEGIN_OF_THE_BEGIN_STR = 'begin_of_the_begin';
+const PROP_NAME_END_OF_THE_END_STR = 'end_of_the_end';
+const PROP_NAME_BEGIN_OF_THE_BEGIN_LONG =
+  '_seconds_since_epoch_begin_of_the_begin';
+const PROP_NAME_END_OF_THE_END_LONG = '_seconds_since_epoch_end_of_the_end';
 const PROP_NAME_DEFAULT_COLLECTION = '_lux_default_collection';
 
-// Intended for when modifies a Set.
+// To be used when a Set is modified.
 function addAddedToByEntry(docObj, userIri) {
   if (isNonEmptyString(userIri)) {
-    const now = toISOStringThroughSeconds(new Date());
     if (isUndefined(docObj.json.added_to_by)) {
       docObj.json.added_to_by = [];
     }
-    docObj.json.added_to_by.push({
-      type: 'Addition',
-      carried_out_by: [{ id: userIri, type: 'Person' }],
-      timespan: {
-        begin_of_the_begin: now,
-        end_of_the_end: now,
-      },
-    });
+
+    // Only add an entry when it will not be a duplicate.
+    const timespanProps = _getNewTimespanProperties(
+      toISOStringThroughSeconds(new Date())
+    );
+    const addedToByArr = docObj.json.added_to_by;
+    const previousEntry =
+      addedToByArr.length > 0 ? addedToByArr[addedToByArr.length - 1] : null;
+    const previousStartLong = isDefined(previousEntry)
+      ? previousEntry.timespan[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
+      : null;
+    const previousUserIri = isDefined(previousEntry)
+      ? previousEntry.carried_out_by[0].id
+      : null;
+    if (
+      previousUserIri != userIri ||
+      previousStartLong != timespanProps[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
+    ) {
+      addedToByArr.push({
+        type: 'Addition',
+        carried_out_by: [{ id: userIri, type: 'Person' }],
+        timespan: timespanProps,
+      });
+    }
   } else {
     throw new InternalServerError(
       'model.addAddedToByEntry requires a non-empty string for the user IRI.'
@@ -288,14 +309,17 @@ function isUserProfile(docNode) {
   );
 }
 
-// @param addedToBy - send null to delete existing property.
+function removeAddedToBy(docObj) {
+  if (isDefined(docObj.json.added_to_by)) {
+    delete docObj.json.added_to_by;
+  }
+}
+
 function setAddedToBy(docObj, addedToBy) {
   if (isDefined(addedToBy)) {
     docObj.json.added_to_by = addedToBy.xpath
       ? addedToBy.toObject()
       : addedToBy;
-  } else if (isDefined(docObj.json.added_to_by)) {
-    delete docObj.json.added_to_by;
   }
 }
 
@@ -305,15 +329,16 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
   if (createdBy) {
     docObj.json.created_by = createdBy.xpath ? createdBy.toObject() : createdBy;
   } else if (isNonEmptyString(userIri)) {
-    const now = toISOStringThroughSeconds(new Date());
     docObj.json.created_by = {
       type: 'Creation',
       carried_out_by: [{ id: userIri, type: 'Person' }],
-      timespan: {
-        begin_of_the_begin: now,
-        end_of_the_end: now,
-      },
+      timespan: _getNewTimespanProperties(
+        toISOStringThroughSeconds(new Date())
+      ),
     };
+    // Practically duplicate the creation entry as a modification entry in support of last modified
+    // by/on falling back on the created by/on info, as that is considered a modification too.
+    addAddedToByEntry(docObj, userIri);
   } else {
     throw new InternalServerError(
       'model.setCreatedBy requires a non-empty string for the user IRI'
@@ -381,6 +406,16 @@ function setUsername(docObj, username) {
       ],
     });
   }
+}
+
+function _getNewTimespanProperties(dateStr) {
+  const dateLong = convertPartialDateTimeToSeconds(dateStr);
+  return {
+    [PROP_NAME_BEGIN_OF_THE_BEGIN_STR]: dateStr,
+    [PROP_NAME_END_OF_THE_END_STR]: dateStr,
+    [PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]: dateLong,
+    [PROP_NAME_END_OF_THE_END_LONG]: dateLong,
+  };
 }
 
 /**
@@ -601,6 +636,7 @@ export {
   merge,
   isMyCollection,
   isUserProfile,
+  removeAddedToBy,
   setAddedToBy,
   setCreatedBy,
   setDefaultCollection,
@@ -608,9 +644,9 @@ export {
   setIndexedProperties,
   setSetMembers,
   setUsername,
-  PROP_NAME_BEGIN_OF_THE_BEGIN,
+  PROP_NAME_BEGIN_OF_THE_BEGIN_STR,
   PROP_NAME_DEFAULT_COLLECTION,
-  PROP_NAME_END_OF_THE_END,
+  PROP_NAME_END_OF_THE_END_STR,
   TYPE_ACTIVITY,
   TYPE_DIGITAL_OBJECT,
   TYPE_HUMAN_MADE_OBJECT,

@@ -1,3 +1,4 @@
+// test that we're loading new code
 import op from '/MarkLogic/optic';
 import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
@@ -1256,7 +1257,7 @@ const SearchCriteriaProcessor = class {
   // Examples input includes cts.*Query() and cts.*Values().  The point in using this is to ensure
   // search-related constants are defined.
   static evalQueryString(queryStr) {
-    console.log('DEBUG - queryStr:', queryStr);
+    console.log('DEBUG - queryStr:', `${START_OF_GENERATED_QUERY}${queryStr}`);
     return fn.head(xdmp.eval(`${START_OF_GENERATED_QUERY}${queryStr}`));
   }
 };

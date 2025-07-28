@@ -1,6 +1,6 @@
 {
   "server-name": "Manage",
   "enabled": "true",
-  "authentication": "%%mlManageAuthentication%%",
+  "authentication": "digest",
   "internal-security": "true"
 }

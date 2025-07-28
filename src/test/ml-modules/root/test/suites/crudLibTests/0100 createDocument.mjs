@@ -291,11 +291,12 @@ const scenarios = [
   },
 ];
 
+const newUserMode = false;
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
       declareUpdate();
-      return createDocument(getNodeFromObject(scenario.input.doc));
+      return createDocument(getNodeFromObject(scenario.input.doc), newUserMode);
     };
     const unitName = null;
     // These tests are dependent on handleRequest creating the user's exclusive roles.

@@ -3,7 +3,7 @@
 - [Introduction](#introduction)
 - [Authentication](#authentication)
 - [Generated Data Service Interfaces](#generated-data-service-interfaces)
-- [Custom MarkLogic Data Services](#custom-marklogic-data-services)
+- [LUX Backend API](#lux-backend-api)
   - [Advanced Search Configuration](#advanced-search-configuration)
     - [Successful Request / Response Example](#successful-request--response-example)
     - [Failed Request / Response Example](#failed-request--response-example)
@@ -74,9 +74,9 @@ It is possible that LUX backend consumers also consume MarkLogic native endpoint
 
 # Authentication
 
-Every LUX backend endpoint request must be authenticated.  Originally, there was a single way: use MarkLogic's internal security and an application server configured with the DIGEST authentication scheme.  The My Collections feature has us switching to external security with an application server configured accordingly, enabling both service accounts and *individual users* the ability to consume the endpoints.  There will be a period when both means are available in some pre-production environments.  The production environment will continue to use internal security until we're ready to switch all environments to external security.
+Every LUX backend endpoint request must be authenticated.  Originally, there was a single way: use MarkLogic's internal security and an application server configured with the DIGEST authentication scheme.  The My Collections feature has us switching to OAuth, enabling both service accounts and *individual users* the ability to consume the endpoints.  There will be a period when both means are available in some pre-production environments.  The production environment will continue to use internal security until we're ready to switch all environments to external security.
 
-In both cases, the user account must be associated to one of the endpoint consumer roles. These provide sufficient privileges to consume all of LUX's backend endpoints. Document permissions may restrict the endpoint consumer to a subset of data and unit-specific configurations. The tenant's endpoint consumer service account has access to all documents. Individual unit endpoint service accounts may have access to overlapping subsets of data. Applicable endpoints offer the `unitName` parameter to specify the unit when the requesting user is a user, as opposed to a service account. For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
+In both cases, the user account must be associated to one of the endpoint consumer roles. These provide sufficient privileges to consume all of LUX's backend endpoints. Document permissions may restrict the endpoint consumer to a subset of data. The tenant's endpoint consumer service account has access to all documents. Individual unit endpoint service accounts may have access to overlapping subsets of data. Applicable endpoints offer the `unitName` parameter to specify the unit when the requesting user is a user, as opposed to a service account; in this context, the unit name determines which unit's documents to make accessible to the request and which configuration files to apply. For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
 
 There is a condition unique to the first time a *user* logs into an environment: the receiving endpoint will get as far as it can and will then throw a `ServerConfigurationChangedError` with a status response code of 503, indicating the endpoint consumer may immediately retry the request. When the [Generated Data Service Interfaces](#generated-data-service-interfaces) are part of the stack, the retry will be automatic. Those that do not use the [Generated Data Service Interfaces](#generated-data-service-interfaces) will need to account for this condition on their own. The retry is necessary to grant the user all the roles they require; they cannot be granted during the original request. This does *not* apply to a user that does not log in as they are then using a service account.
 
@@ -107,7 +107,7 @@ The generated data service proxies require an instance of the `DatabaseClient`. 
 
 *Note to backend endpoint developers: generated Data Service interfaces do not play nicely with hyphens in the Data Service file names.  Use camelCase instead.*
 
-# Custom MarkLogic Data Services
+# LUX Backend API
 
 To better align with data available to the endpoint consumer, several endpoints utilize configuration that may vary by unit, or more precisely, endpoint consumer role.  Thus, when consuming endpoints with users that have different roles, different configurations may be applied.  This includes the search term, advanced search, and related list configurations.  When the user has the `%%mlAppName%%-endpoint-consumer` role, the superset of all of these configurations apply.  For more on how this works, see [Unit Portals](/docs/lux-backend-security-and-software.md#unit-portals).
 
@@ -1534,7 +1534,7 @@ Response Body:
 
 ## Stats
 
-The `stats` endpoint enables consumers to get document estimates by context. The contexts align with the frontend's search contexts. Each context is associated to one or more document types. Additional information may be included in the future.
+The `stats` endpoint enables consumers to get document estimates by context. The context mostly aligns with search scopes, such as Item and Work.  There are also estimates for My Collection and User Profile documents.  Despite those documents belonging to the Set and Agent search scopes, they are excluded from those estimates.  Further, while the other estimates can vary based on the specified unit, these estimates will not.
 
 **URL** : `/ds/lux/stats.mjs`
 
@@ -1544,7 +1544,7 @@ The `stats` endpoint enables consumers to get document estimates by context. The
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
+| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. The My Collection and User Profile estimates are not subject to the unit restriction. |
 
 ### Successful Request / Response Example
 
@@ -1566,10 +1566,11 @@ Response Body:
       "concept":4649130,
       "event":153318,
       "item":17545158,
-      "multi":0,
+      "myCollection":1227,
       "place":579366,
       "reference":11031350,
       "set":305353,
+      "userProfile":911,
       "work":13560980
     }
   },

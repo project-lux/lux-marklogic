@@ -26,7 +26,8 @@ const endpointConfig = new EndpointConfig({
 const zeroArityFun = () => {
   const innerZeroArityFun = () => {
     declareUpdate();
-    return createDocument(getNodeFromObject({ foo: 'bar' }));
+    const newUserMode = false;
+    return createDocument(getNodeFromObject({ foo: 'bar' }), newUserMode);
   };
   const unitName = null;
   return handleRequestV2ForUnitTesting(

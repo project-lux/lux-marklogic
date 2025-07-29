@@ -295,9 +295,7 @@ function getUiType(docNode) {
 
 function isMyCollection(docNode) {
   return fn.exists(
-    docNode.xpath(
-      `json/classified_as[equivalent/id = "${IDENTIFIERS.myCollection}"]`
-    )
+    docNode.xpath(`json/classified_as[id = "${IDENTIFIERS.myCollection}"]`)
   );
 }
 

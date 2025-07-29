@@ -283,12 +283,7 @@ const scenarios = [
         identified_by: [],
         classified_as: [
           {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.myCollection,
-              },
-            ],
+            id: IDENTIFIERS.myCollection,
           },
         ],
         ...newProperty,
@@ -335,12 +330,7 @@ const scenarios = [
         identified_by: [],
         classified_as: [
           {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.myCollection,
-              },
-            ],
+            id: IDENTIFIERS.myCollection,
           },
         ],
         ...newProperty,
@@ -361,12 +351,7 @@ const scenarios = [
         identified_by: [],
         classified_as: [
           {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.myCollection,
-              },
-            ],
+            id: IDENTIFIERS.myCollection,
           },
         ],
       },

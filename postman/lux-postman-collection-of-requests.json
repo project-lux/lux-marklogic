@@ -27,7 +27,7 @@
 										},
 										{
 											"key": "doc",
-											"value": "{\n  \"type\": \"Set\",\n  \"about\": {\n    \"created_by\": {\n      \"influenced_by\": {\n        \"id\": \"https://lux.collections.yale.edu/data/person/OMEGA\",\n        \"type\": \"Person\"\n      }\n    },\n    \"id\": \"clyde\",\n    \"type\": \"Person\"\n  },\n  \"containing\": { \"id\": \"https://some.awesome.thing\" },\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://my.classified.as.id\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.my.collection\"\n        }\n      ]\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n",
+											"value": "{\n  \"type\": \"Set\",\n  \"about\": {\n    \"created_by\": {\n      \"influenced_by\": {\n        \"id\": \"https://lux.collections.yale.edu/data/person/OMEGA\",\n        \"type\": \"Person\"\n      }\n    },\n    \"id\": \"clyde\",\n    \"type\": \"Person\"\n  },\n  \"containing\": { \"id\": \"https://some.awesome.thing\" },\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://todo.concept.my.collection\"\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n",
 											"type": "text"
 										},
 										{
@@ -153,7 +153,7 @@
 										},
 										{
 											"key": "doc",
-											"value": "{\n  \"type\": \"Set\",\n  \"about\": [\n    {\n      \"created_by\": {\n        \"influenced_by\": {\n          \"id\": \"https://lux.collections.yale.edu/data/person/OMEGA\",\n          \"type\": \"Person\"\n        }\n      }\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/person/GAMMA\",\n      \"type\": \"Person\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/person/DELTA\",\n      \"type\": \"Person\"\n    }\n  ],\n  \"containing\": [\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/object/dee0f466-fa19-4576-bac4-f486960c7df5\"\n    },\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/visual/d387a494-c1c1-4e13-a627-f27555d20044\"\n    }\n  ],\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4b259837-ea0c-4b28-8035-ec1144de7231\",\n      \"_label\": \"vehicle equipment\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.my.collection\"\n        }\n      ]\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"id\": \"https://lux.collections.yale.edu/data/set/96e989b6-8feb-4fcf-904a-1a89ba3948bc\",\n  \"created_by\": {\n    \"type\": \"Creation\",\n    \"carried_out_by\": [\n      {\n        \"id\": \"https://lux.collections.yale.edu/data/person/75da25a0-0e23-4ffa-8687-95c327421b2f\",\n        \"type\": \"Person\"\n      }\n    ],\n    \"timespan\": {\n      \"begin_of_the_begin\": \"2025-06-26T16:42:15\",\n      \"end_of_the_end\": \"2025-06-26T16:42:15\"\n    }\n  }\n}\n",
+											"value": "{\n    \"type\": \"Set\",\n    \"about\": {\n        \"created_by\": {\n            \"influenced_by\": {\n                \"id\": \"https://lux.collections.yale.edu/data/person/OMEGA\",\n                \"type\": \"Person\"\n            }\n        },\n        \"id\": \"clyde\",\n        \"type\": \"Person\"\n    },\n    \"containing\": {\n        \"id\": \"https://some.awesome.thing\"\n    },\n    \"identified_by\": [\n        {\n            \"type\": \"Name\",\n            \"content\": \"The My Collection's name, which may be up to 200 characters\",\n            \"language\": [\n                {\n                    \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n                    \"type\": \"Language\",\n                    \"_label\": \"English\",\n                    \"equivalent\": [\n                        {\n                            \"id\": \"http://vocab.getty.edu/aat/300388277\",\n                            \"type\": \"Language\",\n                            \"_label\": \"English\"\n                        }\n                    ]\n                }\n            ],\n            \"classified_as\": [\n                {\n                    \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n                    \"type\": \"Type\",\n                    \"_label\": \"Primary Name\",\n                    \"equivalent\": [\n                        {\n                            \"id\": \"http://vocab.getty.edu/aat/300404670\",\n                            \"type\": \"Type\",\n                            \"_label\": \"Primary Name\"\n                        }\n                    ]\n                },\n                {\n                    \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n                    \"type\": \"Type\",\n                    \"_label\": \"Sort Name\"\n                }\n            ]\n        }\n    ],\n    \"classified_as\": [\n        {\n            \"id\": \"https://todo.concept.my.collection\"\n        }\n    ],\n    \"referred_to_by\": [\n        {\n            \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n            \"classified_as\": [\n                {\n                    \"id\": \"https://not.checked\",\n                    \"equivalent\": [\n                        {\n                            \"id\": \"https://todo.concept.note\"\n                        }\n                    ]\n                }\n            ],\n            \"identified_by\": [\n                {\n                    \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n                    \"classified_as\": [\n                        {\n                            \"id\": \"https://not.checked\",\n                            \"equivalent\": [\n                                {\n                                    \"id\": \"https://todo.concept.display.name\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }\n    ],\n    \"id\": \"https://lux.collections.yale.edu/data/set/554447a3-a82d-4c5c-8e59-e92340045a8d\",\n    \"created_by\": {\n        \"type\": \"Creation\",\n        \"carried_out_by\": [\n            {\n                \"id\": \"https://lux.collections.yale.edu/data/person/8576c7c5-1fcf-4d8c-a7ef-d0ce0ea929a9\",\n                \"type\": \"Person\"\n            }\n        ],\n        \"timespan\": {\n            \"begin_of_the_begin\": \"2025-07-25T12:36:42\",\n            \"end_of_the_end\": \"2025-07-25T12:36:42\"\n        }\n    }\n}",
 											"type": "text"
 										},
 										{
@@ -163,7 +163,7 @@
 										},
 										{
 											"key": "uri",
-											"value": "https://lux.collections.yale.edu/data/set/96e989b6-8feb-4fcf-904a-1a89ba3948bc",
+											"value": "https://lux.collections.yale.edu/data/set/554447a3-a82d-4c5c-8e59-e92340045a8d",
 											"type": "text"
 										}
 									]
@@ -199,8 +199,13 @@
 											"type": "text"
 										},
 										{
+											"key": "uri",
+											"value": "https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73",
+											"type": "text"
+										},
+										{
 											"key": "doc",
-											"value": "{\n    \"type\": \"Person\",\n    \"classified_as\": [\n        {\n            \"id\": \"https://not.checked\",\n            \"equivalent\": [\n                {\n                    \"id\": \"https://todo.concept.user.profile\"\n                }\n            ]\n        }\n    ],\n    \"identified_by\": [\n        {\n            \"type\": \"Identifier\",\n            \"content\": \"joe\",\n            \"classified_as\": [\n                {\n                    \"id\": \"http://www.wikidata.org/entity/Q15901043\",\n                    \"type\": \"Type\",\n                    \"_label\": \"username\"\n                }\n            ]\n        }\n    ],\n    \"id\": \"https://lux.collections.yale.edu/person/79472bdb-3ce7-487e-a38c-4fc602d7c27b\",\n    \"created_by\": {\n        \"type\": \"Creation\",\n        \"carried_out_by\": [\n            {\n                \"id\": \"https://lux.collections.yale.edu/person/79472bdb-3ce7-487e-a38c-4fc602d7c27b\",\n                \"type\": \"Person\"\n            }\n        ],\n        \"timespan\": {\n            \"begin_of_the_begin\": \"2025-05-13T18:33:40\",\n            \"end_of_the_end\": \"2025-05-13T18:33:40\"\n        }\n    }\n}",
+											"value": "{\n  \"type\": \"Person\",\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.user.profile\"\n        }\n      ]\n    }\n  ],\n  \"identified_by\": [\n    {\n      \"type\": \"Identifier\",\n      \"content\": \"katrina\",\n      \"classified_as\": [\n        {\n          \"id\": \"http://www.wikidata.org/entity/Q15901043\",\n          \"type\": \"Type\",\n          \"_label\": \"username\"\n        }\n      ]\n    },\n    {\n      \"type\": \"Name\",\n      \"content\": \"Katrina Bilokur\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\"\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"id\": \"https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73\",\n  \"created_by\": {\n    \"type\": \"Creation\",\n    \"carried_out_by\": [\n      {\n        \"id\": \"https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73\",\n        \"type\": \"Person\"\n      }\n    ],\n    \"timespan\": {\n      \"begin_of_the_begin\": \"2025-07-23T16:53:55\",\n      \"end_of_the_end\": \"2025-07-23T16:53:55\"\n    }\n  },\n  \"_lux_default_collection\": \"https://lux.collections.yale.edu/data/set/4bff8962-7179-4d9c-8ba4-9eab71d1b675\",\n  \"added_to_by\": [\n    {\n      \"type\": \"Addition\",\n      \"carried_out_by\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73\",\n          \"type\": \"Person\"\n        }\n      ],\n      \"timespan\": {\n        \"begin_of_the_begin\": \"2025-07-23T16:53:55\",\n        \"end_of_the_end\": \"2025-07-23T16:53:55\"\n      }\n    }\n  ]\n}\n",
 											"type": "text"
 										},
 										{
@@ -1214,6 +1219,35 @@
 					"response": []
 				},
 				{
+					"name": "Get External Security",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/external-security/lux-cognito/properties?format=json",
+							"protocol": "{{mlProtocol}}",
+							"host": [
+								"{{mlHost}}"
+							],
+							"port": "{{mlManagePort}}",
+							"path": [
+								"manage",
+								"v2",
+								"external-security",
+								"lux-cognito",
+								"properties"
+							],
+							"query": [
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get Log Excerpt",
 					"request": {
 						"method": "GET",
@@ -1565,6 +1599,24 @@
 									"key": "sort",
 									"value": null
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{middleTierUrl}}/api/tenant-status",
+							"host": [
+								"{{middleTierUrl}}"
+							],
+							"path": [
+								"api",
+								"tenant-status"
 							]
 						}
 					},

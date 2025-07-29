@@ -5,7 +5,8 @@ import { isProduction } from '/lib/environmentLib.mjs';
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTION_DATA_READER,
+  ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
 } from '/lib/securityLib.mjs';
 import {
   COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
@@ -72,8 +73,15 @@ const expectedPermissions = [
   // First two from getExclusiveDocumentPermissions
   xdmp.permission(userExclusiveRoleName, CAPABILITY_READ),
   xdmp.permission(userExclusiveRoleName, CAPABILITY_UPDATE),
-  xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
-  xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_UPDATE),
+  xdmp.permission(
+    ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+    CAPABILITY_READ
+  ),
+  xdmp.permission(
+    ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+    CAPABILITY_UPDATE
+  ),
+  xdmp.permission(ROLE_NAME_MY_COLLECTION_DATA_READER, CAPABILITY_READ),
 ];
 const actualPermissions = fn.head(
   xdmp.invokeFunction(

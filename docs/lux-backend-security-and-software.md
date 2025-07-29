@@ -93,31 +93,37 @@ Reader role naming conventions for units, where `[alpha]` is the next available 
 
 ![Endpoint consumer role hierarchy](/docs/img/endpoint-consumer-role-hierarchy.png)
 
-The `%%mlAppName%%-endpoint-consumer-base` role ([2-endpoint-consumer-base-role.json](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json)) grants the roles and execute privileges required to consume the endpoints, less those provided by [amps](#amps).
+The [%%mlAppName%%-endpoint-consumer-base](/src/main/ml-config/base/security/roles/2-endpoint-consumer-base-role.json) role grants the roles and execute privileges required to consume the endpoints, less those provided by [amps](#amps).
 
-There are two roles that directly inherit the base role to differentiate the two types of endpoint consumers:
+There are two roles that directly inherit the base role, which serve to differentiate two types of endpoint consumers:
 
-1. The `%%mlAppName%%-endpoint-consumer-user` role ([2a-endpoint-consumer-user-role.json](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json)) is to be granted to My Collections user accounts.
-2. The `%%mlAppName%%-endpoint-consumer-service-account` role ([2b-endpoint-consumer-service-account-role.json](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json)) is to be granted to service accounts.
+1. The [%%mlAppName%%-endpoint-consumer-user](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json) role is to be granted to My Collections *user* accounts.
+2. The [%%mlAppName%%-endpoint-consumer-service-account](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json) role is to be granted to *service* accounts.
 
-Primary distinctions between the endpoint consumer types:
+Primary distinctions between user and service accounts:
 
 1. Document permissions:
-    * User accounts only have access to My Collections documents. The subset thereof varies by user account.  For example, User 1 and User 2 may share access to My Fossils Collection yet User 1 may also have access to the My Paintings Collection.
+    * User accounts only have access to My Collections documents. The subset thereof varies by user account.  For example and once sharing is supported, User 1 and User 2 may share access to My Fossils Collection yet User 1 may also have access to the My Paintings Collection.
     * Service accounts only have access to documents provided by the [data pipeline](https://github.com/project-lux/data-pipeline).  The subset thereof varies by service account, or unit.  For example, the Yale Peabody Museum and Yale University Art Gallery may share the concept of fossils yet the Yale Peabody Museum service account will have access to many more fossil documents than Yale University Art Gallery's service account.
 2. Requests from a user account can have access to the same configuration and (data pipeline-provided) documents as a service account (using the `unitName` endpoint parameter), but service accounts cannot have access to a user account's documents.  Combining the two previous examples, if the same User 1 logged into LUX through Yale Peabody Museum's portal, the user would have access to their My Collection documents *and* Yale Peabody Museum's fossil documents.  Users that access LUX through Yale Peabody Museum's portal without logging in would only be able to see Yale Peabody Museum's documents.  The [backend endpoint API documentation](/docs/lux-backend-api-usage.md) identifies which endpoints accept the `unitName` parameter.
 3. Service accounts are not allowed to consume My Collection endpoints.
 
-Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).\*  The dedicated endpoint consumer role is to inherit the base endpoint consumer role.  The tenant's endpoint consumer role is defined by [2c-tenant-endpoint-consumer-role.json](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.  
+Each tenant and unit is to have a dedicated a) service account, b) endpoint consumer role, and c) [reader role](#reader).\*  Dedicated endpoint consumer service account roles are to inherit [%%mlAppName%%-endpoint-consumer-service-account](/src/main/ml-config/base/security/roles/2b-endpoint-consumer-service-account-role.json).  The tenant's endpoint consumer role is defined by [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json) and serves as an example.  
 
-Unit endpoint consumer roles may also be configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/). Endpoint consumer role naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
+Unit endpoint consumer roles may also be configured within [/src/main/ml-config/base/security/roles](/src/main/ml-config/base/security/roles/). Endpoint consumer naming conventions for units, where `[alpha]` and `[unit]` match that of the reader role:
 
 * File names: `2[alpha]-[unit]-endpoint-consumer-role.json`
 * Role names: `%%mlAppName%%-[unit]-endpoint-consumer`
 
-For internal security environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+A subset of roles is configured with external group names, in support of OAuth:
 
-Developers are encouraged to test endpoints using an account that has one of these roles.
+* [%%mlAppName%%-endpoint-consumer-user](/src/main/ml-config/base/security/roles/2a-endpoint-consumer-user-role.json) is configured to the "user" group, thereby allowing any authenticated My Collections user to consume endpoints.
+* The tenant owner, [%%mlAppName%%-endpoint-consumer](/src/main/ml-config/base/security/roles/2c-tenant-endpoint-consumer-role.json), is configured to the "my-collections-service" group.
+* Units with unit portals also have their endpoint consumer service account role configured to the "my-collections-service" group.  This includes [%%mlAppName%%-ypm-endpoint-consumer](/src/main/ml-config/base/security/roles/2d-ypm-endpoint-consumer-role.json).
+
+Intended for local developer environments, the project offers tenant and unit endpoint consumer service accounts.  These are configured within [/src/main/ml-config/base-unsecured/security/users](/src/main/ml-config/base-unsecured/security/users).  To deploy, set the `endpointConsumerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.  
+
+Developers are encouraged to test endpoints using endpoint consumer user accounts and endpoint consumer service accounts.
 
 \* See the [Applicable Configuration](#applicable-configuration) section for an additional requirement to provide a unit a service account.
 
@@ -133,22 +139,20 @@ The [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writ
 
 The [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role builds upon the [%%mlAppName%%-writer](/src/main/ml-config/base/security/roles/4-tenant-writer-role.json) role by also being able to run the `performBaseDeployment` task.  This role should not be able to run the `mlDeploySecurity` task or lower level security tasks, specifically creating user accounts, changing a user account's roles and privileges, and changing a role's inherited roles and privileges.
 
-For internal security environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
+Intended for local developer environments, the project offers the [%%mlAppName%%-deployer](/src/main/ml-config/base-unsecured/security/users/tenant-deployer-user.json) *user account*, which is granted the deployer role.  To deploy, set the `deployerPassword` in the properties file (It is not an encrypted password.), add [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) to the `mlConfigPaths` property value, and run the `mlDeployUsers` task or a higher one.
 
 ### My Collections Data Updater
 
-The [%%mlAppName%%-my-collections-data-updater](/src/main/ml-config/base/security/roles/8-my-collections-data-updater-role.json) role is granted the read and update permissions to all My Collection and User Profile documents for two reasons:
+The [%%mlAppName%%-my-collections-data-updater](/src/main/ml-config/base/security/roles/9-my-collections-data-updater-role.json) role is granted the read and update permissions to all My Collection and User Profile documents for two reasons:
 
 1. Support the Blue/Green switch, which needs the ability to get the latest production data from the outgoing instance to the incoming instance.
 2. Support backups of My Collections data that are independent of backing up the entire database, for better RPO and RTO.
 
 Only service accounts used for these purposes are to be granted this role.
 
-The [%%mlAppName%%-user-profile-data-reader](/src/main/ml-config/base/security/roles/7-user-profile-data-reader-role.json) role performs a similar function but is limited to reading user profiles and should only be granted to the [read-document-amp.json](/src/main/ml-config/base/security/amps/read-document-amp.json) amp, for the expressed purpose of returning the name profile of any user profile document.
-
 ### Roles for Amps
 
-See [Amps](#amps).
+Some roles exist for the exclusive use of [amps](#amps). These can be sensitive roles that should not be inherited by other roles, granted to service accounts, or granted to user accounts.
 
 ### Roles for Unit Testing
 
@@ -164,13 +168,17 @@ Amps are used to grant additional executive privileges (via roles) to specific f
 
 Function naming convention: those that start with two underscores are amp'd but not exported; those that start with a single underscore are amp'd and exported.
 
-| Amp | Role(s) | Function(s) |
-| --- | ------- | ----------- |
-| [get-forest-info-by-host-amp.json](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) | [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6a-status-builtins-role.json) | `__getForestInfoByHost`, defined in [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs) |
-| [create-and-grant-role-amp.json](/src/main/ml-config/base/security/amps/create-and-grant-role-amp.json) | [%%mlAppName%%-user-management](/src/main/ml-config/base/security/roles/6e-user-management.json), which inherits [%%mlAppName%%-invoke-in](/src/main/ml-config/base/security/roles/6c-invoke-in-role.json) | `__createExclusiveRoles`, defined in [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) |
-| [handle-request-v2-amp.json](/src/main/ml-config/base/security/amps/handle-request-v2-amp.json) | [%%mlAppName%%-invoke-as-user](/src/main/ml-config/base/security/roles/6d-invoke-as-user-role.json), which inherits [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6b-invoke-role.json) | `__handleRequestV2`, defined in [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) |
-| [read-document-amp.json](/src/main/ml-config/base/security/amps/read-document-amp.json) | [%%mlAppName%%-user-profile-data-reader](/src/main/ml-config/base/security/roles/7-user-profile-data-reader-role.json) | `_readDocument`, defined in [crudLib.mjs](/src/main/ml-modules/root/lib/crudLib.mjs) |
-| execute-with-*-amp.json | [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6b-invoke-role.json) | `_execute_with_*` with libWrapper.mjs, generated by the `addSupportForExecutingWithServiceAccounts` Gradle task. |
+| Amp | Role(s) | Function(s) | Library | Purpose |
+| --- | ------- | ----------- | ------- | ------- |
+| [create-exclusive-roles-amp.json](/src/main/ml-config/base/security/amps/create-exclusive-roles-amp.json) | [%%mlAppName%%-user-management](/src/main/ml-config/base/security/roles/6e-user-management.json), which inherits [%%mlAppName%%-invoke-in](/src/main/ml-config/base/security/roles/6c-invoke-in-role.json) | `__createExclusiveRoles` | [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) |Create and grant a user's reader role. |
+| [get-forest-info-by-host-amp.json](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) | [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6a-status-builtins-role.json) | `__getForestInfoByHost`| [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs) | Enable the [Storage Info endpoint](/docs/lux-backend-api-usage.md#storage-info) to report out volume usage. |
+| [get-my-collection-count-amp.json](/src/main/ml-config/base/security/amps/get-my-collection-count-amp.json) | ["%%mlAppName%%-my-collection-data-reader"](/src/main/ml-config/base/security/roles/8-my-collection-data-reader-role.json) | `_getMyCollectionDocumentCount` | [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs) | Include the total number of My Collection documents in [Stats endpoint](/docs/lux-backend-api-usage.md#stats) response. |
+| [get-user-profile-count-amp.json](/src/main/ml-config/base/security/amps/get-user-profile-count-amp.json) | ["%%mlAppName%%-user-profile-data-reader"](/src/main/ml-config/base/security/roles/7-user-profile-data-reader-role.json) | `_getUserProfileDocumentCount` | [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs) | Include the total number of user profiles in [Stats endpoint](/docs/lux-backend-api-usage.md#stats) response. |
+| [handle-request-v2-amp.json](/src/main/ml-config/base/security/amps/handle-request-v2-amp.json) | [%%mlAppName%%-invoke-as-user](/src/main/ml-config/base/security/roles/6d-invoke-as-user-role.json), which inherits [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6b-invoke-role.json) | `__handleRequestV2` | [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) | Invoke the function provided by the data service, conditionally inclusive of a unit's reader role. |
+| [read-document-amp.json](/src/main/ml-config/base/security/amps/read-document-amp.json) | [%%mlAppName%%-user-profile-data-reader](/src/main/ml-config/base/security/roles/7-user-profile-data-reader-role.json) | `_readDocument` | [crudLib.mjs](/src/main/ml-modules/root/lib/crudLib.mjs) | Return the name profile of any user profile. |
+| execute-with-*-amp.json | [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6b-invoke-role.json) | `_execute_with_*` | libWrapper.mjs^ | Add unit's reader role to user for duration of request. |
+
+^ Generated by the `addSupportForExecutingWithServiceAccounts` Gradle task.
 
 # Software
 
@@ -193,6 +201,7 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 | MarkLogic Server | 11.3.1 | n/a | https://developer.marklogic.com/products/marklogic-server | | 
 | MarkLogic AWS CloudFormation Template (CFT) | 11.3.1 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, maintained in a private repo. |
 | MarkLogic Content Pump (MLCP) | 11.3.1 | `mlcpVersion` | https://github.com/marklogic/marklogic-contentpump | Loading content in MarkLogic. |
+| Flux | 1.4.0 | n/a | https://github.com/marklogic/flux ([docs](https://marklogic.github.io/flux/)) | [Backup](/scripts/jobs/myCollections/backup), [restore](/scripts/jobs/myCollections/restore), and [delete](/scripts/jobs/myCollections/delete) My Collections jobs. |
 | Gradle | 8.13 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
 | MarkLogic Gradle Plugin | 5.0.0 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |
 | MarkLogic Node Module | ^3.3.0 | n/a | https://www.npmjs.com/package/marklogic | To check the version used by LUX's middle tier, check its [package.json](https://github.com/project-lux/lux-middletier/blob/main/package.json). For additional information, see [Generated Data Service Interfaces](./lux-backend-api-usage.md#generated-data-service-interfaces). |

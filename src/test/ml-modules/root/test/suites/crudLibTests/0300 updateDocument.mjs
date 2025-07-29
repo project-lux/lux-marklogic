@@ -1,7 +1,8 @@
+import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
 import {
-  COLLECTION_NAME_MY_COLLECTION,
-  COLLECTION_NAME_USER_PROFILE,
-} from '/lib/appConstants.mjs';
+  PROP_NAME_DEFAULT_COLLECTION,
+  getDefaultCollection,
+} from '/lib/model.mjs';
 import { updateDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
@@ -39,31 +40,26 @@ xdmp.invokeFunction(
   { database: xdmp.securityDatabase() }
 );
 
-const userProfileDocNode = fn.head(
+// Get values required by these tests.
+const { hmoDocObj, userProfileDocNode, defaultMyCollectionDocNode } = fn.head(
   xdmp.invokeFunction(
     () => {
-      return fn.head(
+      // Get a record whose type should not be accepted by updateDocument.
+      const hmoDocObj = getObjectFromNode(cts.doc(HMO_URI));
+      hmoDocObj.id = HMO_URI; // Ensure the ID is set for the test.
+
+      const userProfileDocNode = fn.head(
         cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
       );
-    },
-    {
-      userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
-);
-assertions.push(
-  testHelperProxy.assertExists(
-    userProfileDocNode,
-    `The updateDocument tests are dependent on the createDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
-  )
-);
-const userProfileUri = fn.baseUri(userProfileDocNode) + '';
+      const defaultMyCollectionDocNode = cts.doc(
+        getDefaultCollection(userProfileDocNode)
+      );
 
-// Get a record whose type should not be accepted by updateDocument.
-const hmoDocNode = fn.head(
-  xdmp.invokeFunction(
-    () => {
-      return cts.doc(HMO_URI);
+      return {
+        hmoDocObj,
+        userProfileDocNode,
+        defaultMyCollectionDocNode,
+      };
     },
     {
       userId: xdmp.user(USERNAME_FOR_BONNIE),
@@ -72,13 +68,25 @@ const hmoDocNode = fn.head(
 );
 assertions.push(
   testHelperProxy.assertExists(
-    hmoDocNode,
+    hmoDocObj,
     `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
   )
 );
-// Add the ID
-const hmoDocObj = getObjectFromNode(hmoDocNode);
-hmoDocObj.id = HMO_URI;
+const hmoUri = hmoDocObj.id;
+assertions.push(
+  testHelperProxy.assertExists(
+    userProfileDocNode,
+    `The updateDocument tests are dependent on the createDocument tests creating a User Profile document for '${USERNAME_FOR_BONNIE}'`
+  )
+);
+const userProfileUri = userProfileDocNode.baseURI;
+assertions.push(
+  testHelperProxy.assertExists(
+    defaultMyCollectionDocNode,
+    `The updateDocument tests are dependent on the createDocument tests creating a default for '${USERNAME_FOR_BONNIE}'`
+  )
+);
+const defaultMyCollectionUri = defaultMyCollectionDocNode.baseURI;
 
 xdmp.invokeFunction(
   () => {
@@ -91,28 +99,6 @@ xdmp.invokeFunction(
   },
   { database: xdmp.securityDatabase() }
 );
-
-// Get an existing My Collection for this user.
-const myCollectionDocNode = fn.head(
-  xdmp.invokeFunction(
-    () => {
-      return fn.head(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION))
-      );
-    },
-    {
-      userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
-);
-assertions.push(
-  testHelperProxy.assertExists(
-    myCollectionDocNode,
-    `The updateDocument tests are dependent on the createDocument tests creating a My Collection document '${USERNAME_FOR_BONNIE}' can access`
-  )
-);
-const myCollectionUri = myCollectionDocNode.baseURI;
-
 //
 // END: OK, let's get on with the tests.
 //
@@ -144,6 +130,7 @@ const scenarios = [
             ],
           },
         ],
+        [PROP_NAME_DEFAULT_COLLECTION]: defaultMyCollectionUri,
         ...newProperty,
       },
     },
@@ -163,6 +150,12 @@ const scenarios = [
           message: 'The added_to_by property is missing',
         },
         {
+          type: 'xpath',
+          xpath: `exists(${PROP_NAME_DEFAULT_COLLECTION})`,
+          expected: true,
+          message: `The '${PROP_NAME_DEFAULT_COLLECTION}' property is missing`,
+        },
+        {
           type: 'equality',
           xpath: `created_by`,
           expected: userProfileDocNode.xpath('json/created_by'),
@@ -175,6 +168,85 @@ const scenarios = [
           message: `The ${newPropertyName} property was not retained as given`,
         },
       ],
+    },
+  },
+  {
+    name: 'Regular user updating their profile but omitting their default My Collection',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      doc: {
+        id: userProfileUri,
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: `The default collection is required`,
+    },
+  },
+  {
+    name: 'Regular user updating their profile with a default collection that does not exist',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      doc: {
+        id: userProfileUri,
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+        [PROP_NAME_DEFAULT_COLLECTION]: '/does/not/exist',
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'The document specified as the default collection does not exist',
+    },
+  },
+  {
+    name: 'Regular user updating their profile with a valid URI but not of a My Collection',
+    input: {
+      username: USERNAME_FOR_BONNIE,
+      doc: {
+        id: userProfileUri,
+        type: 'Person',
+        classified_as: [
+          {
+            id: 'https://not.checked',
+            equivalent: [
+              {
+                id: IDENTIFIERS.userProfile,
+              },
+            ],
+          },
+        ],
+        [PROP_NAME_DEFAULT_COLLECTION]: hmoUri,
+        ...newProperty,
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'The document specified as the default collection exists but is not a qualifying collection',
     },
   },
   {
@@ -206,7 +278,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_BONNIE,
       doc: {
-        id: myCollectionUri,
+        id: defaultMyCollectionUri,
         type: 'Set',
         identified_by: [],
         classified_as: [
@@ -227,7 +299,7 @@ const scenarios = [
       nodeAssertions: [
         {
           type: 'xpath',
-          xpath: `id = '${myCollectionUri}'`,
+          xpath: `id = '${defaultMyCollectionUri}'`,
           expected: true,
           message: 'The ID property changed',
         },
@@ -240,7 +312,7 @@ const scenarios = [
         {
           type: 'equality',
           xpath: `created_by`,
-          expected: myCollectionDocNode.xpath('json/created_by'),
+          expected: defaultMyCollectionDocNode.xpath('json/created_by'),
           message: 'The created_by property was not restored',
         },
         {
@@ -256,9 +328,9 @@ const scenarios = [
     name: 'ID mismatch',
     input: {
       username: USERNAME_FOR_BONNIE,
-      idOverride: myCollectionUri + '-different-uri',
+      idOverride: defaultMyCollectionUri + '-different-uri',
       doc: {
-        id: myCollectionUri,
+        id: defaultMyCollectionUri,
         type: 'Set',
         identified_by: [],
         classified_as: [
@@ -284,7 +356,7 @@ const scenarios = [
     input: {
       username: USERNAME_FOR_SERVICE_ACCOUNT,
       doc: {
-        id: myCollectionUri,
+        id: defaultMyCollectionUri,
         type: 'Set',
         identified_by: [],
         classified_as: [
@@ -317,6 +389,7 @@ const scenarios = [
   },
 ];
 
+const newUserMode = false;
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const innerZeroArityFun = () => {
@@ -325,7 +398,8 @@ for (const scenario of scenarios) {
         isDefined(scenario.input.idOverride)
           ? scenario.input.idOverride
           : scenario.input.doc.id,
-        getNodeFromObject(scenario.input.doc)
+        getNodeFromObject(scenario.input.doc),
+        newUserMode
       );
     };
     const unitName = null;

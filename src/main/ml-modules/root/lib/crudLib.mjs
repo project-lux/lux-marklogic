@@ -9,7 +9,8 @@ import {
 import {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
-  ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+  ROLE_NAME_MY_COLLECTION_DATA_READER,
   ROLE_NAME_USER_PROFILE_DATA_READER,
   getExclusiveDocumentPermissions,
   getExclusiveRoleNameByUsername,
@@ -21,10 +22,12 @@ import {
   addAddedToByEntry,
   getAddedToBy,
   getCreatedBy,
+  getDefaultCollection,
   getId,
   getSetMembers,
   isMyCollection,
   isUserProfile,
+  removeAddedToBy,
   setAddedToBy,
   setCreatedBy,
   setId,
@@ -39,7 +42,6 @@ import {
   LoopDetectedError,
   NotFoundError,
 } from './mlErrorsLib.mjs';
-import { getLanguageIdentifier } from './identifierConstants.mjs';
 import {
   getNodeFromObject,
   isNonEmptyArray,
@@ -47,21 +49,21 @@ import {
   isUndefined,
 } from '../utils/utils.mjs';
 
-const DEFAULT_LANG_IRI = getLanguageIdentifier('en');
-const DEFAULT_NEW_DOCUMENT = false;
+const DEFAULT_LANG = 'en';
 const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
 const DOCUMENT_TYPE_MY_COLLECTION = 'My Collection';
 const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
 
-function createDocument(docNode, lang = DEFAULT_LANG_IRI) {
+function createDocument(docNode, newUserMode, lang = DEFAULT_LANG) {
   const uri = null; // determined later
-  return _insertDocument(uri, docNode, lang, true);
+  const newDocumentMode = true;
+  return _insertDocument(uri, docNode, newUserMode, newDocumentMode, lang);
 }
 
 // This function has access to all user profiles and is responsible for restricting access
 // to the name profile when the requesting user is not the owner of the profile.
-function _readDocument(uri, profile = null, lang = 'en') {
+function _readDocument(uri, profile = null, lang = DEFAULT_LANG) {
   if (fn.docAvailable(uri)) {
     const docNode = cts.doc(uri);
 
@@ -77,8 +79,9 @@ function _readDocument(uri, profile = null, lang = 'en') {
 }
 const readDocument = import.meta.amp(_readDocument);
 
-function updateDocument(uri, docNode, lang = DEFAULT_LANG_IRI) {
-  return _insertDocument(uri, docNode, lang, false);
+function updateDocument(uri, docNode, newUserMode, lang = DEFAULT_LANG) {
+  const newDocumentMode = false;
+  return _insertDocument(uri, docNode, newUserMode, newDocumentMode, lang);
 }
 
 function deleteDocument(uri) {
@@ -90,6 +93,16 @@ function deleteDocument(uri) {
       // My Collection documents and are not deterministic.
       const doc = cts.doc(uri);
       if (isMyCollection(doc)) {
+        // Do not allow deletion of a user's default My Collection.
+        const defaultMyCollectionIri = getDefaultCollection(
+          cts.doc(new User().getUserIri())
+        );
+        if (uri === defaultMyCollectionIri) {
+          throw new BadRequestError(
+            `Default personal collections may not be deleted.`
+          );
+        }
+        // Delete the document.
         xdmp.documentDelete(uri);
       } else {
         throw new BadRequestError(
@@ -107,8 +120,9 @@ function deleteDocument(uri) {
 function _insertDocument(
   uri,
   readOnlyDocNode,
-  lang,
-  newDocument = DEFAULT_NEW_DOCUMENT
+  newUserMode,
+  newDocumentMode,
+  lang = DEFAULT_LANG
 ) {
   const user = new User();
   throwIfUserIsServiceAccount(user);
@@ -119,7 +133,7 @@ function _insertDocument(
   });
 
   // When updating a document, require the given URI match the document's ID.
-  if (!newDocument) {
+  if (!newDocumentMode) {
     if (isUndefined(uri)) {
       throw new BadRequestError('The URI is required for updating a document.');
     }
@@ -138,16 +152,18 @@ function _insertDocument(
       user,
       uri,
       readOnlyDocNode,
-      lang,
-      newDocument
+      newUserMode,
+      newDocumentMode,
+      lang
     );
   } else if (isMyCollection(readOnlyDocNode)) {
     config = _getMyCollectionConfig(
       user,
       uri,
       readOnlyDocNode,
-      lang,
-      newDocument
+      newUserMode,
+      newDocumentMode,
+      lang
     );
   } else {
     throw new BadRequestError(
@@ -176,13 +192,13 @@ function _insertDocument(
     config.postValidationCallback(readOnlyDocNode, editableDocObj);
   }
 
-  if (newDocument) {
+  if (newDocumentMode) {
     uri = _getNewDocumentUri(config.recordType);
     setId(editableDocObj, uri);
     // When creating a new user profile, the user object will not yet be able to serve up the IRI.
     const userIri = docIsUserProfile ? uri : user.getUserIri();
-    setCreatedBy(editableDocObj, userIri);
-    setAddedToBy(editableDocObj, null);
+    removeAddedToBy(editableDocObj); // execute before setCreatedBy.
+    setCreatedBy(editableDocObj, userIri); // duplicates created by in added to by.
     setIndexedProperties(editableDocObj, config.indexedProperties);
   } else {
     // Searching for the document and requiring the user be able to update the document in order
@@ -232,17 +248,20 @@ function _getUserProfileConfig(
   user,
   uri,
   readOnlyDocNode,
-  lang,
-  newDocument = DEFAULT_NEW_DOCUMENT
+  newUserMode,
+  newDocumentMode,
+  lang = DEFAULT_LANG
 ) {
   // Pre-validation checks.
   const userId = user.getUserIri();
   const userProfileExists = fn.docAvailable(userId);
-  if (newDocument && userProfileExists) {
+  const defaultMyCollectionUri = getDefaultCollection(readOnlyDocNode);
+  const isDefaultMyCollectionSpecified = isDefined(defaultMyCollectionUri);
+  if (newDocumentMode && userProfileExists) {
     throw new BadRequestError(
       `The user '${user.getUsername()}' already has a profile.`
     );
-  } else if (!newDocument) {
+  } else if (!newDocumentMode) {
     if (uri !== userId) {
       throw new BadRequestError(
         `The ID in the provided document, '${uri}', does not match that of user '${user.getUsername()}'.`
@@ -251,6 +270,22 @@ function _getUserProfileConfig(
       // Unlikely as the user IRI comes from the profile.
       throw new BadRequestError(
         `User '${user.getUsername()}' does not have a profile.`
+      );
+    } else if (!isDefaultMyCollectionSpecified) {
+      throw new BadRequestError('The default collection is required.');
+    }
+  }
+  // When creating or updating a user profile and a default collection is specified (required above
+  // when updating) but not when establishing a new user, ensure it is a qualifying collection.
+  if (isDefaultMyCollectionSpecified && !newUserMode) {
+    if (!fn.docAvailable(defaultMyCollectionUri)) {
+      throw new BadRequestError(
+        'The document specified as the default collection does not exist.'
+      );
+    }
+    if (!isMyCollection(cts.doc(defaultMyCollectionUri))) {
+      throw new BadRequestError(
+        'The document specified as the default collection exists but is not a qualifying collection.'
       );
     }
   }
@@ -261,12 +296,15 @@ function _getUserProfileConfig(
   };
 
   let docOptions;
-  if (newDocument) {
+  if (newDocumentMode) {
     docOptions = {
       permissions: getExclusiveDocumentPermissions(user).concat([
-        xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
         xdmp.permission(
-          ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+          CAPABILITY_READ
+        ),
+        xdmp.permission(
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
           CAPABILITY_UPDATE
         ),
         xdmp.permission(ROLE_NAME_USER_PROFILE_DATA_READER, CAPABILITY_READ),
@@ -306,8 +344,9 @@ function _getMyCollectionConfig(
   user,
   uri,
   readOnlyDocNode,
-  lang,
-  newDocument = DEFAULT_NEW_DOCUMENT
+  newUserMode,
+  newDocumentMode,
+  lang = DEFAULT_LANG
 ) {
   const postValidationCallback = (readOnlyDocNode, editableDocObj) => {
     // Deduplicate and drop references to self.
@@ -325,14 +364,18 @@ function _getMyCollectionConfig(
   };
 
   let docOptions;
-  if (newDocument) {
+  if (newDocumentMode) {
     docOptions = {
       permissions: getExclusiveDocumentPermissions(user).concat([
-        xdmp.permission(ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER, CAPABILITY_READ),
         xdmp.permission(
-          ROLE_NAME_MY_COLLECTIONS_DATA_UPDATER,
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
+          CAPABILITY_READ
+        ),
+        xdmp.permission(
+          ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
           CAPABILITY_UPDATE
         ),
+        xdmp.permission(ROLE_NAME_MY_COLLECTION_DATA_READER, CAPABILITY_READ),
       ]),
       collections: [
         isProduction()

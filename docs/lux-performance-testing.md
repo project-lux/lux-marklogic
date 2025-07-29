@@ -130,7 +130,7 @@ One category at a time (e.g., CPU), click the blue arrow to go into its detailed
 
 1. Take a screenshot.
     *  It can be helpful to display the ML node key for one of the graphs in the screenshot.
-    *  For some, you may wish to apply some filters, such as only the `lux-request-group-1` and `lux-request-group-2` app servers and lux-content database.
+    *  For some, you may wish to apply some filters, such as only the lux-content database.
     *  Omitted graphs are presumed to have no activity.
     *  See [example](https://github.com/project-lux/lux-marklogic/issues/162#issuecomment-2158369404).
 2. Click the export link.

@@ -7,7 +7,8 @@ const lang = external.lang;
 
 const response = handleRequest(function () {
   declareUpdate();
-  return createDocument(docNode, lang);
+  const newUserMode = false;
+  return createDocument(docNode, newUserMode, lang);
 }, unitName);
 
 export default response;

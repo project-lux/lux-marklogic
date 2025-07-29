@@ -837,7 +837,7 @@ function _getAtLeastOneCtsTriple(
   const triplePlan = op.fromTriples(
     op.pattern(
       !childReturnsCtsQuery && inverse ? termValue : op.col('subject'),
-      predicates,
+      SearchCriteriaProcessor.evalQueryString(predicates),
       !childReturnsCtsQuery && !inverse ? termValue : op.col('object')
     )
   );
@@ -867,44 +867,7 @@ function _getAtLeastOneCtsTriple(
     .result()
     .toArray()
     .map(inverse ? ({ object }) => object + '' : ({ subject }) => subject + '');
-  return arrayToString(iris, 'string');
-  // return `
-  // op.fromTriples(
-  //   op.pattern(
-  //     ${!childReturnsCtsQuery && inverse ? termValue : 'op.col("subject")'},
-  //     ${utils.arrayToString(predicates, 'code')},
-  //     ${!childReturnsCtsQuery && !inverse ? termValue : 'op.col("object")'}
-  //   )
-  // )${
-  //   childReturnsCtsQuery
-  //     ? `.joinInner(
-  //           op.fromSearch(${termValue},
-  //             ['fragmentId'],
-  //             null,
-  //             // Once supported, we want to stop calculating scores.
-  //             { scoreMethod: 'simple' }
-  //           )
-  //           .joinInner(
-  //             op.fromLexicons(
-  //               {iri: cts.iriReference()},
-  //               null,
-  //               ['fragmentId']
-  //             ),
-  //             op.on('fragmentId', 'fragmentId')
-  //           ),
-  //           op.on('iri', ${inverse ? "'subject'" : "'object'"})
-  //         )`
-  //     : ''
-  // }
-  // ${max > -1 ? `.limit(${max})` : ''}
-  // .result()
-  // .toArray()
-  // .map(${inverse ? '({object}) => object' : '({subject}) => subject'})
-  //     .concat(${
-  //       castToString
-  //         ? `'${IRI_DOES_NOT_EXIST}'`
-  //         : `sem.iri('${IRI_DOES_NOT_EXIST}')`
-  //     })`;
+  return utils.arrayToString(iris, 'string');
 }
 
 function _getDateFieldRangeQuery(

@@ -787,7 +787,8 @@ def luxAppCert() {
 task printCredentials {
   doFirst {
     // Most important ones
-    println "mlPassword: " + credentials.forKey('mlPassword')
+    println "mlPassword: '" + credentials.forKey('mlPassword') + "'"
+    println "unitTesterPassword: '" + credentials.forKey('unitTesterPassword') + "'"
 
     // Only required by specific, infrequently-used tasks
     println "copyDatabaseInputPassword: " + credentials.forKey('copyDatabaseInputPassword')
@@ -803,6 +804,11 @@ ext {
   mlAdminConfig.password = credentials.forKey('mlPassword')
   mlAppConfig.restAdminPassword =  credentials.forKey('mlPassword')
   mlAppConfig.appServicesPassword = credentials.forKey('mlPassword')
+
+  // Add an encrypted property value as a custom ml-gradle token.
+  def filterTokens = mlAppConfig.getCustomTokens()
+  filterTokens.put('%%unitTesterPassword%%', credentials.forKey('unitTesterPassword'))
+  mlAppConfig.setCustomTokens(filterTokens)
 
   // Re-initialize the connections to the Admin and Manage servers
   mlManageClient.manageConfig = mlManageConfig

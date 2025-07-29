@@ -1,6 +1,18 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v2.0.0 - 2025-08-11
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+- When deploying the unit tests, the [%%mlAppName%%-unit-tester](/src/test/ml-config/security/users/unit-test-user.json) user's password must be specified using the *encrypted* `unitTesterPassword` property.  Passwords are no longer specified for the unit test simulated users, compelling MarkLogic to generate strong, random passwords. [#516](https://github.com/project-lux/lux-marklogic/issues/516)
+
 ## v1.44.0 - 2025-07-28
 ### Added
 - Added the ability to deploy the remaining REST application server with Digest or OAuth authentication (part of [#507](https://github.com/project-lux/lux-marklogic/issues/507))

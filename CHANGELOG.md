@@ -1,6 +1,18 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v2.0.0 - 2025-08-11
+### Added
+
+### Changed
+- Changed from using the classification's equivalent ID to its primary ID when determining whether a record is a My Collection ([#558](https://github.com/project-lux/lux-marklogic/issues/558))
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v1.44.0 - 2025-07-28
 ### Added
 - Added the ability to deploy the remaining REST application server with Digest or OAuth authentication (part of [#507](https://github.com/project-lux/lux-marklogic/issues/507))

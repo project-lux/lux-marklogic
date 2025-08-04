@@ -1561,11 +1561,9 @@ Response Body:
       "concept":4649130,
       "event":153318,
       "item":17545158,
-      "myCollection":1227,
       "place":579366,
       "reference":11031350,
       "set":305353,
-      "userProfile":911,
       "work":13560980
     }
   },
@@ -1671,7 +1669,7 @@ Response Body:
 
 ### Get
 
-The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.
+The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.  Users with the `https://lux.collections.yale.edu/%%mlAppName%%-update-tenant-status` execute privilege will also receive estimates for the numbers of My Collection and user profile documents.
 
 **URL** : `/ds/lux/tenantStatus/get.mjs`
 

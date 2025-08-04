@@ -450,6 +450,13 @@ function requireUserMayUpdateTenantStatus() {
   xdmp.securityAssert(PRIVILEGE_NAME_UPDATE_TENANT_STATUS, 'execute');
 }
 
+function mayUpdateTenantStatus() {
+  return xdmp.passiveHasPrivilege(
+    PRIVILEGE_NAME_UPDATE_TENANT_STATUS,
+    'execute'
+  );
+}
+
 // Get an array of unit names known to this deployment.
 function getEndpointAccessUnitNames() {
   // In case the property is not set, in which there are no endpoint consumers with
@@ -551,6 +558,7 @@ export {
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
+  mayUpdateTenantStatus,
   removeUnitConfigProperties,
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,

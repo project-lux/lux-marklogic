@@ -16,6 +16,7 @@ import {
   CAPABILITY_UPDATE,
   ROLE_NAME_DEPLOYER,
   ROLE_NAME_ENDPOINT_CONSUMER_BASE,
+  mayUpdateTenantStatus,
   requireUserMayUpdateTenantStatus,
 } from './securityLib.mjs';
 import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
@@ -85,11 +86,24 @@ function setTenantStatus(prod, readOnly) {
   console.log('Changes accepted to the tenant status document.');
 }
 
+// Returns a portion of the tenant status document, plus additional information.
 function getTenantStatus() {
-  // No need to return the entire tenant status document.
+  // We're reusing the update permission to decide whether to include these document counts.
+  const documentCounts = {};
+  if (mayUpdateTenantStatus()) {
+    const restrictByProductionMode = true;
+    documentCounts.myCollection = getMyCollectionDocumentCount(
+      restrictByProductionMode
+    );
+    documentCounts.userProfile = getUserProfileDocumentCount(
+      restrictByProductionMode
+    );
+  }
+
   return {
     prod: isProduction(),
     readOnly: inReadOnlyMode(),
+    ...documentCounts,
     ...getVersionInfo(),
   };
 }

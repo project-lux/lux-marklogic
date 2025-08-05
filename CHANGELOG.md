@@ -5,9 +5,11 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
+- Changed from using the classification's equivalent ID to its primary ID when determining whether a record is a My Collection ([#558](https://github.com/project-lux/lux-marklogic/issues/558))
+- Moved the My Collection and user profile document estimates from the [Stats endpoint](/docs/lux-backend-api-usage.md#stats) to the [Get Tenant Status endpoint](/docs/lux-backend-api-usage.md#get). The estimates are only included when the requesting user has the `https://lux.collections.yale.edu/privileges/%%mlAppName%%-update-tenant-status` privilege which is presently only granted to the [%%mlAppName%%-deployer role](/docs/lux-backend-security-and-software.md#deployer). (Edit to [#521](https://github.com/project-lux/lux-marklogic/issues/521))
 
 ### Removed
-
+  
 ### Fixed
 
 ### Security

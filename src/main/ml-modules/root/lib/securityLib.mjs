@@ -16,6 +16,7 @@ import {
 import {
   getNodeFromObject,
   includesOrEquals,
+  isDefined,
   isObject,
   isUndefined,
   removeItemByValueFromArray,
@@ -66,16 +67,9 @@ const DEFAULT_COLLECTION_TEMPLATE = {
   type: 'Set',
   classified_as: [
     {
-      id: 'https://not.checked',
+      id: IDENTIFIERS.myCollection,
       type: 'Type',
       _label: 'My Collection',
-      equivalent: [
-        {
-          id: IDENTIFIERS.myCollection,
-          type: 'Type',
-          _label: 'My Collection',
-        },
-      ],
     },
   ],
   identified_by: [
@@ -385,19 +379,35 @@ function _createUserProfile() {
 
 function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
   declareUpdate();
-  const newUserMode = true;
-  const defaultCollectionDocObj = createDocument(
-    DEFAULT_COLLECTION_TEMPLATE,
-    newUserMode
-  );
+  let defaultCollectionDocObj;
+  try {
+    const newUserMode = true;
 
-  setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
+    defaultCollectionDocObj = createDocument(
+      DEFAULT_COLLECTION_TEMPLATE,
+      newUserMode
+    );
 
-  return updateDocument(
-    userProfileDocObj.id,
-    getNodeFromObject(userProfileDocObj),
-    newUserMode
-  );
+    setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
+
+    return updateDocument(
+      userProfileDocObj.id,
+      getNodeFromObject(userProfileDocObj),
+      newUserMode
+    );
+  } catch (e) {
+    let userMsg;
+    if (isDefined(defaultCollectionDocObj)) {
+      userMsg = `Unable to update the user profile with '${defaultCollectionDocObj.id}' as the default collection.`;
+    } else {
+      userMsg = 'Unable to create a default collection for the user.';
+    }
+    // Alerts are sent if this prefix appears in the logs.
+    // Electing not to use a trace event.
+    console.log(`User account initialization error: ${userMsg}`);
+    console.log(`Underlying error: ${e.message}`);
+    throw new InternalServerError(userMsg);
+  }
 }
 
 function _getExecuteWithServiceAccountFunction(unitName) {
@@ -438,6 +448,13 @@ function throwIfCurrentUserIsServiceAccount() {
 
 function requireUserMayUpdateTenantStatus() {
   xdmp.securityAssert(PRIVILEGE_NAME_UPDATE_TENANT_STATUS, 'execute');
+}
+
+function mayUpdateTenantStatus() {
+  return xdmp.passiveHasPrivilege(
+    PRIVILEGE_NAME_UPDATE_TENANT_STATUS,
+    'execute'
+  );
 }
 
 // Get an array of unit names known to this deployment.
@@ -541,6 +558,7 @@ export {
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
+  mayUpdateTenantStatus,
   removeUnitConfigProperties,
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,

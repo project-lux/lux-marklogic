@@ -1,24 +1,14 @@
 import { handleRequest } from '../../lib/securityLib.mjs';
 import { getSearchScope, getSearchScopeNames } from '../../lib/searchScope.mjs';
 import { COLLECTION_NAME_MY_COLLECTIONS_FEATURE } from '../../lib/appConstants.mjs';
-import {
-  getMyCollectionDocumentCount,
-  getUserProfileDocumentCount,
-} from '../../lib/environmentLib.mjs';
-import { sortObj } from '../../utils/utils.mjs';
 
 const unitName = external.unitName;
 
 handleRequest(function () {
   const start = new Date();
-
-  const restrictByProductionMode = true;
   const doc = {
     estimates: {
-      searchScopes: {
-        myCollection: getMyCollectionDocumentCount(restrictByProductionMode),
-        userProfile: getUserProfileDocumentCount(restrictByProductionMode),
-      },
+      searchScopes: {},
     },
     metadata: {},
   };
@@ -35,8 +25,6 @@ handleRequest(function () {
       )
     );
   });
-
-  doc.estimates.searchScopes = sortObj(doc.estimates.searchScopes);
 
   const end = new Date();
   doc.metadata.timestamp = end;

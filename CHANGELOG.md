@@ -11,6 +11,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
   
 ### Fixed
+- Fixed a concurrency bug which allowed multiple user profiles to be created for the same user ([#587](https://github.com/project-lux/lux-marklogic/issues/587)).
 
 ### Security
 

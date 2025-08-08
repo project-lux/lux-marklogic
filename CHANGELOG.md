@@ -12,6 +12,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
   
 ### Fixed
 - Fixed a concurrency bug which allowed multiple user profiles to be created for the same user ([#587](https://github.com/project-lux/lux-marklogic/issues/587)).
+ - Fixed missing related list configs, which created bad labels like 'Produced Here this Person' ([#589](https://github.com/project-lux/lux-marklogic/issues/558))
 
 ### Security
 - When deploying the unit tests, the [%%mlAppName%%-unit-tester](/src/test/ml-config/security/users/unit-test-user.json) user's password must be specified using the *encrypted* `unitTesterPassword` property.  Passwords are no longer specified for the unit test simulated users, compelling MarkLogic to generate strong, random passwords. [#516](https://github.com/project-lux/lux-marklogic/issues/516)

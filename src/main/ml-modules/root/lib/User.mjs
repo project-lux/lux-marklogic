@@ -4,8 +4,6 @@ import { COLLECTION_NAME_USER_PROFILE } from './appConstants.mjs';
 
 const User = class {
   constructor() {
-    this.username = xdmp.getCurrentUser();
-
     this.userIri = null;
 
     // TBD if a good idea to cache the role names.
@@ -18,7 +16,7 @@ const User = class {
   }
 
   getUsername() {
-    return this.username;
+    return xdmp.getCurrentUser();
   }
 
   // Electing to use "user IRI" instead of "user ID" to avoid confusion with the user ID in the

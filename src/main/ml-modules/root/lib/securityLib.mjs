@@ -30,7 +30,11 @@ import {
   ServerConfigurationChangedError,
 } from './mlErrorsLib.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
-import { createDocument, updateDocument } from './crudLib.mjs';
+import {
+  createDocument,
+  registerIntentToCreateUserProfile,
+  updateDocument,
+} from './crudLib.mjs';
 import { setDefaultCollection } from './model.mjs';
 
 const TENANT_OWNER = ML_APP_NAME;
@@ -347,7 +351,7 @@ function __handleRequestV2(
       _createExclusiveRoles(user);
     }
 
-    _createUserProfileAndDefaultCollection();
+    _createUserProfileAndDefaultCollection(user);
   }
 
   return xdmp.invokeFunction(
@@ -363,16 +367,24 @@ function __handleRequestV2(
 }
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
-function _createUserProfileAndDefaultCollection() {
-  const userProfileDocument = fn.head(xdmp.invokeFunction(_createUserProfile));
+function _createUserProfileAndDefaultCollection(user) {
+  const userProfileDocument = fn.head(
+    xdmp.invokeFunction(() => {
+      return _createUserProfile(user);
+    })
+  );
   xdmp.invokeFunction(() => {
     _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
   });
 }
 
 // create a user profile
-function _createUserProfile() {
+function _createUserProfile(user) {
   declareUpdate();
+
+  // Important: This helps prevent concurrent requests from creating a profile for the same user.
+  registerIntentToCreateUserProfile(user);
+
   const newUserMode = true;
   return createDocument(USER_PROFILE_TEMPLATE, newUserMode);
 }

@@ -5,6 +5,8 @@ import {
   COLLECTION_NAME_NON_PRODUCTION,
   COLLECTION_NAME_PRODUCTION,
   COLLECTION_NAME_USER_PROFILE,
+  URI_TYPE_PERSON,
+  URI_TYPE_SET,
 } from './appConstants.mjs';
 import {
   CAPABILITY_READ,
@@ -54,6 +56,15 @@ const MAX_ATTEMPTS_FOR_NEW_URI = 20;
 
 const DOCUMENT_TYPE_MY_COLLECTION = 'My Collection';
 const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
+
+// This function helps prevent concurrent requests from creating a profile for the same user.
+// Calling it as early as possible is part of what makes it work.
+function registerIntentToCreateUserProfile(user) {
+  // We do not have deterministic URIs but we can lock on one and never otherwise use it.
+  xdmp.lockForUpdate(
+    `${BASE_URL}/data/${URI_TYPE_PERSON}/${user.getUsername()}`
+  );
+}
 
 function createDocument(docNode, newUserMode, lang = DEFAULT_LANG) {
   const uri = null; // determined later
@@ -193,7 +204,7 @@ function _insertDocument(
   }
 
   if (newDocumentMode) {
-    uri = _getNewDocumentUri(config.recordType);
+    uri = _getNewDocumentUri(config.uriType);
     setId(editableDocObj, uri);
     // When creating a new user profile, the user object will not yet be able to serve up the IRI.
     const userIri = docIsUserProfile ? uri : user.getUserIri();
@@ -326,7 +337,7 @@ function _getUserProfileConfig(
   }
 
   return {
-    recordType: 'person',
+    uriType: URI_TYPE_PERSON,
     schemaPath: '/json-schema/user-profile.schema.json',
     postValidationCallback,
     indexedProperties: {
@@ -398,7 +409,7 @@ function _getMyCollectionConfig(
   }
 
   return {
-    recordType: 'set',
+    uriType: URI_TYPE_SET,
     schemaPath: '/json-schema/editable-set.schema.json',
     postValidationCallback,
     indexedProperties: {
@@ -412,7 +423,7 @@ function _getMyCollectionConfig(
   };
 }
 
-function _getNewDocumentUri(recordType, attempt = 1) {
+function _getNewDocumentUri(uriType, attempt = 1) {
   // Insurance
   if (attempt > MAX_ATTEMPTS_FOR_NEW_URI) {
     throw new LoopDetectedError(
@@ -421,11 +432,17 @@ function _getNewDocumentUri(recordType, attempt = 1) {
   }
 
   // We like this request.
-  const uri = `${BASE_URL}/data/${recordType}/${sem.uuidString()}`;
+  const uri = `${BASE_URL}/data/${uriType}/${sem.uuidString()}`;
   if (fn.docAvailable(uri)) {
-    return _getNewDocumentUri(recordType, ++attempt);
+    return _getNewDocumentUri(uriType, ++attempt);
   }
   return uri;
 }
 
-export { createDocument, deleteDocument, readDocument, updateDocument };
+export {
+  createDocument,
+  deleteDocument,
+  readDocument,
+  registerIntentToCreateUserProfile,
+  updateDocument,
+};

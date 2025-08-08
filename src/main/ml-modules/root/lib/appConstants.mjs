@@ -57,6 +57,9 @@ const SEARCH_PREFIX = `${BASE_URL}/api/search`;
 const SEARCH_ESTIMATE_PREFIX = `${BASE_URL}/api/search-estimate`;
 const PRIVILEGES_PREFIX = `${BASE_URL}/privileges`;
 
+const URI_TYPE_PERSON = 'person';
+const URI_TYPE_SET = 'set';
+
 const AS_TYPE_COLLECTION = 'Collection';
 const AS_TYPE_ORDERED_COLLECTION = 'OrderedCollection';
 const AS_TYPE_ORDERED_COLLECTION_PAGE = 'OrderedCollectionPage';
@@ -207,4 +210,6 @@ export {
   TRACE_NAME_SEARCH,
   TENANT_NAME,
   UNIT_TEST_ENDPOINT,
+  URI_TYPE_PERSON,
+  URI_TYPE_SET,
 };

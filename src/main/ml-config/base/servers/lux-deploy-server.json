@@ -1,5 +1,5 @@
 {
-  "server-name": "%%mlAppName%%",
+  "server-name": "%%mlAppName%%-deploy",
   "server-type": "http",
   "enabled": "true",
   "root": "/",

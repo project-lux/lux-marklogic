@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "jwk-to-pem": "^2.0.7"
+  }
+}

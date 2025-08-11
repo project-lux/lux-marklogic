@@ -8,6 +8,7 @@ import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   FEATURE_MY_COLLECTIONS_ENABLED,
+  MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
@@ -16,6 +17,7 @@ import {
 import {
   getNodeFromObject,
   includesOrEquals,
+  isDefined,
   isObject,
   isUndefined,
   removeItemByValueFromArray,
@@ -29,7 +31,11 @@ import {
   ServerConfigurationChangedError,
 } from './mlErrorsLib.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
-import { createDocument, updateDocument } from './crudLib.mjs';
+import {
+  createDocument,
+  registerIntentToCreateUserProfile,
+  updateDocument,
+} from './crudLib.mjs';
 import { setDefaultCollection } from './model.mjs';
 
 const TENANT_OWNER = ML_APP_NAME;
@@ -66,16 +72,9 @@ const DEFAULT_COLLECTION_TEMPLATE = {
   type: 'Set',
   classified_as: [
     {
-      id: 'https://not.checked',
+      id: IDENTIFIERS.myCollection,
       type: 'Type',
       _label: 'My Collection',
-      equivalent: [
-        {
-          id: IDENTIFIERS.myCollection,
-          type: 'Type',
-          _label: 'My Collection',
-        },
-      ],
     },
   ],
   identified_by: [
@@ -353,7 +352,7 @@ function __handleRequestV2(
       _createExclusiveRoles(user);
     }
 
-    _createUserProfileAndDefaultCollection();
+    _createUserProfileAndDefaultCollection(user);
   }
 
   return xdmp.invokeFunction(
@@ -369,35 +368,70 @@ function __handleRequestV2(
 }
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
-function _createUserProfileAndDefaultCollection() {
-  const userProfileDocument = fn.head(xdmp.invokeFunction(_createUserProfile));
-  xdmp.invokeFunction(() => {
-    _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
-  });
+function _createUserProfileAndDefaultCollection(user) {
+  try {
+    const userProfileDocument = fn.head(
+      xdmp.invokeFunction(() => {
+        return _createUserProfile(user);
+      })
+    );
+    xdmp.invokeFunction(() => {
+      _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
+    });
+  } catch (e) {
+    // Suppress the error if the user already has a profile.
+    const idx = e.stack.indexOf(MESSAGE_ALREADY_HAS_A_PROFILE);
+    if (idx == -1) {
+      console.warn(e.stack);
+      throw new InternalServerError(
+        `Unable to create a user profile and/or default collection for '${user.getUsername()}'.`
+      );
+    }
+  }
 }
 
 // create a user profile
-function _createUserProfile() {
+function _createUserProfile(user) {
   declareUpdate();
+
+  // Important: This helps prevent concurrent requests from creating a profile for the same user.
+  registerIntentToCreateUserProfile(user);
+
   const newUserMode = true;
   return createDocument(USER_PROFILE_TEMPLATE, newUserMode);
 }
 
 function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
   declareUpdate();
-  const newUserMode = true;
-  const defaultCollectionDocObj = createDocument(
-    DEFAULT_COLLECTION_TEMPLATE,
-    newUserMode
-  );
+  let defaultCollectionDocObj;
+  try {
+    const newUserMode = true;
 
-  setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
+    defaultCollectionDocObj = createDocument(
+      DEFAULT_COLLECTION_TEMPLATE,
+      newUserMode
+    );
 
-  return updateDocument(
-    userProfileDocObj.id,
-    getNodeFromObject(userProfileDocObj),
-    newUserMode
-  );
+    setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
+
+    return updateDocument(
+      userProfileDocObj.id,
+      getNodeFromObject(userProfileDocObj),
+      newUserMode
+    );
+  } catch (e) {
+    let userMsg;
+    if (isDefined(defaultCollectionDocObj)) {
+      userMsg = `Unable to update the user profile with '${defaultCollectionDocObj.id}' as the default collection.`;
+    } else {
+      userMsg = 'Unable to create a default collection for the user.';
+    }
+    // Alerts are sent if this prefix appears in the logs.
+    // Electing not to use a trace event.
+    console.log(`User account initialization error: ${userMsg}`);
+    console.log(`Underlying error: ${e.message}`);
+    throw new InternalServerError(userMsg);
+  }
 }
 
 function _getExecuteWithServiceAccountFunction(unitName) {
@@ -438,6 +472,13 @@ function throwIfCurrentUserIsServiceAccount() {
 
 function requireUserMayUpdateTenantStatus() {
   xdmp.securityAssert(PRIVILEGE_NAME_UPDATE_TENANT_STATUS, 'execute');
+}
+
+function mayUpdateTenantStatus() {
+  return xdmp.passiveHasPrivilege(
+    PRIVILEGE_NAME_UPDATE_TENANT_STATUS,
+    'execute'
+  );
 }
 
 // Get an array of unit names known to this deployment.
@@ -541,6 +582,7 @@ export {
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
+  mayUpdateTenantStatus,
   removeUnitConfigProperties,
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,

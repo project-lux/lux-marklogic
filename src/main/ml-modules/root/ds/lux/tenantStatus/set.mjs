@@ -12,6 +12,7 @@ const forceInvoke = true; // Required.
 // No need to support unitName.
 handleRequest(
   function () {
+    declareUpdate();
     return setTenantStatus(prod, readOnly);
   },
   unitName,

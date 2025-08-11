@@ -1,0 +1,4 @@
+{
+  "server-name": "%%mlAppName%%-deploy",
+  "ssl-certificate-template": "%%mlAppCertificateName%%"
+}

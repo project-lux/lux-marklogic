@@ -5,6 +5,9 @@ import {
 } from '/test/unitTestConstants.mjs';
 import { User } from '/lib/User.mjs';
 
+const LIB = '0100 User.mjs';
+console.log(`${LIB}: starting.`);
+
 let assertions = [];
 
 let user = new User();
@@ -42,5 +45,7 @@ assertions.push(
   testHelperProxy.assertEqual(xdmp.getCurrentUser(), user.getUsername()),
   "User's constructor should not apply the username passed in"
 );
+
+console.log(`${LIB}: completed ${assertions.length} assertions.`);
 
 assertions;

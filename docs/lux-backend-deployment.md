@@ -109,6 +109,7 @@ Run `./gradlew printCredentials` to verify the correct values were received .  F
 The `[passwordPropertyName]` keys are:
 
    * `mlPassword`: Required.  Expect a 401 when invalid credentials are used.
+   * `unitTesterPassword`: Required when deploying the unit tests.  Expect `mlDeployUsers` or higher to fail if not set.
    * `copyDatabaseInputPassword` and `copyDatabaseOutputPassword`: Only required by the `copyDatabase` task.
    * `importDataPassword`: Only required by the `importData*` tasks.
 
@@ -274,7 +275,7 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
 20. If you executed the above step, verify the [Steps After Importing Data](/docs/lux-backend-import-data.md#steps-after-importing-data) were executed.
 
-21. For environments with unit tests enabled (not Blue or Green), swap out the host and possibly port in http://localhost:8010/test/default.xqy, log in as a user with the `%%mlAppName%%-unit-tester` role, and run the tests. There may be a user with the same name whose password is specified by the `unitTesterPassword` build property (until [#516](https://github.com/project-lux/lux-marklogic/issues/516) is addressed). Tests do not presently work when initiated by the `mlUnitTest` Gradle task.
+21. For environments with unit tests enabled (not Blue or Green), swap out the host and possibly port in http://localhost:8010/test/default.xqy, log in as [%%mlAppName%%-unit-tester](/src/test/ml-config/security/users/unit-test-user.json) using the value of the encrypted property named `unitTesterPassword`, and run the tests. Tests do not presently work when initiated by the `mlUnitTest` Gradle task.
 
 22. Perform a smoke test.  One way is to run through the endpoints from within Postman.
 

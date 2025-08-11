@@ -1,4 +1,5 @@
 import * as utils from '../utils/utils.mjs';
+import { TRACE_NAME_RELATED_LIST as traceName } from '../lib/appConstants.mjs';
 
 const RELATION_NAMES = {
   'classificationOfItem-classification':
@@ -110,6 +111,8 @@ const RELATION_NAMES = {
   'influencedProduction-material': 'Influenced Creation of Objects Made Of',
   'influencedProduction-producedBy':
     'Influenced Creation of Objects Created By',
+  'influencedProduction-producedAt':
+    'Influenced Creation of Objects Created At',
   'influencedProduction-producedUsing':
     'Influenced Creation of Objects Created Using',
   'influencedProduction-productionInfluencedBy':
@@ -154,6 +157,8 @@ const RELATION_NAMES = {
   'producedHere-producedBy': 'Is the Place of Creation of Objects Created By',
   'producedHere-producedUsing':
     'Is the Place of Creation of Objects Created Using',
+  'producedHere-productionInfluencedBy':
+    'Is the Place of Creation of Objects Influenced By',
   'published-aboutAgent': 'Published Works About',
   'published-aboutConcept': 'Published Works About',
   'published-aboutPlace': 'Published Works About',
@@ -214,6 +219,10 @@ function getRelationName(relationKey) {
   }
   const idx = relationKey.indexOf('-');
   const firstTerm = idx > -1 ? relationKey.substring(0, idx) : relationKey;
+  xdmp.trace(
+    traceName,
+    `Couldn't find relation name for '${relationKey}', generating relation name: ${firstTerm}.`
+  );
   return utils.uppercaseFirstCharacter(utils.camelCaseToWords(firstTerm));
 }
 

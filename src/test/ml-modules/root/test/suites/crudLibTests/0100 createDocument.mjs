@@ -75,12 +75,7 @@ const validMyCollection = {
   ],
   classified_as: [
     {
-      id: 'https://not.checked',
-      equivalent: [
-        {
-          id: IDENTIFIERS.myCollection,
-        },
-      ],
+      id: IDENTIFIERS.myCollection,
     },
   ],
   referred_to_by: [
@@ -220,12 +215,7 @@ const scenarios = [
         type: 'HumanMadeObject', // an invalid part; identified_by is also missing.
         classified_as: [
           {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.myCollection, // enough to get past model.isMyCollection
-              },
-            ],
+            id: IDENTIFIERS.myCollection, // enough to get past model.isMyCollection
           },
         ],
       },
@@ -245,12 +235,7 @@ const scenarios = [
         identified_by: [],
         classified_as: [
           {
-            id: 'https://not.checked',
-            equivalent: [
-              {
-                id: IDENTIFIERS.myCollection,
-              },
-            ],
+            id: IDENTIFIERS.myCollection,
           },
         ],
       },

@@ -57,6 +57,9 @@ const SEARCH_PREFIX = `${BASE_URL}/api/search`;
 const SEARCH_ESTIMATE_PREFIX = `${BASE_URL}/api/search-estimate`;
 const PRIVILEGES_PREFIX = `${BASE_URL}/privileges`;
 
+const URI_TYPE_PERSON = 'person';
+const URI_TYPE_SET = 'set';
+
 const AS_TYPE_COLLECTION = 'Collection';
 const AS_TYPE_ORDERED_COLLECTION = 'OrderedCollection';
 const AS_TYPE_ORDERED_COLLECTION_PAGE = 'OrderedCollectionPage';
@@ -152,6 +155,9 @@ const TRACE_NAME_RELATED_LIST = 'LuxRelatedList';
 const TRACE_NAME_PROFILES = 'LuxNamedProfiles';
 const TRACE_NAME_SEARCH = 'LuxSearch';
 
+// A portion of an error message used in a couple places.
+const MESSAGE_ALREADY_HAS_A_PROFILE = 'already has a profile';
+
 export {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
@@ -179,6 +185,7 @@ export {
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
+  MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
   REG_EXP_NEAR_OPERATOR,
@@ -207,4 +214,6 @@ export {
   TRACE_NAME_SEARCH,
   TENANT_NAME,
   UNIT_TEST_ENDPOINT,
+  URI_TYPE_PERSON,
+  URI_TYPE_SET,
 };

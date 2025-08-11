@@ -71,17 +71,17 @@ task switchToAppServicesPort() {
   }
 }
 
-// Change ML app config's rest port to that of the tenant's app server port (one of them).  See
+// Change ML app config's rest port to that of the tenant's deploy app server port.  See
 // startWithAppServicesPort's comment for details.
-task switchToTenantPort() {
+task switchToDeployPort() {
   doFirst {
     println ''
-    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlRestPort")
+    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlDeployPort")
     println ''
-    mlAppConfig.setRestPort(project.property("mlRestPort").toInteger())
+    mlAppConfig.setRestPort(project.property("mlDeployPort").toInteger())
   }
 }
-mlLoadModules.dependsOn switchToTenantPort
+mlLoadModules.dependsOn switchToDeployPort
 
 task determineCodeVersion {
   def applyDefault = false
@@ -464,7 +464,7 @@ task ensureTenantStatusDocumentExists() {
 
     def protocol = project.getProperty("mlAppServicesScheme") // assumption: if one is https, all are.
     def host = project.getProperty("mlHost")
-    def port = project.getProperty("mlRestPort")
+    def port = project.getProperty("mlDeployPort")
     def username = project.getProperty("mlUsername")
     def password = credentials.forKey('mlPassword')
     def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
@@ -787,7 +787,8 @@ def luxAppCert() {
 task printCredentials {
   doFirst {
     // Most important ones
-    println "mlPassword: " + credentials.forKey('mlPassword')
+    println "mlPassword: '" + credentials.forKey('mlPassword') + "'"
+    println "unitTesterPassword: '" + credentials.forKey('unitTesterPassword') + "'"
 
     // Only required by specific, infrequently-used tasks
     println "copyDatabaseInputPassword: " + credentials.forKey('copyDatabaseInputPassword')
@@ -803,6 +804,11 @@ ext {
   mlAdminConfig.password = credentials.forKey('mlPassword')
   mlAppConfig.restAdminPassword =  credentials.forKey('mlPassword')
   mlAppConfig.appServicesPassword = credentials.forKey('mlPassword')
+
+  // Add an encrypted property value as a custom ml-gradle token.
+  def filterTokens = mlAppConfig.getCustomTokens()
+  filterTokens.put('%%unitTesterPassword%%', credentials.forKey('unitTesterPassword'))
+  mlAppConfig.setCustomTokens(filterTokens)
 
   // Re-initialize the connections to the Admin and Manage servers
   mlManageClient.manageConfig = mlManageConfig

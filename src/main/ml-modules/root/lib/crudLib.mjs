@@ -5,6 +5,7 @@ import {
   COLLECTION_NAME_NON_PRODUCTION,
   COLLECTION_NAME_PRODUCTION,
   COLLECTION_NAME_USER_PROFILE,
+  MESSAGE_ALREADY_HAS_A_PROFILE,
   URI_TYPE_PERSON,
   URI_TYPE_SET,
 } from './appConstants.mjs';
@@ -270,7 +271,7 @@ function _getUserProfileConfig(
   const isDefaultMyCollectionSpecified = isDefined(defaultMyCollectionUri);
   if (newDocumentMode && userProfileExists) {
     throw new BadRequestError(
-      `The user '${user.getUsername()}' already has a profile.`
+      `The user '${user.getUsername()}' ${MESSAGE_ALREADY_HAS_A_PROFILE}.`
     );
   } else if (!newDocumentMode) {
     if (uri !== userId) {

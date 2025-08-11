@@ -8,6 +8,7 @@ import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   FEATURE_MY_COLLECTIONS_ENABLED,
+  MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
@@ -368,14 +369,25 @@ function __handleRequestV2(
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
 
 function _createUserProfileAndDefaultCollection(user) {
-  const userProfileDocument = fn.head(
+  try {
+    const userProfileDocument = fn.head(
+      xdmp.invokeFunction(() => {
+        return _createUserProfile(user);
+      })
+    );
     xdmp.invokeFunction(() => {
-      return _createUserProfile(user);
-    })
-  );
-  xdmp.invokeFunction(() => {
-    _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
-  });
+      _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
+    });
+  } catch (e) {
+    // Suppress the error if the user already has a profile.
+    const idx = e.stack.indexOf(MESSAGE_ALREADY_HAS_A_PROFILE);
+    if (idx == -1) {
+      console.warn(e.stack);
+      throw new InternalServerError(
+        `Unable to create a user profile and/or default collection for '${user.getUsername()}'.`
+      );
+    }
+  }
 }
 
 // create a user profile

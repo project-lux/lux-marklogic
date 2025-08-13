@@ -11,4 +11,5 @@ const response = handleRequest(function () {
   return createDocument(docNode, newUserMode, lang);
 }, unitName);
 
+response;
 export default response;

@@ -11,4 +11,5 @@ const response = handleRequest(function () {
   );
 });
 
+response;
 export default response;

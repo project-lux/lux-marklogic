@@ -8,4 +8,5 @@ const response = handleRequest(function () {
   return deleteDocument(uri);
 });
 
+response;
 export default response;

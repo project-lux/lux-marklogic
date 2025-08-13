@@ -9,4 +9,5 @@ const response = handleRequest(function () {
   return readDocument(uri, profile, lang);
 }, unitName);
 
+response;
 export default response;

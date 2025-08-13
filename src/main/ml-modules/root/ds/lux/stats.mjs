@@ -32,4 +32,5 @@ const response = handleRequest(function () {
   return doc;
 }, unitName);
 
+response;
 export default response;

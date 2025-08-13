@@ -19,4 +19,5 @@ const response = handleRequest(
   forceInvoke
 );
 
+response;
 export default response;

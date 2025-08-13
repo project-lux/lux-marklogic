@@ -9,4 +9,5 @@ const response = handleRequest(function () {
   return determineIfSearchWillMatch(multipleSearchCriteria);
 }, unitName);
 
+response;
 export default response;

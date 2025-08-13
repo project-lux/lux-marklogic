@@ -6,4 +6,5 @@ const response = handleRequest(function () {
   return getAdvancedSearchConfig();
 }, unitName);
 
+response;
 export default response;

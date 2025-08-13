@@ -5,4 +5,5 @@ const response = handleRequest(function () {
   return getStorageInfo();
 });
 
+response;
 export default response;

@@ -1258,7 +1258,7 @@ const SearchCriteriaProcessor = class {
   static evalQueryString(queryStr) {
     return fn.head(
       xdmp.eval(
-        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; export default q`
+        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`
       )
     );
   }

@@ -3,4 +3,5 @@ import { getVersionInfo } from '../../lib/environmentLib.mjs';
 
 const response = handleRequest(getVersionInfo);
 
+response;
 export default response;

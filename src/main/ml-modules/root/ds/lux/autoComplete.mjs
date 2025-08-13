@@ -27,4 +27,5 @@ const response = handleRequest(function () {
   );
 }, unitName);
 
+response;
 export default response;

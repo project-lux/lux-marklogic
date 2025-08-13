@@ -10,4 +10,5 @@ const response = handleRequest(function () {
   return getSearchEstimate(searchCriteria, scope);
 }, unitName);
 
+response;
 export default response;

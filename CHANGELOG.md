@@ -1,6 +1,18 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v2.1.0 - 2025-08-25
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Fixed SEC-INVURI error when deploying external security configuration([#599](https://github.com/project-lux/lux-marklogic/issues/599))
+
+### Security
+
 ## v2.0.0 - 2025-08-11
 ### Added
 - Added back a second app server to be used for deployment (digest authentication), where the main rest app server is used for the application at runtime (OAuth authentication)([#585](https://github.com/project-lux/lux-marklogic/issues/585))

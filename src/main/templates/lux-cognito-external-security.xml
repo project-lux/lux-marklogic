@@ -14,7 +14,6 @@
     <oauth-role-attribute>lux:groups</oauth-role-attribute>
     <oauth-privilege-attribute/>
     <oauth-jwt-alg>RS256</oauth-jwt-alg>
-    <oauth-jwks-uri/>
     <%= oauthPublicKeys %>
     </oauth-server>
   </external-security-properties>

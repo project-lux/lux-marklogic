@@ -5,6 +5,8 @@ const unitName = external.unitName;
 const uri = external.uri;
 const profile = external.profile;
 const lang = external.lang;
-handleRequest(function () {
+const response = handleRequest(function () {
   return readDocument(uri, profile, lang);
 }, unitName);
+
+export default response;

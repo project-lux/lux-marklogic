@@ -6,6 +6,8 @@ const unitName = external.unitName;
 const searchCriteria = getObjectFromNode(external.q);
 const scope = external.scope;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   return getSearchEstimate(searchCriteria, scope);
 }, unitName);
+
+export default response;

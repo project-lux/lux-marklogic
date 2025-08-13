@@ -4,7 +4,7 @@ import { COLLECTION_NAME_MY_COLLECTIONS_FEATURE } from '../../lib/appConstants.m
 
 const unitName = external.unitName;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   const start = new Date();
   const doc = {
     estimates: {
@@ -31,3 +31,5 @@ handleRequest(function () {
   doc.metadata.milliseconds = end - start;
   return doc;
 }, unitName);
+
+export default response;

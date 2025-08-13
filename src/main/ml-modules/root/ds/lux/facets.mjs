@@ -9,7 +9,7 @@ const page = external.page;
 const pageLength = external.pageLength;
 const sort = external.sort;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   return getFacet({
     facetName: name,
     searchCriteria,
@@ -19,3 +19,5 @@ handleRequest(function () {
     sort,
   });
 }, unitName);
+
+export default response;

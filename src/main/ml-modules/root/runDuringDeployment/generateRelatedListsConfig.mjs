@@ -368,7 +368,7 @@ const javascript = `
   });
   'Related lists configuration generated.';
 `;
-utils.evalInModulesDatabase(
+const result = utils.evalInModulesDatabase(
   javascript,
   {
     uri: uri,
@@ -376,3 +376,6 @@ utils.evalInModulesDatabase(
   },
   true
 );
+
+result;
+export default result;

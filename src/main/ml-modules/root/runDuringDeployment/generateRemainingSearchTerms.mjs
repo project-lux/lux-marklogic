@@ -429,7 +429,7 @@ const javascript = `
   });
   uri + " updated with remaining search terms."
 `;
-utils.evalInModulesDatabase(
+const result = utils.evalInModulesDatabase(
   javascript,
   {
     uri: uri,
@@ -437,3 +437,6 @@ utils.evalInModulesDatabase(
   },
   true
 );
+
+result;
+export default result;

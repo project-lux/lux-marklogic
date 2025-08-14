@@ -427,9 +427,12 @@ const javascript = `
   xdmp.documentInsert(uri, doc, {
     permissions: xdmp.documentGetPermissions(fn.subsequence(cts.uriMatch("*.mjs"), 1, 1))
   });
-  uri + " updated with remaining search terms."
+  const msg = uri + " updated with remaining search terms."
+
+  msg;
+  export default msg;
 `;
-const result = utils.evalInModulesDatabase(
+const msg = utils.evalInModulesDatabase(
   javascript,
   {
     uri: uri,
@@ -438,5 +441,5 @@ const result = utils.evalInModulesDatabase(
   true
 );
 
-result;
-export default result;
+msg;
+export default msg;

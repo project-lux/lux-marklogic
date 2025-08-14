@@ -255,9 +255,12 @@ const javascript = `
   xdmp.documentInsert(uri, doc, {
     permissions: xdmp.documentGetPermissions(fn.subsequence(cts.uriMatch("*.mjs"), 1, 1))
   });
-  'Advanced search configuration generated.';
+  const msg = 'Advanced search configuration generated.';
+
+  msg;
+  export default msg;
 `;
-const result = utils.evalInModulesDatabase(
+const msg = utils.evalInModulesDatabase(
   javascript,
   {
     uri: uri,
@@ -266,5 +269,5 @@ const result = utils.evalInModulesDatabase(
   true
 );
 
-result;
-export default result;
+msg;
+export default msg;

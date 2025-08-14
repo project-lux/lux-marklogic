@@ -56,3 +56,4 @@ for (let user of users) {
 }
 
 users;
+export default users;

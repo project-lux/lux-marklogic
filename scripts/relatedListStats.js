@@ -47,4 +47,6 @@ Object.keys(scopesToTermNames).forEach((scope) => {
     }
   });
 });
+
 stats;
+export default stats;

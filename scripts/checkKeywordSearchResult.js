@@ -150,3 +150,4 @@ for (let objectUri of objectUris) {
 }
 
 findings;
+export default findings;

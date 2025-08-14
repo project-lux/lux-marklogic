@@ -274,4 +274,6 @@ dataSliceUsernames.forEach((username) => {
     },
   };
 });
+
 findingsByUser;
+export default findingsByUser;

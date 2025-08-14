@@ -24,3 +24,4 @@ xdmp
   });
 
 results;
+export default results;

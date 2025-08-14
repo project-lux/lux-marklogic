@@ -38,4 +38,6 @@ for (const searchScope of Object.keys(searchTermsConfig).sort()) {
     });
   });
 }
+
 predicatesToTypes;
+export default predicatesToTypes;

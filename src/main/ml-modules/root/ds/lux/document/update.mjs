@@ -12,4 +12,5 @@ const response = handleRequest(function () {
   return updateDocument(uri, docNode, newUserMode, lang);
 }, unitName);
 
+response;
 export default response;

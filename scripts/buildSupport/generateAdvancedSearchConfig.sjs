@@ -1,4 +1,4 @@
-xdmp.invoke(
+const response = xdmp.invoke(
   '/runDuringDeployment/generateAdvancedSearchConfig.mjs',
   {},
   {
@@ -7,3 +7,6 @@ xdmp.invoke(
     root: '',
   }
 );
+
+response;
+export default response;

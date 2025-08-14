@@ -408,3 +408,4 @@ console.log(
 );
 
 assertions;
+export default assertions;

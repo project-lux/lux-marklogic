@@ -1,5 +1,23 @@
 #!/bin/bash
 
+# -----------------------------------------------------------------------------
+# getEc2InstanceMetadata.sh
+#
+# Purpose:
+#   Retrieves EC2 instance metadata using IMDSv2 (Instance Metadata Service v2).
+#
+# Usage:
+#   ./getEc2InstanceMetadata.sh
+#
+# Requirements:
+#   - Must be run on an AWS EC2 instance.
+#   - Requires 'curl' to be installed.
+#   - Instance must support IMDSv2.
+#
+# Notes:
+#   - The script fetches a session token and uses it to query various metadata items.
+#   - Some metadata items may not be available depending on the instance configuration.
+# -----------------------------------------------------------------------------
 # Get token for IMDSv2
 TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 

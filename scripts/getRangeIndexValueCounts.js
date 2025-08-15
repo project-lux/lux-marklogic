@@ -29,4 +29,6 @@ indexNames.forEach((name) => {
     );
   }
 });
+
 indexCounts;
+export default indexCounts;

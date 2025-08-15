@@ -132,4 +132,6 @@ for (let i = 0; i < manualIriPlanResults.length; i++) {
       : 'Generated URI plan not executed',
   });
 }
+
 blendedResults;
+export default blendedResults;

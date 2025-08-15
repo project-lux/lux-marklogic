@@ -40,4 +40,7 @@ const thePlan = op.fromTriples([
 ]);
 */
 
-thePlan.limit(100).select(['label']).result();
+const results = thePlan.limit(100).select(['label']).result();
+
+results;
+export default results;

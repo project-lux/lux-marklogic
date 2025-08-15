@@ -78,3 +78,4 @@ try {
 console.log(`${LIB}: completed ${assertions.length} assertions.`);
 
 assertions;
+export default assertions;

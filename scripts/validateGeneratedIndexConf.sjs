@@ -32,3 +32,4 @@ for (let path of doc.xpath('//path')) {
 }
 
 findings;
+export default findings;

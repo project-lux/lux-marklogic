@@ -16,4 +16,7 @@ const backupToValidate = '/host/tmp/20210507-1328466042280';
  */
 const databaseId = xdmp.database(databaseName);
 const forestIds = xdmp.databaseForests(databaseId);
-xdmp.databaseRestoreValidate(forestIds, backupToValidate);
+const result = xdmp.databaseRestoreValidate(forestIds, backupToValidate);
+
+result;
+export default result;

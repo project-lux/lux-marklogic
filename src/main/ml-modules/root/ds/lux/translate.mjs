@@ -4,9 +4,12 @@ import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
 const searchCriteria = external.q;
 const searchScope = external.scope;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   return SearchCriteriaProcessor.translateStringGrammarToJSON(
     searchScope,
     searchCriteria
   );
 });
+
+response;
+export default response;

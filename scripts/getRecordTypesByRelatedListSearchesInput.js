@@ -41,4 +41,6 @@ for (const searchScope of Object.keys(searchTermsConfig).sort()) {
       }
     });
 }
+
 termToTypes;
+export default termToTypes;

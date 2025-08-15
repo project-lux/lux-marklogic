@@ -15,4 +15,6 @@ if (parseInt(xdmp.version().split('.')[0], 10) >= 12) {
 } else {
   response = 'getSslMinAllowTls does not apply to ML versions <= 11';
 }
+
 response;
+export default response;

@@ -10,7 +10,7 @@ const unitName = null; // Irrelevant for this operation.
 const forceInvoke = true; // Required.
 
 // No need to support unitName.
-handleRequest(
+const response = handleRequest(
   function () {
     declareUpdate();
     return setTenantStatus(prod, readOnly);
@@ -18,3 +18,6 @@ handleRequest(
   unitName,
   forceInvoke
 );
+
+response;
+export default response;

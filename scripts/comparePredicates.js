@@ -116,4 +116,7 @@ function getArrayDiff(configuredPredicates, allPredicates) {
   };
 }
 
-getArrayDiff(configuredPredicates, allPredicates);
+const diff = getArrayDiff(configuredPredicates, allPredicates);
+
+diff;
+export default diff;

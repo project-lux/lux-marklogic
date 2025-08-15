@@ -39,4 +39,7 @@ const javascript = `
 `;
 evalInModulesDatabase(javascript);
 
-`Compressed ${uriPattern} into ${filename}`;
+const msg = `Compressed ${uriPattern} into ${filename}`;
+
+msg;
+export default msg;

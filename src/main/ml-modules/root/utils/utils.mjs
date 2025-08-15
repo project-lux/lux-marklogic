@@ -123,7 +123,10 @@ function evalInModulesDatabase(javascript, vars = {}, update = false) {
 
 function getDocFromModulesDatabase(uri) {
   return fn.head(
-    evalInModulesDatabase('const { uri } = external; cts.doc(uri)', { uri })
+    evalInModulesDatabase(
+      'const { uri } = external; const doc = cts.doc(uri); doc; export default doc;',
+      { uri }
+    )
   );
 }
 

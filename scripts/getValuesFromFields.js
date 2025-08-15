@@ -79,4 +79,6 @@ fieldNames.slice(fieldStartIdx - 1, fieldEndIdx - 1).forEach((name) => {
     valuesByField[name] = getValues(name);
   }
 });
+
 valuesByField;
+export default valuesByField;

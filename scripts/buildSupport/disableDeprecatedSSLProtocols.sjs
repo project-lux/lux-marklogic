@@ -19,4 +19,6 @@ if (parseInt(xdmp.version().split('.')[0], 10) <= 11) {
   response =
     'disableDeprecatedSSLProtocols does not apply to ML versions >= 12';
 }
+
 response;
+export default response;

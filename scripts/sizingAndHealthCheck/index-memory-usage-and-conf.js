@@ -80,6 +80,9 @@ const indexSizes = op
     op.sum('totalOnDiskBytes', 'indexOnDiskBytes'),
   ]);
 
-indexDefs
+const findings = indexDefs
   .joinLeftOuter(indexSizes, op.on('indexId', 'indexId'))
   .result('object', params);
+
+findings;
+export default findings;

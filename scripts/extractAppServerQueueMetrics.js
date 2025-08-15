@@ -1235,7 +1235,7 @@ const queueSizesArr = [
   },
 ];
 
-queueSizesArr.map((item) => {
+const metrics = queueSizesArr.map((item) => {
   // Get just the values and sort from greatest to least.
   const values = item.data.entry
     .map((entry) => {
@@ -1272,3 +1272,6 @@ queueSizesArr.map((item) => {
       : 'omitted per script configuration',
   };
 });
+
+metrics;
+export default metrics;

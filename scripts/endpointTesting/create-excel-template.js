@@ -3,636 +3,452 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Create separate Excel files for each endpoint type with parameter-specific columns
+ * Create separate Excel files for each API endpoint with parameter-specific columns
+ * Based on actual API definitions from *.api files
  */
 function createEndpointSpecificTemplates(templateDir) {
-  const templates = {
-    search: {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:q',
-        'param:scope',
-        'param:page',
-        'param:pageLength',
-        'param:sort',
-      ],
-      sampleData: [
-        [
-          'Search - Basic Query',
-          'Basic search for works',
-          'true',
-          200,
-          10000,
-          3000,
-          500,
-          'search,functional',
-          'mona lisa',
-          'work',
-          1,
-          10,
-          '',
-        ],
-        [
-          'Search - Advanced Query',
-          'Search with pagination',
-          'true',
-          200,
-          10000,
-          3000,
-          500,
-          'search,pagination',
-          'painting',
-          'work',
-          2,
-          20,
-          'title_desc',
-        ],
-        [
-          'Search - Empty Query',
-          'Search with empty query',
-          'true',
-          200,
-          10000,
-          3000,
-          0,
-          'search,edge-case',
-          '',
-          'work',
-          1,
-          10,
-          '',
-        ],
-      ],
-    },
+  console.log('Analyzing API files to create individual templates...');
 
-    facets: {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:name',
-        'param:q',
-        'param:scope',
-        'param:page',
-        'param:pageLength',
-      ],
-      sampleData: [
-        [
-          'Facets - Work Creation Place',
-          'Get facets for work creation places',
-          'true',
-          200,
-          10000,
-          3000,
-          500,
-          'facets,functional',
-          'workCreationPlaceId',
-          'mona lisa',
-          'work',
-          1,
-          10,
-        ],
-        [
-          'Facets - Agent Classification',
-          'Get facets for agent classification',
-          'true',
-          200,
-          10000,
-          3000,
-          500,
-          'facets,functional',
-          'agentClassificationId',
-          'artist',
-          'agent',
-          1,
-          20,
-        ],
-        [
-          'Facets - Material Type',
-          'Get facets for material types',
-          'true',
-          200,
-          10000,
-          3000,
-          0,
-          'facets,material',
-          'materialId',
-          'oil',
-          'work',
-          1,
-          15,
-        ],
-      ],
-    },
+  // Get all API definitions
+  const apiDefinitions = analyzeAPIFiles();
+  console.log(
+    `Found ${Object.keys(apiDefinitions).length} unique API endpoints`
+  );
 
-    'related-list': {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:scope',
-        'param:name',
-        'param:uri',
-        'param:page',
-        'param:pageLength',
-      ],
-      sampleData: [
-        [
-          'Related - Works by Agent',
-          'Get works created by specific agent',
-          'true',
-          200,
-          10000,
-          3000,
-          500,
-          'related,functional',
-          'work',
-          'relatedToAgent',
-          'https://lux.collections.yale.edu/data/person/12345',
-          1,
-          10,
-        ],
-        [
-          'Related - Objects at Location',
-          'Get objects at specific location',
-          'true',
-          200,
-          10000,
-          3000,
-          500,
-          'related,functional',
-          'object',
-          'relatedToPlace',
-          'https://lux.collections.yale.edu/data/place/67890',
-          1,
-          20,
-        ],
-        [
-          'Related - Events for Agent',
-          'Get events related to agent',
-          'true',
-          200,
-          10000,
-          3000,
-          0,
-          'related,events',
-          'event',
-          'relatedToAgent',
-          'https://lux.collections.yale.edu/data/person/54321',
-          1,
-          15,
-        ],
-      ],
-    },
+  // Create templates directory if it doesn't exist
+  if (!fs.existsSync(templateDir)) {
+    fs.mkdirSync(templateDir, { recursive: true });
+  }
 
-    'search-estimate': {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:q',
-        'param:scope',
-      ],
-      sampleData: [
-        [
-          'Estimate - Work Search',
-          'Estimate results for work search',
-          'true',
-          200,
-          5000,
-          2000,
-          300,
-          'estimate,functional',
-          'art',
-          'work',
-        ],
-        [
-          'Estimate - Object Search',
-          'Estimate results for object search',
-          'true',
-          200,
-          5000,
-          2000,
-          300,
-          'estimate,functional',
-          'sculpture',
-          'object',
-        ],
-        [
-          'Estimate - Large Result Set',
-          'Estimate for query with many results',
-          'true',
-          200,
-          8000,
-          3000,
-          0,
-          'estimate,performance',
-          'a',
-          'work',
-        ],
-      ],
-    },
-
-    'search-will-match': {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:q',
-        'param:scope',
-      ],
-      sampleData: [
-        [
-          'Will Match - Painting Query',
-          'Check if painting query will match',
-          'true',
-          200,
-          5000,
-          2000,
-          300,
-          'validation,functional',
-          'painting',
-          'work',
-        ],
-        [
-          'Will Match - Specific Artist',
-          'Check if specific artist query matches',
-          'true',
-          200,
-          5000,
-          2000,
-          300,
-          'validation,functional',
-          'Picasso',
-          'agent',
-        ],
-        [
-          'Will Match - No Results',
-          'Query that should return no results',
-          'true',
-          200,
-          5000,
-          2000,
-          0,
-          'validation,negative',
-          'zzznomatchzz',
-          'work',
-        ],
-      ],
-    },
-
-    translate: {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:q',
-        'param:scope',
-      ],
-      sampleData: [
-        [
-          'Translate - Boolean Query',
-          'Translate boolean search query',
-          'true',
-          200,
-          5000,
-          2000,
-          300,
-          'translate,functional',
-          'mona AND lisa',
-          'work',
-        ],
-        [
-          'Translate - Simple Query',
-          'Translate simple keyword query',
-          'true',
-          200,
-          5000,
-          2000,
-          300,
-          'translate,functional',
-          'impressionist',
-          'work',
-        ],
-        [
-          'Translate - Complex Query',
-          'Translate complex search query',
-          'true',
-          200,
-          8000,
-          3000,
-          0,
-          'translate,complex',
-          '(painting OR sculpture) AND NOT modern',
-          'work',
-        ],
-      ],
-    },
-
-    'document-create': {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:unitName',
-        'param:doc',
-        'param:lang',
-      ],
-      sampleData: [
-        [
-          'Create - User Profile',
-          'Create a user profile document',
-          'false',
-          200,
-          15000,
-          5000,
-          1000,
-          'document,create',
-          'ypm',
-          '{"type": "Person", "classified_as": [{"id": "https://todo.concept.user.profile"}]}',
-          'en',
-        ],
-        [
-          'Create - My Collection',
-          'Create a My Collection document',
-          'false',
-          200,
-          15000,
-          5000,
-          1000,
-          'document,create',
-          'ypm',
-          '{"type": "Set", "identified_by": [{"type": "Name", "content": "Test Collection"}]}',
-          'en',
-        ],
-        [
-          'Create - Simple Document',
-          'Create a simple test document',
-          'false',
-          200,
-          15000,
-          5000,
-          1000,
-          'document,create',
-          'ypm',
-          '{"type": "Test", "title": "Simple Test Doc"}',
-          'en',
-        ],
-      ],
-    },
-
-    'document-read': {
-      columns: [
-        'test_name',
-        'description',
-        'enabled',
-        'expected_status',
-        'timeout_ms',
-        'max_response_time',
-        'delay_after_ms',
-        'tags',
-        'param:uri',
-      ],
-      sampleData: [
-        [
-          'Read - Test Document',
-          'Read a specific test document',
-          'false',
-          200,
-          5000,
-          2000,
-          300,
-          'document,read',
-          '/test-document.json',
-        ],
-        [
-          'Read - User Profile',
-          'Read user profile document',
-          'false',
-          200,
-          5000,
-          2000,
-          300,
-          'document,read',
-          '/user-profiles/test-user.json',
-        ],
-        [
-          'Read - Non-existent Doc',
-          'Try to read non-existent document',
-          'false',
-          404,
-          5000,
-          2000,
-          0,
-          'document,negative',
-          '/non-existent.json',
-        ],
-      ],
-    },
-  };
-
-  // Create separate files for each endpoint type
-  Object.entries(templates).forEach(([endpointType, template]) => {
-    createSingleEndpointTemplate(endpointType, template, templateDir);
+  // Generate Excel files for each API endpoint
+  Object.keys(apiDefinitions).forEach((endpointKey) => {
+    const apiDef = apiDefinitions[endpointKey];
+    createTemplateForAPI(apiDef, endpointKey, templateDir);
   });
 
-  console.log('\nEndpoint-specific templates created:');
-  Object.keys(templates).forEach((type) => {
-    console.log(`  - ${type}-tests.xlsx`);
-  });
+  console.log('\nTemplate generation complete!');
+  console.log('Next steps:');
+  console.log('1. Fill in test configurations in the Excel files');
+  console.log('2. Yellow highlighted columns contain required parameters');
+  console.log('3. Run tests with: npm test');
 }
 
 /**
- * Create a single endpoint-specific template file
+ * Analyze all .api files to extract endpoint definitions and parameters
  */
-function createSingleEndpointTemplate(endpointType, template, templateDir) {
-  const workbook = XLSX.utils.book_new();
+function analyzeAPIFiles() {
+  const apiDir = path.resolve(__dirname, '../../src/main/ml-modules/root/ds');
+  const endpoints = {};
 
-  // Create test data with headers
-  const testData = [template.columns, ...template.sampleData];
-  const testSheet = XLSX.utils.aoa_to_sheet(testData);
+  function findApiFiles(dir) {
+    const files = fs.readdirSync(dir);
 
-  // Set column widths
-  testSheet['!cols'] = [
-    { width: 30 }, // test_name
-    { width: 50 }, // description
-    { width: 10 }, // enabled
-    { width: 15 }, // expected_status
-    { width: 12 }, // timeout_ms
-    { width: 18 }, // max_response_time
-    { width: 15 }, // delay_after_ms
-    { width: 25 }, // tags
-    ...template.columns.slice(8).map(() => ({ width: 20 })), // parameter columns
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        findApiFiles(fullPath);
+      } else if (file.endsWith('.api')) {
+        try {
+          const content = fs.readFileSync(fullPath, 'utf8');
+          const apiDef = JSON.parse(content);
+
+          // Extract relative path for endpoint identification
+          const relativePath = path.relative(apiDir, fullPath);
+          const endpointKey = getEndpointKey(relativePath, apiDef.functionName);
+
+          // Parse parameters
+          const requiredParams = [];
+          const optionalParams = [];
+
+          if (apiDef.params) {
+            apiDef.params.forEach((param) => {
+              const paramInfo = {
+                name: param.name,
+                datatype: param.datatype,
+                nullable: param.nullable,
+              };
+
+              if (param.nullable === true) {
+                optionalParams.push(paramInfo);
+              } else {
+                requiredParams.push(paramInfo);
+              }
+            });
+          }
+
+          endpoints[endpointKey] = {
+            functionName: apiDef.functionName,
+            filePath: relativePath,
+            requiredParams,
+            optionalParams,
+            allParams: [...requiredParams, ...optionalParams],
+          };
+        } catch (error) {
+          console.warn(
+            `Warning: Could not parse ${fullPath}: ${error.message}`
+          );
+        }
+      }
+    }
+  }
+
+  findApiFiles(apiDir);
+  return endpoints;
+}
+
+/**
+ * Generate endpoint key from file path and function name
+ */
+function getEndpointKey(filePath, functionName) {
+  // Convert path like "ds/lux/document/create.api" to "document-create"
+  const pathParts = filePath.split(path.sep);
+  const filename = pathParts[pathParts.length - 1].replace('.api', '');
+
+  if (pathParts.includes('document')) {
+    return `document-${filename}`;
+  } else if (pathParts.includes('tenantStatus')) {
+    return `tenant-status-${filename}`;
+  } else {
+    // For files directly in ds/lux/, use the filename
+    return filename;
+  }
+}
+
+/**
+ * Create template for a specific API endpoint
+ */
+function createTemplateForAPI(apiDef, endpointKey, templateDir) {
+  const filename = `${endpointKey}-endpoint.xlsx`;
+  const filePath = path.join(templateDir, filename);
+
+  console.log(`Creating template for ${endpointKey}: ${filename}`);
+
+  // Build columns array
+  const baseColumns = [
+    'test_name',
+    'description',
+    'enabled',
+    'expected_status',
+    'timeout_ms',
+    'max_response_time',
+    'delay_after_ms',
+    'tags',
   ];
 
-  XLSX.utils.book_append_sheet(workbook, testSheet, 'Tests');
+  // Add required parameters first (will be highlighted)
+  const requiredParamColumns = apiDef.requiredParams.map(
+    (param) => `param:${param.name}`
+  );
+
+  // Add optional parameters after required ones
+  const optionalParamColumns = apiDef.optionalParams.map(
+    (param) => `param:${param.name}`
+  );
+
+  const columns = [
+    ...baseColumns,
+    ...requiredParamColumns,
+    ...optionalParamColumns,
+  ];
+
+  // Generate sample data
+  const sampleData = generateSampleData(apiDef, endpointKey, columns);
+
+  // Create workbook and worksheet
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([columns, ...sampleData]);
+
+  // Apply styling to required parameter columns (light yellow background)
+  if (requiredParamColumns.length > 0) {
+    requiredParamColumns.forEach((requiredParam) => {
+      const colIndex = columns.indexOf(requiredParam);
+      if (colIndex !== -1) {
+        // Convert column index to Excel column letter
+        const colLetter = XLSX.utils.encode_col(colIndex);
+
+        // Apply yellow background to header cell
+        const headerCell = ws[colLetter + '1'];
+        if (headerCell) {
+          if (!headerCell.s) headerCell.s = {};
+          headerCell.s.fill = {
+            fgColor: { rgb: 'FFFF99' }, // Light yellow
+          };
+        }
+      }
+    });
+  }
+
+  // Set column widths for better readability
+  const colWidths = columns.map((col) => ({
+    width: col.startsWith('param:')
+      ? 20
+      : col === 'description'
+      ? 30
+      : col === 'test_name'
+      ? 25
+      : 15,
+  }));
+  ws['!cols'] = colWidths;
+
+  // Add worksheet to workbook
+  XLSX.utils.book_append_sheet(wb, ws, endpointKey);
 
   // Add documentation sheet
-  const docData = [
-    ['Column', 'Description', 'Example'],
-    ['test_name', 'Unique name for the test', 'Search - Basic Query'],
-    [
-      'description',
-      'Description of what the test does',
-      'Basic search for works containing mona lisa',
-    ],
-    ['enabled', 'Whether to run this test (true/false)', 'true'],
-    ['expected_status', 'Expected HTTP status code', '200'],
-    ['timeout_ms', 'Request timeout in milliseconds', '10000'],
-    ['max_response_time', 'Maximum acceptable response time', '3000'],
-    ['delay_after_ms', 'Delay after test completion', '500'],
-    ['tags', 'Comma-separated tags for grouping', 'search,functional,smoke'],
-    ['', '', ''],
-    ['Parameter Columns (param:*)', '', ''],
-    ...getEndpointSpecificDocumentation(endpointType),
-  ];
+  const docWs = createDocumentationSheetForAPI(
+    apiDef,
+    endpointKey,
+    columns,
+    requiredParamColumns
+  );
+  XLSX.utils.book_append_sheet(wb, docWs, 'Documentation');
 
-  const docSheet = XLSX.utils.aoa_to_sheet(docData);
-  docSheet['!cols'] = [{ width: 25 }, { width: 60 }, { width: 40 }];
-
-  XLSX.utils.book_append_sheet(workbook, docSheet, 'Documentation');
-
-  // Write file
-  const fileName = `${endpointType}-tests.xlsx`;
-  console.info(`Creating template within ${templateDir}`);
-  const outputPath = path.join(templateDir, fileName);
-  XLSX.writeFile(workbook, outputPath);
+  // Write the file
+  XLSX.writeFile(wb, filePath);
+  console.log(`✓ Created ${filePath}`);
 }
 
 /**
- * Get endpoint-specific parameter documentation
+ * Generate sample test data for an API endpoint
  */
-function getEndpointSpecificDocumentation(endpointType) {
-  const docs = {
-    search: [
-      ['param:q', 'Search query string', 'mona lisa'],
-      [
-        'param:scope',
-        'Search scope (work, object, agent, place, event)',
-        'work',
-      ],
-      ['param:page', 'Page number for pagination', '1'],
-      ['param:pageLength', 'Number of results per page', '10'],
-      ['param:sort', 'Sort order for results', 'title_asc'],
-    ],
-    facets: [
-      ['param:name', 'Facet name identifier', 'workCreationPlaceId'],
-      ['param:q', 'Query to filter facets', 'mona lisa'],
-      ['param:scope', 'Search scope', 'work'],
-      ['param:page', 'Page number', '1'],
-      ['param:pageLength', 'Results per page', '10'],
-    ],
-    'related-list': [
-      ['param:scope', 'Related item scope', 'work'],
-      ['param:name', 'Relationship name', 'relatedToAgent'],
-      [
-        'param:uri',
-        'URI of the related entity',
-        'https://lux.collections.yale.edu/data/person/12345',
-      ],
-      ['param:page', 'Page number', '1'],
-      ['param:pageLength', 'Results per page', '10'],
-    ],
-    'search-estimate': [
-      ['param:q', 'Search query string', 'art'],
-      ['param:scope', 'Search scope', 'work'],
-    ],
-    'search-will-match': [
-      ['param:q', 'Search query string', 'painting'],
-      ['param:scope', 'Search scope', 'work'],
-    ],
-    translate: [
-      ['param:q', 'Query string to translate', 'mona AND lisa'],
-      ['param:scope', 'Target scope for translation', 'work'],
-    ],
-    'document-create': [
-      ['param:unitName', 'Unit name identifier', 'ypm'],
-      ['param:doc', 'JSON document to create', '{"type": "Person"}'],
-      ['param:lang', 'Language code', 'en'],
-    ],
-    'document-read': [
-      ['param:uri', 'URI of document to read', '/test-document.json'],
-    ],
+function generateSampleData(apiDef, endpointKey, columns) {
+  const sampleRows = [];
+
+  // Generate 2-3 sample test cases per endpoint
+  const testCases = getSampleTestCases(apiDef, endpointKey);
+
+  testCases.forEach((testCase, index) => {
+    const row = [];
+
+    columns.forEach((col) => {
+      if (col === 'test_name') {
+        row.push(testCase.name);
+      } else if (col === 'description') {
+        row.push(testCase.description);
+      } else if (col === 'enabled') {
+        row.push('true');
+      } else if (col === 'expected_status') {
+        row.push(testCase.expectedStatus || 200);
+      } else if (col === 'timeout_ms') {
+        row.push(10000);
+      } else if (col === 'max_response_time') {
+        row.push(testCase.maxResponseTime || 3000);
+      } else if (col === 'delay_after_ms') {
+        row.push(500);
+      } else if (col === 'tags') {
+        row.push(testCase.tags || `${endpointKey},functional`);
+      } else if (col.startsWith('param:')) {
+        const paramName = col.replace('param:', '');
+        row.push(testCase.params[paramName] || '');
+      } else {
+        row.push('');
+      }
+    });
+
+    sampleRows.push(row);
+  });
+
+  return sampleRows;
+}
+
+/**
+ * Get sample test cases for an endpoint
+ */
+function getSampleTestCases(apiDef, endpointKey) {
+  // Base test case structure
+  const baseCase = {
+    name: `${endpointKey} - Basic Test`,
+    description: `Test ${apiDef.functionName} endpoint with valid parameters`,
+    expectedStatus: 200,
+    maxResponseTime: 3000,
+    tags: `${endpointKey},functional`,
+    params: {},
   };
 
-  return docs[endpointType] || [];
+  // Generate sample parameter values based on endpoint type and parameter names
+  apiDef.allParams.forEach((param) => {
+    baseCase.params[param.name] = getSampleParamValue(param, endpointKey);
+  });
+
+  // Create variations for different test scenarios
+  const testCases = [baseCase];
+
+  // Add error test case if there are required parameters
+  if (apiDef.requiredParams.length > 0) {
+    const errorCase = {
+      ...baseCase,
+      name: `${endpointKey} - Missing Required Param`,
+      description: `Test ${apiDef.functionName} with missing required parameters`,
+      expectedStatus: 400,
+      maxResponseTime: 2000,
+      tags: `${endpointKey},validation`,
+      params: { ...baseCase.params },
+    };
+
+    // Remove first required parameter to trigger error
+    const firstRequired = apiDef.requiredParams[0];
+    if (firstRequired) {
+      errorCase.params[firstRequired.name] = '';
+    }
+
+    testCases.push(errorCase);
+  }
+
+  return testCases;
 }
 
 /**
- * Create a master configuration directory with all templates
+ * Generate sample parameter values based on parameter name and type
  */
-function createConfigDirectories() {
-  const templateDir = path.join(__dirname, 'configsTemplates');
-  const configDir = path.join(__dirname, 'configs');
+function getSampleParamValue(param, endpointKey) {
+  const paramName = param.name.toLowerCase();
 
-  if (!fs.existsSync(templateDir)) {
-    fs.mkdirSync(templateDir);
-  }
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir);
-  }
+  // Common parameter patterns
+  if (paramName === 'unitname') return '';
+  if (paramName === 'q')
+    return endpointKey.includes('search')
+      ? 'test query'
+      : '{"query": "example"}';
+  if (paramName === 'scope') return 'work';
+  if (paramName === 'uri')
+    return 'https://lux.collections.yale.edu/data/test/example';
+  if (paramName === 'page') return '1';
+  if (paramName === 'pagelength') return '20';
+  if (paramName === 'lang') return 'en';
+  if (paramName === 'profile') return 'summary';
+  if (paramName === 'doc')
+    return '{"@context": "https://linked.art/contexts/base.json", "type": "HumanMadeObject"}';
+  if (paramName === 'text') return 'sample text';
+  if (paramName === 'context') return 'person';
+  if (paramName === 'name') return 'classification';
 
-  createEndpointSpecificTemplates(templateDir);
+  // Default values based on data type
+  if (param.datatype === 'string') return 'example';
+  if (param.datatype === 'int' || param.datatype === 'integer') return '1';
+  if (param.datatype === 'boolean') return 'true';
+  if (param.datatype === 'jsonDocument') return '{}';
 
-  console.log(`\n Templates created within : ${templateDir}`);
-  console.log('\nTo use these templates:');
-  console.log(
-    '1. Copy the template you would like to use into the configs/ directory'
-  );
-  console.log('2. Open the copied template');
-  console.log('3. Modify the test data as needed');
-  console.log('4. Save the request-specific test config file.');
-  console.log('5. Run: node endpoint-test-runner.js configs/');
+  return '';
 }
 
-// Generate the templates
-createConfigDirectories();
+/**
+ * Create documentation sheet for a specific API endpoint
+ */
+function createDocumentationSheetForAPI(
+  apiDef,
+  endpointKey,
+  columns,
+  requiredParamColumns
+) {
+  const docData = [
+    [`LUX Endpoint Testing Framework - ${endpointKey.toUpperCase()}`],
+    [''],
+    ['API Function:', apiDef.functionName],
+    ['File Path:', apiDef.filePath],
+    [''],
+    ['Column Descriptions:'],
+    ['test_name', 'Unique identifier for the test'],
+    ['description', 'Human-readable description of what the test does'],
+    ['enabled', 'Whether to run this test (true/false)'],
+    ['expected_status', 'Expected HTTP status code (200, 404, etc.)'],
+    ['timeout_ms', 'Request timeout in milliseconds'],
+    ['max_response_time', 'Maximum acceptable response time in ms'],
+    ['delay_after_ms', 'Delay after test completion in ms'],
+    ['tags', 'Comma-separated tags for filtering tests'],
+    [''],
+  ];
 
-console.log('\nExample usage:');
-console.log('# Run all tests from all endpoint configuration files');
-console.log('node endpoint-test-runner.js configs/');
-console.log('');
-console.log('# Run tests with custom output directory');
-console.log('node endpoint-test-runner.js configs/ my-test-reports/');
-console.log('');
-console.log('# Using PowerShell script');
-console.log(
-  '.\\run-endpoint-tests.ps1 -ConfigFile "configs" -OutputDir "reports"'
-);
+  // Add parameter documentation
+  if (apiDef.allParams.length > 0) {
+    docData.push(['Parameter Descriptions:']);
+
+    apiDef.allParams.forEach((param) => {
+      const paramCol = `param:${param.name}`;
+      const isRequired = requiredParamColumns.includes(paramCol);
+      const description = getParameterDescription(param.name, param.datatype);
+      docData.push([
+        paramCol,
+        `${description} (${param.datatype})${
+          isRequired ? ' (REQUIRED - highlighted in yellow)' : ' (optional)'
+        }`,
+      ]);
+    });
+  }
+
+  // Add endpoint-specific notes
+  docData.push([''], ['Endpoint-Specific Notes:']);
+  const endpointNotes = getEndpointNotes(endpointKey, apiDef);
+  endpointNotes.forEach((note) => docData.push([note]));
+
+  return XLSX.utils.aoa_to_sheet(docData);
+}
+
+/**
+ * Get parameter descriptions based on parameter name and type
+ */
+function getParameterDescription(paramName, datatype) {
+  const name = paramName.toLowerCase();
+
+  const descriptions = {
+    unitname: 'Unit name for multi-tenant deployments',
+    q: 'Search query (string or JSON object)',
+    scope: 'Search scope (work, person, place, concept, event, etc.)',
+    page: 'Page number for pagination (1-based)',
+    pagelength: 'Number of results per page',
+    sort: 'Sort order for results',
+    uri: 'URI of the resource',
+    doc: 'JSON document for create/update operations',
+    profile: 'Response profile (summary, full, etc.)',
+    lang: 'Language code (en, es, fr, etc.)',
+    text: 'Text to auto-complete or process',
+    context: 'Context for auto-completion (person, place, concept, etc.)',
+    name: 'Name parameter (varies by endpoint)',
+  };
+
+  return descriptions[name] || `${paramName} parameter`;
+}
+
+/**
+ * Get endpoint-specific notes and tips
+ */
+function getEndpointNotes(endpointKey, apiDef) {
+  const notes = [`• Function: ${apiDef.functionName}`];
+
+  if (apiDef.requiredParams.length > 0) {
+    notes.push(
+      `• Required parameters: ${apiDef.requiredParams
+        .map((p) => p.name)
+        .join(', ')}`
+    );
+  }
+
+  if (apiDef.optionalParams.length > 0) {
+    notes.push(
+      `• Optional parameters: ${apiDef.optionalParams
+        .map((p) => p.name)
+        .join(', ')}`
+    );
+  }
+
+  // Add specific notes based on endpoint type
+  if (endpointKey.includes('document')) {
+    notes.push(
+      '• Document operations may require different parameters based on the operation type'
+    );
+  }
+
+  if (endpointKey.includes('search')) {
+    notes.push('• Search queries can be strings or complex JSON objects');
+  }
+
+  return notes;
+}
+
+// Run the template creation if this script is executed directly
+if (require.main === module) {
+  const templateDir = path.join(__dirname, 'templates');
+  createEndpointSpecificTemplates(templateDir);
+}
+
+module.exports = { createEndpointSpecificTemplates };

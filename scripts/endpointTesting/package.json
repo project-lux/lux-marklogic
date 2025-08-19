@@ -1,0 +1,27 @@
+{
+  "name": "lux-endpoint-tester",
+  "version": "1.0.0",
+  "description": "Automated endpoint testing for LUX MarkLogic API",
+  "main": "endpoint-test-runner.js",
+  "scripts": {
+    "test": "node endpoint-test-runner.js",
+    "test:config": "node endpoint-test-runner.js endpoint-test-config.csv",
+    "test:full": "node endpoint-test-runner.js endpoint-test-config.csv ./test-reports",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "xlsx": "^0.18.5",
+    "csv-parser": "^3.0.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "author": "LUX Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/project-lux/lux-marklogic.git"
+  }
+}

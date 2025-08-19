@@ -22,13 +22,18 @@ cd scripts/endpointTesting
 npm install
 ```
 
-### 2. Create Configuration Template
+### 2. Create Configuration Templates
 
 ```powershell
-node create-excel-template.js
+npm run create-templates
 ```
 
-This creates `endpoint-test-config-template.xlsx` with sample test configurations.
+This creates separate Excel files for each endpoint type in the `configs/` directory:
+- `configs/search-endpoints.xlsx`
+- `configs/facets-endpoints.xlsx` 
+- `configs/related-list-endpoints.xlsx`
+- `configs/translate-endpoints.xlsx`
+- `configs/document-endpoints.xlsx`
 
 ### 3. Run Tests
 
@@ -39,12 +44,12 @@ This creates `endpoint-test-config-template.xlsx` with sample test configuration
 
 **Using Node.js directly:**
 ```powershell
-node endpoint-test-runner.js endpoint-test-config.csv
+npm test
 ```
 
 **With custom parameters:**
 ```powershell
-.\run-endpoint-tests.ps1 -ConfigFile "my-tests.xlsx" -Environment "dev" -OutputDir "reports" -Parallel
+.\run-endpoint-tests.ps1 -ConfigDir "configs" -Environment "dev" -OutputDir "reports" -Parallel
 ```
 
 ## Configuration
@@ -177,7 +182,8 @@ Example GitHub Actions workflow:
   run: |
     cd scripts/endpointTesting
     npm install
-    node endpoint-test-runner.js endpoint-tests-ci.csv
+    npm run create-templates
+    npm test
     
 - name: Upload Test Reports
   uses: actions/upload-artifact@v3
@@ -214,7 +220,7 @@ Enable verbose logging:
 Or set environment variable:
 ```powershell
 $env:DEBUG = "true"
-node endpoint-test-runner.js config.csv
+npm test
 ```
 
 ## Best Practices
@@ -230,8 +236,9 @@ node endpoint-test-runner.js config.csv
 
 The framework includes several sample files:
 
-- `endpoint-test-config.csv` - Basic CSV configuration
-- `endpoint-test-config-template.xlsx` - Comprehensive Excel template
+- `configs/*.xlsx` - Endpoint-specific Excel configuration templates
+- `endpoint-test-runner.js` - Main test execution engine  
+- `create-excel-template.js` - Template generator
 - `run-endpoint-tests.ps1` - PowerShell execution script
 - `package.json` - Node.js dependencies
 

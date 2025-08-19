@@ -2,7 +2,7 @@
 # PowerShell script for running endpoint tests with different configurations
 
 param(
-    [string]$ConfigFile = "endpoint-test-config.csv",
+    [string]$ConfigDir = "configs",
     [string]$Environment = "local", 
     [string]$OutputDir = "test-reports",
     [switch]$Parallel = $false,
@@ -56,14 +56,22 @@ if (-not (Test-Path $nodeModulesPath)) {
     Pop-Location
 }
 
-# Verify config file exists
-$configPath = Join-Path $PSScriptRoot $ConfigFile
+# Verify config directory exists
+$configPath = Join-Path $PSScriptRoot $ConfigDir
 if (-not (Test-Path $configPath)) {
-    Write-Error "Configuration file not found: $configPath"
-    Write-Info "Available configuration files:"
-    Get-ChildItem -Path $PSScriptRoot -Filter "*.csv" | ForEach-Object { Write-Info "  - $($_.Name)" }
-    Get-ChildItem -Path $PSScriptRoot -Filter "*.xlsx" | ForEach-Object { Write-Info "  - $($_.Name)" }
+    Write-Error "Configuration directory not found: $configPath"
+    Write-Info "Please create the configs directory and add endpoint configuration files"
+    Write-Info "Run 'npm run create-templates' to generate template files"
     exit 1
+}
+
+# Check if config directory has any Excel files
+$configFiles = Get-ChildItem -Path $configPath -Filter "*.xlsx"
+if ($configFiles.Count -eq 0) {
+    Write-Warning "No Excel configuration files found in: $configPath"
+    Write-Info "Available files:"
+    Get-ChildItem -Path $configPath | ForEach-Object { Write-Info "  - $($_.Name)" }
+    Write-Info "Run 'npm run create-templates' to generate template files"
 }
 
 # Create output directory
@@ -84,7 +92,7 @@ if ($Verbose) {
 
 # Run the test
 Write-Info "Starting endpoint tests..."
-Write-Info "Configuration: $ConfigFile"
+Write-Info "Configuration Directory: $ConfigDir"
 Write-Info "Environment: $Environment"
 Write-Info "Output Directory: $OutputDir"
 Write-Info "Parallel Execution: $Parallel"

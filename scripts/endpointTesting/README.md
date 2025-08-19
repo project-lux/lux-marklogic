@@ -22,7 +22,34 @@ cd scripts/endpointTesting
 npm install
 ```
 
-### 2. Create Configuration Templates
+### 2. Configure Environment Variables
+
+Set up the required environment variables for your target environment:
+
+**Digest Authentication (default):**
+```powershell
+$env:BASE_URL = "http://localhost:8003"
+$env:AUTH_TYPE = "digest"
+$env:AUTH_USERNAME = "your-username"
+$env:AUTH_PASSWORD = "your-password"
+```
+
+**For different environments:**
+```powershell
+# Development
+$env:BASE_URL = "http://dev-server:8003"
+$env:AUTH_TYPE = "digest"
+$env:AUTH_USERNAME = "dev-user"
+$env:AUTH_PASSWORD = "dev-password"
+
+# Production  
+$env:BASE_URL = "https://api.lux.yale.edu"
+$env:AUTH_TYPE = "digest"
+$env:AUTH_USERNAME = "prod-user"
+$env:AUTH_PASSWORD = "secure-prod-password"
+```
+
+### 3. Create Configuration Templates
 
 ```powershell
 npm run create-templates
@@ -35,55 +62,110 @@ This creates separate Excel files for each endpoint type in the `configs/` direc
 - `configs/translate-endpoints.xlsx`
 - `configs/document-endpoints.xlsx`
 
-### 3. Run Tests
+### 4. Run Tests
 
-**Using PowerShell script (Recommended):**
-```powershell
-.\run-endpoint-tests.ps1
-```
-
-**Using Node.js directly:**
+**Using npm scripts (Recommended):**
 ```powershell
 npm test
 ```
 
-**With custom parameters:**
+**Using Node.js directly:**
 ```powershell
-.\run-endpoint-tests.ps1 -ConfigDir "configs" -Environment "dev" -OutputDir "reports" -Parallel
+node endpoint-test-runner.js ./configs
+```
+
+**With custom output directory:**
+```powershell
+node endpoint-test-runner.js ./configs ./test-reports
 ```
 
 ## Configuration
 
+### Environment Variables
+
+The framework uses the following environment variables:
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `BASE_URL` | Base URL for the MarkLogic API | `http://localhost:8003` | `https://api.lux.yale.edu` |
+| `AUTH_TYPE` | Authentication type | `digest` | `digest`, `oauth`, `none` |
+| `AUTH_USERNAME` | Username for digest auth | `null` | `luxuser` |
+| `AUTH_PASSWORD` | Password for digest auth | `null` | `luxpassword` |
+
+**Setting Environment Variables:**
+
+**PowerShell:**
+```powershell
+$env:BASE_URL = "http://localhost:8003"
+$env:AUTH_TYPE = "digest"
+$env:AUTH_USERNAME = "your-username"
+$env:AUTH_PASSWORD = "your-password"
+```
+
+**Command Prompt:**
+```cmd
+set BASE_URL=http://localhost:8003
+set AUTH_TYPE=digest
+set AUTH_USERNAME=your-username
+set AUTH_PASSWORD=your-password
+```
+
+**Linux/macOS:**
+```bash
+export BASE_URL="http://localhost:8003"
+export AUTH_TYPE="digest"
+export AUTH_USERNAME="your-username"
+export AUTH_PASSWORD="your-password"
+```
+
 ### Test Configuration Spreadsheet
 
-The main configuration file contains the following columns:
+The endpoint-specific configuration files contain the following columns:
+
+#### Standard Columns (All Endpoint Types)
 
 | Column | Description | Example | Required |
 |--------|-------------|---------|----------|
 | `test_name` | Unique test identifier | "Search - Basic Query" | Yes |
-| `method` | HTTP method | GET, POST, PUT, DELETE | Yes |
-| `endpoint` | API endpoint with query params | "/ds/lux/search.mjs?q=test" | Yes |
-| `headers` | HTTP headers (semicolon-separated) | "Authorization: Basic abc; Content-Type: json" | No |
-| `body` | Request body content | `{"q": "test", "scope": "work"}` | No |
-| `body_type` | Request body type | raw, formdata, x-www-form-urlencoded | No |
+| `description` | Test description | "Basic search functionality" | No |
+| `enabled` | Whether to run this test | true, false | Yes |
 | `expected_status` | Expected HTTP status code | 200, 404, 401 | Yes |
 | `timeout_ms` | Request timeout in milliseconds | 10000 | No |
 | `max_response_time` | Max acceptable response time | 3000 | No |
 | `delay_after_ms` | Delay after test completion | 500 | No |
-| `environment` | Target environment name | local, dev, test, prod | Yes |
-| `enabled` | Whether to run this test | true, false | Yes |
-| `description` | Test description | "Basic search functionality" | No |
 | `tags` | Comma-separated tags | "search,functional,smoke" | No |
 
-### Environment Configuration
+#### Parameter Columns (Endpoint-Specific)
 
-Define multiple environments in the `Environments` sheet:
+Each endpoint type has specific `param:` columns for its parameters:
 
-```csv
-environment,base_url,auth_type,username,password,description
-local,http://localhost:8003,basic,lux-endpoint-consumer,endpoint,Local development
-dev,https://dev.lux.yale.edu,basic,service-account,***,Development environment
-test,https://test.lux.yale.edu,basic,service-account,***,Test environment
+**Search Endpoints:**
+- `param:q` - Search query
+- `param:scope` - Search scope (work, person, place, etc.)
+- `param:page` - Page number  
+- `param:pageLength` - Results per page
+- `param:sort` - Sort order
+
+**Facets Endpoints:**
+- `param:facetName` - Facet field name
+- `param:q` - Search query
+- `param:scope` - Search scope
+
+**Related-List Endpoints:**
+- `param:id` - Record ID
+- `param:name` - Relationship name
+- `param:page` - Page number
+- `param:pageLength` - Results per page
+
+## Authentication Configuration
+
+Authentication is configured globally using environment variables and applies to all tests. The framework supports digest authentication by default, with the ability to configure different authentication types for future OAuth support.
+
+```powershell
+# Digest authentication (default)
+$env:AUTH_TYPE = "digest"
+$env:AUTH_USERNAME = "your-username"
+$env:AUTH_PASSWORD = "your-password"
 ```
 
 ## Sample Test Configurations
@@ -161,10 +243,7 @@ headers
 
 ### Parallel Execution
 
-Enable parallel test execution:
-```powershell
-.\run-endpoint-tests.ps1 -Parallel
-```
+Tests run sequentially by default for consistent results and easier debugging.
 
 ## Integration with Existing Tools
 
@@ -214,7 +293,8 @@ Example GitHub Actions workflow:
 
 Enable verbose logging:
 ```powershell
-.\run-endpoint-tests.ps1 -Verbose
+$env:DEBUG = "true"
+npm test
 ```
 
 Or set environment variable:
@@ -239,7 +319,6 @@ The framework includes several sample files:
 - `configs/*.xlsx` - Endpoint-specific Excel configuration templates
 - `endpoint-test-runner.js` - Main test execution engine  
 - `create-excel-template.js` - Template generator
-- `run-endpoint-tests.ps1` - PowerShell execution script
 - `package.json` - Node.js dependencies
 
 ## Dependencies

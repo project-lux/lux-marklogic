@@ -9,9 +9,11 @@ class EndpointTester {
     this.outputDir = outputDir;
     this.results = [];
     this.baseUrl = process.env.BASE_URL || 'http://localhost:8003';
-    this.defaultAuth =
-      process.env.DEFAULT_AUTH ||
-      'Basic bHV4LWVuZHBvaW50LWNvbnN1bWVyOmVuZHBvaW50';
+
+    // Authentication configuration
+    this.authType = process.env.AUTH_TYPE || 'digest'; // 'digest', 'oauth', or 'none'
+    this.authUsername = process.env.AUTH_USERNAME || null;
+    this.authPassword = process.env.AUTH_PASSWORD || null;
 
     // Ensure output directory exists
     if (!fs.existsSync(outputDir)) {
@@ -96,7 +98,6 @@ class EndpointTester {
       enabled: row.enabled === 'true' || row.enabled === true,
       description: row.description || '',
       tags: row.tags ? row.tags.split(',').map((t) => t.trim()) : [],
-      auth_override: row.auth_override || null,
       parameters: {},
     };
 
@@ -335,6 +336,7 @@ class EndpointTester {
       const url = this.buildRequestUrl(testConfig);
       const body = this.buildRequestBody(testConfig);
       const headers = this.buildRequestHeaders(testConfig);
+      const auth = this.buildAuthConfig(testConfig);
 
       const requestConfig = {
         method: testConfig.method,
@@ -342,6 +344,7 @@ class EndpointTester {
         headers: headers,
         timeout: testConfig.timeout_ms,
         ...(body && { data: body }),
+        ...(auth && { auth }),
       };
 
       console.log(`Running test: ${testConfig.test_name}`);
@@ -409,12 +412,6 @@ class EndpointTester {
       'User-Agent': 'LUX-Endpoint-Tester/1.0',
     };
 
-    // Add authentication
-    const auth = testConfig.auth_override || this.defaultAuth;
-    if (auth) {
-      headers['Authorization'] = auth;
-    }
-
     // Add content-type based on request body type
     if (testConfig.method === 'POST' || testConfig.method === 'PUT') {
       switch (testConfig.endpoint_type) {
@@ -430,6 +427,31 @@ class EndpointTester {
     return headers;
   }
 
+  /**
+   * Build authentication configuration for axios
+   */
+  buildAuthConfig(testConfig) {
+    const authType = this.authType;
+
+    if (authType === 'digest') {
+      const username = this.authUsername;
+      const password = this.authPassword;
+
+      if (username && password) {
+        return {
+          username: username,
+          password: password,
+        };
+      }
+    } else if (authType === 'oauth') {
+      // TODO: Implement OAuth support
+      console.warn('OAuth authentication not yet implemented');
+      return null;
+    }
+
+    // For no auth, return null
+    return null;
+  }
   /**
    * Parse CSV content (simple implementation)
    */

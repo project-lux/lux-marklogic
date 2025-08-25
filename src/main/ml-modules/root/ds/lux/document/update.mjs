@@ -6,8 +6,11 @@ const uri = external.uri;
 const docNode = external.doc; // Do not use getObjectFromNode
 const lang = external.lang;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   declareUpdate();
   const newUserMode = false;
   return updateDocument(uri, docNode, newUserMode, lang);
 }, unitName);
+
+response;
+export default response;

@@ -162,4 +162,6 @@ usernames.forEach((username) => {
   }
   findings.userAccess.push(userAccess);
 });
+
 findings;
+export default findings;

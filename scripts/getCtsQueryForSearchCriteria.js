@@ -8,13 +8,10 @@
 import { processSearchCriteria } from '/lib/searchLib.mjs';
 import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
 
-// formatAsObject: when true and includeCtsSearch is false, get the CTS query
-// as a JavaScript object; else, the CTS query is a string.
-const formatAsObject = true;
-//
-// includeCtsSearch: when true, return the entire call to cts.search.  Takes
-// precedence over formatAsObject.
-const includeCtsSearch = false;
+// formatAsObject: when true, get the CTS query as a JavaScript object; else,
+// the CTS query is a string.  As an object, all values functions are called
+// (potentially longer to execute and more coming back).
+const formatAsObject = false;
 //
 // filterResults: set to true for filtered results or false for unfiltered.
 const filterResults = false;
@@ -66,12 +63,13 @@ const searchCriteriaProcessor = processSearchCriteria({
 // Rather than returning the CTS Query, one may also elect to return other or
 // additional information from the SearchCriteriaProcessor instance.  See that
 // class's implementation for available functions.
-const ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr(includeCtsSearch);
-const requestedQuery =
-  !includeCtsSearch && formatAsObject
-    ? xdmp
-        .eval(START_OF_GENERATED_QUERY.concat(ctsQueryStr))
-        .toArray()[0]
-        .toObject()
-    : ctsQueryStr;
+const ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr();
+const requestedQuery = formatAsObject
+  ? xdmp
+      .eval(START_OF_GENERATED_QUERY.concat(ctsQueryStr))
+      .toArray()[0]
+      .toObject()
+  : ctsQueryStr;
+
 requestedQuery;
+export default requestedQuery;

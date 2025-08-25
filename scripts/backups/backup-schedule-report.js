@@ -84,4 +84,6 @@ if (reportFormat == 'json') {
   }
   formattedReport = `${csvHeaders}${csvReport}`;
 }
+
 formattedReport;
+export default formattedReport;

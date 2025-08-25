@@ -145,4 +145,6 @@ if (formatAsArrayOfPredicates) {
     findings[username] = Object.keys(findings[username]).sort();
   });
 }
+
 findings;
+export default findings;

@@ -10,7 +10,7 @@ const pageLength = external.pageLength;
 const filterResults = external.filterResults;
 const relationshipsPerRelation = external.relationshipsPerRelation;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   return getRelatedList({
     searchScopeName,
     relatedListName,
@@ -21,3 +21,6 @@ handleRequest(function () {
     relationshipsPerRelation,
   });
 }, unitName);
+
+response;
+export default response;

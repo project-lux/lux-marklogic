@@ -62,3 +62,4 @@ while (hasMore) {
 }
 
 rows;
+export default rows;

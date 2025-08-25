@@ -141,4 +141,6 @@ allPredicates.forEach((predicate) => {
     : 0;
   diffs[predicate] = latestCount - previousCount;
 });
+
 diffs;
+export default diffs;

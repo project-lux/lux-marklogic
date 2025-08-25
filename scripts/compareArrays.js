@@ -43,4 +43,7 @@ function getArrayDiff(arr1, arr2) {
   };
 }
 
-getArrayDiff(arr2, arr1);
+const diff = getArrayDiff(arr2, arr1);
+
+diff;
+export default diff;

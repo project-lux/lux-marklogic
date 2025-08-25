@@ -12,4 +12,6 @@ for (let val of fn.subsequence(
     frequency: cts.frequency(val),
   });
 }
+
 top;
+export default top;

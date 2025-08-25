@@ -38,5 +38,8 @@ const getCollectionInfo = (names) => {
   };
 };
 
+// Populate collections.
 collectionNames.forEach((name) => getCollectionInfo(name));
+
 collections;
+export default collections;

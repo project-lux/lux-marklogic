@@ -5,6 +5,9 @@
  */
 'use strict';
 
+// True for results, false for the query.
+const returnResults = true;
+
 // List the item type(s).  Note this can resolve anywhere within the document.
 // Consider using classifiedAsId and maybe some new IRI constants?
 // May also be an empty array.
@@ -65,5 +68,10 @@ if (exactValues && Object.keys(exactValues).length > 0) {
   );
 }
 
-fn.subsequence(cts.search(cts.andQuery(queries)), start, length);
-//queries;
+const q = cts.andQuery(queries);
+const response = returnResults
+  ? fn.subsequence(cts.search(q), start, length)
+  : q;
+
+response;
+export default response;

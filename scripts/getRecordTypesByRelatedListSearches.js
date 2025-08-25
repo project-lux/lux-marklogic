@@ -96,4 +96,6 @@ Object.keys(relatedListKeysByScope).forEach((searchScope) => {
     });
   });
 });
+
 relatedListsToTypes;
+export default relatedListsToTypes;

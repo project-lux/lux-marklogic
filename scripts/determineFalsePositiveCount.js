@@ -93,4 +93,6 @@ const results = {
   //plan: cts.plan(ctsQuery),
   //queryMeters: xdmp.queryMeters(),
 };
+
 results;
+export default results;

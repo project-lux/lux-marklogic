@@ -29,9 +29,11 @@ const findings = fn
       uri: doc.baseURI,
       triples: relatedLuxDocs.length,
     };
-  });
-findings
+  })
   .sort((a, b) => {
     return b.triples - a.triples;
   })
   .slice(0, returnTopN);
+
+findings;
+export default findings;

@@ -14,7 +14,7 @@ const filterResults = external.filterResults;
 const facetsSoon = external.facetsSoon;
 const synonymsEnabled = external.synonymsEnabled;
 
-handleRequest(function () {
+const response = handleRequest(function () {
   return search({
     searchCriteria,
     searchScope,
@@ -30,3 +30,6 @@ handleRequest(function () {
     synonymsEnabled,
   });
 }, unitName);
+
+response;
+export default response;

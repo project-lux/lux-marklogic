@@ -28,7 +28,6 @@
             }
           },
           "minItems": 1,
-          "maxItems": 1,
           "contains": {
             "type": "object",
             "required": ["id"],

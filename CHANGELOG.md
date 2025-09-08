@@ -1,6 +1,16 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+## v2.2.0 - 2025-09-08
+### Added
+
+### Changed
+- Allow editable sets (My Collections) to have more than one classification
+
+### Removed
+  
+### Fixed
+
 ## v2.1.0 - 2025-08-25
 ### Added
 - Added support for MarkLogic 12 while maintaining compatibility with MarkLogic 11 ([#567](https://github.com/project-lux/lux-marklogic/issues/567)).

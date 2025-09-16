@@ -471,7 +471,8 @@ function throwIfCurrentUserIsServiceAccount() {
 }
 
 function requireUserMayUpdateTenantStatus() {
-  xdmp.securityAssert(PRIVILEGE_NAME_UPDATE_TENANT_STATUS, 'execute');
+  new User().hasRole(ROLE_NAME_ADMIN) ||
+    xdmp.securityAssert(PRIVILEGE_NAME_UPDATE_TENANT_STATUS, 'execute');
 }
 
 function mayUpdateTenantStatus() {

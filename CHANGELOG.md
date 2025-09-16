@@ -10,7 +10,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
   
 ### Fixed
-- Fixed `item.producedBy.name` searches to include results linked by the `lux("agentOfCreation")` predicate ([#523](https://github.com/project-lux/lux-marklogic/issues/523)).
+- Searches for items created by no longer excludes agents of creation ([#523](https://github.com/project-lux/lux-marklogic/issues/523)).
 
 ### Security
 

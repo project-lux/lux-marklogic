@@ -6,6 +6,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 
 ### Changed
+- The tenant status document is now maintained in the modules database ([#588](https://github.com/project-lux/lux-marklogic/issues/588)).
 
 ### Removed
   

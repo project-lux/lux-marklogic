@@ -550,7 +550,6 @@ task ensureTenantStatusDocumentExists() {
 }
 mlDeploy.finalizedBy ensureTenantStatusDocumentExists
 mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
-copyDatabase.finalizedBy ensureTenantStatusDocumentExists
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md

@@ -1,26 +1,21 @@
 docker compose up -d
-winpty docker exec -it my-collections-data bash
+docker exec -it my-collections-data bash
 alias ll='ls -l' >> /etc/profile
 aws configure
 [enter info]
 
 cd /opt
----
-NOTE: the following works for released versions of Flux.
-Until Flux 1.4 is released, we need to use a snapshot of the develop branch.
-One may be made by cloning Flux's repo, switch to the develop branch, and following these directions:
-https://github.com/marklogic/flux/blob/develop/CONTRIBUTING.md#building-the-distribution-locally
----
-curl -L https://github.com/marklogic/flux/releases/download/1.3.0/marklogic-flux-1.3.0.zip > marklogic-flux-1.3.0.zip
-unzip marklogic-flux-1.3.0.zip
-export FLUX_HOME=/opt/marklogic-flux-1.3.0
+curl -L https://github.com/marklogic/flux/releases/download/1.4.0/marklogic-flux-1.4.0.zip > marklogic-flux-1.4.0.zip
+unzip marklogic-flux-1.4.0.zip
+export FLUX_HOME=/opt/marklogic-flux-1.4.0
 
 Based on the operation, swap out [verb] for:
   backup
   restore
-  ...
+  delete
 
 cd /host/code/[verb]
+dos2unix *
 
 Configure [verb]-options.txt
 You will need a MarkLogic user that has the "%%mlAppName%%-my-collections-data-updater" (preferred) or admin role.

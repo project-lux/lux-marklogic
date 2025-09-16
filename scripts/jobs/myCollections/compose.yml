@@ -10,4 +10,4 @@ services:
       - c:/tmp:/host/tmp
     environment:
       - TZ=UTC
-    entrypoint: ["/bin/sh", "-c", "yum install -y curl java-17-amazon-corretto tar unzip which && echo \"alias ll='ls -l'\" >> /etc/profile && sleep infinity"]
+    entrypoint: ["/bin/sh", "-c", "yum install -y dos2unix java-17-amazon-corretto tar unzip which && echo \"alias ll='ls -l'\" >> /etc/profile && sleep infinity"]

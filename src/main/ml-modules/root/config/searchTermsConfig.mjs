@@ -312,7 +312,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     producedBy: {
       patternName: 'hopWithField',
-      predicates: ['lux("agentOfProduction")'],
+      predicates: ['lux("agentOfCreation")', 'lux("agentOfProduction")'],
       targetScope: 'agent',
       hopInverseName: 'produced',
       indexReferences: ['agentPrimaryName'],

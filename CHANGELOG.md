@@ -1,6 +1,19 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+
+## v2.3.0 - 2025-09-22
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Fixed `item.producedBy.name` searches to include results linked by the `lux("agentOfCreation")` predicate ([#523](https://github.com/project-lux/lux-marklogic/issues/523)).
+
+### Security
+
 ## v2.2.0 - 2025-09-08
 ### Added
 
@@ -10,6 +23,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
   
 ### Fixed
+
+### Security
 
 ## v2.1.0 - 2025-08-25
 ### Added

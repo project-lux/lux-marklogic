@@ -8,6 +8,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 - The tenant status document is now maintained in the modules database ([#588](https://github.com/project-lux/lux-marklogic/issues/588)).
 - Changed to Flux 1.4.0 for the My Collections backup, restore, and delete jobs ([#591](https://github.com/project-lux/lux-marklogic/issues/591)).
+- Changed default NOT array from AND to OR ([#616](https://github.com/project-lux/lux-marklogic/issues/616)).
 
 ### Removed
   

@@ -30,6 +30,7 @@ const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
 
+// Presumes the user has the deployment role, which inherits the xdmp:invoke-in privilege.
 // This function purposely does not log using a trace event as trace events can be disabled.
 function setTenantStatus(prod, readOnly) {
   const username = new User().getUsername();
@@ -49,7 +50,17 @@ function setTenantStatus(prod, readOnly) {
     );
   }
 
-  if (fn.docAvailable(TENANT_STATUS_URI)) {
+  const isTenantStatusDocAvailable = () => {
+    return fn.head(
+      xdmp.invokeFunction(
+        () => {
+          return fn.docAvailable(TENANT_STATUS_URI);
+        },
+        { database: xdmp.modulesDatabase() }
+      )
+    );
+  };
+  if (isTenantStatusDocAvailable()) {
     if (isProduction() === prod && inReadOnlyMode() === readOnly) {
       console.log(
         'The current tenant status matches the requested values; no action taken.'
@@ -82,8 +93,12 @@ function setTenantStatus(prod, readOnly) {
     collections: [],
   };
 
-  xdmp.documentInsert(TENANT_STATUS_URI, doc, options);
-  console.log('Changes accepted to the tenant status document.');
+  const zeroArityFun = () => {
+    declareUpdate();
+    xdmp.documentInsert(TENANT_STATUS_URI, doc, options);
+    console.log('Changes accepted to the tenant status document.');
+  };
+  xdmp.invokeFunction(zeroArityFun, { database: xdmp.modulesDatabase() });
 }
 
 // Returns a portion of the tenant status document, plus additional information.
@@ -100,6 +115,7 @@ function getTenantStatus() {
     );
   }
 
+  // TODO: this approach calls _getTenantStatusDocObj twice.
   return {
     prod: isProduction(),
     readOnly: inReadOnlyMode(),
@@ -109,7 +125,7 @@ function getTenantStatus() {
 }
 
 function isProduction() {
-  const prod = getTenantStatusDocObj().prod;
+  const prod = _getTenantStatusDocObj().prod;
   if (typeof prod !== 'boolean') {
     throw new InternalConfigurationError(
       `Tenant status is corrupt: the prod property must be a boolean, but has type '${typeof prod}'`
@@ -119,7 +135,7 @@ function isProduction() {
 }
 
 function inReadOnlyMode() {
-  const isReadOnly = getTenantStatusDocObj().readOnly;
+  const isReadOnly = _getTenantStatusDocObj().readOnly;
   if (typeof isReadOnly !== 'boolean') {
     throw new InternalConfigurationError(
       `Tenant status is corrupt: the readOnly property must be a boolean, but has type '${typeof isReadOnly}'`
@@ -128,14 +144,22 @@ function inReadOnlyMode() {
   return isReadOnly;
 }
 
-function getTenantStatusDocObj() {
-  if (fn.docAvailable(TENANT_STATUS_URI)) {
-    return cts.doc(TENANT_STATUS_URI).toObject();
-  }
-  throw new InternalConfigurationError(
-    `Tenant status document does not exist but is required.`
+function __getTenantStatusDocObj() {
+  const zeroArityFun = () => {
+    if (fn.docAvailable(TENANT_STATUS_URI)) {
+      return cts.doc(TENANT_STATUS_URI).toObject();
+    }
+    throw new InternalConfigurationError(
+      `Tenant status document does not exist but is required.`
+    );
+  };
+  return fn.head(
+    xdmp.invokeFunction(zeroArityFun, {
+      database: xdmp.modulesDatabase(),
+    })
   );
 }
+const _getTenantStatusDocObj = import.meta.amp(__getTenantStatusDocObj);
 
 function _getMyCollectionDocumentCount(restrictByProductionMode = true) {
   return cts.estimate(

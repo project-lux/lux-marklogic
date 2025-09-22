@@ -644,15 +644,15 @@ const SearchCriteriaProcessor = class {
       const notCriteria = searchCriteria.NOT;
       // Accept array or object.
       if (utils.isArray(notCriteria)) {
-        // Create an AND within NOT
-        const andCriteria = {
-          AND: notCriteria.map((item) => {
+        // Create an OR within NOT
+        const orCriteria = {
+          OR: notCriteria.map((item) => {
             return item;
           }),
         };
         ctsQueryStr = `cts.notQuery(${this.generateQueryFromCriteria(
           scopeName,
-          andCriteria,
+          orCriteria,
           parentSearchTerm,
           mustReturnCtsQuery, // no need to override.
           true // ANDs impose their own value.

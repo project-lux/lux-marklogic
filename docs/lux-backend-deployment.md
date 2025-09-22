@@ -220,7 +220,11 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
     * Update one or more locally encrypted passwords.  See step no. 6, above.
     * Update the target environment's SSL properties.  See step no. 7, above.
 
-10. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
+10. For new environments, the content database must be created before amps can be defined. Run:
+
+    `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
+
+11. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
 
     `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
 
@@ -255,7 +259,13 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
 15. Run the following Gradle task to the non-security configuration, the code, and any related dependencies.
 
+    Existing environments:
+
     `./gradlew performBaseDeployment -i -PenvironmentName=[name]`
+
+    New environments (databases were created a few steps back):
+
+    `./gradlew performBaseDeployment -i -PskipDatabases -PenvironmentName=[name]`
 
     This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask. It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually run other subtasks of `performBaseDeployment` and double back for the failed subtask after re-indexing is complete.
 

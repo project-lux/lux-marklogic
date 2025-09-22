@@ -550,7 +550,6 @@ task ensureTenantStatusDocumentExists() {
 }
 mlDeploy.finalizedBy ensureTenantStatusDocumentExists
 mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
-copyDatabase.finalizedBy ensureTenantStatusDocumentExists
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -659,7 +658,15 @@ task performBaseDeployment() {
     println "Starting Base Deployment"
     println ""
   }
-  dependsOn mlDeployGroups, mlDeployDatabases, mlDeployRestApis, mlDeployServers, mlLoadSchemas, mlLoadModules
+  // Conditionally add mlDeployDatabases between mlDeployGroups and mlDeployRestApis
+  def deps = [mlDeployGroups]
+  if (project.hasProperty('skipDatabases')) {
+    println "Skipping mlDeployDatabases as requested."
+  } else {
+    deps << mlDeployDatabases
+  }
+  deps += [mlDeployRestApis, mlDeployServers, mlLoadSchemas, mlLoadModules]
+  dependsOn deps
   doLast {
     println ""
     println "Base Deployment Done"

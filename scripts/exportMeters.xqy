@@ -2,6 +2,7 @@
  : Exports raw data from the meters database for the specified period.
  : Support prefers this export over the XLS from the monitoring console.
  : On Windows, you may need the likes of PeaZip to open the output .zip file.
+ : Source: https://community.progress.com/s/article/exporting-metering-data
  :)
 xquery version "1.0-ml";
 

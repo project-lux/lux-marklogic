@@ -7,10 +7,6 @@
 #   Presently targets the 8003 and main error logs as well as 8003 access logs.  It could be 
 #   extended to mine 8003 request logs (good stuff!).
 #
-#   Portions may not work as expected if the input logs are that of a single node because grep
-#   only starts matching lines with the filename when multiple files are involved.  Multiple 
-#   regular expressions expect lines to start with file names.
-#
 # Directions:
 #
 #   1. Create an empty directory.
@@ -104,8 +100,7 @@ function addCountFromAccessLogs() {
 }
 
 function addBonusLinesForSearch() {
-  # At least for the time being, partOf search requests can comprise more than 75% of a performance test's
-  # search requests.  Until this changes, we want to call this count out.
+  # partOf searches used to comprise more than 75% of a performance test's search requests.
   { echo -e "partOf search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -c "criteria\":{\"partOf"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" >> $ALL_REQUESTS_METRICS_TSV_FILE
   { echo -e "Failed search requests\t"; grep "requestCompleted" $APP_ERROR_LOG_PATTERN | grep -c "\"requestCompleted\":false"; } | sed ':a;N;s/\n//;ba' | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
@@ -216,12 +211,12 @@ PATTERN_RELATED_LIST_REQUESTS="\[Event:id=LuxRelatedList\] Created .* in .* mill
 PATTERN_SEARCH_WILL_MATCH_REQUESTS="\[Event:id=LuxSearch\] Checked .* searches in .* milli"
 PATTERN_SEARCH_ESTIMATE_REQUESTS="\[Event:id=LuxSearch\] Calculated estimate in .* milli"
 PATTERN_DOCUMENT_REQUESTS="\[Event:id=LuxNamedProfiles\] .* in .* milli"
-grep -e "$PATTERN_SEARCH_REQUESTS" \
-     -e "$PATTERN_FACET_REQUESTS" \
-     -e "$PATTERN_RELATED_LIST_REQUESTS" \
-     -e "$PATTERN_SEARCH_WILL_MATCH_REQUESTS" \
-     -e "$PATTERN_SEARCH_ESTIMATE_REQUESTS" \
-     -e "$PATTERN_DOCUMENT_REQUESTS" \
+grep -He "$PATTERN_SEARCH_REQUESTS" \
+     -He "$PATTERN_FACET_REQUESTS" \
+     -He "$PATTERN_RELATED_LIST_REQUESTS" \
+     -He "$PATTERN_SEARCH_WILL_MATCH_REQUESTS" \
+     -He "$PATTERN_SEARCH_ESTIMATE_REQUESTS" \
+     -He "$PATTERN_DOCUMENT_REQUESTS" \
      $APP_ERROR_LOG_PATTERN \
      > $ALL_REQUESTS_FILE
 
@@ -260,14 +255,13 @@ echo -e "Unfiltered Counts\t\t=COUNT(C2:C$CURRENT_ROW)\t=COUNT(D2:D$CURRENT_ROW)
 
 # All completed search requests w/ durations.
 echo -e "   $SEARCH_PARAMS_WITH_DURATIONS_FILE..."
-grep "searchElapsed" $APP_ERROR_LOG_PATTERN > $SEARCH_PARAMS_WITH_DURATIONS_FILE
+grep -H "searchElapsed" $APP_ERROR_LOG_PATTERN > $SEARCH_PARAMS_WITH_DURATIONS_FILE
 echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Create a TSV-formatted report out of the above file
 echo -e "   $SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE..."
 echo -e "Timestamp\tRequest ID\tContext\tFiltered\tTotal Duration (ms)\tSearch Duration (ms)\tEstimate\tReturned\tScope\tCriteria" > "$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE"
 # Switched to Perl as sed only supports 9 backreferences and awk was taking too long to figure out.
-# The regular expression requires the line start with a file name (*.txt)
 # Keep the following regular expression in sync with one in the next section.
 perl -pe 's/^.*txt:(.*) Info: .* requestId: ([^;]+); requestContext: ([^;]+); filterResults: ([^;]+); totalElapsed: ([0-9]+); searchElapsed: ([0-9]+); estimate: ([0-9]+); returned: ([0-9]+); scope: \[([^\]]+)\]; searchCriteria: \[(.*)\]$/$1\t$2\t$3\t$4\t$5\t$6\t$7\t$8\t$9\t$10/' "$SEARCH_PARAMS_WITH_DURATIONS_FILE" >> "$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE"
 echo -e "See also\t$SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
@@ -313,14 +307,13 @@ echo -e "See also\t$FAILED_FACET_REQUESTS_FILE" >> $ALL_REQUESTS_METRICS_TSV_FIL
 
 # Part of a searchWillMatch request, let's see how long it took to determine if a related list contains at least one item
 echo -e "   $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE..."
-grep "LuxRelatedList\] Checked" $APP_ERROR_LOG_PATTERN > $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE
+grep -H "LuxRelatedList\] Checked" $APP_ERROR_LOG_PATTERN > $AT_LEAST_ONE_RELATED_LIST_ITEM_FILE
 echo -e "See also\t$AT_LEAST_ONE_RELATED_LIST_ITEM_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Create a report out of the above file
 echo -e "   $AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE..."
 echo -e "Timestamp\tRelations Checked\tRelated List\tScope\tURI\tHas?\tDuration (ms)" > "$AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE"
 cat "$AT_LEAST_ONE_RELATED_LIST_ITEM_FILE" >> "$AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE"
-# The following sed command expects its input lines to begin with a file name.
 sed -i "s/.*txt:\(.*\) Info: \[Event:id=LuxRelatedList] Checked \([0-9]*\) .* '\([a-zA-Z]*\)' .* '\([a-zA-Z]*\)' for '\([^']*\)' \(.*\) at least .* \([0-9]*\) milli.*/\1\t\2\t\3\t\4\t\5\t\6\t\7/" "$AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE"
 echo -e "See also\t$AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 

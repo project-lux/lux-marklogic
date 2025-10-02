@@ -2,6 +2,18 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v2.4.0 - 2025-10-06
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Hide My Collections-specific search terms when My Collections is disabled([#623](https://github.com/project-lux/lux-marklogic/issues/623)).
+
+### Security
+
 ## v2.3.0 - 2025-09-22
 ### Added
 

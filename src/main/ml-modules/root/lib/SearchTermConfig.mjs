@@ -66,6 +66,10 @@ const SearchTermConfig = class {
     return utils.isNonEmptyString(this.getLabel());
   }
 
+  isMyCollectionTerm() {
+    return this._getProperty('isMyCollectionTerm', false);
+  }
+
   getOptionsReference() {
     return this._getProperty('optionsReference');
   }

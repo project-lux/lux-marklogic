@@ -17,6 +17,7 @@ import {
   getEndpointAccessUnitNames,
 } from '../lib/securityLib.mjs';
 import { STOP_WORDS } from '../data/stopWords.mjs';
+import { FEATURE_MY_COLLECTIONS_ENABLED } from '../lib/appConstants.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -161,6 +162,11 @@ const advancedSearchConfigs = {};
             [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
               patternName
             )
+          ) {
+            add = false;
+          } else if (
+            termConfig.isMyCollectionTerm() &&
+            !FEATURE_MY_COLLECTIONS_ENABLED
           ) {
             add = false;
           }

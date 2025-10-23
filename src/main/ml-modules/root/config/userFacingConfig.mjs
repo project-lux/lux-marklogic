@@ -689,11 +689,13 @@ const searchTermText = {
       label: 'last modified by',
       helpText:
         'Search for Collections by the People & Groups who last modified them.',
+      isMyCollectionTerm: true,
     },
     lastModifiedDate: {
       label: 'last modified on',
       helpText:
         'Search for Collections by the date on which they were last modified.',
+      isMyCollectionTerm: true,
     },
     memberOf: {
       label: 'are a member of',

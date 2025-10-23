@@ -1,0 +1,6 @@
+{
+  "local-name": "__getTenantStatusDocObj",
+  "document-uri": "/lib/environmentLib.mjs",
+  "modules-database": "%%MODULES_DATABASE%%",
+  "role": ["%%mlAppName%%-invoke-in"]
+}

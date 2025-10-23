@@ -1,6 +1,46 @@
 # Changelog
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
+
+## v2.4.0 - 2025-10-06
+### Added
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Hide My Collections-specific search terms when My Collections is disabled([#623](https://github.com/project-lux/lux-marklogic/issues/623)).
+
+### Security
+
+## v2.3.0 - 2025-09-22
+### Added
+
+### Changed
+- The tenant status document is now maintained in the modules database ([#588](https://github.com/project-lux/lux-marklogic/issues/588)).
+- Changed to Flux 1.4.0 for the My Collections backup, restore, and delete jobs ([#591](https://github.com/project-lux/lux-marklogic/issues/591)).
+- Changed default NOT array from AND to OR ([#616](https://github.com/project-lux/lux-marklogic/issues/616)).
+
+### Removed
+  
+### Fixed
+- Searches for items created by no longer exclude agents of creation ([#523](https://github.com/project-lux/lux-marklogic/issues/523)).
+
+### Security
+
+## v2.2.0 - 2025-09-08
+### Added
+
+### Changed
+- Allow editable sets (My Collections) to have more than one classification
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v2.1.0 - 2025-08-25
 ### Added
 - Added support for MarkLogic 12 while maintaining compatibility with MarkLogic 11 ([#567](https://github.com/project-lux/lux-marklogic/issues/567)).

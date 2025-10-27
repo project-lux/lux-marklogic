@@ -1,4 +1,0 @@
-{
-  "server-name": "%%mlAppName%%",
-  "ssl-certificate-template": "%%mlAppCertificateName%%"
-}

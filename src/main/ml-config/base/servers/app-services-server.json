@@ -1,5 +1,6 @@
 {
   "server-name": "App-Services",
+  "server-type": "http",
   "enabled": "true",
   "authentication": "digest",
   "internal-security": "true"

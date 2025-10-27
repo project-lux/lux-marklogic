@@ -160,6 +160,16 @@ ext.writeToFile = { outputPath, content ->
   }
 }
 
+// Helper function to create token replacement filter
+ext.createTokenFilter = { names, texts ->
+  return { line ->
+    for (def i = 0; i < names.size(); i++) {
+      line = line.replaceAll('@@' + names[i] + '@@', texts[i])
+    }
+    return line
+  }
+}
+
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task addOAuthPublicKeys() {
   doLast {
@@ -224,12 +234,16 @@ task preprocessRuntimeConfigAndModules() {
     into './build/main'
     include 'ml-config/**'
     include 'ml-modules/**'
-    filter { line -> {
-      for (def i = 0; i < names.size(); i++) {
-        line = line.replaceAll('@@' + names[i] + '@@', texts[i])
-      }
-      return line
-    }}
+    exclude 'ml-modules/options/lux-options.xml' // Handle separately for renaming
+    filter createTokenFilter(names, texts)
+  }
+
+  // Copy and rename lux-options.xml
+  copy {
+    from './src/main/ml-modules/options/lux-options.xml'
+    into './build/main/ml-modules/options'
+    rename { project.getProperty("mlAppName") + "-request-group-1-options.xml" }
+    filter createTokenFilter(names, texts)
   }
 
   // Copy src/test into build directory
@@ -239,12 +253,7 @@ task preprocessRuntimeConfigAndModules() {
     into './build/test'
     include 'ml-config/**'
     include 'ml-modules/**'
-    filter { line -> {
-      for (def i = 0; i < names.size(); i++) {
-        line = line.replaceAll('@@' + names[i] + '@@', texts[i])
-      }
-      return line
-    }}
+    filter createTokenFilter(names, texts)
   }
 }
 preprocessRuntimeConfigAndModules.finalizedBy addOAuthPublicKeys
@@ -257,13 +266,13 @@ task preprocessBuildSupportScripts() {
     from './scripts/buildSupport'
     into './build/buildSupport'
     include '**'
-    filter { line -> {
+    filter { line ->
       // What's an existing/standard/better way to do this?
       for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
         line = line.replaceAll('%%' +entry.getKey() + '%%', entry.getValue().toString())
       }
       return line
-    }}
+    }
   }
 }
 
@@ -273,9 +282,9 @@ task copyContentDatabaseConfGenerated(){
     from './src/main/templates'
     into './src/main/ml-modules/root/config'
     include 'contentDatabaseConfGenerated.mjs'
-    filter{ line -> {
+    filter{ line ->
       return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
-    }}
+    }
   }
 
 }
@@ -455,6 +464,32 @@ task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
   ssl = useSsl
   args = ["-ssl_protocol", "tlsv1.2"]
 }
+
+task importRestApiOptions(type: com.marklogic.gradle.task.MlcpTask) {
+  //check if SSL is enabled and use the properties value
+  def useSsl = true
+  if (project.hasProperty("mlAppServicesSimpleSsl")) {
+    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
+  }
+  
+  classpath = configurations.mlcp
+  command = "IMPORT"
+  host = project.property("mlHost")
+  port = project.property("mlRestPortGroup2").toInteger()
+  username = project.property("mlUsername")
+  password = credentials.forKey('mlPassword')
+  database = project.property("tenantModulesDatabase")
+  modules = project.property("tenantModulesDatabase")
+  fastload = false // need ability to overwrite
+  input_file_path = "./build/main/ml-modules/options/" + project.getProperty("mlAppName") + "-request-group-1-options.xml"
+  input_file_type = "documents"
+  output_uri_replace = ".*/" + project.getProperty("mlAppName") + "-request-group-1-options.xml,'/Default/" + project.getProperty("mlAppName") + "-request-group-2/rest-api/options/" + project.getProperty("mlAppName") + "-request-group-2-options.xml'"
+  output_permissions = "rest-reader-internal,read,rest-admin-internal,update," + project.getProperty("mlAppName") + "-deployer,update"
+  ssl = useSsl
+  args = ["-ssl_protocol", "tlsv1.2"]
+}
+importRestApiOptions.dependsOn preprocessRuntimeConfigAndModules
+mlLoadModules.finalizedBy importRestApiOptions
 
 task ensureTenantStatusDocumentExists() {
   doFirst {

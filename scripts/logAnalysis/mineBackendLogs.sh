@@ -7,6 +7,14 @@
 #   Presently targets the 8003 and main error logs as well as 8003 access logs.  It could be 
 #   extended to mine 8003 request logs (good stuff!).
 #
+# Usage:
+#
+#   ./mineBackendLogs.sh [log_directory]
+#
+#   If log_directory is provided, the script will process log files in that directory
+#   and create output in log_directory/out. If not provided, it processes files in
+#   the current directory and creates output in ./out.
+#
 # Directions:
 #
 #   1. Create an empty directory.
@@ -31,9 +39,19 @@
 #
 
 # Script configuration
-OUTPUT_DIRECTORY=./out
-APP_ACCESS_LOG_PATTERN=*800[3-4]-AccessLog*.txt
-APP_ERROR_LOG_PATTERN=*800[3-4]-ErrorLog*.txt
+# Check if directory parameter is provided
+if [[ $# -eq 1 ]]; then
+  LOG_DIRECTORY="$1"
+  OUTPUT_DIRECTORY="$1/out"
+  # Ensure log directory path ends without slash for pattern matching
+  LOG_DIRECTORY="${LOG_DIRECTORY%/}"
+else
+  LOG_DIRECTORY="."
+  OUTPUT_DIRECTORY="./out"
+fi
+
+APP_ACCESS_LOG_PATTERN=${LOG_DIRECTORY}/*800[3-6]-AccessLog*.txt
+APP_ERROR_LOG_PATTERN=${LOG_DIRECTORY}/*800[3-6]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
@@ -197,7 +215,7 @@ echo -e "Adding up the number of requests by status code..."
 echo -e "" >> "$ALL_REQUESTS_METRICS_TSV_FILE"
 echo -e "REQUEST COUNTS BY RESPONSE STATUS CODE" >> "$ALL_REQUESTS_METRICS_TSV_FILE"
 echo -e "Count\tStatus Code" >> "$ALL_REQUESTS_METRICS_TSV_FILE"
-grep -o "\" [0-9][0-9][0-9] [0-9]" *AccessLog* | grep -o " [0-9][0-9][0-9] " | sort | uniq -c | sed -e 's/[ ]*//' | sed 's/  /\t/' >> "$ALL_REQUESTS_METRICS_TSV_FILE"
+grep -o "\" [0-9][0-9][0-9] [0-9]" ${LOG_DIRECTORY}/*AccessLog* | grep -o " [0-9][0-9][0-9] " | sort | uniq -c | sed -e 's/[ ]*//' | sed 's/  /\t/' >> "$ALL_REQUESTS_METRICS_TSV_FILE"
 
 echo -e "" | tee -a  $ALL_REQUESTS_METRICS_TSV_FILE
 echo "Generating additional files..."
@@ -339,7 +357,7 @@ echo -e "See also\t$ODD_RELATED_LIST_ERRORS" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Potentially interesting entries from ML's main error logs (not port specific)
 echo -e "   $ERROR_LOG_ABOVE_INFO_FILE..."
-ls | egrep $ERROR_LOG_EGREP_PATTERN_MAIN | xargs grep -v Info | grep -v Debug > $ERROR_LOG_ABOVE_INFO_FILE
+ls ${LOG_DIRECTORY} | egrep $ERROR_LOG_EGREP_PATTERN_MAIN | xargs -I {} grep -v Info "${LOG_DIRECTORY}/{}" | grep -v Debug > $ERROR_LOG_ABOVE_INFO_FILE
 echo -e "See also\t$ERROR_LOG_ABOVE_INFO_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 echo -e ""

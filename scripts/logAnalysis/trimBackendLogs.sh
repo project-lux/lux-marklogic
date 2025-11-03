@@ -98,9 +98,12 @@ for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
       # Last digits of IP address used in the output filename.  There is a potential chance of conflict.
       ipAddressEnd=${ipAddress##*.}
 
+      # Create time suffix for consistent naming (remove colons for filesystem compatibility)
+      timeSuffix=$(echo "${startTime}-${endTime}" | tr -d ':')
+
       fileIn="$inputDir/$testDate-$envName-node-$ipAddressEnd-$outputBasename.txt"
-      fileOut="$outputDir/$testDate-$envName-node-$ipAddressEnd-$outputBasename-trimmed.txt"
-      zipOut="$outputDir/$testDate-$envName-node-$ipAddressEnd-$outputBasename-trimmed.zip"
+      fileOut="$outputDir/$testDate-$timeSuffix-$envName-node-$ipAddressEnd-$outputBasename-trimmed.txt"
+      zipOut="$outputDir/$testDate-$timeSuffix-$envName-node-$ipAddressEnd-$outputBasename-trimmed.zip"
 
       # Determine pattern of timestamps we are to use
       if [[ $inputBasename == *"AccessLog"* ]]; then
@@ -146,11 +149,18 @@ for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
   # Run mining script on this time pair's output directory
   echo "Running mining script on $outputDir..."
   if [[ -f "./mineBackendLogs.sh" ]]; then
-    ./mineBackendLogs.sh "$outputDir"
+    # Format date as YYYY-MM-DD and pass env name, directory, date, start time, end time as parameters
+    formattedDate=$(printf "%04d-%02d-%02d" $YYYY $((10#$MM)) $((10#$DD)))
+    ./mineBackendLogs.sh "$envName" "$outputDir" "$formattedDate" "$startTime" "$endTime"
   else
     echo "Warning: mineBackendLogs.sh not found in current directory"
   fi
 done
 
 echo ""
+echo "Completed processing $startTimesCnt time ranges for $YYYY-$(printf "%02d" $((10#$MM)))-$(printf "%02d" $((10#$DD)))"
+echo "Created directories:"
+for ((i=0; i<${startTimesCnt}; i++)); do 
+  echo -e "\t./${startTimes[$i]//:/}-${endTimes[$i]//:/}"
+done
 echo "Done"

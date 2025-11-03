@@ -27,9 +27,20 @@ YYYY=2025
 MM=10
 DD=30
 
-# Specify multiple start and end time pairs
+# Identify the time ranges to extract.
+#
+# Option 1: Automatic range detection (set AUTO_DETECT_RANGES=true)
+AUTO_DETECT_RANGES=true
+AUTO_DETECT_START_TIME="22:43:00"  # Earliest time to consider for auto-detection (HH:MM:SS)
+AUTO_DETECT_END_TIME="23:45:00"    # Latest time to consider for auto-detection (HH:MM:SS)
+GAP_THRESHOLD_MINUTES=1            # Minimum gap in minutes to consider a new range
+MIN_RANGE_DURATION_MINUTES=3       # Minimum duration for a range to be included
+
+# Option 2: Manual configuration (set AUTO_DETECT_RANGES=false)
 declare -a startTimes=("22:43:00" "22:52:00" "23:04:00" "23:14:00" "23:24:00" "23:35:00")
 declare -a endTimes=("22:50:00" "23:01:00" "23:11:00" "23:22:00" "23:33:00" "23:45:00")
+
+PREVIEW_RANGES=true  # Set to true to preview detected or configured ranges without processing
 
 #
 # CONFIGURATION: END
@@ -51,6 +62,187 @@ case $MM in
   12) mmm="Dec" ;;
   *) echo "Invalid month: $MM"; exit 1 ;;
 esac
+
+# Function to auto-detect time ranges from access log files
+detect_time_ranges() {
+  local logFile=""
+  
+  # Find an access log file to analyze (prefer 8003 but fall back to 8006)
+  for basename in "8003_AccessLog" "8006_AccessLog"; do
+    local ipAddressEnd=${ipAddresses[0]##*.}
+    if [[ -n "$daysBack" && "$daysBack" -gt 0 ]]; then
+      local testBasename="${basename}-${daysBack}"
+    else
+      local testBasename="${basename}"
+    fi
+    local testFile="$inputDir/$testDate-$envName-node-$ipAddressEnd-$(echo "$testBasename" | tr _ -).txt"
+    if [[ -f "$testFile" ]]; then
+      logFile="$testFile"
+      break
+    fi
+  done
+  
+  if [[ -z "$logFile" ]]; then
+    echo "Warning: No access log file found for auto-detection. Using manual configuration."
+    return 1
+  fi
+  
+  echo "Analyzing $logFile for time ranges..."
+  echo "Time boundaries: $AUTO_DETECT_START_TIME to $AUTO_DETECT_END_TIME"
+  
+  # Convert boundary times to seconds for filtering
+  local startBoundarySeconds=$(echo "$AUTO_DETECT_START_TIME" | awk -F: '{print $1*3600 + $2*60 + $3}')
+  local endBoundarySeconds=$(echo "$AUTO_DETECT_END_TIME" | awk -F: '{print $1*3600 + $2*60 + $3}')
+  
+  # Handle day boundary crossing (if end time < start time, end is next day)
+  if [[ $endBoundarySeconds -lt $startBoundarySeconds ]]; then
+    endBoundarySeconds=$((endBoundarySeconds + 86400))
+  fi
+  
+  # Extract timestamps and detect gaps
+  # Access log format: [DD/mmm/YYYY:HH:MM:SS +0000]
+  # We'll extract HH:MM:SS and convert to seconds for gap analysis
+  local tempFile=$(mktemp 2>/dev/null || echo "/tmp/trim_logs_$$_$RANDOM")
+  
+  # Extract timestamps, convert to seconds, filter by boundaries, and sort
+  awk -F'[\\[\\]]' -v startBound="$startBoundarySeconds" -v endBound="$endBoundarySeconds" '
+    /\[.*:.*:.*:.*\]/ {
+      # Extract timestamp part: DD/mmm/YYYY:HH:MM:SS
+      split($2, parts, ":")
+      if (length(parts) >= 4) {
+        # parts[2] = HH, parts[3] = MM, parts[4] = SS (ignoring timezone)
+        split(parts[4], secParts, " ")  # Remove timezone
+        seconds = parts[2] * 3600 + parts[3] * 60 + secParts[1]
+        
+        # Apply boundary filtering
+        timeInBounds = 0
+        if (endBound > 86400) {
+          # Handle day boundary crossing
+          timeInBounds = (seconds >= startBound) || (seconds <= (endBound - 86400))
+        } else {
+          # Normal case - same day
+          timeInBounds = (seconds >= startBound) && (seconds <= endBound)
+        }
+        
+        if (timeInBounds) {
+          print seconds, parts[2] ":" parts[3] ":" secParts[1]
+        }
+      }
+    }' "$logFile" | sort -n > "$tempFile"
+  
+  if [[ ! -s "$tempFile" ]]; then
+    echo "Warning: No valid timestamps found in $logFile. Using manual configuration."
+    rm -f "$tempFile"
+    return 1
+  fi
+  
+  # Analyze gaps and create ranges
+  local gapThresholdSeconds=$((GAP_THRESHOLD_MINUTES * 60))
+  local minDurationSeconds=$((MIN_RANGE_DURATION_MINUTES * 60))
+  
+  # Arrays to store detected ranges
+  local detectedStarts=()
+  local detectedEnds=()
+  local currentStart=""
+  local currentStartSeconds=0
+  local lastTimestamp=""
+  local lastSeconds=0
+  
+  while read -r seconds timestamp; do
+    if [[ -z "$currentStart" ]]; then
+      # Start of first range
+      currentStart="$timestamp"
+      currentStartSeconds=$seconds
+      lastTimestamp="$timestamp"
+      lastSeconds=$seconds
+    elif [[ $((seconds - lastSeconds)) -gt $gapThresholdSeconds ]]; then
+      # Gap detected - end current range and start new one
+      local duration=$((lastSeconds - currentStartSeconds))
+      if [[ $duration -lt 0 ]]; then
+        # Handle day boundary crossing (e.g., range spans midnight)
+        duration=$((duration + 86400))
+      fi
+      
+      if [[ $duration -ge $minDurationSeconds ]]; then
+        detectedStarts+=("$currentStart")
+        detectedEnds+=("$lastTimestamp")
+      fi
+      
+      currentStart="$timestamp"
+      currentStartSeconds=$seconds
+    fi
+    
+    lastTimestamp="$timestamp"
+    lastSeconds=$seconds
+  done < "$tempFile"
+  
+  # Add final range if it meets minimum duration
+  if [[ -n "$currentStart" ]]; then
+    local duration=$((lastSeconds - currentStartSeconds))
+    if [[ $duration -lt 0 ]]; then
+      # Handle day boundary crossing
+      duration=$((duration + 86400))
+    fi
+    
+    if [[ $duration -ge $minDurationSeconds ]]; then
+      detectedStarts+=("$currentStart")
+      detectedEnds+=("$lastTimestamp")
+    fi
+  fi
+  
+  rm -f "$tempFile"
+  
+  # Update global arrays
+  if [[ ${#detectedStarts[@]} -gt 0 ]]; then
+    startTimes=("${detectedStarts[@]}")
+    endTimes=("${detectedEnds[@]}")
+    echo "Auto-detected ${#startTimes[@]} time ranges:"
+    for ((i=0; i<${#startTimes[@]}; i++)); do
+      echo "  Range $((i+1)): ${startTimes[$i]} - ${endTimes[$i]}"
+    done
+    return 0
+  else
+    echo "Warning: No suitable time ranges detected. Using manual configuration."
+    return 1
+  fi
+}
+
+# Auto-detect ranges if enabled
+if [[ "$AUTO_DETECT_RANGES" == "true" ]]; then
+  if ! detect_time_ranges; then
+    echo "Falling back to manual configuration..."
+  fi
+fi
+
+# Preview mode: Show ranges and exit without processing
+if [[ "$PREVIEW_RANGES" == "true" ]]; then
+  echo ""
+  echo "=== PREVIEW MODE ==="
+  if [[ "$AUTO_DETECT_RANGES" == "true" ]]; then
+    echo "Auto-detection settings:"
+    echo "  Time boundaries: $AUTO_DETECT_START_TIME to $AUTO_DETECT_END_TIME"
+    echo "  Gap threshold: $GAP_THRESHOLD_MINUTES minutes"
+    echo "  Min range duration: $MIN_RANGE_DURATION_MINUTES minutes"
+    echo ""
+  fi
+  
+  echo "Time ranges for date $YYYY-$(printf "%02d" $((10#$MM)))-$(printf "%02d" $((10#$DD))):"
+  startTimesCnt=${#startTimes[@]}
+  
+  if [[ $startTimesCnt -eq 0 ]]; then
+    echo "  No time ranges configured or detected!"
+    exit 1
+  fi
+  
+  for ((i=0; i<${startTimesCnt}; i++)); do
+    outputDirSuffix=$(echo "${startTimes[$i]}-${endTimes[$i]}" | tr -d ':')
+    echo "  Range $((i+1)): ${startTimes[$i]} - ${endTimes[$i]} → ./${outputDirSuffix}/"
+  done
+  
+  echo ""
+  echo "Preview complete. Set PREVIEW_RANGES=false to execute trimming."
+  exit 0
+fi
 
 #
 # Process each time pair
@@ -158,7 +350,11 @@ for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
 done
 
 echo ""
-echo "Completed processing $startTimesCnt time ranges for $YYYY-$(printf "%02d" $((10#$MM)))-$(printf "%02d" $((10#$DD)))"
+if [[ "$AUTO_DETECT_RANGES" == "true" ]]; then
+  echo "Completed processing $startTimesCnt auto-detected time ranges for date $YYYY-$(printf "%02d" $((10#$MM)))-$(printf "%02d" $((10#$DD)))"
+else
+  echo "Completed processing $startTimesCnt manually configured time ranges for date $YYYY-$(printf "%02d" $((10#$MM)))-$(printf "%02d" $((10#$DD)))"
+fi
 echo "Created directories:"
 for ((i=0; i<${startTimesCnt}; i++)); do 
   echo -e "\t./${startTimes[$i]//:/}-${endTimes[$i]//:/}"

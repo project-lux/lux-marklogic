@@ -20,9 +20,25 @@ inputDir=.
 # Specify the range to trim to in pieces to facilitate multiple timestamp patterns.
 # All provided times need to be on the same date.
 YYYY=2025
-mmm=Oct
 MM=10
 DD=30
+
+# Convert numeric month to abbreviated month name for access log format
+case $MM in
+  01) mmm="Jan" ;;
+  02) mmm="Feb" ;;
+  03) mmm="Mar" ;;
+  04) mmm="Apr" ;;
+  05) mmm="May" ;;
+  06) mmm="Jun" ;;
+  07) mmm="Jul" ;;
+  08) mmm="Aug" ;;
+  09) mmm="Sep" ;;
+  10) mmm="Oct" ;;
+  11) mmm="Nov" ;;
+  12) mmm="Dec" ;;
+  *) echo "Invalid month: $MM"; exit 1 ;;
+esac
 
 # Specify multiple start and end time pairs
 declare -a startTimes=("22:43:00" "22:52:00" "23:04:00" "23:14:00" "23:24:00" "23:35:00")

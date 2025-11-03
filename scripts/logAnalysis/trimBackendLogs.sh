@@ -3,6 +3,10 @@
 # This script is based on the collectLogs.sh script. It could potentially be incorporated as a second step of that script.
 # Currently this supports the access and error logs, but could be extended for others.
 
+#
+# CONFIGURATION: START
+#
+
 # Bits that go into the input filenames, which is a carryover from collectLogs.sh.  We could modify this script to get 
 # all files that match each input basename --or, as noted above, collect and trim in the same script.
 declare -a inputBasenames=("ErrorLog" "8003_ErrorLog" "8003_AccessLog" "8003_RequestLog" "8006_ErrorLog" "8006_AccessLog" "8006_RequestLog")
@@ -23,6 +27,14 @@ YYYY=2025
 MM=10
 DD=30
 
+# Specify multiple start and end time pairs
+declare -a startTimes=("22:43:00" "22:52:00" "23:04:00" "23:14:00" "23:24:00" "23:35:00")
+declare -a endTimes=("22:50:00" "23:01:00" "23:11:00" "23:22:00" "23:33:00" "23:45:00")
+
+#
+# CONFIGURATION: END
+#
+
 # Convert numeric month to abbreviated month name for access log format
 case $MM in
   01) mmm="Jan" ;;
@@ -39,10 +51,6 @@ case $MM in
   12) mmm="Dec" ;;
   *) echo "Invalid month: $MM"; exit 1 ;;
 esac
-
-# Specify multiple start and end time pairs
-declare -a startTimes=("22:43:00" "22:52:00" "23:04:00" "23:14:00" "23:24:00" "23:35:00")
-declare -a endTimes=("22:50:00" "23:01:00" "23:11:00" "23:22:00" "23:33:00" "23:45:00")
 
 #
 # Process each time pair

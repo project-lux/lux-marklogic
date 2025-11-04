@@ -68,18 +68,15 @@ detect_time_ranges() {
   local logFile=""
   
   # Find an access log file to analyze (prefer 8003 but fall back to 8006)
-  for basename in "8003_AccessLog" "8006_AccessLog"; do
+  for pattern in "8003-AccessLog" "8006-AccessLog"; do
     local ipAddressEnd=${ipAddresses[0]##*.}
-    if [[ -n "$daysBack" && "$daysBack" -gt 0 ]]; then
-      local testBasename="${basename}-${daysBack}"
-    else
-      local testBasename="${basename}"
+    # Look for any file in inputDir that contains the pattern
+    for file in "$inputDir"/*"$pattern"*.txt; do
+      if [[ -f "$file" ]]; then
+        logFile="$file"
+        break 2  # Break out of both loops
     fi
-    local testFile="$inputDir/$testDate-$envName-node-$ipAddressEnd-$(echo "$testBasename" | tr _ -).txt"
-    if [[ -f "$testFile" ]]; then
-      logFile="$testFile"
-      break
-    fi
+    done
   done
   
   if [[ -z "$logFile" ]]; then

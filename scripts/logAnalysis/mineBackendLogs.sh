@@ -77,7 +77,8 @@ APP_ERROR_LOG_PATTERN=${LOG_DIRECTORY}/*800[3-6]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
-ERROR_LOG_EGREP_PATTERN_MAIN=[^0-9]-[0-9]+-ErrorLog*.txt
+# Exclude files with 4 digits preceding "-ErrorLog" (app server logs like 8003-ErrorLog)
+ERROR_LOG_EGREP_PATTERN_MAIN=.*[^0-9][0-9]{0,3}-ErrorLog.*\.txt$
 
 ERROR_LOG_ABOVE_INFO_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}errorLogEntriesAboveInfo.txt
 ALL_REQUESTS_METRICS_TSV_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}requestMetrics.tsv

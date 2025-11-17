@@ -7,6 +7,15 @@
 #   Presently targets the 8003 and main error logs as well as 8003 access logs.  It could be 
 #   extended to mine 8003 request logs (good stuff!).
 #
+# Usage:
+#
+#   ./mineBackendLogs.sh [envName] [log_directory] [date] [startTime] [endTime]
+#
+#   If all parameters are provided, output files will be prefixed with date-startTime-endTime-envName-.
+#   If only log_directory is provided (as second parameter), the script will process log files in that directory
+#   and create output in log_directory/out. If not provided, it processes files in
+#   the current directory and creates output in ./out.
+#
 # Directions:
 #
 #   1. Create an empty directory.
@@ -31,32 +40,64 @@
 #
 
 # Script configuration
-OUTPUT_DIRECTORY=./out
-APP_ACCESS_LOG_PATTERN=*800[3-4]-AccessLog*.txt
-APP_ERROR_LOG_PATTERN=*800[3-4]-ErrorLog*.txt
+# Check parameters: [envName] [directory] [date] [startTime] [endTime]
+if [[ $# -eq 5 ]]; then
+  ENV_NAME="$1"
+  LOG_DIRECTORY="$2"
+  OUTPUT_DIRECTORY="$2/out"
+  # Ensure log directory path ends without slash for pattern matching
+  LOG_DIRECTORY="${LOG_DIRECTORY%/}"
+  REPORT_DATE="$3"
+  REPORT_START_TIME="$4"
+  REPORT_END_TIME="$5"
+  # Create filename prefix (remove colons from times)
+  FILENAME_PREFIX="${REPORT_DATE}-$(echo "$REPORT_START_TIME" | tr -d ':')-$(echo "$REPORT_END_TIME" | tr -d ':')-${ENV_NAME}-"
+elif [[ $# -eq 1 ]]; then
+  ENV_NAME=""
+  LOG_DIRECTORY="$1"
+  OUTPUT_DIRECTORY="$1/out"
+  # Ensure log directory path ends without slash for pattern matching
+  LOG_DIRECTORY="${LOG_DIRECTORY%/}"
+  REPORT_DATE=""
+  REPORT_START_TIME=""
+  REPORT_END_TIME=""
+  FILENAME_PREFIX=""
+else
+  ENV_NAME=""
+  LOG_DIRECTORY="."
+  OUTPUT_DIRECTORY="./out"
+  REPORT_DATE=""
+  REPORT_START_TIME=""
+  REPORT_END_TIME=""
+  FILENAME_PREFIX=""
+fi
+
+APP_ACCESS_LOG_PATTERN=${LOG_DIRECTORY}/*800[3-6]-AccessLog*.txt
+APP_ERROR_LOG_PATTERN=${LOG_DIRECTORY}/*800[3-6]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
-ERROR_LOG_EGREP_PATTERN_MAIN=[^0-9]-[0-9]+-ErrorLog*.txt
+# Exclude files with 4 digits preceding "-ErrorLog" (app server logs like 8003-ErrorLog)
+ERROR_LOG_EGREP_PATTERN_MAIN=.*[^0-9][0-9]{0,3}-ErrorLog.*\.txt$
 
-ERROR_LOG_ABOVE_INFO_FILE=$OUTPUT_DIRECTORY/errorLogEntriesAboveInfo.txt
-ALL_REQUESTS_METRICS_TSV_FILE=$OUTPUT_DIRECTORY/requestMetrics.tsv
-ALL_REQUESTS_FILE=$OUTPUT_DIRECTORY/allRequestsWithDurations.txt
-ALL_REQUESTS_TSV_FILE=$OUTPUT_DIRECTORY/allRequestsWithDurations.tsv
-SEARCHES_LONG_RUNNING_FILE=$OUTPUT_DIRECTORY/searchLongRunning.txt
-SEARCH_PARAMS_WITH_DURATIONS_FILE=$OUTPUT_DIRECTORY/searchParamsAndDurations.txt
-SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE=$OUTPUT_DIRECTORY/searchParamsAndDurations.tsv
-SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE=$OUTPUT_DIRECTORY/searchParamsAndDurations.json
-FAILED_SEARCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchOnlyRequests.txt
-FAILED_SEARCH_ESTIMATE_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchEstimateRequests.txt
-FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/failedSearchWillMatchRequests.txt
-FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/allFacetRequests.txt
-FAILED_FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/allFailedFacetRequests.txt
-AT_LEAST_ONE_RELATED_LIST_ITEM_FILE=$OUTPUT_DIRECTORY/atLeastOneRelatedListItem.txt
-AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE=$OUTPUT_DIRECTORY/atLeastOneRelatedListItem.tsv
-HIT_MAX_NUMBER_OF_RELATIONS=$OUTPUT_DIRECTORY/hitMaxNumberOfRelations.txt
-FAILED_RELATED_LIST_REQUESTS=$OUTPUT_DIRECTORY/failedRelatedListRequests.txt
-ODD_RELATED_LIST_ERRORS=$OUTPUT_DIRECTORY/oddRelatedListErrors.txt
+ERROR_LOG_ABOVE_INFO_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}errorLogEntriesAboveInfo.txt
+ALL_REQUESTS_METRICS_TSV_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}requestMetrics.tsv
+ALL_REQUESTS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}allRequestsWithDurations.txt
+ALL_REQUESTS_TSV_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}allRequestsWithDurations.tsv
+SEARCHES_LONG_RUNNING_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}searchLongRunning.txt
+SEARCH_PARAMS_WITH_DURATIONS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}searchParamsAndDurations.txt
+SEARCH_PARAMS_WITH_DURATIONS_TSV_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}searchParamsAndDurations.tsv
+SEARCH_PARAMS_WITH_DURATIONS_JSON_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}searchParamsAndDurations.json
+FAILED_SEARCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}failedSearchOnlyRequests.txt
+FAILED_SEARCH_ESTIMATE_REQUESTS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}failedSearchEstimateRequests.txt
+FAILED_SEARCH_WILL_MATCH_REQUESTS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}failedSearchWillMatchRequests.txt
+FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}allFacetRequests.txt
+FAILED_FACET_REQUESTS_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}allFailedFacetRequests.txt
+AT_LEAST_ONE_RELATED_LIST_ITEM_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}atLeastOneRelatedListItem.txt
+AT_LEAST_ONE_RELATED_LIST_ITEM_TSV_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}atLeastOneRelatedListItem.tsv
+HIT_MAX_NUMBER_OF_RELATIONS=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}hitMaxNumberOfRelations.txt
+FAILED_RELATED_LIST_REQUESTS=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}failedRelatedListRequests.txt
+ODD_RELATED_LIST_ERRORS=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}oddRelatedListErrors.txt
 
 # Constants
 DURATION_IN_SECS_CELL=B6
@@ -127,10 +168,22 @@ function addBonusLinesForDocuments() {
 [[ -d "$OUTPUT_DIRECTORY" ]] || mkdir "$OUTPUT_DIRECTORY"
 
 # Beginning of report
-echo -e "Description:" > $ALL_REQUESTS_METRICS_TSV_FILE
+if [[ -n "$ENV_NAME" && -n "$REPORT_DATE" ]]; then
+  echo -e "Description:\tLog analysis for $ENV_NAME environment on $REPORT_DATE" > $ALL_REQUESTS_METRICS_TSV_FILE
+else
+  echo -e "Description:" > $ALL_REQUESTS_METRICS_TSV_FILE
+fi
 echo -e "" >> $ALL_REQUESTS_METRICS_TSV_FILE
-echo -e "End time:" >> $ALL_REQUESTS_METRICS_TSV_FILE
-echo -e "Start time:" >> $ALL_REQUESTS_METRICS_TSV_FILE
+if [[ -n "$REPORT_END_TIME" ]]; then
+  echo -e "End time:\t$REPORT_END_TIME" >> $ALL_REQUESTS_METRICS_TSV_FILE
+else
+  echo -e "End time:" >> $ALL_REQUESTS_METRICS_TSV_FILE
+fi
+if [[ -n "$REPORT_START_TIME" ]]; then
+  echo -e "Start time:\t$REPORT_START_TIME" >> $ALL_REQUESTS_METRICS_TSV_FILE
+else
+  echo -e "Start time:" >> $ALL_REQUESTS_METRICS_TSV_FILE
+fi
 echo -e "Duration in minutes:\t=(B3-B4)*1440" >> $ALL_REQUESTS_METRICS_TSV_FILE
 echo -e "Duration in seconds:\t=(B3-B4)*86400" >> $ALL_REQUESTS_METRICS_TSV_FILE
 echo -e "" | tee -a  $ALL_REQUESTS_METRICS_TSV_FILE
@@ -197,7 +250,7 @@ echo -e "Adding up the number of requests by status code..."
 echo -e "" >> "$ALL_REQUESTS_METRICS_TSV_FILE"
 echo -e "REQUEST COUNTS BY RESPONSE STATUS CODE" >> "$ALL_REQUESTS_METRICS_TSV_FILE"
 echo -e "Count\tStatus Code" >> "$ALL_REQUESTS_METRICS_TSV_FILE"
-grep -o "\" [0-9][0-9][0-9] [0-9]" *AccessLog* | grep -o " [0-9][0-9][0-9] " | sort | uniq -c | sed -e 's/[ ]*//' | sed 's/  /\t/' >> "$ALL_REQUESTS_METRICS_TSV_FILE"
+grep -o "\" [0-9][0-9][0-9] [0-9]" ${LOG_DIRECTORY}/*AccessLog* | grep -o " [0-9][0-9][0-9] " | sort | uniq -c | sed -e 's/[ ]*//' | sed 's/  /\t/' >> "$ALL_REQUESTS_METRICS_TSV_FILE"
 
 echo -e "" | tee -a  $ALL_REQUESTS_METRICS_TSV_FILE
 echo "Generating additional files..."
@@ -339,8 +392,16 @@ echo -e "See also\t$ODD_RELATED_LIST_ERRORS" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 # Potentially interesting entries from ML's main error logs (not port specific)
 echo -e "   $ERROR_LOG_ABOVE_INFO_FILE..."
-ls | egrep $ERROR_LOG_EGREP_PATTERN_MAIN | xargs grep -v Info | grep -v Debug > $ERROR_LOG_ABOVE_INFO_FILE
+ls ${LOG_DIRECTORY} | egrep $ERROR_LOG_EGREP_PATTERN_MAIN | xargs -I {} grep -v Info "${LOG_DIRECTORY}/{}" | grep -v Debug > $ERROR_LOG_ABOVE_INFO_FILE
 echo -e "See also\t$ERROR_LOG_ABOVE_INFO_FILE" >> $ALL_REQUESTS_METRICS_TSV_FILE
 
 echo -e ""
-echo -e "Done"
+if [[ -n "$REPORT_START_TIME" && -n "$REPORT_END_TIME" ]]; then
+  echo -e "Mining complete for time range $REPORT_START_TIME to $REPORT_END_TIME"
+  echo -e "Output files created in: $OUTPUT_DIRECTORY"
+  fileCount=$(ls -1 "$OUTPUT_DIRECTORY"/${FILENAME_PREFIX}* 2>/dev/null | wc -l)
+  echo -e "Generated $fileCount analysis files with prefix: ${FILENAME_PREFIX}"
+else
+  echo -e "Done"
+fi
+echo -e ""

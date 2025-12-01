@@ -48,6 +48,29 @@ die () {
     exit 1
 }
 
+cleanup_and_exit() {
+    echo >&2 ""
+    echo >&2 "Error: $1"
+    
+    # Always attempt cleanup if we enabled dynamic hosts
+    if [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
+        echo >&2 ""
+        echo >&2 "Attempting to disable dynamic hosts for security cleanup..."
+        CLEANUP_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
+            -H "Content-Type: application/json" \
+            -d '{"allow-dynamic-hosts":false}' 2>&1)
+        
+        if [ "$?" -eq 0 ]; then
+            echo >&2 "Successfully disabled dynamic hosts during cleanup"
+        else
+            echo >&2 "Warning: Failed to disable dynamic hosts during cleanup: $CLEANUP_RESPONSE"
+        fi
+    fi
+    
+    die "$1" false
+}
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -116,13 +139,18 @@ echo "New host: ${DYNAMIC_HOST_ADMIN_URL}"
 echo ""
 echo "Step 1: Temporarily enabling dynamic hosts for group ${GROUP_NAME}..."
 
+DYNAMIC_HOSTS_ENABLED=false
 ENABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
     -H "Content-Type: application/json" \
-    -d '{"allow-dynamic-hosts":true}' 2>&1) || \
-    die "Failed to enable dynamic hosts: $ENABLE_RESPONSE" false
+    -d '{"allow-dynamic-hosts":true}' 2>&1)
 
-echo "Successfully enabled dynamic hosts for group ${GROUP_NAME}"
+if [ "$?" -ne 0 ]; then
+    die "Failed to enable dynamic hosts: $ENABLE_RESPONSE" false
+else
+    DYNAMIC_HOSTS_ENABLED=true
+    echo "Successfully enabled dynamic hosts for group ${GROUP_NAME}"
+fi
 
 # Step 2: Enable API token authentication for Admin app server
 echo ""
@@ -159,14 +187,17 @@ echo "Requesting token from: ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTE
 TOKEN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X POST "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token?format=xml" \
     -H "Content-Type: application/json" \
-    -d "$TOKEN_PAYLOAD" 2>&1) || \
-    die "Failed to generate dynamic host token: $TOKEN_RESPONSE" false
+    -d "$TOKEN_PAYLOAD" 2>&1)
+
+if [ "$?" -ne 0 ]; then
+    cleanup_and_exit "Failed to generate dynamic host token: $TOKEN_RESPONSE"
+fi
 
 # Extract token from XML response using sed like their script
 DYNAMIC_TOKEN=$(echo "$TOKEN_RESPONSE" | grep "dynamic-host-token" | sed 's%^.*<dynamic-host-token.*>\(.*\)</dynamic-host-token>.*$%\1%')
 
 if [ -z "$DYNAMIC_TOKEN" ]; then
-    die "Failed to extract token from response: $TOKEN_RESPONSE" false
+    cleanup_and_exit "Failed to extract token from response: $TOKEN_RESPONSE"
 fi
 
 echo "Successfully generated dynamic host token"
@@ -182,22 +213,30 @@ INIT_PAYLOAD="<init xmlns=\"http://marklogic.com/manage\"><dynamic-host-token>${
 JOIN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X POST "${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init" \
     -H "Content-Type: application/xml" \
-    -d "$INIT_PAYLOAD" 2>&1) || \
-    die "Failed to join dynamic host to cluster: $JOIN_RESPONSE" false
+    -d "$INIT_PAYLOAD" 2>&1)
+
+if [ "$?" -ne 0 ]; then
+    cleanup_and_exit "Failed to join dynamic host to cluster: $JOIN_RESPONSE"
+fi
 
 echo "Successfully added ${DYNAMIC_HOST} to the cluster"
 
-# Step 5: Disable dynamic hosts for security
-echo ""
-echo "Step 5: Disabling dynamic hosts for security..."
+# Step 5: Disable dynamic hosts for security (cleanup)
+if [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
+    echo ""
+    echo "Step 5: Disabling dynamic hosts for security..."
 
-DISABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
-    -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
-    -H "Content-Type: application/json" \
-    -d '{"allow-dynamic-hosts":false}' 2>&1) || \
-    die "Failed to disable dynamic hosts: $DISABLE_RESPONSE" false
+    DISABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+        -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
+        -H "Content-Type: application/json" \
+        -d '{"allow-dynamic-hosts":false}' 2>&1)
 
-echo "Successfully disabled dynamic hosts for group ${GROUP_NAME}"
+    if [ "$?" -eq 0 ]; then
+        echo "Successfully disabled dynamic hosts for group ${GROUP_NAME}"
+    else
+        echo >&2 "Warning: Failed to disable dynamic hosts: $DISABLE_RESPONSE"
+    fi
+fi
 
 # Step 6: Verify dynamic hosts in cluster
 echo ""

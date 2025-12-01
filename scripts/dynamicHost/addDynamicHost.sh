@@ -114,6 +114,9 @@ done
 [ -z "$PASSWORD" ] && die "Password is required (--password)" true
 [ -z "$DYNAMIC_HOST" ] && die "New host is required (--dynamic-host)" true
 
+# Validate that bootstrap and dynamic hosts are different
+[ "$BOOTSTRAP_HOST" = "$DYNAMIC_HOST" ] && die "Bootstrap host and dynamic host cannot be the same (${BOOTSTRAP_HOST})" true
+
 # Set defaults
 BOOTSTRAP_ADMIN_PORT="${BOOTSTRAP_ADMIN_PORT:-8001}"
 BOOTSTRAP_MANAGE_PORT="${BOOTSTRAP_MANAGE_PORT:-8002}"

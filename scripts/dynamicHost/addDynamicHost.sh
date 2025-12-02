@@ -3,11 +3,12 @@ set -euo pipefail
 
 #
 # This script adds a dynamic host to a MarkLogic cluster by:
-# 1. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
-# 2. Generating a dynamic host token from the bootstrap node
-# 3. Directly joining the dynamic host to the cluster using the token
-# 4. Disabling dynamic hosts for security
-# 5. Verifying the dynamic host was accepted by the cluster
+# 1. Installing MarkLogic on the dynamic host via SSH and SCP
+# 2. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
+# 3. Generating a dynamic host token from the bootstrap node
+# 4. Directly joining the dynamic host to the cluster using the token
+# 5. Revoking the token, disabling dynamic hosts and API token authentication for security
+# 6. Verifying the dynamic host was accepted by the cluster
 #
 # It can be run interactively or headless. If an error occurs and /var/opt/MarkLogic/Logs/ErrorLog.txt
 # exists, the script appends an error message to it. This log should be monitored so a system
@@ -41,7 +42,7 @@ set -euo pipefail
 # MarkLogic cluster configuration.
 readonly CLUSTER_NAME="Default"
 readonly GROUP_NAME="Default"
-readonly TOKEN_DURATION="PT15M"
+readonly TOKEN_DURATION="PT1M"
 readonly TOKEN_COMMENT="auto-scaling event"
 
 # Port defaults
@@ -51,6 +52,10 @@ readonly DEFAULT_MANAGE_PORT=8002
 # Tools configuration
 readonly CURL_EXEC="/usr/bin/curl"
 readonly MARKLOGIC_ERROR_LOG="/var/opt/MarkLogic/Logs/ErrorLog.txt"
+
+# RPM deployment configuration
+readonly MARKLOGIC_RPM_PATH="/opt/MarkLogic-autoscaler/MarkLogic-12.0.0-rhel.x86_64.rpm"
+readonly SSH_PEM_FILE="/opt/MarkLogic-autoscaler/ch-lux-ssh-dev.pem"
 
 # =============================================================================
 # JSON PARSING UTILITIES
@@ -188,6 +193,7 @@ DYNAMIC_TOKEN=""
 # Command line parameters (initialized in argument parsing)
 DRY_RUN=false
 VERBOSE=false
+NO_INSTALL=false
 BOOTSTRAP_HOST=""
 BOOTSTRAP_ADMIN_PORT=""
 BOOTSTRAP_MANAGE_PORT=""
@@ -385,6 +391,10 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
+        --no-install)
+            NO_INSTALL=true
+            shift
+            ;;
         --verbose)
             VERBOSE=true
             shift
@@ -463,7 +473,7 @@ done
 # Construct URLs
 BOOTSTRAP_ADMIN_URL="https://${BOOTSTRAP_HOST}:${BOOTSTRAP_ADMIN_PORT}"
 BOOTSTRAP_MANAGE_URL="https://${BOOTSTRAP_HOST}:${BOOTSTRAP_MANAGE_PORT}"
-DYNAMIC_HOST_ADMIN_URL="https://${DYNAMIC_HOST}:${DYNAMIC_ADMIN_PORT}"
+DYNAMIC_HOST_ADMIN_URL="http://${DYNAMIC_HOST}:${DYNAMIC_ADMIN_PORT}"
 
 echo "Starting dynamic host addition process..."
 echo "Parameters:"
@@ -496,19 +506,31 @@ if [ "$DRY_RUN" = true ]; then
         echo "✗ Bootstrap manage port ($BOOTSTRAP_HOST:$BOOTSTRAP_MANAGE_PORT) unreachable"
     fi
     
-    if curl -s --connect-timeout 5 "$DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT" >/dev/null 2>&1; then
-        echo "✓ Dynamic host admin port reachable"
+    if [ "$NO_INSTALL" = true ]; then
+        # When skipping install, MarkLogic should already be running - check admin port
+        if curl -s --connect-timeout 5 "$DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT" >/dev/null 2>&1; then
+            echo "✓ Dynamic host admin port reachable"
+        else
+            echo "✗ Dynamic host admin port ($DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT) unreachable"
+        fi
     else
-        echo "✗ Dynamic host admin port ($DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT) unreachable"
+        # When installing, check SSH connectivity since we'll need it for RPM deployment
+        if ssh -i "$SSH_PEM_FILE" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=yes ec2-user@"$DYNAMIC_HOST" exit >/dev/null 2>&1; then
+            echo "✓ Dynamic host SSH reachable"
+        else
+            echo "✗ Dynamic host SSH ($DYNAMIC_HOST) unreachable"
+        fi
     fi
     
     echo ""
     echo "Operations that would be performed:"
-    echo "1. Enable dynamic hosts on $GROUP_NAME group (temporary)"
-    echo "2. Generate dynamic host token from bootstrap node"
-    echo "3. Join $DYNAMIC_HOST to cluster using token"
-    echo "4. Disable dynamic hosts for security"
-    echo "5. Verify host acceptance in cluster"
+    echo "1. Install MarkLogic RPM on $DYNAMIC_HOST via SSH (disabled: ${NO_INSTALL})"
+    echo "2. Enable dynamic hosts on $GROUP_NAME group (temporary)"
+    echo "3. Enable API token authentication (temporary)"
+    echo "4. Generate dynamic host token from bootstrap node"
+    echo "5. Join $DYNAMIC_HOST to cluster using token"
+    echo "6. Revoke token, disable API token auth, and disable dynamic hosts"
+    echo "7. Verify host acceptance in cluster"
     echo ""
     echo "Run without --dry-run to execute the actual operations"
     exit 0
@@ -518,8 +540,67 @@ echo "Bootstrap server admin: ${BOOTSTRAP_ADMIN_URL}"
 echo "Bootstrap server manage: ${BOOTSTRAP_MANAGE_URL}"
 echo "New host: ${DYNAMIC_HOST_ADMIN_URL}"
 
-CURRENT_STEP="Step 1: Temporarily enabling dynamic hosts for group ${GROUP_NAME}"
+# =============================================================================
+# Step 1: Install MarkLogic on dynamic host (if not skipped)
+# =============================================================================
+if [ "$NO_INSTALL" = false ]; then
+    CURRENT_STEP="Step 1: Installing MarkLogic on dynamic host ${DYNAMIC_HOST}"
+    echo ""
+    echo "$CURRENT_STEP..."
+
+    # Check if RPM file exists
+    if [ ! -f "$MARKLOGIC_RPM_PATH" ]; then
+        cleanup_and_exit "MarkLogic RPM file not found at: $MARKLOGIC_RPM_PATH" false
+    fi
+
+    # Check if PEM file exists
+    if [ ! -f "$SSH_PEM_FILE" ]; then
+        cleanup_and_exit "SSH PEM file not found at: $SSH_PEM_FILE" false
+    fi
+
+    echo "Copying MarkLogic RPM to dynamic host..."
+    LAST_COMMAND="scp RPM to $DYNAMIC_HOST"
+    if ! scp -i "$SSH_PEM_FILE" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 "$MARKLOGIC_RPM_PATH" ec2-user@"$DYNAMIC_HOST":/tmp/ 2>&1; then
+        cleanup_and_exit "Failed to copy RPM to dynamic host $DYNAMIC_HOST. Check SSH connectivity and permissions." false
+    fi
+
+    echo "Installing MarkLogic RPM on dynamic host..."
+    LAST_COMMAND="ssh install RPM on $DYNAMIC_HOST"
+    RPM_FILENAME=$(basename "$MARKLOGIC_RPM_PATH")
+    SSH_INSTALL_CMD="sudo yum install -y /tmp/$RPM_FILENAME && sudo systemctl enable MarkLogic && sudo systemctl start MarkLogic"
+
+    if ! ssh -i "$SSH_PEM_FILE" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 ec2-user@"$DYNAMIC_HOST" "$SSH_INSTALL_CMD" 2>&1; then
+        cleanup_and_exit "Failed to install MarkLogic RPM on dynamic host $DYNAMIC_HOST. Check SSH access and sudo permissions." false
+    fi
+
+    echo "Waiting for MarkLogic to start on dynamic host..."
+    sleep 10
+
+    # Verify MarkLogic is responding
+    echo "Verifying MarkLogic installation..."
+    for attempt in {1..12}; do  # Wait up to 2 minutes (12 * 10 seconds)
+        if curl -s --connect-timeout 5 "http://$DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT" >/dev/null 2>&1; then
+            echo "MarkLogic is responding on $DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT"
+            break
+        fi
+        if [ $attempt -eq 12 ]; then
+            cleanup_and_exit "MarkLogic failed to start properly on $DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT after installation" false
+        fi
+        echo "Waiting for MarkLogic to start (attempt $attempt/12)..."
+        sleep 10
+    done
+
+    echo "Successfully installed and started MarkLogic on dynamic host"
+else
+    echo "Step 1 skipped: --no-install specified, assuming MarkLogic already installed on $DYNAMIC_HOST"
+fi
+
 echo ""
+
+# =============================================================================
+# Step 2: Enable dynamic hosts
+# =============================================================================
+CURRENT_STEP="Step 2: Temporarily enabling dynamic hosts for group ${GROUP_NAME}"
 echo "$CURRENT_STEP..."
 
 LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties"
@@ -535,7 +616,7 @@ else
     echo "Successfully enabled dynamic hosts for group ${GROUP_NAME}"
 fi
 
-CURRENT_STEP="Step 2: Enabling API token authentication for Admin app server"
+CURRENT_STEP="Step 3: Enabling API token authentication for Admin app server"
 echo ""
 echo "$CURRENT_STEP..."
 
@@ -549,7 +630,7 @@ TOKEN_AUTH_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
 API_TOKEN_AUTH_ENABLED=true
 echo "Successfully enabled API token authentication"
 
-CURRENT_STEP="Step 3: Generating dynamic host token"
+CURRENT_STEP="Step 4: Generating dynamic host token"
 echo ""
 echo "$CURRENT_STEP..."
 
@@ -600,7 +681,7 @@ fi
 
 echo "Successfully generated dynamic host token"
 
-CURRENT_STEP="Step 4: Adding dynamic host ${DYNAMIC_HOST} to the cluster"
+CURRENT_STEP="Step 5: Adding dynamic host ${DYNAMIC_HOST} to the cluster"
 echo ""
 echo "$CURRENT_STEP..."
 
@@ -653,13 +734,13 @@ else
     cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY" false
 fi
 
-CURRENT_STEP="Step 5: Performing security cleanup"
+CURRENT_STEP="Step 6: Performing security cleanup"
 echo ""
 echo "$CURRENT_STEP..."
 # Note: cleanup will be performed by EXIT trap, but we can call it explicitly for user feedback
 perform_cleanup
 
-CURRENT_STEP="Step 6: Verifying dynamic hosts in cluster"
+CURRENT_STEP="Step 7: Verifying dynamic hosts in cluster"
 echo ""
 echo "$CURRENT_STEP..."
 

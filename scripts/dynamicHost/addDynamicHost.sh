@@ -43,7 +43,12 @@ trap 'handle_exit' EXIT
 #   (e.g., sudo runuser -u daemon bash addDynamicHost.sh ...)
 #
 
-die () {
+cleanup_and_exit () {
+    # Set error context if we're in a step and haven't already set an error
+    if [ -n "${CURRENT_STEP:-}" ] && [ "$ERROR_OCCURRED" = false ]; then
+        set_error "$1" "${LAST_COMMAND:-}"
+    fi
+    
     # Write error message to a monitored MarkLogic log file if it exists.
     if [ -f "/var/opt/MarkLogic/Logs/ErrorLog.txt" ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') Unable to add dynamic host: $1" >> /var/opt/MarkLogic/Logs/ErrorLog.txt
@@ -122,9 +127,8 @@ handle_exit() {
         echo >&2 "Error: $ERROR_MESSAGE"
         echo >&2 "═══════════════════════════════════════════════════════════════"
         echo >&2 ""
-        echo >&2 "⚠️  NOTE: For some errors, the details may be shown in the output above"
-        echo >&2 "    this summary box. Look for bash error messages immediately"
-        echo >&2 "    before the error box appeared."
+        echo >&2 "⚠️  NOTE: For some errors, including bash error messages, details may be"
+        echo >&2 "    shown immediately above the summary box."
         echo >&2 ""
         echo >&2 "Performing security cleanup before exit..."
         echo >&2 ""
@@ -192,12 +196,6 @@ perform_cleanup() {
     fi
 }
 
-cleanup_and_exit() {
-    set_error "$1" "${2:-}"
-    # Exit and let trap handle error display and cleanup
-    exit 1
-}
-
 # Parse command line arguments
 DRY_RUN=false
 VERBOSE=false
@@ -243,14 +241,14 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         *)
-            die "Unknown parameter: $1" true
+            cleanup_and_exit "Unknown parameter: $1" true
             ;;
     esac
 done
 
 # Validate required parameters
-[ -z "$BOOTSTRAP_HOST" ] && die "Bootstrap host is required (--bootstrap-host)" true
-[ -z "$USERNAME" ] && die "Username is required (--username)" true
+[ -z "$BOOTSTRAP_HOST" ] && cleanup_and_exit "Bootstrap host is required (--bootstrap-host)" true
+[ -z "$USERNAME" ] && cleanup_and_exit "Username is required (--username)" true
 
 # Handle password: use environment variable if set, otherwise prompt for input
 if [ -n "${MARKLOGIC_PASSWORD:-}" ]; then
@@ -259,13 +257,13 @@ else
     echo -n "Enter MarkLogic password: " >&2
     read -s PASSWORD
     echo >&2  # Add newline after silent input
-    [ -z "$PASSWORD" ] && die "Password is required" true
+    [ -z "$PASSWORD" ] && cleanup_and_exit "Password is required" true
 fi
 
-[ -z "$DYNAMIC_HOST" ] && die "New host is required (--dynamic-host)" true
+[ -z "$DYNAMIC_HOST" ] && cleanup_and_exit "New host is required (--dynamic-host)" true
 
 # Validate that bootstrap and dynamic hosts are different
-[ "$BOOTSTRAP_HOST" = "$DYNAMIC_HOST" ] && die "Bootstrap host and dynamic host cannot be the same (${BOOTSTRAP_HOST})" true
+[ "$BOOTSTRAP_HOST" = "$DYNAMIC_HOST" ] && cleanup_and_exit "Bootstrap host and dynamic host cannot be the same (${BOOTSTRAP_HOST})" true
 
 # Set defaults
 BOOTSTRAP_ADMIN_PORT=${BOOTSTRAP_ADMIN_PORT:-8001}
@@ -429,7 +427,7 @@ ENABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -d '{"allow-dynamic-hosts":true}' 2>&1)
 
 if [ "$?" -ne 0 ]; then
-    cleanup_and_exit "Failed to enable dynamic hosts: $ENABLE_RESPONSE" "$LAST_COMMAND"
+    cleanup_and_exit "Failed to enable dynamic hosts: $ENABLE_RESPONSE" false
 else
     DYNAMIC_HOSTS_ENABLED=true
     echo "Successfully enabled dynamic hosts for group ${GROUP_NAME}"
@@ -444,7 +442,7 @@ TOKEN_AUTH_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/servers/Admin/properties?group-id=${GROUP_NAME}" \
     -H "Content-Type: application/json" \
     -d '{"API-token-authentication":true}' 2>&1) || \
-    cleanup_and_exit "Failed to enable API token authentication: $TOKEN_AUTH_RESPONSE" "$LAST_COMMAND"
+    cleanup_and_exit "Failed to enable API token authentication: $TOKEN_AUTH_RESPONSE" false
 
 echo "Successfully enabled API token authentication"
 
@@ -480,7 +478,7 @@ TOKEN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -d "$TOKEN_PAYLOAD" 2>&1)
 
 if [ "$?" -ne 0 ]; then
-    cleanup_and_exit "Failed to generate dynamic host token: $TOKEN_RESPONSE" "$LAST_COMMAND"
+    cleanup_and_exit "Failed to generate dynamic host token: $TOKEN_RESPONSE" false
 fi
 
 if [ "$VERBOSE" = true ]; then
@@ -494,7 +492,7 @@ LAST_COMMAND="extract token from XML response"
 DYNAMIC_TOKEN=$(echo "$TOKEN_RESPONSE" | grep "dynamic-host-token" | sed 's%^.*<dynamic-host-token.*>\(.*\)</dynamic-host-token>.*$%\1%')
 
 if [ -z "$DYNAMIC_TOKEN" ]; then
-    cleanup_and_exit "Failed to extract token from response: $TOKEN_RESPONSE" "$LAST_COMMAND"
+    cleanup_and_exit "Failed to extract token from response: $TOKEN_RESPONSE" false
 fi
 
 echo "Successfully generated dynamic host token"
@@ -528,9 +526,9 @@ fi
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
     echo "Successfully added ${DYNAMIC_HOST} to the cluster"
 elif [ "$HTTP_CODE" = "401" ]; then
-    cleanup_and_exit "Failed to join dynamic host: Host ${DYNAMIC_HOST} appears to already be initialized or part of another cluster (HTTP 401)" "$LAST_COMMAND"
+    cleanup_and_exit "Failed to join dynamic host: Host ${DYNAMIC_HOST} appears to already be initialized or part of another cluster (HTTP 401)" false
 else
-    cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY" "$LAST_COMMAND"
+    cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY" false
 fi
 
 CURRENT_STEP="Step 5: Performing security cleanup"
@@ -548,14 +546,14 @@ LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME
 DYNAMIC_HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts" \
     -H "Accept: application/json" 2>&1) || \
-    die "Failed to retrieve dynamic hosts: $DYNAMIC_HOSTS_RESPONSE" false
+    cleanup_and_exit "Failed to retrieve dynamic hosts: $DYNAMIC_HOSTS_RESPONSE" false
 
 # Also check all hosts in cluster to verify the specific host was added
 LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts"
 HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts" \
     -H "Accept: application/json" 2>&1) || \
-    die "Failed to retrieve cluster hosts: $HOSTS_RESPONSE" false
+    cleanup_and_exit "Failed to retrieve cluster hosts: $HOSTS_RESPONSE" false
 
 if [ "$VERBOSE" = true ]; then
     echo "Dynamic hosts response:"
@@ -572,7 +570,7 @@ if echo "$HOSTS_RESPONSE" | grep -q "$DYNAMIC_HOST"; then
 else
     echo "✗ Verification failed: Host $DYNAMIC_HOST was not found in the cluster"
     echo "Dynamic hosts response: $DYNAMIC_HOSTS_RESPONSE"
-    die "Host verification failed - $DYNAMIC_HOST was not successfully added to the cluster" false
+    cleanup_and_exit "Host verification failed - $DYNAMIC_HOST was not successfully added to the cluster" false
 fi
 
 echo ""

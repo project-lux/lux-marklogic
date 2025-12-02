@@ -26,6 +26,9 @@
 # Prerequisites:
 #
 # - curl must be available in PATH
+# - grep, sed, cut must be available (standard UNIX text processing tools)
+# - nc (netcat) recommended for connectivity checks (curl used as fallback)
+# - python3 optional for JSON formatting in verbose mode (falls back to raw output)
 # - The MarkLogic user must have admin privileges or appropriate dynamic host management roles
 # - MarkLogic Server must be installed and running (but uninitialized) on the dynamic host
 # - To write to ErrorLog.txt, the script's process owner must have write permissions to it.

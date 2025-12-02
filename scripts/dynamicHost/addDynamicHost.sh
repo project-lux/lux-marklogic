@@ -1,11 +1,49 @@
 #!/bin/bash
 set -euo pipefail
 
+# =============================================================================
+# CONFIGURATION CONSTANTS
+# =============================================================================
+
+# MarkLogic cluster configuration.
+readonly CLUSTER_NAME="Default"
+readonly GROUP_NAME="Default"
+readonly TOKEN_DURATION="PT15M"
+readonly TOKEN_COMMENT="auto-scaling event"
+
+# Port defaults
+readonly DEFAULT_ADMIN_PORT=8001
+readonly DEFAULT_MANAGE_PORT=8002
+
+# Tools configuration
+readonly CURL_EXEC="/usr/bin/curl"
+readonly MARKLOGIC_ERROR_LOG="/var/opt/MarkLogic/Logs/ErrorLog.txt"
+
+# =============================================================================
+# RUNTIME VARIABLES
+# =============================================================================
+
 # Error tracking for better visibility
 ERROR_OCCURRED=false
 ERROR_STEP=""
 ERROR_MESSAGE=""
 LAST_COMMAND=""
+
+# Security cleanup tracking variables
+DYNAMIC_HOSTS_ENABLED=false
+API_TOKEN_AUTH_ENABLED=false
+DYNAMIC_TOKEN=""
+
+# Command line parameters (initialized in argument parsing)
+DRY_RUN=false
+VERBOSE=false
+BOOTSTRAP_HOST=""
+BOOTSTRAP_ADMIN_PORT=""
+BOOTSTRAP_MANAGE_PORT=""
+USERNAME=""
+DYNAMIC_HOST=""
+DYNAMIC_ADMIN_PORT=""
+PASSWORD=""
 
 # Ensure cleanup always runs on script exit
 trap 'handle_exit' EXIT
@@ -50,8 +88,8 @@ cleanup_and_exit () {
     fi
     
     # Write error message to a monitored MarkLogic log file if it exists.
-    if [ -f "/var/opt/MarkLogic/Logs/ErrorLog.txt" ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') Unable to add dynamic host: $1" >> /var/opt/MarkLogic/Logs/ErrorLog.txt
+    if [ -f "$MARKLOGIC_ERROR_LOG" ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Unable to add dynamic host: $1" >> "$MARKLOGIC_ERROR_LOG"
     fi
 
     script=`basename "$0"`
@@ -159,8 +197,8 @@ perform_cleanup() {
     if [ -n "${DYNAMIC_TOKEN:-}" ]; then
         echo >&2 "Revoking dynamic host token for security..."
         set +e  # Don't exit on cleanup failures
-        TOKEN_REVOKE_RESPONSE=$(${curlExec:-curl} --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
-            -k -s -X DELETE "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/clusters/${CLUSTER_NAME:-}/dynamic-host-token" \
+        TOKEN_REVOKE_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
+            -k -s -X DELETE "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token" \
             -H "Content-Type: application/json" \
             -d '{"dynamic-host-tokens": {"token": ["'"$DYNAMIC_TOKEN"'"]}}' 2>&1)
         
@@ -177,8 +215,8 @@ perform_cleanup() {
     if [ "${API_TOKEN_AUTH_ENABLED:-false}" = true ]; then
         echo >&2 "Disabling API token authentication for security..."
         set +e  # Don't exit on cleanup failures
-        API_AUTH_CLEANUP_RESPONSE=$(${curlExec:-curl} --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
-            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/servers/Admin/properties?group-id=${GROUP_NAME:-}" \
+        API_AUTH_CLEANUP_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
+            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/servers/Admin/properties?group-id=${GROUP_NAME}" \
             -H "Content-Type: application/json" \
             -d '{"API-token-authentication":false}' 2>&1)
         
@@ -195,8 +233,8 @@ perform_cleanup() {
     if [ "${DYNAMIC_HOSTS_ENABLED:-false}" = true ]; then
         echo >&2 "Disabling dynamic hosts for security..."
         set +e  # Don't exit on cleanup failures
-        CLEANUP_RESPONSE=$(${curlExec:-curl} --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
-            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/groups/${GROUP_NAME:-}/properties" \
+        CLEANUP_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
+            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/groups/${GROUP_NAME}/properties" \
             -H "Content-Type: application/json" \
             -d '{"allow-dynamic-hosts":false}' 2>&1)
         
@@ -214,15 +252,9 @@ perform_cleanup() {
     fi
 }
 
-# Parse command line arguments
-DRY_RUN=false
-VERBOSE=false
-BOOTSTRAP_HOST=""
-BOOTSTRAP_ADMIN_PORT=""
-BOOTSTRAP_MANAGE_PORT=""
-USERNAME=""
-DYNAMIC_HOST=""
-DYNAMIC_ADMIN_PORT=""
+# =============================================================================
+# ARGUMENT PARSING
+# =============================================================================
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -283,10 +315,10 @@ fi
 # Validate that bootstrap and dynamic hosts are different
 [ "$BOOTSTRAP_HOST" = "$DYNAMIC_HOST" ] && cleanup_and_exit "Bootstrap host and dynamic host cannot be the same (${BOOTSTRAP_HOST})" true
 
-# Set defaults
-BOOTSTRAP_ADMIN_PORT=${BOOTSTRAP_ADMIN_PORT:-8001}
-BOOTSTRAP_MANAGE_PORT=${BOOTSTRAP_MANAGE_PORT:-8002}
-DYNAMIC_ADMIN_PORT=${DYNAMIC_ADMIN_PORT:-8001}
+# Set defaults using constants
+BOOTSTRAP_ADMIN_PORT=${BOOTSTRAP_ADMIN_PORT:-$DEFAULT_ADMIN_PORT}
+BOOTSTRAP_MANAGE_PORT=${BOOTSTRAP_MANAGE_PORT:-$DEFAULT_MANAGE_PORT}
+DYNAMIC_ADMIN_PORT=${DYNAMIC_ADMIN_PORT:-$DEFAULT_ADMIN_PORT}
 
 # Dry run helper functions
 check_connectivity() {
@@ -328,7 +360,7 @@ check_connectivity() {
 test_authentication() {
     local response
     set +e
-    response=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+    response=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
         -k -s -w "%{http_code}" -o /dev/null \
         "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups" 2>/dev/null)
     local result=$?
@@ -375,7 +407,7 @@ perform_dry_run() {
     
     echo ""
     echo "=== Planned Operations ==="
-    echo "1. → Would enable dynamic hosts on Default group (temporary)"
+    echo "1. → Would enable dynamic hosts on $GROUP_NAME group (temporary)"
     echo "2. → Would generate dynamic host token from bootstrap node"
     echo "3. → Would join $DYNAMIC_HOST to cluster using token"
     echo "4. → Would disable dynamic hosts for security"
@@ -393,17 +425,10 @@ perform_dry_run() {
         exit 1
     fi
 }
-CLUSTER_NAME="Default"
-GROUP_NAME="Default"
-DURATION="PT15M"
-COMMENT="auto-scaling event"
 
-# Security cleanup tracking variables
-DYNAMIC_HOSTS_ENABLED=false
-API_TOKEN_AUTH_ENABLED=false
-DYNAMIC_TOKEN=""
-
-curlExec=/usr/bin/curl
+# =============================================================================
+# MAIN SCRIPT EXECUTION
+# =============================================================================
 
 # Construct URLs
 BOOTSTRAP_ADMIN_URL="https://${BOOTSTRAP_HOST}:${BOOTSTRAP_ADMIN_PORT}"
@@ -440,7 +465,7 @@ echo ""
 echo "$CURRENT_STEP..."
 
 LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties"
-ENABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+ENABLE_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
     -H "Content-Type: application/json" \
     -d '{"allow-dynamic-hosts":true}' 2>&1)
@@ -457,7 +482,7 @@ echo ""
 echo "$CURRENT_STEP..."
 
 LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/servers/Admin/properties"
-TOKEN_AUTH_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+TOKEN_AUTH_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/servers/Admin/properties?group-id=${GROUP_NAME}" \
     -H "Content-Type: application/json" \
     -d '{"API-token-authentication":true}' 2>&1) || \
@@ -476,8 +501,8 @@ TOKEN_PAYLOAD=$(cat <<EOF
     "group": "${GROUP_NAME}",
     "host": "${BOOTSTRAP_HOST}",
     "port": ${BOOTSTRAP_ADMIN_PORT},
-    "duration": "${DURATION}",
-    "comment": "${COMMENT}"
+    "duration": "${TOKEN_DURATION}",
+    "comment": "${TOKEN_COMMENT}"
   }
 }
 EOF
@@ -492,7 +517,7 @@ fi
 
 # Generate the token using XML format for easier parsing like their script
 LAST_COMMAND="curl POST ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token"
-TOKEN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+TOKEN_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X POST "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token?format=xml" \
     -H "Content-Type: application/json" \
     -d "$TOKEN_PAYLOAD" 2>&1)
@@ -526,7 +551,7 @@ INIT_PAYLOAD="<init xmlns=\"http://marklogic.com/manage\"><dynamic-host-token>${
 
 # Join the dynamic host directly using the /admin/v1/init endpoint
 LAST_COMMAND="curl POST ${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init"
-JOIN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+JOIN_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -w "HTTPCODE:%{http_code}" \
     -X POST "${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init" \
     -H "Content-Type: application/xml" \
@@ -563,14 +588,14 @@ echo "$CURRENT_STEP..."
 
 # First check dynamic hosts endpoint
 LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts"
-DYNAMIC_HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+DYNAMIC_HOSTS_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts" \
     -H "Accept: application/json" 2>&1) || \
     cleanup_and_exit "Failed to retrieve dynamic hosts: $DYNAMIC_HOSTS_RESPONSE" false
 
 # Also check all hosts in cluster to verify the specific host was added
 LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts"
-HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+HOSTS_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts" \
     -H "Accept: application/json" 2>&1) || \
     cleanup_and_exit "Failed to retrieve cluster hosts: $HOSTS_RESPONSE" false

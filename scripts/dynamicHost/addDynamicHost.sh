@@ -1,6 +1,39 @@
 #!/bin/bash
 set -euo pipefail
 
+#
+# This script adds a dynamic host to a MarkLogic cluster by:
+# 1. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
+# 2. Generating a dynamic host token from the bootstrap node
+# 3. Directly joining the dynamic host to the cluster using the token
+# 4. Disabling dynamic hosts for security
+# 5. Verifying the dynamic host was accepted by the cluster
+#
+# It can be run interactively or headless. If an error occurs and /var/opt/MarkLogic/Logs/ErrorLog.txt
+# exists, the script appends an error message to it. This log should be monitored so a system
+# administrator is notified. The unique string included is "Unable to add dynamic host".
+#
+# Password Options (in order of security, most secure first):
+#
+# 1. Interactive prompt (RECOMMENDED): Password will be prompted securely
+#    Example: ./addDynamicHost.sh --bootstrap-host HOST --username USER --dynamic-host HOST
+#
+# 2. Environment variable: Set MARKLOGIC_PASSWORD before running the script
+#    Example: export MARKLOGIC_PASSWORD=secret; ./addDynamicHost.sh ...
+#    Or with sudo: sudo MARKLOGIC_PASSWORD=secret runuser -u daemon -- ./addDynamicHost.sh ...
+#
+# Prerequisites:
+#
+# - curl must be available in PATH
+# - jq recommended for reliable JSON parsing (python3 used as fallback, grep/sed as last resort)
+# - nc (netcat) recommended for connectivity checks (curl used as fallback)
+# - python3 optional for JSON parsing and formatting (improves reliability)
+# - The MarkLogic user must have admin privileges or appropriate dynamic host management roles
+# - MarkLogic Server must be installed and running (but uninitialized) on the dynamic host
+# - To write to ErrorLog.txt, the script's process owner must have write permissions to it.
+#   (e.g., sudo runuser -u daemon bash addDynamicHost.sh ...)
+#
+
 # =============================================================================
 # CONFIGURATION CONSTANTS
 # =============================================================================
@@ -95,39 +128,6 @@ PASSWORD=""
 
 # Ensure cleanup always runs on script exit
 trap 'handle_exit' EXIT
-
-#
-# This script adds a dynamic host to a MarkLogic cluster by:
-# 1. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
-# 2. Generating a dynamic host token from the bootstrap node
-# 3. Directly joining the dynamic host to the cluster using the token
-# 4. Disabling dynamic hosts for security
-# 5. Verifying the dynamic host was accepted by the cluster
-#
-# It can be run interactively or headless. If an error occurs and /var/opt/MarkLogic/Logs/ErrorLog.txt
-# exists, the script appends an error message to it. This log should be monitored so a system
-# administrator is notified. The unique string included is "Unable to add dynamic host".
-#
-# Password Options (in order of security, most secure first):
-#
-# 1. Interactive prompt (RECOMMENDED): Password will be prompted securely
-#    Example: ./addDynamicHost.sh --bootstrap-host HOST --username USER --dynamic-host HOST
-#
-# 2. Environment variable: Set MARKLOGIC_PASSWORD before running the script
-#    Example: export MARKLOGIC_PASSWORD=secret; ./addDynamicHost.sh ...
-#    Or with sudo: sudo MARKLOGIC_PASSWORD=secret runuser -u daemon -- ./addDynamicHost.sh ...
-#
-# Prerequisites:
-#
-# - curl must be available in PATH
-# - jq recommended for reliable JSON parsing (python3 used as fallback, grep/sed as last resort)
-# - nc (netcat) recommended for connectivity checks (curl used as fallback)
-# - python3 optional for JSON parsing and formatting (improves reliability)
-# - The MarkLogic user must have admin privileges or appropriate dynamic host management roles
-# - MarkLogic Server must be installed and running (but uninitialized) on the dynamic host
-# - To write to ErrorLog.txt, the script's process owner must have write permissions to it.
-#   (e.g., sudo runuser -u daemon bash addDynamicHost.sh ...)
-#
 
 cleanup_and_exit () {
     # Set error context if we're in a step and haven't already set an error

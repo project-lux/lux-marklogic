@@ -173,6 +173,24 @@ perform_cleanup() {
         cleanup_needed=true
     fi
     
+    # Disable API token authentication if it was enabled
+    if [ "${API_TOKEN_AUTH_ENABLED:-false}" = true ]; then
+        echo >&2 "Disabling API token authentication for security..."
+        set +e  # Don't exit on cleanup failures
+        API_AUTH_CLEANUP_RESPONSE=$(${curlExec:-curl} --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
+            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/servers/Admin/properties?group-id=${GROUP_NAME:-}" \
+            -H "Content-Type: application/json" \
+            -d '{"API-token-authentication":false}' 2>&1)
+        
+        if [ "$?" -eq 0 ]; then
+            echo >&2 "Successfully disabled API token authentication"
+        else
+            echo >&2 "Warning: Failed to disable API token authentication: $API_AUTH_CLEANUP_RESPONSE"
+        fi
+        set -e
+        cleanup_needed=true
+    fi
+    
     # Disable dynamic hosts if they were enabled
     if [ "${DYNAMIC_HOSTS_ENABLED:-false}" = true ]; then
         echo >&2 "Disabling dynamic hosts for security..."
@@ -382,6 +400,7 @@ COMMENT="auto-scaling event"
 
 # Security cleanup tracking variables
 DYNAMIC_HOSTS_ENABLED=false
+API_TOKEN_AUTH_ENABLED=false
 DYNAMIC_TOKEN=""
 
 curlExec=/usr/bin/curl
@@ -444,6 +463,7 @@ TOKEN_AUTH_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -d '{"API-token-authentication":true}' 2>&1) || \
     cleanup_and_exit "Failed to enable API token authentication: $TOKEN_AUTH_RESPONSE" false
 
+API_TOKEN_AUTH_ENABLED=true
 echo "Successfully enabled API token authentication"
 
 CURRENT_STEP="Step 3: Generating dynamic host token"

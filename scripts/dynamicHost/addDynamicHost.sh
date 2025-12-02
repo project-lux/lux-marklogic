@@ -24,15 +24,12 @@ trap 'handle_exit' EXIT
 #
 # Password Options (in order of security, most secure first):
 #
-# 1. Interactive prompt (RECOMMENDED): Omit --password to be prompted securely
+# 1. Interactive prompt (RECOMMENDED): Password will be prompted securely
 #    Example: ./addDynamicHost.sh --bootstrap-host HOST --username USER --dynamic-host HOST
 #
 # 2. Environment variable: Set MARKLOGIC_PASSWORD before running the script
 #    Example: export MARKLOGIC_PASSWORD=secret; ./addDynamicHost.sh ...
 #    Or with sudo: sudo MARKLOGIC_PASSWORD=secret runuser -u daemon -- ./addDynamicHost.sh ...
-#
-# 3. Command line argument: Use --password (LEAST SECURE - visible in process list and history)
-#    Example: ./addDynamicHost.sh --bootstrap-host HOST --username USER --password SECRET --dynamic-host HOST
 #
 # Prerequisites:
 #
@@ -57,7 +54,7 @@ die () {
     echo >&2 "$1"
     echo >&2 ""
     if [ "$2" = true ]; then
-        echo >&2 "Usage: $script [--dry-run] [--verbose] --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER [--password PASS] --dynamic-host HOST [--dynamic-admin-port PORT]"
+        echo >&2 "Usage: $script [--dry-run] [--verbose] --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER --dynamic-host HOST [--dynamic-admin-port PORT]"
         echo >&2 ""
         echo >&2 "Parameters:"
         echo >&2 "  --dry-run                     Preview actions without making changes"
@@ -66,7 +63,6 @@ die () {
         echo >&2 "  --bootstrap-admin-port PORT   Bootstrap server admin port (default: 8001)"
         echo >&2 "  --bootstrap-manage-port PORT  Bootstrap server manage port (default: 8002)"
         echo >&2 "  --username USER               MarkLogic username"
-        echo >&2 "  --password PASS               MarkLogic password (optional, uses MARKLOGIC_PASSWORD env var or prompts)"
         echo >&2 "  --dynamic-host HOST           Hostname/IP of the machine joining as dynamic host"
         echo >&2 "  --dynamic-admin-port PORT     Admin port for the joining host (default: 8001)"
         echo >&2 ""
@@ -209,7 +205,6 @@ BOOTSTRAP_HOST=""
 BOOTSTRAP_ADMIN_PORT=""
 BOOTSTRAP_MANAGE_PORT=""
 USERNAME=""
-PASSWORD=""
 DYNAMIC_HOST=""
 DYNAMIC_ADMIN_PORT=""
 
@@ -239,10 +234,6 @@ while [[ $# -gt 0 ]]; do
             USERNAME="$2"
             shift 2
             ;;
-        --password)
-            PASSWORD="$2"
-            shift 2
-            ;;
         --dynamic-host)
             DYNAMIC_HOST="$2"
             shift 2
@@ -262,15 +253,13 @@ done
 [ -z "$USERNAME" ] && die "Username is required (--username)" true
 
 # Handle password: use environment variable if set, otherwise prompt for input
-if [ -z "${PASSWORD:-}" ]; then
-    if [ -n "${MARKLOGIC_PASSWORD:-}" ]; then
-        PASSWORD="$MARKLOGIC_PASSWORD"
-    else
-        echo -n "Enter MarkLogic password: " >&2
-        read -s PASSWORD
-        echo >&2  # Add newline after silent input
-        [ -z "$PASSWORD" ] && die "Password is required" true
-    fi
+if [ -n "${MARKLOGIC_PASSWORD:-}" ]; then
+    PASSWORD="$MARKLOGIC_PASSWORD"
+else
+    echo -n "Enter MarkLogic password: " >&2
+    read -s PASSWORD
+    echo >&2  # Add newline after silent input
+    [ -z "$PASSWORD" ] && die "Password is required" true
 fi
 
 [ -z "$DYNAMIC_HOST" ] && die "New host is required (--dynamic-host)" true

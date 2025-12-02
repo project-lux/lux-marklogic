@@ -725,9 +725,11 @@ if [ "$VERBOSE" = true ]; then
     echo ""
 fi
 
-# Check for success (HTTP 200/201) or specific error conditions
+# Check for success (HTTP 200/201/202) or specific error conditions
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
     echo "Successfully added ${DYNAMIC_HOST} to the cluster"
+elif [ "$HTTP_CODE" = "202" ]; then
+    echo "Join request accepted - ${DYNAMIC_HOST} is restarting to complete cluster join..."
 elif [ "$HTTP_CODE" = "401" ]; then
     cleanup_and_exit "Failed to join dynamic host: Host ${DYNAMIC_HOST} appears to already be initialized or part of another cluster (HTTP 401)" false
 else
@@ -744,14 +746,7 @@ CURRENT_STEP="Step 7: Verifying dynamic hosts in cluster"
 echo ""
 echo "$CURRENT_STEP..."
 
-# First check dynamic hosts endpoint
-LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts"
-DYNAMIC_HOSTS_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
-    -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts" \
-    -H "Accept: application/json" 2>&1) || \
-    cleanup_and_exit "Failed to retrieve dynamic hosts: $DYNAMIC_HOSTS_RESPONSE" false
-
-# Also check all hosts in cluster to verify the specific host was added
+# Check all hosts in cluster to verify the specific host was added
 LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts"
 HOSTS_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts" \
@@ -759,22 +754,22 @@ HOSTS_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     cleanup_and_exit "Failed to retrieve cluster hosts: $HOSTS_RESPONSE" false
 
 if [ "$VERBOSE" = true ]; then
-    echo "Dynamic hosts response:"
-    echo "$DYNAMIC_HOSTS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$DYNAMIC_HOSTS_RESPONSE"
-    echo ""
     echo "All cluster hosts response:"
     echo "$HOSTS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$HOSTS_RESPONSE"
     echo ""
 fi
 
-# Check if the dynamic host appears in the hosts list using proper JSON parsing
-if json_contains_value "$HOSTS_RESPONSE" "$DYNAMIC_HOST"; then
+# Check if the dynamic host appears in the hosts list using EC2 hostname pattern
+# Convert IP address to EC2 hostname format (ip-10-5-156-66)
+EC2_HOSTNAME_PATTERN="ip-$(echo "$DYNAMIC_HOST" | tr '.' '-')"
+
+if json_contains_value "$HOSTS_RESPONSE" "$EC2_HOSTNAME_PATTERN"; then
     echo "✓ Verification successful: Host $DYNAMIC_HOST is now part of the cluster"
 else
     echo "✗ Verification failed: Host $DYNAMIC_HOST was not found in the cluster"
     if [ "$VERBOSE" = true ]; then
-        echo "Dynamic hosts response: $DYNAMIC_HOSTS_RESPONSE"
         echo "All hosts response: $HOSTS_RESPONSE"
+        echo "Searched for EC2 hostname pattern: $EC2_HOSTNAME_PATTERN"
     fi
     cleanup_and_exit "Host verification failed - $DYNAMIC_HOST was not successfully added to the cluster" false
 fi

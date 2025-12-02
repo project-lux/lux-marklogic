@@ -220,21 +220,21 @@ cleanup_and_exit () {
     echo >&2 "$1"
     echo >&2 ""
     if [ "$2" = true ]; then
-        echo >&2 "Usage: $script [--dry-run] [--verbose] --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER --dynamic-host HOST [--dynamic-admin-port PORT]"
+        echo >&2 "Usage: $script [--dry-run] [--verbose] --bootstrap-host HOST --username USER --dynamic-host HOST [options]"
         echo >&2 ""
-        echo >&2 "Parameters:"
-        echo >&2 "  --dry-run                     Preview actions without making changes"
-        echo >&2 "  --verbose                     Show detailed request/response information"
-        echo >&2 "  --bootstrap-host HOST         MarkLogic bootstrap server hostname/IP (existing cluster node)"
-        echo >&2 "  --bootstrap-admin-port PORT   Bootstrap server admin port (default: 8001)"
-        echo >&2 "  --bootstrap-manage-port PORT  Bootstrap server manage port (default: 8002)"
-        echo >&2 "  --username USER               MarkLogic username"
-        echo >&2 "  --dynamic-host HOST           Hostname/IP of the machine joining as dynamic host"
-        echo >&2 "  --dynamic-admin-port PORT     Admin port for the joining host (default: 8001)"
+        echo >&2 "Required:"
+        echo >&2 "  --bootstrap-host HOST         Existing cluster node hostname/IP"
+        echo >&2 "  --username USER               MarkLogic admin username"
+        echo >&2 "  --dynamic-host HOST           New host to add to cluster"
         echo >&2 ""
-        echo >&2 "Example: $script --bootstrap-host 10.0.1.100 --username admin --dynamic-host 10.0.1.200"
-        echo >&2 "Example: $script --dry-run --bootstrap-host 10.0.1.100 --username admin --dynamic-host 10.0.1.200"
-        echo >&2 "Example: MARKLOGIC_PASSWORD=secret $script --bootstrap-host 10.0.1.100 --username admin --dynamic-host 10.0.1.200"
+        echo >&2 "Optional:"
+        echo >&2 "  --dry-run                     Show configuration and exit"
+        echo >&2 "  --verbose                     Show detailed output"
+        echo >&2 "  --bootstrap-admin-port PORT   Bootstrap admin port (default: $DEFAULT_ADMIN_PORT)"
+        echo >&2 "  --bootstrap-manage-port PORT  Bootstrap manage port (default: $DEFAULT_MANAGE_PORT)"
+        echo >&2 "  --dynamic-admin-port PORT     Dynamic host admin port (default: $DEFAULT_ADMIN_PORT)"
+        echo >&2 ""
+        echo >&2 "Password: Use MARKLOGIC_PASSWORD env var or interactive prompt"
         echo >&2 ""
     fi
     exit 1
@@ -445,127 +445,16 @@ fi
 # Validate that bootstrap and dynamic hosts are different
 [ "$BOOTSTRAP_HOST" = "$DYNAMIC_HOST" ] && cleanup_and_exit "Bootstrap host and dynamic host cannot be the same (${BOOTSTRAP_HOST})" true
 
-# Set defaults using constants
+# Set port defaults and validate
 BOOTSTRAP_ADMIN_PORT=${BOOTSTRAP_ADMIN_PORT:-$DEFAULT_ADMIN_PORT}
-BOOTSTRAP_MANAGE_PORT=${BOOTSTRAP_MANAGE_PORT:-$DEFAULT_MANAGE_PORT}
+BOOTSTRAP_MANAGE_PORT=${BOOTSTRAP_MANAGE_PORT:-$DEFAULT_MANAGE_PORT} 
 DYNAMIC_ADMIN_PORT=${DYNAMIC_ADMIN_PORT:-$DEFAULT_ADMIN_PORT}
 
-# Validate port numbers
-if ! validate_port "$BOOTSTRAP_ADMIN_PORT"; then
-    cleanup_and_exit "Invalid bootstrap admin port: $BOOTSTRAP_ADMIN_PORT (must be 1-65535)" true
-fi
-if ! validate_port "$BOOTSTRAP_MANAGE_PORT"; then
-    cleanup_and_exit "Invalid bootstrap manage port: $BOOTSTRAP_MANAGE_PORT (must be 1-65535)" true
-fi
-if ! validate_port "$DYNAMIC_ADMIN_PORT"; then
-    cleanup_and_exit "Invalid dynamic host admin port: $DYNAMIC_ADMIN_PORT (must be 1-65535)" true
-fi
-
-# Dry run helper functions
-check_connectivity() {
-    local host="$1"
-    local port="$2"
-    local description="$3"
-    
-    if command -v nc >/dev/null 2>&1; then
-        # Disable exit on error for this specific command
-        set +e
-        nc -z "$host" "$port" 2>/dev/null
-        local result=$?
-        set -e
-        
-        if [ $result -eq 0 ]; then
-            echo "✓ Connectivity check: $description ($host:$port) - reachable"
-            return 0
-        else
-            echo "✗ Connectivity check: $description ($host:$port) - FAILED"
-            return 1
-        fi
-    else
-        # Fallback to curl if nc is not available
-        set +e
-        curl -s --connect-timeout 5 "http://$host:$port" >/dev/null 2>&1
-        local result=$?
-        set -e
-        
-        if [ $result -eq 0 ]; then
-            echo "✓ Connectivity check: $description ($host:$port) - reachable"
-            return 0
-        else
-            echo "✗ Connectivity check: $description ($host:$port) - FAILED"
-            return 1
-        fi
-    fi
-}
-
-test_authentication() {
-    local response
-    set +e
-    response=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
-        -k -s -w "%{http_code}" -o /dev/null \
-        "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups" 2>/dev/null)
-    local result=$?
-    set -e
-    
-    if [ $result -eq 0 ] && [ "$response" = "200" ]; then
-        echo "✓ Authentication test: $USERNAME can access management API"
-        return 0
-    else
-        echo "✗ Authentication test: Failed (HTTP $response)"
-        return 1
-    fi
-}
-
-perform_dry_run() {
-    echo ""
-    echo "=== DRY RUN MODE - No changes will be made ==="
-    echo ""
-    
-    local checks_passed=0
-    local total_checks=0
-    
-    # Connectivity checks
-    total_checks=$((total_checks + 1))
-    if check_connectivity "$BOOTSTRAP_HOST" "$BOOTSTRAP_ADMIN_PORT" "Bootstrap admin"; then
-        checks_passed=$((checks_passed + 1))
-    fi
-    
-    total_checks=$((total_checks + 1))
-    if check_connectivity "$BOOTSTRAP_HOST" "$BOOTSTRAP_MANAGE_PORT" "Bootstrap management"; then
-        checks_passed=$((checks_passed + 1))
-    fi
-    
-    total_checks=$((total_checks + 1))
-    if check_connectivity "$DYNAMIC_HOST" "$DYNAMIC_ADMIN_PORT" "Dynamic host admin"; then
-        checks_passed=$((checks_passed + 1))
-    fi
-    
-    # Authentication check
-    total_checks=$((total_checks + 1))
-    if test_authentication; then
-        checks_passed=$((checks_passed + 1))
-    fi
-    
-    echo ""
-    echo "=== Planned Operations ==="
-    echo "1. → Would enable dynamic hosts on $GROUP_NAME group (temporary)"
-    echo "2. → Would generate dynamic host token from bootstrap node"
-    echo "3. → Would join $DYNAMIC_HOST to cluster using token"
-    echo "4. → Would disable dynamic hosts for security"
-    echo "5. → Would verify host acceptance in cluster"
-    echo ""
-    
-    local checks_failed=$((total_checks - checks_passed))
-    
-    if [ $checks_passed -eq $total_checks ]; then
-        echo "✓ All checks passed ($checks_passed/$total_checks) - script would likely succeed"
-        echo "  Run without --dry-run to execute the actual operations"
-        exit 0
-    else
-        echo "✗ $checks_failed of $total_checks checks failed ($checks_passed passed) - fix issues before running"
-        exit 1
-    fi
-}
+for port_check in "bootstrap admin:$BOOTSTRAP_ADMIN_PORT" "bootstrap manage:$BOOTSTRAP_MANAGE_PORT" "dynamic host admin:$DYNAMIC_ADMIN_PORT"; do
+    port_name="${port_check%:*}"
+    port_value="${port_check#*:}"
+    validate_port "$port_value" || cleanup_and_exit "Invalid $port_name port: $port_value (must be 1-65535)" true
+done
 
 # =============================================================================
 # MAIN SCRIPT EXECUTION
@@ -582,19 +471,47 @@ echo "  Bootstrap host: $BOOTSTRAP_HOST"
 echo "  Bootstrap admin port: $BOOTSTRAP_ADMIN_PORT"
 echo "  Bootstrap manage port: $BOOTSTRAP_MANAGE_PORT"
 echo "  Username: $USERNAME"
-echo "  Dynamic host: $DYNAMIC_HOST"
-echo "  Dynamic host admin port: $DYNAMIC_ADMIN_PORT"
-if [ "$DRY_RUN" = true ]; then
-    echo "  Mode: DRY RUN (preview only)"
-fi
-if [ "$VERBOSE" = true ]; then
-    echo "  Mode: VERBOSE (detailed output)"
-fi
-echo ""
 
-# Execute dry run if requested
+# Execute dry run if requested - show configuration and validate connectivity
 if [ "$DRY_RUN" = true ]; then
-    perform_dry_run
+    echo ""
+    echo "=== DRY RUN MODE - No changes will be made ==="
+    echo "Configuration:"
+    echo "  Bootstrap: $BOOTSTRAP_HOST:$BOOTSTRAP_ADMIN_PORT (admin) / $BOOTSTRAP_HOST:$BOOTSTRAP_MANAGE_PORT (manage)"
+    echo "  Dynamic host: $DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT"
+    echo "  Username: $USERNAME"
+    echo ""
+    
+    # Simple connectivity checks using curl (no complex fallback logic)
+    echo "Connectivity checks:"
+    if curl -s --connect-timeout 5 "$BOOTSTRAP_HOST:$BOOTSTRAP_ADMIN_PORT" >/dev/null 2>&1; then
+        echo "✓ Bootstrap admin port reachable"
+    else
+        echo "✗ Bootstrap admin port ($BOOTSTRAP_HOST:$BOOTSTRAP_ADMIN_PORT) unreachable"
+    fi
+    
+    if curl -s --connect-timeout 5 "$BOOTSTRAP_HOST:$BOOTSTRAP_MANAGE_PORT" >/dev/null 2>&1; then
+        echo "✓ Bootstrap manage port reachable"
+    else
+        echo "✗ Bootstrap manage port ($BOOTSTRAP_HOST:$BOOTSTRAP_MANAGE_PORT) unreachable"
+    fi
+    
+    if curl -s --connect-timeout 5 "$DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT" >/dev/null 2>&1; then
+        echo "✓ Dynamic host admin port reachable"
+    else
+        echo "✗ Dynamic host admin port ($DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT) unreachable"
+    fi
+    
+    echo ""
+    echo "Operations that would be performed:"
+    echo "1. Enable dynamic hosts on $GROUP_NAME group (temporary)"
+    echo "2. Generate dynamic host token from bootstrap node"
+    echo "3. Join $DYNAMIC_HOST to cluster using token"
+    echo "4. Disable dynamic hosts for security"
+    echo "5. Verify host acceptance in cluster"
+    echo ""
+    echo "Run without --dry-run to execute the actual operations"
+    exit 0
 fi
 
 echo "Bootstrap server admin: ${BOOTSTRAP_ADMIN_URL}"
@@ -692,11 +609,22 @@ INIT_PAYLOAD="<init xmlns=\"http://marklogic.com/manage\"><dynamic-host-token>${
 
 # Join the dynamic host directly using the /admin/v1/init endpoint
 LAST_COMMAND="curl POST ${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init"
+echo "Attempting to join dynamic host to cluster..."
+
+# Use more detailed curl output and better error capture
+set +e  # Temporarily disable exit on error to capture details
 JOIN_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
-    -k -s -w "HTTPCODE:%{http_code}" \
+    -k -s -w "HTTPCODE:%{http_code}" --connect-timeout 30 --max-time 60 \
     -X POST "${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init" \
     -H "Content-Type: application/xml" \
     -d "$INIT_PAYLOAD" 2>&1)
+JOIN_EXIT_CODE=$?
+set -e  # Re-enable exit on error
+
+# Check if curl command itself failed
+if [ $JOIN_EXIT_CODE -ne 0 ]; then
+    cleanup_and_exit "Failed to join dynamic host: curl error code $JOIN_EXIT_CODE when connecting to $DYNAMIC_HOST:$DYNAMIC_ADMIN_PORT. See https://curl.se/libcurl/c/libcurl-errors.html for error details. Response: $JOIN_RESPONSE" false
+fi
 
 # Extract HTTP status code and body more reliably
 if echo "$JOIN_RESPONSE" | grep -q "HTTPCODE:[0-9]*$"; then

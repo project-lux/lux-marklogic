@@ -101,6 +101,76 @@ json_contains_value() {
 }
 
 # =============================================================================
+# INPUT VALIDATION FUNCTIONS
+# =============================================================================
+
+# Validate hostname or IP address format
+# Usage: validate_hostname_or_ip "hostname"
+validate_hostname_or_ip() {
+    local host="$1"
+    
+    # Check for empty input
+    [ -z "$host" ] && return 1
+    
+    # Check for IPv4 format (basic pattern)
+    if echo "$host" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'; then
+        # Validate IPv4 octets are 0-255
+        local IFS='.'
+        local octets=($host)
+        for octet in "${octets[@]}"; do
+            [ "$octet" -gt 255 ] 2>/dev/null && return 1
+        done
+        return 0
+    fi
+    
+    # Check for IPv6 format (simplified - contains colons and hex)
+    if echo "$host" | grep -qE '^[0-9a-fA-F:]+$' && echo "$host" | grep -q ':'; then
+        return 0
+    fi
+    
+    # Check if it looks like a malformed IP (contains only digits and dots but didn't match IPv4 pattern)
+    if echo "$host" | grep -qE '^[0-9.]+$'; then
+        # This catches things like "10.5.156.154.14" or "999.999.999.999"
+        return 1
+    fi
+    
+    # Check for valid hostname format (RFC compliant)
+    # - Start and end with alphanumeric
+    # - Can contain alphanumeric, hyphens, and dots
+    # - Each label max 63 chars, total max 253 chars
+    if echo "$host" | grep -qE '^[a-zA-Z0-9]([a-zA-Z0-9\.-]*[a-zA-Z0-9])?$'; then
+        # Check length constraints
+        [ ${#host} -le 253 ] || return 1
+        
+        # Check each label is max 63 characters
+        local IFS='.'
+        local labels=($host)
+        for label in "${labels[@]}"; do
+            [ ${#label} -le 63 ] || return 1
+            # Labels can't start or end with hyphen
+            echo "$label" | grep -qE '^[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?$' || return 1
+        done
+        return 0
+    fi
+    
+    return 1
+}
+
+# Validate port number
+# Usage: validate_port "8001"
+validate_port() {
+    local port="$1"
+    
+    # Check if numeric and in valid range
+    if echo "$port" | grep -qE '^[0-9]+$'; then
+        [ "$port" -ge 1 ] && [ "$port" -le 65535 ] 2>/dev/null
+        return $?
+    fi
+    
+    return 1
+}
+
+# =============================================================================
 # RUNTIME VARIABLES
 # =============================================================================
 
@@ -130,9 +200,14 @@ PASSWORD=""
 trap 'handle_exit' EXIT
 
 cleanup_and_exit () {
-    # Set error context if we're in a step and haven't already set an error
-    if [ -n "${CURRENT_STEP:-}" ] && [ "$ERROR_OCCURRED" = false ]; then
-        set_error "$1" "${LAST_COMMAND:-}"
+    # Set error context if we haven't already set an error
+    if [ "$ERROR_OCCURRED" = false ]; then
+        # Determine the appropriate error step
+        local error_step="${CURRENT_STEP:-Validation}"
+        ERROR_OCCURRED=true
+        ERROR_STEP="$error_step"
+        ERROR_MESSAGE="$1"
+        LAST_COMMAND="${2:-}"
     fi
     
     # Write error message to a monitored MarkLogic log file if it exists.
@@ -213,8 +288,8 @@ handle_exit() {
         echo >&2 "Error: $ERROR_MESSAGE"
         echo >&2 "═══════════════════════════════════════════════════════════════"
         echo >&2 ""
-        echo >&2 "⚠️  NOTE: For some errors, including bash error messages, details may be"
-        echo >&2 "    shown immediately above the summary box."
+        echo >&2 "⚠️  NOTE: When the error message is vague, check above 'Usage:'"
+        echo >&2 "    as you may find additional details there."
         echo >&2 ""
         echo >&2 "Performing security cleanup before exit..."
         echo >&2 ""
@@ -346,6 +421,10 @@ done
 
 # Validate required parameters
 [ -z "$BOOTSTRAP_HOST" ] && cleanup_and_exit "Bootstrap host is required (--bootstrap-host)" true
+if ! validate_hostname_or_ip "$BOOTSTRAP_HOST"; then
+    cleanup_and_exit "Invalid bootstrap host format: $BOOTSTRAP_HOST (must be valid hostname or IP address)" true
+fi
+
 [ -z "$USERNAME" ] && cleanup_and_exit "Username is required (--username)" true
 
 # Handle password: use environment variable if set, otherwise prompt for input
@@ -359,6 +438,9 @@ else
 fi
 
 [ -z "$DYNAMIC_HOST" ] && cleanup_and_exit "New host is required (--dynamic-host)" true
+if ! validate_hostname_or_ip "$DYNAMIC_HOST"; then
+    cleanup_and_exit "Invalid dynamic host format: $DYNAMIC_HOST (must be valid hostname or IP address)" true
+fi
 
 # Validate that bootstrap and dynamic hosts are different
 [ "$BOOTSTRAP_HOST" = "$DYNAMIC_HOST" ] && cleanup_and_exit "Bootstrap host and dynamic host cannot be the same (${BOOTSTRAP_HOST})" true
@@ -367,6 +449,17 @@ fi
 BOOTSTRAP_ADMIN_PORT=${BOOTSTRAP_ADMIN_PORT:-$DEFAULT_ADMIN_PORT}
 BOOTSTRAP_MANAGE_PORT=${BOOTSTRAP_MANAGE_PORT:-$DEFAULT_MANAGE_PORT}
 DYNAMIC_ADMIN_PORT=${DYNAMIC_ADMIN_PORT:-$DEFAULT_ADMIN_PORT}
+
+# Validate port numbers
+if ! validate_port "$BOOTSTRAP_ADMIN_PORT"; then
+    cleanup_and_exit "Invalid bootstrap admin port: $BOOTSTRAP_ADMIN_PORT (must be 1-65535)" true
+fi
+if ! validate_port "$BOOTSTRAP_MANAGE_PORT"; then
+    cleanup_and_exit "Invalid bootstrap manage port: $BOOTSTRAP_MANAGE_PORT (must be 1-65535)" true
+fi
+if ! validate_port "$DYNAMIC_ADMIN_PORT"; then
+    cleanup_and_exit "Invalid dynamic host admin port: $DYNAMIC_ADMIN_PORT (must be 1-65535)" true
+fi
 
 # Dry run helper functions
 check_connectivity() {

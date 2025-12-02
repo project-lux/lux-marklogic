@@ -64,26 +64,51 @@ die () {
     exit 1
 }
 
-cleanup_and_exit() {
-    echo >&2 ""
-    echo >&2 "Error: $1"
+perform_cleanup() {
+    local cleanup_needed=false
     
-    # Always attempt cleanup if we enabled dynamic hosts
+    # Revoke token if one was generated
+    if [ -n "$DYNAMIC_TOKEN" ]; then
+        echo >&2 "Revoking dynamic host token for security..."
+        TOKEN_REVOKE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+            -k -s -X DELETE "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token" \
+            -H "Content-Type: application/json" \
+            -d '{"dynamic-host-tokens": {"token": ["'"$DYNAMIC_TOKEN"'"]}}' 2>&1)
+        
+        if [ "$?" -eq 0 ]; then
+            echo >&2 "Successfully revoked dynamic host token"
+        else
+            echo >&2 "Warning: Failed to revoke token: $TOKEN_REVOKE_RESPONSE"
+        fi
+        cleanup_needed=true
+    fi
+    
+    # Disable dynamic hosts if they were enabled
     if [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
-        echo >&2 ""
-        echo >&2 "Attempting to disable dynamic hosts for security cleanup..."
+        echo >&2 "Disabling dynamic hosts for security..."
         CLEANUP_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
             -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
             -H "Content-Type: application/json" \
             -d '{"allow-dynamic-hosts":false}' 2>&1)
         
         if [ "$?" -eq 0 ]; then
-            echo >&2 "Successfully disabled dynamic hosts during cleanup"
+            echo >&2 "Successfully disabled dynamic hosts"
         else
-            echo >&2 "Warning: Failed to disable dynamic hosts during cleanup: $CLEANUP_RESPONSE"
+            echo >&2 "Warning: Failed to disable dynamic hosts: $CLEANUP_RESPONSE"
         fi
+        cleanup_needed=true
     fi
     
+    if [ "$cleanup_needed" = true ]; then
+        echo >&2 "Security cleanup completed"
+    fi
+}
+
+cleanup_and_exit() {
+    echo >&2 ""
+    echo >&2 "Error: $1"
+    echo >&2 ""
+    perform_cleanup
     die "$1" false
 }
 
@@ -256,6 +281,10 @@ GROUP_NAME="Default"
 DURATION="PT15M"
 COMMENT="auto-scaling event"
 
+# Security cleanup tracking variables
+DYNAMIC_HOSTS_ENABLED=false
+DYNAMIC_TOKEN=""
+
 curlExec=/usr/bin/curl
 
 # Construct URLs
@@ -292,7 +321,6 @@ echo "New host: ${DYNAMIC_HOST_ADMIN_URL}"
 echo ""
 echo "Step 1: Temporarily enabling dynamic hosts for group ${GROUP_NAME}..."
 
-DYNAMIC_HOSTS_ENABLED=false
 ENABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
     -H "Content-Type: application/json" \
@@ -399,22 +427,10 @@ else
     cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY"
 fi
 
-# Step 5: Disable dynamic hosts for security (cleanup)
-if [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
-    echo ""
-    echo "Step 5: Disabling dynamic hosts for security..."
-
-    DISABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
-        -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
-        -H "Content-Type: application/json" \
-        -d '{"allow-dynamic-hosts":false}' 2>&1)
-
-    if [ "$?" -eq 0 ]; then
-        echo "Successfully disabled dynamic hosts for group ${GROUP_NAME}"
-    else
-        echo >&2 "Warning: Failed to disable dynamic hosts: $DISABLE_RESPONSE"
-    fi
-fi
+# Step 5: Security cleanup (disable dynamic hosts and revoke token)
+echo ""
+echo "Step 5: Performing security cleanup..."
+perform_cleanup
 
 # Step 6: Verify dynamic hosts in cluster
 echo ""
@@ -452,6 +468,13 @@ fi
 
 echo ""
 echo "Dynamic host addition process completed successfully!"
+
+# Final security cleanup to ensure token is revoked
+if [ -n "$DYNAMIC_TOKEN" ] || [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
+    echo ""
+    echo "Performing final security cleanup..."
+    perform_cleanup
+fi
 echo ""
 echo "Summary:"
 echo "- Bootstrap host: ${BOOTSTRAP_HOST}"

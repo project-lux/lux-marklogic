@@ -1,4 +1,15 @@
 #!/bin/bash
+set -euo pipefail
+
+# Error tracking for better visibility
+ERROR_OCCURRED=false
+ERROR_STEP=""
+ERROR_MESSAGE=""
+LAST_COMMAND=""
+
+# Ensure cleanup always runs on script exit
+trap 'handle_exit' EXIT
+
 #
 # This script adds a dynamic host to a MarkLogic cluster by:
 # 1. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
@@ -67,14 +78,89 @@ die () {
     exit 1
 }
 
+handle_exit() {
+    local exit_code=$?
+    
+    if [ $exit_code -ne 0 ] && [ "$ERROR_OCCURRED" = false ]; then
+        # Unexpected error - capture context
+        ERROR_OCCURRED=true
+        ERROR_STEP="${CURRENT_STEP:-Unknown}"
+        
+        # Provide helpful error message based on exit code
+        case $exit_code in
+            1)
+                if [ -n "${LAST_COMMAND:-}" ]; then
+                    ERROR_MESSAGE="Script failed unexpectedly (exit code $exit_code). Check the error message above for details. Last command context: $LAST_COMMAND"
+                else
+                    ERROR_MESSAGE="Script failed unexpectedly (exit code $exit_code). Check the error message above for details (likely syntax error, unbound variable, or command failure)"
+                fi
+                ;;
+            2)
+                ERROR_MESSAGE="Script failed due to misuse of shell builtin or incorrect command usage (exit code $exit_code). Check the error message above for details"
+                ;;
+            126)
+                ERROR_MESSAGE="Script failed because a command was found but not executable (exit code $exit_code). Check file permissions"
+                ;;
+            127)
+                ERROR_MESSAGE="Script failed because a command was not found (exit code $exit_code). Check that required tools (curl, etc.) are installed"
+                ;;
+            130)
+                ERROR_MESSAGE="Script was interrupted by Ctrl+C (exit code $exit_code)"
+                ;;
+            *)
+                ERROR_MESSAGE="Script failed unexpectedly (exit code $exit_code). Check the error message above for details"
+                if [ -n "${LAST_COMMAND:-}" ]; then
+                    ERROR_MESSAGE="$ERROR_MESSAGE. Last command context: $LAST_COMMAND"
+                fi
+                ;;
+        esac
+    fi
+    
+    # Show clear error information before cleanup
+    if [ "$ERROR_OCCURRED" = true ]; then
+        echo >&2 ""
+        echo >&2 "═══════════════════════════════════════════════════════════════"
+        echo >&2 "                        ERROR OCCURRED"
+        echo >&2 "═══════════════════════════════════════════════════════════════"
+        echo >&2 "$ERROR_STEP"
+        echo >&2 "Error: $ERROR_MESSAGE"
+        echo >&2 "═══════════════════════════════════════════════════════════════"
+        echo >&2 ""
+        echo >&2 "⚠️  NOTE: The actual error details are shown in the output above"
+        echo >&2 "    this summary box. Look for bash error messages immediately"
+        echo >&2 "    before the error box appeared."
+        echo >&2 ""
+        echo >&2 "Performing security cleanup before exit..."
+        echo >&2 ""
+    fi
+    
+    # Always perform cleanup
+    perform_cleanup
+    
+    # Exit with appropriate code
+    if [ "$ERROR_OCCURRED" = true ] && [ $exit_code -eq 0 ]; then
+        exit 1
+    else
+        exit $exit_code
+    fi
+}
+
+set_error() {
+    ERROR_OCCURRED=true
+    ERROR_STEP="${CURRENT_STEP:-Unknown}"
+    ERROR_MESSAGE="$1"
+    LAST_COMMAND="${2:-}"
+}
+
 perform_cleanup() {
     local cleanup_needed=false
     
     # Revoke token if one was generated
-    if [ -n "$DYNAMIC_TOKEN" ]; then
+    if [ -n "${DYNAMIC_TOKEN:-}" ]; then
         echo >&2 "Revoking dynamic host token for security..."
-        TOKEN_REVOKE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
-            -k -s -X DELETE "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token" \
+        set +e  # Don't exit on cleanup failures
+        TOKEN_REVOKE_RESPONSE=$(${curlExec:-curl} --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
+            -k -s -X DELETE "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/clusters/${CLUSTER_NAME:-}/dynamic-host-token" \
             -H "Content-Type: application/json" \
             -d '{"dynamic-host-tokens": {"token": ["'"$DYNAMIC_TOKEN"'"]}}' 2>&1)
         
@@ -83,14 +169,16 @@ perform_cleanup() {
         else
             echo >&2 "Warning: Failed to revoke token: $TOKEN_REVOKE_RESPONSE"
         fi
+        set -e
         cleanup_needed=true
     fi
     
     # Disable dynamic hosts if they were enabled
-    if [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
+    if [ "${DYNAMIC_HOSTS_ENABLED:-false}" = true ]; then
         echo >&2 "Disabling dynamic hosts for security..."
-        CLEANUP_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
-            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
+        set +e  # Don't exit on cleanup failures
+        CLEANUP_RESPONSE=$(${curlExec:-curl} --anyauth --user "${USERNAME:-}:${PASSWORD:-}" \
+            -k -s -X PUT "${BOOTSTRAP_MANAGE_URL:-}/manage/v2/groups/${GROUP_NAME:-}/properties" \
             -H "Content-Type: application/json" \
             -d '{"allow-dynamic-hosts":false}' 2>&1)
         
@@ -99,6 +187,7 @@ perform_cleanup() {
         else
             echo >&2 "Warning: Failed to disable dynamic hosts: $CLEANUP_RESPONSE"
         fi
+        set -e
         cleanup_needed=true
     fi
     
@@ -108,16 +197,22 @@ perform_cleanup() {
 }
 
 cleanup_and_exit() {
-    echo >&2 ""
-    echo >&2 "Error: $1"
-    echo >&2 ""
-    perform_cleanup
-    die "$1" false
+    set_error "$1" "${2:-}"
+    # Exit and let trap handle error display and cleanup
+    exit 1
 }
 
 # Parse command line arguments
 DRY_RUN=false
 VERBOSE=false
+BOOTSTRAP_HOST=""
+BOOTSTRAP_ADMIN_PORT=""
+BOOTSTRAP_MANAGE_PORT=""
+USERNAME=""
+PASSWORD=""
+DYNAMIC_HOST=""
+DYNAMIC_ADMIN_PORT=""
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --dry-run)
@@ -167,8 +262,8 @@ done
 [ -z "$USERNAME" ] && die "Username is required (--username)" true
 
 # Handle password: use environment variable if set, otherwise prompt for input
-if [ -z "$PASSWORD" ]; then
-    if [ -n "$MARKLOGIC_PASSWORD" ]; then
+if [ -z "${PASSWORD:-}" ]; then
+    if [ -n "${MARKLOGIC_PASSWORD:-}" ]; then
         PASSWORD="$MARKLOGIC_PASSWORD"
     else
         echo -n "Enter MarkLogic password: " >&2
@@ -195,7 +290,13 @@ check_connectivity() {
     local description="$3"
     
     if command -v nc >/dev/null 2>&1; then
-        if nc -z "$host" "$port" 2>/dev/null; then
+        # Disable exit on error for this specific command
+        set +e
+        nc -z "$host" "$port" 2>/dev/null
+        local result=$?
+        set -e
+        
+        if [ $result -eq 0 ]; then
             echo "✓ Connectivity check: $description ($host:$port) - reachable"
             return 0
         else
@@ -204,7 +305,12 @@ check_connectivity() {
         fi
     else
         # Fallback to curl if nc is not available
-        if curl -s --connect-timeout 5 "http://$host:$port" >/dev/null 2>&1; then
+        set +e
+        curl -s --connect-timeout 5 "http://$host:$port" >/dev/null 2>&1
+        local result=$?
+        set -e
+        
+        if [ $result -eq 0 ]; then
             echo "✓ Connectivity check: $description ($host:$port) - reachable"
             return 0
         else
@@ -216,11 +322,14 @@ check_connectivity() {
 
 test_authentication() {
     local response
+    set +e
     response=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
         -k -s -w "%{http_code}" -o /dev/null \
         "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups" 2>/dev/null)
+    local result=$?
+    set -e
     
-    if [ "$response" = "200" ]; then
+    if [ $result -eq 0 ] && [ "$response" = "200" ]; then
         echo "✓ Authentication test: $USERNAME can access management API"
         return 0
     else
@@ -321,34 +430,39 @@ echo "Bootstrap server manage: ${BOOTSTRAP_MANAGE_URL}"
 echo "New host: ${DYNAMIC_HOST_ADMIN_URL}"
 
 # Step 1: Enable dynamic hosts for the group temporarily
+CURRENT_STEP="Step 1: Enable dynamic hosts"
 echo ""
 echo "Step 1: Temporarily enabling dynamic hosts for group ${GROUP_NAME}..."
 
+LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties"
 ENABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties" \
     -H "Content-Type: application/json" \
     -d '{"allow-dynamic-hosts":true}' 2>&1)
 
 if [ "$?" -ne 0 ]; then
-    die "Failed to enable dynamic hosts: $ENABLE_RESPONSE" false
+    cleanup_and_exit "Failed to enable dynamic hosts: $ENABLE_RESPONSE" "$LAST_COMMAND"
 else
     DYNAMIC_HOSTS_ENABLED=true
     echo "Successfully enabled dynamic hosts for group ${GROUP_NAME}"
 fi
 
 # Step 2: Enable API token authentication for Admin app server
+CURRENT_STEP="Step 2: Enable API token authentication"
 echo ""
 echo "Step 2: Enabling API token authentication for Admin app server..."
 
+LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/servers/Admin/properties"
 TOKEN_AUTH_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X PUT "${BOOTSTRAP_MANAGE_URL}/manage/v2/servers/Admin/properties?group-id=${GROUP_NAME}" \
     -H "Content-Type: application/json" \
     -d '{"API-token-authentication":true}' 2>&1) || \
-    die "Failed to enable API token authentication: $TOKEN_AUTH_RESPONSE" false
+    cleanup_and_exit "Failed to enable API token authentication: $TOKEN_AUTH_RESPONSE" "$LAST_COMMAND"
 
 echo "Successfully enabled API token authentication"
 
 # Step 3: Generate dynamic host token
+CURRENT_STEP="Step 3: Generate dynamic host token"
 echo ""
 echo "Step 3: Generating dynamic host token..."
 
@@ -373,13 +487,14 @@ if [ "$VERBOSE" = true ]; then
 fi
 
 # Generate the token using XML format for easier parsing like their script
+LAST_COMMAND="curl POST ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token"
 TOKEN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X POST "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token?format=xml" \
     -H "Content-Type: application/json" \
     -d "$TOKEN_PAYLOAD" 2>&1)
 
 if [ "$?" -ne 0 ]; then
-    cleanup_and_exit "Failed to generate dynamic host token: $TOKEN_RESPONSE"
+    cleanup_and_exit "Failed to generate dynamic host token: $TOKEN_RESPONSE" "$LAST_COMMAND"
 fi
 
 if [ "$VERBOSE" = true ]; then
@@ -389,15 +504,17 @@ if [ "$VERBOSE" = true ]; then
 fi
 
 # Extract token from XML response using sed like their script
+LAST_COMMAND="extract token from XML response"
 DYNAMIC_TOKEN=$(echo "$TOKEN_RESPONSE" | grep "dynamic-host-token" | sed 's%^.*<dynamic-host-token.*>\(.*\)</dynamic-host-token>.*$%\1%')
 
 if [ -z "$DYNAMIC_TOKEN" ]; then
-    cleanup_and_exit "Failed to extract token from response: $TOKEN_RESPONSE"
+    cleanup_and_exit "Failed to extract token from response: $TOKEN_RESPONSE" "$LAST_COMMAND"
 fi
 
 echo "Successfully generated dynamic host token"
 
 # Step 4: Directly join the dynamic host to the cluster
+CURRENT_STEP="Step 4: Join dynamic host to cluster"
 echo ""
 echo "Step 4: Adding dynamic host ${DYNAMIC_HOST} to the cluster..."
 
@@ -405,6 +522,7 @@ echo "Step 4: Adding dynamic host ${DYNAMIC_HOST} to the cluster..."
 INIT_PAYLOAD="<init xmlns=\"http://marklogic.com/manage\"><dynamic-host-token>${DYNAMIC_TOKEN}</dynamic-host-token></init>"
 
 # Join the dynamic host directly using the /admin/v1/init endpoint
+LAST_COMMAND="curl POST ${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init"
 JOIN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -w "HTTPCODE:%{http_code}" \
     -X POST "${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init" \
@@ -425,27 +543,32 @@ fi
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
     echo "Successfully added ${DYNAMIC_HOST} to the cluster"
 elif [ "$HTTP_CODE" = "401" ]; then
-    cleanup_and_exit "Failed to join dynamic host: Host ${DYNAMIC_HOST} appears to already be initialized or part of another cluster (HTTP 401)"
+    cleanup_and_exit "Failed to join dynamic host: Host ${DYNAMIC_HOST} appears to already be initialized or part of another cluster (HTTP 401)" "$LAST_COMMAND"
 else
-    cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY"
+    cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY" "$LAST_COMMAND"
 fi
 
 # Step 5: Security cleanup (disable dynamic hosts and revoke token)
+CURRENT_STEP="Step 5: Security cleanup"
 echo ""
 echo "Step 5: Performing security cleanup..."
+# Note: cleanup will be performed by EXIT trap, but we can call it explicitly for user feedback
 perform_cleanup
 
 # Step 6: Verify dynamic hosts in cluster
+CURRENT_STEP="Step 6: Verify hosts in cluster"
 echo ""
 echo "Step 6: Verifying dynamic hosts in cluster..."
 
 # First check dynamic hosts endpoint
+LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts"
 DYNAMIC_HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts" \
     -H "Accept: application/json" 2>&1) || \
     die "Failed to retrieve dynamic hosts: $DYNAMIC_HOSTS_RESPONSE" false
 
 # Also check all hosts in cluster to verify the specific host was added
+LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts"
 HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts" \
     -H "Accept: application/json" 2>&1) || \
@@ -472,12 +595,7 @@ fi
 echo ""
 echo "Dynamic host addition process completed successfully!"
 
-# Final security cleanup to ensure token is revoked
-if [ -n "$DYNAMIC_TOKEN" ] || [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
-    echo ""
-    echo "Performing final security cleanup..."
-    perform_cleanup
-fi
+# Note: Final cleanup will be performed automatically by EXIT trap
 echo ""
 echo "Summary:"
 echo "- Bootstrap host: ${BOOTSTRAP_HOST}"

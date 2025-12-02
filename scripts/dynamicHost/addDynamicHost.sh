@@ -126,7 +126,7 @@ handle_exit() {
         echo >&2 "Error: $ERROR_MESSAGE"
         echo >&2 "═══════════════════════════════════════════════════════════════"
         echo >&2 ""
-        echo >&2 "⚠️  NOTE: The actual error details are shown in the output above"
+        echo >&2 "⚠️  NOTE: For some errors, the details may be shown in the output above"
         echo >&2 "    this summary box. Look for bash error messages immediately"
         echo >&2 "    before the error box appeared."
         echo >&2 ""
@@ -429,10 +429,9 @@ echo "Bootstrap server admin: ${BOOTSTRAP_ADMIN_URL}"
 echo "Bootstrap server manage: ${BOOTSTRAP_MANAGE_URL}"
 echo "New host: ${DYNAMIC_HOST_ADMIN_URL}"
 
-# Step 1: Enable dynamic hosts for the group temporarily
-CURRENT_STEP="Step 1: Enable dynamic hosts"
+CURRENT_STEP="Step 1: Temporarily enabling dynamic hosts for group ${GROUP_NAME}"
 echo ""
-echo "Step 1: Temporarily enabling dynamic hosts for group ${GROUP_NAME}..."
+echo "$CURRENT_STEP..."
 
 LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/groups/${GROUP_NAME}/properties"
 ENABLE_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
@@ -447,10 +446,9 @@ else
     echo "Successfully enabled dynamic hosts for group ${GROUP_NAME}"
 fi
 
-# Step 2: Enable API token authentication for Admin app server
-CURRENT_STEP="Step 2: Enable API token authentication"
+CURRENT_STEP="Step 2: Enabling API token authentication for Admin app server"
 echo ""
-echo "Step 2: Enabling API token authentication for Admin app server..."
+echo "$CURRENT_STEP..."
 
 LAST_COMMAND="curl PUT ${BOOTSTRAP_MANAGE_URL}/manage/v2/servers/Admin/properties"
 TOKEN_AUTH_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
@@ -461,10 +459,9 @@ TOKEN_AUTH_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
 
 echo "Successfully enabled API token authentication"
 
-# Step 3: Generate dynamic host token
-CURRENT_STEP="Step 3: Generate dynamic host token"
+CURRENT_STEP="Step 3: Generating dynamic host token"
 echo ""
-echo "Step 3: Generating dynamic host token..."
+echo "$CURRENT_STEP..."
 
 TOKEN_PAYLOAD=$(cat <<EOF
 {
@@ -513,10 +510,9 @@ fi
 
 echo "Successfully generated dynamic host token"
 
-# Step 4: Directly join the dynamic host to the cluster
-CURRENT_STEP="Step 4: Join dynamic host to cluster"
+CURRENT_STEP="Step 4: Adding dynamic host ${DYNAMIC_HOST} to the cluster"
 echo ""
-echo "Step 4: Adding dynamic host ${DYNAMIC_HOST} to the cluster..."
+echo "$CURRENT_STEP..."
 
 # Create XML payload for joining the host
 INIT_PAYLOAD="<init xmlns=\"http://marklogic.com/manage\"><dynamic-host-token>${DYNAMIC_TOKEN}</dynamic-host-token></init>"
@@ -548,17 +544,15 @@ else
     cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY" "$LAST_COMMAND"
 fi
 
-# Step 5: Security cleanup (disable dynamic hosts and revoke token)
-CURRENT_STEP="Step 5: Security cleanup"
+CURRENT_STEP="Step 5: Performing security cleanup"
 echo ""
-echo "Step 5: Performing security cleanup..."
+echo "$CURRENT_STEP..."
 # Note: cleanup will be performed by EXIT trap, but we can call it explicitly for user feedback
 perform_cleanup
 
-# Step 6: Verify dynamic hosts in cluster
-CURRENT_STEP="Step 6: Verify hosts in cluster"
+CURRENT_STEP="Step 6: Verifying dynamic hosts in cluster"
 echo ""
-echo "Step 6: Verifying dynamic hosts in cluster..."
+echo "$CURRENT_STEP..."
 
 # First check dynamic hosts endpoint
 LAST_COMMAND="curl GET ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts"

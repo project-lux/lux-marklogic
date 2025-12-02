@@ -43,10 +43,11 @@ die () {
     echo >&2 "$1"
     echo >&2 ""
     if [ "$2" = true ]; then
-        echo >&2 "Usage: $script [--dry-run] --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER [--password PASS] --dynamic-host HOST [--dynamic-admin-port PORT]"
+        echo >&2 "Usage: $script [--dry-run] [--verbose] --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER [--password PASS] --dynamic-host HOST [--dynamic-admin-port PORT]"
         echo >&2 ""
         echo >&2 "Parameters:"
         echo >&2 "  --dry-run                     Preview actions without making changes"
+        echo >&2 "  --verbose                     Show detailed request/response information"
         echo >&2 "  --bootstrap-host HOST         MarkLogic bootstrap server hostname/IP (existing cluster node)"
         echo >&2 "  --bootstrap-admin-port PORT   Bootstrap server admin port (default: 8001)"
         echo >&2 "  --bootstrap-manage-port PORT  Bootstrap server manage port (default: 8002)"
@@ -88,10 +89,15 @@ cleanup_and_exit() {
 
 # Parse command line arguments
 DRY_RUN=false
+VERBOSE=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --dry-run)
             DRY_RUN=true
+            shift
+            ;;
+        --verbose)
+            VERBOSE=true
             shift
             ;;
         --bootstrap-host)
@@ -268,6 +274,9 @@ echo "  Dynamic host admin port: $DYNAMIC_ADMIN_PORT"
 if [ "$DRY_RUN" = true ]; then
     echo "  Mode: DRY RUN (preview only)"
 fi
+if [ "$VERBOSE" = true ]; then
+    echo "  Mode: VERBOSE (detailed output)"
+fi
 echo ""
 
 # Execute dry run if requested
@@ -316,8 +325,8 @@ TOKEN_PAYLOAD=$(cat <<EOF
 {
   "dynamic-host-token": {
     "group": "${GROUP_NAME}",
-    "host": "${DYNAMIC_HOST}",
-    "port": ${DYNAMIC_ADMIN_PORT},
+    "host": "${BOOTSTRAP_HOST}",
+    "port": ${BOOTSTRAP_ADMIN_PORT},
     "duration": "${DURATION}",
     "comment": "${COMMENT}"
   }
@@ -326,6 +335,11 @@ EOF
 )
 
 echo "Requesting token from: ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token"
+if [ "$VERBOSE" = true ]; then
+    echo "Token request payload:"
+    echo "$TOKEN_PAYLOAD"
+    echo ""
+fi
 
 # Generate the token using XML format for easier parsing like their script
 TOKEN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
@@ -335,6 +349,12 @@ TOKEN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
 
 if [ "$?" -ne 0 ]; then
     cleanup_and_exit "Failed to generate dynamic host token: $TOKEN_RESPONSE"
+fi
+
+if [ "$VERBOSE" = true ]; then
+    echo "Token generation response:"
+    echo "$TOKEN_RESPONSE"
+    echo ""
 fi
 
 # Extract token from XML response using sed like their script
@@ -355,15 +375,29 @@ INIT_PAYLOAD="<init xmlns=\"http://marklogic.com/manage\"><dynamic-host-token>${
 
 # Join the dynamic host directly using the /admin/v1/init endpoint
 JOIN_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
-    -k -s -X POST "${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init" \
+    -k -s -w "HTTPCODE:%{http_code}" \
+    -X POST "${DYNAMIC_HOST_ADMIN_URL}/admin/v1/init" \
     -H "Content-Type: application/xml" \
     -d "$INIT_PAYLOAD" 2>&1)
 
-if [ "$?" -ne 0 ]; then
-    cleanup_and_exit "Failed to join dynamic host to cluster: $JOIN_RESPONSE"
+# Extract HTTP status code
+HTTP_CODE=$(echo "$JOIN_RESPONSE" | grep -o "HTTPCODE:[0-9]*" | cut -d: -f2)
+JOIN_BODY=$(echo "$JOIN_RESPONSE" | sed 's/HTTPCODE:[0-9]*$//')
+
+if [ "$VERBOSE" = true ]; then
+    echo "Join response (HTTP $HTTP_CODE):"
+    echo "$JOIN_BODY"
+    echo ""
 fi
 
-echo "Successfully added ${DYNAMIC_HOST} to the cluster"
+# Check for success (HTTP 200/201) or specific error conditions
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+    echo "Successfully added ${DYNAMIC_HOST} to the cluster"
+elif [ "$HTTP_CODE" = "401" ]; then
+    cleanup_and_exit "Failed to join dynamic host: Host ${DYNAMIC_HOST} appears to already be initialized or part of another cluster (HTTP 401)"
+else
+    cleanup_and_exit "Failed to join dynamic host to cluster (HTTP $HTTP_CODE): $JOIN_BODY"
+fi
 
 # Step 5: Disable dynamic hosts for security (cleanup)
 if [ "$DYNAMIC_HOSTS_ENABLED" = true ]; then
@@ -386,13 +420,35 @@ fi
 echo ""
 echo "Step 6: Verifying dynamic hosts in cluster..."
 
-HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+# First check dynamic hosts endpoint
+DYNAMIC_HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
     -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-hosts" \
     -H "Accept: application/json" 2>&1) || \
-    die "Failed to retrieve dynamic hosts: $HOSTS_RESPONSE" false
+    die "Failed to retrieve dynamic hosts: $DYNAMIC_HOSTS_RESPONSE" false
 
-echo "Current dynamic hosts response:"
-echo "$HOSTS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$HOSTS_RESPONSE"
+# Also check all hosts in cluster to verify the specific host was added
+HOSTS_RESPONSE=$($curlExec --anyauth --user "${USERNAME}:${PASSWORD}" \
+    -k -s -X GET "${BOOTSTRAP_MANAGE_URL}/manage/v2/hosts" \
+    -H "Accept: application/json" 2>&1) || \
+    die "Failed to retrieve cluster hosts: $HOSTS_RESPONSE" false
+
+if [ "$VERBOSE" = true ]; then
+    echo "Dynamic hosts response:"
+    echo "$DYNAMIC_HOSTS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$DYNAMIC_HOSTS_RESPONSE"
+    echo ""
+    echo "All cluster hosts response:"
+    echo "$HOSTS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$HOSTS_RESPONSE"
+    echo ""
+fi
+
+# Check if the dynamic host appears in the hosts list
+if echo "$HOSTS_RESPONSE" | grep -q "$DYNAMIC_HOST"; then
+    echo "✓ Verification successful: Host $DYNAMIC_HOST is now part of the cluster"
+else
+    echo "✗ Verification failed: Host $DYNAMIC_HOST was not found in the cluster"
+    echo "Dynamic hosts response: $DYNAMIC_HOSTS_RESPONSE"
+    die "Host verification failed - $DYNAMIC_HOST was not successfully added to the cluster" false
+fi
 
 echo ""
 echo "Dynamic host addition process completed successfully!"

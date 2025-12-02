@@ -20,6 +20,54 @@ readonly CURL_EXEC="/usr/bin/curl"
 readonly MARKLOGIC_ERROR_LOG="/var/opt/MarkLogic/Logs/ErrorLog.txt"
 
 # =============================================================================
+# JSON PARSING UTILITIES
+# =============================================================================
+
+# Extract JSON value using multiple fallback methods
+# Usage: extract_json_value "$json_string" "key"
+extract_json_value() {
+    local json="$1"
+    local key="$2"
+    
+    # Try jq first (most reliable)
+    if command -v jq >/dev/null 2>&1; then
+        echo "$json" | jq -r ".\"$key\"" 2>/dev/null || echo ""
+        return
+    fi
+    
+    # Try python as fallback
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "import json, sys; data=json.load(sys.stdin); print(data.get('$key', ''))" <<< "$json" 2>/dev/null || echo ""
+        return
+    fi
+    
+    # Fallback to grep/sed (fragile but better than before)
+    echo "$json" | grep -o "\"$key\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | sed "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/" 2>/dev/null || echo ""
+}
+
+# Check if JSON contains a specific value (for host verification)
+# Usage: json_contains_value "$json_string" "value"
+json_contains_value() {
+    local json="$1"
+    local value="$2"
+    
+    # Try jq first
+    if command -v jq >/dev/null 2>&1; then
+        echo "$json" | jq -e --arg val "$value" 'tostring | contains($val)' >/dev/null 2>&1
+        return
+    fi
+    
+    # Try python fallback
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "import json, sys; data=json.load(sys.stdin); print('$value' in str(data))" <<< "$json" 2>/dev/null | grep -q "True"
+        return
+    fi
+    
+    # Fallback to grep (last resort)
+    echo "$json" | grep -q "$value"
+}
+
+# =============================================================================
 # RUNTIME VARIABLES
 # =============================================================================
 
@@ -72,9 +120,9 @@ trap 'handle_exit' EXIT
 # Prerequisites:
 #
 # - curl must be available in PATH
-# - grep, sed, cut must be available (standard UNIX text processing tools)
+# - jq recommended for reliable JSON parsing (python3 used as fallback, grep/sed as last resort)
 # - nc (netcat) recommended for connectivity checks (curl used as fallback)
-# - python3 optional for JSON formatting in verbose mode (falls back to raw output)
+# - python3 optional for JSON parsing and formatting (improves reliability)
 # - The MarkLogic user must have admin privileges or appropriate dynamic host management roles
 # - MarkLogic Server must be installed and running (but uninitialized) on the dynamic host
 # - To write to ErrorLog.txt, the script's process owner must have write permissions to it.
@@ -515,10 +563,10 @@ if [ "$VERBOSE" = true ]; then
     echo ""
 fi
 
-# Generate the token using XML format for easier parsing like their script
+# Generate the token using JSON format for reliable parsing
 LAST_COMMAND="curl POST ${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token"
 TOKEN_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
-    -k -s -X POST "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token?format=xml" \
+    -k -s -X POST "${BOOTSTRAP_MANAGE_URL}/manage/v2/clusters/${CLUSTER_NAME}/dynamic-host-token?format=json" \
     -H "Content-Type: application/json" \
     -d "$TOKEN_PAYLOAD" 2>&1)
 
@@ -532,9 +580,9 @@ if [ "$VERBOSE" = true ]; then
     echo ""
 fi
 
-# Extract token from XML response using sed like their script
-LAST_COMMAND="extract token from XML response"
-DYNAMIC_TOKEN=$(echo "$TOKEN_RESPONSE" | grep "dynamic-host-token" | sed 's%^.*<dynamic-host-token.*>\(.*\)</dynamic-host-token>.*$%\1%')
+# Extract token from JSON response using proper JSON parsing
+LAST_COMMAND="extract token from JSON response"
+DYNAMIC_TOKEN=$(extract_json_value "$TOKEN_RESPONSE" "dynamic-host-token")
 
 if [ -z "$DYNAMIC_TOKEN" ]; then
     cleanup_and_exit "Failed to extract token from response: $TOKEN_RESPONSE" false
@@ -557,9 +605,17 @@ JOIN_RESPONSE=$("$CURL_EXEC" --anyauth --user "${USERNAME}:${PASSWORD}" \
     -H "Content-Type: application/xml" \
     -d "$INIT_PAYLOAD" 2>&1)
 
-# Extract HTTP status code
-HTTP_CODE=$(echo "$JOIN_RESPONSE" | grep -o "HTTPCODE:[0-9]*" | cut -d: -f2)
-JOIN_BODY=$(echo "$JOIN_RESPONSE" | sed 's/HTTPCODE:[0-9]*$//')
+# Extract HTTP status code and body more reliably
+if echo "$JOIN_RESPONSE" | grep -q "HTTPCODE:[0-9]*$"; then
+    # Extract the last occurrence of HTTPCODE pattern
+    HTTP_CODE=$(echo "$JOIN_RESPONSE" | grep -o "HTTPCODE:[0-9]*$" | cut -d: -f2)
+    # Remove the HTTPCODE line from the end
+    JOIN_BODY=$(echo "$JOIN_RESPONSE" | sed 's/HTTPCODE:[0-9]*$//')
+else
+    # Fallback if no HTTPCODE found
+    HTTP_CODE="0"
+    JOIN_BODY="$JOIN_RESPONSE"
+fi
 
 if [ "$VERBOSE" = true ]; then
     echo "Join response (HTTP $HTTP_CODE):"
@@ -609,12 +665,15 @@ if [ "$VERBOSE" = true ]; then
     echo ""
 fi
 
-# Check if the dynamic host appears in the hosts list
-if echo "$HOSTS_RESPONSE" | grep -q "$DYNAMIC_HOST"; then
+# Check if the dynamic host appears in the hosts list using proper JSON parsing
+if json_contains_value "$HOSTS_RESPONSE" "$DYNAMIC_HOST"; then
     echo "✓ Verification successful: Host $DYNAMIC_HOST is now part of the cluster"
 else
     echo "✗ Verification failed: Host $DYNAMIC_HOST was not found in the cluster"
-    echo "Dynamic hosts response: $DYNAMIC_HOSTS_RESPONSE"
+    if [ "$VERBOSE" = true ]; then
+        echo "Dynamic hosts response: $DYNAMIC_HOSTS_RESPONSE"
+        echo "All hosts response: $HOSTS_RESPONSE"
+    fi
     cleanup_and_exit "Host verification failed - $DYNAMIC_HOST was not successfully added to the cluster" false
 fi
 

@@ -11,13 +11,25 @@
 # exists, the script appends an error message to it. This log should be monitored so a system
 # administrator is notified. The unique string included is "Unable to add dynamic host".
 #
+# Password Options (in order of security, most secure first):
+#
+# 1. Interactive prompt (RECOMMENDED): Omit --password to be prompted securely
+#    Example: ./addDynamicHost.sh --bootstrap-host HOST --username USER --dynamic-host HOST
+#
+# 2. Environment variable: Set MARKLOGIC_PASSWORD before running the script
+#    Example: export MARKLOGIC_PASSWORD=secret; ./addDynamicHost.sh ...
+#    Or with sudo: sudo MARKLOGIC_PASSWORD=secret runuser -u daemon -- ./addDynamicHost.sh ...
+#
+# 3. Command line argument: Use --password (LEAST SECURE - visible in process list and history)
+#    Example: ./addDynamicHost.sh --bootstrap-host HOST --username USER --password SECRET --dynamic-host HOST
+#
 # Prerequisites:
 #
 # - curl must be available in PATH
 # - The MarkLogic user must have admin privileges or appropriate dynamic host management roles
-# - MarkLogic Server must be installed and running (but uninitialized) on the joining host
+# - MarkLogic Server must be installed and running (but uninitialized) on the dynamic host
 # - To write to ErrorLog.txt, the script's process owner must have write permissions to it.
-#   (e.g., sudo runuser -u daemon bash add_dynamic_host.sh ...)
+#   (e.g., sudo runuser -u daemon bash addDynamicHost.sh ...)
 #
 
 die () {
@@ -31,18 +43,19 @@ die () {
     echo >&2 "$1"
     echo >&2 ""
     if [ "$2" = true ]; then
-        echo >&2 "Usage: $script --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER --password PASS --dynamic-host HOST [--dynamic-admin-port PORT]"
+        echo >&2 "Usage: $script --bootstrap-host HOST [--bootstrap-admin-port PORT] [--bootstrap-manage-port PORT] --username USER [--password PASS] --dynamic-host HOST [--dynamic-admin-port PORT]"
         echo >&2 ""
         echo >&2 "Parameters:"
         echo >&2 "  --bootstrap-host HOST         MarkLogic bootstrap server hostname/IP (existing cluster node)"
         echo >&2 "  --bootstrap-admin-port PORT   Bootstrap server admin port (default: 8001)"
         echo >&2 "  --bootstrap-manage-port PORT  Bootstrap server manage port (default: 8002)"
         echo >&2 "  --username USER               MarkLogic username"
-        echo >&2 "  --password PASS               MarkLogic password"
+        echo >&2 "  --password PASS               MarkLogic password (optional, uses MARKLOGIC_PASSWORD env var or prompts)"
         echo >&2 "  --dynamic-host HOST           Hostname/IP of the machine joining as dynamic host"
         echo >&2 "  --dynamic-admin-port PORT     Admin port for the joining host (default: 8001)"
         echo >&2 ""
-        echo >&2 "Example: $script --bootstrap-host 10.0.1.100 --username admin --password secret --dynamic-host 10.0.1.200"
+        echo >&2 "Example: $script --bootstrap-host 10.0.1.100 --username admin --dynamic-host 10.0.1.200"
+        echo >&2 "Example: MARKLOGIC_PASSWORD=secret $script --bootstrap-host 10.0.1.100 --username admin --dynamic-host 10.0.1.200"
         echo >&2 ""
     fi
     exit 1
@@ -111,7 +124,19 @@ done
 # Validate required parameters
 [ -z "$BOOTSTRAP_HOST" ] && die "Bootstrap host is required (--bootstrap-host)" true
 [ -z "$USERNAME" ] && die "Username is required (--username)" true
-[ -z "$PASSWORD" ] && die "Password is required (--password)" true
+
+# Handle password: use environment variable if set, otherwise prompt for input
+if [ -z "$PASSWORD" ]; then
+    if [ -n "$MARKLOGIC_PASSWORD" ]; then
+        PASSWORD="$MARKLOGIC_PASSWORD"
+    else
+        echo -n "Enter MarkLogic password: " >&2
+        read -s PASSWORD
+        echo >&2  # Add newline after silent input
+        [ -z "$PASSWORD" ] && die "Password is required" true
+    fi
+fi
+
 [ -z "$DYNAMIC_HOST" ] && die "New host is required (--dynamic-host)" true
 
 # Validate that bootstrap and dynamic hosts are different

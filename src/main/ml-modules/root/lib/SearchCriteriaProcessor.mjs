@@ -347,7 +347,8 @@ const SearchCriteriaProcessor = class {
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
   _getSemanticSortResults() {
-    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+    // xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+
     // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
     // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
     // For now, this defaults to true. Feel free to parameterize if desired.

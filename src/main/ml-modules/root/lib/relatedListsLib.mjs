@@ -108,7 +108,7 @@ function getRelatedList({
   let relationsChecked = 0;
 
   try {
-    xdmp.setRequestTimeLimit(RELATED_LIST_TIMEOUT);
+    // xdmp.setRequestTimeLimit(RELATED_LIST_TIMEOUT);
 
     if (!utils.isNonEmptyString(uri)) {
       throw new BadRequestError(

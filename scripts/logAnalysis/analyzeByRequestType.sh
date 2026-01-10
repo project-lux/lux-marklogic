@@ -65,7 +65,8 @@ fi
   echo
 }
 
-echo "Convincing these logs to spill all their secrets..."
+# Only show progress message if output is going to a terminal (not redirected)
+[ -t 1 ] && echo "Convincing these logs to spill all their secrets..."
 
 gawk -v start_iso="$START_ISO" -v end_iso="$END_ISO" -v debug="$DEBUG" '
 BEGIN{

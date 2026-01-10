@@ -9,15 +9,48 @@
 # Optional:
 #   DEBUG=1 ./analyzeByRequestType.sh ...
 
-if [ $# -lt 3 ]; then
-  echo "Usage: $0 \"<glob-of-log-files>\" <start-iso> <end-iso>"
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 \"<glob-of-log-files>\" [start-iso] [end-iso]"
+  echo "  If start-iso and end-iso are omitted, all log entries will be processed"
+  echo "  IMPORTANT: Quote the glob pattern to prevent shell expansion!"
+  echo "  Example: $0 \"*AccessLog*\" \"2026-01-09T22:15:00\" \"2026-01-09T22:25:00\""
+  echo "  Example: $0 \"*AccessLog*\"  # Process all entries"
+  exit 1
+fi
+
+# Check if first argument looks like a filename instead of a glob pattern
+if [ -f "$1" ]; then
+  echo "ERROR: First argument appears to be a filename, not a quoted glob pattern."
+  echo "Did you forget to quote the glob? Try: $0 \"*AccessLog*\" ..."
+  echo "Current arguments: $*"
   exit 1
 fi
 
 LOG_GLOB="$1"
-START_ISO="$2"
-END_ISO="$3"
+START_ISO="${2:-}"
+END_ISO="${3:-}"
 DEBUG="${DEBUG:-0}"
+
+# Validate ISO timestamp format if provided
+if [ -n "$START_ISO" ] && ! echo "$START_ISO" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
+  echo "ERROR: Invalid start timestamp format: $START_ISO"
+  echo "Expected format: YYYY-MM-DDTHH:MM:SS (e.g., 2026-01-09T22:17:59)"
+  exit 1
+fi
+
+if [ -n "$END_ISO" ] && ! echo "$END_ISO" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
+  echo "ERROR: Invalid end timestamp format: $END_ISO"
+  echo "Expected format: YYYY-MM-DDTHH:MM:SS (e.g., 2026-01-09T22:23:43)"
+  exit 1
+fi
+
+[ "$DEBUG" = "1" ] && {
+  echo "Script arguments:"
+  echo "  LOG_GLOB: $LOG_GLOB"
+  echo "  START_ISO: $START_ISO"
+  echo "  END_ISO: $END_ISO"
+  echo
+}
 
 # Expand glob (current directory). Adjust path as needed.
 FILES=$(find . -maxdepth 1 -type f -name "$LOG_GLOB" 2>/dev/null)
@@ -32,10 +65,15 @@ fi
   echo
 }
 
+echo "Convincing these logs to spill all their secrets..."
+
 gawk -v start_iso="$START_ISO" -v end_iso="$END_ISO" -v debug="$DEBUG" '
 BEGIN{
   # Force UTC for mktime() so ISO and log timestamps align.
   ENVIRON["TZ"]="UTC"
+  
+  # Check if time filtering is enabled
+  use_time_filter = (start_iso != "" && end_iso != "")
 }
 
 # --- Helpers ---
@@ -77,11 +115,13 @@ function classify(uri,    u) {
 
 # --- Init ---
 BEGIN{
-  start_epoch = iso_to_epoch(start_iso)
-  end_epoch   = iso_to_epoch(end_iso)
-  if (start_epoch <= 0 || end_epoch <= 0 || end_epoch <= start_epoch) {
-    printf("Invalid window: %s → %s\n", start_iso, end_iso) > "/dev/stderr"
-    exit 3
+  if (use_time_filter) {
+    start_epoch = iso_to_epoch(start_iso)
+    end_epoch   = iso_to_epoch(end_iso)
+    if (start_epoch <= 0 || end_epoch <= 0 || end_epoch <= start_epoch) {
+      printf("Invalid time window: %s → %s\n", start_iso, end_iso) > "/dev/stderr"
+      exit 3
+    }
   }
   types["Search"]; types["Facet"]; types["Related List"]; types["Search Will Match"];
   types["Search Estimate"]; types["Document"]; types["Translate"]; types["Other"];
@@ -116,7 +156,7 @@ BEGIN{
   bytes  = (sb[2] == "-" ? 0 : sb[2]) + 0
 
   epoch = logts_to_epoch(tstamp)
-  if (epoch < start_epoch || epoch >= end_epoch) next
+  if (use_time_filter && (epoch < start_epoch || epoch >= end_epoch)) next
 
   type = classify(uri)
 
@@ -133,7 +173,11 @@ BEGIN{
 }
 
 END{
-  printf("Window (UTC): %s → %s\n", start_iso, end_iso)
+  if (use_time_filter) {
+    printf("Window (UTC): %s → %s\n", start_iso, end_iso)
+  } else {
+    printf("Processing all log entries (no time filter)\n")
+  }
 
   if (debug) {
     print "\nFile-level matches:"

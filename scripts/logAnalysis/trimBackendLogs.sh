@@ -237,6 +237,20 @@ if [[ "$PREVIEW_RANGES" == "true" ]]; then
   done
   
   echo ""
+  echo "Optional post-processing scripts:"
+  if [[ -f "./analyzeByRequestType.sh" ]]; then
+    echo "  ✓ analyzeByRequestType.sh will run (found)"
+  else
+    echo "  ✗ analyzeByRequestType.sh will not run (not found)"
+  fi
+  
+  if [[ -f "./mineBackendLogs.sh" ]]; then
+    echo "  ✓ mineBackendLogs.sh will run (found)"
+  else
+    echo "  ✗ mineBackendLogs.sh will not run (not found)"
+  fi
+  
+  echo ""
   echo "Preview complete. Set PREVIEW_RANGES=false to execute trimming."
   exit 0
 fi
@@ -248,6 +262,8 @@ startTimesCnt=${#startTimes[@]}
 for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
   startTime=${startTimes[$timePair]}
   endTime=${endTimes[$timePair]}
+  timeSuffix=$(echo "${startTime}-${endTime}" | tr -d ':')
+  outputFilenamePrefix="$testDate-$timeSuffix-$envName"
   
   # Create output directory based on time pair (remove colons for directory name)
   outputDirSuffix=$(echo "${startTime}-${endTime}" | tr -d ':')
@@ -287,12 +303,9 @@ for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
       # Last digits of IP address used in the output filename.  There is a potential chance of conflict.
       ipAddressEnd=${ipAddress##*.}
 
-      # Create time suffix for consistent naming (remove colons for filesystem compatibility)
-      timeSuffix=$(echo "${startTime}-${endTime}" | tr -d ':')
-
       fileIn="$inputDir/$testDate-$envName-node-$ipAddressEnd-$outputBasename.txt"
-      fileOut="$outputDir/$testDate-$timeSuffix-$envName-node-$ipAddressEnd-$outputBasename-trimmed.txt"
-      zipOut="$outputDir/$testDate-$timeSuffix-$envName-node-$ipAddressEnd-$outputBasename-trimmed.zip"
+      fileOut="$outputDir/$outputFilenamePrefix-node-$ipAddressEnd-$outputBasename.txt"
+      zipOut="$outputDir/$outputFilenamePrefix-node-$ipAddressEnd-$outputBasename.zip"
 
       # Determine pattern of timestamps we are to use
       if [[ $inputBasename == *"AccessLog"* ]]; then
@@ -335,6 +348,16 @@ for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
     done
   done
 
+  # Run request type analysis script on this time pair's trimmed access logs
+  echo "Running request type analysis on $outputDir..."
+  if [[ -f "./analyzeByRequestType.sh" ]]; then
+    # Change to output directory and run analysis on trimmed access logs
+    (cd "$outputDir" && ../analyzeByRequestType.sh "*AccessLog*.txt" > "$outputFilenamePrefix-requestTypeAnalysis.txt" 2>&1)
+    echo "Request type analysis saved to $outputDir/$outputFilenamePrefix-requestTypeAnalysis.txt"
+  else
+    echo "Warning: analyzeByRequestType.sh not found in current directory"
+  fi
+
   # Run mining script on this time pair's output directory
   echo "Running mining script on $outputDir..."
   if [[ -f "./mineBackendLogs.sh" ]]; then
@@ -344,6 +367,7 @@ for (( timePair=0; timePair<${startTimesCnt}; timePair++ )); do
   else
     echo "Warning: mineBackendLogs.sh not found in current directory"
   fi
+
 done
 
 echo ""

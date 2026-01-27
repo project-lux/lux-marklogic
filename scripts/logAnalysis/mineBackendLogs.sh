@@ -77,7 +77,6 @@ APP_ERROR_LOG_PATTERN=${LOG_DIRECTORY}/*800[3-6]-ErrorLog*.txt
 
 # Switched to egrep pattern as this one could omit some.
 # ERROR_LOG_PATTERN_MAIN=*[^8][^0][^0-1][^3]-ErrorLog*.txt
-# Exclude files with 4 digits preceding "-ErrorLog" (app server logs like 8003-ErrorLog)
 ERROR_LOG_EGREP_PATTERN_MAIN=.*[^0-9][0-9]{0,3}-ErrorLog.*\.txt$
 
 ERROR_LOG_ABOVE_INFO_FILE=$OUTPUT_DIRECTORY/${FILENAME_PREFIX}errorLogEntriesAboveInfo.txt
@@ -127,11 +126,11 @@ function grepForSectionCounts() {
   grepForLineCount "20s-25s" "$2" "$3[2][0-4][0-9][0-9][0-9]$4"
   grepForLineCount "25s-30s" "$2" "$3[2][5-9][0-9][0-9][0-9]$4"
   grepForLineCount ">30s" "$2" "$3[3-9][0-9][0-9][0-9][0-9]$4"
-  CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+  CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
   END_SUM_ROW=$CURRENT_ROW
   START_SUM_ROW=$((END_SUM_ROW - 17 + 1))
   echo -e "Sub-Total\t=SUM(B$START_SUM_ROW:B$END_SUM_ROW)" >> $ALL_REQUESTS_METRICS_TSV_FILE
-  CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+  CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
   echo -e "Avg/sec\t=B$CURRENT_ROW/$DURATION_IN_SECS_CELL" >> $ALL_REQUESTS_METRICS_TSV_FILE
   echo -e "" | tee -a $ALL_REQUESTS_METRICS_TSV_FILE
 }
@@ -194,34 +193,34 @@ TOTAL_FORMULA=""
 # Sections
 # The pattern for search requests include successful and unsuccessful requests.
 grepForSectionCounts "SEARCH REQUESTS" "requestCompleted" "\"total\":" ","
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="B$SUB_TOTAL_ROW"
 addBonusLinesForSearch
 
 # The pattern for facet requests include successful and unsuccessful requests.
 grepForSectionCounts "FACET REQUESTS" "LuxFacets" "in " " milli"
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
 
 grepForSectionCounts "RELATED LIST REQUESTS\tExcludes searchWillMatch calls." "LuxRelatedList" "Created .* in " " milli"
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
 
 grepForSectionCounts "SEARCH WILL MATCH REQUESTS" "LuxSearch" "Checked [0-9]* searches in " " milli"
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
 
 grepForSectionCounts "SEARCH ESTIMATE REQUESTS" "LuxSearch" "Calculated estimate in " " milli"
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
 
 grepForSectionCounts "DOCUMENT REQUESTS" "LuxNamedProfiles" "in " " milli"
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 SUB_TOTAL_ROW=$((CURRENT_ROW - 2))
 TOTAL_FORMULA+="+B$SUB_TOTAL_ROW"
 addBonusLinesForDocuments
@@ -234,11 +233,11 @@ addCountFromAccessLogs "Person roles" "/ds/lux/personRoles.mjs"
 addCountFromAccessLogs "Search info" "/ds/lux/searchInfo.mjs"
 addCountFromAccessLogs "Stats" "/ds/lux/stats.mjs"
 addCountFromAccessLogs "Translate" "/ds/lux/translate.mjs"
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 END_SUM_ROW=$CURRENT_ROW
 START_SUM_ROW=$((END_SUM_ROW - 6))
 echo -e "Sub-Total\t=SUM(B$START_SUM_ROW:B$END_SUM_ROW)" >> $ALL_REQUESTS_METRICS_TSV_FILE
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_METRICS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_METRICS_TSV_FILE)
 TOTAL_FORMULA+="+B$CURRENT_ROW"
 
 # Grand total
@@ -302,7 +301,7 @@ sed -i \
     "s/\(.*txt\):\(.*\) Info: \[Event:id=LuxNamedProfiles\] .* in \([0-9]*\) milli.*/\1\t\2\t\t\t\t\t\t\3/" \
     "$ALL_REQUESTS_TSV_FILE"
 # Add rows for filtered and unfiltered counts.  This needs to be updated after adding or removing a column.
-CURRENT_ROW=$(wc -l $ALL_REQUESTS_TSV_FILE | sed -e 's/[^0-9]//g')
+CURRENT_ROW=$(wc -l < $ALL_REQUESTS_TSV_FILE)
 echo -e "Filtered Counts\t\t=SUBTOTAL(2, C2:C$CURRENT_ROW)\t=SUBTOTAL(2, D2:D$CURRENT_ROW)\t=SUBTOTAL(2, E2:E$CURRENT_ROW)\t=SUBTOTAL(2, F2:F$CURRENT_ROW)\t=SUBTOTAL(2, G2:G$CURRENT_ROW)\t=SUBTOTAL(2, H2:H$CURRENT_ROW)" >> $ALL_REQUESTS_TSV_FILE
 echo -e "Unfiltered Counts\t\t=COUNT(C2:C$CURRENT_ROW)\t=COUNT(D2:D$CURRENT_ROW)\t=COUNT(E2:E$CURRENT_ROW)\t=COUNT(F2:F$CURRENT_ROW)\t=COUNT(G2:G$CURRENT_ROW)\t=COUNT(H2:H$CURRENT_ROW)" >> $ALL_REQUESTS_TSV_FILE
 

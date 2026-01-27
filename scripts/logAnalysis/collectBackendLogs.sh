@@ -7,12 +7,13 @@ declare -a ipAddresses=("" "" "")
 # PEM file to access the source environment.
 pemFile=~/Apps/LUX/ML/ch-lux-ssh-prod.pem
 # Basenames of all files to pull down.  Omit the portion covered by inputBasenameSuffix.  Also incorporated into the output filenames.
-declare -a inputBasenames=("ErrorLog" "8003_ErrorLog" "8003_AccessLog" "8003_RequestLog" "8004_ErrorLog" "8004_AccessLog" "8004_RequestLog")
+declare -a inputBasenames=("ErrorLog" "8003_ErrorLog" "8003_AccessLog" "8003_RequestLog" "8006_ErrorLog" "8006_AccessLog" "8006_RequestLog")
 
 # Date or date range formatted as YYYYMMDD or YYYYMMDD-YYYYMMDD.  Used in the output filename.
-dateRange=20250804-20250818
-# Suffix associated to the *last* day in the date range
-inputBasenameSuffix=7
+dateRange=20251030
+# Number of days back for the *last* day in the date range (e.g., 1 for yesterday, 2 for day before, etc.)
+# Set to empty string or 0 for current logs (no suffix)
+daysBack=1
 # Output directory.  Omit trailing slash.
 outputDir=./logs
 # A reference to the source environment.  Used in the output filename.
@@ -52,14 +53,14 @@ dateIndex=0
 while [[ $currentDate -le $endDate ]]; do
   dates+=($currentDate)
   
-  # Calculate suffix: most recent date gets inputBasenameSuffix, earlier dates get incremented values
+  # Calculate suffix: most recent date gets daysBack, earlier dates get incremented values
   if [[ $currentDate == $endDate ]]; then
-    suffixes+=($inputBasenameSuffix)
+    suffixes+=($daysBack)
   else
     # Calculate how many days before the end date
     daysBefore=$((dateIndex))
-    if [[ -n "$inputBasenameSuffix" ]]; then
-      calculatedSuffix=$((inputBasenameSuffix + (${#dates[@]} - 1 - dateIndex)))
+    if [[ -n "$daysBack" && "$daysBack" -gt 0 ]]; then
+      calculatedSuffix=$((daysBack + (${#dates[@]} - 1 - dateIndex)))
     else
       calculatedSuffix=$((${#dates[@]} - 1 - dateIndex))
     fi
@@ -81,11 +82,11 @@ totalDates=${#dates[@]}
 for (( i=0; i<${totalDates}; i++ )); do
   if [[ $i == $((totalDates - 1)) ]]; then
     # Last date (most recent) gets the original suffix
-    correctedSuffixes+=($inputBasenameSuffix)
+    correctedSuffixes+=($daysBack)
   else
     # Earlier dates get incremented suffix values
-    if [[ -n "$inputBasenameSuffix" ]]; then
-      correctedSuffix=$((inputBasenameSuffix + (totalDates - 1 - i)))
+    if [[ -n "$daysBack" && "$daysBack" -gt 0 ]]; then
+      correctedSuffix=$((daysBack + (totalDates - 1 - i)))
     else
       correctedSuffix=$((totalDates - 1 - i))
     fi
@@ -118,13 +119,14 @@ for (( d=0; d<${datesCnt}; d++ )); do
       # Last digits of IP address used in the output filename.  There is a potential chance of conflict.
       ipAddressEnd=${ipAddress##*.}
       
-      # Add underscore prefix to suffix if it's not empty
+      # Add underscore prefix to suffix if it's not empty and greater than 0
       suffix=""
-      if [[ -n "$currentSuffix" ]]; then
+      if [[ -n "$currentSuffix" && "$currentSuffix" -gt 0 ]]; then
         suffix="_$currentSuffix"
       fi
       
-      cmd="scp -i '$pemFile' 'ec2-user@$ipAddress:/var/opt/MarkLogic/Logs/$inputBasename$suffix.txt' '$outputDir/$currentTestDate-$envName-node-$ipAddressEnd-$inputBasename$suffix.txt'"
+      outputFilename=$(echo "$currentTestDate-$envName-node-$ipAddressEnd-$inputBasename$suffix.txt" | tr _ -)
+      cmd="scp -i '$pemFile' 'ec2-user@$ipAddress:/var/opt/MarkLogic/Logs/$inputBasename$suffix.txt' '$outputDir/$outputFilename'"
       echo "Executing: $cmd"
       eval $cmd
     done

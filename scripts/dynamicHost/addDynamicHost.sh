@@ -5,7 +5,7 @@ set -euo pipefail
 # This script adds a dynamic host to a MarkLogic cluster by:
 # 1. Installing MarkLogic on the dynamic host via SSH and SCP
 # 2. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
-# 3. Generating a dynamic host token from the bootstrap node
+# 3. Generating a dynamic host token from the bootstrap host
 # 4. Directly joining the dynamic host to the cluster using the token
 # 5. Revoking the token, disabling dynamic hosts and API token authentication for security
 # 6. Verifying the dynamic host was accepted by the cluster
@@ -229,7 +229,7 @@ cleanup_and_exit () {
         echo >&2 "Usage: $script [--dry-run] [--verbose] --bootstrap-host HOST --username USER --dynamic-host HOST [options]"
         echo >&2 ""
         echo >&2 "Required:"
-        echo >&2 "  --bootstrap-host HOST         Existing cluster node hostname/IP"
+        echo >&2 "  --bootstrap-host HOST         IP address or hostname of host to cluster with"
         echo >&2 "  --username USER               MarkLogic admin username"
         echo >&2 "  --dynamic-host HOST           New host to add to cluster"
         echo >&2 ""
@@ -527,7 +527,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "1. Install MarkLogic RPM on $DYNAMIC_HOST via SSH (disabled: ${NO_INSTALL})"
     echo "2. Enable dynamic hosts on $GROUP_NAME group (temporary)"
     echo "3. Enable API token authentication (temporary)"
-    echo "4. Generate dynamic host token from bootstrap node"
+    echo "4. Generate dynamic host token from bootstrap host"
     echo "5. Join $DYNAMIC_HOST to cluster using token"
     echo "6. Revoke token, disable API token auth, and disable dynamic hosts"
     echo "7. Verify host acceptance in cluster"

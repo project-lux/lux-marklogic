@@ -3,12 +3,13 @@ set -euo pipefail
 
 #
 # This script adds a dynamic host to a MarkLogic cluster by:
-# 1. Installing MarkLogic on the dynamic host via SSH and SCP
-# 2. Temporarily enabling dynamic hosts and API token authentication on the bootstrap host
-# 3. Generating a dynamic host token from the bootstrap host
-# 4. Directly joining the dynamic host to the cluster using the token
-# 5. Revoking the token, disabling dynamic hosts and API token authentication for security
-# 6. Verifying the dynamic host was accepted by the cluster
+# 1. Installing MarkLogic on the dynamic host via SSH and SCP (optional, can be skipped)
+# 2. Temporarily enabling dynamic hosts on the bootstrap host
+# 3. Temporarily enabling API token authentication on the bootstrap host
+# 4. Generating a dynamic host token from the bootstrap host
+# 5. Directly joining the dynamic host to the cluster using the token
+# 6. Revoking the token, disabling API token authentication, and disabling dynamic hosts for security
+# 7. Verifying the dynamic host was accepted by the cluster
 #
 # It can be run interactively or headless. If an error occurs and /var/opt/MarkLogic/Logs/ErrorLog.txt
 # exists, the script appends an error message to it. This log should be monitored so a system

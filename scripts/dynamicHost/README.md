@@ -4,19 +4,23 @@
   - [Dynamic Host Feature Notes](#dynamic-host-feature-notes)
   - [Design and Implementation Status](#design-and-implementation-status)
     - [EC2 Instance](#ec2-instance)
+    - [EC2 User Data Script](#ec2-user-data-script)
     - [Dynamic Host AMI](#dynamic-host-ami)
     - [Dynamic Host ASG](#dynamic-host-asg)
     - [Application Load Balancer (ALB)](#application-load-balancer-alb)
     - [Scale-Out](#scale-out)
       - [Monitor \& Initiate](#monitor--initiate)
       - [Join the Cluster](#join-the-cluster)
+      - [Health Check](#health-check)
     - [Scale-In](#scale-in)
       - [Monitor \& Initiate](#monitor--initiate-1)
-      - [Leave the Cluster](#leave-the-cluster)
     - [Licensing Compliance](#licensing-compliance)
-  - [Alternative Implementation Options](#alternative-implementation-options)
+  - [Alternative or Additional Implementation Options](#alternative-or-additional-implementation-options)
+    - [Reset and Reuse EC2 Instance](#reset-and-reuse-ec2-instance)
     - [Standby EC2 Instance](#standby-ec2-instance)
     - [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster)
+    - [Clean-Up Obsolete Dynamic Host Configuration](#clean-up-obsolete-dynamic-host-configuration)
+  - [Options Considered but not Selected](#options-considered-but-not-selected)
   - [Intermediary Means](#intermediary-means)
     - [Start Pre-Existing EC2 instance](#start-pre-existing-ec2-instance)
     - [Add/Remove from Load Balancer](#addremove-from-load-balancer)
@@ -61,6 +65,12 @@ Graviton, tested without dynamic host:
 * `m8g.8xlarge` as bootstrap host: $1,048, 2.8 GHz, 32 vCPUs (32 cores), and 128 GB RAM
 * `m8g.xlarge` as dynamic host: $131, 2.8 GHz, 4 vCPUs (4 cores), and 16 GB RAM
 
+### EC2 User Data Script
+
+When the [Dynamic Host ASG](#dynamic-host-asg) spins up an EC2 instance using the [Dynamic Host AMI](#dynamic-host-ami), the EC2 instance's user data attribute will be set to a script responsible for converting the EC2 instance into a dynamic host.  This entails consuming a MarkLogic endpoint.  See the [Join the Cluster](#join-the-cluster) for more details.
+
+Related alternative: [Reset and Reuse EC2 Instance](#reset-and-reuse-ec2-instance)
+
 ### Dynamic Host AMI
 
 **Implementation status:** not started
@@ -88,9 +98,7 @@ To be determined if the creation thereof is as simply as:
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
-We intend to utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html), Lambda functions, and 1-2 new MarkLogic endpoints to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster).  
-
-ASG lifecycle hooks change the paradigm away from having a single orchestrating process.
+System resource utilization alarm actions (detailed elsewhere) will either set the number of instances on this ASG to zero or one.  When setting to one, the EC2 instance user data attribute is to be set to the [EC2 User Data Script](#ec2-user-data-script).  The user data script initiated the dynamic host [joining the cluster](#join-the-cluster).  This simplifies the deployment.  The [Options Considered but not Selected](#options-considered-but-not-selected) section discusses an alternative we stepped away from.
 
 ### Application Load Balancer (ALB)
 
@@ -111,12 +119,9 @@ The ALB is to send an even number of requests between the two hosts.  The cluste
 
 Possible components and sequence, which are detailed in the following sections:
 
-1. Scale-out alarm activates the ASG scaling policy's lifecycle hook (Pending:Wait).
-2. The number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been changed to one.
-3. The lifecycle hook uses EventBridge to execute a Lambda function.
-4. The Lambda function consumes a MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
-5. CompleteLifecycleAction fires and the ALB starts checking performing its health check against the dynamic host.
-6. Once the dynamic host passes its health check, the ALB starts routing requests to it.
+1. Scale-out alarm sets the number of instances for the [Dynamic Host ASG](#dynamic-host-asg) to one.
+2. The EC2 user data consumes a MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
+3. Once the dynamic host passes its health check, the ALB starts routing requests to it.
 
 #### Monitor & Initiate
 
@@ -144,7 +149,7 @@ By relying on the ASG, we no longer need to register the dynamic host with the l
 
 **Ticket(s):**
 
-We need to utilize the **Pending:Wait** lifecycle hook to add the dynamic host to the cluster.  The hook is to use EventBridge to execute a Lambda function.  That function is to consume a new MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
+The dynamic host's [EC2 User Data Script](#ec2-user-data-script) is to consume a new MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
 
 The design calls for converting a subset of [addDynamicHost.sh](./addDynamicHost.sh) into MarkLogic server-side code, deployed to the bootstrap host and exposed via REST endpoint.  The subset of functionality we need is:
 
@@ -156,7 +161,7 @@ The design calls for converting a subset of [addDynamicHost.sh](./addDynamicHost
 
 We do not plan to temporarily enable the addition of dynamic hosts and API authentication.  Rather, we are to enable using ML Gradle and leave them enabled.
 
-To consume the endpoint, the Lambda function will need to provide MarkLogic user credentials that have sufficient execute privileges.  The implementation could be encapsulated in an amp'd function to avoid requiring the admin role.  The Lambda function must also provide the IP address of the dynamic host.
+To consume the endpoint, the dynamic host's user data script will need to provide MarkLogic user credentials that have sufficient execute privileges.  The implementation could be encapsulated in an amp'd function to avoid requiring the admin role.  The user data script function must also provide the IP address of the dynamic host.
 
 **Monitoring Considerations:**
 
@@ -167,15 +172,19 @@ To consume the endpoint, the Lambda function will need to provide MarkLogic user
     * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
 * When connected, the dynamic host will write its own MarkLogic logs.  We need to decide if we will stream and monitor them in CloudWatch.
 
+#### Health Check
+
+The standard health check is insufficient.  We need to know when the LUX endpoints are available on the dynamic host.  As such, we can pick the lightest weight one.  As soon as it starts returning a status code of 200, the ALB is to start routing 50% of the requests to it.
+
 ### Scale-In
 
 The scale-in process should closely align with the scale-out process, but backwards:
 
-1. Scale-in alarm activates the ASG scaling policy's lifecycle hook (Terminating:Wait).
-2. The number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been set to zero.
-3. Utilize the ASG's deregistration delay to allow the dynamic host's in flight requests to complete. 
-4. The lifecycle hook then uses EventBridge to execute a Lambda function.
-5. The Lambda function consumes a MarkLogic endpoint for the dynamic node to [Leave the Cluster](#leave-the-cluster).
+1. Scale-in alarm sets the number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been set to zero.
+2. Utilize the ASG's deregistration delay to allow the dynamic host's in flight requests to complete. 
+3. The dynamic host's EC2 instance is destroyed but not forgotten by the bootstrap host.
+
+The last item deserves a bit more discussion as it's not ideal to leave obsolete configuration in place.  The plan is for the new MarkLogic endpoint to remove any obsolete dynamic host configuration before adding one.  Should we find the obsolete configuration problematic before it is cleaned up by the next scale-out event, we could [Clean-Up Obsolete Dynamic Host Configuration](#clean-up-obsolete-dynamic-host-configuration) shortly after the scale-in event.
 
 #### Monitor & Initiate
 
@@ -189,23 +198,19 @@ The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynam
 
 By relying on the ASG, we no longer need to deregister the dynamic host from the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
 
-#### Leave the Cluster
-
-**Implementation status:** not started.  Need a new MarkLogic endpoint to consume when terminating the dynamic host's EC2 instance.
-
-**Ticket(s):**
-
-We need to utilize the **Terminating:Wait** lifecycle hook to remove the dynamic host from the cluster.  This is another spot where we can use EventBridge and Lambda to consume a new MarkLogic endpoint.  The server-side code is to use `xdmp.removeDynamicHosts` to disconnect and remove the dynamic host.
-
-The Lambda function will need to provide MarkLogic user credentials with sufficient privileges, but not the dynamic host's IP address.
-
-TBD if there will be a single endpoint that supports adding and removing a dynamic host.  This can be decided during the implementation phase.
-
 ### Licensing Compliance
 
 Starting in Oct 2026, licensing for the dynamic host is limited by total duration used for the year.  We will need to see our auto scaling implementation in action with production replay to get a sense of whether we need to implement controls or simply confirm we're good on an annual basis.
 
-## Alternative Implementation Options
+## Alternative or Additional Implementation Options
+
+### Reset and Reuse EC2 Instance
+
+**Pro(s):** Reduced scale-out duration.  Not yet quantified.
+
+**Con(s):** Another difference between the bootstrap and dynamic host AMIs.
+
+The approach described in [EC2 User Data Script](#ec2-user-data-script) section inhibits resetting and reusing a dynamic host's EC2 instance.  Should we decide it sufficiently advantageous to do so, we could consider the likes of a systemd service to run upon boot.
 
 ### Standby EC2 Instance
 
@@ -226,6 +231,20 @@ Yet another take on this is having the second ASG and utilizing its [warm pool](
 **Con(s):** Would require the cluster restart alarm action to initiate the scale-out process and ensure doing so does not result in a race condition with the scale-out alarm's action.
 
 As discussed in the [Join the Cluster](#join-the-cluster) section, a cluster-wide restart disconnects any dynamic hosts and they are not automatically reconnected.  If we rely on our scale-out alarm to determine whether the dynamic host is still needed, it could add minutes (not verified) to the process.  Alternatively, we could extend the cluster restart alarm action to initiate the scale-out event immediately after the scale-in event completes.  There may be an opportunity to combine/optimize the two processes.  We should also ensure this cannot result in adding two dynamic hosts.
+
+### Clean-Up Obsolete Dynamic Host Configuration
+
+**Pro(s):** TBD.  We don't yet know whether the obsolete configuration between scale-out events will pose an issue.
+
+**Con(s):** Define, deploy, and maintain a (simple) MarkLogic scheduled task.
+
+The current design relies on the scale-in alarm action to simply tell the [Dynamic Host ASG](#dynamic-host-asg) to have zero instances.  While that results in the destruction of the dynamic host's EC2 instance, it will still be registered as a disconnected dynamic host with the bootstrap host.  Should this become problematic, we could develop a MarkLogic scheduled task executed at a frequency of our choosing which would remove disconnected dynamic hosts from the bootstrap host.
+
+## Options Considered but not Selected
+
+To have a dynamic host join or leave a cluster, we considered utilizing ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html), EventBridge, and Lambda functions in order to consume a MarkLogic endpoint.  We elected to use a user data script of the dynamic host's EC2 instance instead.
+
+While testing the dynamic host feature, bash scripts were developed.  We're setting those aside for AWS built-in capabilities and a new MarkLogic endpoint.
 
 ## Intermediary Means
 

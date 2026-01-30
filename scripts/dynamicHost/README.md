@@ -31,13 +31,13 @@
 * Requires MarkLogic be installed on the dynamic host but not initialized.  It cannot start with a data directory.  [resetLocalDynamicHost.sh](./resetLocalDynamicHost.sh) was created while testing scale-out and shows what needed to be done between two scale-out events.
 * When all permanent hosts in a cluster restart, any dynamic hosts are disconnected and do not automatically reconnect.  Since LUX will only have one permanent host, the design discusses a couple of options.
 
-The [Join the Cluster](#join-the-cluster) references a script that implements the process of adding running EC2 instance to a MarkLogic cluster, as a dynamic host.  It makes the required changes on both the bootstrap and dynamic hosts.
+The [Join the Cluster](#join-the-cluster) section references a script that implements the process of adding running EC2 instance to a MarkLogic cluster, as a dynamic host.  It makes the required changes on both the bootstrap and dynamic hosts.
 
 ## Design and Implementation Status
 
 ### EC2 Instance
 
-The scale-out EC2 instance need only be the `xlarge` cut of the bootstrap host type, which is 1/8th the level of system resources as the bootstrap host.
+The dynamic host EC2 instance need only be the `xlarge` cut of the bootstrap host type, which is 1/8th the level of system resources as the bootstrap host.
 
 The bootstrap host held up through arrival rate 150 (272 req/s), of the stress test.  With the dynamic host:
 
@@ -51,12 +51,12 @@ Intel, wanted but tested due to it not being available AWS AZ us-east-1a where .
 * `m8i-flex.8xlarge` as bootstrap host:  $1,174, 3.9 GHz, 32 vCPUs (16 cores), and 128 GB RAM
 * `m8i-flex.xlarge` as dynamic host: $147, 3.9 GHz, 4 vCPUs (2 cores), and 16 GB RAM
 
-Intel, tested with scale-out:
+Intel, tested with dynamic host:
 
 * `m6i.8xlarge` as bootstrap host: $1,121, 3.5 GHz, 32 vCPUs (16 cores), and 128 GB RAM
 * `m6i.xlarge` as dynamic host: $140, 3.5 GHz, 4 vCPUs (2 cores), and 16 GB RAM
 
-Graviton, tested without scale-out:
+Graviton, tested without dynamic host:
 
 * `m8g.8xlarge` as bootstrap host: $1,048, 2.8 GHz, 32 vCPUs (32 cores), and 128 GB RAM
 * `m8g.xlarge` as dynamic host: $131, 2.8 GHz, 4 vCPUs (4 cores), and 16 GB RAM

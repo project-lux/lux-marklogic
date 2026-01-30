@@ -89,6 +89,8 @@ To be determined if the creation thereof is as simply as:
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
+We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.
+
 ### Scale-Out
 
 #### Monitor & Initiate
@@ -242,7 +244,10 @@ Starting in Oct 2026, licensing for the dynamic host is limited by total duratio
 
 An alternative to [Dynamic Host AMI](#dynamic-host-ami) and a second ASG would be to keep the dynamic host's EC2 instance around.  The scale-out alarm action could start the EC2 instance then move on to [Join the Cluster](#join-the-cluster).
 
-The scale-in alarm action would then need to either reset the instance
+The scale-in or scale-out alarm action would then need reset the instance, which may only require deleting the `/var/opt/MarkLogic` directory on the dynamic host.
+
+Yet another take on this is having the second ASG and utilizing its [warm pool](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-warm-pools.html).
+
 
 ## Intermediary Means
 

@@ -140,7 +140,7 @@ By relying on the ASG, we no longer need to register the dynamic host with the l
 
 #### Join the Cluster
 
-**Implementation status:** not started.  Need to develop the endpoint, which is to be consumed starting the dynamic host's EC2 instance.
+**Implementation status:** not started.  Need to develop the endpoint, which is to be consumed when starting the dynamic host's EC2 instance.
 
 **Ticket(s):**
 

@@ -109,13 +109,22 @@ ASG lifecycle hooks would change the paradigm of having a single orchestrating p
 
 ### Scale-Out
 
+Possible components and sequence, which are detailed in the following sections:
+
+1. Scale-out alarm activates the ASG scaling policy's lifecycle hook (Pending:Wait).
+2. The number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been changed to one.
+3. The lifecycle hook uses EventBridge to execute a Lambda function.
+4. The Lambda function uses SSM Run Command to execute the [Join the Cluster](#join-the-cluster) script.
+5. CompleteLifecycleAction fires and the ALB starts checking performing its health check against the dynamic host.
+6. Once the dynamic host passes its health check, the ALB starts routing requests to it.
+
 #### Monitor & Initiate
 
 **Implementation status:** not started
 
 **Ticket(s):**
 
-Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-out.  Set a threshold for the system resources.  Use "evaluation periods" and "datapoints to alarm" to require at least one of the system resources to exceed its threshold for minutes before initiating the scale-out.
+Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-out.  Set a threshold for the system resources.  Use **EvaluationPeriods** and **DatapointsToAlarm** to require at least one of the system resources to exceed its threshold M-of-N consecutive datapoints before initiating the scale-out.  Note that memory is not monitored by default and requires the **CloudWatch Agent**.
 
 The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynamic-host-asg) to one.  To avoid a double scale-out, it is not to increase the number of instances by one.  Always set to one.  
 
@@ -153,7 +162,7 @@ Monitoring:
 * If the script is executed from the bootstrap host and the script is unable to add the dynamic host, it will write "Unable to add dynamic host" to /var/opt/MarkLogic/Logs/ErrorLog.txt, which we should monitor for and alert the team via email.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
 * We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
     * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
-    * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In] process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
+    * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
     * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
 
 The script requires MarkLogic user credentials for the bootstrap host.  In headless mode, these may be provided via environment variables.  To avoid credentials from being retained in the bash history, the script purposely does not accept the password from the command line.
@@ -212,7 +221,13 @@ Copied from the script:
 
 ### Scale-In
 
-The scale-in process should closely align with the scale-out process, but backwards.
+The scale-in process should closely align with the scale-out process, but backwards:
+
+1. Scale-in alarm activates the ASG scaling policy's lifecycle hook (Terminating:Wait).
+2. The number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been set to zero.
+3. Utilize the ASG's deregistration delay to allow the dynamic host's in flight requests to complete. 
+4. The lifecycle hook then uses EventBridge to execute a Lambda function.
+5. The Lambda function uses SSM Run Command to execute the [Leave the Cluster](#leave-the-cluster) script.
 
 #### Monitor & Initiate
 

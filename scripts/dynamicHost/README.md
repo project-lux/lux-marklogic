@@ -38,7 +38,7 @@
 
 ### EC2 Instance
 
-The scale-out ec2 instance need only be the `xlarge` cut of the bootstrap host type, which is 1/8th the level of system resources as the bootstrap host.
+The scale-out EC2 instance need only be the `xlarge` cut of the bootstrap host type, which is 1/8th the level of system resources as the bootstrap host.
 
 The bootstrap host held up through arrival rate 150 (272 req/s), of the stress test.  With the dynamic host:
 
@@ -93,7 +93,7 @@ We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autosca
 
 To be verified:
 
-> Invoke your bootstrap/cluster join script via **SSM Run Command** from the launch lifecycle hook (EventBridge → Lambda → SSM). On success, **CompleteLifecycleAction** to continue. Repeat in reverse for cluster removal on scale in.
+> Invoke your bootstrap/cluster join script via **SSM Run Command** from the launch lifecycle hook (EventBridge → Lambda → SSM). On success, **CompleteLifecycleAction** to continue. Repeat in reverse for cluster removal on scale-in.
 >    * [Tutorial: Configure a lifecycle hook that invokes a Lambda function](https://docs.aws.amazon.com/autoscaling/ec2/userguide/tutorial-lifecycle-hook-lambda.html)
 >    * [AWS Sample: Using Auto Scaling lifecycle hooks, Lambda, and EC2 Run Command](https://github.com/aws-samples/aws-lambda-lifecycle-hooks-function)
 >    * [Run Command walkthroughs](https://docs.aws.amazon.com/systems-manager/latest/userguide/run-command-walkthroughs.html)
@@ -110,13 +110,13 @@ ASG lifecycle hooks would change the paradigm of having a single orchestrating p
 
 Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-out.  Set a threshold for the system resources.  Use "evaluation periods" and "datapoints to alarm" to require at least one of the system resources to exceed its threshold for minutes before initiating the scale-out.
 
-The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynamic-host-asg) to one.  To avoid a double scale out, it is not to increase the number of instances by one.  Always set to one.  
+The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynamic-host-asg) to one.  To avoid a double scale-out, it is not to increase the number of instances by one.  Always set to one.  
 
 We may implement this using the ASG's "simple scaling" mode plus a cooldown period.
 
 To be verified:
 
-> **Simple scaling** waits for any in progress scaling and the **cooldown** to finish before acting on another alarm, effectively preventing back to back scale outs unless the alarm transitions back to **OK** and then **ALARM** again. Configure the **ASG default cooldown** (e.g., several minutes longer than your instance warmup/bootstrap). 
+> **Simple scaling** waits for any in progress scaling and the **cooldown** to finish before acting on another alarm, effectively preventing back to back scale-outs unless the alarm transitions back to **OK** and then **ALARM** again. Configure the **ASG default cooldown** (e.g., several minutes longer than your instance warmup/bootstrap). 
 >    * [Simple scaling policies](https://docs.aws.amazon.com/autoscaling/ec2/userguide/simple-scaling-policies.html)
 >    * SO: [How do 'Health Check Grace Period' and 'Default Cooldown' in AWS autoscaling work?](https://stackoverflow.com/questions/55872117/how-do-health-check-grace-period-and-default-cooldown-in-aws-autoscaling-wor)
 
@@ -146,7 +146,7 @@ Monitoring:
 * If the script is executed from the bootstrap host and the script is unable to add the dynamic host, it will write "Unable to add dynamic host" to /var/opt/MarkLogic/Logs/ErrorLog.txt, which we should monitor for and alert the team via email.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
 * We need to start monitoring for "Starting MarkLogic" in ErrorLog.txt.  Should this happen while a dynamic host is active, the bootstrap host will not automatically reconnect.  When this alert comes in, we will need to:
     * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
-    * Determine if there is a dynamic host and if so, destroy its ec2 instance.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
+    * Determine if there is a dynamic host and if so, destroy its EC2 instance.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
     * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  Alternatively, we could extend this alarm action to immediately initiate the scale-out, which would take minutes off getting a dynamic host in play.  May need to take precautions to avoid a race condition with the scale-out monitoring.
 
 The script requires MarkLogic user credentials for the bootstrap host.  In headless mode, these may be provided via environment variables.  To avoid credentials from being retained in the bash history, the script purposely does not accept the password from the command line.

@@ -13,9 +13,7 @@
       - [Register with Load Balancer](#register-with-load-balancer)
     - [Scale-In](#scale-in)
       - [Monitor \& Initiate](#monitor--initiate-1)
-      - [Deregister with Load Balancer](#deregister-with-load-balancer)
       - [Leave the Cluster](#leave-the-cluster)
-      - [Destroy the Dynamic Host](#destroy-the-dynamic-host)
     - [Licensing Compliance](#licensing-compliance)
   - [Alternative Implementation Options](#alternative-implementation-options)
     - [Standby EC2 Instance](#standby-ec2-instance)
@@ -235,39 +233,25 @@ The scale-in process should closely align with the scale-out process, but backwa
 
 **Ticket(s):**
 
-Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-in.  Set a threshold for the system resources.  Use "evaluation periods" and "datapoints to alarm" to require **both** of the system resources to be below their thresholds for minutes before initiating the scale-in.
+Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-in.  Set a threshold for the system resources.  Use **EvaluationPeriods** and **DatapointsToAlarm** to require **both** of the system resources to be below their thresholds for minutes before initiating the scale-in.
 
-#### Deregister with Load Balancer
+The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynamic-host-asg) to zero and utilize its deregistration delay setting to allow the dynamic host to complete in flight requests.
 
-**Implementation status:** [updateLoadBalancer.sh](./updateLoadBalancer.sh) may be used as a leg up, but needs to be invocable by the process orchestrating the scale-in event.
-
-**Ticket(s):**
-
-On scale-in, rely on deregistration delay (connection draining) so in flight requests finish cleanly. Configure this on the target group.  The default is 300s, but 60s ought to be sufficient.
-
-[updateLoadBalancer.sh](./updateLoadBalancer.sh) supports deregister but does not override the deregistration delay.
-
-The orchestrating process should wait for the deregistration to delay before proceeding.
+By relying on the ASG, no longer need to deregister the dynamic host from the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
 
 #### Leave the Cluster
 
-**Implementation status:** not started.  Need a script that can be invoked at the right time (ASG lifecycle hook?)
+**Implementation status:** not started.  Need a script to be invoked when terminating the dynamic host's EC2 instance.
 
 **Ticket(s):**
 
-[DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) may be used to permanently remove a dynamic host from a cluster.
+We need to utilize the **Terminating:Wait** lifecycle hook to remove the dynamic host from the cluster.  This is another spot where we can use EventBridge, Lambda, and SSM Run Command to get to a custom script.
 
-It should not be removed until it has had a chance to complete its in flight requests (i.e., after the load balancer deregistration delay).
+The custom script may use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove a dynamic host from a cluster.  It will require MarkLogic user credentials with sufficient privileges.
+
+By the time this script is executed, the dynamic host should have already finished processing in flight requests, courtesy of the ASG's deregistration delay.
 
 If the calling context cannot identify the dynamic host for the DELETE request, we should be able to identify it from [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts), which is what [addDynamicHost.sh](./addDynamicHost.sh) uses to verify whether the dynamic host was successfully added.
-
-#### Destroy the Dynamic Host
-
-**Implementation status:** not started
-
-**Ticket(s):**
-
-Once the dynamic host is removed from the cluster, the process orchestrating the scale-in event is to destroy the dynamic host by setting the number of instances on the [Dynamic Host ASG](#dynamic-host-asg) to zero.
 
 ### Licensing Compliance
 

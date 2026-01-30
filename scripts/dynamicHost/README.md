@@ -7,10 +7,10 @@
     - [EC2 Instance](#ec2-instance)
     - [Dynamic Host AMI](#dynamic-host-ami)
     - [Dynamic Host ASG](#dynamic-host-asg)
+    - [Application Load Balancer (ALB)](#application-load-balancer-alb)
     - [Scale-Out](#scale-out)
       - [Monitor \& Initiate](#monitor--initiate)
       - [Join the Cluster](#join-the-cluster)
-      - [Register with Load Balancer](#register-with-load-balancer)
     - [Scale-In](#scale-in)
       - [Monitor \& Initiate](#monitor--initiate-1)
       - [Leave the Cluster](#leave-the-cluster)
@@ -105,6 +105,19 @@ To be verified:
 
 ASG lifecycle hooks would change the paradigm of having a single orchestrating process, as referred to several times below.
 
+### Application Load Balancer (ALB)
+
+The ALB is to be configured with two ASGs.  One for the bootstrap host and another for the dynamic host.  This allows us to:
+
+1. Have different AMIs for the two host types.
+    * The bootstrap host should have an EBS volume.
+    * The dynamic host should not.
+2. Use different EC2 instance types.
+    * The bootstrap host should use an `8xlarge` instance type.
+    * The dynamic host should use the `xlarge` instance type of the same family.
+
+The ALB is to send an even number of requests between the two hosts.  The cluster tested well by sending half of the requests to each host.  Additional details are in the [EC2 Instance](#ec2-instance) section.
+
 ### Scale-Out
 
 Possible components and sequence, which are detailed in the following sections:
@@ -181,41 +194,6 @@ Full list of known prerequisites:
     * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
     * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
     * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
-
-#### Register with Load Balancer
-
-**Implementation status:** option to use [updateLoadBalancer.sh](./updateLoadBalancer.sh), which would need to be invocable during scale-out event.
-
-**Ticket(s):**
-
-After the dynamic host is in the cluster, we need to register it with the load balancer such that the dynamic host starts to receive requests.  The cluster tested well by sending half of the requests to each host.  Additional details are in the [EC2 Instance](#ec2-instance) section.
-
-[updateLoadBalancer.sh](./updateLoadBalancer.sh) enables one to register or deregister an EC2 instance from a load balancer.
-
-Copied from the script:
-
-```bash
-#
-# Load Balancer Management Script
-#
-# This script adds or removes an EC2 instance from multiple ALB target groups.
-# 
-# Usage:
-#   ./updateLoadBalancer.sh <add|remove> [instance-id] [target-groups]
-#
-# Parameters:
-#   $1: Action - "add" or "remove"
-#   $2: Instance ID (optional) - defaults to LB_INSTANCE_ID environment variable
-#   $3: Target groups (optional) - comma-separated ARNs, defaults to LB_TARGET_GROUPS environment variable
-#
-# Environment Variables:
-#   LB_INSTANCE_ID: EC2 instance ID (e.g., i-1234567890abcdef0)
-#   LB_TARGET_GROUPS: Comma-separated target group ARNs (spaces around commas are supported)
-#
-# Example:
-#   ./updateLoadBalancer.sh add i-1234567890abcdef0 "arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/app1/abc, arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/app2/def"
-#
-```
 
 ### Scale-In
 
@@ -301,7 +279,34 @@ Wait until instance passes its health checks, which can take minutes:
 
 ### Add/Remove from Load Balancer
 
-See [Register with Load Balancer](#register-with-load-balancer)
+During testing, after the dynamic host is in the cluster, we registered it with the load balancer such that the dynamic host starts to receive requests.  Given our intended use of a [Dynamic Host ASG](#dynamic-host-asg), we will not need to manually script this part.  Same for deregistration.
+
+[updateLoadBalancer.sh](./updateLoadBalancer.sh) enables one to register or deregister an EC2 instance from a load balancer.
+
+Copied from the script:
+
+```bash
+#
+# Load Balancer Management Script
+#
+# This script adds or removes an EC2 instance from multiple ALB target groups.
+# 
+# Usage:
+#   ./updateLoadBalancer.sh <add|remove> [instance-id] [target-groups]
+#
+# Parameters:
+#   $1: Action - "add" or "remove"
+#   $2: Instance ID (optional) - defaults to LB_INSTANCE_ID environment variable
+#   $3: Target groups (optional) - comma-separated ARNs, defaults to LB_TARGET_GROUPS environment variable
+#
+# Environment Variables:
+#   LB_INSTANCE_ID: EC2 instance ID (e.g., i-1234567890abcdef0)
+#   LB_TARGET_GROUPS: Comma-separated target group ARNs (spaces around commas are supported)
+#
+# Example:
+#   ./updateLoadBalancer.sh add i-1234567890abcdef0 "arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/app1/abc, arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/app2/def"
+#
+```
 
 ### Stop EC2 Instance
 

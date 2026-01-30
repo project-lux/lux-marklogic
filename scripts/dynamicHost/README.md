@@ -88,7 +88,7 @@ To be determined if the creation thereof is as simply as:
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
-We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.  
+We intend to utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.  
 
 To be verified:
 
@@ -97,7 +97,7 @@ To be verified:
 >    * [AWS Sample: Using Auto Scaling lifecycle hooks, Lambda, and EC2 Run Command](https://github.com/aws-samples/aws-lambda-lifecycle-hooks-function)
 >    * [Run Command walkthroughs](https://docs.aws.amazon.com/systems-manager/latest/userguide/run-command-walkthroughs.html)
 
-ASG lifecycle hooks would change the paradigm of having a single orchestrating process, as referred to several times below.
+ASG lifecycle hooks change the paradigm away from having a single orchestrating process.
 
 ### Application Load Balancer (ALB)
 
@@ -145,7 +145,7 @@ By relying on the ASG, we no longer need to register the dynamic host with the l
 
 #### Join the Cluster
 
-**Implementation status:** script requires review and invocable during scale-out event (ASG lifecycle hook?).
+**Implementation status:** script requires review and to be invoked when starting the dynamic host's EC2 instance.
 
 **Ticket(s):**
 

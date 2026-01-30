@@ -89,7 +89,7 @@ To be determined if the creation thereof is as simply as:
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
-We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.
+We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.  This would change the paradigm of having a single orchestrating process, as referred to several times below.
 
 ### Scale-Out
 
@@ -105,7 +105,7 @@ The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynam
 
 #### Join the Cluster
 
-**Implementation status:** script requires review and invocable during scale-out event.
+**Implementation status:** script requires review and invocable during scale-out event (ASG lifecycle hook?).
 
 **Ticket(s):**
 
@@ -212,7 +212,7 @@ The orchestrating process should wait for the deregistration to delay before pro
 
 #### Leave the Cluster
 
-**Implementation status:** not started
+**Implementation status:** not started.  Need a script that can be invoked at the right time (ASG lifecycle hook?)
 
 **Ticket(s):**
 

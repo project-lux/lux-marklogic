@@ -110,6 +110,8 @@ The ALB is to be configured with two ASGs.  One for the bootstrap host and anoth
     * The bootstrap host should use an `8xlarge` instance type.
     * The dynamic host should use the `xlarge` instance type of the same family.
 
+The ALB only requires one target group, which both ASGs are to use.
+
 The ALB is to send an even number of requests between the two hosts.  The cluster tested well by sending half of the requests to each host.  Additional details are in the [EC2 Instance](#ec2-instance) section.
 
 ### Scale-Out

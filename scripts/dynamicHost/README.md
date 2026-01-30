@@ -1,7 +1,6 @@
 # MarkLogic Dynamic Host for LUX
 
 - [MarkLogic Dynamic Host for LUX](#marklogic-dynamic-host-for-lux)
-  - [Documentation Outstanding](#documentation-outstanding)
   - [Dynamic Host Feature Notes](#dynamic-host-feature-notes)
   - [Design and Implementation Status](#design-and-implementation-status)
     - [EC2 Instance](#ec2-instance)
@@ -23,11 +22,6 @@
     - [Add/Remove from Load Balancer](#addremove-from-load-balancer)
     - [Stop EC2 Instance](#stop-ec2-instance)
   - [Check/Change Instance Type](#checkchange-instance-type)
-
-## Documentation Outstanding
-
-1. List of open questions.
-2. Any additional [Alternative Implementation Options](#alternative-implementation-options)?
 
 ## Dynamic Host Feature Notes
 

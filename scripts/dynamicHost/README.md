@@ -89,7 +89,16 @@ To be determined if the creation thereof is as simply as:
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
-We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.  This would change the paradigm of having a single orchestrating process, as referred to several times below.
+We could utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.  
+
+To be verified:
+
+> Invoke your bootstrap/cluster join script via SSM Run Command from the launch lifecycle hook (EventBridge → Lambda → SSM). On success, CompleteLifecycleAction to continue. Repeat in reverse for cluster removal on scale in.
+>    * [Tutorial: Configure a lifecycle hook that invokes a Lambda function](https://docs.aws.amazon.com/autoscaling/ec2/userguide/tutorial-lifecycle-hook-lambda.html)
+>    * [AWS Sample: Using Auto Scaling lifecycle hooks, Lambda, and EC2 Run Command](https://github.com/aws-samples/aws-lambda-lifecycle-hooks-function)
+>    * [Run Command walkthroughs](https://docs.aws.amazon.com/systems-manager/latest/userguide/run-command-walkthroughs.html)
+
+ASG lifecycle hooks would change the paradigm of having a single orchestrating process, as referred to several times below.
 
 ### Scale-Out
 

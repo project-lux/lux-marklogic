@@ -19,6 +19,7 @@
     - [Licensing Compliance](#licensing-compliance)
   - [Alternative Implementation Options](#alternative-implementation-options)
     - [Standby EC2 Instance](#standby-ec2-instance)
+    - [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster)
   - [Intermediary Means](#intermediary-means)
     - [Start Pre-Existing EC2 instance](#start-pre-existing-ec2-instance)
     - [Add/Remove from Load Balancer](#addremove-from-load-balancer)
@@ -32,7 +33,13 @@
 
 ## Dynamic Host Feature Notes
 
-[MarkLogic's dynamic evaluator host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) requires MarkLogic be installed but not initialized.  It cannot start with a data directory.  [resetLocalDynamicHost.sh](./resetLocalDynamicHost.sh) was created while testing scale-out and shows what needed to be done between two scale-out events.
+[MarkLogic's dynamic evaluator host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) highlights:
+
+* Dynamic hosts evaluate queries only.  They do not host forests and do not enable forest-level failover.
+* Requires MarkLogic be installed on the dynamic host but not initialized.  It cannot start with a data directory.  [resetLocalDynamicHost.sh](./resetLocalDynamicHost.sh) was created while testing scale-out and shows what needed to be done between two scale-out events.
+* When all permanent hosts in a cluster restart, any dynamic hosts are disconnected and do not automatically reconnect.  Since LUX will only have one permanent host, the design discusses a couple of options.
+
+The [Join the Cluster](#join-the-cluster) references a script that implements the process of adding running EC2 instance to a MarkLogic cluster, as a dynamic host.  It makes the required changes on both the bootstrap and dynamic hosts.
 
 ## Design and Implementation Status
 
@@ -144,10 +151,10 @@ This is the script we will want to run once the dynamic host is running.  We wil
 Monitoring:
 
 * If the script is executed from the bootstrap host and the script is unable to add the dynamic host, it will write "Unable to add dynamic host" to /var/opt/MarkLogic/Logs/ErrorLog.txt, which we should monitor for and alert the team via email.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
-* We need to start monitoring for "Starting MarkLogic" in ErrorLog.txt.  Should this happen while a dynamic host is active, the bootstrap host will not automatically reconnect.  When this alert comes in, we will need to:
+* We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
     * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
-    * Determine if there is a dynamic host and if so, destroy its EC2 instance.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
-    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  Alternatively, we could extend this alarm action to immediately initiate the scale-out, which would take minutes off getting a dynamic host in play.  May need to take precautions to avoid a race condition with the scale-out monitoring.
+    * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In] process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
+    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
 
 The script requires MarkLogic user credentials for the bootstrap host.  In headless mode, these may be provided via environment variables.  To avoid credentials from being retained in the bash history, the script purposely does not accept the password from the command line.
 
@@ -265,6 +272,13 @@ The scale-in or scale-out alarm action would then need reset the instance, which
 
 Yet another take on this is having the second ASG and utilizing its [warm pool](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-warm-pools.html).
 
+### Immediate Rejoin Restarted Cluster
+
+**Pro(s):** Dynamic host to resume processing requests sooner.
+
+**Con(s):** Would require the cluster restart alarm action to initiate the scale-out process and ensure doing so does not result in a race condition with the scale-out alarm's action.
+
+As discussed in the [Join the Cluster](#join-the-cluster) section, a cluster-wide restart disconnects any dynamic hosts and they are not automatically reconnected.  If we rely on our scale-out alarm to determine whether the dynamic host is still needed, it could add minutes (not verified) to the process.  Alternatively, we could extend the cluster restart alarm action to initiate the scale-out event immediately after the scale-in event completes.  There may be an opportunity to combine/optimize the two processes.  We should also ensure this cannot result in adding two dynamic hosts.
 
 ## Intermediary Means
 

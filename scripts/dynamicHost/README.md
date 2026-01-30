@@ -88,14 +88,7 @@ To be determined if the creation thereof is as simply as:
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
-We intend to utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster) based on the dynamic host's EC2 instance state.  
-
-To be verified:
-
-> Invoke your bootstrap/cluster join script via **SSM Run Command** from the launch lifecycle hook (EventBridge → Lambda → SSM). On success, **CompleteLifecycleAction** to continue. Repeat in reverse for cluster removal on scale-in.
->    * [Tutorial: Configure a lifecycle hook that invokes a Lambda function](https://docs.aws.amazon.com/autoscaling/ec2/userguide/tutorial-lifecycle-hook-lambda.html)
->    * [AWS Sample: Using Auto Scaling lifecycle hooks, Lambda, and EC2 Run Command](https://github.com/aws-samples/aws-lambda-lifecycle-hooks-function)
->    * [Run Command walkthroughs](https://docs.aws.amazon.com/systems-manager/latest/userguide/run-command-walkthroughs.html)
+We intend to utilize the ASG's [lifecycle hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html), Lambda functions, and 1-2 new MarkLogic endpoints to [Join the Cluster](#join-the-cluster) and [Leave the Cluster](#leave-the-cluster).  
 
 ASG lifecycle hooks change the paradigm away from having a single orchestrating process.
 
@@ -121,7 +114,7 @@ Possible components and sequence, which are detailed in the following sections:
 1. Scale-out alarm activates the ASG scaling policy's lifecycle hook (Pending:Wait).
 2. The number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been changed to one.
 3. The lifecycle hook uses EventBridge to execute a Lambda function.
-4. The Lambda function uses SSM Run Command to execute the [Join the Cluster](#join-the-cluster) script.
+4. The Lambda function consumes a MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
 5. CompleteLifecycleAction fires and the ALB starts checking performing its health check against the dynamic host.
 6. Once the dynamic host passes its health check, the ALB starts routing requests to it.
 
@@ -151,45 +144,28 @@ By relying on the ASG, we no longer need to register the dynamic host with the l
 
 **Ticket(s):**
 
-We need to utilize the **Pending:Wait** lifecycle hook to add the dynamic host to the cluster.  The hook is to use EventBridge to execute a Lambda function.  That function is to use SSM Run Command to run [addDynamicHost.sh](./addDynamicHost.sh), or at least a version thereof.  The version created while testing the dynamic host feature performed the following.  We may not need it to install MarkLogic and we may want to permanently enable dynamic hosts and API token authentication.
+We need to utilize the **Pending:Wait** lifecycle hook to add the dynamic host to the cluster.  The hook is to use EventBridge to execute a Lambda function.  That function is to consume a new MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
 
-```bash
-# This script adds a dynamic host to a MarkLogic cluster by:
-# 1. Installing MarkLogic on the dynamic host via SSH and SCP (optional, can be skipped)
-# 2. Temporarily enabling dynamic hosts on the bootstrap host
-# 3. Temporarily enabling API token authentication on the bootstrap host
-# 4. Generating a dynamic host token from the bootstrap host
-# 5. Directly joining the dynamic host to the cluster using the token
-# 6. Revoking the token, disabling API token authentication, and disabling dynamic hosts for security
-# 7. Verifying the dynamic host was accepted by the cluster
-```
+The design calls for converting a subset of [addDynamicHost.sh](./addDynamicHost.sh) into MarkLogic server-side code, deployed to the bootstrap host and exposed via REST endpoint.  The subset of functionality we need is:
 
-The script requires MarkLogic user credentials for the bootstrap host.  In headless mode, these may be provided via environment variables.  To avoid credentials from being retained in the bash history, the script purposely does not accept the password from the command line.
+1. Generating a dynamic host token using `admin.issueDynamicHostToken`.
+2. Initialize the dynamic host using the token by consuming the `/admin/v1/init` endpoint on the dynamic host.  For a bash script example of this, start at line 685 of [addDynamicHost.sh](./addDynamicHost.sh).
+3. Invalidate the token using `admin.revokeDynamicHostToken`.
+4. Verify the dynamic host connected to the bootstrap host using `xdmp.getDynamicHosts`.
+5. Log "Unable to add dynamic host" to the application server's error log (e.g., 8003_ErrorLog.txt) when the server-side code experiences an error or is unable to verify the dynamic host connected.
 
-The script was vibe-coded and is nearly 800 lines long.  Part of the reason for length is an attempt to have thorough checking for every step.  We should review and revise to completely understand and be able to maintain.  We may be able to reduce and/or remove some prerequisites.  We may also find additional scenarios need to be accounted for.
+We do not plan to temporarily enable the addition of dynamic hosts and API authentication.  Rather, we are to enable using ML Gradle and leave them enabled.
 
-Full list of known prerequisites:
-
-```bash
-# Prerequisites:
-#
-# - curl must be available in PATH
-# - jq recommended for reliable JSON parsing (python3 used as fallback, grep/sed as last resort)
-# - nc (netcat) recommended for connectivity checks (curl used as fallback)
-# - python3 optional for JSON parsing and formatting (improves reliability)
-# - The MarkLogic user must have admin privileges or appropriate dynamic host management roles
-# - MarkLogic Server must be installed and running (but uninitialized) on the dynamic host
-# - To write to ErrorLog.txt, the script's process owner must have write permissions to it.
-#   (e.g., sudo runuser -u daemon bash addDynamicHost.sh ...)
-```
+To consume the endpoint, the Lambda function will need to provide MarkLogic user credentials that have sufficient execute privileges.  The implementation could be encapsulated in an amp'd function to avoid requiring the admin role.  The Lambda function must also provide the IP address of the dynamic host.
 
 **Monitoring Considerations:**
 
-* If the script is executed from the bootstrap host and the script is unable to add the dynamic host, it will write "Unable to add dynamic host" to /var/opt/MarkLogic/Logs/ErrorLog.txt, which we should monitor for and alert the team via email.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
+* Monitor for and alert the team via email when "Unable to add dynamic host" appears in the application error log.  We may wish to monitor in both 8003_ErrorLog.txt and 8006_ErrorLog.txt.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
 * We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
     * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
     * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
     * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
+* When connected, the dynamic host will write its own MarkLogic logs.  We need to decide if we will stream and monitor them in CloudWatch.
 
 ### Scale-In
 
@@ -199,7 +175,7 @@ The scale-in process should closely align with the scale-out process, but backwa
 2. The number of instances for the [Dynamic Host ASG](#dynamic-host-asg) has been set to zero.
 3. Utilize the ASG's deregistration delay to allow the dynamic host's in flight requests to complete. 
 4. The lifecycle hook then uses EventBridge to execute a Lambda function.
-5. The Lambda function uses SSM Run Command to execute the [Leave the Cluster](#leave-the-cluster) script.
+5. The Lambda function consumes a MarkLogic endpoint for the dynamic node to [Leave the Cluster](#leave-the-cluster).
 
 #### Monitor & Initiate
 
@@ -215,17 +191,15 @@ By relying on the ASG, we no longer need to deregister the dynamic host from the
 
 #### Leave the Cluster
 
-**Implementation status:** not started.  Need a script to be invoked when terminating the dynamic host's EC2 instance.
+**Implementation status:** not started.  Need a new MarkLogic endpoint to consume when terminating the dynamic host's EC2 instance.
 
 **Ticket(s):**
 
-We need to utilize the **Terminating:Wait** lifecycle hook to remove the dynamic host from the cluster.  This is another spot where we can use EventBridge, Lambda, and SSM Run Command to get to a custom script.
+We need to utilize the **Terminating:Wait** lifecycle hook to remove the dynamic host from the cluster.  This is another spot where we can use EventBridge and Lambda to consume a new MarkLogic endpoint.  The server-side code is to use `xdmp.removeDynamicHosts` to disconnect and remove the dynamic host.
 
-The custom script may use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove a dynamic host from a cluster.  It will require MarkLogic user credentials with sufficient privileges.
+The Lambda function will need to provide MarkLogic user credentials with sufficient privileges, but not the dynamic host's IP address.
 
-By the time this script is executed, the dynamic host should have already finished processing in flight requests, courtesy of the ASG's deregistration delay.
-
-If the calling context cannot identify the dynamic host for the DELETE request, we should be able to identify it from [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts), which is what [addDynamicHost.sh](./addDynamicHost.sh) uses to verify whether the dynamic host was successfully added.
+TBD if there will be a single endpoint that supports adding and removing a dynamic host.  This can be decided during the implementation phase.
 
 ### Licensing Compliance
 

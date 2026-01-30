@@ -134,13 +134,15 @@ To be verified:
 >    * [Simple scaling policies](https://docs.aws.amazon.com/autoscaling/ec2/userguide/simple-scaling-policies.html)
 >    * SO: [How do 'Health Check Grace Period' and 'Default Cooldown' in AWS autoscaling work?](https://stackoverflow.com/questions/55872117/how-do-health-check-grace-period-and-default-cooldown-in-aws-autoscaling-wor)
 
+By relying on the ASG, we no longer need to register the dynamic host with the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
+
 #### Join the Cluster
 
 **Implementation status:** script requires review and invocable during scale-out event (ASG lifecycle hook?).
 
 **Ticket(s):**
 
-[addDynamicHost.sh](./addDynamicHost.sh) was created while testing the scale-out.  It implements the required portions and best security practices of the dynamic host feature.  Excerpt from the script:
+We need to utilize the **Pending:Wait** lifecycle hook to add the dynamic host to the cluster.  The hook is to use EventBridge to execute a Lambda function.  That function is to use SSM Run Command to run [addDynamicHost.sh](./addDynamicHost.sh), or at least a version thereof.  The version created while testing the dynamic host feature performed the following.  We may not need it to install MarkLogic and we may want to permanently enable dynamic hosts and API token authentication.
 
 ```bash
 # This script adds a dynamic host to a MarkLogic cluster by:
@@ -152,16 +154,6 @@ To be verified:
 # 6. Revoking the token, disabling API token authentication, and disabling dynamic hosts for security
 # 7. Verifying the dynamic host was accepted by the cluster
 ```
-
-This is the script we will want to run once the dynamic host is running.  We will want to utilize the script's exit code to know if the script was successful.  
-
-Monitoring:
-
-* If the script is executed from the bootstrap host and the script is unable to add the dynamic host, it will write "Unable to add dynamic host" to /var/opt/MarkLogic/Logs/ErrorLog.txt, which we should monitor for and alert the team via email.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
-* We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
-    * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
-    * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
-    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
 
 The script requires MarkLogic user credentials for the bootstrap host.  In headless mode, these may be provided via environment variables.  To avoid credentials from being retained in the bash history, the script purposely does not accept the password from the command line.
 
@@ -181,6 +173,14 @@ Full list of known prerequisites:
 # - To write to ErrorLog.txt, the script's process owner must have write permissions to it.
 #   (e.g., sudo runuser -u daemon bash addDynamicHost.sh ...)
 ```
+
+**Monitoring Considerations:**
+
+* If the script is executed from the bootstrap host and the script is unable to add the dynamic host, it will write "Unable to add dynamic host" to /var/opt/MarkLogic/Logs/ErrorLog.txt, which we should monitor for and alert the team via email.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
+* We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
+    * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
+    * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
+    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
 
 #### Register with Load Balancer
 
@@ -237,7 +237,7 @@ Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and 
 
 The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynamic-host-asg) to zero and utilize its deregistration delay setting to allow the dynamic host to complete in flight requests.
 
-By relying on the ASG, no longer need to deregister the dynamic host from the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
+By relying on the ASG, we no longer need to deregister the dynamic host from the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
 
 #### Leave the Cluster
 

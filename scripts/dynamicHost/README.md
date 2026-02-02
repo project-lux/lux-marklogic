@@ -18,7 +18,7 @@
   - [Alternative or Additional Implementation Options](#alternative-or-additional-implementation-options)
     - [Reset and Reuse EC2 Instance](#reset-and-reuse-ec2-instance)
     - [Standby EC2 Instance](#standby-ec2-instance)
-    - [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster)
+    - [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster)
     - [Clean-Up Obsolete Dynamic Host Configuration](#clean-up-obsolete-dynamic-host-configuration)
   - [Options Considered but not Selected](#options-considered-but-not-selected)
   - [Intermediary Means](#intermediary-means)
@@ -40,6 +40,8 @@ The [Join the Cluster](#join-the-cluster) section references a script that imple
 ## Design and Implementation Status
 
 ### EC2 Instance
+
+_There is not a dedicated ticket for the dynamic host's EC2 instance.  It will be provided by the [Dynamic Host ASG](#dynamic-host-asg), which will use the [Dynamic Host AMI](#dynamic-host-ami) and the [EC2 User Data Script](#ec2-user-data-script)._
 
 The dynamic host EC2 instance need only be the `xlarge` cut of the bootstrap host type, which is 1/8th the level of system resources as the bootstrap host.
 
@@ -66,6 +68,10 @@ Graviton, tested without dynamic host:
 * `m8g.xlarge` as dynamic host: $131, 2.8 GHz, 4 vCPUs (4 cores), and 16 GB RAM
 
 ### EC2 User Data Script
+
+**Implementation status:** not started
+
+**Ticket(s):**
 
 When the [Dynamic Host ASG](#dynamic-host-asg) spins up an EC2 instance using the [Dynamic Host AMI](#dynamic-host-ami), the EC2 instance's user data attribute will be set to a script responsible for converting the EC2 instance into a dynamic host.  This entails consuming a MarkLogic endpoint.  See the [Join the Cluster](#join-the-cluster) for more details.
 
@@ -147,7 +153,7 @@ By relying on the ASG, we no longer need to register the dynamic host with the l
 
 **Implementation status:** not started.  Need to develop the endpoint, which is to be consumed when starting the dynamic host's EC2 instance.
 
-**Ticket(s):**
+**Ticket(s):** [ML 638](https://github.com/project-lux/lux-marklogic/issues/638) for new endpoint, [ML 639](https://github.com/project-lux/lux-marklogic/issues/639) for ML Gradle configuration, and [CF 148](https://git.yale.edu/lux-its/ml-cluster-formation/issues/148) for monitoring.
 
 The dynamic host's [EC2 User Data Script](#ec2-user-data-script) is to consume a new MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
 
@@ -169,7 +175,7 @@ To consume the endpoint, the dynamic host's user data script will need to provid
 * We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
     * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
     * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
-    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediate Rejoin Restarted Cluster](#immediate-rejoin-restarted-cluster).
+    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster).
 * When connected, the dynamic host will write its own MarkLogic logs.  We need to decide if we will stream and monitor them in CloudWatch.
 
 #### Health Check
@@ -224,7 +230,7 @@ The scale-in or scale-out alarm action would then need reset the instance, which
 
 Yet another take on this is having the second ASG and utilizing its [warm pool](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-warm-pools.html).
 
-### Immediate Rejoin Restarted Cluster
+### Immediately Rejoin Restarted Cluster
 
 **Pro(s):** Dynamic host to resume processing requests sooner.
 

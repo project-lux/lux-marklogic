@@ -19,7 +19,8 @@
     - [Reset and Reuse EC2 Instance](#reset-and-reuse-ec2-instance)
     - [Standby EC2 Instance](#standby-ec2-instance)
     - [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster)
-    - [Clean-Up Obsolete Dynamic Host Configuration](#clean-up-obsolete-dynamic-host-configuration)
+    - [Clean-Up Obsolete Dynamic Host Configuration in Background](#clean-up-obsolete-dynamic-host-configuration-in-background)
+    - [Clean-up Obsolete Dynamic Host Configuration upon Restart](#clean-up-obsolete-dynamic-host-configuration-upon-restart)
   - [Options Considered but not Selected](#options-considered-but-not-selected)
   - [Intermediary Means](#intermediary-means)
     - [Start Pre-Existing EC2 instance](#start-pre-existing-ec2-instance)
@@ -172,11 +173,11 @@ To consume the endpoint, the dynamic host's user data script will need to provid
 **Monitoring Considerations:**
 
 * Monitor for and alert the team via email when "Unable to add dynamic host" appears in the application error log.  We may wish to monitor in both 8003_ErrorLog.txt and 8006_ErrorLog.txt.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
-* We would need a configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action may need to:
-    * Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
-    * Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
-    * Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster).
 * When connected, the dynamic host will write its own MarkLogic logs.  We need to decide if we will stream and monitor them in CloudWatch.
+* We could monitor for the bootstrap host restarting the MarkLogic process.  As first noted in [Dynamic Host Feature Notes](#dynamic-host-feature-notes), any dynamic host that is connected at the time becomes disconnected.  Our initial design calls for the scale-out event to replace the dynamic host, cleaning up the obsolete dynamic host configuration as necessary.  Three alternatives have been discussed:
+    * [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster)
+    * [Clean-Up Obsolete Dynamic Host Configuration in Background](#clean-up-obsolete-dynamic-host-configuration-in-background)
+    * [Clean-up Obsolete Dynamic Host Configuration upon Restart](#clean-up-obsolete-dynamic-host-configuration-upon-restart)
 
 #### Health Check
 
@@ -190,7 +191,7 @@ The scale-in process should closely align with the scale-out process, but backwa
 2. Utilize the ASG's deregistration delay to allow the dynamic host's in flight requests to complete. 
 3. The dynamic host's EC2 instance is destroyed but not forgotten by the bootstrap host.
 
-The last item deserves a bit more discussion as it's not ideal to leave obsolete configuration in place.  The plan is for the new MarkLogic endpoint to remove any obsolete dynamic host configuration before adding one.  Should we find the obsolete configuration problematic before it is cleaned up by the next scale-out event, we could [Clean-Up Obsolete Dynamic Host Configuration](#clean-up-obsolete-dynamic-host-configuration) shortly after the scale-in event.
+The last item deserves a bit more discussion as it's not ideal to leave obsolete configuration in place.  The plan is for the new MarkLogic endpoint to remove any obsolete dynamic host configuration before adding one.  Should we find the obsolete configuration problematic before it is cleaned up by the next scale-out event, we could [Clean-up Obsolete Dynamic Host Configuration upon Restart](#clean-up-obsolete-dynamic-host-configuration-upon-restart) or [Clean-Up Obsolete Dynamic Host Configuration in Background](#clean-up-obsolete-dynamic-host-configuration-in-background) upon or shortly the configuration becomes obsolete.
 
 #### Monitor & Initiate
 
@@ -238,13 +239,27 @@ Yet another take on this is having the second ASG and utilizing its [warm pool](
 
 As discussed in the [Join the Cluster](#join-the-cluster) section, a cluster-wide restart disconnects any dynamic hosts and they are not automatically reconnected.  If we rely on our scale-out alarm to determine whether the dynamic host is still needed, it could add minutes (not verified) to the process.  Alternatively, we could extend the cluster restart alarm action to initiate the scale-out event immediately after the scale-in event completes.  There may be an opportunity to combine/optimize the two processes.  We should also ensure this cannot result in adding two dynamic hosts.
 
-### Clean-Up Obsolete Dynamic Host Configuration
+### Clean-Up Obsolete Dynamic Host Configuration in Background
 
-**Pro(s):** TBD.  We don't yet know whether the obsolete configuration between scale-out events will pose an issue.
+**Pro(s):** TBD.  We don't yet know whether the obsolete configuration between scale-out events will pose an issue.  However, a pro is that this option is less effort and complexity than [Clean-up Obsolete Dynamic Host Configuration upon Restart](#clean-up-obsolete-dynamic-host-configuration-upon-restart).
 
 **Con(s):** Define, deploy, and maintain a (simple) MarkLogic scheduled task.
 
 The current design relies on the scale-in alarm action to simply tell the [Dynamic Host ASG](#dynamic-host-asg) to have zero instances.  While that results in the destruction of the dynamic host's EC2 instance, it will still be registered as a disconnected dynamic host with the bootstrap host.  Should this become problematic, we could develop a MarkLogic scheduled task executed at a frequency of our choosing which would remove disconnected dynamic hosts from the bootstrap host.
+
+### Clean-up Obsolete Dynamic Host Configuration upon Restart
+
+**Pro(s):** TBD.  We don't yet know whether the obsolete configuration between scale-out events will pose an issue.
+
+**Con(s):** Additional monitoring alarm scripting.
+
+The current design relies on the scale-in alarm action to simply tell the [Dynamic Host ASG](#dynamic-host-asg) to have zero instances.  While that results in the destruction of the dynamic host's EC2 instance, it will still be registered as a disconnected dynamic host with the bootstrap host.
+
+Should this become problematic, we could configure a cluster restart alarm to "Starting MarkLogic" in the bootstrap host's ErrorLog.txt.  As first mentioned in the [Dynamic Host Feature Notes](#dynamic-host-feature-notes) section, dynamic hosts are disconnected when a cluster made up of a single permanent host is restarted.  This alarm's action would need to:
+
+- Use [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) to determine if bootstrap host still has any knowledge of a dynamic host, and if so, use [DELETE /manage/v2/clusters/{id|name}/dynamic-hosts](https://docs.marklogic.com/12.0/REST/DELETE/manage/v2/clusters/[id-or-name]/dynamic-hosts) to permanently remove the dynamic host.
+- Determine if there is a dynamic host and if so, complete relevant portions of the [Scale-In](#scale-in) process.  We will need to test to see if [GET /manage/v2/hosts](https://docs.marklogic.com/12.0/REST/GET/manage/v2/hosts) identifies the dynamic host after the bootstrap host has been restarted while the dynamic host was connected.
+- Rely on the scale-out monitoring to re-initiate scale-out, should the bootstrap host exceed one of its system resource utilization thresholds for a sufficient period.  For an alternative that would allow the dynamic host to resume processing requests sooner, see [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster).
 
 ## Options Considered but not Selected
 

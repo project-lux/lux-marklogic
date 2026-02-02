@@ -78,6 +78,12 @@ When the [Dynamic Host ASG](#dynamic-host-asg) spins up an EC2 instance using th
 
 Related alternative: [Reset and Reuse EC2 Instance](#reset-and-reuse-ec2-instance)
 
+Additional dynamic host EC2 user data script requirements:
+
+1. Review our permanent host's EC2 user data script to see which portions should apply.
+2. Review the Mini ML configuration to see which OS level settings should apply.
+3. Monitor the MarkLogic logs.
+
 ### Dynamic Host AMI
 
 **Implementation status:** not started
@@ -172,8 +178,8 @@ To consume the endpoint, the dynamic host's user data script will need to provid
 
 **Monitoring Considerations:**
 
-* Monitor for and alert the team via email when "Unable to add dynamic host" appears in the application error log.  We may wish to monitor in both 8003_ErrorLog.txt and 8006_ErrorLog.txt.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
-* When connected, the dynamic host will write its own MarkLogic logs.  We need to decide if we will stream and monitor them in CloudWatch.
+* [CF 148](https://git.yale.edu/lux-its/ml-cluster-formation/issues/148): Monitor for and alert the team via email when "Unable to add dynamic host" appears in the application error log.  We may wish to monitor in both 8003_ErrorLog.txt and 8006_ErrorLog.txt.  This can be configured in the [log monitoring configuration spreadsheet](https://docs.google.com/spreadsheets/d/1uu6aL7yn047yyiZ4auujpTXnlwm01sgWZQ50ht-X4M4/edit?gid=1743835316#gid=1743835316) and pushed out via existing terraform.
+* When connected, the dynamic host will write its own MarkLogic logs.  See [EC2 User Data Script](#ec2-user-data-script) for the monitoring thereof.
 * We could monitor for the bootstrap host restarting the MarkLogic process.  As first noted in [Dynamic Host Feature Notes](#dynamic-host-feature-notes), any dynamic host that is connected at the time becomes disconnected.  Our initial design calls for the scale-out event to replace the dynamic host, cleaning up the obsolete dynamic host configuration as necessary.  Three alternatives have been discussed:
     * [Immediately Rejoin Restarted Cluster](#immediately-rejoin-restarted-cluster)
     * [Clean-Up Obsolete Dynamic Host Configuration in Background](#clean-up-obsolete-dynamic-host-configuration-in-background)

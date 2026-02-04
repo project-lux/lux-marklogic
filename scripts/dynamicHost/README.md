@@ -72,7 +72,7 @@ Graviton, tested without dynamic host:
 
 **Implementation status:** not started
 
-**Ticket(s):**
+**Ticket(s):** [CF 149](https://git.yale.edu/lux-its/ml-cluster-formation/issues/149)
 
 When the [Dynamic Host ASG](#dynamic-host-asg) spins up an EC2 instance using the [Dynamic Host AMI](#dynamic-host-ami), the EC2 instance's user data attribute will be set to a script responsible for converting the EC2 instance into a dynamic host.  This entails consuming a MarkLogic endpoint.  See the [Join the Cluster](#join-the-cluster) for more details.
 
@@ -88,7 +88,7 @@ Additional dynamic host EC2 user data script requirements:
 
 **Implementation status:** not started
 
-**Ticket(s):**
+**Ticket(s):** [CF 150](https://git.yale.edu/lux-its/ml-cluster-formation/issues/150)
 
 We will want to maintain an image (AMI) that the dynamic host is to start from.  It should have identical configuration as the bootstrap host with two exceptions:
 
@@ -107,13 +107,17 @@ To be determined if the creation thereof is as simply as:
 
 **Implementation status:** not started
 
-**Ticket(s):**
+**Ticket(s):** [CF 151](https://git.yale.edu/lux-its/ml-cluster-formation/issues/151)
 
 Introduce a second Auto Scaling Group (ASG) to the existing load balancer, dedicated to the dynamic host.  The dynamic host ASG is to be associated to the [Dynamic Host AMI](#dynamic-host-ami), the `xlarge` cut of PRD's EC2 instance type, with an initial number of instances of zero.
 
 System resource utilization alarm actions (detailed elsewhere) will either set the number of instances on this ASG to zero or one.  When setting to one, the EC2 instance user data attribute is to be set to the [EC2 User Data Script](#ec2-user-data-script).  The user data script initiated the dynamic host [joining the cluster](#join-the-cluster).  This simplifies the deployment.  The [Options Considered but not Selected](#options-considered-but-not-selected) section discusses an alternative we stepped away from.
 
 ### Application Load Balancer (ALB)
+
+**Implementation status:** ALB exists but the [Dynamic Host ASG](#dynamic-host-asg) needs to be added. 
+
+**Ticket(s):** 
 
 The ALB is to be configured with two ASGs.  One for the bootstrap host and another for the dynamic host.  This allows us to:
 
@@ -140,7 +144,7 @@ Possible components and sequence, which are detailed in the following sections:
 
 **Implementation status:** not started
 
-**Ticket(s):**
+**Ticket(s):** Part of [CF 152](https://git.yale.edu/lux-its/ml-cluster-formation/issues/152)
 
 Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-out.  Set a threshold for the system resources.  Use **EvaluationPeriods** and **DatapointsToAlarm** to require at least one of the system resources to exceed its threshold M-of-N consecutive datapoints before initiating the scale-out.  Note that memory is not monitored by default and requires the **CloudWatch Agent**.
 
@@ -187,6 +191,10 @@ To consume the endpoint, the dynamic host's user data script will need to provid
 
 #### Health Check
 
+**Implementation status:** an existing LUX endpoint will be used but a health check needs to be configured to it.
+
+**Ticket(s):** [CF 153](https://git.yale.edu/lux-its/ml-cluster-formation/issues/153)
+
 The standard health check is insufficient.  We need to know when the LUX endpoints are available on the dynamic host.  As such, we can pick the lightest weight one.  As soon as it starts returning a status code of 200, the ALB is to start routing 50% of the requests to it.
 
 ### Scale-In
@@ -203,7 +211,7 @@ The last item deserves a bit more discussion as it's not ideal to leave obsolete
 
 **Implementation status:** not started
 
-**Ticket(s):**
+**Ticket(s):** Part of [CF 152](https://git.yale.edu/lux-its/ml-cluster-formation/issues/152)
 
 Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and initiate a scale-in.  Set a threshold for the system resources.  Use **EvaluationPeriods** and **DatapointsToAlarm** to require **both** of the system resources to be below their thresholds for minutes before initiating the scale-in.
 

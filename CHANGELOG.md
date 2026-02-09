@@ -2,6 +2,20 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v2.5.0 - Unreleased
+
+### Added
+
+- Added collections influenced by agent relationships ([#644](https://github.com/project-lux/lux-marklogic/issues/644)).
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v2.4.0 - 2025-10-06
 ### Added
 

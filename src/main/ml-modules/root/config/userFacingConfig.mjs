@@ -90,6 +90,11 @@ const searchTermText = {
       helpText:
         'Search for People & Groups that influenced the creation of the specified Works',
     },
+    influencedCreationSet: {
+      label: 'influenced the creation of',
+      helpText:
+        'Search for People & Groups that influenced the creation of the specified Collections',
+    },
     influencedProduction: {
       label: 'influenced the production of',
       helpText:
@@ -655,6 +660,11 @@ const searchTermText = {
       label: 'have a creation caused by',
       helpText:
         'Search for Collections that were created because of the specified Events.',
+    },
+    creationInfluencedBy: {
+      label: 'have a creation influenced by',
+      helpText:
+        'Search for Collections that were created with influence by the specified Person or Group',
     },
     containingItem: {
       label: 'contain',

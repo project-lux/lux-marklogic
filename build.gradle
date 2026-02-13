@@ -1,5 +1,20 @@
-import javax.net.ssl.*
-import java.security.cert.X509Certificate
+import org.apache.hc.client5.http.impl.classic.HttpClients
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
+import org.apache.hc.client5.http.auth.AuthScope
+import org.apache.hc.client5.http.classic.methods.HttpGet
+import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager
+import org.apache.hc.client5.http.socket.ConnectionSocketFactory
+import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory
+import org.apache.hc.client5.http.ssl.TrustAllStrategy
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier
+import org.apache.hc.core5.http.config.Registry
+import org.apache.hc.core5.http.config.RegistryBuilder
+import org.apache.hc.core5.http.io.entity.StringEntity
+import org.apache.hc.core5.http.io.entity.EntityUtils
+import org.apache.hc.core5.ssl.SSLContexts
 
 buildscript {
   repositories {
@@ -9,6 +24,7 @@ buildscript {
     classpath "com.marklogic:ml-gradle:${mlGradleVersion}"
     classpath "com.marklogic:marklogic-unit-test-client:${mlUnitTestVersion}"
     classpath "org.json:json:${orgJsonVersion}"
+    classpath "org.apache.httpcomponents.client5:httpclient5:${httpClientVersion}"
   }
 }
 
@@ -493,93 +509,110 @@ mlLoadModules.finalizedBy importRestApiOptions
 
 task ensureTenantStatusDocumentExists() {
   doFirst {
+    println ""
+    println "Ensuring tenant status document exists..."
+    println ""
+
     // Only used if the tenant status document does not exist.
     def isProd = project.getProperty("environmentProd").toBoolean()
     def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
 
-    def protocol = project.getProperty("mlAppServicesScheme") // assumption: if one is https, all are.
-    def host = project.getProperty("mlHost")
+    def protocol = project.getProperty("mlAppServicesScheme")
+    def host = project.getProperty("mlHost") 
     def port = project.getProperty("mlDeployPort")
     def username = project.getProperty("mlUsername")
     def password = credentials.forKey('mlPassword')
     def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
     def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
 
-    // Configure SSL settings for HTTPS
-    if (protocol == "https") {
-      // Create a trust-all SSL context (for development/testing)
-      def trustAllCerts = [
-        new X509TrustManager() {
-          public X509Certificate[] getAcceptedIssuers() { return null }
-          public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-          public void checkServerTrusted(X509Certificate[] certs, String authType) { }
-        }
-      ] as X509TrustManager[]
-
-      def sslContext = SSLContext.getInstance("SSL")
-      sslContext.init(null, trustAllCerts, new java.security.SecureRandom())
-      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory())
-      
-      // Disable hostname verification (for development/testing)
-      HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-        public boolean verify(String hostname, SSLSession session) {
-          return true
-        }
-      })
-    }
-
-    // Set up digest authentication
-    Authenticator.setDefault(new Authenticator() {
-      @Override
-      protected PasswordAuthentication getPasswordAuthentication() {
-        return new PasswordAuthentication(username, password.toCharArray())
-      }
-    })
-
     try {
-      // See if the tenant status document exists.
-      def getConnection = new URL(getUrl).openConnection()
-      getConnection.setRequestMethod("GET")
-      def responseCode = getConnection.getResponseCode()
-
-      if (responseCode >= 200 && responseCode < 300) {
-        println "Tenant status document was found; no action taken."
-      } else {
-        println "The tenant status document was not found; creating..."
+      // Use Apache HttpClient 5.x which handles digest auth properly (unlike Java's HttpURLConnection)
+      def httpClientBuilder = HttpClients.custom()
+        .disableConnectionState()  // Force new connections
+        .disableAutomaticRetries() // Prevent connection reuse issues
+      
+      // Set up digest authentication
+      def credentialsProvider = new BasicCredentialsProvider()
+      credentialsProvider.setCredentials(
+        new AuthScope(null, -1),
+        new UsernamePasswordCredentials(username, password.toCharArray())
+      )
+      httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+      
+      // Configure SSL if needed
+      if (protocol == "https") {
+        def sslContext = SSLContexts.custom()
+          .loadTrustMaterial(new TrustAllStrategy())
+          .build()
         
-        def postConnection = new URL(postUrl).openConnection()
-        postConnection.setRequestMethod("POST")
-        postConnection.setDoOutput(true)
-        postConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-
-        def formData = "prod=${isProd}&readOnly=${isReadOnly}"
-
-        // Send the request
-        def outputStream = postConnection.getOutputStream()
-        outputStream.write(formData.getBytes("UTF-8"))
-        outputStream.close()
+        // Create socket factory registry for HttpClient 5.x
+        def socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+          .register("http", PlainConnectionSocketFactory.getSocketFactory())
+          .register("https", new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+          .build()
         
-        def postResponseCode = postConnection.getResponseCode()
-        println "POST response code: ${postResponseCode}"
+        // Use a completely fresh connection manager that doesn't pool
+        def connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry)
+        httpClientBuilder.setConnectionManager(connectionManager)
+      }
+      
+      def httpClient = httpClientBuilder.build()
+      
+      try {
+        // Check if tenant status document exists
+        def getRequest = new HttpGet(getUrl)
+        def getResponse = httpClient.execute(getRequest)
         
-        if (postResponseCode >= 200 && postResponseCode < 300) {
-          println "Tenant status document created successfully"
-        } else {
-          println "Failed to create tenant status document"
-          def errorStream = postConnection.getErrorStream()
-          if (errorStream) {
-            println "Error: ${errorStream.text}"
+        try {
+          // Consume entity to ensure connection is released
+          if (getResponse.getEntity()) {
+            EntityUtils.consume(getResponse.getEntity())
           }
-          throw new GradleException("Failed to create tenant status document with response code ${postResponseCode} and message: ${postConnection.getResponseMessage()}")
+          
+          if (getResponse.getCode() >= 200 && getResponse.getCode() < 300) {
+            println "Tenant status document was found; no action taken."
+          } else {
+            println "The tenant status document was not found; creating..."
+            
+            // Create the tenant status document
+            def postRequest = new HttpPost(postUrl)
+            postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded")
+            
+            def formData = "prod=${isProd}&readOnly=${isReadOnly}"
+            postRequest.setEntity(new StringEntity(formData))
+            
+            def postResponse = httpClient.execute(postRequest)
+            
+            try {
+              def postStatusCode = postResponse.getCode()
+
+              if (postStatusCode >= 200 && postStatusCode < 300) {
+                println "Tenant status document created successfully"
+                // Consume entity to ensure connection is released
+                if (postResponse.getEntity()) {
+                  EntityUtils.consume(postResponse.getEntity())
+                }
+              } else {
+                def errorContent = EntityUtils.toString(postResponse.getEntity())
+                throw new GradleException("Failed to create tenant status document with response code ${postStatusCode}: ${errorContent}")
+              }
+            } finally {
+              postResponse.close()
+            }
+          }
+        } finally {
+          getResponse.close()
         }
+      } finally {
+        httpClient.close()
       }
       
     } catch (Exception e) {
-      println "Error occurred: ${e.message}"
-      throw e
-    } finally {
-      // Clean up the authenticator
-      Authenticator.setDefault(null)
+      println "DEBUG: Exception occurred: ${e.getClass().getName()} - ${e.message}"
+      if (e.getCause()) {
+        println "DEBUG: Caused by: ${e.getCause()}"
+      }
+      throw new GradleException("Failed to ensure tenant status document exists: ${e.message}", e)
     }
   }
 }

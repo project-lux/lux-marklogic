@@ -31,6 +31,7 @@
   - [Related List](#related-list)
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
+  - [Scale Out](#scale-out)
   - [Search](#search)
     - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
@@ -946,6 +947,10 @@ Response Body:
     }
 }
 ```
+
+## Scale Out
+
+TODO
 
 ## Search
 

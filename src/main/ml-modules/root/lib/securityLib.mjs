@@ -47,6 +47,7 @@ const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONS
 const ROLE_NAME_ENDPOINT_CONSUMER_BASE = '%%mlAppName%%-endpoint-consumer-base'; // users and service accounts
 const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
 
+const PRIVILEGE_NAME_SCALE_ENVIRONMENT = `${PRIVILEGES_PREFIX}/%%mlAppName%%-scale-environment`;
 const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${PRIVILEGES_PREFIX}/%%mlAppName%%-update-tenant-status`;
 const ROLE_NAME_DEPLOYER = '%%mlAppName%%-deployer';
 
@@ -171,7 +172,7 @@ function __createExclusiveRoles(user) {
             defaultPermissions,
             defaultCollections,
             compartment,
-            externalNames
+            externalNames,
           );
         }
       });
@@ -195,7 +196,7 @@ function __createExclusiveRoles(user) {
     // Whether it be a local or temporary user, the endpoint consumer needs to retry the current
     // request as the system will not yet acknowledge the user's new role --even with xdmp.invoke.
     throw new ServerConfigurationChangedError(
-      "The requesting user's security profile changed; retry the request to enable the changes to take effect."
+      "The requesting user's security profile changed; retry the request to enable the changes to take effect.",
     );
   }
 }
@@ -208,17 +209,17 @@ function getExclusiveRoleNamesByUsername(username) {
 function getExclusiveRoleNameByUsername(username, capability) {
   if (isUndefined(username)) {
     throw new InternalServerError(
-      'The username for the exclusive role was not specified.'
+      'The username for the exclusive role was not specified.',
     );
   }
   if (PERMITTED_CAPABILITIES.includes(capability) === false) {
     throw new BadRequestError(
-      `Exclusive user roles do not support the '${capability}' capability`
+      `Exclusive user roles do not support the '${capability}' capability`,
     );
   }
   if (isUndefined(ROLE_SUFFIX_BY_CAPABILITY[capability])) {
     throw new InternalServerError(
-      `The role name suffix is not specified for the '${capability}' capability`
+      `The role name suffix is not specified for the '${capability}' capability`,
     );
   }
   return `${username}-${ROLE_SUFFIX_BY_CAPABILITY[capability]}`;
@@ -238,11 +239,11 @@ function getExclusiveDocumentPermissions(user) {
   return [
     xdmp.permission(
       _getExclusiveRoleName(user, CAPABILITY_UPDATE),
-      CAPABILITY_READ
+      CAPABILITY_READ,
     ),
     xdmp.permission(
       _getExclusiveRoleName(user, CAPABILITY_UPDATE),
-      CAPABILITY_UPDATE
+      CAPABILITY_UPDATE,
     ),
   ];
 }
@@ -270,7 +271,7 @@ function getExclusiveDocumentPermissions(user) {
  */
 function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
   const endpointConfig = getCurrentEndpointConfig(
-    FEATURE_MY_COLLECTIONS_ENABLED
+    FEATURE_MY_COLLECTIONS_ENABLED,
   );
   if (FEATURE_MY_COLLECTIONS_ENABLED) {
     // Require the current endpoint's configuration; an error is throw upon
@@ -288,7 +289,7 @@ function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
 function handleRequestV2ForUnitTesting(
   f,
   unitName = TENANT_OWNER,
-  endpointConfig
+  endpointConfig,
 ) {
   // As this allows the caller to specify which endpoint configuration to use and is only
   // intended to be called when running a unit test, restrict it.
@@ -309,7 +310,7 @@ function __handleRequestV2(
   f,
   unitName = TENANT_OWNER,
   endpointConfig,
-  forceInvoke = false
+  forceInvoke = false,
 ) {
   // Adjust from null
   if (isUndefined(unitName)) {
@@ -323,14 +324,14 @@ function __handleRequestV2(
   // When in read-only mode, block requests that are not allowed to execute then.
   if (endpointConfig.mayNotExecuteInReadOnlyMode() && inReadOnlyMode()) {
     throw new NotAcceptingWriteRequestsError(
-      'The instance is in read-only mode; try again later'
+      'The instance is in read-only mode; try again later',
     );
   }
 
   // Block service accounts from using any My Collections endpoint.
   if (isMyCollectionRequest && isServiceAccount) {
     throw new AccessDeniedError(
-      'Service accounts are not permitted to use this endpoint'
+      'Service accounts are not permitted to use this endpoint',
     );
   }
 
@@ -363,7 +364,7 @@ function __handleRequestV2(
       // If we needed to create a user profile, we'll need to execute the requested function in a
       // new transaction.
       isolation: createUserProfile ? 'different-transaction' : 'same-statement',
-    }
+    },
   );
 }
 const _handleRequestV2 = import.meta.amp(__handleRequestV2);
@@ -373,7 +374,7 @@ function _createUserProfileAndDefaultCollection(user) {
     const userProfileDocument = fn.head(
       xdmp.invokeFunction(() => {
         return _createUserProfile(user);
-      })
+      }),
     );
     xdmp.invokeFunction(() => {
       _createDefaultCollectionAndUpdateUserProfile(userProfileDocument);
@@ -384,7 +385,7 @@ function _createUserProfileAndDefaultCollection(user) {
     if (idx == -1) {
       console.warn(e.stack);
       throw new InternalServerError(
-        `Unable to create a user profile and/or default collection for '${user.getUsername()}'.`
+        `Unable to create a user profile and/or default collection for '${user.getUsername()}'.`,
       );
     }
   }
@@ -409,7 +410,7 @@ function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
 
     defaultCollectionDocObj = createDocument(
       DEFAULT_COLLECTION_TEMPLATE,
-      newUserMode
+      newUserMode,
     );
 
     setDefaultCollection(userProfileDocObj, defaultCollectionDocObj.id);
@@ -417,7 +418,7 @@ function _createDefaultCollectionAndUpdateUserProfile(userProfileDocObj) {
     return updateDocument(
       userProfileDocObj.id,
       getNodeFromObject(userProfileDocObj),
-      newUserMode
+      newUserMode,
     );
   } catch (e) {
     let userMsg;
@@ -442,7 +443,7 @@ function _getExecuteWithServiceAccountFunction(unitName) {
     return libWrapper[functionName];
   }
   throw new BadRequestError(
-    `Unable to process the request with the '${unitName}' unit's service account; please verify the unit name.`
+    `Unable to process the request with the '${unitName}' unit's service account; please verify the unit name.`,
   );
 }
 
@@ -457,7 +458,7 @@ function _isUserServiceAccount(user) {
 function throwIfUserIsServiceAccount(user) {
   if (_isUserServiceAccount(user)) {
     throw new AccessDeniedError(
-      'Service accounts may not perform this operation'
+      'Service accounts may not perform this operation',
     );
   }
 }
@@ -470,6 +471,13 @@ function throwIfCurrentUserIsServiceAccount() {
   throwIfUserIsServiceAccount(new User());
 }
 
+function requireUserMayScaleEnvironment() {
+  if (new User().hasRole(ROLE_NAME_ADMIN)) {
+    return;
+  }
+  xdmp.securityAssert(PRIVILEGE_NAME_SCALE_ENVIRONMENT, 'execute');
+}
+
 function requireUserMayUpdateTenantStatus() {
   if (new User().hasRole(ROLE_NAME_ADMIN)) {
     return;
@@ -480,7 +488,7 @@ function requireUserMayUpdateTenantStatus() {
 function mayUpdateTenantStatus() {
   return xdmp.passiveHasPrivilege(
     PRIVILEGE_NAME_UPDATE_TENANT_STATUS,
-    'execute'
+    'execute',
   );
 }
 
@@ -493,7 +501,7 @@ function getEndpointAccessUnitNames() {
   }
   return removeItemByValueFromArray(
     split(ENDPOINT_ACCESS_UNIT_NAMES, ',', true),
-    TENANT_OWNER
+    TENANT_OWNER,
   );
 }
 
@@ -516,7 +524,7 @@ function getCurrentUserUnitName() {
       ) {
         return roleName.slice(
           `${TENANT_OWNER}-`.length,
-          roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length
+          roleName.length - ENDPOINT_CONSUMER_ROLES_END_WITH.length,
         );
       }
       return prev;
@@ -547,7 +555,7 @@ function isConfiguredForUnit(unitName, configTree) {
   if (configTree[PROPERTY_NAME_EXCLUDED_UNITS]) {
     return !includesOrEquals(
       configTree[PROPERTY_NAME_EXCLUDED_UNITS],
-      unitName
+      unitName,
     );
   }
 
@@ -587,6 +595,7 @@ export {
   isCurrentUserServiceAccount,
   mayUpdateTenantStatus,
   removeUnitConfigProperties,
+  requireUserMayScaleEnvironment,
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,
   throwIfUserIsServiceAccount,

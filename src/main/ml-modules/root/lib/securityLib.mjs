@@ -472,11 +472,11 @@ function throwIfCurrentUserIsServiceAccount() {
   throwIfUserIsServiceAccount(new User());
 }
 
-function requireUserMayScaleEnvironment() {
-  if (new User().hasRole(ROLE_NAME_ADMIN)) {
-    return;
-  }
-  xdmp.securityAssert(PRIVILEGE_NAME_SCALE_ENVIRONMENT, 'execute');
+function mayScaleEnvironment() {
+  return (
+    new User().hasRole(ROLE_NAME_ADMIN) ||
+    xdmp.passiveHasPrivilege(PRIVILEGE_NAME_SCALE_ENVIRONMENT, 'execute')
+  );
 }
 
 function requireUserMayUpdateTenantStatus() {
@@ -612,9 +612,9 @@ export {
   handleRequestV2ForUnitTesting,
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
+  mayScaleEnvironment,
   mayUpdateTenantStatus,
   removeUnitConfigProperties,
-  requireUserMayScaleEnvironment,
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,
   throwIfUserIsServiceAccount,

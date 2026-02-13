@@ -71,6 +71,12 @@ class NotImplementedError extends Error {
   }
 }
 
+class ScaleEnvironmentError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class ServerConfigurationChangedError extends Error {
   constructor(message) {
     super(message);
@@ -94,6 +100,7 @@ export {
   NotAcceptingWriteRequestsError,
   NotFoundError,
   NotImplementedError,
+  ScaleEnvironmentError,
   ServerConfigurationChangedError,
   isInvalidSearchRequestError,
 };

@@ -41,6 +41,10 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
+  '/ds/lux/scaleOut.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
   '/ds/lux/search.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },

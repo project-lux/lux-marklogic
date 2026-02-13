@@ -43,7 +43,7 @@ import {
 import {
   InternalServerError,
   InvalidSearchRequestError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import * as utils from '../utils/utils.mjs';
 
 // Once supported, we want to stop calculating scores.

@@ -18,7 +18,7 @@ import {
 import {
   InternalServerError,
   InvalidSearchRequestError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import { getRelatedListQuery } from './relatedListsLib.mjs';
 import { getSimilarQuery } from './similarLib.mjs';
 import {
@@ -57,7 +57,7 @@ function getPatternConfig(patternName) {
     return SEARCH_PATTERN_CONFIG[patternName];
   }
   throw new InternalServerError(
-    `Unknown search pattern '${patternName}' configured to a term.`
+    `Unknown search pattern '${patternName}' configured to a term.`,
   );
 }
 
@@ -72,7 +72,7 @@ function applyPattern({
   // If not yet dealing with an atomic value, request the resolved CTS query for this term's value.
   if (!searchTerm.hasValueType()) {
     throw new InternalServerError(
-      `Unable to determine a search term's value type.`
+      `Unable to determine a search term's value type.`,
     );
   } else if (searchTerm.getValueType() !== TYPE_ATOMIC) {
     searchTerm.setValue(
@@ -80,8 +80,8 @@ function applyPattern({
         searchTerm.getScopeName(),
         searchTerm.getValue(),
         searchTerm,
-        false // Given we're not in a group, we need not require the child to return a CTS query.
-      )
+        false, // Given we're not in a group, we need not require the child to return a CTS query.
+      ),
     );
   }
 
@@ -91,13 +91,13 @@ function applyPattern({
     termConfig.getOptionsReference(),
     patternName,
     requestOptions,
-    searchTerm.getSearchOptions()
+    searchTerm.getSearchOptions(),
   );
   return getPatternConfig(patternName).function(
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   );
 }
 
@@ -197,7 +197,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     const termName = searchTerm.getName();
     const scopeName = searchTerm.getScopeName();
@@ -207,7 +207,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
     const indexReferences = termConfig.getIndexReferences();
     if (!utils.isArray(indexReferences) || indexReferences.length !== 2) {
       throw new InternalServerError(
-        `The '${termName}' search term within the '${scopeName}' scope is not correctly configured: two indexes are required.`
+        `The '${termName}' search term within the '${scopeName}' scope is not correctly configured: two indexes are required.`,
       );
     }
     const startIndexName = indexReferences[0];
@@ -224,7 +224,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
     const endDateStr = dates[1].length > 0 ? dates[1] : null;
     if (!startDateStr && !endDateStr) {
       throw new InvalidSearchRequestError(
-        `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`
+        `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
       );
     }
 
@@ -240,7 +240,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
         endIndexName,
         endDateStr,
         op,
-        termWeight
+        termWeight,
       );
     } else if ('=' == op) {
       codeStr = `cts.andQuery([
@@ -250,7 +250,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
           endIndexName,
           endDateStr,
           '>=',
-          termWeight
+          termWeight,
         )},
         ${_getDateFieldRangeQuery(
           startIndexName,
@@ -258,7 +258,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
           endIndexName,
           endDateStr,
           '<=',
-          termWeight
+          termWeight,
         )}
       ])`;
     } else if ('!=' == op) {
@@ -269,7 +269,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
           endIndexName,
           endDateStr,
           '<',
-          termWeight
+          termWeight,
         )},
         ${_getDateFieldRangeQuery(
           startIndexName,
@@ -277,12 +277,12 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
           endIndexName,
           endDateStr,
           '>',
-          termWeight
+          termWeight,
         )}
       ])`;
     } else {
       throw new InternalServerError(
-        `The date range pattern has not accounted for the '${op}' operator.`
+        `The date range pattern has not accounted for the '${op}' operator.`,
       );
     }
 
@@ -300,10 +300,10 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DOCUMENT_ID] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     return _formattedPatternResponse(
-      `cts.documentQuery(['${searchTerm.getValue()}'])`
+      `cts.documentQuery(['${searchTerm.getValue()}'])`,
     );
   },
 };
@@ -320,7 +320,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     /*
      * When request is for values, we need to create a values query and a CTS query.  We always
@@ -330,7 +330,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
      */
     const requestIsForValues = searchPatternOptions.get(
       OPTION_NAME_RETURN_VALUES,
-      false
+      false,
     );
     // While the overall request may be for values, we need to return a query when this term instance
     // is a child of another.
@@ -343,7 +343,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
       !isChildTerm || // if not a child term, we need to ensure this is a cts query to be fed into cts.search.
       searchTerm.getMustReturnCtsQuery() || // Could be directly in a group, such as cts.andQuery.
       ![PATTERN_NAME_HOP_INVERSE, PATTERN_NAME_HOP_WITH_FIELD].includes(
-        searchTerm.getParentSearchTerm().getSearchTermConfig().getPatternName()
+        searchTerm.getParentSearchTerm().getSearchTermConfig().getPatternName(),
       ); // Parent HOP_WITH_FIELD and HOP_INVERSE terms don't need a document query
     // because they use cts.tripleRangeQuery and cts.triples, respectively.
     // Other patterns expect a cts query.
@@ -354,7 +354,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
 
     const eagerEvaluation = searchPatternOptions.get(
       OPTION_NAME_EAGER_EVALUATION,
-      true
+      true,
     );
 
     const ctsQueryStr = `${wrapStart}${_getAtLeastOneCtsTriple(
@@ -362,7 +362,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
       searchTermConfig.getPredicates(),
       searchTerm.getChildWillReturnCtsQuery(),
       false,
-      eagerEvaluation
+      eagerEvaluation,
     )}${wrapEnd}`;
     let values = null;
 
@@ -370,7 +370,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
       // A request may specify the maximum number of values to return.
       const maximumNumberOfValues = searchPatternOptions.get(
         OPTION_NAME_MAXIMUM_VALUES,
-        -1
+        -1,
       );
       const codeStr = `${_getAtLeastOneCtsTriple(
         searchTerm.getValue(),
@@ -378,7 +378,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
         searchTerm.getChildWillReturnCtsQuery(),
         true,
         eagerEvaluation,
-        maximumNumberOfValues
+        maximumNumberOfValues,
       )}`;
       values = SearchCriteriaProcessor.evalQueryString(codeStr);
     }
@@ -397,7 +397,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
@@ -410,17 +410,17 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
       ? termValue
       : `${_getCtsQueryFunctionName(
           'field',
-          searchTerm.isCompleteMatch()
+          searchTerm.isCompleteMatch(),
         )}(${utils.arrayToString(
-          termConfig.getIndexReferences()
+          termConfig.getIndexReferences(),
         )}, "${termValue}", ${utils.arrayToString(
-          resolvedSearchOptions
+          resolvedSearchOptions,
         )}, ${termWeight})`;
 
     const tripleRangeQuery = _getTripleRangeQuery(
       termConfig.getPredicates(),
       valuesQueryStr,
-      termWeight
+      termWeight,
     );
     const codeStr = parentScope
       ? _getParentDataType(parentScope, tripleRangeQuery)
@@ -439,7 +439,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_RANGE] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     const op = searchTerm.getComparisonOperator();
     _requireRangeOperator(searchTerm.getName(), op);
@@ -449,7 +449,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_RANGE] = {
       '${op}',
       ${utils.arrayToString(
         utils.toArray(searchTerm.getValue(), termConfig.getScalarType()),
-        termConfig.getScalarType()
+        termConfig.getScalarType(),
       )},
       ${utils.arrayToString(resolvedSearchOptions)},
       ${searchTerm.getWeight()}
@@ -468,14 +468,14 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_VALUE] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     const termConfig = searchTerm.getSearchTermConfig();
     const codeStr = `cts.fieldValueQuery(
       ${utils.arrayToString(termConfig.getIndexReferences())},
       ${utils.arrayToString(
         utils.toArray(searchTerm.getValue(), termConfig.getScalarType()),
-        termConfig.getScalarType()
+        termConfig.getScalarType(),
       )},
       ${utils.arrayToString(resolvedSearchOptions)},
       ${searchTerm.getWeight()}
@@ -494,12 +494,12 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_WORD] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     const termConfig = searchTerm.getSearchTermConfig();
     const codeStr = `${_getCtsQueryFunctionName(
       'field',
-      searchTerm.isCompleteMatch()
+      searchTerm.isCompleteMatch(),
     )}(
       ${utils.arrayToString(termConfig.getIndexReferences())},
       ${utils.arrayToString(utils.toArray(searchTerm.getValue()))},
@@ -520,7 +520,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     return _formattedPatternResponse(`sem.iri('${searchTerm.getValue()}')`);
   },
@@ -536,7 +536,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_PROPERTY_VALUE] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     let termValue = searchTerm.getValue();
     if (searchTerm.getName() == 'recordType') {
@@ -558,7 +558,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_PROPERTY_VALUE] = {
       ${utils.arrayToString(termConfig.getPropertyNames())},
       ${utils.arrayToString(
         utils.toArray(termValue, termConfig.getScalarType()),
-        termConfig.getScalarType()
+        termConfig.getScalarType(),
       )},
       ${utils.arrayToString(resolvedSearchOptions)},
       ${searchTerm.getWeight()}
@@ -579,17 +579,17 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     return _formattedPatternResponse(
       getRelatedListQuery(
         searchTerm,
         resolvedSearchOptions,
         searchPatternOptions,
-        requestOptions
+        requestOptions,
       ),
       null,
-      false // Exclude type constraint as related lists are already specific.
+      false, // Exclude type constraint as related lists are already specific.
     );
   },
 };
@@ -604,17 +604,17 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_SIMILAR] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     return _formattedPatternResponse(
       getSimilarQuery(
         searchTerm,
         resolvedSearchOptions,
         searchPatternOptions,
-        requestOptions
+        requestOptions,
       ),
       null,
-      false // Exclude type constraint as similar specifies one.
+      false, // Exclude type constraint as similar specifies one.
     );
   },
 };
@@ -629,7 +629,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
     searchTerm,
     resolvedSearchOptions,
     searchPatternOptions,
-    requestOptions
+    requestOptions,
   ) => {
     // Convert to an array, if not already one.
     const termValues = utils.toArray(searchTerm.getValue());
@@ -647,7 +647,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
       termValues,
       searchTerm.isCompleteMatch(),
       resolvedSearchOptions,
-      termWeight
+      termWeight,
     );
 
     const semanticWordQuery = _getWordQueries(
@@ -656,7 +656,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
       termValues,
       searchTerm.isCompleteMatch(),
       resolvedSearchOptions,
-      termWeight
+      termWeight,
     );
 
     const codeStr = `cts.orQuery([
@@ -666,7 +666,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
           ? TOKEN_PREDICATES
           : getSearchScopePredicates(termScopeName),
         semanticWordQuery,
-        termWeight
+        termWeight,
       )}
     ])`;
     return _formattedPatternResponse(codeStr);
@@ -676,7 +676,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
 function _formattedPatternResponse(
   codeStr,
   values = null,
-  includeTypeConstraint = true
+  includeTypeConstraint = true,
 ) {
   return {
     codeStr,
@@ -688,7 +688,7 @@ function _formattedPatternResponse(
 function _requireRangeOperator(termName, op) {
   if (!['>', '>=', '<', '<=', '=', '!='].includes(op)) {
     throw new InvalidSearchRequestError(
-      `the '${termName}' search term requires the '_comp' property set to '>', '>=', '<', '<=', '=', or '!='.`
+      `the '${termName}' search term requires the '_comp' property set to '>', '>=', '<', '<=', '=', or '!='.`,
     );
   }
 }
@@ -700,7 +700,7 @@ function _getWordQueries(
   termValues,
   isCompleteMatch,
   resolvedSearchOptions,
-  weight
+  weight,
 ) {
   const indexReferencesFormatted =
     indexReferences == TOKEN_FIELDS
@@ -711,10 +711,10 @@ function _getWordQueries(
     // Double-quote the value.
     return `${_getCtsQueryFunctionName(
       indexType,
-      isCompleteMatch
+      isCompleteMatch,
     )}(${indexReferencesFormatted}, "${utils.escapeCharacters(
       value,
-      '"'
+      '"',
     )}", ${utils.arrayToString(resolvedSearchOptions)}, ${weight})`;
   });
 
@@ -728,7 +728,7 @@ function _getWordQueries(
 function _getParentDataType(parentScope, subQuery) {
   return `cts.andQuery([cts.jsonPropertyValueQuery('dataType', ${utils.arrayToString(
     getSearchScopes()[parentScope].types,
-    'string'
+    'string',
   )}, ['exact']),${subQuery}])`;
 }
 
@@ -783,7 +783,7 @@ function _getAtLeastOneCtsTriple(
   childReturnsCtsQuery,
   castToString = false,
   eagerEvaluation = true,
-  max = -1
+  max = -1,
 ) {
   const needWrap = max > -1;
   const maxWrapStart = needWrap ? 'fn.subsequence(' : '';
@@ -813,7 +813,7 @@ function _getDateFieldRangeQuery(
   endIndexName,
   endDateStr,
   op,
-  weight
+  weight,
 ) {
   const isStartDate = _determineIsStartDateByOperator(op);
 
@@ -828,7 +828,7 @@ function _getDateFieldRangeQuery(
 
   return `cts.fieldRangeQuery('${fieldName}', '${op}', ${convertPartialDateTimeToSeconds(
     dateStr,
-    isStartDate
+    isStartDate,
   )}, [], ${weight})`;
 }
 

@@ -199,9 +199,9 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 
 | Software | Version | Build Property | Notes |
 |----------|---------|----------------|-------|
-| [MarkLogic Server](https://developer.marklogic.com/products/marklogic-server) | 11.3.1 | n/a | | 
-| [MarkLogic AWS CloudFormation Template (CFT)](https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master) | 11.3.1 | n/a | LUX uses a modified version, maintained in a private repo. |
-| [MarkLogic Content Pump (MLCP)](https://github.com/marklogic/marklogic-contentpump) | 11.3.1 | `mlcpVersion` | Loading content in MarkLogic. |
+| [MarkLogic Server](https://developer.marklogic.com/products/marklogic-server) | 12.0.0 | n/a | | 
+| [MarkLogic AWS CloudFormation Template (CFT)](https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master) | 12.0.0 | n/a | LUX uses a modified version, maintained in a private repo. |
+| [MarkLogic Content Pump (MLCP)](https://github.com/marklogic/marklogic-contentpump) | 12.0.0 | `mlcpVersion` | Loading content in MarkLogic. |
 | [Flux](https://github.com/marklogic/flux) ([docs](https://marklogic.github.io/flux/)) | 1.4.0 | n/a | [Backup](/scripts/jobs/myCollections/backup), [restore](/scripts/jobs/myCollections/restore), and [delete](/scripts/jobs/myCollections/delete) My Collections jobs. |
 | [Gradle](https://github.com/gradle/gradle) | 8.13 | n/a | Post-CFT deployment. |
 | [MarkLogic Gradle Plugin](https://github.com/marklogic-community/ml-gradle) | 5.0.0 | `mlGradleVersion` | Post-CFT deployment. |

@@ -25,10 +25,10 @@ const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
 const RELATED_LIST_PER_RELATION_DEFAULT = parseInt(
-  '%%relatedListPerRelationDefault%%'.trim()
+  '%%relatedListPerRelationDefault%%'.trim(),
 );
 const RELATED_LIST_PER_RELATION_MAX = parseInt(
-  '%%relatedListPerRelationMax%%'.trim()
+  '%%relatedListPerRelationMax%%'.trim(),
 );
 
 const DEFAULT_FILTER_SEARCH_RESULTS =
@@ -40,13 +40,13 @@ const FULL_TEXT_SEARCH_RELATED_FIELD_NAME =
   '%%fullTextSearchRelatedFieldName%%'.trim();
 
 const LOW_STORAGE_CRITICAL_THRESHOLD = parseInt(
-  '%%lowStorageCriticalThreshold%%'.trim()
+  '%%lowStorageCriticalThreshold%%'.trim(),
 );
 const LOW_STORAGE_WARNING_THRESHOLD = parseInt(
-  '%%lowStorageWarningThreshold%%'.trim()
+  '%%lowStorageWarningThreshold%%'.trim(),
 );
 const HIGH_STORAGE_WARNING_THRESHOLD = parseInt(
-  '%%highStorageWarningThreshold%%'.trim()
+  '%%highStorageWarningThreshold%%'.trim(),
 );
 
 const BASE_URL = 'https://lux.collections.yale.edu';

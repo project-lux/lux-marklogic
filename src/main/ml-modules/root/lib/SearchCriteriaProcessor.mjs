@@ -99,12 +99,12 @@ const SearchCriteriaProcessor = class {
     pageLength,
     pageWith,
     sortCriteria,
-    valuesOnly
+    valuesOnly,
   ) {
     this.resolvedSearchCriteria =
       SearchCriteriaProcessor._requireSearchCriteriaJson(
         scopeName,
-        searchCriteria
+        searchCriteria,
       );
     searchCriteria = null; // use this.resolvedSearchCriteria
 
@@ -130,7 +130,7 @@ const SearchCriteriaProcessor = class {
         this.requestOptions.scopeName = scopeName;
       } else {
         throw new InvalidSearchRequestError(
-          `'${this.resolvedSearchCriteria._scope}' is not a valid search scope.`
+          `'${this.resolvedSearchCriteria._scope}' is not a valid search scope.`,
         );
       }
     } else {
@@ -141,7 +141,7 @@ const SearchCriteriaProcessor = class {
     if (this.scopeName === 'multi') {
       if (!this.allowMultiScope) {
         throw new InvalidSearchRequestError(
-          `search scope of 'multi' not supported by this operation or level.`
+          `search scope of 'multi' not supported by this operation or level.`,
         );
       }
       if (this.resolvedSearchCriteria.OR) {
@@ -160,7 +160,7 @@ const SearchCriteriaProcessor = class {
             pageLength,
             pageWith,
             sortCriteria,
-            valuesOnly
+            valuesOnly,
           );
           // return since we are making a new call to this.process()
           return;
@@ -173,7 +173,7 @@ const SearchCriteriaProcessor = class {
               const searchCriteriaProcessor = new SearchCriteriaProcessor(
                 filterResults,
                 facetsAreLikely,
-                synonymsEnabled
+                synonymsEnabled,
               );
               try {
                 searchCriteriaProcessor.process(
@@ -186,21 +186,21 @@ const SearchCriteriaProcessor = class {
                   pageLength,
                   pageWith,
                   sortCriteria,
-                  valuesOnly
+                  valuesOnly,
                 );
               } catch (e) {
                 e.message = `Error in scope '${subScope}': ${e.message}`;
                 throw e;
               }
               return searchCriteriaProcessor.getCtsQueryStr();
-            }
+            },
           )}])`;
           // return since we have set this.ctsQueryStr based on other calls to searchCriteriaProcessor.process()
           return;
         }
       } else {
         throw new InvalidSearchRequestError(
-          `a search with scope 'multi' must contain an 'OR' array`
+          `a search with scope 'multi' must contain an 'OR' array`,
         );
       }
     }
@@ -210,7 +210,7 @@ const SearchCriteriaProcessor = class {
       this.resolvedSearchCriteria,
       null,
       true, // Must return a CTS query.
-      false // Return cts.falseQuery when the top-level term is unusable.
+      false, // Return cts.falseQuery when the top-level term is unusable.
     );
 
     // Protect from a repo-wide search as repo-wide facets are expensive to calculate, even when
@@ -222,8 +222,8 @@ const SearchCriteriaProcessor = class {
       if (this.ignoredTerms.length > 0) {
         throw new InvalidSearchRequestError(
           `the search criteria given only contains '${this.ignoredTerms.join(
-            "', '"
-          )}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`
+            "', '",
+          )}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
         );
       }
       throw new InvalidSearchRequestError(`more search criteria is required.`);
@@ -240,7 +240,7 @@ const SearchCriteriaProcessor = class {
     this.ctsQueryStr = this.resolveTokens(
       getSearchScopeFields(this.scopeName, true), // default to all
       getSearchScopePredicates(this.scopeName), // defaults to any
-      getSearchScopeTypes(this.scopeName, false) // default to none
+      getSearchScopeTypes(this.scopeName, false), // default to none
     );
   }
 
@@ -273,14 +273,14 @@ const SearchCriteriaProcessor = class {
 
   getEstimate() {
     return cts.estimate(
-      SearchCriteriaProcessor.evalQueryString(this.getCtsQueryStr())
+      SearchCriteriaProcessor.evalQueryString(this.getCtsQueryStr()),
     );
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
   getSearchResults() {
     const sortType = SearchCriteriaProcessor.getSortTypeFromSortCriteria(
-      this.sortCriteria
+      this.sortCriteria,
     );
     if (SORT_TYPE_MULTI_SCOPE === sortType) {
       return this._getMultiScopeSortResults();
@@ -294,19 +294,19 @@ const SearchCriteriaProcessor = class {
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
   _getMultiScopeSortResults() {
     const ctsQuery = SearchCriteriaProcessor.evalQueryString(
-      this.getCtsQueryStr()
+      this.getCtsQueryStr(),
     );
 
     const docPlan = op.fromSearch(
       ctsQuery,
       ['fragmentId'],
       null,
-      FROM_SEARCH_OPTIONS
+      FROM_SEARCH_OPTIONS,
     );
     const { order, subSortConfigs } =
       this.sortCriteria.getMultiScopeSortOption();
     const subSortPlans = subSortConfigs.map((subSortConfig) =>
-      this._getSubSortPlan(subSortConfig)
+      this._getSubSortPlan(subSortConfig),
     );
     const unionSubSortPlan = subSortPlans.reduce(
       (combinedPlan, subSortPlan) => {
@@ -316,7 +316,7 @@ const SearchCriteriaProcessor = class {
           return combinedPlan.union(subSortPlan);
         }
       },
-      null
+      null,
     );
 
     const finalPlan = docPlan
@@ -341,13 +341,13 @@ const SearchCriteriaProcessor = class {
         sortByMe: cts.fieldReference(subSortConfig.indexReference),
       },
       null,
-      op.fragmentIdCol('fragmentId')
+      op.fragmentIdCol('fragmentId'),
     );
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
   _getSemanticSortResults() {
-    // xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
 
     // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
     // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
@@ -356,7 +356,7 @@ const SearchCriteriaProcessor = class {
     const { predicate, indexReference, order } =
       this.sortCriteria.getSemanticSortOption();
     const ctsQuery = SearchCriteriaProcessor.evalQueryString(
-      this.getCtsQueryStr()
+      this.getCtsQueryStr(),
     );
 
     // get cts results into an optic plan.
@@ -372,8 +372,8 @@ const SearchCriteriaProcessor = class {
         op.col('subjectIri'),
         predicate,
         op.col('objectIri'),
-        op.fragmentIdCol('fragmentId')
-      )
+        op.fragmentIdCol('fragmentId'),
+      ),
     );
 
     // join the triples to the cts results where they have matching fragmentId
@@ -390,7 +390,7 @@ const SearchCriteriaProcessor = class {
     // Add the sortByMe values to the rows, where the index's fieldDocIri matches the triple's objectIri
     semanticSortPlan = semanticSortPlan.joinLeftOuter(
       indexedFieldPlan,
-      op.on('objectIri', 'fieldDocIri')
+      op.on('objectIri', 'fieldDocIri'),
     );
 
     // // The following is necessary when one wants each search result represented once yet has more than one triple with sortPredicate
@@ -405,7 +405,7 @@ const SearchCriteriaProcessor = class {
           order === 'ascending'
             ? op.min('sortByMe', op.col('sortByMe'))
             : op.max('sortByMe', op.col('sortByMe')),
-        ]
+        ],
       );
     }
 
@@ -421,7 +421,7 @@ const SearchCriteriaProcessor = class {
       .orderBy(
         order === 'ascending'
           ? op.asc(op.col('sortByMe'))
-          : op.desc(op.col('sortByMe'))
+          : op.desc(op.col('sortByMe')),
       )
       .offset((this.page - 1) * this.pageLength)
       .limit(this.pageLength)
@@ -440,7 +440,7 @@ const SearchCriteriaProcessor = class {
       .orderBy(
         order === 'ascending'
           ? op.asc(op.col('sortByMe'))
-          : op.desc(op.col('sortByMe'))
+          : op.desc(op.col('sortByMe')),
       )
       .limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
       .result()
@@ -448,21 +448,21 @@ const SearchCriteriaProcessor = class {
     if (planOutput.length > MAXIMUM_PAGE_WITH_LENGTH) {
       console.warn(
         `The search exceeded the ${MAXIMUM_PAGE_WITH_LENGTH} limit with base search criteria ${JSON.stringify(
-          this.getSearchCriteria()
-        )}`
+          this.getSearchCriteria(),
+        )}`,
       );
     }
     const foundUriIndex = planOutput.findIndex(({ uri }) => uri === uriToFind);
     if (foundUriIndex === -1) {
       throw new InvalidSearchRequestError(
-        `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`
+        `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`,
       );
     }
     const foundUriPage = Math.ceil((foundUriIndex + 1) / this.pageLength);
     const results = planOutput
       .slice(
         (foundUriPage - 1) * this.pageLength,
-        foundUriPage * this.pageLength
+        foundUriPage * this.pageLength,
       )
       .map(({ uri }) => ({
         id: uri,
@@ -488,30 +488,30 @@ const SearchCriteriaProcessor = class {
         .subsequence(
           cts.search(
             SearchCriteriaProcessor.evalQueryString(this.getCtsQueryStr()),
-            searchOptionsArr
+            searchOptionsArr,
           ),
           1,
-          MAXIMUM_PAGE_WITH_LENGTH + 1
+          MAXIMUM_PAGE_WITH_LENGTH + 1,
         )
         .toArray();
       if (docs.length > MAXIMUM_PAGE_WITH_LENGTH) {
         console.warn(
           `The search exceeded the pageWith limit (${MAXIMUM_PAGE_WITH_LENGTH}) with base search criteria ${JSON.stringify(
-            this.getSearchCriteria()
-          )}`
+            this.getSearchCriteria(),
+          )}`,
         );
       }
       const foundDocIndex = docs.findIndex((doc) => doc.baseURI === docToFind);
       if (foundDocIndex === -1) {
         throw new InvalidSearchRequestError(
-          `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`
+          `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`,
         );
       }
       const foundDocPage = Math.ceil((foundDocIndex + 1) / this.pageLength);
       const results = docs
         .slice(
           (foundDocPage - 1) * this.pageLength,
-          foundDocPage * this.pageLength
+          foundDocPage * this.pageLength,
         )
         .map((doc) => ({ id: doc.baseURI, type: doc.xpath('/json/type') }));
       return { resultPage: foundDocPage, results };
@@ -521,13 +521,13 @@ const SearchCriteriaProcessor = class {
         .subsequence(
           cts.search(
             SearchCriteriaProcessor.evalQueryString(this.getCtsQueryStr()),
-            searchOptionsArr
+            searchOptionsArr,
           ),
           utils.getStartingPaginationIndexForSubsequence(
             this.page,
-            this.pageLength
+            this.pageLength,
           ),
-          this.pageLength
+          this.pageLength,
         )
         .toArray();
       const results = docs.map((doc) => ({
@@ -604,7 +604,7 @@ const SearchCriteriaProcessor = class {
     searchCriteria,
     parentSearchTerm = null,
     mustReturnCtsQuery = false,
-    returnTrueForUnusableTerms = true
+    returnTrueForUnusableTerms = true,
   ) {
     let ctsQueryStr = '';
     SearchCriteriaProcessor._requireSearchCriteriaObject(searchCriteria);
@@ -624,7 +624,7 @@ const SearchCriteriaProcessor = class {
           groupArr[0],
           parentSearchTerm,
           false,
-          true // process() will catch if this is the only search criteria term and it gets ignored.
+          true, // process() will catch if this is the only search criteria term and it gets ignored.
         );
       } else {
         ctsQueryStr += `cts.${groupName.toLowerCase()}Query([`;
@@ -635,8 +635,8 @@ const SearchCriteriaProcessor = class {
               item,
               parentSearchTerm,
               true,
-              isAnd // we want cts.trueQuery when within an AND.
-            )
+              isAnd, // we want cts.trueQuery when within an AND.
+            ),
           );
         });
         ctsQueryStr += '])';
@@ -656,7 +656,7 @@ const SearchCriteriaProcessor = class {
           orCriteria,
           parentSearchTerm,
           mustReturnCtsQuery, // no need to override.
-          true // ANDs impose their own value.
+          true, // ANDs impose their own value.
         )})`;
       } else if (utils.isObject(notCriteria)) {
         ctsQueryStr = `cts.notQuery(${this.generateQueryFromCriteria(
@@ -664,13 +664,13 @@ const SearchCriteriaProcessor = class {
           notCriteria,
           parentSearchTerm,
           true,
-          true // We want cts.trueQuery so as to avoid cts.notQuery(cts.falseQuery)
+          true, // We want cts.trueQuery so as to avoid cts.notQuery(cts.falseQuery)
         )})`;
       } else {
         throw new InvalidSearchRequestError(
           `object or array expected for NOT search criteria but given ${JSON.stringify(
-            searchCriteria
-          )}`
+            searchCriteria,
+          )}`,
         );
       }
     } else if (searchCriteria.BOOST) {
@@ -685,19 +685,19 @@ const SearchCriteriaProcessor = class {
             searchCriteria.BOOST[0],
             parentSearchTerm,
             true,
-            false // Do not search for everything.
+            false, // Do not search for everything.
           )},
           ${this.generateQueryFromCriteria(
             scopeName,
             searchCriteria.BOOST[1],
             parentSearchTerm,
             true,
-            false // Do not boost by everything.
+            false, // Do not boost by everything.
           )}
         )`;
       } else {
         throw new InvalidSearchRequestError(
-          `the BOOST operator requires an array of two items.`
+          `the BOOST operator requires an array of two items.`,
         );
       }
     } else {
@@ -705,7 +705,7 @@ const SearchCriteriaProcessor = class {
         scopeName,
         searchCriteria,
         parentSearchTerm,
-        mustReturnCtsQuery
+        mustReturnCtsQuery,
       );
       if (searchTerm.hasModifiedCriteria()) {
         ctsQueryStr = this.generateQueryFromCriteria(
@@ -713,7 +713,7 @@ const SearchCriteriaProcessor = class {
           searchTerm.getModifiedCriteria(),
           parentSearchTerm,
           mustReturnCtsQuery,
-          true // Unless logic in _parseAndValidateTerm changes, modified criteria will be an AND.
+          true, // Unless logic in _parseAndValidateTerm changes, modified criteria will be an AND.
         );
       } else if (searchTerm.isUsable()) {
         const patternResponse = applyPattern({
@@ -755,7 +755,7 @@ const SearchCriteriaProcessor = class {
     scopeName,
     searchCriteria,
     parentSearchTerm,
-    mustReturnCtsQuery
+    mustReturnCtsQuery,
   ) {
     let searchTerm = new SearchTerm()
       .addScopeName(scopeName)
@@ -773,14 +773,14 @@ const SearchCriteriaProcessor = class {
           // Need to check for the property's existence as zero is a valid value.
           if (!searchCriteria.hasOwnProperty(termName)) {
             throw new InvalidSearchRequestError(
-              `the '${termName}' term requires a value.`
+              `the '${termName}' term requires a value.`,
             );
           }
         } else {
           throw new InvalidSearchRequestError(
             `search term defines more than one term name in criteria ${JSON.stringify(
-              searchCriteria
-            )}`
+              searchCriteria,
+            )}`,
           );
         }
       }
@@ -788,8 +788,8 @@ const SearchCriteriaProcessor = class {
     if (!searchTerm.hasName()) {
       throw new InvalidSearchRequestError(
         `search term does not specify a term name in criteria ${JSON.stringify(
-          searchCriteria
-        )}`
+          searchCriteria,
+        )}`,
       );
     }
 
@@ -800,7 +800,7 @@ const SearchCriteriaProcessor = class {
     if (utils.isString(termValue)) {
       const tokenizedValues = SearchCriteriaProcessor._tokenizeSearchTermValue(
         searchCriteria[termName],
-        searchTerm.isCompleteMatch() || searchTerm.isTokenized()
+        searchTerm.isCompleteMatch() || searchTerm.isTokenized(),
       );
       if (tokenizedValues.length > 1) {
         return searchTerm.addModifiedCriteria({
@@ -844,14 +844,14 @@ const SearchCriteriaProcessor = class {
               indexReferences: searchTermConfig.getIdIndexReferences(),
               patternName: PATTERN_NAME_INDEXED_VALUE,
               scalarType: 'string',
-            })
+            }),
           );
       } else {
         if (SearchCriteriaProcessor._hasGroup(termValue)) {
           searchTerm.setValueType(TYPE_GROUP);
           if (!acceptsGroup(patternName)) {
             throw new InvalidSearchRequestError(
-              `the '${termName}' term contains a group but is not allowed to.`
+              `the '${termName}' term contains a group but is not allowed to.`,
             );
           }
         } else if (
@@ -860,7 +860,7 @@ const SearchCriteriaProcessor = class {
           searchTerm.setValueType(TYPE_TERM);
           if (!acceptsTerm(patternName)) {
             throw new InvalidSearchRequestError(
-              `the '${termName}' term contains another term but is not allowed to.`
+              `the '${termName}' term contains another term but is not allowed to.`,
             );
           }
         }
@@ -880,15 +880,15 @@ const SearchCriteriaProcessor = class {
         searchTerm.addChildInfo(
           this._getPartialChildSearchTermInfo(
             targetScopeName || scopeName,
-            termValue
-          )
+            termValue,
+          ),
         );
 
         // Always attempt to accept the target scope when specified by the search term.
         if (targetScopeName && targetScopeName != scopeName) {
           if (!isSearchScopeName(targetScopeName)) {
             throw new InternalServerError(
-              `The '${termName}' search term is configured to an invalid target scope: '${targetScopeName}'`
+              `The '${termName}' search term is configured to an invalid target scope: '${targetScopeName}'`,
             );
           }
           searchTerm.setScopeName(targetScopeName);
@@ -899,11 +899,11 @@ const SearchCriteriaProcessor = class {
       !searchTermConfig.hasPatternName()
     ) {
       throw new InvalidSearchRequestError(
-        `the search term '${termName}' in scope '${scopeName}' only supports the 'id' child search term.`
+        `the search term '${termName}' in scope '${scopeName}' only supports the 'id' child search term.`,
       );
     } else if (!acceptsAtomicValue(patternName)) {
       throw new InvalidSearchRequestError(
-        `the search term '${termName}' in scope '${scopeName}' does not accept atomic values.`
+        `the search term '${termName}' in scope '${scopeName}' does not accept atomic values.`,
       );
     } else {
       searchTerm.setValueType(TYPE_ATOMIC);
@@ -960,15 +960,15 @@ const SearchCriteriaProcessor = class {
     const scopedTerms = this.searchTermsConfig[scopeName];
     if (!scopedTerms) {
       throw new InternalServerError(
-        `No terms are configured to the '${scopeName}' search scope.`
+        `No terms are configured to the '${scopeName}' search scope.`,
       );
     } else if (!scopedTerms[termName]) {
       throw new InvalidSearchRequestError(
         `the '${termName}' term is invalid for the '${scopeName}' search scope. Valid choices: ${Object.keys(
-          scopedTerms
+          scopedTerms,
         )
           .sort()
-          .join(', ')}`
+          .join(', ')}`,
       );
     }
     return new SearchTermConfig(scopedTerms[termName]);
@@ -1009,7 +1009,7 @@ const SearchCriteriaProcessor = class {
     if (SearchCriteriaProcessor._isKeywordTerm(searchTerm)) {
       // The return of this function could include cleaned up values.
       searchTerm.setValue(
-        sanitizeAndValidateWildcardedStrings(searchTerm.getValue())
+        sanitizeAndValidateWildcardedStrings(searchTerm.getValue()),
       );
     }
   }
@@ -1021,7 +1021,7 @@ const SearchCriteriaProcessor = class {
       SEARCH_OPTIONS_NAME_KEYWORD ==
         resolveSearchOptionsName(
           searchTermConfig.getOptionsReference(),
-          searchTermConfig.getPatternName()
+          searchTermConfig.getPatternName(),
         )
     );
   }
@@ -1031,7 +1031,7 @@ const SearchCriteriaProcessor = class {
       return true;
     }
     throw new InvalidSearchRequestError(
-      `object expected but given ${JSON.stringify(searchCriteria)}`
+      `object expected but given ${JSON.stringify(searchCriteria)}`,
     );
   }
 
@@ -1040,7 +1040,7 @@ const SearchCriteriaProcessor = class {
       return true;
     }
     throw new InvalidSearchRequestError(
-      `array expected but given ${JSON.stringify(searchCriteria)}`
+      `array expected but given ${JSON.stringify(searchCriteria)}`,
     );
   }
 
@@ -1075,7 +1075,7 @@ const SearchCriteriaProcessor = class {
 
     return SearchCriteriaProcessor.translateStringGrammarToJSON(
       scopeName,
-      searchCriteria
+      searchCriteria,
     );
   }
 
@@ -1095,14 +1095,14 @@ const SearchCriteriaProcessor = class {
     }
 
     throw new InternalServerError(
-      '_tokenizeSearchTermValue must be given a non-null string.'
+      '_tokenizeSearchTermValue must be given a non-null string.',
     );
   }
 
   static translateStringGrammarToJSON(scopeName, searchCriteria) {
     if (!isSearchScopeName(scopeName)) {
       throw new InvalidSearchRequestError(
-        `'${scopeName}' is not a valid search scope.`
+        `'${scopeName}' is not a valid search scope.`,
       );
     }
     // Parse as ML's search grammar and convert to the LUX Search JSON format.  There are no bindings.
@@ -1113,7 +1113,7 @@ const SearchCriteriaProcessor = class {
       ctsQueryObj = cts.parse(adjustedSearchCriteriaStr).toObject();
     } catch (e) {
       throw new InvalidSearchRequestError(
-        `unable to parse criteria ${searchCriteria}`
+        `unable to parse criteria ${searchCriteria}`,
       );
     }
     return {
@@ -1185,7 +1185,7 @@ const SearchCriteriaProcessor = class {
         searchCriteriaJson[operator] = [];
         for (const item of ctsQueryObj[propName].queries) {
           searchCriteriaJson[operator].push(
-            SearchCriteriaProcessor._walkParsedQuery(item)
+            SearchCriteriaProcessor._walkParsedQuery(item),
           );
         }
       } else if (propName == 'notQuery') {
@@ -1196,13 +1196,13 @@ const SearchCriteriaProcessor = class {
         searchCriteriaJson.BOOST = [];
         searchCriteriaJson.BOOST.push(
           SearchCriteriaProcessor._walkParsedQuery(
-            ctsQueryObj.boostQuery.matchingQuery
-          )
+            ctsQueryObj.boostQuery.matchingQuery,
+          ),
         );
         searchCriteriaJson.BOOST.push(
           SearchCriteriaProcessor._walkParsedQuery(
-            ctsQueryObj.boostQuery.boostingQuery
-          )
+            ctsQueryObj.boostQuery.boostingQuery,
+          ),
         );
       } else if (propName == 'wordQuery') {
         // Restore phrase quotes (when there is a space in the value).
@@ -1217,14 +1217,14 @@ const SearchCriteriaProcessor = class {
             searchCriteriaJson._lang = option.substring(5);
           } else {
             console.log(
-              `Ignoring search term option '${option}' from cts.parse result.`
+              `Ignoring search term option '${option}' from cts.parse result.`,
             );
           }
         }
       } else {
         // Better to ignore or bring back warnings?
         throw new InvalidSearchRequestError(
-          `'${propName}' is not a supported portion of the search string grammar.`
+          `'${propName}' is not a supported portion of the search string grammar.`,
         );
       }
     }
@@ -1259,8 +1259,8 @@ const SearchCriteriaProcessor = class {
   static evalQueryString(queryStr) {
     return fn.head(
       xdmp.eval(
-        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`
-      )
+        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`,
+      ),
     );
   }
 };

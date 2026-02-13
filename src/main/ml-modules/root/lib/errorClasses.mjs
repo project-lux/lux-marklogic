@@ -37,6 +37,12 @@ class InternalServerError extends Error {
   }
 }
 
+class InvalidHostError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class InvalidSearchRequestError extends Error {
   constructor(message) {
     super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`);
@@ -82,6 +88,7 @@ export {
   DataMergeError,
   InternalConfigurationError,
   InternalServerError,
+  InvalidHostError,
   InvalidSearchRequestError,
   LoopDetectedError,
   NotAcceptingWriteRequestsError,

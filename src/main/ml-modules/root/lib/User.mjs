@@ -1,5 +1,5 @@
 import { isDefined, isUndefined } from '../utils/utils.mjs';
-import { InternalServerError } from './mlErrorsLib.mjs';
+import { InternalServerError } from './errorClasses.mjs';
 import { COLLECTION_NAME_USER_PROFILE } from './appConstants.mjs';
 
 const User = class {
@@ -43,12 +43,12 @@ const User = class {
       .uris(
         '',
         ['limit=2', 'score-zero'],
-        cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)
+        cts.collectionQuery(COLLECTION_NAME_USER_PROFILE),
       )
       .toArray();
     if (results.length > 1) {
       throw new InternalServerError(
-        `Multiple user profiles found for username '${username}'.`
+        `Multiple user profiles found for username '${username}'.`,
       );
     } else if (results.length === 1) {
       return results[0] + '';

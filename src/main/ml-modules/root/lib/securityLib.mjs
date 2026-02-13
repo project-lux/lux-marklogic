@@ -26,10 +26,11 @@ import {
 import {
   AccessDeniedError,
   BadRequestError,
+  InvalidHostError,
   InternalServerError,
   NotAcceptingWriteRequestsError,
   ServerConfigurationChangedError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import { IDENTIFIERS } from './identifierConstants.mjs';
 import {
   createDocument,
@@ -575,6 +576,24 @@ function removeUnitConfigProperties(configTree, recursive = false) {
   }
 }
 
+/**
+ * Simple validation to ensure host contains only valid hostname/IP characters
+ * @param {string} host - The host parameter to validate
+ * @throws {InvalidHostError} If the host contains invalid characters
+ */
+function validateAndTrimHost(host) {
+  if (!host || typeof host !== 'string') {
+    throw new InvalidHostError('Host parameter is required');
+  }
+
+  // Allow only valid hostname/IP characters (prevents injection attacks)
+  if (!/^[a-zA-Z0-9.-:]+$/.test(host.trim())) {
+    throw new InvalidHostError('Host parameter contains invalid characters');
+  }
+
+  return host.trim();
+}
+
 export {
   CAPABILITY_READ,
   CAPABILITY_UPDATE,
@@ -599,4 +618,5 @@ export {
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,
   throwIfUserIsServiceAccount,
+  validateAndTrimHost,
 };

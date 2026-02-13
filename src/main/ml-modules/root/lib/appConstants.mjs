@@ -94,10 +94,10 @@ const ALLOWED_SEARCH_OPTIONS_KEYWORD = [
 const DEFAULT_SEARCH_OPTIONS_EXACT = ['exact'];
 const DEFAULT_SEARCH_OPTIONS_KEYWORD = [
   'case-insensitive',
-  'diacritic-sensitive', // For platform comparison.
+  'diacritic-insensitive',
   'punctuation-insensitive',
   'whitespace-insensitive',
-  'unstemmed', // For platform comparison.
+  'stemmed',
   'wildcarded',
 ];
 

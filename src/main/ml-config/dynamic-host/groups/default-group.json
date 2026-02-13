@@ -1,0 +1,4 @@
+{
+  "group-name": "Default",
+  "allow-dynamic-hosts": %%allowDynamicHosts%%
+}

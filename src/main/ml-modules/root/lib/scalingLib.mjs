@@ -11,4 +11,4 @@ function scaleOut(dynamicHost) {
   // TODO: continue
 }
 
-export { scaleOut, validateAndTrimHost as validateHostSecurity };
+export { scaleOut };

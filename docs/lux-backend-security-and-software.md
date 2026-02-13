@@ -197,24 +197,25 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 
 ## Inventory
 
-| Software | Version | Build Property | Link | Notes |
-|----------|---------|----------------|------|-------|
-| MarkLogic Server | 11.3.1 | n/a | https://developer.marklogic.com/products/marklogic-server | | 
-| MarkLogic AWS CloudFormation Template (CFT) | 11.3.1 | n/a | https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master | LUX uses a modified version, maintained in a private repo. |
-| MarkLogic Content Pump (MLCP) | 11.3.1 | `mlcpVersion` | https://github.com/marklogic/marklogic-contentpump | Loading content in MarkLogic. |
-| Flux | 1.4.0 | n/a | https://github.com/marklogic/flux ([docs](https://marklogic.github.io/flux/)) | [Backup](/scripts/jobs/myCollections/backup), [restore](/scripts/jobs/myCollections/restore), and [delete](/scripts/jobs/myCollections/delete) My Collections jobs. |
-| Gradle | 8.13 | n/a | https://github.com/gradle/gradle | Post-CFT deployment. |
-| MarkLogic Gradle Plugin | 5.0.0 | `mlGradleVersion` | https://github.com/marklogic-community/ml-gradle | Post-CFT deployment. |
-| MarkLogic Node Module | ^3.6.0 | n/a | https://www.npmjs.com/package/marklogic | To check the version used by LUX's middle tier, check its [package.json](https://github.com/project-lux/lux-middletier/blob/main/package.json). For additional information, see [Generated Data Service Interfaces](./lux-backend-api-usage.md#generated-data-service-interfaces). |
-| MarkLogic Unit Test | 1.5.0 | `mlUnitTestVersion` | https://github.com/marklogic-community/marklogic-unit-test | [User Guide](https://marklogic-community.github.io/marklogic-unit-test/) |
-| Gradle Credentials Plugin (nu.studer.credentials) | 3.0 | `nuStuderCredentialsVersion` | https://github.com/etiennestuder/gradle-credentials-plugin | Used to avoid clear text passwords in the Gradle properties files. |
-| Gradle Properties Plugin (net.saliman.properties) | 1.5.2 | `netSalimonPropertiesVersion` | https://github.com/stevesaliman/gradle-properties-plugin | Provides support for `gradle-[name].properties` files. |
-| `org.json:json` | 20220320 | `orgJsonVersion` | https://search.maven.org/artifact/org.json/json | Provides CSV to JSON support to the `processSearchTagConfig` Gradle task. |
-| `org.apache.commons:commons-csv` | 1.5.1-marklogic | `orgApacheCommonsCsvVersion` | https://search.maven.org/artifact/org.apache.commons/commons-csv | Provides/extends CSV support to MLCP. |
-| OpenJDK | 17.0.8 | n/a | https://openjdk.java.net/ | Required to run Gradle, MLCP, and CoRB. |
-| Git | 2.45.2 | n/a | https://git-scm.com/downloads | Source control. |
-| Visual Studio Code | Latest* | n/a | https://code.visualstudio.com/Download | IDE |
-| Docker Desktop | Latest* | n/a | https://www.docker.com/products/docker-desktop | Those with a Docker subscription or otherwise in compliance with their [Pricing & Subscriptions](https://www.docker.com/pricing/) may optionally create their local developer environment using Docker. |
+| Software | Version | Build Property | Notes |
+|----------|---------|----------------|-------|
+| [MarkLogic Server](https://developer.marklogic.com/products/marklogic-server) | 11.3.1 | n/a | | 
+| [MarkLogic AWS CloudFormation Template (CFT)](https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master) | 11.3.1 | n/a | LUX uses a modified version, maintained in a private repo. |
+| [MarkLogic Content Pump (MLCP)](https://github.com/marklogic/marklogic-contentpump) | 11.3.1 | `mlcpVersion` | Loading content in MarkLogic. |
+| [Flux](https://github.com/marklogic/flux) ([docs](https://marklogic.github.io/flux/)) | 1.4.0 | n/a | [Backup](/scripts/jobs/myCollections/backup), [restore](/scripts/jobs/myCollections/restore), and [delete](/scripts/jobs/myCollections/delete) My Collections jobs. |
+| [Gradle](https://github.com/gradle/gradle) | 8.13 | n/a | Post-CFT deployment. |
+| [MarkLogic Gradle Plugin](https://github.com/marklogic-community/ml-gradle) | 5.0.0 | `mlGradleVersion` | Post-CFT deployment. |
+| [MarkLogic Node Module](https://www.npmjs.com/package/marklogic) | ^3.6.0 | n/a | To check the version used by LUX's middle tier, check its [package.json](https://github.com/project-lux/lux-middletier/blob/main/package.json). For additional information, see [Generated Data Service Interfaces](./lux-backend-api-usage.md#generated-data-service-interfaces). |
+| [MarkLogic Unit Test](https://github.com/marklogic-community/marklogic-unit-test) | 1.5.0 | `mlUnitTestVersion` | [User Guide](https://marklogic-community.github.io/marklogic-unit-test/) |
+| [Gradle Credentials Plugin (nu.studer.credentials)](https://github.com/etiennestuder/gradle-credentials-plugin) | 3.0 | `nuStuderCredentialsVersion` | Used to avoid clear text passwords in the Gradle properties files. |
+| [Apache HTTP Client](https://central.sonatype.com/artifact/org.apache.httpcomponents.client5/httpclient5) | 5.3.1 | `httpClientVersion` | Consume the tenant status endpoints. |
+| [Gradle Properties Plugin (net.saliman.properties)](https://github.com/stevesaliman/gradle-properties-plugin) | 1.5.2 | `netSalimonPropertiesVersion` | Provides support for `gradle-[name].properties` files. |
+| [`org.json:json`](https://central.sonatype.com/artifact/org.json/json) | 20220320 | `orgJsonVersion` | Provides CSV to JSON support to the `processSearchTagConfig` Gradle task. |
+| [`org.apache.commons:commons-csv`](https://central.sonatype.com/artifact/org.apache.commons/commons-csv) | 1.5.1-marklogic | `orgApacheCommonsCsvVersion` | Provides/extends CSV support to MLCP. |
+| [OpenJDK](https://openjdk.java.net/) | 21.0.8 | n/a | Required to run Gradle, MLCP, and CoRB. |
+| [Git](https://git-scm.com/downloads) | 2.53.0 | n/a | Source control. |
+| [Visual Studio Code](https://code.visualstudio.com/Download) | Latest* | n/a | IDE |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop) | Latest* | n/a | Those with a Docker subscription or otherwise in compliance with their [Pricing & Subscriptions](https://www.docker.com/pricing/) may optionally create their local developer environment using Docker. |
 
 \* Presumes developer has auto updates or keeps up on the updates.
 

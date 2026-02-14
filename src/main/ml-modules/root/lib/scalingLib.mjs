@@ -1,6 +1,6 @@
 import { mayScaleEnvironment, validateAndTrimHost } from './securityLib.mjs';
 import { User } from './User.mjs';
-import { ML_MANAGE_PORT } from './appConstants.mjs';
+import { ML_ADMIN_PORT } from './appConstants.mjs';
 import { ScaleEnvironmentError } from './errorClasses.mjs';
 
 // Non-amp'd function that all scale out requests are to go through.
@@ -41,29 +41,31 @@ function __scaleOutAsAdmin(user, dynamicHost) {
     token = admin.issueDynamicHostToken(
       'Default', // associated build property: allowDynamicHosts
       xdmp.hostName(),
-      8001, // associated build property: enableApiTokenAuthentication
+      ML_ADMIN_PORT, // associated build property: enableApiTokenAuthentication
       xs.dayTimeDuration('PT5M'),
       `Token for ${dynamicHost} to be added by ${user.getUsername()}`,
     );
 
-    // Presumes and required dynamic host is uninitialized (http).
-    // Also presumes the same manage port as current host.
-    const url = `http://${dynamicHost}:${ML_MANAGE_PORT}/v1/admin/init`;
-    const response = xdmp.httpPost(url, {
-      data: xdmp.quote({ 'dynamic-host-token': token }),
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
-
-    // TODO: force error condition to see what we can log.
-    console.dir(response);
+    // Presumes and requires dynamic host is uninitialized (http).
+    // Also presumes the same admin port as current host.
+    const url = `http://${dynamicHost}:${ML_ADMIN_PORT}/admin/v1/init`;
+    const response = fn.head(
+      xdmp.httpPost(url, {
+        data: xdmp.quote({ 'dynamic-host-token': token }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
 
     // Verify this host believes it was successful
-    const newDynamicHosts = xdmp.getDynamicHosts().toArray();
-    if (!newDynamicHosts.some((host) => host.host === dynamicHost)) {
+    if (xdmp.getDynamicHosts().toArray().length === 0) {
+      let details = ` URL attempted: ${url}.`;
+      if (response) {
+        details = ` Response code: ${response.code}, response message: ${response.message}`;
+      }
       throwErrorDueToFailedScaleOutAttempt(
-        `dynamic host '${dynamicHost}' did not appear a list of ${newDynamicHosts.length} hosts.`,
+        `the dynamic hosts list is empty after attempting to add '${dynamicHost}'.${details}`,
       );
     }
 

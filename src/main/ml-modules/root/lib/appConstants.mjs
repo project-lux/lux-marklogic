@@ -2,7 +2,7 @@ const CODE_VERSION = '@@codeVersion@@';
 
 const ML_APP_NAME = '%%mlAppName%%';
 const TENANT_NAME = '%%environmentName%%';
-const ML_MANAGE_PORT = parseInt('%%mlManagePort%%'.trim());
+const ML_ADMIN_PORT = parseInt('%%mlAdminPort%%'.trim());
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
@@ -187,8 +187,8 @@ export {
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
   MESSAGE_ALREADY_HAS_A_PROFILE,
+  ML_ADMIN_PORT,
   ML_APP_NAME,
-  ML_MANAGE_PORT,
   PRIVILEGES_PREFIX,
   REG_EXP_NEAR_OPERATOR,
   RELATED_LIST_PAGE_LENGTH_DEFAULT,

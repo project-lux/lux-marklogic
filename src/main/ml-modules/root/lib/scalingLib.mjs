@@ -2,6 +2,7 @@ import { mayScaleEnvironment, validateAndTrimHost } from './securityLib.mjs';
 import { User } from './User.mjs';
 import { ML_ADMIN_PORT } from './appConstants.mjs';
 import { ScaleEnvironmentError } from './errorClasses.mjs';
+import { getExceptionObjectElseMessage } from '../utils/utils.mjs';
 
 // Non-amp'd function that all scale out requests are to go through.
 function scaleOut(dynamicHost) {
@@ -30,6 +31,7 @@ function __scaleOutAsAdmin(user, dynamicHost) {
   const admin = require('/MarkLogic/admin.xqy');
 
   let token = null;
+  let errorMsg = null;
   try {
     // Remove trace of any previous dynamic host.
     const oldDynamicHosts = xdmp.getDynamicHosts().toArray();
@@ -64,26 +66,26 @@ function __scaleOutAsAdmin(user, dynamicHost) {
       if (response) {
         details = ` Response code: ${response.code}, response message: ${response.message}`;
       }
-      throwErrorDueToFailedScaleOutAttempt(
-        `the dynamic hosts list is empty after attempting to add '${dynamicHost}'.${details}`,
-      );
+      errorMsg = `the dynamic hosts list is empty after attempting to add '${dynamicHost}'.${details}`;
     }
 
     return true;
+  } catch (e) {
+    errorMsg = getExceptionObjectElseMessage(e);
   } finally {
     if (token) {
       admin.revokeDynamicHostToken(token);
+    }
+
+    if (errorMsg) {
+      // We monitor for the message's prefix.
+      const fullMessage = `Unable to add dynamic host: ${errorMsg}`;
+      console.error(fullMessage);
+      throw new ScaleEnvironmentError(fullMessage);
     }
   }
 }
 // Only scaleOut should call this.
 const _scaleOutAsAdmin = import.meta.amp(__scaleOutAsAdmin);
-
-function throwErrorDueToFailedScaleOutAttempt(msg) {
-  // We monitor for the message's prefix.
-  const fullMessage = `Unable to add dynamic host: ${msg}`;
-  console.error(fullMessage);
-  throw new ScaleEnvironmentError(fullMessage);
-}
 
 export { scaleOut };

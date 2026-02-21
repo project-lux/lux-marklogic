@@ -33,7 +33,7 @@
 [MarkLogic's dynamic evaluator host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) highlights:
 
 * Dynamic hosts evaluate queries only.  They do not host forests and do not enable forest-level failover.
-* Requires MarkLogic be installed on the dynamic host but not initialized.  It cannot start with a data directory.  [resetLocalDynamicHost.sh](./resetLocalDynamicHost.sh) was created while testing scale-out and shows what needed to be done between two scale-out events.
+* Requires MarkLogic be installed on the dynamic host but not initialized.  It cannot start with a data directory.  [resetLocalDynamicHost.sh](/scripts/dynamicHost/resetLocalDynamicHost.sh) was created while testing scale-out and shows what needed to be done between two scale-out events.
 * When all permanent hosts in a cluster restart, any dynamic hosts are disconnected and do not automatically reconnect.  Since LUX will only have one permanent host, the design discusses a couple of options.
 
 The [Join the Cluster](#join-the-cluster) section references a script that implements the process of adding running EC2 instance to a MarkLogic cluster, as a dynamic host.  It makes the required changes on both the bootstrap and dynamic hosts.
@@ -158,7 +158,7 @@ To be verified:
 >    * [Simple scaling policies](https://docs.aws.amazon.com/autoscaling/ec2/userguide/simple-scaling-policies.html)
 >    * SO: [How do 'Health Check Grace Period' and 'Default Cooldown' in AWS autoscaling work?](https://stackoverflow.com/questions/55872117/how-do-health-check-grace-period-and-default-cooldown-in-aws-autoscaling-wor)
 
-By relying on the ASG, we no longer need to register the dynamic host with the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
+By relying on the ASG, we no longer need to register the dynamic host with the load balancer, making [updateLoadBalancer.sh](/scripts/dynamicHost/updateLoadBalancer.sh) obsolete.
 
 #### Join the Cluster
 
@@ -168,10 +168,10 @@ By relying on the ASG, we no longer need to register the dynamic host with the l
 
 The dynamic host's [EC2 User Data Script](#ec2-user-data-script) is to consume a new MarkLogic endpoint responsible for configuring a running EC2 instance into a connected dynamic host.
 
-The design calls for converting a subset of [addDynamicHost.sh](./addDynamicHost.sh) into MarkLogic server-side code, deployed to the bootstrap host and exposed via REST endpoint.  The subset of functionality we need is:
+The design calls for converting a subset of [addDynamicHost.sh](/scripts/dynamicHost/addDynamicHost.sh) into MarkLogic server-side code, deployed to the bootstrap host and exposed via REST endpoint.  The subset of functionality we need is:
 
 1. Generating a dynamic host token using `admin.issueDynamicHostToken`.
-2. Initialize the dynamic host using the token by consuming the `/admin/v1/init` endpoint on the dynamic host.  For a bash script example of this, start at line 685 of [addDynamicHost.sh](./addDynamicHost.sh).
+2. Initialize the dynamic host using the token by consuming the `/admin/v1/init` endpoint on the dynamic host.  For a bash script example of this, start at line 685 of [addDynamicHost.sh](/scripts/dynamicHost/addDynamicHost.sh).
 3. Invalidate the token using `admin.revokeDynamicHostToken`.
 4. Verify the dynamic host connected to the bootstrap host using `xdmp.getDynamicHosts`.
 5. Log "Unable to add dynamic host" to the application server's error log (e.g., 8003_ErrorLog.txt) when the server-side code experiences an error or is unable to verify the dynamic host connected.
@@ -217,7 +217,7 @@ Use AWS CloudWatch metrics and alarms to monitor CPU and memory utilization and 
 
 The alarm is to set the number of EC2 instances on the [Dynamic Host ASG](#dynamic-host-asg) to zero and utilize its deregistration delay setting to allow the dynamic host to complete in flight requests.
 
-By relying on the ASG, we no longer need to deregister the dynamic host from the load balancer, making [updateLoadBalancer.sh](./updateLoadBalancer.sh) obsolete.
+By relying on the ASG, we no longer need to deregister the dynamic host from the load balancer, making [updateLoadBalancer.sh](/scripts/dynamicHost/updateLoadBalancer.sh) obsolete.
 
 ### Licensing Compliance
 
@@ -305,7 +305,7 @@ Wait until instance passes its health checks, which can take minutes:
 
 During testing, after the dynamic host is in the cluster, we registered it with the load balancer such that the dynamic host starts to receive requests.  Given our intended use of a [Dynamic Host ASG](#dynamic-host-asg), we will not need to manually script this part.  Same for deregistration.
 
-[updateLoadBalancer.sh](./updateLoadBalancer.sh) enables one to register or deregister an EC2 instance from a load balancer.
+[updateLoadBalancer.sh](/scripts/dynamicHost/updateLoadBalancer.sh) enables one to register or deregister an EC2 instance from a load balancer.
 
 Copied from the script:
 

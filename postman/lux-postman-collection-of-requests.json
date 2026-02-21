@@ -626,6 +626,58 @@
 					},
 					"response": []
 				},
+        {
+          "name": "Scale Out",
+          "request": {
+            "auth": {
+              "type": "digest",
+              "digest": [
+                {
+                  "key": "password",
+                  "value": "{{mlDeployerPassword}}",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "{{mlDeployerUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "algorithm",
+                  "value": "MD5",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "dynamicHost",
+                  "value": "10.5.156.66",
+                  "type": "text",
+                  "uuid": "6bec3278-3ec9-4ab3-9133-49c7a8dd6a1c"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlDeployPort}}/ds/lux/scaleOut.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": [
+                "{{mlHost}}"
+              ],
+              "port": "{{mlDeployPort}}",
+              "path": [
+                "ds",
+                "lux",
+                "scaleOut.mjs"
+              ]
+            }
+          },
+          "response": []
+        },
 				{
 					"name": "Search",
 					"request": {

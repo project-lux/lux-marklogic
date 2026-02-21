@@ -3,9 +3,6 @@ import { scaleOut } from '../../lib/scalingLib.mjs';
 
 const dynamicHost = external.dynamicHost;
 
-const response = handleRequest(function () {
-  return scaleOut(dynamicHost);
+handleRequest(function () {
+  scaleOut(dynamicHost);
 });
-
-response;
-export default response;

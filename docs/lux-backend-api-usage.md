@@ -32,38 +32,42 @@
     - [Successful Request / Response Example](#successful-request--response-example-6)
     - [Failed Request / Response Example](#failed-request--response-example-7)
   - [Scale Out](#scale-out)
+    - [Dynamic Host Requirements](#dynamic-host-requirements)
+    - [Monitoring](#monitoring)
+    - [Successful Request / Response Example](#successful-request--response-example-7)
+    - [Failed Request / Response Example](#failed-request--response-example-8)
   - [Search](#search)
     - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
-    - [Failed Request / Response Example](#failed-request--response-example-8)
-  - [Search Estimate](#search-estimate)
-    - [Successful Request / Response Example](#successful-request--response-example-7)
     - [Failed Request / Response Example](#failed-request--response-example-9)
-  - [Search Info](#search-info)
+  - [Search Estimate](#search-estimate)
     - [Successful Request / Response Example](#successful-request--response-example-8)
     - [Failed Request / Response Example](#failed-request--response-example-10)
-  - [Search Will Match](#search-will-match)
+  - [Search Info](#search-info)
     - [Successful Request / Response Example](#successful-request--response-example-9)
     - [Failed Request / Response Example](#failed-request--response-example-11)
-  - [Stats](#stats)
+  - [Search Will Match](#search-will-match)
     - [Successful Request / Response Example](#successful-request--response-example-10)
     - [Failed Request / Response Example](#failed-request--response-example-12)
-  - [Storage Info](#storage-info)
+  - [Stats](#stats)
     - [Successful Request / Response Example](#successful-request--response-example-11)
     - [Failed Request / Response Example](#failed-request--response-example-13)
+  - [Storage Info](#storage-info)
+    - [Successful Request / Response Example](#successful-request--response-example-12)
+    - [Failed Request / Response Example](#failed-request--response-example-14)
   - [Tenant Status](#tenant-status)
     - [Get](#get)
-      - [Successful Request / Response Example](#successful-request--response-example-12)
-      - [Failed Request / Response Example](#failed-request--response-example-14)
-    - [Set](#set)
       - [Successful Request / Response Example](#successful-request--response-example-13)
       - [Failed Request / Response Example](#failed-request--response-example-15)
+    - [Set](#set)
+      - [Successful Request / Response Example](#successful-request--response-example-14)
+      - [Failed Request / Response Example](#failed-request--response-example-16)
   - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-14)
-    - [Failed Request / Response Example](#failed-request--response-example-16)
-  - [Version Info](#version-info)
     - [Successful Request / Response Example](#successful-request--response-example-15)
     - [Failed Request / Response Example](#failed-request--response-example-17)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-16)
+    - [Failed Request / Response Example](#failed-request--response-example-18)
 
 # Introduction
 
@@ -950,7 +954,95 @@ Response Body:
 
 ## Scale Out
 
-TODO
+The `scaleOut` endpoint adds the specified host to the cluster.  The endpoint implements [MarkLogic's dynamic host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html).  Dynamic hosts are evaluator nodes.  They improve the cluster's request throughput and do not manage forests.
+
+For licensing purposes, LUX's implementation supports one dynamic host at a time.  Each time this endpoint is consumed by an authorized user, any pre-existing dynamic hosts are permanently disassociated from the cluster.
+
+To consume, the user must have the `admin` role or the [`%%mlAppName%%-scale-environment`](/src/main/ml-config/base/security/privileges/app-update-scale-environment.json) executive privilege.  This executive privilege is granted to the [`%%appName%%-deployer`](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.
+
+The endpoint is available on multiple ports.  The `mlDeployPort` is recommended as requests take about five seconds.  The port determines which application server error log should be [monitored](#monitoring).
+
+After adding a dynamic host to the cluster, update your load balancer to start routing a subset of requests to it.  The complete design may be found in [MarkLogic Dynamic Host for LUX](/docs/lux-dynamic-host.md).
+
+### Dynamic Host Requirements
+
+Prior to consuming this endpoint, the dynamic host must have an uninitialized MarkLogic running.  If reusing a dynamic host, the following should be performed between attempts, on the dynamic host:
+
+1. Stop MarkLogic.
+2. Uninstall MarkLogic.
+3. Delete the data directory, first preserving any log files as required/desired.
+4. Install MarkLogic.
+5. Start MarkLogic.
+
+Below is a sample script that could be run on the dynamic host.  It does not preserve logs.
+
+```bash
+sudo /usr/bin/systemctl stop MarkLogic
+sudo /usr/bin/yum remove -y MarkLogic
+sudo /usr/bin/rm -rf /var/opt/MarkLogic/
+sudo yum install -y /home/ec2-user/MarkLogic-12.0.1-rhel.x86_64.rpm
+sudo systemctl enable MarkLogic
+sudo systemctl start MarkLogic
+echo "Done"
+```
+
+### Monitoring
+
+One may be alerted of successful and failed attempts by monitoring for the following strings in the application server error log.
+
+* Attempt messages include "is attempting add dynamic host"
+* Success messages include "successfully added dynamic host"
+* Failure messages for authorized users include "Unable to add dynamic host"
+* Failure messages for unauthorized users include "is not authorized to scale the environment"
+
+**URL** : `/ds/lux/scaleOut.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `dynamicHost` | `x.x.x.x` | **REQUIRED** - Specify the hostname or IP address of the dynamic host.  See [Dynamic Host Requirements](#dynamic-host-requirements). |
+
+### Successful Request / Response Example
+
+Scenario: Successfully initialize and add the dynamic host to the cluster.
+
+Parameters: 
+
+`dynamicHost`: `x.x.x.x`
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body: Empty
+
+### Failed Request / Response Example
+
+Scenario: The dynamic host is already initialized.
+
+Parameters: 
+
+`dynamicHost`: `x.x.x.x`
+
+Response Status Code: 500
+
+Response Status Message: Internal Server Error
+
+Response Body:
+
+```
+{
+  "errorResponse":{
+    "statusCode":500,
+    "status":"Internal Server Error",
+    "messageCode":"INTERNAL ERROR",
+    "message":"JS-JAVASCRIPT: throw new ScaleEnvironmentError(fullMessage); --Error running JavaScript request: Error: Unable to add dynamic host: SVC-SOCCONN: Socket connect error: connect x.x.x.x:8001: Connection refused . See the MarkLogic server error log for further detail."
+  }
+}
+```
 
 ## Search
 

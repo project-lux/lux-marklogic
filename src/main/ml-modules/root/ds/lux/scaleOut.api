@@ -5,8 +5,5 @@
       "name": "dynamicHost",
       "datatype": "string"
     }
-  ],
-  "return": {
-    "datatype": "boolean"
-  }
+  ]
 }

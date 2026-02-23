@@ -741,9 +741,6 @@ task performBaseDeployment() {
     println ""
   }
 }
-// It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
-// could result in an error if the tenant's modules database didn't exist in time.
-performBaseDeployment.finalizedBy mlDeployForestReplicas
 
 // Enables SSL on the builtin servers
 // And create the certificate intended for the non-builtin servers

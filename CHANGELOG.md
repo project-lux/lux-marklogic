@@ -46,6 +46,11 @@ Most bullet points without a ticket reference are associated with [#643](https:/
 ### Removed
 
 - Forest-level failover.
+- Removed the /v1/search options file.
+- Removed the build script's dependency on MLCP including the unused MLCP Gradle tasks:
+    - `copyDatabase`
+    - `importDataFull`
+    - `importDataIncremental` 
   
 ### Fixed
 

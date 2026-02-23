@@ -587,7 +587,8 @@ function validateAndTrimHost(host) {
   }
 
   // Allow only valid hostname/IP characters (prevents injection attacks)
-  if (!/^[a-zA-Z0-9.-:]+$/.test(host.trim())) {
+  // Note: Colons are not allowed as they're used for hostname:port separation
+  if (!/^[a-zA-Z0-9.-]+$/.test(host.trim())) {
     throw new InvalidHostError('Host parameter contains invalid characters');
   }
 

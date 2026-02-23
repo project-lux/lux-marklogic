@@ -422,14 +422,16 @@ Available application servers and their ports may vary by environment.  The outc
 | Property | Port^ | Type | PROD? | Usage |
 | -------- | ----- | ---- | ----- | ----- | 
 | n/a | 7997 | HTTP | Yes | Internal and external health check. |
-| n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
-| n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
-| n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPort` | 8003 | REST | Yes | Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  The middle tier is expected to send all requests here.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlAppServicesPort` | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
+| `mlAdminPort` | 8001 | HTTP | Yes | MarkLogic Admin Console. |
+| `mlManagePort` | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
+| `mlRestPort` | 8003 | REST | Yes | 1 of 2 application servers intended to be used by the middle tier.  Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlDeployPort` | 8004 | REST | Yes | Use this application server when making deployment changes, inclusive of Gradle tasks, blue/green switches, and to consume the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out).  Even when the My Collections feature is enabled, the authentication scheme of this application server will remain digest. |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
-| `mlTestRestPort` | 8010 | REST | Yes | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |
+| `mlRestPort2` | 8006 | REST | Yes | 2 of 2 application servers intended to be used by the middle tier.  Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlTestRestPort` | 8010 | REST | No | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |
 
-\* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.
+\* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006 and thus would be in conflict with the above.
 
 ^ The most definitive source is the environment itself.  Second would be the environment's `gradle-[name].properties` file.
 

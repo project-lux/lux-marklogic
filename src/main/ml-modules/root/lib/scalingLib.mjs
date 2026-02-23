@@ -8,19 +8,19 @@ import { getExceptionObjectElseMessage } from '../utils/utils.mjs';
 function scaleOut(dynamicHost) {
   const user = new User();
   console.log(
-    `User '${user.getUsername()}' is attempting to add dynamic host '${dynamicHost}'.`,
+    `User '${user.getUsername()}' is attempting to add dynamic host '${dynamicHost}'`,
   );
 
   if (!mayScaleEnvironment()) {
     throw new ScaleEnvironmentError(
-      `User '${user.getUsername()}' is not authorized to scale the environment.`,
+      `User '${user.getUsername()}' is not authorized to scale the environment`,
     );
   }
 
   const result = _scaleOutAsAdmin(user, dynamicHost);
   if (result) {
     console.log(
-      `User '${user.getUsername()}' successfully added dynamic host '${dynamicHost}'.`,
+      `User '${user.getUsername()}' successfully added dynamic host '${dynamicHost}'`,
     );
   }
   return result;
@@ -37,6 +37,20 @@ function __scaleOutAsAdmin(user, dynamicHost) {
     const oldDynamicHosts = xdmp.getDynamicHosts().toArray();
     if (oldDynamicHosts.length > 0) {
       xdmp.removeDynamicHosts(oldDynamicHosts);
+    }
+
+    // Verify the local host has the required configuration.
+    const groupId = xdmp.group();
+    const config = admin.getConfiguration();
+    if (
+      !admin.groupGetAllowDynamicHosts(config, groupId) ||
+      !admin.appserverGetAPITokenAuthentication(
+        config,
+        admin.appserverGetId(config, groupId, 'Admin'),
+      )
+    ) {
+      errorMsg = `the local host is not configured to allow dynamic hosts; check deployment configuration`;
+      return false;
     }
 
     dynamicHost = validateAndTrimHost(dynamicHost);
@@ -62,11 +76,12 @@ function __scaleOutAsAdmin(user, dynamicHost) {
 
     // Verify this host believes it was successful
     if (xdmp.getDynamicHosts().toArray().length === 0) {
-      let details = ` URL attempted: ${url}.`;
+      let details = ` URL attempted: ${url}`;
       if (response) {
         details = ` Response code: ${response.code}, response message: ${response.message}`;
       }
       errorMsg = `the dynamic hosts list is empty after attempting to add '${dynamicHost}'.${details}`;
+      return false;
     }
 
     return true;

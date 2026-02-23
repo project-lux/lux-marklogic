@@ -205,7 +205,7 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 |----------|---------|----------------|-------|
 | [MarkLogic Server](https://developer.marklogic.com/products/marklogic-server) | 12.0.1 | n/a | | 
 | [MarkLogic AWS CloudFormation Template (CFT)](https://github.com/marklogic/cloud-enablement-aws/tree/11.0-master) | 12.0.1 | n/a | LUX uses a modified version, maintained in a private repo. |
-| [MarkLogic Content Pump (MLCP)](https://github.com/marklogic/marklogic-contentpump) | 12.0.1 | `mlcpVersion` | Loading content in MarkLogic. |
+| [MarkLogic Content Pump (MLCP)](https://github.com/marklogic/marklogic-contentpump) | 12.0.1 | n/a | Loading content in MarkLogic. |
 | [Flux](https://github.com/marklogic/flux) ([docs](https://marklogic.github.io/flux/)) | 1.4.0 | n/a | [Backup](/scripts/jobs/myCollections/backup), [restore](/scripts/jobs/myCollections/restore), and [delete](/scripts/jobs/myCollections/delete) My Collections jobs. |
 | [Gradle](https://github.com/gradle/gradle) | 8.13 | n/a | Post-CFT deployment. |
 | [MarkLogic Gradle Plugin](https://github.com/marklogic-community/ml-gradle) | 5.0.0 | `mlGradleVersion` | Post-CFT deployment. |
@@ -215,7 +215,6 @@ For version compatibility questions, see the [MarkLogic Server Product Support M
 | [Apache HTTP Client](https://central.sonatype.com/artifact/org.apache.httpcomponents.client5/httpclient5) | 5.6 | `httpClientVersion` | Consume the tenant status endpoints. |
 | [Gradle Properties Plugin (net.saliman.properties)](https://github.com/stevesaliman/gradle-properties-plugin) | 1.5.2 | `netSalimonPropertiesVersion` | Provides support for `gradle-[name].properties` files. |
 | [`org.json:json`](https://central.sonatype.com/artifact/org.json/json) | 20220320 | `orgJsonVersion` | Provides CSV to JSON support to the `processSearchTagConfig` Gradle task. |
-| [`org.apache.commons:commons-csv`](https://central.sonatype.com/artifact/org.apache.commons/commons-csv) | 1.5.1-marklogic | `orgApacheCommonsCsvVersion` | Provides/extends CSV support to MLCP. |
 | [OpenJDK](https://openjdk.java.net/) | 21.0.8 | n/a | Required to run Gradle, MLCP, and CoRB. |
 | [Git](https://git-scm.com/downloads) | 2.53.0 | n/a | Source control. |
 | [Visual Studio Code](https://code.visualstudio.com/Download) | Latest* | n/a | IDE |

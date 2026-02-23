@@ -39,16 +39,11 @@ repositories {
   mavenCentral()
 }
 
-configurations {
-  mlcp
-}
-
 dependencies {
   mlBundle "com.marklogic:marklogic-unit-test-modules:${mlUnitTestVersion}"
-  mlcp "com.marklogic:mlcp:${mlcpVersion}"
-  mlcp "org.apache.commons:commons-csv:${orgApacheCommonsCsvVersion}"
-  mlcp files("lib")
 }
+
+// Originally for MLCP.
 tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
@@ -250,15 +245,6 @@ task preprocessRuntimeConfigAndModules() {
     into './build/main'
     include 'ml-config/**'
     include 'ml-modules/**'
-    exclude 'ml-modules/options/lux-options.xml' // Handle separately for renaming
-    filter createTokenFilter(names, texts)
-  }
-
-  // Copy and rename lux-options.xml
-  copy {
-    from './src/main/ml-modules/options/lux-options.xml'
-    into './build/main/ml-modules/options'
-    rename { project.getProperty("mlAppName") + "-request-group-1-options.xml" }
     filter createTokenFilter(names, texts)
   }
 
@@ -367,145 +353,6 @@ task addSupportForExecutingWithServiceAccounts() {
 }
 mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
-
-// Developer convenience to copy a database, including from DEV to one's local environment.
-// More info in /docs/lux-backend-build-tool-and-tasks.md.
-//
-// Should this task automatically clear the database first, like importDataFull does?
-task copyDatabase(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-
-  classpath = configurations.mlcp
-  command = "COPY"
-
-  input_host = project.property("copyDatabaseInputHost")
-  input_port = project.property("copyDatabaseInputPort").toInteger()
-  input_username = project.property("copyDatabaseInputUsername")
-  input_password = credentials.forKey('copyDatabaseInputPassword')
-  input_database = project.property("copyDatabaseInputDatabase")
-
-  output_host = project.property("copyDatabaseOutputHost")
-  output_port = project.property("copyDatabaseOutputPort").toInteger()
-  output_username = project.property("copyDatabaseOutputUsername")
-  output_password = credentials.forKey('copyDatabaseOutputPassword')
-  output_database = project.property("copyDatabaseOutputDatabase")
-
-  copy_permissions=true
-  copy_collections=true
-  copy_metadata=true
-  copy_properties=true
-  copy_quality=true
-
-  fastload=true
-  batch_size = project.getProperties().getOrDefault("copyDatabaseBatchSize", "100").toInteger()
-  thread_count = project.getProperties().getOrDefault("copyDatabaseThreadCount", "4").toInteger()
-
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-}
-
-// Import data running in full mode.
-//    Database *is* cleared first.
-//    MLCP *does* run in fast load mode --therefore it is *not* safe to update documents.
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-//
-// At least on Windows, this task can start to fail once the Gradle cache has enough entries
-// to make the generated command too long.  Perhaps we can provide a shorter classpath.
-task importDataFull(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-  
-  classpath = configurations.mlcp
-  command = "IMPORT"
-  host = project.property("importDataHost")
-  port = project.property("importDataPort").toInteger()
-  username = project.property("importDataUsername")
-  password = credentials.forKey('importDataPassword')
-  database = project.property("tenantContentDatabase")
-  modules = project.property("tenantModulesDatabase")
-  fastload = true // Database cleared for full loads
-  input_file_path = project.property("importDataFilePath")
-  input_file_type = "delimited_json"
-  input_compressed = project.property("importDataFileIsCompressed")
-  input_compression_codec = "gzip"
-  transform_module = "/documentTransforms.sjs"
-  transform_function = "associateDocToDataSlice"
-  uri_id = "id"
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-
-  dependsOn {
-    mlClearDatabase
-  }
-}
-
-// Import data running in incremental mode:
-//    Database is *not* cleared first.
-//    MLCP does *not* run in fast load mode --therefore it is safe to update documents.
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-//
-// At least on Windows, this task can start to fail once the Gradle cache has enough entries
-// to make the generated command too long.  Perhaps we can provide a shorter classpath.
-task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-
-  classpath = configurations.mlcp
-  command = "IMPORT"
-
-  host = project.property("importDataHost")
-  port = project.property("importDataPort").toInteger()
-  username = project.property("importDataUsername")
-  password = credentials.forKey('importDataPassword')
-  database = project.property("tenantContentDatabase")
-  modules = project.property("tenantModulesDatabase")
-  fastload = false // Database not cleared for incremental loads
-  input_file_path = project.property("importDataFilePath")
-  input_file_type = "delimited_json"
-  input_compressed = project.property("importDataFileIsCompressed")
-  input_compression_codec = "gzip"
-  transform_module = "/documentTransforms.sjs"
-  transform_function = "associateDocToDataSlice"
-  uri_id = "id"
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-}
-
-task importRestApiOptions(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-  
-  classpath = configurations.mlcp
-  command = "IMPORT"
-  host = project.property("mlHost")
-  port = project.property("mlRestPortGroup2").toInteger()
-  username = project.property("mlUsername")
-  password = credentials.forKey('mlPassword')
-  database = project.property("tenantModulesDatabase")
-  modules = project.property("tenantModulesDatabase")
-  fastload = false // need ability to overwrite
-  input_file_path = "./build/main/ml-modules/options/" + project.getProperty("mlAppName") + "-request-group-1-options.xml"
-  input_file_type = "documents"
-  output_uri_replace = ".*/" + project.getProperty("mlAppName") + "-request-group-1-options.xml,'/Default/" + project.getProperty("mlAppName") + "-request-group-2/rest-api/options/" + project.getProperty("mlAppName") + "-request-group-2-options.xml'"
-  output_permissions = "rest-reader-internal,read,rest-admin-internal,update," + project.getProperty("mlAppName") + "-deployer,update"
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-}
-importRestApiOptions.dependsOn preprocessRuntimeConfigAndModules
-mlLoadModules.finalizedBy importRestApiOptions
 
 task ensureTenantStatusDocumentExists() {
   doFirst {
@@ -638,7 +485,6 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
 }
 mlDeploy.finalizedBy generateRemainingSearchTerms
 mlLoadModules.finalizedBy generateRemainingSearchTerms
-copyDatabase.finalizedBy generateRemainingSearchTerms
 
 // Runs the related lists configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -861,11 +707,6 @@ task printCredentials {
     // Most important ones
     println "mlPassword: '" + credentials.forKey('mlPassword') + "'"
     println "unitTesterPassword: '" + credentials.forKey('unitTesterPassword') + "'"
-
-    // Only required by specific, infrequently-used tasks
-    println "copyDatabaseInputPassword: " + credentials.forKey('copyDatabaseInputPassword')
-    println "copyDatabaseOutputPassword: " + credentials.forKey('copyDatabaseOutputPassword')
-    println "importDataPassword: " + credentials.forKey('importDataPassword')
   }
 }
 

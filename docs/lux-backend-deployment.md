@@ -44,12 +44,12 @@ What follows is a mix of deployment and runtime dependencies and prerequisites f
 
 3. Network exposes the ports for the [LUX MarkLogic Application Servers](#lux-marklogic-application-servers).
 4. Clone of the LUX Backend repo, with the correct branch checked out.  New clone?  You may need to allow `gradlew` to execute: `chmod 744 gradlew`.
-5. Many of the deployment steps use [Gradle Build Tool](https://gradle.org/) tasks. Gradle doesn't require any set up, as it should be downloaded for you if you use the gradle wrapper script (`gradlew`). However, Java is a prerequisite for running Gradle tasks.  The version required can vary based on usage.  The `JAVA_HOME` environment variable may need to be set --Gradle will produce an error in a subsequent step, when the environment variable is required but not set.
+5. Many of the deployment steps use [Gradle Build Tool](https://gradle.org/) tasks. Gradle doesn't require any set up, as it should be downloaded for you if you use the gradle wrapper script (`gradlew`). However, Java is a prerequisite for running Gradle tasks.  See [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md#software) for the version used on the project.  The `JAVA_HOME` environment variable may need to be set --Gradle will produce an error in a subsequent step, when the environment variable is required but not set.
 
     ```
-    java version "1.8.0_281"
-    Java(TM) SE Runtime Environment (build 1.8.0_281-b09)
-    Java HotSpot(TM) 64-Bit Server VM (build 25.281-b09, mixed mode)
+    openjdk 21.0.8 2025-07-15 LTS
+    OpenJDK Runtime Environment Zulu21.44+17-CA (build 21.0.8+9-LTS)
+    OpenJDK 64-Bit Server VM Zulu21.44+17-CA (build 21.0.8+9-LTS, mixed mode, sharing)
     ```
 
 6. If planning to run MLCP from the command line (vs. via Gradle), [download](https://server.marklogic.com/products/mlcp) and install the MLCP version that aligns with the MarkLogic Server version.
@@ -110,8 +110,6 @@ The `[passwordPropertyName]` keys are:
 
    * `mlPassword`: Required.  Expect a 401 when invalid credentials are used.
    * `unitTesterPassword`: Required when deploying the unit tests.  Expect `mlDeployUsers` or higher to fail if not set.
-   * `copyDatabaseInputPassword` and `copyDatabaseOutputPassword`: Only required by the `copyDatabase` task.
-   * `importDataPassword`: Only required by the `importData*` tasks.
 
 Note the `endpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
 
@@ -341,7 +339,7 @@ Example Query Console response, identifying an underlying error:
 
 # Regenerate Remaining Search Terms
 
-Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `endpointAccessUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
+Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `endpointAccessUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
 
 # Regenerate Related Lists Configuration
 

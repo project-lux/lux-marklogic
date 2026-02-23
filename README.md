@@ -10,6 +10,7 @@ Below is a static list of available documentation within the [/docs](/docs) dire
 - [Local Development Environment](/docs/lux-backend-setup-local-env.md)
 - [Import Data](/docs/lux-backend-import-data.md)
 - [Infrastructure](/docs/lux-backend-infrastructure.md)
+- [Scaling](/docs/lux-dynamic-host.md)
 - [Performance Testing Procedure](/docs/lux-performance-testing.md)
 - [Postman Workspace](/docs/lux-postman-workspace.md)
 - [Repository Inventory](/docs/lux-backend-repo-inventory.md)

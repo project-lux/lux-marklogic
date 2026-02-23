@@ -3,10 +3,7 @@ import { deleteDocument } from '../../../lib/crudLib.mjs';
 
 const uri = external.uri;
 
-const response = handleRequest(function () {
+handleRequest(function () {
   declareUpdate();
-  return deleteDocument(uri);
+  deleteDocument(uri);
 });
-
-response;
-export default response;

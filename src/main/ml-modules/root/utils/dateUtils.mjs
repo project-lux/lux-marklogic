@@ -1,4 +1,4 @@
-import { BadRequestError } from '../lib/mlErrorsLib.mjs';
+import { BadRequestError } from '../lib/errorClasses.mjs';
 
 const MIN_SUPPORTED_FULL_DATE_IN_SECONDS =
   new Date('-009999-01-01T00:00:00.000Z').getTime() / 1000;
@@ -65,7 +65,7 @@ function _completeDateTimeValue(dateTimeStr, start = true) {
       When providing less than an entire xs.dateTime value, the system will populate the rest of the value based on the operator or whether the search tag is configured as a start (vs. end) date.
       When providing more than 'YYYY-MM-DD', quote the entire value.`
         .replace(/\n/g, ' ')
-        .replace(/[ ]{2,}/g, ' ')
+        .replace(/[ ]{2,}/g, ' '),
     );
   }
   const year = match[0];
@@ -79,7 +79,7 @@ function _completeDateTimeValue(dateTimeStr, start = true) {
     dateTimeStr =
       dateTimeStr +
       suffix.substring(
-        suffix.length - (targetedSyntaxLength - dateTimeStr.length)
+        suffix.length - (targetedSyntaxLength - dateTimeStr.length),
       );
   }
 
@@ -102,7 +102,7 @@ function _convertDateTimeToSeconds(dateTimeStr) {
 
   if (isNaN(totalSeconds)) {
     throw new BadRequestError(
-      `Unable to convert date '${dateTimeStr}' into seconds.`
+      `Unable to convert date '${dateTimeStr}' into seconds.`,
     );
   }
 

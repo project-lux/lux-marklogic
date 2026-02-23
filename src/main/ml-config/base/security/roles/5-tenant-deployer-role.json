@@ -34,6 +34,11 @@
       "kind": "execute"
     },
     {
+      "privilege-name": "%%mlAppName%%-scale-environment",
+      "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-scale-environment",
+      "kind": "execute"
+    },
+    {
       "privilege-name": "%%mlAppName%%-update-tenant-status",
       "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-update-tenant-status",
       "kind": "execute"

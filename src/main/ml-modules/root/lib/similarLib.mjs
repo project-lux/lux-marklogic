@@ -3,7 +3,7 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
   NotFoundError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import {
   ASPECT_NAME_RESERVED,
   SIMILAR_CONFIG,
@@ -25,13 +25,13 @@ function getSimilarQuery(
   searchTerm,
   resolvedSearchOptions,
   searchPatternOptions,
-  requestOptions
+  requestOptions,
 ) {
   const scopeName = searchTerm.getScopeName();
   const similarValues = getSimilarValues(
     scopeName,
     searchTerm.getValue(),
-    searchTerm.getProperty('include')
+    searchTerm.getProperty('include'),
   );
   const searchCriteria = buildSearchCriteria(scopeName, similarValues);
   const searchCriteriaProcessor = processSearchCriteria({
@@ -45,7 +45,7 @@ function getSimilarQuery(
 function getSimilarValues(scopeName, iri, aspects) {
   if (!SIMILAR_CONFIG.hasOwnProperty(scopeName)) {
     throw new InvalidSearchRequestError(
-      `'${scopeName}' is not a valid search scope for similar queries`
+      `'${scopeName}' is not a valid search scope for similar queries`,
     );
   }
   const doc = cts.doc(iri);
@@ -54,7 +54,7 @@ function getSimilarValues(scopeName, iri, aspects) {
   }
   if (!doesSearchScopeHaveType(scopeName, getType(doc))) {
     throw new InvalidSearchRequestError(
-      `document '${iri}' is not associated with '${scopeName}' search scope`
+      `document '${iri}' is not associated with '${scopeName}' search scope`,
     );
   }
   const returnObj = {};
@@ -74,8 +74,8 @@ function getSimilarValues(scopeName, iri, aspects) {
     if (!scopeConfig.hasOwnProperty(aspect)) {
       throw new InvalidSearchRequestError(
         `'${aspect}' is not a valid search aspect for the '${scopeName}' search scope. Valid similarity aspects for the '${scopeName}' search scope are: ${Object.keys(
-          scopeConfig
-        ).join(', ')}.`
+          scopeConfig,
+        ).join(', ')}.`,
       );
     }
 
@@ -137,7 +137,7 @@ function buildSearchCriteria(scope, similarValues) {
   }
   if (criteriaCnt === 0) {
     throw new InvalidSearchRequestError(
-      `the similar query cannot extract any search criteria with the given aspects. Please select more aspects. If all aspects are selected, there is not enough information in this record to search for similar ones.`
+      `the similar query cannot extract any search criteria with the given aspects. Please select more aspects. If all aspects are selected, there is not enough information in this record to search for similar ones.`,
     );
   }
   return combinedCriteria;
@@ -148,16 +148,16 @@ function getDateRanges(doc, path) {
   if (path.endsWith(`/${PROP_NAME_BEGIN_OF_THE_BEGIN_STR}`)) {
     timeSpanPath = path.substring(
       0,
-      path.length - PROP_NAME_BEGIN_OF_THE_BEGIN_STR.length - 1
+      path.length - PROP_NAME_BEGIN_OF_THE_BEGIN_STR.length - 1,
     );
   } else if (path.endsWith(`/${PROP_NAME_END_OF_THE_END_STR}`)) {
     timeSpanPath = path.substring(
       0,
-      path.length - PROP_NAME_END_OF_THE_END_STR.length - 1
+      path.length - PROP_NAME_END_OF_THE_END_STR.length - 1,
     );
   } else {
     throw new InternalServerError(
-      'A term configured to dates is not configured to the beginning or ending of a date range.'
+      'A term configured to dates is not configured to the beginning or ending of a date range.',
     );
   }
 
@@ -171,12 +171,12 @@ function getDateRanges(doc, path) {
       const startDateStr = getFirstValue(
         timeSpanNode,
         './' + PROP_NAME_BEGIN_OF_THE_BEGIN_STR,
-        defaultValue
+        defaultValue,
       );
       const endDateStr = getFirstValue(
         timeSpanNode,
         './' + PROP_NAME_END_OF_THE_END_STR,
-        defaultValue
+        defaultValue,
       );
       if (
         utils.isNonEmptyString(startDateStr) ||

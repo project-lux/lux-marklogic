@@ -1,0 +1,9 @@
+{
+  "functionName": "scaleOut",
+  "params": [
+    {
+      "name": "dynamicHost",
+      "datatype": "string"
+    }
+  ]
+}

@@ -19,7 +19,7 @@ TODO: document all changes in mini-mi-off-release-branch.
 
 ### Security
 
-- Introduced the [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-update-scale-environment.json) execute privilege and granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to enable said role to consume the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out) (part of [#638](https://github.com/project-lux/lux-marklogic/issues/638)).
+- Introduced the [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-scale-environment.json) execute privilege and granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to enable said role to consume the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out) (part of [#638](https://github.com/project-lux/lux-marklogic/issues/638)).
 
 ## v2.5.0 - Unreleased
 

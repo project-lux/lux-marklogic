@@ -958,7 +958,7 @@ The `scaleOut` endpoint adds the specified host to the cluster.  The endpoint im
 
 For licensing purposes, LUX's implementation supports one dynamic host at a time.  Each time this endpoint is consumed by an authorized user, any pre-existing dynamic hosts are permanently disassociated from the cluster.
 
-To consume, the user must have the `admin` role or the [`%%mlAppName%%-scale-environment`](/src/main/ml-config/base/security/privileges/app-update-scale-environment.json) executive privilege.  This executive privilege is granted to the [`%%appName%%-deployer`](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.
+To consume, the user must have the `admin` role or the [`%%mlAppName%%-scale-environment`](/src/main/ml-config/base/security/privileges/app-scale-environment.json) executive privilege.  This executive privilege is granted to the [`%%appName%%-deployer`](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.
 
 The endpoint is available on multiple ports.  The `mlDeployPort` is recommended as requests take about five seconds.  The port determines which application server error log should be [monitored](#monitoring).
 
@@ -990,7 +990,7 @@ echo "Done"
 
 One may be alerted of successful and failed attempts by monitoring for the following strings in the application server error log.
 
-* Attempt messages include "is attempting add dynamic host"
+* Attempt messages include "is attempting to add dynamic host"
 * Success messages include "successfully added dynamic host"
 * Failure messages for authorized users include "Unable to add dynamic host"
 * Failure messages for unauthorized users include "is not authorized to scale the environment"

@@ -8,7 +8,7 @@ import { getExceptionObjectElseMessage } from '../utils/utils.mjs';
 function scaleOut(dynamicHost) {
   const user = new User();
   console.log(
-    `User '${user.getUsername()}' is attempting add dynamic host '${dynamicHost}'.`,
+    `User '${user.getUsername()}' is attempting to add dynamic host '${dynamicHost}'.`,
   );
 
   if (!mayScaleEnvironment()) {

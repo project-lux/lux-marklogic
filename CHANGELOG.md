@@ -8,7 +8,7 @@ TODO: document all changes in mini-mi-off-release-branch.
 
 ### Added
 
-- Added the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out) endpoint ([#638](https://github.com/project-lux/lux-marklogic/issues/638)).
+- Added the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out) endpoint ([#638](https://github.com/project-lux/lux-marklogic/issues/638)).
 - Added the [./src/main/ml-config/dynamic-host/](./src/main/ml-config/dynamic-host/) MarkLogic Gradle configuration directory as well as the `allowDynamicHosts` and `enableApiTokenAuthentication` Gradle properties.  The new configuration directory allows us to continue supporting MarkLogic 11 deployments.  The properties allow us to enable or disable the MarkLogic 12 dynamic host-related settings we do not plan to change when scaling out or in. Minimum supported ML 12 version is 12.0.1. ([#639](https://github.com/project-lux/lux-marklogic/issues/639))
 
 ### Changed
@@ -19,7 +19,7 @@ TODO: document all changes in mini-mi-off-release-branch.
 
 ### Security
 
-- Introduced the [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-scale-environment.json) execute privilege and granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to enable said role to consume the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out) (part of [#638](https://github.com/project-lux/lux-marklogic/issues/638)).
+- Introduced the [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-scale-environment.json) execute privilege and granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to enable said role to consume the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out) (part of [#638](https://github.com/project-lux/lux-marklogic/issues/638)).
 
 ## v2.5.0 - Unreleased
 

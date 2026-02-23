@@ -162,7 +162,7 @@ Some roles exist for the exclusive use of [amps](#amps). These can be sensitive 
 
 The project has the following custom executive privileges: 
 
-1. [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-update-scale-environment.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out).
+1. [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-scale-environment.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out).
 2. [%%mlAppName%%-update-tenant-status](/src/main/ml-config/base/security/privileges/app-update-tenant-status.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Set Tenant Status endpoint](./lux-backend-api-usage.md#set).
 
 ## Amps

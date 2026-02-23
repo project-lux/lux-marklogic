@@ -1,5 +1,5 @@
 import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
-import { BadRequestError, NotImplementedError } from '../lib/mlErrorsLib.mjs';
+import { BadRequestError, NotImplementedError } from '../lib/errorClasses.mjs';
 import {
   FACETS_PREFIX,
   IRI_PREFIX,
@@ -109,7 +109,7 @@ function checkPaginationParameters(page, pageLength) {
     pageLength <= 0
   ) {
     throw new BadRequestError(
-      `Invalid pagination parameter values. Both must be greater than zero. Given '${page}' for page and '${pageLength}' for pageLength.`
+      `Invalid pagination parameter values. Both must be greater than zero. Given '${page}' for page and '${pageLength}' for pageLength.`,
     );
   }
 }
@@ -125,8 +125,8 @@ function getDocFromModulesDatabase(uri) {
   return fn.head(
     evalInModulesDatabase(
       'const { uri } = external; const doc = cts.doc(uri); doc; export default doc;',
-      { uri }
-    )
+      { uri },
+    ),
   );
 }
 
@@ -246,7 +246,7 @@ function replaceMatchingPropertyNames(obj, nameToReplace, replacementName) {
       obj[key] = replaceMatchingPropertyNames(
         obj[key],
         nameToReplace,
-        replacementName
+        replacementName,
       );
     }
   }
@@ -265,7 +265,7 @@ function replaceMatchingPropertyValues(obj, valToReplace, replacementVal) {
       obj[key] = replaceMatchingPropertyValues(
         obj[key],
         valToReplace,
-        replacementVal
+        replacementVal,
       );
     }
 
@@ -386,13 +386,13 @@ function toArray(val, castTo = null, isStart = true) {
             val[i] = +val[i];
             if (isNaN(val[i])) {
               throw new BadRequestError(
-                `'${origValue}' is not a number; yet, a number is required.`
+                `'${origValue}' is not a number; yet, a number is required.`,
               );
             }
           }
         } else {
           throw new NotImplementedError(
-            `toArray does not support a castTo parameter value of '${castTo}'.`
+            `toArray does not support a castTo parameter value of '${castTo}'.`,
           );
         }
       }
@@ -469,8 +469,8 @@ function getDocPermissionsFromString(str) {
       perms.push(
         xdmp.permission(
           parts[roleNameIdx].trim(),
-          parts[capabilityNameIdx].trim()
-        )
+          parts[capabilityNameIdx].trim(),
+        ),
       );
     }
   }
@@ -547,7 +547,7 @@ function buildSearchUri({
   synonymsEnabled,
 }) {
   const prefixAndQParam = `${SEARCH_PREFIX}/${scope}?q=${encodeURIComponent(
-    JSON.stringify(searchCriteria)
+    JSON.stringify(searchCriteria),
   )}`;
   const mayChangeScopeParam = mayChangeScope
     ? `&mayChangeScope=${encodeURIComponent(mayChangeScope)}`
@@ -579,13 +579,13 @@ function buildSearchUri({
 
 function buildSearchEstimateUri(searchCriteria, scope) {
   return `${SEARCH_ESTIMATE_PREFIX}/${scope}?q=${encodeURIComponent(
-    JSON.stringify(searchCriteria)
+    JSON.stringify(searchCriteria),
   )}`;
 }
 
 function buildFacetsUri(searchCriteria, scope, name, page, pageLength) {
   return `${FACETS_PREFIX}/${scope}?q=${encodeURIComponent(
-    JSON.stringify(searchCriteria)
+    JSON.stringify(searchCriteria),
   )}&name=${name}&page=${page}&pageLength=${pageLength}`;
 }
 
@@ -598,7 +598,7 @@ function buildRelatedListUri({
   relationshipsPerRelation = RELATED_LIST_PER_RELATION_DEFAULT,
 }) {
   let relatedListUri = `${RELATED_LIST_PREFIX}/${scope}?name=${name}&uri=${encodeURIComponent(
-    uri
+    uri,
   )}&page=${page}`;
   if (pageLength !== RELATED_LIST_PAGE_LENGTH_DEFAULT) {
     relatedListUri = relatedListUri + `&pageLength=${pageLength}`;

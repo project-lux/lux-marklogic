@@ -19,7 +19,10 @@ import {
   mayUpdateTenantStatus,
   requireUserMayUpdateTenantStatus,
 } from './securityLib.mjs';
-import { BadRequestError, InternalConfigurationError } from './mlErrorsLib.mjs';
+import {
+  BadRequestError,
+  InternalConfigurationError,
+} from './errorClasses.mjs';
 import { User } from './User.mjs';
 
 const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
@@ -35,7 +38,7 @@ const MbToGbDivisor = 1024;
 function setTenantStatus(prod, readOnly) {
   const username = new User().getUsername();
   console.log(
-    `User '${username}' is attempting to set the tenant's production mode to '${prod}' and read-only state to '${readOnly}'.`
+    `User '${username}' is attempting to set the tenant's production mode to '${prod}' and read-only state to '${readOnly}'.`,
   );
 
   requireUserMayUpdateTenantStatus();
@@ -46,7 +49,7 @@ function setTenantStatus(prod, readOnly) {
   }
   if (readOnly !== true && readOnly !== false) {
     throw new BadRequestError(
-      `Invalid readOnly: '${readOnly}'. Must be a boolean.`
+      `Invalid readOnly: '${readOnly}'. Must be a boolean.`,
     );
   }
 
@@ -56,19 +59,19 @@ function setTenantStatus(prod, readOnly) {
         () => {
           return fn.docAvailable(TENANT_STATUS_URI);
         },
-        { database: xdmp.modulesDatabase() }
-      )
+        { database: xdmp.modulesDatabase() },
+      ),
     );
   };
   if (isTenantStatusDocAvailable()) {
     if (isProduction() === prod && inReadOnlyMode() === readOnly) {
       console.log(
-        'The current tenant status matches the requested values; no action taken.'
+        'The current tenant status matches the requested values; no action taken.',
       );
       return;
     }
     console.log(
-      `The current tenant's production mode is '${isProduction()}' and read-only state is '${inReadOnlyMode()}'`
+      `The current tenant's production mode is '${isProduction()}' and read-only state is '${inReadOnlyMode()}'`,
     );
   } else {
     console.log('The tenant status document does not yet exist.');
@@ -108,10 +111,10 @@ function getTenantStatus() {
   if (mayUpdateTenantStatus()) {
     const restrictByProductionMode = true;
     documentCounts.myCollection = getMyCollectionDocumentCount(
-      restrictByProductionMode
+      restrictByProductionMode,
     );
     documentCounts.userProfile = getUserProfileDocumentCount(
-      restrictByProductionMode
+      restrictByProductionMode,
     );
   }
 
@@ -128,7 +131,7 @@ function isProduction() {
   const prod = _getTenantStatusDocObj().prod;
   if (typeof prod !== 'boolean') {
     throw new InternalConfigurationError(
-      `Tenant status is corrupt: the prod property must be a boolean, but has type '${typeof prod}'`
+      `Tenant status is corrupt: the prod property must be a boolean, but has type '${typeof prod}'`,
     );
   }
   return prod;
@@ -138,7 +141,7 @@ function inReadOnlyMode() {
   const isReadOnly = _getTenantStatusDocObj().readOnly;
   if (typeof isReadOnly !== 'boolean') {
     throw new InternalConfigurationError(
-      `Tenant status is corrupt: the readOnly property must be a boolean, but has type '${typeof isReadOnly}'`
+      `Tenant status is corrupt: the readOnly property must be a boolean, but has type '${typeof isReadOnly}'`,
     );
   }
   return isReadOnly;
@@ -150,33 +153,36 @@ function __getTenantStatusDocObj() {
       return cts.doc(TENANT_STATUS_URI).toObject();
     }
     throw new InternalConfigurationError(
-      `Tenant status document does not exist but is required.`
+      `Tenant status document does not exist but is required.`,
     );
   };
   return fn.head(
     xdmp.invokeFunction(zeroArityFun, {
       database: xdmp.modulesDatabase(),
-    })
+    }),
   );
 }
 const _getTenantStatusDocObj = import.meta.amp(__getTenantStatusDocObj);
 
 function _getMyCollectionDocumentCount(restrictByProductionMode = true) {
   return cts.estimate(
-    _getCollectionQuery(COLLECTION_NAME_MY_COLLECTION, restrictByProductionMode)
+    _getCollectionQuery(
+      COLLECTION_NAME_MY_COLLECTION,
+      restrictByProductionMode,
+    ),
   );
 }
 const getMyCollectionDocumentCount = import.meta.amp(
-  _getMyCollectionDocumentCount
+  _getMyCollectionDocumentCount,
 );
 
 function _getUserProfileDocumentCount(restrictByProductionMode = true) {
   return cts.estimate(
-    _getCollectionQuery(COLLECTION_NAME_USER_PROFILE, restrictByProductionMode)
+    _getCollectionQuery(COLLECTION_NAME_USER_PROFILE, restrictByProductionMode),
   );
 }
 const getUserProfileDocumentCount = import.meta.amp(
-  _getUserProfileDocumentCount
+  _getUserProfileDocumentCount,
 );
 
 // Collections can be a single collection name or an array of them.
@@ -187,11 +193,11 @@ function _getCollectionQuery(collections, restrictByProductionMode = true) {
     collections.push(
       isProduction()
         ? COLLECTION_NAME_PRODUCTION
-        : COLLECTION_NAME_NON_PRODUCTION
+        : COLLECTION_NAME_NON_PRODUCTION,
     );
   }
   return cts.andQuery(
-    collections.map((collection) => cts.collectionQuery(collection))
+    collections.map((collection) => cts.collectionQuery(collection)),
   );
 }
 
@@ -230,7 +236,7 @@ function __getForestInfoByHost() {
           const standsArr = utils.toArrayFallback(forestInfo.stands);
           forestInfo.forestSize = standsArr.reduce(
             (accumulator, standInfo) => accumulator + standInfo.diskSize,
-            0
+            0,
           );
           delete forestInfo.stands;
 
@@ -241,7 +247,7 @@ function __getForestInfoByHost() {
             forestInfoByHost[forestInfo.hostId][forestInfo.dataDir] = [];
           }
           forestInfoByHost[forestInfo.hostId][forestInfo.dataDir].push(
-            forestInfo
+            forestInfo,
           );
         });
     });
@@ -254,7 +260,7 @@ function _calculateTotals(
   forestInfoByHost,
   journalSizeThresholdForReserveMb,
   perJournalReserveMb,
-  perVolumeOtherReserveMb
+  perVolumeOtherReserveMb,
 ) {
   const hostInfo = {};
   for (const host of Object.keys(forestInfoByHost)) {
@@ -341,7 +347,7 @@ function _calculateTotals(
               approximateUnreservedRemainingPercent:
                 totalsMb.approximateUnreservedRemainingPercent,
               message: _getStorageThresholdMessage(
-                totalsMb.approximateUnreservedRemainingPercent
+                totalsMb.approximateUnreservedRemainingPercent,
               ),
             };
           } else {
@@ -357,7 +363,7 @@ function _calculateTotals(
           largeDataActualMb: 0,
           totalKnownUsedMb: 0,
           totalReservedMb: 0,
-        }
+        },
       );
       volumeInfo[volume] = totals;
     }
@@ -401,7 +407,7 @@ function getStorageInfo() {
     _getForestInfoByHost(),
     journalSizeThresholdForReserveMb,
     perJournalReserveMb,
-    perVolumeOtherReserveMb
+    perVolumeOtherReserveMb,
   );
 }
 
@@ -410,8 +416,8 @@ function _getDataConversionDate() {
     return fn
       .head(
         cts.search(
-          cts.jsonPropertyScopeQuery('conversion-date', cts.trueQuery())
-        )
+          cts.jsonPropertyScopeQuery('conversion-date', cts.trueQuery()),
+        ),
       )
       .xpath('/admin/conversion-date')
       .toString();

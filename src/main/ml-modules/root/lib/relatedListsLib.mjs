@@ -12,7 +12,7 @@ import {
   TRACE_NAME_RELATED_LIST as traceName,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
-import { BadRequestError } from './mlErrorsLib.mjs';
+import { BadRequestError } from './errorClasses.mjs';
 import { processSearchCriteria } from './searchLib.mjs';
 import { SearchPatternOptions } from './SearchPatternOptions.mjs';
 import {

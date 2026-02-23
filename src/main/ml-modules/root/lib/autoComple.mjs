@@ -4,7 +4,7 @@ import {
   getContextParameterValues,
 } from '../config/autoCompleteConfig.mjs';
 import { sanitizeAndValidateWildcardedStrings } from './searchLib.mjs';
-import { BadRequestError } from './mlErrorsLib.mjs';
+import { BadRequestError } from './errorClasses.mjs';
 
 const MAXIMUM_RESULT_COUNT = 10;
 
@@ -18,7 +18,7 @@ function getMatches(
   pageLength = MAXIMUM_RESULT_COUNT,
   filterIndex = 0,
   previouslyFiltered = 0,
-  timeoutInMilliseconds = 0
+  timeoutInMilliseconds = 0,
 ) {
   const start = new Date();
 
@@ -31,13 +31,13 @@ function getMatches(
     throw new BadRequestError(
       `The '${context}' context does not identify an auto complete configuration; accepted values: ${getContextParameterValues()
         .sort()
-        .join(', ')}.`
+        .join(', ')}.`,
     );
   }
   const fieldForNamesToReturn = autoCompleteConfig.namesIndexReference;
   if (!fieldForNamesToReturn || fieldForNamesToReturn == 'null') {
     throw new BadRequestError(
-      `The auto complete name index is not specified for the '${context}' search tag.`
+      `The auto complete name index is not specified for the '${context}' search tag.`,
     );
   }
   // See if we're to match on the field that also includes alternative names.
@@ -105,7 +105,7 @@ function _fullyHonorContext({
     fieldForNamesToReturn,
     fieldForMatchingNames,
     previouslyFiltered,
-    timeoutInMilliseconds
+    timeoutInMilliseconds,
   );
 
   let filteredCount = 0;
@@ -117,7 +117,7 @@ function _fullyHonorContext({
       matchOn,
       fieldForMatchingNames,
       startingLoc,
-      batchSize
+      batchSize,
     );
     if (candidateUris.length == 0) {
       break;
@@ -138,8 +138,8 @@ function _fullyHonorContext({
         fn.head(
           cts.search(
             cts.fieldValueQuery(fieldForId, candidateUris[i], ['exact']),
-            ['score-zero', 'unchecked', 'unfaceted']
-          )
+            ['score-zero', 'unchecked', 'unfaceted'],
+          ),
         )
       ) {
         matches.push(
@@ -148,8 +148,8 @@ function _fullyHonorContext({
             fieldForNamesToReturn,
             onlyReturnPrimaryNames,
             matchOn,
-            fieldForMatchingNames
-          )
+            fieldForMatchingNames,
+          ),
         );
         if (matches.length == pageLength) {
           break;
@@ -176,7 +176,7 @@ function _fullyHonorContext({
         previouslyFiltered,
         timeoutInMilliseconds,
         matches.length,
-        filteredCount
+        filteredCount,
       );
     }
   }
@@ -196,7 +196,7 @@ function getInitialBatchSize(
   fieldForNamesToReturn,
   fieldForMatchingNames,
   previouslyFiltered,
-  timeoutInMilliseconds
+  timeoutInMilliseconds,
 ) {
   if (previouslyFiltered > 0) {
     // 10% more than last time
@@ -217,7 +217,7 @@ function getSubsequentBatchSize(
   previouslyFiltered,
   timeoutInMilliseconds,
   matchesLength,
-  filteredCount
+  filteredCount,
 ) {
   return Math.max(
     pageLength, // low end.
@@ -227,10 +227,10 @@ function getSubsequentBatchSize(
         fieldForNamesToReturn,
         fieldForMatchingNames,
         previouslyFiltered,
-        timeoutInMilliseconds
+        timeoutInMilliseconds,
       ),
-      Math.ceil((filteredCount / matchesLength) * (pageLength - matchesLength))
-    )
+      Math.ceil((filteredCount / matchesLength) * (pageLength - matchesLength)),
+    ),
   );
 }
 
@@ -247,7 +247,7 @@ function _partiallyHonorContext({
       matchOn,
       fieldForMatchingNames,
       utils.getStartingPaginationIndexForSubsequence(page, pageLength),
-      pageLength
+      pageLength,
     ).map((uri) => {
       return _constructMatch(uri, fieldForNamesToReturn);
     }),
@@ -259,7 +259,7 @@ function _constructMatch(
   fieldForNamesToReturn,
   onlyReturnPrimaryNames = true,
   matchOn = null,
-  fieldForMatchingNames = null
+  fieldForMatchingNames = null,
 ) {
   // Able to include primary names that do not match the consumer-provided text.
   // If we were to switch to cts.fieldValueMatch, we may take a 70-80 millisecond
@@ -275,7 +275,7 @@ function _constructMatch(
         fieldForNamesToReturn,
         null,
         ['ascending', 'document', 'score-zero', 'unchecked'],
-        cts.documentQuery(uri)
+        cts.documentQuery(uri),
       )
       .toArray(),
   };
@@ -295,7 +295,7 @@ function _constructMatch(
         fieldForMatchingNames,
         matchOn,
         ['ascending', 'case-insensitive', 'diacritic-insensitive', 'document'],
-        cts.documentQuery(uri)
+        cts.documentQuery(uri),
       )
       .toArray();
   }
@@ -306,7 +306,7 @@ function _getUrisOfMatches(
   matchOn,
   fieldForMatchingNames,
   startingLoc,
-  length
+  length,
 ) {
   // Including cts.search's unfiltered option, as we are below, can indeed include false positives.  For
   // example, 'ben*' can get you results that included 'ben' anywhere in the name, versus starting with it.
@@ -326,10 +326,10 @@ function _getUrisOfMatches(
           'stemmed',
           'wildcarded',
         ]),
-        ['score-zero', 'unchecked', 'unfaceted', 'unfiltered']
+        ['score-zero', 'unchecked', 'unfaceted', 'unfiltered'],
       ),
       startingLoc,
-      length
+      length,
     )
     .toArray()
     .map((doc) => {

@@ -14,7 +14,7 @@ import {
   BadRequestError,
   InternalServerError,
   isInvalidSearchRequestError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import { SEMANTIC_FACETS_CONFIG } from '../config/semanticFacetsConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 
@@ -66,7 +66,7 @@ function getFacet({
         facetName,
         searchCriteriaProcessor,
         page,
-        pageLength
+        pageLength,
       ));
     } else {
       utils.checkPaginationParameters(page, pageLength);
@@ -76,7 +76,7 @@ function getFacet({
         searchCriteriaProcessor,
         page,
         pageLength,
-        sort
+        sort,
       ));
     }
 
@@ -87,7 +87,7 @@ function getFacet({
       searchCriteriaProcessor,
       totalItems,
       page,
-      pageLength
+      pageLength,
     );
     requestCompleted = true;
     return facetValues;
@@ -102,19 +102,19 @@ function getFacet({
       // Log mining script checks for "Calculated the following facet".
       xdmp.trace(
         traceName,
-        `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`
+        `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`,
       );
     } else if (InvalidSearchRequestError) {
       // Not associated to a monitoring test or the log mining script.
       xdmp.trace(
         traceName,
-        `Unable to calculate the '${facetName}' facet due to an invalid search request.`
+        `Unable to calculate the '${facetName}' facet due to an invalid search request.`,
       );
     } else {
       // Monitoring test and log mining script checks for "Failed to calculate".
       xdmp.trace(
         traceName,
-        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`
+        `Failed to calculate the following facet after ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`,
       );
     }
   }
@@ -126,7 +126,7 @@ function _getFacetResponse(
   searchCriteriaProcessor,
   totalItems,
   page,
-  pageLength
+  pageLength,
 ) {
   const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
   const searchScope = searchCriteriaProcessor.getSearchScope();
@@ -135,7 +135,7 @@ function _getFacetResponse(
     const facetSearchCriteria = _getFacetSearchCriteria(
       searchCriteria,
       facetName,
-      value
+      value,
     );
     return {
       id: utils.buildSearchEstimateUri(facetSearchCriteria, searchScope),
@@ -152,7 +152,7 @@ function _getFacetResponse(
       searchScope,
       facetName,
       page,
-      pageLength
+      pageLength,
     ),
     type: AS_TYPE_ORDERED_COLLECTION_PAGE,
     partOf: {
@@ -169,7 +169,7 @@ function _getFacetResponse(
         searchScope,
         facetName,
         page - 1,
-        pageLength
+        pageLength,
       ),
       type: AS_TYPE_ORDERED_COLLECTION_PAGE,
     };
@@ -182,7 +182,7 @@ function _getFacetResponse(
         searchScope,
         facetName,
         page + 1,
-        pageLength
+        pageLength,
       ),
       type: AS_TYPE_ORDERED_COLLECTION_PAGE,
     };
@@ -197,7 +197,7 @@ function _isSemanticFacet(facetName) {
     return true;
   } else {
     throw new BadRequestError(
-      `Unable to calculate the '${facetName}' facet: not an available facet.`
+      `Unable to calculate the '${facetName}' facet: not an available facet.`,
     );
   }
 }
@@ -208,7 +208,7 @@ function _calculateNonSemanticFacet(
   searchCriteriaProcessor,
   page,
   pageLength,
-  sort
+  sort,
 ) {
   const fieldValuesOptions = ['lazy', 'score-zero'];
   switch (sort) {
@@ -236,7 +236,7 @@ function _calculateNonSemanticFacet(
 
   const indexReferences = facetConfig.subFacets
     ? facetConfig.subFacets.map(
-        (subFacetName) => FACETS_CONFIG[subFacetName].indexReference
+        (subFacetName) => FACETS_CONFIG[subFacetName].indexReference,
       )
     : [facetConfig.indexReference];
 
@@ -244,7 +244,7 @@ function _calculateNonSemanticFacet(
     indexReferences,
     null,
     fieldValuesOptions,
-    ctsQuery
+    ctsQuery,
   );
 
   const isDateFacet = facetName.endsWith('Date');
@@ -255,7 +255,7 @@ function _calculateNonSemanticFacet(
       .subsequence(
         sequence,
         utils.getStartingPaginationIndexForSubsequence(page, pageLength),
-        pageLength
+        pageLength,
       )
       .toArray()
       .map((value) => ({
@@ -269,12 +269,12 @@ function _calculateSemanticFacet(
   facetName,
   searchCriteriaProcessor,
   page,
-  pageLength
+  pageLength,
 ) {
   // Require search criteria.
   const baseSearchCtsQuery = searchCriteriaProcessor
     ? SearchCriteriaProcessor.evalQueryString(
-        searchCriteriaProcessor.getCtsQueryStr()
+        searchCriteriaProcessor.getCtsQueryStr(),
       )
     : null;
   if (!baseSearchCtsQuery) {
@@ -294,7 +294,7 @@ function _calculateSemanticFacet(
         'score-zero',
       ]),
       1,
-      SEMANTIC_VALUE_LIMIT + 1
+      SEMANTIC_VALUE_LIMIT + 1,
     )
     .toArray();
 
@@ -302,8 +302,8 @@ function _calculateSemanticFacet(
   if (potentialFacetValues.length > SEMANTIC_VALUE_LIMIT) {
     console.warn(
       `The '${facetName}' facet exceeded the ${SEMANTIC_VALUE_LIMIT} value limit with base search criteria ${JSON.stringify(
-        baseSearchCriteria
-      )}`
+        baseSearchCriteria,
+      )}`,
     );
   }
 
@@ -313,7 +313,7 @@ function _calculateSemanticFacet(
       return {
         value: uri,
         count: cts.estimate(
-          semanticFacetConfig.getValuesCountCtsQuery(baseSearchCtsQuery, uri)
+          semanticFacetConfig.getValuesCountCtsQuery(baseSearchCtsQuery, uri),
         ),
       };
     })
@@ -323,7 +323,7 @@ function _calculateSemanticFacet(
 
   const startIndex = utils.getStartingPaginationIndexForSplice(
     page,
-    pageLength
+    pageLength,
   );
   const endIndex = startIndex + pageLength;
   // thanks to the logic of Array.prototype.slice():
@@ -343,7 +343,7 @@ function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
   if (_isSemanticFacet(facetName)) {
     return SEMANTIC_FACETS_CONFIG[facetName].getFacetSelectedCriteria(
       searchCriteria,
-      facetValue
+      facetValue,
     );
   } else {
     return {
@@ -359,7 +359,7 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   if (FACETS_CONFIG[facetName].subFacets) {
     return {
       OR: FACETS_CONFIG[facetName].subFacets.map((subFacetName) =>
-        _convertFacetToSearchTerm(subFacetName, facetValue)
+        _convertFacetToSearchTerm(subFacetName, facetValue),
       ),
     };
   }
@@ -374,7 +374,7 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   }
   if (!searchTermsConfig[scopeName][termName]) {
     throw new InternalServerError(
-      `Unable to convert '${facetName}' to a search term`
+      `Unable to convert '${facetName}' to a search term`,
     );
   }
   const searchTermInfo = searchTermsConfig[scopeName][termName];

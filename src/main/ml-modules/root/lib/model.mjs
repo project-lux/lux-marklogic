@@ -26,7 +26,7 @@ import {
   BadRequestError,
   DataMergeError,
   InternalServerError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import {
   isDefined,
   isNonEmptyString,
@@ -67,7 +67,7 @@ function addAddedToByEntry(docObj, userIri) {
 
     // Only add an entry when it will not be a duplicate.
     const timespanProps = _getNewTimespanProperties(
-      toISOStringThroughSeconds(new Date())
+      toISOStringThroughSeconds(new Date()),
     );
     const addedToByArr = docObj.json.added_to_by;
     const previousEntry =
@@ -90,7 +90,7 @@ function addAddedToByEntry(docObj, userIri) {
     }
   } else {
     throw new InternalServerError(
-      'model.addAddedToByEntry requires a non-empty string for the user IRI.'
+      'model.addAddedToByEntry requires a non-empty string for the user IRI.',
     );
   }
 }
@@ -116,9 +116,9 @@ function getClassifiedAsExhibition(docNode) {
   return _upTo(
     'classified_as',
     docNode.xpath(
-      `json/classified_as[equivalent/id = "${IDENTIFIERS.exhibition}"]`
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.exhibition}"]`,
     ),
-    null
+    null,
   );
 }
 
@@ -126,8 +126,8 @@ function getClassifiedAsNationalities(docNode) {
   return _upTo(
     'classified_as',
     docNode.xpath(
-      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.nationality}"]]`
-    )
+      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.nationality}"]]`,
+    ),
   );
 }
 
@@ -135,8 +135,8 @@ function getClassifiedAsOccupations(docNode) {
   return _upTo(
     'classified_as',
     docNode.xpath(
-      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.occupation}}"]]`
-    )
+      `json/classified_as[classified_as[equivalent/id = "${IDENTIFIERS.occupation}}"]]`,
+    ),
   );
 }
 
@@ -151,7 +151,7 @@ function getCreatedByCarriedOutBy(docNode) {
   }
   return _upTo(
     'created_by',
-    docNode.xpath('json/created_by/part/carried_out_by')
+    docNode.xpath('json/created_by/part/carried_out_by'),
   );
 }
 
@@ -163,7 +163,7 @@ function getDefaultCollection(docNode) {
   return _getFirstStringValueUpTo(
     docNode,
     `json/${PROP_NAME_DEFAULT_COLLECTION}`,
-    PROP_NAME_DEFAULT_COLLECTION
+    PROP_NAME_DEFAULT_COLLECTION,
   );
 }
 
@@ -182,7 +182,7 @@ function getId(docNode) {
 function getIdentifiedByIdentifier(docNode) {
   return _upTo(
     'identified_by',
-    docNode.xpath('json/identified_by[type="Identifier"]')
+    docNode.xpath('json/identified_by[type="Identifier"]'),
   );
 }
 
@@ -228,7 +228,7 @@ function getProducedByCarriedOutBy(docNode) {
   }
   return _upTo(
     'produced_by',
-    docNode.xpath('json/produced_by/part/carried_out_by')
+    docNode.xpath('json/produced_by/part/carried_out_by'),
   );
 }
 
@@ -240,8 +240,8 @@ function getReferredToBy(docNode) {
   return _upTo(
     'referred_to_by',
     docNode.xpath(
-      `json/referred_to_by/classified_as[equivalent/id = "${IDENTIFIERS.descriptionStatement}"]`
-    )
+      `json/referred_to_by/classified_as[equivalent/id = "${IDENTIFIERS.descriptionStatement}"]`,
+    ),
   );
 }
 
@@ -252,7 +252,7 @@ function getRepresentation(docNode) {
 function getRepresentationImage(docNode) {
   return _upTo(
     'representation',
-    docNode.xpath('json/representation/digitally_shown_by')
+    docNode.xpath('json/representation/digitally_shown_by'),
   );
 }
 
@@ -268,8 +268,8 @@ function getSupertypes(docNode) {
   return _upTo(
     'classified_as',
     docNode.xpath(
-      `json/classified_as[./classified_as/equivalent/id = "${IDENTIFIERS.typeOfWork}"]`
-    )
+      `json/classified_as[./classified_as/equivalent/id = "${IDENTIFIERS.typeOfWork}"]`,
+    ),
   );
 }
 
@@ -289,21 +289,21 @@ function getUiType(docNode) {
   return _getFirstStringValueUpTo(
     docNode,
     'indexedProperties/uiType',
-    'uiType'
+    'uiType',
   );
 }
 
 function isMyCollection(docNode) {
   return fn.exists(
-    docNode.xpath(`json/classified_as[id = "${IDENTIFIERS.myCollection}"]`)
+    docNode.xpath(`json/classified_as[id = "${IDENTIFIERS.myCollection}"]`),
   );
 }
 
 function isUserProfile(docNode) {
   return fn.exists(
     docNode.xpath(
-      `json/classified_as[equivalent/id = "${IDENTIFIERS.userProfile}"]`
-    )
+      `json/classified_as[equivalent/id = "${IDENTIFIERS.userProfile}"]`,
+    ),
   );
 }
 
@@ -331,7 +331,7 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
       type: 'Creation',
       carried_out_by: [{ id: userIri, type: 'Person' }],
       timespan: _getNewTimespanProperties(
-        toISOStringThroughSeconds(new Date())
+        toISOStringThroughSeconds(new Date()),
       ),
     };
     // Practically duplicate the creation entry as a modification entry in support of last modified
@@ -339,7 +339,7 @@ function setCreatedBy(docObj, userIri, createdBy = null) {
     addAddedToByEntry(docObj, userIri);
   } else {
     throw new InternalServerError(
-      'model.setCreatedBy requires a non-empty string for the user IRI'
+      'model.setCreatedBy requires a non-empty string for the user IRI',
     );
   }
 }
@@ -453,7 +453,7 @@ function merge(o1, o2) {
           merged[key] = o1[key];
         } else {
           throw new DataMergeError(
-            `Unable to merge the '${key}' property with differing atomic values of '${o1[key]}' and '${o2[key]}'.`
+            `Unable to merge the '${key}' property with differing atomic values of '${o1[key]}' and '${o2[key]}'.`,
           );
         }
         delete o1[key];
@@ -524,8 +524,8 @@ function _upTo(ancestorName, descendantNodeSeq, descendantValue = null) {
         if (currentName == fn.nodeName(currentNode).toString()) {
           console.warn(
             `May not have created the correct JSON-LD property lineage to ${fn.nodeName(
-              firstDescendantNode
-            )} as the ${currentName} property appears to be in the lineage more than two times.`
+              firstDescendantNode,
+            )} as the ${currentName} property appears to be in the lineage more than two times.`,
           );
           break;
         }
@@ -540,7 +540,7 @@ function _upTo(ancestorName, descendantNodeSeq, descendantValue = null) {
                 return info.name;
               })
               .reverse()
-              .join('/')}`
+              .join('/')}`,
           );
         }
       }

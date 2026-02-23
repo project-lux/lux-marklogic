@@ -37,6 +37,12 @@ class InternalServerError extends Error {
   }
 }
 
+class InvalidHostError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class InvalidSearchRequestError extends Error {
   constructor(message) {
     super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`);
@@ -65,6 +71,12 @@ class NotImplementedError extends Error {
   }
 }
 
+class ScaleEnvironmentError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class ServerConfigurationChangedError extends Error {
   constructor(message) {
     super(message);
@@ -82,11 +94,13 @@ export {
   DataMergeError,
   InternalConfigurationError,
   InternalServerError,
+  InvalidHostError,
   InvalidSearchRequestError,
   LoopDetectedError,
   NotAcceptingWriteRequestsError,
   NotFoundError,
   NotImplementedError,
+  ScaleEnvironmentError,
   ServerConfigurationChangedError,
   isInvalidSearchRequestError,
 };

@@ -88,7 +88,7 @@ function _getSearchConfigEntries(
   inBetweenScopes,
   maxLevel,
   currentLevel,
-  report
+  report,
 ) {
   const searchConfigEntries = [];
   Object.keys(unitSearchTermsConfig[startingScope]).forEach((termName) => {
@@ -103,7 +103,7 @@ function _getSearchConfigEntries(
       ) {
         if (report) {
           skippedNonQualifyingTopLevelTerms.push(
-            `[${termConfig.patternName}] '${termName}' term in the ${startingScope}-to-${endingScope} list`
+            `[${termConfig.patternName}] '${termName}' term in the ${startingScope}-to-${endingScope} list`,
           );
         }
       } else {
@@ -112,7 +112,7 @@ function _getSearchConfigEntries(
 
         if (matchesEndingScope) {
           searchConfigEntries.push(
-            _getSearchConfigEntry(startingScope, targetScope, termName, null)
+            _getSearchConfigEntry(startingScope, targetScope, termName, null),
           );
         } else {
           addSubEntries(unitSearchTermsConfig, targetScope, termName);
@@ -132,11 +132,11 @@ function _getSearchConfigEntries(
       currentLevel < maxLevel ? inBetweenScopes : [],
       maxLevel,
       currentLevel + 1,
-      report
+      report,
     );
     subEntries.forEach((subEntry) => {
       searchConfigEntries.push(
-        _getSearchConfigEntry(startingScope, targetScope, termName, subEntry)
+        _getSearchConfigEntry(startingScope, targetScope, termName, subEntry),
       );
     });
   }
@@ -146,7 +146,7 @@ function _convertToRuntimeFormat(
   relatedListScopeName,
   relatedListTermName,
   searchConfigEntry,
-  report
+  report,
 ) {
   const criteria = {};
   let currentSpot = criteria;
@@ -183,14 +183,14 @@ function _convertToRuntimeFormat(
   if (RELATION_KEYS_TO_SUPPRESS.includes(relationKey)) {
     if (report) {
       suppressedRelations.push(
-        `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`
+        `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`,
       );
     }
     return null;
   } else {
     if (!RELATION_NAMES[relationKey] && report) {
       noRelationLabel.push(
-        `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`
+        `[${relatedListScopeName}.${relatedListTermName}] ${relationKey}`,
       );
     }
     return {
@@ -241,7 +241,7 @@ const relatedListsConfig = {};
       termInfo.inBetweenScopes,
       termInfo.maxLevel,
       1,
-      report
+      report,
     );
     if (utils.isNonEmptyArray(searchConfigEntries)) {
       if (!unitRelatedListsConfig[termInfo.fromScope]) {
@@ -269,7 +269,7 @@ const relatedListsConfig = {};
           toScope,
           termName,
           searchConfigEntry,
-          report
+          report,
         );
         if (runtimeConfig) {
           searchConfigs.push(runtimeConfig);
@@ -288,7 +288,7 @@ const relatedListsConfig = {};
 // Consolidated logging
 utils.logValues(
   'Non-qualifying top-level terms for related lists',
-  skippedNonQualifyingTopLevelTerms
+  skippedNonQualifyingTopLevelTerms,
 );
 utils.logValues('Suppressed relations', suppressedRelations);
 utils.logValues('Relations without a label', noRelationLabel, true, true);
@@ -305,7 +305,7 @@ function constructModuleNode(relatedListsConfig) {
  * Generated timestamp: ${new Date()}
  */
 import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
-import { BadRequestError } from '../lib/mlErrorsLib.mjs';
+import { BadRequestError } from '../lib/errorClasses.mjs';
   
 const RELATED_LISTS_CONFIG = ${JSON.stringify(relatedListsConfig)};
 
@@ -377,7 +377,7 @@ const msg = utils.evalInModulesDatabase(
     uri: uri,
     doc: constructModuleNode(relatedListsConfig),
   },
-  true
+  true,
 );
 
 msg;

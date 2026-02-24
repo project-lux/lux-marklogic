@@ -506,6 +506,24 @@ task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
 }
 ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
 
+// Delete test modules from main modules database after they've been copied to test
+task deleteTestModulesFromMain (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Deleting test modules from main modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def cleanupScript = new File('./build/buildSupport/deleteTestModulesFromMain.sjs').getText('UTF-8')
+    def cleanupResult = client.newServerEval().javascript(cleanupScript).evalAs(String.class)
+    
+    println ""
+    println cleanupResult
+    println ""
+  }
+}
+resetTestModulesDatabase.finalizedBy deleteTestModulesFromMain
+
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask) {

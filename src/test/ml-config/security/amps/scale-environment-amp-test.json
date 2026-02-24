@@ -1,6 +1,6 @@
 {
   "local-name": "__scaleOutAsAdmin",
   "document-uri": "/lib/scalingLib.mjs",
-  "modules-database": "%%tenantModulesDatabase%%",
+  "modules-database": "%%tenantTestModulesDatabase%%",
   "role": ["admin"]
 }

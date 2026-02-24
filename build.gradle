@@ -51,6 +51,7 @@ tasks.withType(JavaExec) {
 ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
 ext.publicKeysPath = "${project.projectDir}/src/main/public-keys"
 ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
+ext.buildAmpTestPath = "${project.projectDir}/build/test/ml-config/security/amps"
 ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
 ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oauth/security/external-security"
 
@@ -465,6 +466,26 @@ task ensureTenantStatusDocumentExists() {
 }
 mlDeploy.finalizedBy ensureTenantStatusDocumentExists
 mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
+
+// Resets the test modules database with all documents from the main modules database,
+// maintaining permissions.  This should be run after all other changes have been made
+// to the modules database.
+task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Resetting test modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def script = new File('./build/buildSupport/resetTestModulesDatabase.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md

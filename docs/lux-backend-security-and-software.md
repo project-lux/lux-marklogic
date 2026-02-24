@@ -171,6 +171,8 @@ Amps are used to grant additional executive privileges (via roles) to specific f
 
 Function naming convention: those that start with two underscores are amp'd but not exported; those that start with a single underscore are amp'd and exported.
 
+In support of unit tests using their own modules database, each amp is to be copied within [/src/test/ml-config/security/amps/](/src/test/ml-config/security/amps/).  Add "-test" before the file extension and change the `modules-database` property value to `%%tenantTestModulesDatabase%%`. 
+
 | Amp | Role(s) | Function(s) | Library | Purpose |
 | --- | ------- | ----------- | ------- | ------- |
 | [create-exclusive-roles-amp.json](/src/main/ml-config/base/security/amps/create-exclusive-roles-amp.json) | [%%mlAppName%%-user-management](/src/main/ml-config/base/security/roles/6e-user-management.json), which inherits [%%mlAppName%%-invoke-in](/src/main/ml-config/base/security/roles/6c-invoke-in-role.json) | `__createExclusiveRoles` | [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) |Create and grant a user's reader role. |

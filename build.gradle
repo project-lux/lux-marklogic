@@ -57,6 +57,20 @@ ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oaut
 
 ext.lineSep = System.getProperty("line.separator")
 
+// Helper function to determine if unit testing deployment is allowed
+ext.getUnitTestingDeploymentStatus = {
+  def requested = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def environmentName = project.getProperty("environmentName").toLowerCase()
+  def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
+  def isProductionEnvironment = productionEnvironmentNames.contains(environmentName)
+  return [
+    requested: requested, 
+    environmentName: environmentName, 
+    isProductionEnvironment: isProductionEnvironment,
+    allowed: requested && !isProductionEnvironment
+  ]
+}
+
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
@@ -122,20 +136,15 @@ task determineCodeVersion {
 //
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task restrictUnitTestingDeployment {
-  def isUnitTestingConfigIncluded = project.getProperty("mlConfigPaths").contains("test/ml-config")
-  def environmentName = project.getProperty("environmentName").toLowerCase()
-  if (isUnitTestingConfigIncluded) {
-    def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
-    if (productionEnvironmentNames.contains(environmentName)) {
-      throw new GradleException("It is unsecure to deploy unit testing configuration to a production environment, of which '${environmentName}' is considered.")
-    } else {
-      println ""
-      println "Deployment to '${environmentName}' includes unit testing configuration."
-    }
-  } else {
-    println ""
-    println "Deployment to '${environmentName}' excludes unit testing configuration."
+  def testingStatus = getUnitTestingDeploymentStatus()
+  
+  if (testingStatus.requested && !testingStatus.allowed) {
+    throw new GradleException("It is unsecure to deploy unit testing configuration to a " +
+        "production environment, of which '${testingStatus.environmentName}' is considered.")
   }
+  
+  println ""
+  println "Deployment to '${testingStatus.environmentName}' ${testingStatus.requested ? 'includes' : 'excludes'} unit testing configuration."
 }
 
 // Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
@@ -322,14 +331,24 @@ task addSupportForExecutingWithServiceAccounts() {
       // 1. The modules database name provides multi-tenancy support.
       // 2. When the unit is the tenant owner, we only need one represented.
       def includeUnit = unit != tenantName
+      // Generate amp for main modules database
       def templateBindings = [
           roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
           functionName: "_${functionName}", // underscore needed
-          moduleFilename: moduleFilename
+          moduleFilename: moduleFilename,
+          modulesDatabase: project.getProperty("tenantModulesDatabase")
       ]
       def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
       writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
       println "Generated amp for the '${unit}' unit."
+      
+      // Generate amp for test modules database if unit testing deployment is allowed
+      if (getUnitTestingDeploymentStatus().allowed) {
+        templateBindings.modulesDatabase = project.getProperty("tenantTestModulesDatabase")
+        def testContent = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
+        writeToFile("${buildAmpTestPath}/execute-with-${unit}-test-amp.json", testContent)
+        println "Generated test amp for the '${unit}' unit."
+      }
     }
 
     // Populate the wrapper function library.

@@ -59,7 +59,9 @@ ext.lineSep = System.getProperty("line.separator")
 
 // Helper function to determine if unit testing deployment is allowed
 ext.getUnitTestingDeploymentStatus = {
-  def requested = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def configRequested = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def modulesRequested = project.getProperty("mlModulePaths").contains("test/ml-modules")
+  def requested = configRequested || modulesRequested
   def environmentName = project.getProperty("environmentName").toLowerCase()
   def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
   def isProductionEnvironment = productionEnvironmentNames.contains(environmentName)
@@ -139,12 +141,12 @@ task restrictUnitTestingDeployment {
   def testingStatus = getUnitTestingDeploymentStatus()
   
   if (testingStatus.requested && !testingStatus.allowed) {
-    throw new GradleException("It is unsecure to deploy unit testing configuration to a " +
+    throw new GradleException("It is unsecure to deploy unit testing artifacts (configuration and/or modules) to a " +
         "production environment, of which '${testingStatus.environmentName}' is considered.")
   }
   
   println ""
-  println "Deployment to '${testingStatus.environmentName}' ${testingStatus.requested ? 'includes' : 'excludes'} unit testing configuration."
+  println "Deployment to '${testingStatus.environmentName}' ${testingStatus.requested ? 'includes' : 'excludes'} unit testing artifacts."
 }
 
 // Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
@@ -490,6 +492,9 @@ mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
 // maintaining permissions.  This should be run after all other changes have been made
 // to the modules database.
 task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
+  onlyIf {
+    getUnitTestingDeploymentStatus().allowed
+  }
   doFirst {
     println ""
     println "Resetting test modules database..."
@@ -507,6 +512,8 @@ task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
 ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
 
 // Delete test modules from main modules database after they've been copied to test
+// This one should run regardless of whether unit testing deployment is allowed, 
+// because the marklogic-unit-test-modules bundle adds some.
 task deleteTestModulesFromMain (type: com.marklogic.gradle.task.MarkLogicTask) {
   doFirst {
     println ""

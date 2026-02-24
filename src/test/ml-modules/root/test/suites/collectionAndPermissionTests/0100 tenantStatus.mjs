@@ -21,8 +21,8 @@ try {
   assertions.push(
     testHelperProxy.assertTrue(
       false,
-      `The testStatus tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`
-    )
+      `The testStatus tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`,
+    ),
   );
 }
 
@@ -34,15 +34,18 @@ assertions.push(
   testHelperProxy.assertEqualJson(
     [],
     xdmp.invokeFunction(zeroArityFun),
-    'The tenant status document is not expected to be in any collections'
-  )
+    'The tenant status document is not expected to be in any collections',
+  ),
 );
 
 // Check the permissions.  Couldn't get testHelperProxy.assertEqualJson to work here.
 const actualPermissions = fn.head(
-  xdmp.invokeFunction(() => {
-    return xdmp.documentGetPermissions(TENANT_STATUS_URI);
-  })
+  xdmp.invokeFunction(
+    () => {
+      return xdmp.documentGetPermissions(TENANT_STATUS_URI);
+    },
+    { database: xdmp.modulesDatabase() },
+  ),
 );
 const expectedPermissions = [
   xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_READ),
@@ -53,7 +56,7 @@ assertPermissionArraysMatch(
   'tenant status',
   assertions,
   expectedPermissions,
-  actualPermissions
+  actualPermissions,
 );
 
 console.log(`${LIB}: completed ${assertions.length} assertions.`);

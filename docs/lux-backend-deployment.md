@@ -6,6 +6,7 @@ In this document:
 - [Dependencies and Prerequisites](#dependencies-and-prerequisites)
 - [Tenant Configuration](#tenant-configuration)
   - [Tenant Limitations and Warnings](#tenant-limitations-and-warnings)
+- [Enabling Unit Testing](#enabling-unit-testing)
 - [Gradle Passwords](#gradle-passwords)
 - [Custom Token Replacement](#custom-token-replacement)
 - [Deploy Entire Backend](#deploy-entire-backend)
@@ -99,6 +100,37 @@ The current tenant deployment model includes shared configuration and does not i
     * `setBanner`: Until we can make this conditional, comment out `mlDeploySecurity.finalizedBy setBanner`.
     * `*SSLProtocols`: Until we can make this conditional, comment out `mlDeployServers.finalizedBy disableDeprecatedSSLProtocols`.
     * `*Ciphers`: Until we can make this conditional, comment out `mlDeployServers.finalizedBy updateSSLCiphers`.
+
+# Enabling Unit Testing
+
+To enable and deploy unit testing artifacts:
+
+1. Target environment must not be considered a production environment, which is controlled by the `productionEnvironmentNames` build property.
+2. Set the `mlTestRestPort` build property (likely to 8010).
+3. Verify the following build properties are set to the resolved names:
+
+    `tenantTestContentDatabase`=YOUR_TENANT_NAME-test-content
+    
+    `tenantTestModulesDatabase`=YOUR_TENANT_NAME-test-modules
+
+4. Add `build/test/ml-modules` to the `mlModulePaths` property value.
+5. Add `build/test/ml-config` to the `mlConfigPaths` property value.
+6. Set the `unitTesterPassword` password as described in [Gradle Passwords](#gradle-passwords).
+7. If enabling for a new environment, move on to the [Deploy Entire Backend](#deploy-entire-backend) procedure.  For existing environments, this could be sufficient:
+
+    * Manually create and partially configure the test content database.  The underlying reason why this seemingly can't be done with ML Gradle has not been determined.  Substitute "lux" for your tenant name.
+
+       * Database name: "lux-test-content"
+       * Schemas database: "lux-schemas"
+       * The next step will create and attach a forest.
+
+    * `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
+
+    * `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
+
+    * `./gradlew performBaseDeployment -i -PskipDatabases -PenvironmentName=[name]`
+
+Once deployed, run the tests from http://localhost:8010/test/default.xqy, swapping out the host and port as needed.
 
 # Gradle Passwords
 
@@ -218,17 +250,23 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
     * Update one or more locally encrypted passwords.  See step no. 6, above.
     * Update the target environment's SSL properties.  See step no. 7, above.
 
-10. For new environments, the content database must be created before amps can be defined. Run:
+10. If unit tests are to be enabled and the test content database does not yet exist, manually create and partially configure it.  The underlying reason why this seemingly can't be done with ML Gradle has not been determined.  Substitute "lux" for your tenant name.
+
+    * Database name: "lux-test-content"
+    * Schemas database: "lux-schemas"
+    * The next step will create and attach a forest.
+
+11. For new environments (or when enabling unit testing for an existing environment), the content database must be created before amps can be defined. Run:
 
     `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
 
-11. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
+12. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
 
     `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
 
     Note: The `setBanner` Gradle task is configured to run after `mlDeploySecurity` as it too requires an admin.  The `setBanner` Gradle task may also be called directly.
 
-11. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
+13. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
 
 
 12. **Restricted to administrators:** If the indexing configuration is changing, decide whether to re-load or re-index the database.

@@ -51,10 +51,27 @@ tasks.withType(JavaExec) {
 ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
 ext.publicKeysPath = "${project.projectDir}/src/main/public-keys"
 ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
+ext.buildAmpTestPath = "${project.projectDir}/build/test/ml-config/security/amps"
 ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
 ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oauth/security/external-security"
 
 ext.lineSep = System.getProperty("line.separator")
+
+// Helper function to determine if unit testing deployment is allowed
+ext.getUnitTestingDeploymentStatus = {
+  def configRequested = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def modulesRequested = project.getProperty("mlModulePaths").contains("test/ml-modules")
+  def requested = configRequested || modulesRequested
+  def environmentName = project.getProperty("environmentName").toLowerCase()
+  def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
+  def isProductionEnvironment = productionEnvironmentNames.contains(environmentName)
+  return [
+    requested: requested, 
+    environmentName: environmentName, 
+    isProductionEnvironment: isProductionEnvironment,
+    allowed: requested && !isProductionEnvironment
+  ]
+}
 
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
@@ -121,20 +138,15 @@ task determineCodeVersion {
 //
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task restrictUnitTestingDeployment {
-  def isUnitTestingConfigIncluded = project.getProperty("mlConfigPaths").contains("test/ml-config")
-  def environmentName = project.getProperty("environmentName").toLowerCase()
-  if (isUnitTestingConfigIncluded) {
-    def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
-    if (productionEnvironmentNames.contains(environmentName)) {
-      throw new GradleException("It is unsecure to deploy unit testing configuration to a production environment, of which '${environmentName}' is considered.")
-    } else {
-      println ""
-      println "Deployment to '${environmentName}' includes unit testing configuration."
-    }
-  } else {
-    println ""
-    println "Deployment to '${environmentName}' excludes unit testing configuration."
+  def testingStatus = getUnitTestingDeploymentStatus()
+  
+  if (testingStatus.requested && !testingStatus.allowed) {
+    throw new GradleException("It is unsecure to deploy unit testing artifacts (configuration and/or modules) to a " +
+        "production environment, of which '${testingStatus.environmentName}' is considered.")
   }
+  
+  println ""
+  println "Deployment to '${testingStatus.environmentName}' ${testingStatus.requested ? 'includes' : 'excludes'} unit testing artifacts."
 }
 
 // Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
@@ -234,6 +246,17 @@ task preprocessRuntimeConfigAndModules() {
   println 'Resolving custom token(s): ' + names.join(", ")
   println ''
 
+  println "Populating the database configuration JavaScript template."
+  text = file('./config/contentDatabaseConfGenerated.json').text
+  copy{
+    from './src/main/templates'
+    into './src/main/ml-modules/root/config'
+    include 'contentDatabaseConfGenerated.mjs'
+    filter{ line ->
+      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
+    }
+  }
+
   // Clear target directories first, as there could be obsolete files therein.
   delete './build/main'
   delete './build/test'
@@ -278,20 +301,6 @@ task preprocessBuildSupportScripts() {
   }
 }
 
-task copyContentDatabaseConfGenerated(){
-  def text = file('./config/contentDatabaseConfGenerated.json').text
-  copy{
-    from './src/main/templates'
-    into './src/main/ml-modules/root/config'
-    include 'contentDatabaseConfGenerated.mjs'
-    filter{ line ->
-      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
-    }
-  }
-
-}
-mlLoadModules.dependsOn copyContentDatabaseConfGenerated
-
 // Defines amps and populates the libWrapper.mjs template.
 task addSupportForExecutingWithServiceAccounts() {
   doLast {
@@ -321,14 +330,24 @@ task addSupportForExecutingWithServiceAccounts() {
       // 1. The modules database name provides multi-tenancy support.
       // 2. When the unit is the tenant owner, we only need one represented.
       def includeUnit = unit != tenantName
+      // Generate amp for main modules database
       def templateBindings = [
           roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
           functionName: "_${functionName}", // underscore needed
-          moduleFilename: moduleFilename
+          moduleFilename: moduleFilename,
+          modulesDatabase: project.getProperty("tenantModulesDatabase")
       ]
       def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
       writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
       println "Generated amp for the '${unit}' unit."
+      
+      // Generate amp for test modules database if unit testing deployment is allowed
+      if (getUnitTestingDeploymentStatus().allowed) {
+        templateBindings.modulesDatabase = project.getProperty("tenantTestModulesDatabase")
+        def testContent = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
+        writeToFile("${buildAmpTestPath}/execute-with-${unit}-test-amp.json", testContent)
+        println "Generated test amp for the '${unit}' unit."
+      }
     }
 
     // Populate the wrapper function library.
@@ -465,6 +484,49 @@ task ensureTenantStatusDocumentExists() {
 }
 mlDeploy.finalizedBy ensureTenantStatusDocumentExists
 mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
+
+// Resets the test modules database with all documents from the main modules database,
+// maintaining permissions.  This should be run after all other changes have been made
+// to the modules database.
+task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
+  onlyIf {
+    getUnitTestingDeploymentStatus().allowed
+  }
+  doFirst {
+    println ""
+    println "Resetting test modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def script = new File('./build/buildSupport/resetTestModulesDatabase.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
+
+// Delete test modules from main modules database after they've been copied to test
+// This one should run regardless of whether unit testing deployment is allowed, 
+// because the marklogic-unit-test-modules bundle adds some.
+task deleteTestModulesFromMain (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Deleting test modules from main modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def cleanupScript = new File('./build/buildSupport/deleteTestModulesFromMain.sjs').getText('UTF-8')
+    def cleanupResult = client.newServerEval().javascript(cleanupScript).evalAs(String.class)
+    
+    println ""
+    println cleanupResult
+    println ""
+  }
+}
+resetTestModulesDatabase.finalizedBy deleteTestModulesFromMain
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md

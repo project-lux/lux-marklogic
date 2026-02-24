@@ -4,7 +4,7 @@
   "enabled": "true",
   "root": "/",
   "port": %%mlDeployPort%%,
-  "content-database": "%%tenantTestContentDatabase%%",
+  "content-database": "%%tenantContentDatabase%%",
   "modules-database": "%%tenantModulesDatabase%%",
   "authentication": "digest",
   "internal-security": "true",

@@ -4,7 +4,7 @@
   "enabled": "true",
   "root": "/",
   "port": %%mlRestPortGroup2%%,
-  "content-database": "%%tenantTestContentDatabase%%",
+  "content-database": "%%tenantContentDatabase%%",
   "modules-database": "%%tenantModulesDatabase%%",
   "authentication": "%%mlRestAuthenticationGroup2%%",
   "internal-security": "true",

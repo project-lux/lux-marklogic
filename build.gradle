@@ -246,6 +246,17 @@ task preprocessRuntimeConfigAndModules() {
   println 'Resolving custom token(s): ' + names.join(", ")
   println ''
 
+  println "Populating the database configuration JavaScript template."
+  text = file('./config/contentDatabaseConfGenerated.json').text
+  copy{
+    from './src/main/templates'
+    into './src/main/ml-modules/root/config'
+    include 'contentDatabaseConfGenerated.mjs'
+    filter{ line ->
+      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
+    }
+  }
+
   // Clear target directories first, as there could be obsolete files therein.
   delete './build/main'
   delete './build/test'
@@ -289,20 +300,6 @@ task preprocessBuildSupportScripts() {
     }
   }
 }
-
-task copyContentDatabaseConfGenerated(){
-  def text = file('./config/contentDatabaseConfGenerated.json').text
-  copy{
-    from './src/main/templates'
-    into './src/main/ml-modules/root/config'
-    include 'contentDatabaseConfGenerated.mjs'
-    filter{ line ->
-      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
-    }
-  }
-
-}
-mlLoadModules.dependsOn copyContentDatabaseConfGenerated
 
 // Defines amps and populates the libWrapper.mjs template.
 task addSupportForExecutingWithServiceAccounts() {

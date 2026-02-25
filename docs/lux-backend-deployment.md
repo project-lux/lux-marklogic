@@ -487,7 +487,6 @@ Those with an asterisk following the name are input to the log analysis script, 
 
 | Trace Name | Always | Description |
 | ---------- | ------ | ----------- |
-| `LuxError` | No | When enabled, [customErrorHandler.mjs](/src/main/ml-modules/root/customErrorHandler.mjs) will log the error's raw details, which can vary from the error handler's response, inclusive of the status response code, status response message, and response body.  The custom error handler is configured to the HTTP application servers. |
 | `LuxFacets`\* | Yes | Logs the name of a facet set and how long it takes to calculate them, in milliseconds. |
 | `LuxNamedProfiles`\* | Yes | Logs the duration it takes to profile a document, in milliseconds. Only logged when a profile is requested and that profile is known by the system. A warning message is logged when an unknown profile is specified --regardless of this trace event being enabled. |
 | `LuxSearch`\* | Yes | Logs the duration search takes, in milliseconds. No additional context is provided, thereby limiting the value of this trace event; however, the search response body includes durations for that search's steps: parse, query, and facets. |

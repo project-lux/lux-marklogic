@@ -54,7 +54,8 @@ Most bullet points without a ticket reference are associated with [#643](https:/
 - Removed the build script's dependency on MLCP including the unused MLCP Gradle tasks:
     - `copyDatabase`
     - `importDataFull`
-    - `importDataIncremental` 
+    - `importDataIncremental`
+- Removed the custom error handler ([#317](https://github.com/project-lux/lux-marklogic/issues/317))
   
 ### Fixed
 

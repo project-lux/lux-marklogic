@@ -56,14 +56,14 @@ The bootstrap host held up through arrival rate 150 (272 req/s), of the stress t
 Intel, wanted but tested due to it not being available AWS AZ us-east-1a where .111 and its EBS storage were located:
 
 * `m8i-flex.8xlarge` as bootstrap host:  $1,174, 3.9 GHz, 32 vCPUs (16 cores), and 128 GB RAM
-* `m8i-flex.xlarge` as dynamic host: $147, 3.9 GHz, 4 vCPUs (2 cores), and 16 GB RAM
+* `m8i-flex.xlarge` as dynamic host: $147, 3.9 GHz, 4 vCPUs (2 cores), and 32 GB RAM
 
 Intel, tested with dynamic host:
 
 * `m6i.8xlarge` as bootstrap host: $1,121, 3.5 GHz, 32 vCPUs (16 cores), and 128 GB RAM
-* `m8i-flex.xlarge` as dynamic host: $147, 3.9 GHz, 4 vCPUs (2 cores), and 16 GB RAM
+* `m8i-flex.xlarge` as dynamic host: $147, 3.9 GHz, 4 vCPUs (2 cores), and 32 GB RAM
 
-    *Unable to recall why the `m6i.xlarge` wasn't used.*
+    *The `m6i.xlarge` instance type has 16 GB RAM, which proved insufficient.*
 
 Graviton, tested without dynamic host:
 

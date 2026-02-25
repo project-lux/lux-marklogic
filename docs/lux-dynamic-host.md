@@ -61,7 +61,9 @@ Intel, wanted but tested due to it not being available AWS AZ us-east-1a where .
 Intel, tested with dynamic host:
 
 * `m6i.8xlarge` as bootstrap host: $1,121, 3.5 GHz, 32 vCPUs (16 cores), and 128 GB RAM
-* `m6i.xlarge` as dynamic host: $140, 3.5 GHz, 4 vCPUs (2 cores), and 16 GB RAM
+* `m8i-flex.xlarge` as dynamic host: $147, 3.9 GHz, 4 vCPUs (2 cores), and 16 GB RAM
+
+    *Unable to recall why the `m6i.xlarge` wasn't used.*
 
 Graviton, tested without dynamic host:
 

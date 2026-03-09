@@ -11,7 +11,7 @@ Most bullet points without a ticket reference are associated with [#643](https:/
 ### Added
 
 - Added the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out) endpoint ([#638](https://github.com/project-lux/lux-marklogic/issues/638)).
-- Added the [./src/main/ml-config/dynamic-host/](./src/main/ml-config/dynamic-host/) MarkLogic Gradle configuration directory as well as the `allowDynamicHosts` and `enableApiTokenAuthentication` Gradle properties.  The new configuration directory allows us to continue supporting MarkLogic 11 deployments.  The properties allow us to enable or disable the MarkLogic 12 dynamic host-related settings we do not plan to change when scaling out or in. Minimum supported ML 12 version is 12.0.1. ([#639](https://github.com/project-lux/lux-marklogic/issues/639))
+- Added the [/src/main/ml-config/dynamic-host/](/src/main/ml-config/dynamic-host/) MarkLogic Gradle configuration directory as well as the `allowDynamicHosts` and `enableApiTokenAuthentication` Gradle properties.  The new configuration directory allows us to continue supporting MarkLogic 11 deployments.  The properties allow us to enable or disable the MarkLogic 12 dynamic host-related settings we do not plan to change when scaling out or in. Minimum supported ML 12 version is 12.0.1. ([#639](https://github.com/project-lux/lux-marklogic/issues/639))
 - Added a modules database dedicated to unit testing, thereby supporting tenant status tests without modifying the tenant's real status document.  In so doing:
     - Closed hole that enabled deployment of test modules to production modules databases.
     - All test artifacts are removed from the main modules database, for all environments.

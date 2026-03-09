@@ -3,9 +3,12 @@ import { User } from './User.mjs';
 import { ML_ADMIN_PORT } from './appConstants.mjs';
 import { ScaleEnvironmentError } from './errorClasses.mjs';
 import { getExceptionObjectElseMessage } from '../utils/utils.mjs';
+import { StopWatch } from '../utils/stopWatch.mjs';
 
 // Non-amp'd function that all scale out requests are to go through.
 function scaleOut(dynamicHost) {
+  // passing true to start the stop watch immediately.
+  const stopWatch = new StopWatch(true);
   const user = new User();
   console.log(
     `User '${user.getUsername()}' is attempting to add dynamic host '${dynamicHost}'`,
@@ -17,7 +20,7 @@ function scaleOut(dynamicHost) {
     );
   }
 
-  const result = _scaleOutAsAdmin(user, dynamicHost);
+  const result = _scaleOutAsAdmin(user, dynamicHost, stopWatch);
   if (result) {
     console.log(
       `User '${user.getUsername()}' successfully added dynamic host '${dynamicHost}'`,
@@ -27,17 +30,19 @@ function scaleOut(dynamicHost) {
 }
 
 // Keep private.
-function __scaleOutAsAdmin(user, dynamicHost) {
+function __scaleOutAsAdmin(user, dynamicHost, stopWatch) {
   const admin = require('/MarkLogic/admin.xqy');
 
   let token = null;
   let errorMsg = null;
   try {
+    stopWatch.lap('upToRemoveDynamicHosts');
     // Remove trace of any previous dynamic host.
     const oldDynamicHosts = xdmp.getDynamicHosts().toArray();
     if (oldDynamicHosts.length > 0) {
       xdmp.removeDynamicHosts(oldDynamicHosts);
     }
+    stopWatch.lap('afterRemoveDynamicHosts');
 
     // Verify the local host has the required configuration.
     const groupId = xdmp.group();
@@ -52,8 +57,10 @@ function __scaleOutAsAdmin(user, dynamicHost) {
       errorMsg = `the local host is not configured to allow dynamic hosts; check deployment configuration`;
       return false;
     }
+    stopWatch.lap('afterConfigChecks');
 
     dynamicHost = validateAndTrimHost(dynamicHost);
+    stopWatch.lap('afterValidateAndTrimHost');
     token = admin.issueDynamicHostToken(
       'Default', // associated build property: allowDynamicHosts
       xdmp.hostName(),
@@ -61,10 +68,12 @@ function __scaleOutAsAdmin(user, dynamicHost) {
       xs.dayTimeDuration('PT5M'),
       `Token for ${dynamicHost} to be added by ${user.getUsername()}`,
     );
+    stopWatch.lap('afterIssueDynamicHostToken');
 
     // Presumes and requires dynamic host is uninitialized (http).
     // Also presumes the same admin port as current host.
     const url = `http://${dynamicHost}:${ML_ADMIN_PORT}/admin/v1/init`;
+    console.log(`sending post request to ${url}`);
     const response = fn.head(
       xdmp.httpPost(url, {
         data: xdmp.quote({ 'dynamic-host-token': token }),
@@ -73,6 +82,7 @@ function __scaleOutAsAdmin(user, dynamicHost) {
         },
       }),
     );
+    stopWatch.lap('afterInitializeDynamicHost');
 
     // Verify this host believes it was successful
     if (xdmp.getDynamicHosts().toArray().length === 0) {
@@ -83,11 +93,13 @@ function __scaleOutAsAdmin(user, dynamicHost) {
       errorMsg = `the dynamic hosts list is empty after attempting to add '${dynamicHost}'.${details}`;
       return false;
     }
+    stopWatch.lap('afterDynamicHostCheck');
 
     return true;
   } catch (e) {
     errorMsg = getExceptionObjectElseMessage(e);
   } finally {
+    console.dir(stopWatch.lapsToObject());
     if (token) {
       admin.revokeDynamicHostToken(token);
     }

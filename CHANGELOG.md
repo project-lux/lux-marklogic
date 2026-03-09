@@ -38,9 +38,11 @@ Most bullet points without a ticket reference are associated with [#643](https:/
     - Reduced the group retry limit from 180 seconds to 10 seconds.
     - Increase retention of raw meters from 7 days to 14 days.
 - Application server changes:
-    - Added a second backend application server for the middle tier to send document and translate requests to.
-    - Recommend the middle tier route `/ds/lux/document/read.mjs` and `/ds/lux/translate.mjs` requests to one application server and the rest to the other.
-    - Both application servers intended for middle tier use have 48 threads.
+    - Renamed the `lux` application server to `lux-request-group-1`.
+    - Added the `lux-request-group-2` application server to support load distribution in the middle tier. Internal stress testing has consistently shown that routing backend requests across two app servers increases throughput headroom and reduces performance degradation during high arrival rates.
+    - The middle tier is recommended to route `/ds/lux/document/read.mjs` and `/ds/lux/translate.mjs` requests to one application server and the rest to the other.
+    - With a 32 vCPU static MarkLogic host, the application servers tested best with 48 threads each.
+    - The second application server's backend configuration may be made using the `*Group2` build properties.
     - Any application server previously configured to the custom error handler is now configured to the default error handler, `/MarkLogic/rest-api/error-handler.xqy`.
 - Content database changes:
     - Enabled preload-mapped-data.

@@ -1,6 +1,6 @@
 import { mayScaleEnvironment, validateAndTrimHost } from './securityLib.mjs';
 import { User } from './User.mjs';
-import { ML_ADMIN_PORT } from './appConstants.mjs';
+import { ML_ADMIN_PORT, SCALE_OUT_TIMEOUT } from './appConstants.mjs';
 import { ScaleEnvironmentError } from './errorClasses.mjs';
 import { getExceptionObjectElseMessage } from '../utils/utils.mjs';
 
@@ -33,6 +33,8 @@ function __scaleOutAsAdmin(user, dynamicHost) {
   let token = null;
   let errorMsg = null;
   try {
+    xdmp.setRequestTimeLimit(SCALE_OUT_TIMEOUT);
+
     // Remove trace of any previous dynamic host.
     const oldDynamicHosts = xdmp.getDynamicHosts().toArray();
     if (oldDynamicHosts.length > 0) {

@@ -20,6 +20,7 @@ const COLLECTION_NAME_NON_PRODUCTION = 'nonProd';
 const UNIT_TEST_ENDPOINT = '/test/default.xqy';
 const ROLE_NAME_MAY_RUN_UNIT_TESTS = '%%mlAppName%%-may-run-unit-tests';
 
+const SCALE_OUT_TIMEOUT = parseInt('%%scaleOutTimeout%%'.trim());
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 
@@ -196,6 +197,7 @@ export {
   RELATED_LIST_PREFIX,
   RELATED_LIST_TIMEOUT,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
+  SCALE_OUT_TIMEOUT,
   SEARCH_ESTIMATE_PREFIX,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_INVERSE_MAP,

@@ -4,7 +4,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v3.0.0 - Unreleased
 
-LUX backend v3.0.0 reduces recurring expenses by changing from clusters to individual MarkLogic hosts and relying on [MarkLogic's dynamic host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) to scale out when needed.
+LUX backend v3.0.0 reduces recurring expenses by changing from clusters to individual MarkLogic hosts and relying on [MarkLogic's dynamic host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) to scale out when needed.  See [MarkLogic Dynamic Host for LUX](/docs/lux-dynamic-host.md) for additional design aspects.
 
 Most bullet points without a ticket reference are associated with [#643](https://github.com/project-lux/lux-marklogic/issues/643).  The rest without a ticket reference document changes that rolled out with this version but are defined in a private repository.
 
@@ -19,17 +19,17 @@ Most bullet points without a ticket reference are associated with [#643](https:/
 
 ### Changed
 
-- Changed from 48 vCPU and 384 GB RAM clusters to individual 32 vCPU and 128 GB hosts, thereby reducing CPU resources by 1/3rd and RAM by 2/3rds.
-- Processor speed increased from 3.1 GHz to 3.5 GHz.
-- Upgraded from Amazon Linux 2 to Amazon Linux 2023.  Other OS settings:
-    - Swap space: 32 GB
-    - vm.swappiness: 1
-    - vm.dirty_background_ratio: 1
-    - vm.dirty_ratio: 20
-    - Transparent huge pages (THP): `madvise`
-    - Huge page count: 20,480
-    - Huge page size: 2,048 KB
-    - File descriptor hard & soft limits for daemon: 65,535
+- Changed from 48 vCPU and 384 GB RAM clusters to individual 32 vCPU and 128 GB RAM hosts, thereby reducing CPU resources by 1/3rd and RAM by 2/3rds.  The dynamic host adds 4 vCPUs and 32 GB RAM.
+- Processor speed increased from 3.1 GHz to 3.5 GHz.  Dynamic host has 3.9 GHz.
+- Upgraded from Amazon Linux 2 to Amazon Linux 2023.  Other OS settings (static host / dynamic host):
+    - Swap space: 32 GB / 24 GB
+    - vm.swappiness: 1 / 1
+    - vm.dirty_background_ratio: 1 / 1
+    - vm.dirty_ratio: 20 / 20
+    - Transparent huge pages (THP): `never` / `never`
+    - Huge page count: 20,480 / 4,960
+    - Huge page size: 2,048 KB / 2,048 KB
+    - File descriptor hard & soft limits for daemon: 65,535 / 65,535
 - Reduced from nine forests spread across three hosts to two forests on one host.
 - Increased to 9,000 IOPS and 375 MB/s throughput on GP3 EBS volume.
 - Upgraded from MarkLogic 11.3.1 to MarkLogic 12.0.1.

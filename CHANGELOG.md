@@ -26,6 +26,7 @@ Most bullet points without a ticket reference are associated with [#643](https:/
     - vm.swappiness: 1 / 1
     - vm.dirty_background_ratio: 1 / 1
     - vm.dirty_ratio: 20 / 20
+    - IO scheduler: `none` / `none`
     - Transparent huge pages (THP): `never` / `never`
     - Huge page count: 20,480 / 4,960
     - Huge page size: 2,048 KB / 2,048 KB

@@ -10,5 +10,6 @@
   "internal-security": "true",
   "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
   "rewrite-resolves-globally": true,
-  "default-user": "nobody"
+  "default-user": "nobody",
+  "ssl-certificate-template": "%%mlAppCertificateName%%"
 }

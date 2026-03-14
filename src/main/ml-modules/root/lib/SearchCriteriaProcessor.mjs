@@ -1264,4 +1264,8 @@ const SearchCriteriaProcessor = class {
   }
 };
 
-export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };
+export {
+  FROM_SEARCH_OPTIONS,
+  START_OF_GENERATED_QUERY,
+  SearchCriteriaProcessor,
+};

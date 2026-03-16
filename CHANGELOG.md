@@ -2,7 +2,7 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v3.0.0 - Unreleased
+## v3.0.0 - 2026-03-16
 
 LUX backend v3.0.0 reduces recurring expenses by changing from clusters to individual MarkLogic hosts and relying on [MarkLogic's dynamic host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) to scale out when needed.  See [MarkLogic Dynamic Host for LUX](/docs/lux-dynamic-host.md) for additional design aspects.
 

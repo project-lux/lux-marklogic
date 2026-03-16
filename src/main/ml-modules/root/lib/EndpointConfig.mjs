@@ -4,7 +4,7 @@ import {
   PROP_NAME_FEATURES,
   PROP_NAME_MY_COLLECTIONS,
 } from '../config/endpointsConfig.mjs';
-import { InternalConfigurationError } from '../lib/mlErrorsLib.mjs';
+import { InternalConfigurationError } from './errorClasses.mjs';
 import { isDefined, isUndefined } from '../utils/utils.mjs';
 
 const propertyIsRequired = true;
@@ -44,19 +44,19 @@ const EndpointConfig = class {
       PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
       this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE],
       propertyIsRequired,
-      trueOrFalse
+      trueOrFalse,
     );
     this.assertValidPropertyValueType(
       PROP_NAME_FEATURES,
       this[PROP_NAME_FEATURES],
       propertyIsRequired,
-      'object'
+      'object',
     );
     this.assertValidPropertyValue(
       PROP_NAME_MY_COLLECTIONS,
       this[PROP_NAME_FEATURES][PROP_NAME_MY_COLLECTIONS],
       propertyIsRequired,
-      trueOrFalse
+      trueOrFalse,
     );
   }
 
@@ -64,7 +64,7 @@ const EndpointConfig = class {
     propertyName,
     propertyValue,
     isPropertyRequired,
-    allowedValues
+    allowedValues,
   ) {
     if (isPropertyRequired) {
       this.assertPropertyDefined(propertyName, propertyValue);
@@ -75,7 +75,7 @@ const EndpointConfig = class {
     ) {
       if (!allowedValues.includes(propertyValue)) {
         throw new InternalConfigurationError(
-          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value is not one of the allowed values`
+          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value is not one of the allowed values`,
         );
       }
     }
@@ -85,7 +85,7 @@ const EndpointConfig = class {
     propertyName,
     propertyValue,
     isPropertyRequired,
-    valueType
+    valueType,
   ) {
     if (isPropertyRequired) {
       this.assertPropertyDefined(propertyName, propertyValue);
@@ -96,7 +96,7 @@ const EndpointConfig = class {
     ) {
       if (typeof propertyValue !== valueType) {
         throw new InternalConfigurationError(
-          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value has the wrong value type`
+          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value has the wrong value type`,
         );
       }
     }
@@ -105,7 +105,7 @@ const EndpointConfig = class {
   assertPropertyDefined(propertyName, propertyValue) {
     if (isUndefined(propertyValue)) {
       throw new InternalConfigurationError(
-        `The ${this.getEndpointPath()} endpoint is missing the '${propertyName}' configuration property.`
+        `The ${this.getEndpointPath()} endpoint is missing the '${propertyName}' configuration property.`,
       );
     }
   }

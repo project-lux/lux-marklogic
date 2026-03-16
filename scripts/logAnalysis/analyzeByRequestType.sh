@@ -159,6 +159,12 @@ BEGIN{
   epoch = logts_to_epoch(tstamp)
   if (use_time_filter && (epoch < start_epoch || epoch >= end_epoch)) next
 
+  # Extract node identifier from filename
+  node = "unknown"
+  if (match(FILENAME, /node-([0-9]+)/, node_match)) {
+    node = "node-" node_match[1]
+  }
+
   type = classify(uri)
 
   count[type]++
@@ -166,6 +172,11 @@ BEGIN{
   status_count[status]++
   total++
   bytes_total += bytes
+
+  # Per-node tracking
+  node_total[node]++
+  node_type_count[node,type]++
+  node_type_bytes[node,type] += bytes
 
   # File-level info (helpful in DEBUG)
   file_total[FILENAME]++
@@ -196,6 +207,30 @@ END{
 
   s = (count["Search"]+0) ? count["Search"] : 1
   printf("\nFacet per Search ratio: %.2f\n", (count["Facet"]+0)/s)
+
+  # Sort nodes for consistent output
+  n = 0
+  for (node in node_total) nodes[++n] = node
+  asort(nodes)
+
+  printf("\nPer-node totals:\n")
+  for (i = 1; i <= n; i++) {
+    node = nodes[i]
+    printf("  %-12s %10d\n", node, node_total[node])
+  }
+
+  printf("\nPer-node by type:\n")
+  for (i = 1; i <= n; i++) {
+    node = nodes[i]
+    printf("  %s:\n", node)
+    for (t in types) {
+      requests = node_type_count[node,t]+0
+      bytes_val = node_type_bytes[node,t]+0
+      if (requests > 0) {
+        printf("    %-16s %10d %15d\n", t, requests, bytes_val)
+      }
+    }
+  }
 
   printf("\nStatus codes:\n")
   for (sc in status_count) printf("  %-4s %10d\n", sc, status_count[sc])

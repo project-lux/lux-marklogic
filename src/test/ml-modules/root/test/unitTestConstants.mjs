@@ -10,6 +10,7 @@ const ROLE_NAME_TENANT_READER = '%%mlAppName%%-reader';
 
 const USERNAME_FOR_BONNIE = '%%mlAppName%%-unit-test-bonnie';
 const USERNAME_FOR_CLYDE = '%%mlAppName%%-unit-test-clyde';
+const USERNAME_FOR_DEPLOYER = '%%mlAppName%%-unit-test-deployer';
 const USERNAME_FOR_SERVICE_ACCOUNT = '%%mlAppName%%-unit-test-service-account';
 
 // Filenames are relative to a suite's test-data subdir.
@@ -30,5 +31,6 @@ export {
   ROLE_NAME_UNIT_TESTER,
   USERNAME_FOR_BONNIE,
   USERNAME_FOR_CLYDE,
+  USERNAME_FOR_DEPLOYER,
   USERNAME_FOR_SERVICE_ACCOUNT,
 };

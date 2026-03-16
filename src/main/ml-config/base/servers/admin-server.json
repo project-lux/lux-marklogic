@@ -1,5 +1,6 @@
 {
   "server-name": "Admin",
+  "server-type": "http",
   "enabled": "true",
   "authentication": "digest",
   "internal-security": "true"

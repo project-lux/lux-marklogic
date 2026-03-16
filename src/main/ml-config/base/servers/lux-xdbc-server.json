@@ -5,8 +5,8 @@
   "enabled": "true",
   "root": "/",
   "port": %%mlXdbcPort%%,
-  "content-database": "%%DATABASE%%",
-  "modules-database": "%%MODULES_DATABASE%%",
+  "content-database": "%%tenantContentDatabase%%",
+  "modules-database": "%%tenantModulesDatabase%%",
   "authentication": "digest",
   "internal-security": "true"
 }

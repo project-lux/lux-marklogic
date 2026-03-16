@@ -124,7 +124,7 @@ const advancedSearchConfigs = {};
         .sort()
         .forEach((termName) => {
           const termConfig = new SearchTermConfig(
-            unitSearchTermsConfig[scopeName][termName]
+            unitSearchTermsConfig[scopeName][termName],
           );
           const patternName = termConfig.getPatternName();
 
@@ -160,7 +160,7 @@ const advancedSearchConfigs = {};
           // 20230420, bhartwig: asked to suppress Similar terms.
           else if (
             [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-              patternName
+              patternName,
             )
           ) {
             add = false;
@@ -176,7 +176,7 @@ const advancedSearchConfigs = {};
               scopeName,
               termName,
               termConfig,
-              report
+              report,
             );
           } else if (report) {
             omittedTermNames.push(`[${patternName}] ${scopeName}.${termName}`);
@@ -190,7 +190,7 @@ const advancedSearchConfigs = {};
     unitAdvancedSearchConfig.terms[scopeName] = utils.sortObj(
       unitAdvancedSearchConfig.terms[scopeName],
       'label',
-      'Name' // If this label changes, this should be updated to match.
+      'Name', // If this label changes, this should be updated to match.
     );
   });
 
@@ -208,26 +208,26 @@ const advancedSearchConfigs = {};
 // Consolidated log entries
 utils.logValues(
   'Advanced search-included search terms that have allowed search options but no default search options',
-  noDefaultsOptions
+  noDefaultsOptions,
 );
 utils.logValues(
   'Advanced search-included search terms that do not have allowed or default search options',
-  noAllowedOptions
+  noAllowedOptions,
 );
 utils.logValues(
   'Advanced search-included search terms for which a search pattern could not be determined',
   unknownPattern,
   true,
-  true
+  true,
 );
 utils.logValues('Search terms omitted from advanced search', omittedTermNames);
 utils.logValues(
   'Advanced search - omitted the following search terms because they do not have a label',
-  noLabel
+  noLabel,
 );
 utils.logValues(
   'Advanced search - omitted the following search terms because they do not have help text',
-  noHelpText
+  noHelpText,
 );
 
 function constructModuleNode(advancedSearchConfigs) {
@@ -239,7 +239,7 @@ function constructModuleNode(advancedSearchConfigs) {
  * Generated timestamp: ${new Date()}
  */
 import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
-import { BadRequestError } from '../lib/mlErrorsLib.mjs';
+import { BadRequestError } from '../lib/errorClasses.mjs';
 
 const ADVANCED_SEARCH_CONFIG = ${JSON.stringify(advancedSearchConfigs)};
 
@@ -272,7 +272,7 @@ const msg = utils.evalInModulesDatabase(
     uri: uri,
     doc: constructModuleNode(advancedSearchConfigs),
   },
-  true
+  true,
 );
 
 msg;

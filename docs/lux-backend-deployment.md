@@ -6,6 +6,7 @@ In this document:
 - [Dependencies and Prerequisites](#dependencies-and-prerequisites)
 - [Tenant Configuration](#tenant-configuration)
   - [Tenant Limitations and Warnings](#tenant-limitations-and-warnings)
+- [Enabling Unit Testing](#enabling-unit-testing)
 - [Gradle Passwords](#gradle-passwords)
 - [Custom Token Replacement](#custom-token-replacement)
 - [Deploy Entire Backend](#deploy-entire-backend)
@@ -44,12 +45,12 @@ What follows is a mix of deployment and runtime dependencies and prerequisites f
 
 3. Network exposes the ports for the [LUX MarkLogic Application Servers](#lux-marklogic-application-servers).
 4. Clone of the LUX Backend repo, with the correct branch checked out.  New clone?  You may need to allow `gradlew` to execute: `chmod 744 gradlew`.
-5. Many of the deployment steps use [Gradle Build Tool](https://gradle.org/) tasks. Gradle doesn't require any set up, as it should be downloaded for you if you use the gradle wrapper script (`gradlew`). However, Java is a prerequisite for running Gradle tasks.  The version required can vary based on usage.  The `JAVA_HOME` environment variable may need to be set --Gradle will produce an error in a subsequent step, when the environment variable is required but not set.
+5. Many of the deployment steps use [Gradle Build Tool](https://gradle.org/) tasks. Gradle doesn't require any set up, as it should be downloaded for you if you use the gradle wrapper script (`gradlew`). However, Java is a prerequisite for running Gradle tasks.  See [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md#software) for the version used on the project.  The `JAVA_HOME` environment variable may need to be set --Gradle will produce an error in a subsequent step, when the environment variable is required but not set.
 
     ```
-    java version "1.8.0_281"
-    Java(TM) SE Runtime Environment (build 1.8.0_281-b09)
-    Java HotSpot(TM) 64-Bit Server VM (build 25.281-b09, mixed mode)
+    openjdk 21.0.8 2025-07-15 LTS
+    OpenJDK Runtime Environment Zulu21.44+17-CA (build 21.0.8+9-LTS)
+    OpenJDK 64-Bit Server VM Zulu21.44+17-CA (build 21.0.8+9-LTS, mixed mode, sharing)
     ```
 
 6. If planning to run MLCP from the command line (vs. via Gradle), [download](https://server.marklogic.com/products/mlcp) and install the MLCP version that aligns with the MarkLogic Server version.
@@ -100,6 +101,37 @@ The current tenant deployment model includes shared configuration and does not i
     * `*SSLProtocols`: Until we can make this conditional, comment out `mlDeployServers.finalizedBy disableDeprecatedSSLProtocols`.
     * `*Ciphers`: Until we can make this conditional, comment out `mlDeployServers.finalizedBy updateSSLCiphers`.
 
+# Enabling Unit Testing
+
+To enable and deploy unit testing artifacts:
+
+1. Target environment must not be considered a production environment, which is controlled by the `productionEnvironmentNames` build property.
+2. Set the `mlTestRestPort` build property (likely to 8010).
+3. Verify the following build properties are set to the resolved names:
+
+    `tenantTestContentDatabase`=YOUR_TENANT_NAME-test-content
+    
+    `tenantTestModulesDatabase`=YOUR_TENANT_NAME-test-modules
+
+4. Add `build/test/ml-modules` to the `mlModulePaths` property value.
+5. Add `build/test/ml-config` to the `mlConfigPaths` property value.
+6. Set the `unitTesterPassword` password as described in [Gradle Passwords](#gradle-passwords).
+7. If enabling for a new environment, move on to the [Deploy Entire Backend](#deploy-entire-backend) procedure.  For existing environments, this could be sufficient:
+
+    * Manually create and partially configure the test content database.  The underlying reason why this seemingly can't be done with ML Gradle has not been determined.  Substitute "lux" for your tenant name.
+
+       * Database name: "lux-test-content"
+       * Schemas database: "lux-schemas"
+       * The next step will create and attach a forest.
+
+    * `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
+
+    * `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
+
+    * `./gradlew performBaseDeployment -i -PskipDatabases -PenvironmentName=[name]`
+
+Once deployed, run the tests from http://localhost:8010/test/default.xqy, swapping out the host and port as needed.
+
 # Gradle Passwords
 
 Passwords to be used with Gradle tasks are to be encrypted at the command line using https://github.com/etiennestuder/gradle-credentials-plugin's `addCredentials` task: `./gradlew addCredentials --key [passwordPropertyName] --value '[yourPassword]'`.  *Note the use of single quotes around the value --they ensure the entire value is received.*  
@@ -110,8 +142,6 @@ The `[passwordPropertyName]` keys are:
 
    * `mlPassword`: Required.  Expect a 401 when invalid credentials are used.
    * `unitTesterPassword`: Required when deploying the unit tests.  Expect `mlDeployUsers` or higher to fail if not set.
-   * `copyDatabaseInputPassword` and `copyDatabaseOutputPassword`: Only required by the `copyDatabase` task.
-   * `importDataPassword`: Only required by the `importData*` tasks.
 
 Note the `endpointConsumerPassword` password may be set directly in the properties file.  It is only used when `mlConfigPaths` includes [/src/main/ml-config/base-unsecured](/src/main/ml-config/base-unsecured) and running `mlDeployUsers` or above.  If not set under these conditions, an error is thrown.
 
@@ -220,17 +250,23 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
     * Update one or more locally encrypted passwords.  See step no. 6, above.
     * Update the target environment's SSL properties.  See step no. 7, above.
 
-10. For new environments, the content database must be created before amps can be defined. Run:
+10. If unit tests are to be enabled and the test content database does not yet exist, manually create and partially configure it.  The underlying reason why this seemingly can't be done with ML Gradle has not been determined.  Substitute "lux" for your tenant name.
+
+    * Database name: "lux-test-content"
+    * Schemas database: "lux-schemas"
+    * The next step will create and attach a forest.
+
+11. For new environments (or when enabling unit testing for an existing environment), the content database must be created before amps can be defined. Run:
 
     `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
 
-11. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
+12. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
 
     `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
 
     Note: The `setBanner` Gradle task is configured to run after `mlDeploySecurity` as it too requires an admin.  The `setBanner` Gradle task may also be called directly.
 
-11. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
+13. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
 
 
 12. **Restricted to administrators:** If the indexing configuration is changing, decide whether to re-load or re-index the database.
@@ -341,7 +377,7 @@ Example Query Console response, identifying an underlying error:
 
 # Regenerate Remaining Search Terms
 
-Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `endpointAccessUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, `copyDatabase`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
+Facet, hop inverse, type, ID, and IRI search terms are to be regenerated after changing [/src/main/ml-modules/root/config/facetsConfig.mjs](/src/main/ml-modules/root/config/facetsConfig.mjs), `hopInverseName` property values in [/src/main/ml-modules/root/config/searchTermsConfig.mjs](/src/main/ml-modules/root/config/searchTermsConfig.mjs), the `endpointAccessUnitNames` build property value, or the associated generator ([/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs](/src/main/ml-modules/root/runDuringDeployment/generateRemainingSearchTerms.mjs)).  The associated Gradle task, `generateRemainingSearchTerms`, is run automatically when `mlDeploy`, `performBaseDeployment`, or `mlLoadModules` (and thus `mlReloadModules`) runs.
 
 # Regenerate Related Lists Configuration
 
@@ -422,14 +458,16 @@ Available application servers and their ports may vary by environment.  The outc
 | Property | Port^ | Type | PROD? | Usage |
 | -------- | ----- | ---- | ----- | ----- | 
 | n/a | 7997 | HTTP | Yes | Internal and external health check. |
-| n/a | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
-| n/a | 8001 | HTTP | Yes | MarkLogic Admin Console. |
-| n/a | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
-| `mlRestPort` | 8003 | REST | Yes | Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  The middle tier is expected to send all requests here.  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlAppServicesPort` | 8000 | REST | Yes | App-Services, which includes Query Console. May also be used by ML Gradle. |
+| `mlAdminPort` | 8001 | HTTP | Yes | MarkLogic Admin Console. |
+| `mlManagePort` | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
+| `mlRestPort` | 8003 | REST | Yes | 1 of 2 application servers intended to be used by the middle tier.  Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlDeployPort` | 8004 | REST | Yes | Use this application server when making deployment changes, inclusive of Gradle tasks, blue/green switches, and to consume the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out).  Even when the My Collections feature is enabled, the authentication scheme of this application server will remain digest. |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
-| `mlTestRestPort` | 8010 | REST | Yes | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |
+| `mlRestPort2` | 8006 | REST | Yes | 2 of 2 application servers intended to be used by the middle tier.  Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
+| `mlTestRestPort` | 8010 | REST | No | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |
 
-\* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006.
+\* For deployments that include the Query Plan Viewer, an additional HTTP application server may be present; its default port number is 8006 and thus would be in conflict with the above.
 
 ^ The most definitive source is the environment itself.  Second would be the environment's `gradle-[name].properties` file.
 
@@ -449,7 +487,6 @@ Those with an asterisk following the name are input to the log analysis script, 
 
 | Trace Name | Always | Description |
 | ---------- | ------ | ----------- |
-| `LuxError` | No | When enabled, [customErrorHandler.mjs](/src/main/ml-modules/root/customErrorHandler.mjs) will log the error's raw details, which can vary from the error handler's response, inclusive of the status response code, status response message, and response body.  The custom error handler is configured to the HTTP application servers. |
 | `LuxFacets`\* | Yes | Logs the name of a facet set and how long it takes to calculate them, in milliseconds. |
 | `LuxNamedProfiles`\* | Yes | Logs the duration it takes to profile a document, in milliseconds. Only logged when a profile is requested and that profile is known by the system. A warning message is logged when an unknown profile is specified --regardless of this trace event being enabled. |
 | `LuxSearch`\* | Yes | Logs the duration search takes, in milliseconds. No additional context is provided, thereby limiting the value of this trace event; however, the search response body includes durations for that search's steps: parse, query, and facets. |

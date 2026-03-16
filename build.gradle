@@ -1,5 +1,20 @@
-import javax.net.ssl.*
-import java.security.cert.X509Certificate
+import org.apache.hc.client5.http.auth.AuthScope
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
+import org.apache.hc.client5.http.classic.methods.HttpGet
+import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
+import org.apache.hc.client5.http.impl.classic.HttpClients
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager
+import org.apache.hc.client5.http.socket.ConnectionSocketFactory
+import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory
+import org.apache.hc.client5.http.ssl.TrustAllStrategy
+import org.apache.hc.core5.http.config.Registry
+import org.apache.hc.core5.http.config.RegistryBuilder
+import org.apache.hc.core5.http.io.entity.EntityUtils
+import org.apache.hc.core5.http.io.entity.StringEntity
+import org.apache.hc.core5.ssl.SSLContexts
 
 buildscript {
   repositories {
@@ -9,6 +24,7 @@ buildscript {
     classpath "com.marklogic:ml-gradle:${mlGradleVersion}"
     classpath "com.marklogic:marklogic-unit-test-client:${mlUnitTestVersion}"
     classpath "org.json:json:${orgJsonVersion}"
+    classpath "org.apache.httpcomponents.client5:httpclient5:${httpClientVersion}"
   }
 }
 
@@ -23,16 +39,11 @@ repositories {
   mavenCentral()
 }
 
-configurations {
-  mlcp
-}
-
 dependencies {
   mlBundle "com.marklogic:marklogic-unit-test-modules:${mlUnitTestVersion}"
-  mlcp "com.marklogic:mlcp:${mlcpVersion}"
-  mlcp "org.apache.commons:commons-csv:${orgApacheCommonsCsvVersion}"
-  mlcp files("lib")
 }
+
+// Originally for MLCP.
 tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
@@ -40,10 +51,27 @@ tasks.withType(JavaExec) {
 ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
 ext.publicKeysPath = "${project.projectDir}/src/main/public-keys"
 ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
+ext.buildAmpTestPath = "${project.projectDir}/build/test/ml-config/security/amps"
 ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
 ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oauth/security/external-security"
 
 ext.lineSep = System.getProperty("line.separator")
+
+// Helper function to determine if unit testing deployment is allowed
+ext.getUnitTestingDeploymentStatus = {
+  def configRequested = project.getProperty("mlConfigPaths").contains("test/ml-config")
+  def modulesRequested = project.getProperty("mlModulePaths").contains("test/ml-modules")
+  def requested = configRequested || modulesRequested
+  def environmentName = project.getProperty("environmentName").toLowerCase()
+  def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
+  def isProductionEnvironment = productionEnvironmentNames.contains(environmentName)
+  return [
+    requested: requested, 
+    environmentName: environmentName, 
+    isProductionEnvironment: isProductionEnvironment,
+    allowed: requested && !isProductionEnvironment
+  ]
+}
 
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
@@ -110,20 +138,15 @@ task determineCodeVersion {
 //
 // More info in /docs/lux-backend-build-tool-and-tasks.md
 task restrictUnitTestingDeployment {
-  def isUnitTestingConfigIncluded = project.getProperty("mlConfigPaths").contains("test/ml-config")
-  def environmentName = project.getProperty("environmentName").toLowerCase()
-  if (isUnitTestingConfigIncluded) {
-    def productionEnvironmentNames = project.getProperty("productionEnvironmentNames").toLowerCase()
-    if (productionEnvironmentNames.contains(environmentName)) {
-      throw new GradleException("It is unsecure to deploy unit testing configuration to a production environment, of which '${environmentName}' is considered.")
-    } else {
-      println ""
-      println "Deployment to '${environmentName}' includes unit testing configuration."
-    }
-  } else {
-    println ""
-    println "Deployment to '${environmentName}' excludes unit testing configuration."
+  def testingStatus = getUnitTestingDeploymentStatus()
+  
+  if (testingStatus.requested && !testingStatus.allowed) {
+    throw new GradleException("It is unsecure to deploy unit testing artifacts (configuration and/or modules) to a " +
+        "production environment, of which '${testingStatus.environmentName}' is considered.")
   }
+  
+  println ""
+  println "Deployment to '${testingStatus.environmentName}' ${testingStatus.requested ? 'includes' : 'excludes'} unit testing artifacts."
 }
 
 // Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
@@ -157,6 +180,16 @@ ext.writeToFile = { outputPath, content ->
   file.getParentFile().mkdirs() // Create parent directories if they don't exist
   file.withWriter { out ->
     out.println content
+  }
+}
+
+// Helper function to create token replacement filter
+ext.createTokenFilter = { names, texts ->
+  return { line ->
+    for (def i = 0; i < names.size(); i++) {
+      line = line.replaceAll('@@' + names[i] + '@@', texts[i])
+    }
+    return line
   }
 }
 
@@ -213,6 +246,17 @@ task preprocessRuntimeConfigAndModules() {
   println 'Resolving custom token(s): ' + names.join(", ")
   println ''
 
+  println "Populating the database configuration JavaScript template."
+  text = file('./config/contentDatabaseConfGenerated.json').text
+  copy{
+    from './src/main/templates'
+    into './src/main/ml-modules/root/config'
+    include 'contentDatabaseConfGenerated.mjs'
+    filter{ line ->
+      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
+    }
+  }
+
   // Clear target directories first, as there could be obsolete files therein.
   delete './build/main'
   delete './build/test'
@@ -224,12 +268,7 @@ task preprocessRuntimeConfigAndModules() {
     into './build/main'
     include 'ml-config/**'
     include 'ml-modules/**'
-    filter { line -> {
-      for (def i = 0; i < names.size(); i++) {
-        line = line.replaceAll('@@' + names[i] + '@@', texts[i])
-      }
-      return line
-    }}
+    filter createTokenFilter(names, texts)
   }
 
   // Copy src/test into build directory
@@ -239,12 +278,7 @@ task preprocessRuntimeConfigAndModules() {
     into './build/test'
     include 'ml-config/**'
     include 'ml-modules/**'
-    filter { line -> {
-      for (def i = 0; i < names.size(); i++) {
-        line = line.replaceAll('@@' + names[i] + '@@', texts[i])
-      }
-      return line
-    }}
+    filter createTokenFilter(names, texts)
   }
 }
 preprocessRuntimeConfigAndModules.finalizedBy addOAuthPublicKeys
@@ -257,29 +291,15 @@ task preprocessBuildSupportScripts() {
     from './scripts/buildSupport'
     into './build/buildSupport'
     include '**'
-    filter { line -> {
+    filter { line ->
       // What's an existing/standard/better way to do this?
       for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
         line = line.replaceAll('%%' +entry.getKey() + '%%', entry.getValue().toString())
       }
       return line
-    }}
+    }
   }
 }
-
-task copyContentDatabaseConfGenerated(){
-  def text = file('./config/contentDatabaseConfGenerated.json').text
-  copy{
-    from './src/main/templates'
-    into './src/main/ml-modules/root/config'
-    include 'contentDatabaseConfGenerated.mjs'
-    filter{ line -> {
-      return line.replaceAll("@@contentDatabaseConfGenerated@@", text)
-    }}
-  }
-
-}
-mlLoadModules.dependsOn copyContentDatabaseConfGenerated
 
 // Defines amps and populates the libWrapper.mjs template.
 task addSupportForExecutingWithServiceAccounts() {
@@ -310,14 +330,24 @@ task addSupportForExecutingWithServiceAccounts() {
       // 1. The modules database name provides multi-tenancy support.
       // 2. When the unit is the tenant owner, we only need one represented.
       def includeUnit = unit != tenantName
+      // Generate amp for main modules database
       def templateBindings = [
           roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
           functionName: "_${functionName}", // underscore needed
-          moduleFilename: moduleFilename
+          moduleFilename: moduleFilename,
+          modulesDatabase: project.getProperty("tenantModulesDatabase")
       ]
       def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
       writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
       println "Generated amp for the '${unit}' unit."
+      
+      // Generate amp for test modules database if unit testing deployment is allowed
+      if (getUnitTestingDeploymentStatus().allowed) {
+        templateBindings.modulesDatabase = project.getProperty("tenantTestModulesDatabase")
+        def testContent = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
+        writeToFile("${buildAmpTestPath}/execute-with-${unit}-test-amp.json", testContent)
+        println "Generated test amp for the '${unit}' unit."
+      }
     }
 
     // Populate the wrapper function library.
@@ -343,213 +373,160 @@ task addSupportForExecutingWithServiceAccounts() {
 mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
-// Developer convenience to copy a database, including from DEV to one's local environment.
-// More info in /docs/lux-backend-build-tool-and-tasks.md.
-//
-// Should this task automatically clear the database first, like importDataFull does?
-task copyDatabase(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-
-  classpath = configurations.mlcp
-  command = "COPY"
-
-  input_host = project.property("copyDatabaseInputHost")
-  input_port = project.property("copyDatabaseInputPort").toInteger()
-  input_username = project.property("copyDatabaseInputUsername")
-  input_password = credentials.forKey('copyDatabaseInputPassword')
-  input_database = project.property("copyDatabaseInputDatabase")
-
-  output_host = project.property("copyDatabaseOutputHost")
-  output_port = project.property("copyDatabaseOutputPort").toInteger()
-  output_username = project.property("copyDatabaseOutputUsername")
-  output_password = credentials.forKey('copyDatabaseOutputPassword')
-  output_database = project.property("copyDatabaseOutputDatabase")
-
-  copy_permissions=true
-  copy_collections=true
-  copy_metadata=true
-  copy_properties=true
-  copy_quality=true
-
-  fastload=true
-  batch_size = project.getProperties().getOrDefault("copyDatabaseBatchSize", "100").toInteger()
-  thread_count = project.getProperties().getOrDefault("copyDatabaseThreadCount", "4").toInteger()
-
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-}
-
-// Import data running in full mode.
-//    Database *is* cleared first.
-//    MLCP *does* run in fast load mode --therefore it is *not* safe to update documents.
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-//
-// At least on Windows, this task can start to fail once the Gradle cache has enough entries
-// to make the generated command too long.  Perhaps we can provide a shorter classpath.
-task importDataFull(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-  
-  classpath = configurations.mlcp
-  command = "IMPORT"
-  host = project.property("importDataHost")
-  port = project.property("importDataPort").toInteger()
-  username = project.property("importDataUsername")
-  password = credentials.forKey('importDataPassword')
-  database = project.property("tenantContentDatabase")
-  modules = project.property("tenantModulesDatabase")
-  fastload = true // Database cleared for full loads
-  input_file_path = project.property("importDataFilePath")
-  input_file_type = "delimited_json"
-  input_compressed = project.property("importDataFileIsCompressed")
-  input_compression_codec = "gzip"
-  transform_module = "/documentTransforms.sjs"
-  transform_function = "associateDocToDataSlice"
-  uri_id = "id"
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-
-  dependsOn {
-    mlClearDatabase
-  }
-}
-
-// Import data running in incremental mode:
-//    Database is *not* cleared first.
-//    MLCP does *not* run in fast load mode --therefore it is safe to update documents.
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-//
-// At least on Windows, this task can start to fail once the Gradle cache has enough entries
-// to make the generated command too long.  Perhaps we can provide a shorter classpath.
-task importDataIncremental(type: com.marklogic.gradle.task.MlcpTask) {
-  //check if SSL is enabled and use the properties value
-  def useSsl = true
-  if (project.hasProperty("mlAppServicesSimpleSsl")) {
-    useSsl = project.getProperty("mlAppServicesSimpleSsl").toBoolean();
-  }
-
-  classpath = configurations.mlcp
-  command = "IMPORT"
-
-  host = project.property("importDataHost")
-  port = project.property("importDataPort").toInteger()
-  username = project.property("importDataUsername")
-  password = credentials.forKey('importDataPassword')
-  database = project.property("tenantContentDatabase")
-  modules = project.property("tenantModulesDatabase")
-  fastload = false // Database not cleared for incremental loads
-  input_file_path = project.property("importDataFilePath")
-  input_file_type = "delimited_json"
-  input_compressed = project.property("importDataFileIsCompressed")
-  input_compression_codec = "gzip"
-  transform_module = "/documentTransforms.sjs"
-  transform_function = "associateDocToDataSlice"
-  uri_id = "id"
-  ssl = useSsl
-  args = ["-ssl_protocol", "tlsv1.2"]
-}
-
 task ensureTenantStatusDocumentExists() {
   doFirst {
+    println ""
+    println "Ensuring tenant status document exists..."
+    println ""
+
     // Only used if the tenant status document does not exist.
     def isProd = project.getProperty("environmentProd").toBoolean()
     def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
 
-    def protocol = project.getProperty("mlAppServicesScheme") // assumption: if one is https, all are.
-    def host = project.getProperty("mlHost")
+    def protocol = project.getProperty("mlAppServicesScheme")
+    def host = project.getProperty("mlHost") 
     def port = project.getProperty("mlDeployPort")
     def username = project.getProperty("mlUsername")
     def password = credentials.forKey('mlPassword')
     def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
     def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
 
-    // Configure SSL settings for HTTPS
-    if (protocol == "https") {
-      // Create a trust-all SSL context (for development/testing)
-      def trustAllCerts = [
-        new X509TrustManager() {
-          public X509Certificate[] getAcceptedIssuers() { return null }
-          public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-          public void checkServerTrusted(X509Certificate[] certs, String authType) { }
-        }
-      ] as X509TrustManager[]
-
-      def sslContext = SSLContext.getInstance("SSL")
-      sslContext.init(null, trustAllCerts, new java.security.SecureRandom())
-      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory())
-      
-      // Disable hostname verification (for development/testing)
-      HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-        public boolean verify(String hostname, SSLSession session) {
-          return true
-        }
-      })
-    }
-
-    // Set up digest authentication
-    Authenticator.setDefault(new Authenticator() {
-      @Override
-      protected PasswordAuthentication getPasswordAuthentication() {
-        return new PasswordAuthentication(username, password.toCharArray())
-      }
-    })
-
     try {
-      // See if the tenant status document exists.
-      def getConnection = new URL(getUrl).openConnection()
-      getConnection.setRequestMethod("GET")
-      def responseCode = getConnection.getResponseCode()
-
-      if (responseCode >= 200 && responseCode < 300) {
-        println "Tenant status document was found; no action taken."
-      } else {
-        println "The tenant status document was not found; creating..."
+      // Use Apache HttpClient 5.x which handles digest auth properly (unlike Java's HttpURLConnection)
+      def httpClientBuilder = HttpClients.custom()
+        .disableConnectionState()  // Force new connections
+        .disableAutomaticRetries() // Prevent connection reuse issues
+      
+      // Set up digest authentication
+      def credentialsProvider = new BasicCredentialsProvider()
+      credentialsProvider.setCredentials(
+        new AuthScope(null, -1),
+        new UsernamePasswordCredentials(username, password.toCharArray())
+      )
+      httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+      
+      // Configure SSL if needed
+      if (protocol == "https") {
+        def sslContext = SSLContexts.custom()
+          .loadTrustMaterial(new TrustAllStrategy())
+          .build()
         
-        def postConnection = new URL(postUrl).openConnection()
-        postConnection.setRequestMethod("POST")
-        postConnection.setDoOutput(true)
-        postConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-
-        def formData = "prod=${isProd}&readOnly=${isReadOnly}"
-
-        // Send the request
-        def outputStream = postConnection.getOutputStream()
-        outputStream.write(formData.getBytes("UTF-8"))
-        outputStream.close()
+        // Create socket factory registry for HttpClient 5.x
+        def socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+          .register("http", PlainConnectionSocketFactory.getSocketFactory())
+          .register("https", new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+          .build()
         
-        def postResponseCode = postConnection.getResponseCode()
-        println "POST response code: ${postResponseCode}"
+        // Use a completely fresh connection manager that doesn't pool
+        def connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry)
+        httpClientBuilder.setConnectionManager(connectionManager)
+      }
+      
+      def httpClient = httpClientBuilder.build()
+      
+      try {
+        // Check if tenant status document exists
+        def getRequest = new HttpGet(getUrl)
+        def getResponse = httpClient.execute(getRequest)
         
-        if (postResponseCode >= 200 && postResponseCode < 300) {
-          println "Tenant status document created successfully"
-        } else {
-          println "Failed to create tenant status document"
-          def errorStream = postConnection.getErrorStream()
-          if (errorStream) {
-            println "Error: ${errorStream.text}"
+        try {
+          // Consume entity to ensure connection is released
+          if (getResponse.getEntity()) {
+            EntityUtils.consume(getResponse.getEntity())
           }
-          throw new GradleException("Failed to create tenant status document with response code ${postResponseCode} and message: ${postConnection.getResponseMessage()}")
+          
+          if (getResponse.getCode() >= 200 && getResponse.getCode() < 300) {
+            println "Tenant status document was found; no action taken."
+          } else {
+            println "The tenant status document was not found; creating..."
+            
+            // Create the tenant status document
+            def postRequest = new HttpPost(postUrl)
+            postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded")
+            
+            def formData = "prod=${isProd}&readOnly=${isReadOnly}"
+            postRequest.setEntity(new StringEntity(formData))
+            
+            def postResponse = httpClient.execute(postRequest)
+            
+            try {
+              def postStatusCode = postResponse.getCode()
+
+              if (postStatusCode >= 200 && postStatusCode < 300) {
+                println "Tenant status document created successfully"
+                // Consume entity to ensure connection is released
+                if (postResponse.getEntity()) {
+                  EntityUtils.consume(postResponse.getEntity())
+                }
+              } else {
+                def errorContent = EntityUtils.toString(postResponse.getEntity())
+                throw new GradleException("Failed to create tenant status document with response code ${postStatusCode}: ${errorContent}")
+              }
+            } finally {
+              postResponse.close()
+            }
+          }
+        } finally {
+          getResponse.close()
         }
+      } finally {
+        httpClient.close()
       }
       
     } catch (Exception e) {
-      println "Error occurred: ${e.message}"
-      throw e
-    } finally {
-      // Clean up the authenticator
-      Authenticator.setDefault(null)
+      println "DEBUG: Exception occurred: ${e.getClass().getName()} - ${e.message}"
+      if (e.getCause()) {
+        println "DEBUG: Caused by: ${e.getCause()}"
+      }
+      throw new GradleException("Failed to ensure tenant status document exists: ${e.message}", e)
     }
   }
 }
 mlDeploy.finalizedBy ensureTenantStatusDocumentExists
 mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
+
+// Resets the test modules database with all documents from the main modules database,
+// maintaining permissions.  This should be run after all other changes have been made
+// to the modules database.
+task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
+  onlyIf {
+    getUnitTestingDeploymentStatus().allowed
+  }
+  doFirst {
+    println ""
+    println "Resetting test modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def script = new File('./build/buildSupport/resetTestModulesDatabase.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
+
+// Delete test modules from main modules database after they've been copied to test
+// This one should run regardless of whether unit testing deployment is allowed, 
+// because the marklogic-unit-test-modules bundle adds some.
+task deleteTestModulesFromMain (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Deleting test modules from main modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def cleanupScript = new File('./build/buildSupport/deleteTestModulesFromMain.sjs').getText('UTF-8')
+    def cleanupResult = client.newServerEval().javascript(cleanupScript).evalAs(String.class)
+    
+    println ""
+    println cleanupResult
+    println ""
+  }
+}
+resetTestModulesDatabase.finalizedBy deleteTestModulesFromMain
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -570,7 +547,6 @@ task generateRemainingSearchTerms (type: com.marklogic.gradle.task.MarkLogicTask
 }
 mlDeploy.finalizedBy generateRemainingSearchTerms
 mlLoadModules.finalizedBy generateRemainingSearchTerms
-copyDatabase.finalizedBy generateRemainingSearchTerms
 
 // Runs the related lists configuration generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -673,9 +649,6 @@ task performBaseDeployment() {
     println ""
   }
 }
-// It was a little tricky binding mlDeployForestReplicas to performBaseDeployment; adding it above
-// could result in an error if the tenant's modules database didn't exist in time.
-performBaseDeployment.finalizedBy mlDeployForestReplicas
 
 // Enables SSL on the builtin servers
 // And create the certificate intended for the non-builtin servers
@@ -796,11 +769,6 @@ task printCredentials {
     // Most important ones
     println "mlPassword: '" + credentials.forKey('mlPassword') + "'"
     println "unitTesterPassword: '" + credentials.forKey('unitTesterPassword') + "'"
-
-    // Only required by specific, infrequently-used tasks
-    println "copyDatabaseInputPassword: " + credentials.forKey('copyDatabaseInputPassword')
-    println "copyDatabaseOutputPassword: " + credentials.forKey('copyDatabaseOutputPassword')
-    println "importDataPassword: " + credentials.forKey('importDataPassword')
   }
 }
 

@@ -1,5 +1,5 @@
 import { EndpointConfig } from '../lib/EndpointConfig.mjs';
-import { InternalConfigurationError } from '../lib/mlErrorsLib.mjs';
+import { InternalConfigurationError } from '../lib/errorClasses.mjs';
 import { isUndefined } from '../utils/utils.mjs';
 
 const PROP_NAME_ALLOW_IN_READ_ONLY_MODE = 'allowInReadOnlyMode';
@@ -38,6 +38,10 @@ const ENDPOINTS_CONFIG = {
     features: { myCollections: false },
   },
   '/ds/lux/relatedList.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
+  '/ds/lux/scaleOut.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
@@ -92,7 +96,7 @@ function getCurrentEndpointConfig(myCollectionsFeatureEnabled = true) {
   if (isUndefined(endpointConfig)) {
     if (myCollectionsFeatureEnabled) {
       throw new InternalConfigurationError(
-        `The ${getCurrentEndpointPath()} endpoint is not configured.`
+        `The ${getCurrentEndpointPath()} endpoint is not configured.`,
       );
     }
     return null;

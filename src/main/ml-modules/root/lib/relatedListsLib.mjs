@@ -12,7 +12,7 @@ import {
   TRACE_NAME_RELATED_LIST as traceName,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
-import { BadRequestError } from './mlErrorsLib.mjs';
+import { BadRequestError } from './errorClasses.mjs';
 import { processSearchCriteria } from './searchLib.mjs';
 import { SearchPatternOptions } from './SearchPatternOptions.mjs';
 import {
@@ -112,14 +112,14 @@ function getRelatedList({
 
     if (!utils.isNonEmptyString(uri)) {
       throw new BadRequestError(
-        `The value of 'uri' parameter must be a non-empty string.`
+        `The value of 'uri' parameter must be a non-empty string.`,
       );
     }
 
     // Get the configuration.  Error is thrown if not a related list.
     const relatedListConfig = getRelatedListConfig(
       searchScopeName,
-      relatedListName
+      relatedListName,
     );
 
     // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to return calls to cts.triples.
@@ -130,17 +130,17 @@ function getRelatedList({
     // Set the maximum number of values to process per relation. Do not let requester exceed the maximum imposed by the backend.
     relationshipsPerRelation = Math.min(
       relationshipsPerRelation,
-      RELATED_LIST_PER_RELATION_MAX
+      RELATED_LIST_PER_RELATION_MAX,
     );
     searchPatternOptions.set(
       OPTION_NAME_MAXIMUM_VALUES,
-      relationshipsPerRelation
+      relationshipsPerRelation,
     );
 
     // When we only need a handful of triples, switch to lazy evaluation.
     searchPatternOptions.set(
       OPTION_NAME_EAGER_EVALUATION,
-      relationshipsPerRelation < 20 ? false : true
+      relationshipsPerRelation < 20 ? false : true,
     );
 
     // Validate pagination parameters and impose a maximum page length.
@@ -160,7 +160,7 @@ function getRelatedList({
         searchCriteria: utils.replaceMatchingPropertyValues(
           searchConfig.criteria,
           TOKEN_RUNTIME_PARAM,
-          uri
+          uri,
         ),
         searchScope: relatedListConfig.targetScope,
         allowMultiScope: false,
@@ -177,7 +177,7 @@ function getRelatedList({
       } else {
         const { results } = searchCriteriaProcessor.getSearchResults();
         urisByRelation[searchConfig.relationKey] = results.map(
-          (result) => result.id
+          (result) => result.id,
         );
       }
       // No need to log that we hit the max in the Search Will Match context; it sets this threshold very low.
@@ -189,7 +189,7 @@ function getRelatedList({
         // Monitoring test and log mining script checks for "Hit the max".
         xdmp.trace(
           traceName,
-          `Hit the max of ${relationshipsPerRelation} relationships for the '${searchConfig.relationKey}' relation with scope '${searchScopeName}', term '${relatedListName}', and URI '${uri}' (filterResults: ${filterResults}).`
+          `Hit the max of ${relationshipsPerRelation} relationships for the '${searchConfig.relationKey}' relation with scope '${searchScopeName}', term '${relatedListName}', and URI '${uri}' (filterResults: ${filterResults}).`,
         );
       }
       relationToScope[searchConfig.relationKey] = searchConfig.relationScope;
@@ -226,7 +226,7 @@ function getRelatedList({
         uri,
         page,
         pageLength,
-        relationshipsPerRelation
+        relationshipsPerRelation,
       );
     }
 
@@ -290,7 +290,7 @@ function getRelatedList({
      *
      */
     const dataByUriAll = Object.entries(dataByUri).sort(
-      ([, a], [, b]) => b.total - a.total
+      ([, a], [, b]) => b.total - a.total,
     );
     // Determine if the next page would have any results.
     const idx = utils.getStartingPaginationIndexForSplice(page, pageLength);
@@ -319,7 +319,7 @@ function getRelatedList({
       const relatedUri = dataByUri[s][0];
       const relatedDataByRelationKey = dataByUri[s][1];
       const relationKeys = Object.keys(relatedDataByRelationKey).filter(
-        (key) => key != 'total'
+        (key) => key != 'total',
       );
       for (let t = 0; t < relationKeys.length; t++) {
         const relationKey = relationKeys[t];
@@ -328,7 +328,7 @@ function getRelatedList({
           relatedListConfig.targetScope,
           relationToCriteria[relationKey],
           relatedUri,
-          relationData.scope
+          relationData.scope,
         );
         delete criteria._scope;
         orderedItems.push({
@@ -357,7 +357,7 @@ function getRelatedList({
 
     // Last sort: when a document is related in multiple ways, sort the relationships with the greater counts first.
     orderedItems = orderedItems.sort(
-      (a, b) => b.totalCount - a.totalCount || b.totalItems - a.totalItems
+      (a, b) => b.totalCount - a.totalCount || b.totalItems - a.totalItems,
     );
 
     orderedItems.forEach((orderedItem) => {
@@ -373,7 +373,7 @@ function getRelatedList({
       uri,
       page,
       pageLength,
-      relationshipsPerRelation
+      relationshipsPerRelation,
     );
   } finally {
     const duration = new Date().getTime() - start.getTime();
@@ -384,13 +384,13 @@ function getRelatedList({
           traceName,
           `Checked ${relationsChecked} relation(s) to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' ${
             hasOneOrMoreResult ? 'has' : 'does not have'
-          } at least one related item, in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`
+          } at least one related item, in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}).`,
         );
       } else {
         // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
-          `Created the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`
+          `Created the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' in ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`,
         );
       }
     } else {
@@ -398,13 +398,13 @@ function getRelatedList({
         // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
-          `Unable to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' has at least one related item, after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`
+          `Unable to determine the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' has at least one related item, after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`,
         );
       } else {
         // Log mining script matches on a portion(s) of this message.
         xdmp.trace(
           traceName,
-          `Failed to create the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`
+          `Failed to create the '${relatedListName}' list in scope '${searchScopeName}' for '${uri}' after ${duration} milliseconds (page: ${page}; pageLength: ${pageLength}; filterResults: ${filterResults}).`,
         );
       }
     }
@@ -417,7 +417,7 @@ function sortByPriority(searchConfigs) {
   });
   const entries = [];
   sorted.forEach((searchConfig) =>
-    entries.push(`${_getPriority(searchConfig)}: ${searchConfig.relationKey}`)
+    entries.push(`${_getPriority(searchConfig)}: ${searchConfig.relationKey}`),
   );
   return sorted;
 }
@@ -444,7 +444,7 @@ function _formatRelatedListReturn(
   uri,
   page,
   pageLength,
-  relationshipsPerRelation
+  relationshipsPerRelation,
 ) {
   const relatedListReturn = {
     '@context': LUX_CONTEXT,
@@ -479,7 +479,7 @@ function _convertToObjectsOrWorksSearch(
   fromScope,
   fromCriteria,
   relatedUri,
-  toScope
+  toScope,
 ) {
   const objectsOrWorksCriteria = {
     _scope: toScope,
@@ -502,13 +502,13 @@ function _convertToObjectsOrWorksSearch(
       // Second is the value of the top-level search term, after converting any iri terms to id terms, to force
       // use of the field range indexes / Indexed Value search pattern.
       objectsOrWorksCriteria.AND.push(
-        utils.replaceMatchingPropertyNames(fromCriteria[termName], 'iri', 'id')
+        utils.replaceMatchingPropertyNames(fromCriteria[termName], 'iri', 'id'),
       );
     } else {
       // TBD if this ever happens.
       // Log mining script matches on a portion(s) of this message.
       const msg = `Unable to determine the inverse search term of '${termName}', beginning in the '${fromScope}' scope: ${JSON.stringify(
-        fromCriteria
+        fromCriteria,
       )}`;
       xdmp.trace(traceName, msg);
       return msg;
@@ -529,7 +529,7 @@ function getRelatedListQuery(
   searchTerm,
   resolvedSearchOptions,
   searchPatternOptions,
-  requestOptions
+  requestOptions,
 ) {
   const searchScopeName = searchTerm.getScopeName();
   const relatedListName = searchTerm.getName();
@@ -544,7 +544,7 @@ function getRelatedListQuery(
   // to create flat and hierarchial versions.
   const relatedListConfig = getRelatedListConfig(
     searchScopeName,
-    relatedListName
+    relatedListName,
   );
   const query = {
     OR: relatedListConfig.searchConfigs.map((searchConfig) => {
@@ -556,7 +556,7 @@ function getRelatedListQuery(
     searchCriteria: utils.replaceMatchingPropertyValues(
       query,
       TOKEN_RUNTIME_PARAM,
-      searchTerm.getValue()
+      searchTerm.getValue(),
     ),
     searchScope: relatedListConfig.targetScope,
     allowMultiScope: false,

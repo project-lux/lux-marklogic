@@ -1,0 +1,4 @@
+{
+  "database-name": "%%tenantTestContentDatabase%%",
+  "schema-database": "%%SCHEMAS_DATABASE%%"
+}

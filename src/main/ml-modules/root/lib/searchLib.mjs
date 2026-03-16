@@ -24,7 +24,7 @@ import { getDefaultSearchOptionsNameByPatternName } from './searchPatternsLib.mj
 import {
   InvalidSearchRequestError,
   isInvalidSearchRequestError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import {
   getRelatedList,
   getRelatedListSearchInfo,
@@ -105,7 +105,7 @@ function search({
       synonymsEnabled,
       valuesOnly,
     },
-    false
+    false,
   );
 }
 
@@ -127,7 +127,7 @@ function _search(
     synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
     valuesOnly = DEFAULT_VALUES_ONLY,
   },
-  changedScope = false
+  changedScope = false,
 ) {
   const stopWatch = new StopWatch(true);
   const requestId = utils.assignRequestId('search');
@@ -160,7 +160,7 @@ function _search(
           filterResults,
           facetsSoon,
           synonymsEnabled,
-        })}`
+        })}`,
       );
     }
 
@@ -207,11 +207,11 @@ function _search(
       for (let i = 0; i < names.length; i++) {
         const candidateSearchScopeName = names[i];
         const candidateSearchScopeObj = getSearchScope(
-          candidateSearchScopeName
+          candidateSearchScopeName,
         );
         const estimate = _calculateEstimate(
           searchCriteriaProcessor,
-          candidateSearchScopeObj
+          candidateSearchScopeObj,
         );
         stopWatch.addTo('estimates');
 
@@ -222,7 +222,7 @@ function _search(
             // Not associated with monitoring tests or the log mining script.
             xdmp.trace(
               traceName,
-              `Changed search request ${requestId}'s scope from '${searchScope}' to '${resolvedSearchScope}'`
+              `Changed search request ${requestId}'s scope from '${searchScope}' to '${resolvedSearchScope}'`,
             );
           }
           return _search(
@@ -242,7 +242,7 @@ function _search(
               synonymsEnabled,
               valuesOnly,
             },
-            true
+            true,
           );
         }
       }
@@ -253,7 +253,7 @@ function _search(
         searchCriteriaProcessor,
         resultPage,
         pageLength,
-        results.length
+        results.length,
       );
       stopWatch.addTo('estimates');
     }
@@ -275,7 +275,7 @@ function _search(
         {
           id: utils.buildSearchEstimateUri(
             resolvedSearchCriteria,
-            resolvedSearchScope
+            resolvedSearchScope,
           ),
           type: AS_TYPE_ORDERED_COLLECTION,
           // CHANGE IF MORE THAN ONE LANGUAGE IS SUPPORTED
@@ -284,7 +284,7 @@ function _search(
           summary: {
             en: [
               utils.buildScopeDescription(
-                SCOPE_DESCRIPTORS[resolvedSearchScope]
+                SCOPE_DESCRIPTORS[resolvedSearchScope],
               ),
             ],
           },
@@ -333,7 +333,7 @@ function _search(
       // Not associated with monitoring tests or the log mining script.
       xdmp.trace(
         traceName,
-        `Search ${requestId} errored out: ${JSON.stringify(e)}`
+        `Search ${requestId} errored out: ${JSON.stringify(e)}`,
       );
     }
     throw e;
@@ -375,14 +375,14 @@ function _search(
         xdmp.trace(
           traceName,
           `requestId: ${requestId}; requestContext: ${requestContext}; filterResults: ${filterResults}; totalElapsed: ${stopWatch.totalElapsed()}; searchElapsed: ${stopWatch.lapElapsed(
-            'search'
+            'search',
           )}; estimate: ${estimate}; returned: ${
             results.length
           }; scope: [${resolvedSearchScope}]; searchCriteria: [${
             resolvedSearchCriteria
               ? JSON.stringify(resolvedSearchCriteria)
               : searchCriteria
-          }]`
+          }]`,
         );
       }
     }
@@ -413,7 +413,7 @@ function processSearchCriteria({
   const searchCriteriaProcessor = new SearchCriteriaProcessor(
     filterResults,
     facetsAreLikely,
-    synonymsEnabled
+    synonymsEnabled,
   );
   searchCriteriaProcessor.process(
     searchCriteria,
@@ -425,7 +425,7 @@ function processSearchCriteria({
     pageLength,
     pageWith,
     sortCriteria,
-    valuesOnly
+    valuesOnly,
   );
   stopWatch.lap('process');
   return searchCriteriaProcessor;
@@ -435,7 +435,7 @@ function _getCurrentRequestEstimate(
   searchCriteriaProcessor,
   page,
   pageLength,
-  currentPageResultCount
+  currentPageResultCount,
 ) {
   // If the current page's result count is less than the page length, we can now determine the exact number of results.
   if (currentPageResultCount > 0 && pageLength > currentPageResultCount) {
@@ -452,9 +452,9 @@ function _calculateEstimate(searchCriteriaProcessor, searchScopeObj) {
       searchCriteriaProcessor.resolveTokens(
         searchScopeObj.fields,
         searchScopeObj.predicates,
-        searchScopeObj.types
-      )
-    )
+        searchScopeObj.types,
+      ),
+    ),
   );
 }
 
@@ -506,7 +506,7 @@ function getSearchEstimate(searchCriteria, scope) {
       // Log mining script matches on a portion(s) of this message.
       xdmp.trace(
         traceName,
-        `Calculated estimate in ${timeElapsed} milliseconds.`
+        `Calculated estimate in ${timeElapsed} milliseconds.`,
       );
     }
     return {
@@ -519,7 +519,7 @@ function getSearchEstimate(searchCriteria, scope) {
         // Not associated to a monitoring test or the log mining script.
         xdmp.trace(
           traceName,
-          `Unable to calculate an estimate due to an invalid search request.`
+          `Unable to calculate an estimate due to an invalid search request.`,
         );
       } else {
         // Monitoring test and log mining script checks for "Search Estimate errored out".
@@ -529,7 +529,7 @@ function getSearchEstimate(searchCriteria, scope) {
             exception: utils.getExceptionObjectElseMessage(e),
             scope,
             searchCriteria,
-          })}`
+          })}`,
         );
       }
     }
@@ -598,15 +598,15 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
             // Not associated to a monitoring test or the log mining script.
             xdmp.trace(
               traceName,
-              `Unable to determine if the '${name}' search will match due to an invalid search request.`
+              `Unable to determine if the '${name}' search will match due to an invalid search request.`,
             );
           } else {
             // Monitoring test and log mining script checks for "Search Will Match errored out".
             xdmp.trace(
               traceName,
               `A search named '${name}' given to Search Will Match errored out: ${JSON.stringify(
-                { exception: utils.getExceptionObjectElseMessage(e), criteria }
-              )}`
+                { exception: utils.getExceptionObjectElseMessage(e), criteria },
+              )}`,
             );
           }
         }
@@ -619,7 +619,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
         traceName,
         `Checked ${Object.keys(namedSearchesResponse).length} searches in ${
           new Date().getTime() - start.getTime()
-        } milliseconds.`
+        } milliseconds.`,
       );
     }
 
@@ -632,7 +632,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
         `Search Will Match errored out: ${JSON.stringify({
           exception: utils.getExceptionObjectElseMessage(e),
           multipleSearchCriteria,
-        })}`
+        })}`,
       );
     }
     throw e;
@@ -656,7 +656,7 @@ function resolveSearchOptions(
   optionsName = null,
   patternName = null,
   requestOverridesArr = [],
-  instanceOverridesArr = {}
+  instanceOverridesArr = {},
 ) {
   optionsName = resolveSearchOptionsName(optionsName, patternName);
   if (SEARCH_OPTIONS_NAME_EXACT == optionsName) {
@@ -665,12 +665,12 @@ function resolveSearchOptions(
     // Instance options override request options which override the defaults.
     return _mergeSearchOptions(
       _mergeSearchOptions(DEFAULT_SEARCH_OPTIONS_KEYWORD, requestOverridesArr),
-      instanceOverridesArr
+      instanceOverridesArr,
     );
   }
   if (optionsName) {
     console.warn(
-      `The '${optionsName}' search options reference is unknown. Please check the search criteria configuration. Using null.`
+      `The '${optionsName}' search options reference is unknown. Please check the search criteria configuration. Using null.`,
     );
   }
   return null;
@@ -697,11 +697,11 @@ function _mergeSearchOptions(defaultOptionsArr, overrideOptionsArr) {
         mergedOptionsArr = utils.replaceValueInArray(
           mergedOptionsArr,
           SEARCH_OPTIONS_INVERSE_MAP[searchOption],
-          searchOption
+          searchOption,
         );
       } else {
         console.log(
-          `Ignoring an unrecognized search term option of '${searchOption}'.`
+          `Ignoring an unrecognized search term option of '${searchOption}'.`,
         );
       }
     });
@@ -781,7 +781,7 @@ const QUALIFYING_CHARS = '\\s\\-';
 const QUALIFYING_CHARS_REGEX = new RegExp(`[${QUALIFYING_CHARS}]`);
 const MINIMUM_QUALIFYING_CHAR_COUNT = 3;
 const QUALIFYING_WILDCARD_REGEX = new RegExp(
-  `([${WILDCARD_CHARS}][^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},})|([^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},}[${WILDCARD_CHARS}])`
+  `([${WILDCARD_CHARS}][^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},})|([^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},}[${WILDCARD_CHARS}])`,
 );
 function _hasInvalidWildcardCriteria(str) {
   const pieces = str.split(QUALIFYING_CHARS_REGEX);

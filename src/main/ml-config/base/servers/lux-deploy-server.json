@@ -4,8 +4,8 @@
   "enabled": "true",
   "root": "/",
   "port": %%mlDeployPort%%,
-  "content-database": "%%DATABASE%%",
-  "modules-database": "%%MODULES_DATABASE%%",
+  "content-database": "%%tenantContentDatabase%%",
+  "modules-database": "%%tenantModulesDatabase%%",
   "authentication": "digest",
   "internal-security": "true",
   "external-security": [],
@@ -14,6 +14,6 @@
   "default-time-limit": %%mlRestDefaultTimeout%%,
   "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
   "rewrite-resolves-globally": true,
-  "error-handler": "/customErrorHandler.mjs",
+  "error-handler": "/MarkLogic/rest-api/error-handler.xqy",
   "default-user": "nobody"
 }

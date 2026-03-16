@@ -1,6 +1,6 @@
 import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
 import * as utils from '../utils/utils.mjs';
-import { NotImplementedError } from './mlErrorsLib.mjs';
+import { NotImplementedError } from './errorClasses.mjs';
 
 const DEFAULT = 'default';
 
@@ -92,8 +92,8 @@ const SortCriteria = class {
             cts.scoreOrder(
               this._getOrder(
                 specifiedOrder,
-                'desc' // Matches when there is no sort parameter.
-              )
+                'desc', // Matches when there is no sort parameter.
+              ),
             ),
           ];
           return false;
@@ -104,7 +104,7 @@ const SortCriteria = class {
               this.multiScopeSortOption = {
                 order: this._getOrder(specifiedOrder, 'asc'),
                 subSortConfigs: sortBinding.subSorts.map(
-                  (sortName) => SORT_BINDINGS[sortName]
+                  (sortName) => SORT_BINDINGS[sortName],
                 ),
               };
             } else if (sortBinding.predicate) {
@@ -119,17 +119,17 @@ const SortCriteria = class {
                 cts.indexOrder(
                   this._getIndexReference(
                     sortBinding.indexType,
-                    sortBinding.indexReference
+                    sortBinding.indexReference,
                   ),
-                  this._getOrder(specifiedOrder, sortBinding.defaultOrder)
-                )
+                  this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+                ),
               );
             }
           } else {
             this.warnings.push(
               `Unable to sort by '${
                 sortByName === '' ? this.sortCriteriaStr : sortByName
-              }' as it is not a defined sort binding.`
+              }' as it is not a defined sort binding.`,
             );
           }
         }
@@ -143,7 +143,7 @@ const SortCriteria = class {
       return cts.fieldReference(indexReference);
     }
     throw new NotImplementedError(
-      `_getIndexReference does not support an indexType value of '${indexType}'.`
+      `_getIndexReference does not support an indexType value of '${indexType}'.`,
     );
   }
 
@@ -158,7 +158,7 @@ const SortCriteria = class {
           orderFinalized = true;
         } else {
           this.warnings.push(
-            `'${candidateOrder}' is not a supported sort order; a default will be applied.`
+            `'${candidateOrder}' is not a supported sort order; a default will be applied.`,
           );
         }
       }

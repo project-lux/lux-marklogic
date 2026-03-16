@@ -44,7 +44,7 @@ import {
   BadRequestError,
   LoopDetectedError,
   NotFoundError,
-} from './mlErrorsLib.mjs';
+} from './errorClasses.mjs';
 import {
   getNodeFromObject,
   isNonEmptyArray,
@@ -63,7 +63,7 @@ const DOCUMENT_TYPE_USER_PROFILE = 'User Profile';
 function registerIntentToCreateUserProfile(user) {
   // We do not have deterministic URIs but we can lock on one and never otherwise use it.
   xdmp.lockForUpdate(
-    `${BASE_URL}/data/${URI_TYPE_PERSON}/${user.getUsername()}`
+    `${BASE_URL}/data/${URI_TYPE_PERSON}/${user.getUsername()}`,
   );
 }
 
@@ -107,18 +107,18 @@ function deleteDocument(uri) {
       if (isMyCollection(doc)) {
         // Do not allow deletion of a user's default My Collection.
         const defaultMyCollectionIri = getDefaultCollection(
-          cts.doc(new User().getUserIri())
+          cts.doc(new User().getUserIri()),
         );
         if (uri === defaultMyCollectionIri) {
           throw new BadRequestError(
-            `Default personal collections may not be deleted.`
+            `Default personal collections may not be deleted.`,
           );
         }
         // Delete the document.
         xdmp.documentDelete(uri);
       } else {
         throw new BadRequestError(
-          `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION}.`
+          `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION}.`,
         );
       }
     } else {
@@ -134,7 +134,7 @@ function _insertDocument(
   readOnlyDocNode,
   newUserMode,
   newDocumentMode,
-  lang = DEFAULT_LANG
+  lang = DEFAULT_LANG,
 ) {
   const user = new User();
   throwIfUserIsServiceAccount(user);
@@ -152,7 +152,7 @@ function _insertDocument(
     const docId = getId(readOnlyDocNode);
     if (uri !== docId) {
       throw new BadRequestError(
-        `The URI '${uri}' does not match the document ID '${docId}'.`
+        `The URI '${uri}' does not match the document ID '${docId}'.`,
       );
     }
   } // Update mode may now rely on the value of the uri parameter.
@@ -166,7 +166,7 @@ function _insertDocument(
       readOnlyDocNode,
       newUserMode,
       newDocumentMode,
-      lang
+      lang,
     );
   } else if (isMyCollection(readOnlyDocNode)) {
     config = _getMyCollectionConfig(
@@ -175,11 +175,11 @@ function _insertDocument(
       readOnlyDocNode,
       newUserMode,
       newDocumentMode,
-      lang
+      lang,
     );
   } else {
     throw new BadRequestError(
-      `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION} or ${DOCUMENT_TYPE_USER_PROFILE}.`
+      `The document type is not supported. The document must be a ${DOCUMENT_TYPE_MY_COLLECTION} or ${DOCUMENT_TYPE_USER_PROFILE}.`,
     );
   }
 
@@ -192,7 +192,7 @@ function _insertDocument(
         .map((error, idx) => {
           return `${idx + 1}: ${error}`;
         })
-        .join('; ')}`
+        .join('; ')}`,
     );
   }
 
@@ -223,17 +223,17 @@ function _insertDocument(
           cts.documentPermissionQuery(
             getExclusiveRoleNameByUsername(
               user.getUsername(),
-              CAPABILITY_UPDATE
+              CAPABILITY_UPDATE,
             ),
-            CAPABILITY_UPDATE
+            CAPABILITY_UPDATE,
           ),
-        ])
-      )
+        ]),
+      ),
     );
 
     if (isUndefined(existingDocNode)) {
       throw new BadRequestError(
-        'Either the document does not exist or you do not have permission to update it.'
+        'Either the document does not exist or you do not have permission to update it.',
       );
     }
 
@@ -262,7 +262,7 @@ function _getUserProfileConfig(
   readOnlyDocNode,
   newUserMode,
   newDocumentMode,
-  lang = DEFAULT_LANG
+  lang = DEFAULT_LANG,
 ) {
   // Pre-validation checks.
   const userId = user.getUserIri();
@@ -271,17 +271,17 @@ function _getUserProfileConfig(
   const isDefaultMyCollectionSpecified = isDefined(defaultMyCollectionUri);
   if (newDocumentMode && userProfileExists) {
     throw new BadRequestError(
-      `The user '${user.getUsername()}' ${MESSAGE_ALREADY_HAS_A_PROFILE}.`
+      `The user '${user.getUsername()}' ${MESSAGE_ALREADY_HAS_A_PROFILE}.`,
     );
   } else if (!newDocumentMode) {
     if (uri !== userId) {
       throw new BadRequestError(
-        `The ID in the provided document, '${uri}', does not match that of user '${user.getUsername()}'.`
+        `The ID in the provided document, '${uri}', does not match that of user '${user.getUsername()}'.`,
       );
     } else if (!userProfileExists) {
       // Unlikely as the user IRI comes from the profile.
       throw new BadRequestError(
-        `User '${user.getUsername()}' does not have a profile.`
+        `User '${user.getUsername()}' does not have a profile.`,
       );
     } else if (!isDefaultMyCollectionSpecified) {
       throw new BadRequestError('The default collection is required.');
@@ -292,12 +292,12 @@ function _getUserProfileConfig(
   if (isDefaultMyCollectionSpecified && !newUserMode) {
     if (!fn.docAvailable(defaultMyCollectionUri)) {
       throw new BadRequestError(
-        'The document specified as the default collection does not exist.'
+        'The document specified as the default collection does not exist.',
       );
     }
     if (!isMyCollection(cts.doc(defaultMyCollectionUri))) {
       throw new BadRequestError(
-        'The document specified as the default collection exists but is not a qualifying collection.'
+        'The document specified as the default collection exists but is not a qualifying collection.',
       );
     }
   }
@@ -313,11 +313,11 @@ function _getUserProfileConfig(
       permissions: getExclusiveDocumentPermissions(user).concat([
         xdmp.permission(
           ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
-          CAPABILITY_READ
+          CAPABILITY_READ,
         ),
         xdmp.permission(
           ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
-          CAPABILITY_UPDATE
+          CAPABILITY_UPDATE,
         ),
         xdmp.permission(ROLE_NAME_USER_PROFILE_DATA_READER, CAPABILITY_READ),
       ]),
@@ -358,7 +358,7 @@ function _getMyCollectionConfig(
   readOnlyDocNode,
   newUserMode,
   newDocumentMode,
-  lang = DEFAULT_LANG
+  lang = DEFAULT_LANG,
 ) {
   const postValidationCallback = (readOnlyDocNode, editableDocObj) => {
     // Deduplicate and drop references to self.
@@ -368,8 +368,8 @@ function _getMyCollectionConfig(
         new Map(
           givenMembers
             .filter((member) => member.id + '' !== uri)
-            .map((member) => [member.id + '', member])
-        ).values()
+            .map((member) => [member.id + '', member]),
+        ).values(),
       );
       setSetMembers(editableDocObj, revisedMembers);
     }
@@ -381,11 +381,11 @@ function _getMyCollectionConfig(
       permissions: getExclusiveDocumentPermissions(user).concat([
         xdmp.permission(
           ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
-          CAPABILITY_READ
+          CAPABILITY_READ,
         ),
         xdmp.permission(
           ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER,
-          CAPABILITY_UPDATE
+          CAPABILITY_UPDATE,
         ),
         xdmp.permission(ROLE_NAME_MY_COLLECTION_DATA_READER, CAPABILITY_READ),
       ]),
@@ -400,7 +400,7 @@ function _getMyCollectionConfig(
   } else {
     if (isUndefined(uri)) {
       throw new BadRequestError(
-        'The document must have an ID in order to update it.'
+        'The document must have an ID in order to update it.',
       );
     }
     docOptions = {
@@ -428,7 +428,7 @@ function _getNewDocumentUri(uriType, attempt = 1) {
   // Insurance
   if (attempt > MAX_ATTEMPTS_FOR_NEW_URI) {
     throw new LoopDetectedError(
-      `Unable to determine a unique URI for a new Set within ${MAX_ATTEMPTS_FOR_NEW_URI} attempts.`
+      `Unable to determine a unique URI for a new Set within ${MAX_ATTEMPTS_FOR_NEW_URI} attempts.`,
     );
   }
 

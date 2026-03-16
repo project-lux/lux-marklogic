@@ -2,6 +2,7 @@ const CODE_VERSION = '@@codeVersion@@';
 
 const ML_APP_NAME = '%%mlAppName%%';
 const TENANT_NAME = '%%environmentName%%';
+const ML_ADMIN_PORT = parseInt('%%mlAdminPort%%'.trim());
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 
@@ -19,16 +20,17 @@ const COLLECTION_NAME_NON_PRODUCTION = 'nonProd';
 const UNIT_TEST_ENDPOINT = '/test/default.xqy';
 const ROLE_NAME_MAY_RUN_UNIT_TESTS = '%%mlAppName%%-may-run-unit-tests';
 
+const SCALE_OUT_TIMEOUT = parseInt('%%scaleOutTimeout%%'.trim());
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
 const RELATED_LIST_PER_RELATION_DEFAULT = parseInt(
-  '%%relatedListPerRelationDefault%%'.trim()
+  '%%relatedListPerRelationDefault%%'.trim(),
 );
 const RELATED_LIST_PER_RELATION_MAX = parseInt(
-  '%%relatedListPerRelationMax%%'.trim()
+  '%%relatedListPerRelationMax%%'.trim(),
 );
 
 const DEFAULT_FILTER_SEARCH_RESULTS =
@@ -40,13 +42,13 @@ const FULL_TEXT_SEARCH_RELATED_FIELD_NAME =
   '%%fullTextSearchRelatedFieldName%%'.trim();
 
 const LOW_STORAGE_CRITICAL_THRESHOLD = parseInt(
-  '%%lowStorageCriticalThreshold%%'.trim()
+  '%%lowStorageCriticalThreshold%%'.trim(),
 );
 const LOW_STORAGE_WARNING_THRESHOLD = parseInt(
-  '%%lowStorageWarningThreshold%%'.trim()
+  '%%lowStorageWarningThreshold%%'.trim(),
 );
 const HIGH_STORAGE_WARNING_THRESHOLD = parseInt(
-  '%%highStorageWarningThreshold%%'.trim()
+  '%%highStorageWarningThreshold%%'.trim(),
 );
 
 const BASE_URL = 'https://lux.collections.yale.edu';
@@ -149,7 +151,6 @@ const SYNONYM_WEIGHT = -0.5; // Could make this configurable via property or end
 const SYNONYMS_ENABLED = '%%synonymsEnabled%%'.trim() === 'true';
 const THESAURUS_URIS = ['/thesauri/sample-thesaurus.xml'];
 
-const TRACE_NAME_ERROR = 'LuxError';
 const TRACE_NAME_FACETS = 'LuxFacets';
 const TRACE_NAME_RELATED_LIST = 'LuxRelatedList';
 const TRACE_NAME_PROFILES = 'LuxNamedProfiles';
@@ -186,6 +187,7 @@ export {
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
   MESSAGE_ALREADY_HAS_A_PROFILE,
+  ML_ADMIN_PORT,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
   REG_EXP_NEAR_OPERATOR,
@@ -195,6 +197,7 @@ export {
   RELATED_LIST_PREFIX,
   RELATED_LIST_TIMEOUT,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
+  SCALE_OUT_TIMEOUT,
   SEARCH_ESTIMATE_PREFIX,
   SEARCH_GRAMMAR_OPERATORS,
   SEARCH_OPTIONS_INVERSE_MAP,
@@ -207,7 +210,6 @@ export {
   SYNONYMS_ENABLED,
   THESAURUS_URIS,
   TOKEN_RUNTIME_PARAM,
-  TRACE_NAME_ERROR,
   TRACE_NAME_FACETS,
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,

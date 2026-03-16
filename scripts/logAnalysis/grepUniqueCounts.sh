@@ -18,6 +18,7 @@ Options:
   --perl             Use PCRE mode (grep -P) if available (required for lookarounds)
   --inner REGEX      Optional regex applied via awk to extract a sub-match from each match.
                      This should be an ERE (awk's regex), not PCRE.
+  --sort-by-match    Sort by matched expression (descending) instead of by count.
   --help             Show this help
 
 Examples:
@@ -46,6 +47,7 @@ REGEX=""
 IGNORE_CASE=false
 PERL_MODE=false
 INNER_REGEX=""
+SORT_BY_MATCH=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -59,6 +61,8 @@ while [[ $# -gt 0 ]]; do
       PERL_MODE=true; shift ;;
     --inner)
       INNER_REGEX=${2:-}; shift 2 ;;
+    --sort-by-match)
+      SORT_BY_MATCH=true; shift ;;
     --help|-h)
       show_help; exit 0 ;;
     *)
@@ -102,7 +106,16 @@ GREP_BIN=${GREP_BIN:-grep}
 # 1) grep -o emits only the matched substrings
 # 2) optional INNER extraction via awk (ERE capture) to extract subgroup
 # 3) sort | uniq -c for counts
-# 4) sort -nr to show most frequent first
+# 4) final sort: by count (-nr) or by match (-k2 -r)
+
+# Set sort flags based on sort preference
+if $SORT_BY_MATCH; then
+  SORT_FLAGS=(-k2 -r)
+else
+  SORT_FLAGS=(-nr)
+fi
+
+# Build pipeline: start with grep, optionally add awk, finish with counting and sorting
 if [[ -n "$INNER_REGEX" ]]; then
   # INNER_REGEX should have one capturing group for the desired piece
   # Example: "Couldn't find relation name for '([^']*)'"
@@ -115,10 +128,10 @@ if [[ -n "$INNER_REGEX" ]]; then
       ' \
     | sort \
     | uniq -c \
-    | sort -nr
+    | sort "${SORT_FLAGS[@]}"
 else
   $GREP_BIN "${GREP_OPTS[@]}" -- "$REGEX" "$FILE" \
     | sort \
     | uniq -c \
-    | sort -nr
+    | sort "${SORT_FLAGS[@]}"
 fi

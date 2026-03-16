@@ -1,0 +1,6 @@
+{
+  "privilege-name": "%%mlAppName%%-scale-environment",
+  "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-scale-environment",
+  "role": [],
+  "kind": "execute"
+}

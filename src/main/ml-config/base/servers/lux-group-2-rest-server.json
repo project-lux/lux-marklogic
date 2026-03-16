@@ -1,0 +1,19 @@
+{
+  "server-name": "%%mlAppName%%-request-group-2",
+  "server-type": "http",
+  "enabled": "true",
+  "root": "/",
+  "port": %%mlRestPortGroup2%%,
+  "content-database": "%%tenantContentDatabase%%",
+  "modules-database": "%%tenantModulesDatabase%%",
+  "authentication": "%%mlRestAuthenticationGroup2%%",
+  "internal-security": "true",
+  "external-security": [],
+  "threads": %%mlRestMaxThreadsGroup2%%,
+  "max-time-limit": %%mlRestMaxTimeoutGroup2%%,
+  "default-time-limit": %%mlRestDefaultTimeoutGroup2%%,
+  "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
+  "rewrite-resolves-globally": true,
+  "error-handler": "/MarkLogic/rest-api/error-handler.xqy",
+  "default-user": "nobody"
+}

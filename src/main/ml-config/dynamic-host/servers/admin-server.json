@@ -1,0 +1,4 @@
+{
+  "server-name": "Admin",
+  "API-token-authentication": %%enableApiTokenAuthentication%%
+}

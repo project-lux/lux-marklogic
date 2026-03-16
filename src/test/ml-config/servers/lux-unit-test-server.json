@@ -1,0 +1,15 @@
+{
+  "server-name": "%%mlAppName%%-unit-test",
+  "server-type": "http",
+  "enabled": "true",
+  "root": "/",
+  "port": %%mlTestRestPort%%,
+  "content-database": "%%tenantTestContentDatabase%%",
+  "modules-database": "%%tenantTestModulesDatabase%%",
+  "authentication": "digest",
+  "internal-security": "true",
+  "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
+  "rewrite-resolves-globally": true,
+  "default-user": "nobody",
+  "ssl-certificate-template": "%%mlAppCertificateName%%"
+}

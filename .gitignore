@@ -8,4 +8,4 @@ gradle-*.properties
 !gradle-wrapper.properties
 
 src/main/ml-modules/root/config/contentDatabaseConfGenerated.mjs
-scripts/node_modules
+node_modules

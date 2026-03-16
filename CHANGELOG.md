@@ -2,6 +2,70 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v3.0.0 - 2026-03-16
+
+LUX backend v3.0.0 reduces recurring expenses by changing from clusters to individual MarkLogic hosts and relying on [MarkLogic's dynamic host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) to scale out when needed.  See [MarkLogic Dynamic Host for LUX](/docs/lux-dynamic-host.md) for additional design aspects.
+
+Most bullet points without a ticket reference are associated with [#643](https://github.com/project-lux/lux-marklogic/issues/643).  The rest without a ticket reference document changes that rolled out with this version but are defined in a private repository.
+
+### Added
+
+- Added the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out) endpoint ([#638](https://github.com/project-lux/lux-marklogic/issues/638)).
+- Added the [/src/main/ml-config/dynamic-host/](/src/main/ml-config/dynamic-host/) MarkLogic Gradle configuration directory as well as the `allowDynamicHosts` and `enableApiTokenAuthentication` Gradle properties.  The new configuration directory allows us to continue supporting MarkLogic 11 deployments.  The properties allow us to enable or disable the MarkLogic 12 dynamic host-related settings we do not plan to change when scaling out or in. Minimum supported ML 12 version is 12.0.1. ([#639](https://github.com/project-lux/lux-marklogic/issues/639))
+- Added a modules database dedicated to unit testing, thereby supporting tenant status tests without modifying the tenant's real status document.  In so doing:
+    - Closed hole that enabled deployment of test modules to production modules databases.
+    - All test artifacts are removed from the main modules database, for all environments.
+    - Requirements and directions for enabling unit tests may be found [here](/docs/lux-backend-deployment.md#enabling-unit-testing).
+
+### Changed
+
+- Changed from 48 vCPU and 384 GB RAM clusters to individual 32 vCPU and 128 GB RAM hosts, thereby reducing CPU resources by 1/3rd and RAM by 2/3rds.  The dynamic host adds 4 vCPUs and 32 GB RAM.
+- Processor speed increased from 3.1 GHz to 3.5 GHz.  Dynamic host has 3.9 GHz.
+- Upgraded from Amazon Linux 2 to Amazon Linux 2023.  Other OS settings (static host / dynamic host):
+    - Swap space: 32 GB / 24 GB
+    - vm.swappiness: 1 / 1
+    - vm.dirty_background_ratio: 1 / 1
+    - vm.dirty_ratio: 20 / 20
+    - IO scheduler: `none` / `none`
+    - Transparent huge pages (THP): `never` / `never`
+    - Huge page count: 20,480 / 4,960
+    - Huge page size: 2,048 KB / 2,048 KB
+    - File descriptor hard & soft limits for daemon: 65,535 / 65,535
+- Reduced from nine forests spread across three hosts to two forests on one host.
+- Increased to 9,000 IOPS and 375 MB/s throughput on GP3 EBS volume.
+- Upgraded from MarkLogic 11.3.1 to MarkLogic 12.0.1.
+- MarkLogic group changes:
+    - Reverted to automatic group cache settings.
+    - Reduced the group retry limit from 180 seconds to 10 seconds.
+    - Increase retention of raw meters from 7 days to 14 days.
+- Application server changes:
+    - Renamed the `lux` application server to `lux-request-group-1`.
+    - Added the `lux-request-group-2` application server to support load distribution in the middle tier. Internal stress testing has consistently shown that routing backend requests across two app servers increases throughput headroom and reduces performance degradation during high arrival rates.
+    - The middle tier is recommended to route `/ds/lux/document/read.mjs` and `/ds/lux/translate.mjs` requests to one application server and the rest to the other.
+    - With a 32 vCPU static MarkLogic host, the application servers tested best with 48 threads each.
+    - The second application server's backend configuration may be made using the `*Group2` build properties.
+    - Any application server previously configured to the custom error handler is now configured to the default error handler, `/MarkLogic/rest-api/error-handler.xqy`.
+- Content database changes:
+    - Enabled preload-mapped-data.
+    - Disabled index-detection.
+- Changed the `ensureTenantStatusDocumentExists` task to use the Apache HTTP client.
+
+### Removed
+
+- Forest-level failover.
+- Removed the /v1/search options file.
+- Removed the build script's dependency on MLCP including the unused MLCP Gradle tasks:
+    - `copyDatabase`
+    - `importDataFull`
+    - `importDataIncremental`
+- Removed the custom error handler ([#317](https://github.com/project-lux/lux-marklogic/issues/317))
+  
+### Fixed
+
+### Security
+
+- Introduced the [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-scale-environment.json) execute privilege and granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to enable said role to consume the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out) (part of [#638](https://github.com/project-lux/lux-marklogic/issues/638)).
+
 ## v2.5.0 - 2026-02-16
 
 ### Added
@@ -70,7 +134,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ## v2.0.0 - 2025-08-11
 ### Added
-- Added back a second app server to be used for deployment (digest authentication), where the main rest app server is used for the application at runtime (OAuth authentication)([#585](https://github.com/project-lux/lux-marklogic/issues/585))
+- Added back a second application server to be used for deployment (digest authentication), where the main rest application server is used for the application at runtime (OAuth authentication)([#585](https://github.com/project-lux/lux-marklogic/issues/585))
 
 ### Changed
 - Changed from using the classification's equivalent ID to its primary ID when determining whether a record is a My Collection ([#558](https://github.com/project-lux/lux-marklogic/issues/558))

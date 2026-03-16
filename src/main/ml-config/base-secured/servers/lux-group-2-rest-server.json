@@ -1,0 +1,10 @@
+{
+  "server-name": "%%mlAppName%%-request-group-2",
+  "ssl-min-allow-tls": "TLSv1.2",
+  "ssl-hostname": "",
+  "ssl-ciphers": "DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256",
+  "ssl-ciphersuites": "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256",
+  "ssl-require-client-certificate": true,
+  "ssl-client-issuer-authority-verification": false,
+  "ssl-certificate-template": "%%mlAppCertificateName%%"
+}

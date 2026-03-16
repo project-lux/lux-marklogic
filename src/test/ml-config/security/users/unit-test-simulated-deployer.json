@@ -1,0 +1,5 @@
+{
+  "user-name": "%%mlAppName%%-unit-test-deployer",
+  "description": "Simulated deployer user for unit testing in the '%%mlAppName%%' tenant",
+  "role": ["%%mlAppName%%-may-run-unit-tests", "%%mlAppName%%-deployer"]
+}

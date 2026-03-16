@@ -82,13 +82,13 @@ const searchTermsConfig = {};
           (hasHopInverseInfo(searchTerm) &&
             !isConfiguredForUnit(
               unitName,
-              BASE_CONFIG[searchTerm.targetScope] // Could have been deleted from unitConfig.
+              BASE_CONFIG[searchTerm.targetScope], // Could have been deleted from unitConfig.
             ))
         ) {
           droppedTermMsgs.push(
             `${unitName}.${scopeName}.${termName} (targetScope: ${
               hasHopInverseInfo(searchTerm) ? searchTerm.targetScope : 'N/A'
-            })`
+            })`,
           );
           if (!droppedTerms[scopeName]) {
             droppedTerms[scopeName] = [];
@@ -126,7 +126,7 @@ const searchTermsConfig = {};
     if (isDate) {
       facetIdIndexReferences = [facetIndexReference];
       facetIdIndexReferences.push(
-        facetIdIndexReferences[0].replace('Start', 'End')
+        facetIdIndexReferences[0].replace('Start', 'End'),
       );
     }
 
@@ -164,19 +164,19 @@ const searchTermsConfig = {};
         } else if (
           utils.getArrayDiff(
             facetIdIndexReferences,
-            searchTermIdIndexReferences
+            searchTermIdIndexReferences,
           ).length > 0
         ) {
           // Merge the ID index arrays
           const mergedArrays = utils.getMergedArrays(
             searchTermIdIndexReferences,
-            facetIdIndexReferences
+            facetIdIndexReferences,
           );
           unitConfig[scopeName][parentTermName].idIndexReferences =
             mergedArrays;
           if (isUnrestrictedUnit) {
             mergedTermMsgs.push(
-              `${scopeName}.${parentTermName}: ['${mergedArrays.join("', '")}']`
+              `${scopeName}.${parentTermName}: ['${mergedArrays.join("', '")}']`,
             );
           }
         } else if (isUnrestrictedUnit) {
@@ -191,8 +191,8 @@ const searchTermsConfig = {};
       const patternName = isDate
         ? PATTERN_NAME_DATE_RANGE
         : isDimension
-        ? PATTERN_NAME_INDEXED_RANGE
-        : PATTERN_NAME_INDEXED_VALUE;
+          ? PATTERN_NAME_INDEXED_RANGE
+          : PATTERN_NAME_INDEXED_VALUE;
 
       unitConfig[scopeName][termName] = {
         patternName: patternName,
@@ -314,11 +314,11 @@ const searchTermsConfig = {};
 // Consolidated log entries
 utils.logValues(
   `Did not define the following terms due to the dataset not containing the associated data.`,
-  skippedTypeTermMsgs
+  skippedTypeTermMsgs,
 );
 utils.logValues(
   'ID index reference matches the facet configuration and could be omitted from the search criteria configuration',
-  matchedIdIndexConfigMsgs
+  matchedIdIndexConfigMsgs,
 );
 utils.logValues('Merged ID index references by term', mergedTermMsgs);
 utils.logValues('Dropped scopes', droppedScopeMsgs);
@@ -327,13 +327,13 @@ utils.logValues(
   'Terms where the facet configuration overrode the search term configuration',
   facetConfigGivenPrecedenceMsgs,
   true,
-  true
+  true,
 );
 utils.logValues(
   'Overridden search term definitions',
   overrodeTermMgs,
   true,
-  true
+  true,
 );
 
 // Write to the modules database.
@@ -346,7 +346,7 @@ function constructModuleNode(searchTermsConfig) {
  * Generated timestamp: ${new Date()}
  */
 import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
-import { BadRequestError } from '../lib/mlErrorsLib.mjs';
+import { BadRequestError } from '../lib/errorClasses.mjs';
 
 const SEARCH_TERMS_CONFIG = ${JSON.stringify(searchTermsConfig)};
 
@@ -438,7 +438,7 @@ const msg = utils.evalInModulesDatabase(
     uri: uri,
     doc: constructModuleNode(searchTermsConfig),
   },
-  true
+  true,
 );
 
 msg;

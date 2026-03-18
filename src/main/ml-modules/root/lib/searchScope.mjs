@@ -96,7 +96,7 @@ function getSearchScopes() {
 // Get the names of all the search scopes, or just those that are included in stats.
 function getSearchScopeNames(statsOnly = false) {
   return Object.keys(SEARCH_SCOPES).filter(
-    (name) => (statsOnly && SEARCH_SCOPES[name].includeInStats) || !statsOnly
+    (name) => (statsOnly && SEARCH_SCOPES[name].includeInStats) || !statsOnly,
   );
 }
 
@@ -200,7 +200,10 @@ function getOrderedUserInterfaceSearchScopeNames() {
       return SEARCH_SCOPES[name].isUserInterfaceSearchScope === true;
     })
     .sort((scope1, scope2) => {
-      scope1.userInterfaceOrder > scope2.userInterfaceOrder ? 1 : -1;
+      return (
+        SEARCH_SCOPES[scope1].userInterfaceOrder -
+        SEARCH_SCOPES[scope2].userInterfaceOrder
+      );
     });
 }
 

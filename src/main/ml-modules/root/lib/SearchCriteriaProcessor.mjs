@@ -1192,10 +1192,10 @@ const SearchCriteriaProcessor = class {
           .toUpperCase();
         searchCriteriaJson[operator] = [];
         if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
-        for (const item of ctsQueryObj[propName].queries) {
-          searchCriteriaJson[operator].push(
-            SearchCriteriaProcessor._walkParsedQuery(item),
-          );
+          for (const item of ctsQueryObj[propName].queries) {
+            searchCriteriaJson[operator].push(
+              SearchCriteriaProcessor._walkParsedQuery(item),
+            );
           }
         }
       } else if (propName == 'notQuery') {
@@ -1253,9 +1253,14 @@ const SearchCriteriaProcessor = class {
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
-    const isMultiScope = sortBinding.subSorts != null;
-    const isSemantic = sortBinding.predicate != null;
-    return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
+    if (utils.isObject(sortBinding)) {
+      const isMultiScope = sortBinding.subSorts != null;
+      const isSemantic = sortBinding.predicate != null;
+      return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
+    }
+    throw new InternalServerError(
+      'sortBinding is required to determine sort type.',
+    );
   }
 
   static getSortTypeFromSortCriteria(sortCriteria) {

@@ -1,0 +1,32 @@
+{
+  "_scope": "item",
+  "AND": [
+    {
+      "name": "Mona Lisa"
+    },
+    {
+      "producedBy": {
+        "id": "https://example.org/agent/leonardo",
+        "value": "Leonardo da Vinci"
+      }
+    },
+    {
+      "material": {
+        "id": "https://example.org/concept/oil-paint",
+        "value": "Oil paint"
+      }
+    },
+    {
+      "producedAt": {
+        "id": "https://example.org/place/italy",
+        "value": "Italy"
+      }
+    },
+    {
+      "height": {
+        "operator": ">=",
+        "value": 50
+      }
+    }
+  ]
+}

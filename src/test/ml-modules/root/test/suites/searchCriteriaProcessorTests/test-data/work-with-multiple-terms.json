@@ -1,0 +1,26 @@
+{
+  "_scope": "work",
+  "OR": [
+    {
+      "name": "Guernica"
+    },
+    {
+      "createdBy": {
+        "id": "https://example.org/agent/picasso",
+        "value": "Pablo Picasso"
+      }
+    },
+    {
+      "language": {
+        "id": "https://example.org/concept/spanish",
+        "value": "Spanish"
+      }
+    },
+    {
+      "publishedAt": {
+        "id": "https://example.org/place/new-york",
+        "value": "New York"
+      }
+    }
+  ]
+}

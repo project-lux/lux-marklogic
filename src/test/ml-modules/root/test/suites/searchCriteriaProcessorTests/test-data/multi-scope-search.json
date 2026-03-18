@@ -1,0 +1,13 @@
+{
+  "_scope": "multi",
+  "OR": [
+    {
+      "_scope": "agent",
+      "text": "Pablo Picasso"
+    },
+    {
+      "_scope": "work",
+      "text": "Guernica"
+    }
+  ]
+}

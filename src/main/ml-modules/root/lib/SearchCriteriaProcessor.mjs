@@ -1191,10 +1191,12 @@ const SearchCriteriaProcessor = class {
           .substring(0, propName.length - 5)
           .toUpperCase();
         searchCriteriaJson[operator] = [];
+        if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
         for (const item of ctsQueryObj[propName].queries) {
           searchCriteriaJson[operator].push(
             SearchCriteriaProcessor._walkParsedQuery(item),
           );
+          }
         }
       } else if (propName == 'notQuery') {
         searchCriteriaJson.NOT = [

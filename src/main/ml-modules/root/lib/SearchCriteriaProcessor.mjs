@@ -1055,6 +1055,10 @@ const SearchCriteriaProcessor = class {
   //   3. Search string abiding by the LUX-supported subset of ML's search grammar.
   //
   static _requireSearchCriteriaJson(scopeName, searchCriteria) {
+    if (utils.isUndefined(searchCriteria)) {
+      throw new InvalidSearchRequestError(`Search criteria is required.`);
+    }
+
     // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
     if (typeof searchCriteria == 'object') {
       if (scopeName) {

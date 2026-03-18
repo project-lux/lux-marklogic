@@ -118,12 +118,6 @@ To enable and deploy unit testing artifacts:
 6. Set the `unitTesterPassword` password as described in [Gradle Passwords](#gradle-passwords).
 7. If enabling for a new environment, move on to the [Deploy Entire Backend](#deploy-entire-backend) procedure.  For existing environments, this could be sufficient:
 
-    * Manually create and partially configure the test content database.  The underlying reason why this seemingly can't be done with ML Gradle has not been determined.  Substitute "lux" for your tenant name.
-
-       * Database name: "lux-test-content"
-       * Schemas database: "lux-schemas"
-       * The next step will create and attach a forest.
-
     * `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
 
     * `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`

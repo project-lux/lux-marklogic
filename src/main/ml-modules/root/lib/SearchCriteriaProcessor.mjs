@@ -33,6 +33,7 @@ import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
   SORT_TYPE_SEMANTIC,
+  SortCriteria,
 } from './SortCriteria.mjs';
 import {
   REG_EXP_NEAR_OPERATOR,
@@ -112,7 +113,10 @@ const SearchCriteriaProcessor = class {
     this.page = page;
     this.pageLength = pageLength;
     this.pageWith = pageWith;
-    this.sortCriteria = sortCriteria;
+    this.sortCriteria =
+      sortCriteria instanceof SortCriteria
+        ? sortCriteria
+        : new SortCriteria(sortCriteria || '');
     this.valuesOnly = valuesOnly;
     this.searchPatternOptions = searchPatternOptions
       ? searchPatternOptions

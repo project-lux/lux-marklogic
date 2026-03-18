@@ -984,7 +984,7 @@ const SearchCriteriaProcessor = class {
 
   static getFirstNonOptionPropertyName(termValue) {
     let propName = null;
-    if (termValue && typeof termValue == 'object') {
+    if (utils.isObject(termValue)) {
       const propNames = Object.keys(termValue);
       for (let i = 0; i < propNames.length; i++) {
         if (!propNames[i].startsWith('_')) {

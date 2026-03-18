@@ -13,6 +13,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Fixed
 
 - Removed need to manually create the modules database used by the unit tests ([#660](https://github.com/project-lux/lux-marklogic/issues/660)).
+- Fixed the order of search scopes to align with the UI's search tabs ([#663](https://github.com/project-lux/lux-marklogic/issues/663)).
 
 ### Security
 

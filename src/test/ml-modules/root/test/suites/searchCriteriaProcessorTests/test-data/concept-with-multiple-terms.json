@@ -1,0 +1,26 @@
+{
+  "_scope": "concept",
+  "OR": [
+    {
+      "name": "Impressionism"
+    },
+    {
+      "broader": {
+        "id": "https://example.org/concept/art-movement",
+        "value": "Art Movement"
+      }
+    },
+    {
+      "classificationOfAgent": {
+        "id": "https://example.org/agent/monet",
+        "value": "Claude Monet"
+      }
+    },
+    {
+      "influencedByPlace": {
+        "id": "https://example.org/place/france",
+        "value": "France"
+      }
+    }
+  ]
+}

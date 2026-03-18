@@ -1,0 +1,20 @@
+{
+  "_scope": "agent",
+  "AND": [
+    {
+      "name": "Van Gogh"
+    },
+    {
+      "activeAt": {
+        "id": "https://example.org/place/paris",
+        "value": "Paris"
+      }
+    },
+    {
+      "gender": {
+        "id": "https://example.org/concept/male",
+        "value": "Male"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "_scope": "agent",
+  "AND": [
+    {
+      "text": "Pablo"
+    },
+    {
+      "OR": [
+        {
+          "classification": {
+            "id": "https://example.org/concept/painter"
+          }
+        },
+        {
+          "classification": {
+            "id": "https://example.org/concept/sculptor"
+          }
+        }
+      ]
+    }
+  ]
+}

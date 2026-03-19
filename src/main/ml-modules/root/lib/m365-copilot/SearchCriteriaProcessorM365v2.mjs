@@ -494,9 +494,17 @@ const SearchCriteriaProcessorM365v2 = class {
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
-    const isMultiScope = sortBinding.subSorts != null;
-    const isSemantic = sortBinding.predicate != null;
-    return SearchCriteriaProcessorM365v2.getSortType(isMultiScope, isSemantic);
+    if (utils.isObject(sortBinding)) {
+      const isMultiScope = sortBinding.subSorts != null;
+      const isSemantic = sortBinding.predicate != null;
+      return SearchCriteriaProcessorM365v2.getSortType(
+        isMultiScope,
+        isSemantic,
+      );
+    }
+    throw new InternalServerError(
+      'sortBinding is required to determine sort type.',
+    );
   }
 
   static getSortTypeFromSortCriteria(sortCriteria) {
@@ -543,7 +551,7 @@ const SearchCriteriaProcessorM365v2 = class {
 
   static getFirstNonOptionPropertyName(termValue) {
     let propName = null;
-    if (termValue && typeof termValue === 'object') {
+    if (utils.isObject(termValue)) {
       for (const p of Object.keys(termValue)) {
         if (!p.startsWith('_')) {
           propName = p;
@@ -559,6 +567,36 @@ const SearchCriteriaProcessorM365v2 = class {
       SearchCriteriaProcessorM365v2.getFirstNonOptionPropertyName(termValue) !=
       null
     );
+  }
+
+  static _requireSearchCriteriaJson(scopeName, searchCriteria) {
+    if (utils.isUndefined(searchCriteria)) {
+      throw new InvalidSearchRequestError(`Search criteria is required.`);
+    }
+
+    // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
+    if (typeof searchCriteria == 'object') {
+      if (scopeName) {
+        searchCriteria._scope = scopeName;
+      }
+      return searchCriteria;
+    }
+
+    // When search criteria starts with an open curly brace, try to parse as JSON.
+    if (typeof searchCriteria == 'string' && searchCriteria.startsWith('{')) {
+      try {
+        const searchCriteriaJson = JSON.parse(searchCriteria);
+        // Give precedence to the search scope parameter.
+        if (scopeName) {
+          searchCriteriaJson._scope = scopeName;
+        }
+        return searchCriteriaJson;
+      } catch (e) {
+        // Allow to flow through
+      }
+    }
+
+    return translateStringGrammarToJSON(scopeName, searchCriteria);
   }
 };
 

@@ -343,7 +343,7 @@ function _getPartialChildSearchTermInfo(self, scopeName, termValue) {
   let patternName = null;
 
   if (!hasGroup) {
-    const termName = getFirstNonOptionPropertyName(termValue);
+    const termName = self.constructor.getFirstNonOptionPropertyName(termValue);
     const searchTermConfig = _getSearchTermConfig(self, scopeName, termName);
     patternName = searchTermConfig.getPatternName();
     willReturnCtsQuery = returnsCtsQuery(patternName);
@@ -409,19 +409,6 @@ function _ignoreIfStopWordOrPunctuationOnly(self, searchTerm) {
 
 function _hasIdChildTerm(termValue) {
   return termValue && typeof termValue.id === 'string';
-}
-
-function getFirstNonOptionPropertyName(termValue) {
-  let propName = null;
-  if (termValue && typeof termValue === 'object') {
-    for (const p of Object.keys(termValue)) {
-      if (!p.startsWith('_')) {
-        propName = p;
-        break;
-      }
-    }
-  }
-  return propName;
 }
 
 function _hasGroup(termValue) {

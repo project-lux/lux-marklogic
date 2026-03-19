@@ -48,11 +48,8 @@ export function generateQueryFromCriteria(
   _requireSearchCriteriaObject(searchCriteria);
 
   // Group operators
-  if (
-    Object.prototype.hasOwnProperty.call(searchCriteria, 'AND') ||
-    Object.prototype.hasOwnProperty.call(searchCriteria, 'OR')
-  ) {
-    const isAnd = Object.prototype.hasOwnProperty.call(searchCriteria, 'AND');
+  if (searchCriteria.AND || searchCriteria.OR) {
+    const isAnd = searchCriteria.AND;
     const groupName = isAnd ? 'AND' : 'OR';
     const groupArr = searchCriteria[groupName];
     _requireSearchCriteriaArray(groupArr);
@@ -84,7 +81,7 @@ export function generateQueryFromCriteria(
   }
 
   // NOT operator
-  if (Object.prototype.hasOwnProperty.call(searchCriteria, 'NOT')) {
+  if (searchCriteria.NOT) {
     const notCriteria = searchCriteria.NOT;
     if (utils.isArray(notCriteria)) {
       const orCriteria = { OR: notCriteria.map((x) => x) };
@@ -99,7 +96,7 @@ export function generateQueryFromCriteria(
   }
 
   // BOOST operator
-  if (Object.prototype.hasOwnProperty.call(searchCriteria, 'BOOST')) {
+  if (searchCriteria.BOOST) {
     if (
       utils.isArray(searchCriteria.BOOST) &&
       searchCriteria.BOOST.length === 2
@@ -172,7 +169,7 @@ export function resolveTemplateTokens(self) {
     { pattern: TOKEN_PREDICATES, value: predicates, scalarType: 'code' },
     { pattern: TOKEN_TYPES, value: types, scalarType: 'string' },
   ];
-  return _resolveTokens(self.ctsQueryTemplate, tokens);
+  return _resolveTokens(self.ctsQueryStrWithTokens, tokens);
 }
 
 // ------------------ Internal helpers ------------------
@@ -215,7 +212,7 @@ function _parseAndValidateTerm(
       } else if (!searchTerm.hasName()) {
         const termName = key;
         searchTerm.setName(termName);
-        if (!Object.prototype.hasOwnProperty.call(searchCriteria, termName)) {
+        if (!searchCriteria[termName]) {
           throw new InvalidSearchRequestError(
             `the '${termName}' term requires a value.`,
           );

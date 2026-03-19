@@ -63,7 +63,7 @@ const SearchCriteriaProcessorM365v2 = class {
     this.resolvedSearchCriteria = null;
     this.criteriaCnt = 0;
     this.ignoredTerms = [];
-    this.ctsQueryTemplate = '';
+    this.ctsQueryStrWithTokens = '';
     this.ctsQueryStr = '';
     this.valuesOnly = false;
     this.values = [];
@@ -105,28 +105,32 @@ const SearchCriteriaProcessorM365v2 = class {
 
     // Early branch for multi-scope (unchanged behavior)
     if (this.scopeName === 'multi') {
-      this._buildMultiScopeOrQueryOrRecurse(); // same logic as original monolith (kept inline below)
-      return;
+      this._buildMultiScopeQueryOrRecurse(); // same logic as original monolith (kept inline below)
+      // Only return early if multi-scope logic actually built a query
+      if (utils.isNonEmptyString(this.ctsQueryStr)) {
+        return; // early return: multi-scope logic sets this.ctsQueryStr
+      }
+      // Otherwise continue with normal processing for empty criteria validation
+    } else {
+      // Build CTS query template (string)
+      this.ctsQueryStrWithTokens = generateQueryFromCriteria(
+        this,
+        this.scopeName,
+        this.resolvedSearchCriteria,
+        null,
+        true, // mustReturnCtsQuery
+        false, // returnTrueForUnusableTerms
+      );
     }
-
-    // Build CTS query template (string)
-    this.ctsQueryTemplate = generateQueryFromCriteria(
-      this,
-      this.scopeName,
-      this.resolvedSearchCriteria,
-      null,
-      true, // mustReturnCtsQuery
-      false, // returnTrueForUnusableTerms
-    );
 
     // Prevent repo-wide “empty” criteria
     this._validatePresenceOfUsableCriteria();
 
     // Optional type constraint injection (kept as tokens)
     if (this.includeTypeConstraint) {
-      this.ctsQueryTemplate = `cts.andQuery([
+      this.ctsQueryStrWithTokens = `cts.andQuery([
         cts.jsonPropertyValueQuery('dataType', TOKEN_TYPES, ['exact']),
-        ${this.ctsQueryTemplate}
+        ${this.ctsQueryStrWithTokens}
       ])`;
     }
 
@@ -394,7 +398,7 @@ const SearchCriteriaProcessorM365v2 = class {
 
   // ---------------- Multi-scope orchestration (unchanged logic) ----------------
 
-  _buildMultiScopeOrQueryOrRecurse() {
+  _buildMultiScopeQueryOrRecurse() {
     if (!this.allowMultiScope) {
       throw new InvalidSearchRequestError(
         `search scope of 'multi' not supported by this operation or level.`,
@@ -405,6 +409,8 @@ const SearchCriteriaProcessorM365v2 = class {
       SearchCriteriaProcessorM365v2._requireSearchCriteriaArray(orArr);
 
       if (orArr.length === 0) {
+        // Let empty OR arrays fall through to normal processing and validation
+        this.resolvedSearchCriteria = {};
         return;
       } else if (orArr.length === 1) {
         const { filterResults, facetsAreLikely, synonymsEnabled } =
@@ -427,6 +433,7 @@ const SearchCriteriaProcessorM365v2 = class {
           this.valuesOnly,
         );
         this.ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr();
+        this.scopeName = searchCriteriaProcessor.scopeName;
         return;
       } else {
         const parts = orArr.map((subCriteria) => {
@@ -471,7 +478,7 @@ const SearchCriteriaProcessorM365v2 = class {
   _validatePresenceOfUsableCriteria() {
     if (
       this.criteriaCnt < 1 ||
-      !utils.isNonEmptyString(this.ctsQueryTemplate)
+      !utils.isNonEmptyString(this.ctsQueryStrWithTokens)
     ) {
       if (this.ignoredTerms.length > 0) {
         throw new InvalidSearchRequestError(

@@ -69,25 +69,60 @@ const SearchCriteriaProcessorM365v1 = class {
     };
     this.searchTermsConfig = getSearchTermsConfig();
 
-    // Given to process()
-    this.scopeName;
-    this.allowMultiScope;
-    this.searchPatternOptions;
-    this.includeTypeConstraint; // Patterns can override to false.
-    this.page;
-    this.pageLength;
-    this.pageWith;
-    this.sortCriteria;
-
-    // Populated via process()
-    this.resolvedSearchCriteria = null;
-    this.criteriaCnt = 0; // Keep abbreviation style for consistency with codebase conventions.
-    this.ignoredTerms = [];
-    // Internally treat this as a "template" that contains tokens to be resolved later
-    this.ctsQueryTemplate = '';
-    // Final resolved string or (fallback) cts.parse('') object is stored here
-    this.ctsQueryStr = '';
+    // Process parameters (assigned in _initProcessState)
+    this.scopeName = null;
+    this.allowMultiScope = false;
+    this.searchPatternOptions = null;
+    this.includeTypeConstraint = true;
+    this.page = 1;
+    this.pageLength = 20;
+    this.pageWith = null;
+    this.sortCriteria = null;
     this.valuesOnly = false;
+
+    // State variables (reset per invocation)
+    this.resolvedSearchCriteria = null;
+    this.criteriaCnt = 0;
+    this.ignoredTerms = [];
+    this.ctsQueryStrWithTokens = '';
+    this.ctsQueryStr = '';
+    this.values = [];
+  }
+
+  _initProcessState(
+    scopeName,
+    allowMultiScope,
+    searchPatternOptions,
+    includeTypeConstraint,
+    page,
+    pageLength,
+    pageWith,
+    sortCriteria,
+    valuesOnly,
+  ) {
+    // Assign process parameters
+    this.scopeName = scopeName;
+    this.allowMultiScope = allowMultiScope;
+    this.page = page;
+    this.pageLength = pageLength;
+    this.pageWith = pageWith;
+    this.sortCriteria =
+      sortCriteria instanceof SortCriteria
+        ? sortCriteria
+        : new SortCriteria(sortCriteria || '');
+    this.valuesOnly = valuesOnly;
+
+    this.searchPatternOptions = searchPatternOptions
+      ? searchPatternOptions
+      : new SearchPatternOptions();
+
+    this.includeTypeConstraint = includeTypeConstraint;
+
+    // Reset per-invocation state
+    this.criteriaCnt = 0;
+    this.ignoredTerms = [];
+    this.ctsQueryStrWithTokens = '';
+    this.ctsQueryStr = '';
     this.values = [];
   }
 
@@ -128,27 +163,31 @@ const SearchCriteriaProcessorM365v1 = class {
 
     // Handle "multi" scope early and return when done
     if (this.scopeName === 'multi') {
-      this._buildMultiScopeOrQueryOrRecurse();
-      return; // early return: multi-scope logic sets this.ctsQueryStr
+      this._buildMultiScopeQueryOrRecurse();
+      // Only return early if multi-scope logic actually built a query
+      if (utils.isNonEmptyString(this.ctsQueryStr)) {
+        return; // early return: multi-scope logic sets this.ctsQueryStr
+      }
+      // Otherwise continue with normal processing for empty criteria validation
+    } else {
+      // Build query template from criteria (string with tokens)
+      this.ctsQueryStrWithTokens = this.generateQueryFromCriteria(
+        this.scopeName,
+        this.resolvedSearchCriteria,
+        null,
+        true, // Must return a CTS query.
+        false, // Return cts.falseQuery when the top-level term is unusable.
+      );
     }
-
-    // Build query template from criteria (string with tokens)
-    this.ctsQueryTemplate = this.generateQueryFromCriteria(
-      this.scopeName,
-      this.resolvedSearchCriteria,
-      null,
-      true, // Must return a CTS query.
-      false, // Return cts.falseQuery when the top-level term is unusable.
-    );
 
     // Protect from a repo-wide search as repo-wide facets are expensive to calculate
     this._validatePresenceOfUsableCriteria();
 
     // Optionally add type constraint (using tokens for scope-specific estimates)
     if (this.includeTypeConstraint) {
-      this.ctsQueryTemplate = `cts.andQuery([
+      this.ctsQueryStrWithTokens = `cts.andQuery([
         cts.jsonPropertyValueQuery('dataType', ${TOKEN_TYPES}, ['exact']),
-        ${this.ctsQueryTemplate}
+        ${this.ctsQueryStrWithTokens}
       ])`;
     }
 
@@ -513,7 +552,7 @@ const SearchCriteriaProcessorM365v1 = class {
    */
   _resolveTokens(tokenArr) {
     // UNIT TEST CANDIDATE: replacement correctness (arrays / scalars), no-op when template empty
-    let template = this.ctsQueryTemplate;
+    let template = this.ctsQueryStrWithTokens;
     tokenArr.forEach((token) => {
       const val = Array.isArray(token.value)
         ? utils.arrayToString(token.value, token.scalarType)
@@ -542,11 +581,8 @@ const SearchCriteriaProcessorM365v1 = class {
     SearchCriteriaProcessorM365v1._requireSearchCriteriaObject(searchCriteria);
 
     // Group operators (AND / OR)
-    if (
-      Object.prototype.hasOwnProperty.call(searchCriteria, 'AND') ||
-      Object.prototype.hasOwnProperty.call(searchCriteria, 'OR')
-    ) {
-      const isAnd = Object.prototype.hasOwnProperty.call(searchCriteria, 'AND');
+    if (searchCriteria.AND || searchCriteria.OR) {
+      const isAnd = utils.isDefined(searchCriteria.AND);
       const groupName = isAnd ? 'AND' : 'OR';
       const groupArr = searchCriteria[groupName];
       SearchCriteriaProcessorM365v1._requireSearchCriteriaArray(groupArr);
@@ -582,7 +618,7 @@ const SearchCriteriaProcessorM365v1 = class {
     }
 
     // NOT operator
-    if (Object.prototype.hasOwnProperty.call(searchCriteria, 'NOT')) {
+    if (searchCriteria.NOT) {
       const notCriteria = searchCriteria.NOT;
       if (utils.isArray(notCriteria)) {
         const orCriteria = { OR: notCriteria.map((item) => item) };
@@ -611,7 +647,7 @@ const SearchCriteriaProcessorM365v1 = class {
     }
 
     // BOOST operator
-    if (Object.prototype.hasOwnProperty.call(searchCriteria, 'BOOST')) {
+    if (searchCriteria.BOOST) {
       if (
         utils.isArray(searchCriteria.BOOST) &&
         searchCriteria.BOOST.length === 2
@@ -755,22 +791,34 @@ ${this.generateQueryFromCriteria(
     const searchTermConfig = this._getSearchTermConfig(scopeName, termName);
     searchTerm.setSearchTermConfig(searchTermConfig);
 
-    // Normalize ID-child or group/term/atomic classification + target-scope hop handling
-    this._normalizeIdChildIfNeeded(
+    // Normalize ID child → indexed string match (follows original implementation pattern)
+    const normalizedTerm = this._normalizeIdChildIfNeeded(
       searchTerm,
       searchTermConfig,
       termName,
       termValue,
       scopeName,
     );
-    this._classifyValueType(searchTerm, searchTermConfig, termName, termValue);
-    this._applyTargetScopeIfAny(
-      searchTerm,
-      searchTermConfig,
-      termName,
-      scopeName,
-      termValue,
-    );
+
+    if (normalizedTerm) {
+      // ID normalization created a new, fully-configured SearchTerm
+      searchTerm = normalizedTerm;
+    } else {
+      // Continue with normal classification and target scope processing
+      this._classifyValueType(
+        searchTerm,
+        searchTermConfig,
+        termName,
+        termValue,
+      );
+      this._applyTargetScopeIfAny(
+        searchTerm,
+        searchTermConfig,
+        termName,
+        scopeName,
+        termValue,
+      );
+    }
 
     // Defaults and hygiene
     this._ensureNumericWeight(searchTerm);
@@ -790,7 +838,7 @@ ${this.generateQueryFromCriteria(
           const termName = key;
           searchTerm.setName(termName);
           // Need to check for the property's existence as zero is a valid value.
-          if (!Object.prototype.hasOwnProperty.call(searchCriteria, termName)) {
+          if (!searchCriteria[termName]) {
             throw new InvalidSearchRequestError(
               `the '${termName}' term requires a value.`,
             );
@@ -821,7 +869,8 @@ ${this.generateQueryFromCriteria(
         SearchCriteriaProcessorM365v1._hasIdChildTerm(termValue) &&
         searchTermConfig.hasIdIndexReferences()
       ) {
-        const normalized = new SearchTerm()
+        // Create and return completely new searchTerm for ID value matching
+        return new SearchTerm()
           .addName(`${termName}Id`)
           .addValue(termValue.id)
           .addValueType(TYPE_ATOMIC)
@@ -833,8 +882,6 @@ ${this.generateQueryFromCriteria(
               scalarType: 'string',
             }),
           );
-        // replace original searchTerm with normalized one
-        searchTerm.copyFrom(normalized); // assumes SearchTerm supports copying; if not, set properties one-by-one
       } else {
         // id -> iri conversion when configured to do so
         if (
@@ -847,6 +894,7 @@ ${this.generateQueryFromCriteria(
         }
       }
     }
+    return null; // no ID normalization occurred
   }
 
   _classifyValueType(searchTerm, searchTermConfig, termName, termValue) {
@@ -944,21 +992,24 @@ ${this.generateQueryFromCriteria(
     if (!hasGroup) {
       const termName =
         SearchCriteriaProcessorM365v1.getFirstNonOptionPropertyName(termValue);
-      const searchTermConfig = this._getSearchTermConfig(scopeName, termName);
-      patternName = searchTermConfig.getPatternName();
-      willReturnCtsQuery = returnsCtsQuery(patternName);
-      valueType =
-        utils.isArray(termValue[termName]) ||
-        utils.isObject(termValue[termName])
-          ? TYPE_TERM
-          : TYPE_ATOMIC;
+
+      if (termName) {
+        const searchTermConfig = this._getSearchTermConfig(scopeName, termName);
+        patternName = searchTermConfig.getPatternName();
+        willReturnCtsQuery = returnsCtsQuery(patternName);
+        valueType =
+          utils.isArray(termValue[termName]) ||
+          utils.isObject(termValue[termName])
+            ? TYPE_TERM
+            : TYPE_ATOMIC;
+      } else {
+        // No valid term name found - treat as atomic value
+        valueType = TYPE_ATOMIC;
+        willReturnCtsQuery = false;
+      }
     }
 
-    return {
-      patternName,
-      valueType,
-      willReturnCtsQuery,
-    };
+    return { patternName, valueType, willReturnCtsQuery };
   }
 
   _getSearchTermConfig(scopeName, termName) {
@@ -1292,41 +1343,6 @@ ${this.generateQueryFromCriteria(
 
   // region ------------ Private orchestration helpers ------------
 
-  _initProcessState(
-    scopeName,
-    allowMultiScope,
-    searchPatternOptions,
-    includeTypeConstraint,
-    page,
-    pageLength,
-    pageWith,
-    sortCriteria,
-    valuesOnly,
-  ) {
-    this.scopeName = scopeName;
-    this.allowMultiScope = allowMultiScope;
-    this.page = page;
-    this.pageLength = pageLength;
-    this.pageWith = pageWith;
-    this.sortCriteria =
-      sortCriteria instanceof SortCriteria
-        ? sortCriteria
-        : new SortCriteria(sortCriteria || '');
-    this.valuesOnly = valuesOnly;
-
-    this.searchPatternOptions = searchPatternOptions
-      ? searchPatternOptions
-      : new SearchPatternOptions();
-
-    this.includeTypeConstraint = includeTypeConstraint;
-    // reset per-invocation fields
-    this.criteriaCnt = 0;
-    this.ignoredTerms = [];
-    this.ctsQueryTemplate = '';
-    this.ctsQueryStr = '';
-    this.values = [];
-  }
-
   _resolveAndValidateScope() {
     if (this.resolvedSearchCriteria._scope) {
       const scopeName = this.resolvedSearchCriteria._scope.trim().toLowerCase();
@@ -1345,7 +1361,7 @@ ${this.generateQueryFromCriteria(
     }
   }
 
-  _buildMultiScopeOrQueryOrRecurse() {
+  _buildMultiScopeQueryOrRecurse() {
     if (!this.allowMultiScope) {
       throw new InvalidSearchRequestError(
         `search scope of 'multi' not supported by this operation or level.`,
@@ -1356,7 +1372,8 @@ ${this.generateQueryFromCriteria(
       SearchCriteriaProcessorM365v1._requireSearchCriteriaArray(orArr);
 
       if (orArr.length === 0) {
-        // if OR array is empty, do nothing; generating with empty criteria will error later
+        // Let empty OR arrays fall through to normal processing and validation
+        this.resolvedSearchCriteria = {};
         return;
       } else if (orArr.length === 1) {
         // Recurse into single OR
@@ -1380,6 +1397,7 @@ ${this.generateQueryFromCriteria(
           this.valuesOnly,
         );
         this.ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr();
+        this.scopeName = searchCriteriaProcessor.scopeName;
         return;
       } else {
         // Build cts.orQuery([...]) by evaluating each sub-criteria independently and concatenating
@@ -1425,7 +1443,7 @@ ${this.generateQueryFromCriteria(
   _validatePresenceOfUsableCriteria() {
     if (
       this.criteriaCnt < 1 ||
-      !utils.isNonEmptyString(this.ctsQueryTemplate)
+      !utils.isNonEmptyString(this.ctsQueryStrWithTokens)
     ) {
       if (this.ignoredTerms.length > 0) {
         throw new InvalidSearchRequestError(

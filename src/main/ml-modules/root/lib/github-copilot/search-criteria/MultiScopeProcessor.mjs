@@ -1,6 +1,13 @@
 import { ProcessorConfig } from './ProcessorConfig.mjs';
 import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 
+// Multi-scope processing result status constants
+const MULTI_SCOPE_STATUS = {
+  CONTINUE_NORMAL_PROCESSING: 'CONTINUE_NORMAL_PROCESSING',
+  RECURSION_USED: 'RECURSION_USED',
+  QUERY_BUILT: 'QUERY_BUILT',
+};
+
 /**
  * Handles multi-scope search criteria processing
  * Extracts the complex branching logic from SearchCriteriaProcessor.process()
@@ -13,7 +20,9 @@ class MultiScopeProcessor {
    * @param {SearchCriteriaProcessor} processor - The main processor instance
    * @param {Array} orArray - OR array from resolved search criteria
    * @param {Object} processParams - Parameters to pass to recursive process calls
-   * @returns {string|null} CTS query string or null if recursing
+   * @returns {Object} Result object with status and optional queryString
+   *   - status: MULTI_SCOPE_STATUS constant value
+   *   - queryString?: string (present when status is QUERY_BUILT)
    */
   processMultiScopeSearch(processor, orArray, processParams) {
     const {
@@ -30,8 +39,8 @@ class MultiScopeProcessor {
     processor.constructor._requireSearchCriteriaArray(orArray);
 
     if (orArray.length === 0) {
-      // if OR array is empty, do nothing, we will try to generate with empty criteria which will throw an error
-      return null;
+      // if OR array is empty, continue with normal processing to trigger validation error
+      return { status: MULTI_SCOPE_STATUS.CONTINUE_NORMAL_PROCESSING };
     }
 
     if (orArray.length === 1) {
@@ -48,28 +57,29 @@ class MultiScopeProcessor {
         sortCriteria,
         valuesOnly,
       );
-      // Return null to signal that recursion was used
-      return null;
+      // Return status indicating that recursion was used
+      return { status: MULTI_SCOPE_STATUS.RECURSION_USED };
     }
 
     // Multiple items - build OR query
-    return this._buildMultiScopeOrQuery(
+    const queryString = this._buildMultiScopeOrQuery(
+      processor,
       orArray,
-      processor.requestOptions,
       processParams,
     );
+    return { status: MULTI_SCOPE_STATUS.QUERY_BUILT, queryString };
   }
 
   /**
    * UNIT TEST CANDIDATE: OR query building for multiple sub-criteria
    * Builds a CTS OR query from multiple search criteria
    *
+   * @param {SearchCriteriaProcessor} processor - The main processor instance
    * @param {Array} orArray - Array of search criteria objects
-   * @param {Object} requestOptions - Request options from main processor
    * @param {Object} processParams - Parameters for sub-processors
    * @returns {string} CTS OR query string
    */
-  _buildMultiScopeOrQuery(orArray, requestOptions, processParams) {
+  _buildMultiScopeOrQuery(processor, orArray, processParams) {
     const {
       searchPatternOptions,
       includeTypeConstraint,
@@ -80,7 +90,8 @@ class MultiScopeProcessor {
       valuesOnly,
     } = processParams;
 
-    const { filterResults, facetsAreLikely, synonymsEnabled } = requestOptions;
+    const { filterResults, facetsAreLikely, synonymsEnabled } =
+      processor.requestOptions;
     const SearchCriteriaProcessor = processor.constructor;
 
     const subQueries = orArray.map((subCriteria, index, array) => {
@@ -137,4 +148,4 @@ class MultiScopeProcessor {
   }
 }
 
-export { MultiScopeProcessor };
+export { MultiScopeProcessor, MULTI_SCOPE_STATUS };

@@ -69,8 +69,10 @@ export function walkParsedQuery(ctsQueryObj) {
     if (['andQuery', 'orQuery'].includes(propName)) {
       const operator = propName.substring(0, propName.length - 5).toUpperCase();
       out[operator] = [];
-      for (const item of ctsQueryObj[propName].queries) {
-        out[operator].push(walkParsedQuery(item));
+      if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
+        for (const item of ctsQueryObj[propName].queries) {
+          out[operator].push(walkParsedQuery(item));
+        }
       }
     } else if (propName === 'notQuery') {
       out.NOT = [walkParsedQuery(ctsQueryObj.notQuery.query)];

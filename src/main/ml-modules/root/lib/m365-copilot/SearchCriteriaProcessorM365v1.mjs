@@ -33,6 +33,7 @@ import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
   SORT_TYPE_SEMANTIC,
+  SortCriteria,
 } from '../SortCriteria.mjs';
 import {
   REG_EXP_NEAR_OPERATOR,
@@ -988,7 +989,7 @@ ${this.generateQueryFromCriteria(
 
   static getFirstNonOptionPropertyName(termValue) {
     let propName = null;
-    if (termValue && typeof termValue === 'object') {
+    if (utils.isObject(termValue)) {
       const propNames = Object.keys(termValue);
       for (let i = 0; i < propNames.length; i++) {
         if (!propNames[i].startsWith('_')) {
@@ -1060,6 +1061,10 @@ ${this.generateQueryFromCriteria(
   // 3. Search string abiding by the LUX-supported subset of ML's search grammar.
   //
   static _requireSearchCriteriaJson(scopeName, searchCriteria) {
+    if (utils.isUndefined(searchCriteria)) {
+      throw new InvalidSearchRequestError(`Search criteria is required.`);
+    }
+
     // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
     if (typeof searchCriteria == 'object') {
       if (scopeName) {
@@ -1189,10 +1194,12 @@ ${this.generateQueryFromCriteria(
           .substring(0, propName.length - 5)
           .toUpperCase();
         searchCriteriaJson[operator] = [];
-        for (const item of ctsQueryObj[propName].queries) {
-          searchCriteriaJson[operator].push(
-            SearchCriteriaProcessorM365v1._walkParsedQuery(item),
-          );
+        if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
+          for (const item of ctsQueryObj[propName].queries) {
+            searchCriteriaJson[operator].push(
+              SearchCriteriaProcessorM365v1._walkParsedQuery(item),
+            );
+          }
         }
       } else if (propName == 'notQuery') {
         searchCriteriaJson.NOT = [
@@ -1251,9 +1258,17 @@ ${this.generateQueryFromCriteria(
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
-    const isMultiScope = sortBinding.subSorts != null;
-    const isSemantic = sortBinding.predicate != null;
-    return SearchCriteriaProcessorM365v1.getSortType(isMultiScope, isSemantic);
+    if (utils.isObject(sortBinding)) {
+      const isMultiScope = sortBinding.subSorts != null;
+      const isSemantic = sortBinding.predicate != null;
+      return SearchCriteriaProcessorM365v1.getSortType(
+        isMultiScope,
+        isSemantic,
+      );
+    }
+    throw new InternalServerError(
+      'sortBinding is required to determine sort type.',
+    );
   }
 
   static getSortTypeFromSortCriteria(sortCriteria) {
@@ -1293,7 +1308,10 @@ ${this.generateQueryFromCriteria(
     this.page = page;
     this.pageLength = pageLength;
     this.pageWith = pageWith;
-    this.sortCriteria = sortCriteria;
+    this.sortCriteria =
+      sortCriteria instanceof SortCriteria
+        ? sortCriteria
+        : new SortCriteria(sortCriteria || '');
     this.valuesOnly = valuesOnly;
 
     this.searchPatternOptions = searchPatternOptions

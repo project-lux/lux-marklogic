@@ -2,6 +2,7 @@
 import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 import { isSearchScopeName } from '../../searchScope.mjs';
 import { SearchPatternOptions } from '../../SearchPatternOptions.mjs';
+import { SortCriteria } from '../../SortCriteria.mjs';
 import * as utils from '../../../utils/utils.mjs';
 
 // UNIT TEST CANDIDATE: scope normalization and precedence
@@ -24,7 +25,10 @@ export function initProcessState(
   self.page = page;
   self.pageLength = pageLength;
   self.pageWith = pageWith;
-  self.sortCriteria = sortCriteria;
+  self.sortCriteria =
+    sortCriteria instanceof SortCriteria
+      ? sortCriteria
+      : new SortCriteria(sortCriteria || '');
   self.valuesOnly = valuesOnly;
 
   self.searchPatternOptions = searchPatternOptions

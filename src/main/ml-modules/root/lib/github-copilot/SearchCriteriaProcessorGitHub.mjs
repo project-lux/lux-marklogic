@@ -33,6 +33,7 @@ import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
   SORT_TYPE_SEMANTIC,
+  SortCriteria,
 } from '../SortCriteria.mjs';
 import {
   REG_EXP_NEAR_OPERATOR,
@@ -48,7 +49,10 @@ import * as utils from '../../utils/utils.mjs';
 
 // New internal handler classes
 import { ProcessorConfig } from './search-criteria/ProcessorConfig.mjs';
-import { MultiScopeProcessor } from './search-criteria/MultiScopeProcessor.mjs';
+import {
+  MultiScopeProcessor,
+  MULTI_SCOPE_STATUS,
+} from './search-criteria/MultiScopeProcessor.mjs';
 import { CtsQueryBuilder } from './search-criteria/CtsQueryBuilder.mjs';
 
 // Once supported, we want to stop calculating scores.
@@ -121,7 +125,10 @@ const SearchCriteriaProcessorGitHub = class {
     this.page = page;
     this.pageLength = pageLength;
     this.pageWith = pageWith;
-    this.sortCriteria = sortCriteria;
+    this.sortCriteria =
+      sortCriteria instanceof SortCriteria
+        ? sortCriteria
+        : new SortCriteria(sortCriteria || '');
     this.valuesOnly = valuesOnly;
     this.searchPatternOptions = searchPatternOptions
       ? searchPatternOptions
@@ -175,11 +182,14 @@ const SearchCriteriaProcessorGitHub = class {
         processParams,
       );
 
-      if (result) {
+      if (result.status === MULTI_SCOPE_STATUS.CONTINUE_NORMAL_PROCESSING) {
+        // Empty OR array - continue with normal processing to trigger validation error
+        // Fall through to normal query generation
+      } else if (result.status === MULTI_SCOPE_STATUS.QUERY_BUILT) {
         // Multi-scope processor built query string
-        this.ctsQueryStr = result;
+        this.ctsQueryStr = result.queryString;
         return;
-      } else {
+      } else if (result.status === MULTI_SCOPE_STATUS.RECURSION_USED) {
         // Multi-scope processor recursed, we're done
         return;
       }
@@ -856,7 +866,7 @@ const SearchCriteriaProcessorGitHub = class {
 
   static getFirstNonOptionPropertyName(termValue) {
     let propName = null;
-    if (termValue && typeof termValue == 'object') {
+    if (utils.isObject(termValue)) {
       const propNames = Object.keys(termValue);
       for (let i = 0; i < propNames.length; i++) {
         if (!propNames[i].startsWith('_')) {
@@ -928,6 +938,10 @@ const SearchCriteriaProcessorGitHub = class {
   //   3. Search string abiding by the LUX-supported subset of ML's search grammar.
   //
   static _requireSearchCriteriaJson(scopeName, searchCriteria) {
+    if (utils.isUndefined(searchCriteria)) {
+      throw new InvalidSearchRequestError(`Search criteria is required.`);
+    }
+
     // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
     if (typeof searchCriteria == 'object') {
       if (scopeName) {
@@ -1068,10 +1082,12 @@ const SearchCriteriaProcessorGitHub = class {
           .substring(0, propName.length - 5)
           .toUpperCase();
         searchCriteriaJson[operator] = [];
-        for (const item of ctsQueryObj[propName].queries) {
-          searchCriteriaJson[operator].push(
-            SearchCriteriaProcessorGitHub._walkParsedQuery(item),
-          );
+        if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
+          for (const item of ctsQueryObj[propName].queries) {
+            searchCriteriaJson[operator].push(
+              SearchCriteriaProcessorGitHub._walkParsedQuery(item),
+            );
+          }
         }
       } else if (propName == 'notQuery') {
         searchCriteriaJson.NOT = [
@@ -1133,11 +1149,18 @@ const SearchCriteriaProcessorGitHub = class {
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
-    const isMultiScope = sortBinding.subSorts != null;
-    const isSemantic = sortBinding.predicate != null;
-    return SearchCriteriaProcessorGitHub.getSortType(isMultiScope, isSemantic);
+    if (utils.isObject(sortBinding)) {
+      const isMultiScope = sortBinding.subSorts != null;
+      const isSemantic = sortBinding.predicate != null;
+      return SearchCriteriaProcessorGitHub.getSortType(
+        isMultiScope,
+        isSemantic,
+      );
+    }
+    throw new InternalServerError(
+      'sortBinding is required to determine sort type.',
+    );
   }
-
   static getSortTypeFromSortCriteria(sortCriteria) {
     const isMultiScope = sortCriteria.hasMultiScopeSortOption();
     const isSemantic = sortCriteria.hasSemanticSortOption();

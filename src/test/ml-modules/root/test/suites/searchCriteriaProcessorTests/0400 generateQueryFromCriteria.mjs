@@ -1,10 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
-import {
-  InvalidSearchRequestError,
-  InternalServerError,
-} from '/lib/errorClasses.mjs';
 
 const LIB = '0400 generateQueryFromCriteria.mjs';
 console.log(`${LIB}: starting.`);

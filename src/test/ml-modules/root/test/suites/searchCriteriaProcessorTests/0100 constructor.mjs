@@ -1,6 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { isUndefined } from '/utils/utils.mjs';
 
 const LIB = '0100 constructor.mjs';
 console.log(`${LIB}: starting.`);
@@ -193,10 +194,10 @@ for (const scenario of scenarios) {
       ),
     );
     assertions.push(
-      testHelperProxy.assertEqual(
-        undefined,
-        actual.ctsQueryStrWithTokens,
-        'ctsQueryStrWithTokens should be undefined before process() is called',
+      testHelperProxy.assertTrue(
+        isUndefined(actual.ctsQueryStrWithTokens) ||
+          actual.ctsQueryStrWithTokens === '',
+        'ctsQueryStrWithTokens should be undefined or an empty string before process() is called',
       ),
     );
     assertions.push(

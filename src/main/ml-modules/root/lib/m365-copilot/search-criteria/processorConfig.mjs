@@ -40,7 +40,7 @@ export function initProcessState(
   // reset per-invocation fields
   self.criteriaCnt = 0;
   self.ignoredTerms = [];
-  self.ctsQueryTemplate = '';
+  self.ctsQueryStrWithTokens = '';
   self.ctsQueryStr = '';
   self.values = [];
 }

@@ -9,6 +9,14 @@ echo "Date: $(date)"
 echo "========================================="
 
 echo
+echo "--- OPERATING SYSTEM ---"
+echo "OS Release Information:"
+cat /etc/os-release
+echo
+echo "Available Updates:"
+yum check-update 2>/dev/null || echo "yum not available or no updates found"
+echo
+
 echo "--- PROCESSOR INFORMATION ---"
 echo
 echo "CPU Cores/Threads:"
@@ -52,6 +60,11 @@ cat /proc/meminfo | grep "HugePages_Total"
 echo
 echo "Huge Page Size:"
 grep Hugepagesize /proc/meminfo
+echo
+
+echo "--- DISK SPACE ---"
+echo "Disk usage (human readable):"
+df -h
 echo
 
 echo "--- FILE DESCRIPTOR LIMITS ---"

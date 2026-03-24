@@ -10,6 +10,11 @@ echo "========================================="
 
 echo
 echo "--- PROCESSOR INFORMATION ---"
+echo
+echo "CPU Cores/Threads:"
+echo "Total processing units: $(nproc)"
+lscpu | grep -E '^CPU\(s\):|^Thread\(s\) per core:|^Core\(s\) per socket:|^Socket\(s\):'
+echo
 echo "CPU MHz (Intel):"
 grep MHz /proc/cpuinfo | head -5
 echo
@@ -17,6 +22,10 @@ echo "# For Graviton processors, use: sudo dmidecode -t processor | grep -E \"Sp
 echo
 
 echo "--- MEMORY & SWAP INFORMATION ---"
+echo "Total RAM:"
+free -h | grep Mem
+grep MemTotal /proc/meminfo
+echo
 echo "Swap Space:"
 swapon --show
 echo

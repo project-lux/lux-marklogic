@@ -1,8 +1,8 @@
 # Flux documentation: https://marklogic.github.io/flux/
 --host                 "host.docker.internal"
 --port                 "8003"
---auth-type            "BASIC"
 --database             "lux-content"
 --username             ""
-# Needed for shared environments but not local developer environments.
+# For HTTPS-enabled envs, change to BASIC and uncomment ssl-protocol.
+--auth-type            "DIGEST"
 #--ssl-protocol         "TLSv1.2"

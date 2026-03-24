@@ -16,7 +16,7 @@ import { SearchCriteriaProcessorOriginal } from './SearchCriteriaProcessorOrigin
 // 2 = SearchCriteriaProcessorM365v1
 // 3 = SearchCriteriaProcessorM365v2
 // 4 = SearchCriteriaProcessorOriginal
-const implementationChoice = 2;
+const implementationChoice = 3;
 
 const SearchCriteriaProcessor = class {
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {

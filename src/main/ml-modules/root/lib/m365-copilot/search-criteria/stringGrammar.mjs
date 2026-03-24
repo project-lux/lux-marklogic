@@ -5,6 +5,7 @@ import {
   SEARCH_GRAMMAR_OPERATORS,
 } from '../../appConstants.mjs';
 import { isSearchScopeName } from '../../searchScope.mjs';
+import * as utils from '../../../utils/utils.mjs';
 
 // UNIT TEST CANDIDATE: operator normalization, bracket removal, NEAR downcase, colon quoting
 export function adjustSearchString(givenQueryString) {

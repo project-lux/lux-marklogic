@@ -6,7 +6,7 @@
   "port": %%mlTestRestPort%%,
   "content-database": "%%tenantTestContentDatabase%%",
   "modules-database": "%%tenantTestModulesDatabase%%",
-  "authentication": "digest",
+  "authentication": "%%mlAuthentication%%",
   "internal-security": "true",
   "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
   "rewrite-resolves-globally": true,

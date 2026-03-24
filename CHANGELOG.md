@@ -8,6 +8,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- The default authentication scheme of all application servers is now controlled by the `mlAuthentication` build property.  Set to `basic` for HTTPS-enabled environments and `digest` for HTTP environments.  For MyCollections-enabled deployments, the [oauth ml-config directory](./src/main/ml-config/oauth/) should be included and will override the primary REST servers to use the `oauth` authentication scheme. ([#666](https://github.com/project-lux/lux-marklogic/issues/666))
+
 ### Removed
   
 ### Fixed

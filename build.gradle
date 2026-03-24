@@ -373,6 +373,7 @@ task addSupportForExecutingWithServiceAccounts() {
 mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
+// Implementation supports both the basic and digest auth schemes.
 task ensureTenantStatusDocumentExists() {
   doFirst {
     println ""
@@ -392,12 +393,10 @@ task ensureTenantStatusDocumentExists() {
     def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
 
     try {
-      // Use Apache HttpClient 5.x which handles digest auth properly (unlike Java's HttpURLConnection)
       def httpClientBuilder = HttpClients.custom()
         .disableConnectionState()  // Force new connections
         .disableAutomaticRetries() // Prevent connection reuse issues
       
-      // Set up digest authentication
       def credentialsProvider = new BasicCredentialsProvider()
       credentialsProvider.setCredentials(
         new AuthScope(null, -1),

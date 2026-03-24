@@ -1,7 +1,7 @@
 # Flux documentation: https://marklogic.github.io/flux/
 --host                 "host.docker.internal"
 --port                 "8003"
---auth-type            "DIGEST"
+--auth-type            "BASIC"
 --database             "lux-content"
 --username             ""
 # Needed for shared environments but not local developer environments.

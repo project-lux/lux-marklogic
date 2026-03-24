@@ -14,6 +14,7 @@ matchCount=0
 noMatchCount=0
 
 # Connection settings
+scheme=basic
 protocol=https
 host=OMITTED
 port=8004
@@ -35,7 +36,7 @@ while read line; do
 
   # Get estimate
   # TODO: Gracefully handle requests that time out.
-  estimate=$(curl --digest --insecure \
+  estimate=$(curl --$scheme --insecure \
     -u "$username":"$password" \
     -F "scope=${scope}" \
     -F "q=${q}" \
@@ -55,7 +56,7 @@ while read line; do
 
   # Get last page, filtered
   # TODO: Gracefully handle requests that time out.
-  pageCount=$(curl --digest --insecure \
+  pageCount=$(curl --$scheme --insecure \
     -u "$username":"$password" \
     "$searchUrl" \
     -F "filterResults=true" \

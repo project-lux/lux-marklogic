@@ -14,8 +14,12 @@ matchCount=0
 noMatchCount=0
 
 # Connection settings
-scheme=basic
 protocol=https
+if [ "$protocol" = "https" ]; then
+  scheme=basic
+else
+  scheme=digest
+fi
 host=OMITTED
 port=8004
 username=lux_consumer_dev

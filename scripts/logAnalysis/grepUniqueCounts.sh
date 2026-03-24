@@ -106,11 +106,11 @@ GREP_BIN=${GREP_BIN:-grep}
 # 1) grep -o emits only the matched substrings
 # 2) optional INNER extraction via awk (ERE capture) to extract subgroup
 # 3) sort | uniq -c for counts
-# 4) final sort: by count (-nr) or by match (-k2 -r)
+# 4) final sort: by count (-nr) or by match (-k2 -nr)
 
 # Set sort flags based on sort preference
 if $SORT_BY_MATCH; then
-  SORT_FLAGS=(-k2 -r)
+  SORT_FLAGS=(-k2 -nr)
 else
   SORT_FLAGS=(-nr)
 fi

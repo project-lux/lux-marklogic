@@ -61,6 +61,13 @@ echo
 echo "Huge Page Size:"
 grep Hugepagesize /proc/meminfo
 echo
+echo "Per MarkLogic:"
+grep "Huge Pages" /var/opt/MarkLogic/Logs/ErrorLog.txt || echo "MarkLogic not started today"
+echo
+
+echo "--- GROUP-LEVEL CACHE SETTINGS ---"
+grep "Debug: Initializing" /var/opt/MarkLogic/Logs/ErrorLog.txt || echo "MarkLogic not started today"
+echo
 
 echo "--- DISK SPACE ---"
 echo "Disk usage (human readable):"

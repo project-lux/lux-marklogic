@@ -2,6 +2,6 @@
   "server-name": "App-Services",
   "server-type": "http",
   "enabled": "true",
-  "authentication": "digest",
+  "authentication": "%%mlAuthentication%%",
   "internal-security": "true"
 }

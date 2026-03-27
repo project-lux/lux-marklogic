@@ -1,0 +1,6 @@
+{
+  "server-name": "%%mlAppName%%-request-group-2",
+  "authentication": "oauth",
+  "internal-security": "false",
+  "external-security": ["%%oauthName%%"]
+}

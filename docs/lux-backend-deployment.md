@@ -213,6 +213,8 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
     ```
     # Before running the enableSSL task
+    mlAuthentication=digest
+
     mlManageScheme=http
     mlManageSimpleSsl=false
     mlAdminScheme=http
@@ -226,6 +228,8 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
     ```
     # After running the enableSSL task
+    mlAuthentication=basic
+
     mlManageScheme=https
     mlManageSimpleSsl=true
     mlAdminScheme=https
@@ -456,7 +460,7 @@ Available application servers and their ports may vary by environment.  The outc
 | `mlAdminPort` | 8001 | HTTP | Yes | MarkLogic Admin Console. |
 | `mlManagePort` | 8002 | REST | Yes | Management REST API, Monitoring History, and Monitoring Dashboard.  Also used by ML Gradle.  |
 | `mlRestPort` | 8003 | REST | Yes | 1 of 2 application servers intended to be used by the middle tier.  Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
-| `mlDeployPort` | 8004 | REST | Yes | Use this application server when making deployment changes, inclusive of Gradle tasks, blue/green switches, and to consume the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out).  Even when the My Collections feature is enabled, the authentication scheme of this application server will remain digest. |
+| `mlDeployPort` | 8004 | REST | Yes | Use this application server when making deployment changes, inclusive of Gradle tasks, blue/green switches, and to consume the [Scale Out endpoint](/docs/lux-backend-api-usage.md#scale-out).  Even when the My Collections feature is enabled, the authentication scheme of this application server will remain basic (HTTPS) or digest (HTTP). |
 | `mlXdbcPort` | 8005 | XDBC | Yes | Interact with the main database via XCC, as CoRB and MLCP do. |
 | `mlRestPort2` | 8006 | REST | Yes | 2 of 2 application servers intended to be used by the middle tier.  Offers the [LUX Backend API](/docs/lux-backend-api-usage.md#lux-backend-api).  For additional connection information, see [Authentication](/docs/lux-backend-api-usage.md#authentication). |
 | `mlTestRestPort` | 8010 | REST | No | Unit testing. Locally, with this port, the URL is http://localhost:8010/test/default.xqy |

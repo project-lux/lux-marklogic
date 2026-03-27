@@ -88,17 +88,6 @@ task startWithAppServicesPort() {
   mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
 }
 
-// Change ML app config's rest port to that of the app services port.  See startWithAppServicesPort's
-// comment for details.
-task switchToAppServicesPort() {
-  doFirst {
-    println ''
-    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
-    println ''
-    mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
-  }
-}
-
 // Change ML app config's rest port to that of the tenant's deploy app server port.  See
 // startWithAppServicesPort's comment for details.
 task switchToDeployPort() {

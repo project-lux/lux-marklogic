@@ -248,23 +248,17 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
     * Update one or more locally encrypted passwords.  See step no. 6, above.
     * Update the target environment's SSL properties.  See step no. 7, above.
 
-10. If unit tests are to be enabled and the test content database does not yet exist, manually create and partially configure it.  The underlying reason why this seemingly can't be done with ML Gradle has not been determined.  Substitute "lux" for your tenant name.
-
-    * Database name: "lux-test-content"
-    * Schemas database: "lux-schemas"
-    * The next step will create and attach a forest.
-
-11. For new environments (or when enabling unit testing for an existing environment), the content database must be created before amps can be defined. Run:
+10. For new environments (or when enabling unit testing for an existing environment), the content database must be created before amps can be defined. Run:
 
     `./gradlew mlDeployDatabases -i -PenvironmentName=[name]`
 
-12. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
+11. **Restricted to administrators:** If a new environment, the security configuration changed since the previous deployment, or you would otherwise like to re-deploy the security configuration, have a user with MarkLogic's `admin` role run the following.
 
     `./gradlew mlDeploySecurity -i -PenvironmentName=[name]`
 
     Note: The `setBanner` Gradle task is configured to run after `mlDeploySecurity` as it too requires an admin.  The `setBanner` Gradle task may also be called directly.
 
-13. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
+12. **Restricted to administrators:** Create local user accounts, if needed.  For example, in a local environment, this is when you would use the admin credentials to create a user account that is granted the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role, such that you may execute most of the rest of this procedure using that account.  In a shared environment that is still using local user accounts, this is when you may want to use `scripts/admin/createUsers.sjs`.
 
 
 12. **Restricted to administrators:** If the indexing configuration is changing, decide whether to re-load or re-index the database.
@@ -291,7 +285,21 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
     It is possible for the modules database to go offline when attempting to clear it, regardless of using ML Gradle or the admin console. More specifically, its forest gets stuck in what should be a temporary status. To resolve, restart the host the forest is on, then attempt the clear operation a second time. We're yet to see this issue happen during the second attempt.
 
-15. Run the following Gradle task to the non-security configuration, the code, and any related dependencies.
+15. To change from the **digest to basic** authentication scheme:
+        
+    - Set `mlManageAuthentication` to `digest`
+        
+    - Set `mlAuthentication` to `basic`
+
+    - `./gradlew mlDeployServers -i -PenvironmentName=[name]`
+
+    - It will begin to fail after the manage app server changes to `basic` (its configuration file includes `%%mlAuthentication%%`).  This is expected.
+        
+    - Remove `mlManageAuthentication` from the properties file.
+
+    - Move on to the next step.
+
+16. Run the following Gradle task to the non-security configuration, the code, and any related dependencies.
 
     Existing environments:
 
@@ -301,23 +309,17 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
     `./gradlew performBaseDeployment -i -PskipDatabases -PenvironmentName=[name]`
 
-    This is a convenience task that runs several others.  When it fails, the tasks before the specific one that failed would have completed successfully.  We have noted a couple scenarios when this task has failed partway through.  One is a timeout was exceeded; to get around that, temporarily increase the default time out on the Manage app server (port 8002).  The other was when the target environment was still creating an index required by a different subtask. It may be necessary to wait for the re-indexing job to complete before moving on; however, with this particular example (and possibly only instance), one could manually run other subtasks of `performBaseDeployment` and double back for the failed subtask after re-indexing is complete.
+17. Verify all fields and field range indexes referenced by the code are offered by the database.  See [Check for Mismatched Indexing Configuration](/docs/lux-backend-database-indexing.md#check-for-mismatched-indexing-configuration) for instructions.
 
-    The entire `performBaseDeployment` task and sub-tasks is expected to take about 6 minutes.
+18. If you wish to determine whether the deployment kicked off a database indexing job, log into the admin console and check the database's status page.  As noted above, the [LUX backend search endpoint](/docs/lux-backend-api-usage.md#search) may return an error until all indexes it depends on become available.
 
-16. Verify all fields and field range indexes referenced by the code are offered by the database.  See [Check for Mismatched Indexing Configuration](/docs/lux-backend-database-indexing.md#check-for-mismatched-indexing-configuration) for instructions.
-
-17. If you wish to determine whether the deployment kicked off a database indexing job, log into the admin console and check the database's status page.  As noted above, the [LUX backend search endpoint](/docs/lux-backend-api-usage.md#search) may return an error until all indexes it depends on become available.
-
-18. **This step may be skipped.  Synonym support is disabled in LUX and the only content in the ml-data directory is the sample thesaurus.**
+19. **This step may be skipped.  Synonym support is disabled in LUX and the only content in the ml-data directory is the sample thesaurus.**
 
     Load the content of the [/src/main/ml-data](/src/main/ml-data) directory, which includes deploying the thesauri. Should you encounter an issue, please see [Deploy Thesauri](#deploy-thesauri).
 
     `./gradlew mlLoadData -PenvironmentName=[name]`
 
-19. Need to load the rest/most of the data?  Check out [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md).
-
-20. If you executed the above step, verify the [Steps After Importing Data](/docs/lux-backend-import-data.md#steps-after-importing-data) were executed.
+20. Need to load the rest/most of the data?  Check out [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md).
 
 21. For environments with unit tests enabled (not Blue or Green), swap out the host and possibly port in http://localhost:8010/test/default.xqy, log in as [%%mlAppName%%-unit-tester](/src/test/ml-config/security/users/unit-test-user.json) using the value of the encrypted property named `unitTesterPassword`, and run the tests. Tests do not presently work when initiated by the `mlUnitTest` Gradle task.
 

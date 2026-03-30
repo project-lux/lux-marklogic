@@ -368,7 +368,6 @@ const SearchCriteriaProcessorM365v2 = class {
   //#endregion
 
   //#region Private instance methods
-  // UNIT TEST CANDIDATE: scope normalization and precedence
   _initProcessState({
     scopeName,
     allowMultiScope,

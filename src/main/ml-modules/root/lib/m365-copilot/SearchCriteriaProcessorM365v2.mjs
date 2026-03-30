@@ -48,7 +48,7 @@ const MAXIMUM_PAGE_WITH_LENGTH = 100000;
 const SearchCriteriaProcessorM365v2 = class {
   //#region Constructor(s)
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {
-    // requestOptions preserved for patterns
+    // Capture all constructor parameters as request options, enabling search patterns to utilize.
     this.requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
     this.searchTermsConfig = getSearchTermsConfig();
 
@@ -195,6 +195,8 @@ const SearchCriteriaProcessorM365v2 = class {
     }
   }
 
+  // Certain search patterns implement an option compelling them to return values versus a CTS query.
+  // This was introduced in support of related lists.
   getValues() {
     return this.values;
   }
@@ -217,6 +219,14 @@ const SearchCriteriaProcessorM365v2 = class {
     );
   }
 
+  /**
+   * Public: resolve tokens within query string. This assists in the support of providing estimates for additional search scopes.
+   *
+   * @param {Array} fieldsArr - Array of field names to apply within the returned query string.
+   * @param {Array} predicatesArr - Array of predicates to apply within the returned query string.
+   * @param {Array} typesArr - Array of types to apply within the returned query string.
+   * @returns {String} Query string after applying parameter values.
+   */
   resolveTokens(fieldsArr, predicatesArr, typesArr) {
     const tokens = [
       { pattern: TOKEN_FIELDS, value: fieldsArr, scalarType: 'string' },
@@ -449,7 +459,10 @@ const SearchCriteriaProcessorM365v2 = class {
 
   _getSemanticSortResults() {
     xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
-    // TODO: Consider making oneSortValuePerResult configurable via sortCriteria in a follow-up.
+
+    // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
+    // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
+    // For now, this defaults to true. Feel free to parameterize if desired.
     const oneSortValuePerResult = true;
 
     const { predicate, indexReference, order } =
@@ -457,10 +470,14 @@ const SearchCriteriaProcessorM365v2 = class {
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),
     );
+    // get cts results into an optic plan.
+    // add a column for the document uri for each result, which we will use later
     const ctsPlan = op
       .fromSearch(ctsQuery)
       .joinDocUri('uri', op.fragmentIdCol('fragmentId'));
 
+    // create a plan from all of the triples linked to our predicate
+    // make sure we get a fragmentId for each triple
     const triplePlan = op.fromTriples(
       op.pattern(
         op.col('subjectIri'),
@@ -470,19 +487,29 @@ const SearchCriteriaProcessorM365v2 = class {
       ),
     );
 
+    // join the triples to the cts results where they have matching fragmentId
     let semanticSortPlan = ctsPlan.joinLeftOuter(triplePlan);
 
+    // create a plan where each row has the following -
+    // - fieldDocIri: iri of a document
+    // - sortByMe: indexed value from that document, which we will use for sorting
     const indexedFieldPlan = op.fromLexicons({
       fieldDocIri: cts.iriReference(),
       sortByMe: cts.fieldReference(indexReference),
     });
 
+    // Add the sortByMe values to the rows, where the index's fieldDocIri matches the triple's objectIri
     semanticSortPlan = semanticSortPlan.joinLeftOuter(
       indexedFieldPlan,
       op.on('objectIri', 'fieldDocIri'),
     );
 
+    // The following is necessary when one wants each search result represented once yet has more than one triple with sortPredicate
+    // (e.g., co-produced items) or multiple names to sort on (e.g., sort names in multiple languages).
     if (oneSortValuePerResult === true) {
+      // When a search value has multiple values to sort by, they prevail in the following order:
+      // - for multiple triples: whichever objectIri has comes first in ascending string order
+      // - for multiple indexed names: whichever sortByMe comes first in ascending string order
       semanticSortPlan = semanticSortPlan.groupBy(
         ['uri'],
         [
@@ -692,6 +719,8 @@ const SearchCriteriaProcessorM365v2 = class {
     }
   }
 
+  // Protect from a repo-wide search as repo-wide facets are expensive to calculate, even when
+  // applying a scope search.
   _requireCriteria() {
     if (
       this.criteriaCnt < 1 ||

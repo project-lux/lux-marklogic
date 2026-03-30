@@ -211,14 +211,13 @@ const SearchCriteriaProcessorM365v2 = class {
     mustReturnCtsQuery = false,
     returnTrueForUnusableTerms = true,
   ) {
-    return generateQueryFromCriteria(
-      this,
+    return generateQueryFromCriteria(this, {
       scopeName,
       searchCriteria,
       parentSearchTerm,
       mustReturnCtsQuery,
       returnTrueForUnusableTerms,
-    );
+    });
   }
 
   /**

@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { adjustSearchString } from '/lib/m365-copilot/search-criteria/stringGrammar.mjs';
+import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0260 adjustSearchString.mjs';
 console.log(`${LIB}: starting.`);
@@ -265,7 +265,9 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    return adjustSearchString(scenario.input.queryString);
+    return SearchCriteriaProcessor.adjustSearchString(
+      scenario.input.queryString,
+    );
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);

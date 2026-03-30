@@ -62,6 +62,10 @@ const SearchCriteriaProcessor = class {
     );
   }
 
+  static adjustSearchString(queryString) {
+    return SearchCriteriaProcessor.getClass().adjustSearchString(queryString);
+  }
+
   static evalQueryString(queryStr) {
     return SearchCriteriaProcessor.getClass().evalQueryString(queryStr);
   }

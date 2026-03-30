@@ -36,7 +36,6 @@ export function generateQueryFromCriteria(
   mustReturnCtsQuery = false,
   returnTrueForUnusableTerms = true,
 ) {
-  // UNIT TEST CANDIDATE: dispatch across AND/OR/NOT/BOOST vs terminal
   self.constructor.requireSearchCriteriaObject(searchCriteria);
 
   // Group operators
@@ -157,7 +156,6 @@ function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
   return `cts.${kind}Query([${pieces.join(', ')}])`;
 }
 
-// UNIT TEST CANDIDATE: quoted vs split tokenization, multi-colon handling
 function _tokenizeSearchTermValue(value, leaveAsIs) {
   if (leaveAsIs) return [value];
   if (utils.isString(value)) {
@@ -330,7 +328,6 @@ function _parseAndValidateTerm(
 }
 
 function _getPartialChildSearchTermInfo(self, scopeName, termValue) {
-  // UNIT TEST CANDIDATE: heuristics for willReturnCtsQuery/valueType
   const hasGroup = _hasGroup(termValue);
   let willReturnCtsQuery = hasGroup;
   let valueType = TYPE_GROUP;

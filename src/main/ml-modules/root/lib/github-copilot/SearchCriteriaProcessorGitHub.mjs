@@ -1015,7 +1015,7 @@ const SearchCriteriaProcessorGitHub = class {
     }
     return {
       _scope: scopeName,
-      ...SearchCriteriaProcessorGitHub._walkParsedQuery(ctsQueryObj),
+      ...SearchCriteriaProcessorGitHub.walkParsedQuery(ctsQueryObj),
     };
   }
 
@@ -1074,7 +1074,7 @@ const SearchCriteriaProcessorGitHub = class {
     return adjustedSearchString;
   }
 
-  static _walkParsedQuery(ctsQueryObj) {
+  static walkParsedQuery(ctsQueryObj) {
     const searchCriteriaJson = {};
     for (const propName of Object.keys(ctsQueryObj)) {
       if (['andQuery', 'orQuery'].includes(propName)) {
@@ -1085,25 +1085,25 @@ const SearchCriteriaProcessorGitHub = class {
         if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
           for (const item of ctsQueryObj[propName].queries) {
             searchCriteriaJson[operator].push(
-              SearchCriteriaProcessorGitHub._walkParsedQuery(item),
+              SearchCriteriaProcessorGitHub.walkParsedQuery(item),
             );
           }
         }
       } else if (propName == 'notQuery') {
         searchCriteriaJson.NOT = [
-          SearchCriteriaProcessorGitHub._walkParsedQuery(
+          SearchCriteriaProcessorGitHub.walkParsedQuery(
             ctsQueryObj.notQuery.query,
           ),
         ];
       } else if (propName == 'boostQuery') {
         searchCriteriaJson.BOOST = [];
         searchCriteriaJson.BOOST.push(
-          SearchCriteriaProcessorGitHub._walkParsedQuery(
+          SearchCriteriaProcessorGitHub.walkParsedQuery(
             ctsQueryObj.boostQuery.matchingQuery,
           ),
         );
         searchCriteriaJson.BOOST.push(
-          SearchCriteriaProcessorGitHub._walkParsedQuery(
+          SearchCriteriaProcessorGitHub.walkParsedQuery(
             ctsQueryObj.boostQuery.boostingQuery,
           ),
         );

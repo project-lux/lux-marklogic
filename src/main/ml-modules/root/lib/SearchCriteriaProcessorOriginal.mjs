@@ -1139,7 +1139,7 @@ const SearchCriteriaProcessorOriginal = class {
     }
     return {
       _scope: scopeName,
-      ...SearchCriteriaProcessorOriginal._walkParsedQuery(ctsQueryObj),
+      ...SearchCriteriaProcessorOriginal.walkParsedQuery(ctsQueryObj),
     };
   }
 
@@ -1196,7 +1196,7 @@ const SearchCriteriaProcessorOriginal = class {
     return adjustedSearchString;
   }
 
-  static _walkParsedQuery(ctsQueryObj) {
+  static walkParsedQuery(ctsQueryObj) {
     const searchCriteriaJson = {};
     for (const propName of Object.keys(ctsQueryObj)) {
       if (['andQuery', 'orQuery'].includes(propName)) {
@@ -1207,25 +1207,25 @@ const SearchCriteriaProcessorOriginal = class {
         if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
           for (const item of ctsQueryObj[propName].queries) {
             searchCriteriaJson[operator].push(
-              SearchCriteriaProcessorOriginal._walkParsedQuery(item),
+              SearchCriteriaProcessorOriginal.walkParsedQuery(item),
             );
           }
         }
       } else if (propName == 'notQuery') {
         searchCriteriaJson.NOT = [
-          SearchCriteriaProcessorOriginal._walkParsedQuery(
+          SearchCriteriaProcessorOriginal.walkParsedQuery(
             ctsQueryObj.notQuery.query,
           ),
         ];
       } else if (propName == 'boostQuery') {
         searchCriteriaJson.BOOST = [];
         searchCriteriaJson.BOOST.push(
-          SearchCriteriaProcessorOriginal._walkParsedQuery(
+          SearchCriteriaProcessorOriginal.walkParsedQuery(
             ctsQueryObj.boostQuery.matchingQuery,
           ),
         );
         searchCriteriaJson.BOOST.push(
-          SearchCriteriaProcessorOriginal._walkParsedQuery(
+          SearchCriteriaProcessorOriginal.walkParsedQuery(
             ctsQueryObj.boostQuery.boostingQuery,
           ),
         );

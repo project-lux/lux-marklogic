@@ -1187,7 +1187,7 @@ ${this.generateQueryFromCriteria(
 
     return {
       _scope: scopeName,
-      ...SearchCriteriaProcessorM365v1._walkParsedQuery(ctsQueryObj),
+      ...SearchCriteriaProcessorM365v1.walkParsedQuery(ctsQueryObj),
     };
   }
 
@@ -1237,7 +1237,7 @@ ${this.generateQueryFromCriteria(
   }
 
   // UNIT TEST CANDIDATE: correct mapping of cts.parse() object to our JSON grammar
-  static _walkParsedQuery(ctsQueryObj) {
+  static walkParsedQuery(ctsQueryObj) {
     const searchCriteriaJson = {};
     for (const propName of Object.keys(ctsQueryObj)) {
       if (['andQuery', 'orQuery'].includes(propName)) {
@@ -1248,25 +1248,25 @@ ${this.generateQueryFromCriteria(
         if (utils.isNonEmptyArray(ctsQueryObj[propName].queries)) {
           for (const item of ctsQueryObj[propName].queries) {
             searchCriteriaJson[operator].push(
-              SearchCriteriaProcessorM365v1._walkParsedQuery(item),
+              SearchCriteriaProcessorM365v1.walkParsedQuery(item),
             );
           }
         }
       } else if (propName == 'notQuery') {
         searchCriteriaJson.NOT = [
-          SearchCriteriaProcessorM365v1._walkParsedQuery(
+          SearchCriteriaProcessorM365v1.walkParsedQuery(
             ctsQueryObj.notQuery.query,
           ),
         ];
       } else if (propName == 'boostQuery') {
         searchCriteriaJson.BOOST = [];
         searchCriteriaJson.BOOST.push(
-          SearchCriteriaProcessorM365v1._walkParsedQuery(
+          SearchCriteriaProcessorM365v1.walkParsedQuery(
             ctsQueryObj.boostQuery.matchingQuery,
           ),
         );
         searchCriteriaJson.BOOST.push(
-          SearchCriteriaProcessorM365v1._walkParsedQuery(
+          SearchCriteriaProcessorM365v1.walkParsedQuery(
             ctsQueryObj.boostQuery.boostingQuery,
           ),
         );

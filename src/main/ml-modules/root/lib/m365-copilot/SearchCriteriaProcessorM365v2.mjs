@@ -18,6 +18,7 @@ import { generateQueryFromCriteria } from './search-criteria/criteriaEngine.mjs'
 import {
   adjustSearchString,
   translateStringGrammarToJSON,
+  walkParsedQuery,
 } from './search-criteria/stringGrammar.mjs';
 import {
   getSearchScopeFields,
@@ -281,6 +282,11 @@ const SearchCriteriaProcessorM365v2 = class {
   // Pass-through method in support of unit testing.
   static adjustSearchString(givenQueryString) {
     return adjustSearchString(givenQueryString);
+  }
+
+  // Pass-through method in support of unit testing.
+  static walkParsedQuery(ctsQueryObj) {
+    return walkParsedQuery(ctsQueryObj);
   }
 
   static getFirstNonOptionPropertyName(termValue) {

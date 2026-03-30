@@ -194,6 +194,7 @@ function _parseAndValidateTerm(
       } else if (!searchTerm.hasName()) {
         const termName = key;
         searchTerm.setName(termName);
+        // Need to check for the property's existence as zero is a valid value.
         if (!searchCriteria[termName]) {
           throw new InvalidSearchRequestError(
             `the '${termName}' term requires a value.`,
@@ -330,6 +331,8 @@ function _parseAndValidateTerm(
   }
 
   _cleanTermValues(searchTerm);
+
+  // Ignore punctuation-only terms and stop words
   _ignoreIfStopWordOrPunctuationOnly(self, searchTerm);
 
   return searchTerm;
@@ -355,6 +358,7 @@ function _getPartialChildSearchTermInfo(self, scopeName, termValue) {
   return { patternName, valueType, willReturnCtsQuery };
 }
 
+// Get a search term's configuration by scope name and term name. Exception thrown when an invalid combination.
 function _getSearchTermConfig(self, scopeName, termName) {
   const scopedTerms = self.searchTermsConfig[scopeName];
   if (!scopedTerms) {
@@ -374,6 +378,7 @@ function _getSearchTermConfig(self, scopeName, termName) {
 }
 
 function _cleanTermValues(searchTerm) {
+  // Apply sanitization for wildcard strings when dealing with keyword terms
   if (_isKeywordTerm(searchTerm)) {
     searchTerm.setValue(
       sanitizeAndValidateWildcardedStrings(searchTerm.getValue()),

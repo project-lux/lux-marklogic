@@ -129,7 +129,7 @@ const SearchCriteriaProcessorM365v2 = class {
 
     this._requireCriteria();
 
-    // Optional type constraint injection
+    // Conditionally add type constraint, using a token for search scope-specific estimates.
     if (this.includeTypeConstraint) {
       this.ctsQueryStrWithTokens = `cts.andQuery([
         cts.jsonPropertyValueQuery('dataType', ${TOKEN_TYPES}, ['exact']),
@@ -166,7 +166,7 @@ const SearchCriteriaProcessorM365v2 = class {
   }
 
   getCtsQueryStr() {
-    // Preserved: when empty, fall back to cts.parse('') (query object)
+    // Finalize the query
     this.ctsQueryStr =
       this.ctsQueryStr && this.ctsQueryStr.length > 0
         ? this.ctsQueryStr
@@ -234,6 +234,7 @@ const SearchCriteriaProcessorM365v2 = class {
       { pattern: TOKEN_TYPES, value: typesArr, scalarType: 'string' },
     ];
 
+    // Replace tokens within the query string template
     let out = this.ctsQueryStrWithTokens;
     tokens.forEach((t) => {
       const val = Array.isArray(t.value)
@@ -584,6 +585,7 @@ const SearchCriteriaProcessorM365v2 = class {
       searchOptionsArr.push('score-zero');
 
     if (this.pageWith) {
+      // if pageWith is set, find the page that contains the document with the specified ID
       const docToFind = this.pageWith;
       const docs = fn
         .subsequence(
@@ -619,6 +621,7 @@ const SearchCriteriaProcessorM365v2 = class {
         .map((doc) => ({ id: doc.baseURI, type: doc.xpath('/json/type') }));
       return { resultPage: foundDocPage, results };
     } else {
+      // else, pageWith is not set, paginate based on normal page and pageLength
       const docs = fn
         .subsequence(
           cts.search(
@@ -653,7 +656,7 @@ const SearchCriteriaProcessorM365v2 = class {
       SearchCriteriaProcessorM365v2.requireSearchCriteriaArray(orArr);
 
       if (orArr.length === 0) {
-        // Let empty OR arrays fall through to normal processing and validation
+        // if OR array is empty, do nothing, we will try to generate with empty criteria which will throw an error
         this.resolvedSearchCriteria = {};
         return;
       } else if (orArr.length === 1) {
@@ -666,8 +669,8 @@ const SearchCriteriaProcessorM365v2 = class {
         );
         searchCriteriaProcessor.process(
           orArr[0],
-          null,
-          false,
+          null, // search criteria must define scope.
+          false, // reject nested multi scope requests.
           this.searchPatternOptions,
           this.includeTypeConstraint,
           this.page,
@@ -678,6 +681,7 @@ const SearchCriteriaProcessorM365v2 = class {
         );
         this.ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr();
         this.scopeName = searchCriteriaProcessor.scopeName;
+        // return since we are making a new call to this.process()
         return;
       } else {
         const parts = orArr.map((subCriteria) => {
@@ -692,8 +696,8 @@ const SearchCriteriaProcessorM365v2 = class {
           try {
             searchCriteriaProcessor.process(
               subCriteria,
-              null,
-              false,
+              null, // search criteria must define scope.
+              false, // reject nested multi scope requests.
               this.searchPatternOptions,
               this.includeTypeConstraint,
               this.page,
@@ -710,6 +714,7 @@ const SearchCriteriaProcessorM365v2 = class {
         });
 
         this.ctsQueryStr = `cts.orQuery([${parts.join(',')}])`;
+        // return since we have set this.ctsQueryStr based on other calls to searchCriteriaProcessor.process()
         return;
       }
     } else {

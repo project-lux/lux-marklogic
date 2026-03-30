@@ -81,6 +81,10 @@ const SearchCriteriaProcessor = class {
       termValue,
     );
   }
+
+  static walkParsedQuery(ctsQueryObj) {
+    return SearchCriteriaProcessor.getClass().walkParsedQuery(ctsQueryObj);
+  }
 };
 
 export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };

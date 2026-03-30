@@ -40,7 +40,6 @@ function adjustSearchString(givenQueryString) {
   return adjusted;
 }
 
-// UNIT TEST CANDIDATE: end-to-end parse failures and success paths
 function translateStringGrammarToJSON(scopeName, searchCriteria) {
   if (!isSearchScopeName(scopeName)) {
     throw new InvalidSearchRequestError(
@@ -62,7 +61,6 @@ function translateStringGrammarToJSON(scopeName, searchCriteria) {
   };
 }
 
-// UNIT TEST CANDIDATE: mapping shapes from cts.parse to our JSON grammar
 function walkParsedQuery(ctsQueryObj) {
   const out = {};
   for (const propName of Object.keys(ctsQueryObj)) {

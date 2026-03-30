@@ -1,4 +1,4 @@
-// SearchCriteriaProcessorM365v2.js
+//#region Imports
 import op from '/MarkLogic/optic';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import {
@@ -19,18 +19,17 @@ import {
   resolveAndValidateScope,
 } from './search-criteria/processorConfig.mjs';
 import { generateQueryFromCriteria as generateQuery } from './search-criteria/criteriaEngine.mjs';
-import {
-  translateStringGrammarToJSON,
-  adjustSearchString,
-  walkParsedQuery,
-} from './search-criteria/stringGrammar.mjs';
+import { translateStringGrammarToJSON } from './search-criteria/stringGrammar.mjs';
 import {
   getSearchScopeFields,
   getSearchScopePredicates,
   getSearchScopeTypes,
 } from '../searchScope.mjs';
+//#endregion
 
-// Once supported, we want to stop calculating scores.
+//#region Constants
+// TODO: Now that we're ML 12, can and should we set this to none?  Unless made conditional,
+// doing so could be the first non-ML11 compatible change.
 const FROM_SEARCH_OPTIONS = { scoreMethod: 'simple' };
 
 const START_OF_GENERATED_QUERY = `
@@ -41,9 +40,10 @@ const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
 const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");`;
 
 const MAXIMUM_PAGE_WITH_LENGTH = 100000;
+//#endregion
 
 const SearchCriteriaProcessorM365v2 = class {
-  //#region Constructor(s).
+  //#region Constructor(s)
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {
     // requestOptions preserved for patterns
     this.requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
@@ -70,7 +70,7 @@ const SearchCriteriaProcessorM365v2 = class {
   }
   //#endregion
 
-  //#region Public instance methods.
+  //#region Public instance methods
   // Processes and validates search criteria, ending with a fully resolved query.
   process(
     searchCriteria,
@@ -342,7 +342,7 @@ const SearchCriteriaProcessorM365v2 = class {
   }
   //#endregion
 
-  //#region Private instance methods.
+  //#region Private instance methods
   _getMultiScopeSortResults() {
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),

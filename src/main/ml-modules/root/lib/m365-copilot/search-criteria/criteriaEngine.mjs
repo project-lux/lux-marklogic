@@ -1,3 +1,4 @@
+//#region Imports
 import {
   PATTERN_NAME_INDEXED_VALUE,
   TYPE_GROUP,
@@ -23,6 +24,7 @@ import {
   InternalServerError,
 } from '../../errorClasses.mjs';
 import * as utils from '../../../utils/utils.mjs';
+//#endregion
 
 //#region Public function(s)
 // Builds a CTS query string template from JSON criteria.

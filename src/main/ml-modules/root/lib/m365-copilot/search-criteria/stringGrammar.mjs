@@ -1,4 +1,4 @@
-// StringGrammar.mjs
+//#region Imports
 import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 import {
   REG_EXP_NEAR_OPERATOR,
@@ -6,7 +6,9 @@ import {
 } from '../../appConstants.mjs';
 import { isSearchScopeName } from '../../searchScope.mjs';
 import * as utils from '../../../utils/utils.mjs';
+//#endregion
 
+//#region Public functions
 function adjustSearchString(givenQueryString) {
   // Find all operators within the search string. These are used later.
   const foundOperators = SEARCH_GRAMMAR_OPERATORS.filter((opName) => {
@@ -37,12 +39,12 @@ function adjustSearchString(givenQueryString) {
       // Tokenize once more to perform term-level adjustments.
       adjusted += piece
         .split(/\s/)
-        .map((term) => 
+        .map((term) =>
           // Terms containing more than one colon (e.g., ils:yul:mfhd:8752038) will not get past cts.parse
           // unless quoted. We cannot quote every term as that could change the meaning of the query
           // (e.g., AND vs "AND"). If we ever want to support the string grammar's colon operator, this
           // logic will need to be refined.
-          (term.includes(':') ? `"${term}"` : term)
+          term.includes(':') ? `"${term}"` : term,
         )
         .join(' ');
     } else {
@@ -114,5 +116,6 @@ function walkParsedQuery(ctsQueryObj) {
   }
   return out;
 }
+//#endregion
 
 export { adjustSearchString, translateStringGrammarToJSON, walkParsedQuery };

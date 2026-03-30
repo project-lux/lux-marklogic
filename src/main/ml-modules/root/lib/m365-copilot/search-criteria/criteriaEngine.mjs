@@ -29,70 +29,42 @@ import * as utils from '../../../utils/utils.mjs';
 //#region Public function(s)
 // Builds a CTS query string template from JSON criteria.
 // Mutates `self` for counters/values/includeTypeConstraint exactly like the monolith code.
-function generateQueryFromCriteria(
-  self,
-  scopeName,
-  searchCriteria,
-  parentSearchTerm = null,
-  mustReturnCtsQuery = false,
-  returnTrueForUnusableTerms = true,
-) {
+function generateQueryFromCriteria(self, params) {
+  const {
+    scopeName,
+    searchCriteria,
+    parentSearchTerm = null,
+    mustReturnCtsQuery = false,
+    returnTrueForUnusableTerms = true,
+  } = params;
   self.constructor.requireSearchCriteriaObject(searchCriteria);
 
   // Group operators
   if (searchCriteria.AND || searchCriteria.OR) {
-    return _handleGroupOperators(
-      self,
-      scopeName,
-      searchCriteria,
-      parentSearchTerm,
-      mustReturnCtsQuery,
-      returnTrueForUnusableTerms,
-    );
+    return _handleGroupOperators(self, params);
   }
 
   // NOT operator
   if (searchCriteria.NOT) {
-    return _handleNotOperator(
-      self,
-      scopeName,
-      searchCriteria,
-      parentSearchTerm,
-      mustReturnCtsQuery,
-      returnTrueForUnusableTerms,
-    );
+    return _handleNotOperator(self, params);
   }
 
   // BOOST operator
   if (searchCriteria.BOOST) {
-    return _handleBoostOperator(
-      self,
-      scopeName,
-      searchCriteria,
-      parentSearchTerm,
-      mustReturnCtsQuery,
-      returnTrueForUnusableTerms,
-    );
+    return _handleBoostOperator(self, params);
   }
 
   // Terminal / term
-  let searchTerm = _parseAndValidateTerm(
-    self,
-    scopeName,
-    searchCriteria,
-    parentSearchTerm,
-    mustReturnCtsQuery,
-  );
+  let searchTerm = _parseAndValidateTerm(self, params);
 
   if (searchTerm.hasModifiedCriteria()) {
-    return generateQueryFromCriteria(
-      self,
+    return generateQueryFromCriteria(self, {
       scopeName,
-      searchTerm.getModifiedCriteria(),
+      searchCriteria: searchTerm.getModifiedCriteria(),
       parentSearchTerm,
       mustReturnCtsQuery,
-      true,
-    );
+      returnTrueForUnusableTerms: true,
+    });
   }
 
   if (searchTerm.isUsable()) {
@@ -134,14 +106,14 @@ function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
   return `cts.${kind}Query([${pieces.join(', ')}])`;
 }
 
-function _handleGroupOperators(
-  self,
-  scopeName,
-  searchCriteria,
-  parentSearchTerm,
-  mustReturnCtsQuery,
-  returnTrueForUnusableTerms,
-) {
+function _handleGroupOperators(self, params) {
+  const {
+    scopeName,
+    searchCriteria,
+    parentSearchTerm,
+    mustReturnCtsQuery,
+    returnTrueForUnusableTerms,
+  } = params;
   const isAnd = searchCriteria.AND;
   const groupName = isAnd ? 'AND' : 'OR';
   const groupArr = searchCriteria[groupName];
@@ -152,45 +124,55 @@ function _handleGroupOperators(
     return '';
   } else if (!isAnd && groupArr.length === 1) {
     // Don't group an OR when there is only one item.
-    return generateQueryFromCriteria(
-      self,
+    return generateQueryFromCriteria(self, {
       scopeName,
-      groupArr[0],
+      searchCriteria: groupArr[0],
       parentSearchTerm,
-      false,
-      true, // process() will catch if this is the only search criteria term and it gets ignored.
-    );
+      mustReturnCtsQuery: false,
+      returnTrueForUnusableTerms: true, // process() will catch if this is the only search criteria term and it gets ignored.
+    });
   } else {
     const pieces = groupArr.map((item) =>
-      generateQueryFromCriteria(
-        self,
+      generateQueryFromCriteria(self, {
         scopeName,
-        item,
+        searchCriteria: item,
         parentSearchTerm,
-        true,
-        isAnd, // we want cts.trueQuery when within an AND.
-      ),
+        mustReturnCtsQuery: true,
+        returnTrueForUnusableTerms: isAnd, // we want cts.trueQuery when within an AND.
+      }),
     );
     return _wrapGroup(isAnd ? 'and' : 'or', pieces);
   }
 }
 
-function _handleNotOperator(
-  self,
-  scopeName,
-  searchCriteria,
-  parentSearchTerm,
-  mustReturnCtsQuery,
-  returnTrueForUnusableTerms,
-) {
+function _handleNotOperator(self, params) {
+  const {
+    scopeName,
+    searchCriteria,
+    parentSearchTerm,
+    mustReturnCtsQuery,
+    returnTrueForUnusableTerms,
+  } = params;
   const notCriteria = searchCriteria.NOT;
   // Accept array or object.
   if (utils.isArray(notCriteria)) {
     // Create an OR within NOT
     const orCriteria = { OR: notCriteria.map((x) => x) };
-    return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, orCriteria, parentSearchTerm, mustReturnCtsQuery, true)})`;
+    return `cts.notQuery(${generateQueryFromCriteria(self, {
+      scopeName,
+      searchCriteria: orCriteria,
+      parentSearchTerm,
+      mustReturnCtsQuery,
+      returnTrueForUnusableTerms: true,
+    })})`;
   } else if (utils.isObject(notCriteria)) {
-    return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, notCriteria, parentSearchTerm, true, true)})`;
+    return `cts.notQuery(${generateQueryFromCriteria(self, {
+      scopeName,
+      searchCriteria: notCriteria,
+      parentSearchTerm,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    })})`;
   } else {
     throw new InvalidSearchRequestError(
       `object or array expected for NOT search criteria but given ${JSON.stringify(searchCriteria)}`,
@@ -198,22 +180,34 @@ function _handleNotOperator(
   }
 }
 
-function _handleBoostOperator(
-  self,
-  scopeName,
-  searchCriteria,
-  parentSearchTerm,
-  mustReturnCtsQuery,
-  returnTrueForUnusableTerms,
-) {
+function _handleBoostOperator(self, params) {
+  const {
+    scopeName,
+    searchCriteria,
+    parentSearchTerm,
+    mustReturnCtsQuery,
+    returnTrueForUnusableTerms,
+  } = params;
   if (
     utils.isArray(searchCriteria.BOOST) &&
     searchCriteria.BOOST.length === 2
   ) {
     // Deep copy prevents the matching query from impacting the boost query.
     return `cts.boostQuery(
-${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[0], parentSearchTerm, true, false)},
-${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSearchTerm, true, false)}
+${generateQueryFromCriteria(self, {
+  scopeName,
+  searchCriteria: searchCriteria.BOOST[0],
+  parentSearchTerm,
+  mustReturnCtsQuery: true,
+  returnTrueForUnusableTerms: false,
+})},
+${generateQueryFromCriteria(self, {
+  scopeName,
+  searchCriteria: searchCriteria.BOOST[1],
+  parentSearchTerm,
+  mustReturnCtsQuery: true,
+  returnTrueForUnusableTerms: false,
+})}
 )`;
   }
   throw new InvalidSearchRequestError(
@@ -236,13 +230,9 @@ function _tokenizeSearchTermValue(value, leaveAsIs) {
   );
 }
 
-function _parseAndValidateTerm(
-  self,
-  scopeName,
-  searchCriteria,
-  parentSearchTerm,
-  mustReturnCtsQuery,
-) {
+function _parseAndValidateTerm(self, params) {
+  const { scopeName, searchCriteria, parentSearchTerm, mustReturnCtsQuery } =
+    params;
   const searchTerm = new SearchTerm()
     .addScopeName(scopeName)
     .addMustReturnCtsQuery(mustReturnCtsQuery)

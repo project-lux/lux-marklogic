@@ -135,10 +135,15 @@ ${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSear
       code = patternResponse.codeStr;
     }
 
+    // Unlike the CTS query that can be incorporated into a larger query, values are to be appended
+    // to the values of any other search term in the same query. This is not expected to be an issue
+    // with its introductory purpose of supporting related lists that execute each relationship's
+    // query individually.
     if (utils.isNonEmptyArray(patternResponse.values)) {
       self.values = self.values.concat(patternResponse.values);
     }
 
+    // A single search term has the ability to exclude the type constraint. Introduced for related lists.
     if (patternResponse.includeTypeConstraint === false) {
       self.includeTypeConstraint = false;
     }
@@ -226,6 +231,7 @@ function _parseAndValidateTerm(
           searchTerm.getPropertyNames().forEach((name) => {
             criterion[`_${name}`] = searchTerm.getProperty(name);
           });
+          // #273: Prevent re-tokenization when the encapsulating AND gets processed.
           criterion._tokenized = true; // prevent re-tokenization
           return criterion;
         }),
@@ -241,6 +247,8 @@ function _parseAndValidateTerm(
 
   // Normalize ID child → indexed string match
   if (typeof termValue === 'object') {
+    // When the term value has the 'id' property and the term config specifies an ID index
+    // reference, redefine the term to match on an ID value.
     if (_hasIdChildTerm(termValue) && searchTermConfig.hasIdIndexReferences()) {
       const normalized = new SearchTerm()
         .addName(`${termName}Id`)

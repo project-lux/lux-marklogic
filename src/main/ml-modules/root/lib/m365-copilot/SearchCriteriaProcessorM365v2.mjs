@@ -14,7 +14,6 @@ import {
 import { TOKEN_FIELDS, TOKEN_PREDICATES, TOKEN_TYPES } from '../searchLib.mjs';
 import * as utils from '../../utils/utils.mjs';
 
-// New modules introduced by the split
 import {
   initProcessState,
   resolveAndValidateScope,
@@ -44,6 +43,7 @@ const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");`;
 const MAXIMUM_PAGE_WITH_LENGTH = 100000;
 
 const SearchCriteriaProcessorM365v2 = class {
+  //#region Constructor(s).
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {
     // requestOptions preserved for patterns
     this.requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
@@ -68,7 +68,10 @@ const SearchCriteriaProcessorM365v2 = class {
     this.valuesOnly = false;
     this.values = [];
   }
+  //#endregion
 
+  //#region Public instance methods.
+  // Processes and validates search criteria, ending with a fully resolved query.
   process(
     searchCriteria,
     scopeName,
@@ -95,7 +98,7 @@ const SearchCriteriaProcessorM365v2 = class {
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
     this.resolvedSearchCriteria =
-      SearchCriteriaProcessorM365v2._requireSearchCriteriaJson(
+      SearchCriteriaProcessorM365v2.requireSearchCriteriaJson(
         this.scopeName,
         searchCriteria,
       );
@@ -105,12 +108,11 @@ const SearchCriteriaProcessorM365v2 = class {
 
     // Early branch for multi-scope (unchanged behavior)
     if (this.scopeName === 'multi') {
-      this._buildMultiScopeQueryOrRecurse(); // same logic as original monolith (kept inline below)
-      // Only return early if multi-scope logic actually built a query
+      this._buildMultiScopeQueryOrRecurse();
+      // Return if we have a query, else allow to flow through to empty criteria check.
       if (utils.isNonEmptyString(this.ctsQueryStr)) {
-        return; // early return: multi-scope logic sets this.ctsQueryStr
+        return;
       }
-      // Otherwise continue with normal processing for empty criteria validation
     } else {
       // Build CTS query template (string)
       this.ctsQueryStrWithTokens = generateQuery(
@@ -123,10 +125,9 @@ const SearchCriteriaProcessorM365v2 = class {
       );
     }
 
-    // Prevent repo-wide “empty” criteria
-    this._validatePresenceOfUsableCriteria();
+    this._requireCriteria();
 
-    // Optional type constraint injection (kept as tokens)
+    // Optional type constraint injection
     if (this.includeTypeConstraint) {
       this.ctsQueryStrWithTokens = `cts.andQuery([
         cts.jsonPropertyValueQuery('dataType', ${TOKEN_TYPES}, ['exact']),
@@ -134,34 +135,69 @@ const SearchCriteriaProcessorM365v2 = class {
       ])`;
     }
 
-    // Resolve tokens to final string using scope-derived arrays
-    const fields = getSearchScopeFields(this.scopeName, true);
-    const predicates = getSearchScopePredicates(this.scopeName);
-    const types = getSearchScopeTypes(this.scopeName, false);
-    this.ctsQueryStr = this.resolveTokens(fields, predicates, types);
+    // Resolve tokens to final query
+    this.ctsQueryStr = this.resolveTokens(
+      getSearchScopeFields(this.scopeName, true),
+      getSearchScopePredicates(this.scopeName),
+      getSearchScopeTypes(this.scopeName, false),
+    );
   }
 
-  // ---------------- Public getters (unchanged) ----------------
   getSearchCriteria() {
     return this.resolvedSearchCriteria;
   }
+
   hasSearchScope() {
     return utils.isNonEmptyString(this.scopeName);
   }
+
   getSearchScope() {
     return this.scopeName;
   }
+
   getRequestOptions() {
     return this.requestOptions;
   }
+
   getIgnoredTerms() {
     return this.ignoredTerms;
   }
+
+  getCtsQueryStr() {
+    // Preserved: when empty, fall back to cts.parse('') (query object)
+    this.ctsQueryStr =
+      this.ctsQueryStr && this.ctsQueryStr.length > 0
+        ? this.ctsQueryStr
+        : cts.parse('');
+    return this.ctsQueryStr;
+  }
+
+  getEstimate() {
+    return cts.estimate(
+      SearchCriteriaProcessorM365v2.evalQueryString(this.getCtsQueryStr()),
+    );
+  }
+
+  // returns { resultPage: number, results: Array<{id: string, type: string}> }
+  getSearchResults() {
+    const sortType = SearchCriteriaProcessorM365v2.getSortTypeFromSortCriteria(
+      this.sortCriteria,
+    );
+    // TODO: these are the three to consolidate in the Optic version.
+    if (SORT_TYPE_MULTI_SCOPE === sortType) {
+      return this._getMultiScopeSortResults();
+    } else if (SORT_TYPE_SEMANTIC === sortType) {
+      return this._getSemanticSortResults();
+    } else {
+      return this._getNonSemanticSortResults();
+    }
+  }
+
   getValues() {
     return this.values;
   }
 
-  // Pass-through method for backward compatibility with tests
+  // Pass-through method for backward compatibility
   generateQueryFromCriteria(
     scopeName,
     searchCriteria,
@@ -179,8 +215,6 @@ const SearchCriteriaProcessorM365v2 = class {
     );
   }
 
-  // Pass-through method for backward compatibility with tests
-  // Now used by both runtime (process) and tests - single code path!
   resolveTokens(fieldsArr, predicatesArr, typesArr) {
     const tokens = [
       { pattern: TOKEN_FIELDS, value: fieldsArr, scalarType: 'string' },
@@ -198,29 +232,117 @@ const SearchCriteriaProcessorM365v2 = class {
     });
     return out;
   }
+  //#endregion
 
-  getEstimate() {
-    return cts.estimate(
-      SearchCriteriaProcessorM365v2.evalQueryString(this.getCtsQueryStr()),
-    );
+  //#region Public static methods
+  static getSortType(isMultiScope, isSemantic) {
+    let sortType = SORT_TYPE_NON_SEMANTIC;
+    if (isMultiScope) sortType = SORT_TYPE_MULTI_SCOPE;
+    else if (isSemantic) sortType = SORT_TYPE_SEMANTIC;
+    return sortType;
   }
 
-  // returns { resultPage: number, results: Array<{id: string, type: string}> }
-  getSearchResults() {
-    const sortType = SearchCriteriaProcessorM365v2.getSortTypeFromSortCriteria(
-      this.sortCriteria,
-    );
-    if (SORT_TYPE_MULTI_SCOPE === sortType) {
-      return this._getMultiScopeSortResults();
-    } else if (SORT_TYPE_SEMANTIC === sortType) {
-      return this._getSemanticSortResults();
-    } else {
-      return this._getNonSemanticSortResults();
+  static getSortTypeFromSortBinding(sortBinding) {
+    if (utils.isObject(sortBinding)) {
+      const isMultiScope = sortBinding.subSorts != null;
+      const isSemantic = sortBinding.predicate != null;
+      return SearchCriteriaProcessorM365v2.getSortType(
+        isMultiScope,
+        isSemantic,
+      );
     }
+    throw new InternalServerError(
+      'sortBinding is required to determine sort type.',
+    );
   }
 
-  // ---------------- Sorting paths (intentionally unchanged) ----------------
+  static getSortTypeFromSortCriteria(sortCriteria) {
+    return SearchCriteriaProcessorM365v2.getSortType(
+      sortCriteria.hasMultiScopeSortOption(),
+      sortCriteria.hasSemanticSortOption(),
+    );
+  }
 
+  static evalQueryString(queryStr) {
+    // TODO: will the Optic version still need this?  Would prefer to avoid eval or add protection.
+    return fn.head(
+      xdmp.eval(
+        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`,
+      ),
+    );
+  }
+
+  // Pass-through method for backward compatibility
+  static translateStringGrammarToJSON(scopeName, searchCriteria) {
+    return translateStringGrammarToJSON(scopeName, searchCriteria);
+  }
+
+  static getFirstNonOptionPropertyName(termValue) {
+    let propName = null;
+    if (utils.isObject(termValue)) {
+      for (const p of Object.keys(termValue)) {
+        if (!p.startsWith('_')) {
+          propName = p;
+          break;
+        }
+      }
+    }
+    return propName;
+  }
+
+  static hasNonOptionPropertyName(termValue) {
+    return (
+      SearchCriteriaProcessorM365v2.getFirstNonOptionPropertyName(termValue) !=
+      null
+    );
+  }
+
+  static requireSearchCriteriaObject(searchCriteria) {
+    if (utils.isObject(searchCriteria)) return true;
+    throw new InvalidSearchRequestError(
+      `object expected but given ${JSON.stringify(searchCriteria)}`,
+    );
+  }
+
+  static requireSearchCriteriaArray(searchCriteria) {
+    if (utils.isArray(searchCriteria)) return true;
+    throw new InvalidSearchRequestError(
+      `array expected but given ${JSON.stringify(searchCriteria)}`,
+    );
+  }
+
+  static requireSearchCriteriaJson(scopeName, searchCriteria) {
+    if (utils.isUndefined(searchCriteria)) {
+      throw new InvalidSearchRequestError(`Search criteria is required.`);
+    }
+
+    // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
+    if (typeof searchCriteria == 'object') {
+      if (scopeName) {
+        searchCriteria._scope = scopeName;
+      }
+      return searchCriteria;
+    }
+
+    // When search criteria starts with an open curly brace, try to parse as JSON.
+    if (typeof searchCriteria == 'string' && searchCriteria.startsWith('{')) {
+      try {
+        const searchCriteriaJson = JSON.parse(searchCriteria);
+        // Give precedence to the search scope parameter.
+        if (scopeName) {
+          searchCriteriaJson._scope = scopeName;
+        }
+        return searchCriteriaJson;
+      } catch (e) {
+        // Allow to flow through
+      }
+    }
+
+    return translateStringGrammarToJSON(scopeName, searchCriteria);
+  }
+  //#endregion
+
+  //#region Private instance methods.
   _getMultiScopeSortResults() {
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),
@@ -426,19 +548,6 @@ const SearchCriteriaProcessorM365v2 = class {
     }
   }
 
-  // ---------------- Query getters / tokens ----------------
-
-  getCtsQueryStr() {
-    // Preserved: when empty, fall back to cts.parse('') (query object)
-    this.ctsQueryStr =
-      this.ctsQueryStr && this.ctsQueryStr.length > 0
-        ? this.ctsQueryStr
-        : cts.parse('');
-    return this.ctsQueryStr;
-  }
-
-  // ---------------- Multi-scope orchestration (unchanged logic) ----------------
-
   _buildMultiScopeQueryOrRecurse() {
     if (!this.allowMultiScope) {
       throw new InvalidSearchRequestError(
@@ -447,7 +556,7 @@ const SearchCriteriaProcessorM365v2 = class {
     }
     if (this.resolvedSearchCriteria.OR) {
       const orArr = this.resolvedSearchCriteria.OR;
-      SearchCriteriaProcessorM365v2._requireSearchCriteriaArray(orArr);
+      SearchCriteriaProcessorM365v2.requireSearchCriteriaArray(orArr);
 
       if (orArr.length === 0) {
         // Let empty OR arrays fall through to normal processing and validation
@@ -516,7 +625,7 @@ const SearchCriteriaProcessorM365v2 = class {
     }
   }
 
-  _validatePresenceOfUsableCriteria() {
+  _requireCriteria() {
     if (
       this.criteriaCnt < 1 ||
       !utils.isNonEmptyString(this.ctsQueryStrWithTokens)
@@ -531,121 +640,7 @@ const SearchCriteriaProcessorM365v2 = class {
       throw new InvalidSearchRequestError(`more search criteria is required.`);
     }
   }
-
-  // ---------------- Static (public) - preserved ----------------
-
-  static getSortType(isMultiScope, isSemantic) {
-    let sortType = SORT_TYPE_NON_SEMANTIC;
-    if (isMultiScope) sortType = SORT_TYPE_MULTI_SCOPE;
-    else if (isSemantic) sortType = SORT_TYPE_SEMANTIC;
-    return sortType;
-  }
-
-  static getSortTypeFromSortBinding(sortBinding) {
-    if (utils.isObject(sortBinding)) {
-      const isMultiScope = sortBinding.subSorts != null;
-      const isSemantic = sortBinding.predicate != null;
-      return SearchCriteriaProcessorM365v2.getSortType(
-        isMultiScope,
-        isSemantic,
-      );
-    }
-    throw new InternalServerError(
-      'sortBinding is required to determine sort type.',
-    );
-  }
-
-  static getSortTypeFromSortCriteria(sortCriteria) {
-    const isMultiScope = sortCriteria.hasMultiScopeSortOption();
-    const isSemantic = sortCriteria.hasSemanticSortOption();
-    return SearchCriteriaProcessorM365v2.getSortType(isMultiScope, isSemantic);
-  }
-
-  static evalQueryString(queryStr) {
-    // TODO: Security posture – inputs are internally generated; if externalized, enforce strict allowlist for function tokens.
-    return fn.head(
-      xdmp.eval(
-        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`,
-      ),
-    );
-  }
-
-  // Exposed for compatibility; delegate to StringGrammar.mjs
-  static translateStringGrammarToJSON(scopeName, searchCriteria) {
-    return translateStringGrammarToJSON(scopeName, searchCriteria);
-  }
-
-  static _adjustSearchString(str) {
-    return adjustSearchString(str);
-  }
-
-  static _walkParsedQuery(obj) {
-    return walkParsedQuery(obj);
-  }
-
-  static _requireSearchCriteriaObject(searchCriteria) {
-    if (utils.isObject(searchCriteria)) return true;
-    throw new InvalidSearchRequestError(
-      `object expected but given ${JSON.stringify(searchCriteria)}`,
-    );
-  }
-
-  static _requireSearchCriteriaArray(searchCriteria) {
-    if (utils.isArray(searchCriteria)) return true;
-    throw new InvalidSearchRequestError(
-      `array expected but given ${JSON.stringify(searchCriteria)}`,
-    );
-  }
-
-  static getFirstNonOptionPropertyName(termValue) {
-    let propName = null;
-    if (utils.isObject(termValue)) {
-      for (const p of Object.keys(termValue)) {
-        if (!p.startsWith('_')) {
-          propName = p;
-          break;
-        }
-      }
-    }
-    return propName;
-  }
-
-  static hasNonOptionPropertyName(termValue) {
-    return (
-      SearchCriteriaProcessorM365v2.getFirstNonOptionPropertyName(termValue) !=
-      null
-    );
-  }
-
-  static _requireSearchCriteriaJson(scopeName, searchCriteria) {
-    if (utils.isUndefined(searchCriteria)) {
-      throw new InvalidSearchRequestError(`Search criteria is required.`);
-    }
-
-    // When search criteria is already an object, just make sure the scopeName parameter gets precedence.
-    if (typeof searchCriteria == 'object') {
-      if (scopeName) {
-        searchCriteria._scope = scopeName;
-      }
-      return searchCriteria;
-    }
-
-    // When search criteria starts with an open curly brace, try to parse as JSON.
-    if (typeof searchCriteria == 'string' && searchCriteria.startsWith('{')) {
-      try {
-        const searchCriteriaJson = JSON.parse(searchCriteria);
-        // Give precedence to the search scope parameter.
-        if (scopeName) {
-          searchCriteriaJson._scope = scopeName;
-        }
-        return searchCriteriaJson;
-      } catch (e) {
-        // Allow to flow through
-      }
-    }
-
-    return translateStringGrammarToJSON(scopeName, searchCriteria);
-  }
+  //#endregion
 };
 
 export { START_OF_GENERATED_QUERY, SearchCriteriaProcessorM365v2 };

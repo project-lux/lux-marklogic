@@ -37,14 +37,14 @@ export function generateQueryFromCriteria(
   returnTrueForUnusableTerms = true,
 ) {
   // UNIT TEST CANDIDATE: dispatch across AND/OR/NOT/BOOST vs terminal
-  _requireSearchCriteriaObject(searchCriteria);
+  self.constructor.requireSearchCriteriaObject(searchCriteria);
 
   // Group operators
   if (searchCriteria.AND || searchCriteria.OR) {
     const isAnd = searchCriteria.AND;
     const groupName = isAnd ? 'AND' : 'OR';
     const groupArr = searchCriteria[groupName];
-    _requireSearchCriteriaArray(groupArr);
+    self.constructor.requireSearchCriteriaArray(groupArr);
 
     if (groupArr.length === 0) {
       return '';
@@ -409,19 +409,5 @@ function _hasGroup(termValue) {
   return (
     termValue &&
     (termValue.AND || termValue.OR || termValue.NOT || termValue.BOOST)
-  );
-}
-
-function _requireSearchCriteriaObject(searchCriteria) {
-  if (utils.isObject(searchCriteria)) return true;
-  throw new InvalidSearchRequestError(
-    `object expected but given ${JSON.stringify(searchCriteria)}`,
-  );
-}
-
-function _requireSearchCriteriaArray(searchCriteria) {
-  if (utils.isArray(searchCriteria)) return true;
-  throw new InvalidSearchRequestError(
-    `array expected but given ${JSON.stringify(searchCriteria)}`,
   );
 }

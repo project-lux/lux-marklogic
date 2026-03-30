@@ -16,16 +16,8 @@ import { STOP_WORDS } from '../../../data/stopWords.mjs';
 import {
   resolveSearchOptionsName,
   sanitizeAndValidateWildcardedStrings,
-  TOKEN_FIELDS,
-  TOKEN_PREDICATES,
-  TOKEN_TYPES,
 } from '../../searchLib.mjs';
-import {
-  getSearchScopeFields,
-  getSearchScopePredicates,
-  getSearchScopeTypes,
-  isSearchScopeName,
-} from '../../searchScope.mjs';
+import { isSearchScopeName } from '../../searchScope.mjs';
 import {
   InvalidSearchRequestError,
   InternalServerError,
@@ -159,19 +151,6 @@ ${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSear
   return returnTrueForUnusableTerms ? 'cts.trueQuery()' : 'cts.falseQuery()';
 }
 
-// Resolves tokens (fields/predicates/types) into a final CTS string
-export function resolveTemplateTokens(self) {
-  const fields = getSearchScopeFields(self.scopeName, true);
-  const predicates = getSearchScopePredicates(self.scopeName);
-  const types = getSearchScopeTypes(self.scopeName, false);
-  const tokens = [
-    { pattern: TOKEN_FIELDS, value: fields, scalarType: 'string' },
-    { pattern: TOKEN_PREDICATES, value: predicates, scalarType: 'code' },
-    { pattern: TOKEN_TYPES, value: types, scalarType: 'string' },
-  ];
-  return _resolveTokens(self.ctsQueryStrWithTokens, tokens);
-}
-
 // ------------------ Internal helpers ------------------
 
 function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
@@ -279,6 +258,24 @@ function _parseAndValidateTerm(
         );
       return normalized; // return early; caller treats modified criteria vs returned term equivalently
     } else {
+      // Validate object term value types and set appropriate value type
+      const patternName = searchTermConfig.getPatternName();
+      if (_hasGroup(termValue)) {
+        searchTerm.setValueType(TYPE_GROUP);
+        if (!acceptsGroup(patternName)) {
+          throw new InvalidSearchRequestError(
+            `the '${termName}' term contains a group but is not allowed to.`,
+          );
+        }
+      } else if (self.constructor.hasNonOptionPropertyName(termValue)) {
+        searchTerm.setValueType(TYPE_TERM);
+        if (!acceptsTerm(patternName)) {
+          throw new InvalidSearchRequestError(
+            `the '${termName}' term contains another term but is not allowed to.`,
+          );
+        }
+      }
+
       if (
         _hasIdChildTerm(termValue) &&
         isConvertIdChildToIri(searchTermConfig.getPatternName())
@@ -427,16 +424,4 @@ function _requireSearchCriteriaArray(searchCriteria) {
   throw new InvalidSearchRequestError(
     `array expected but given ${JSON.stringify(searchCriteria)}`,
   );
-}
-
-function _resolveTokens(template, tokenArr) {
-  let out = template;
-  tokenArr.forEach((t) => {
-    const val = Array.isArray(t.value)
-      ? utils.arrayToString(t.value, t.scalarType)
-      : t.value;
-    const re = new RegExp(t.pattern, 'g');
-    if (utils.isNonEmptyString(out)) out = out.replace(re, val);
-  });
-  return out;
 }

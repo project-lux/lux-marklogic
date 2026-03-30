@@ -277,32 +277,134 @@ const scenarios = [
       stackToInclude: 'does not specify a term name',
     },
   },
+  // Validation tests that would have caught the missing acceptsGroup/acceptsTerm logic
+  {
+    name: 'Text pattern should reject groups - GROUP validation missing would have missed this',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: {
+        text: {
+          AND: [{ name: 'Pablo' }, { name: 'Picasso' }],
+        },
+      },
+      parentSearchTerm: null,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'contains a group but is not allowed to',
+    },
+  },
+  {
+    name: 'Text pattern should reject terms - TERM validation missing would have missed this',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: {
+        text: {
+          name: 'Pablo Picasso',
+        },
+      },
+      parentSearchTerm: null,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'contains another term but is not allowed to',
+    },
+  },
+  {
+    name: 'Document ID pattern should reject groups - GROUP validation missing would have missed this',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: {
+        id: {
+          OR: ['id1', 'id2'],
+        },
+      },
+      parentSearchTerm: null,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'contains a group but is not allowed to',
+    },
+  },
+  {
+    name: 'Document ID pattern should reject terms - TERM validation missing would have missed this',
+    input: {
+      scopeName: 'work',
+      searchCriteria: {
+        id: {
+          name: 'some-document-id',
+        },
+      },
+      parentSearchTerm: null,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'contains another term but is not allowed to',
+    },
+  },
+  {
+    name: 'Indexed value pattern should reject groups - GROUP validation missing would have missed this',
+    input: {
+      scopeName: 'work',
+      searchCriteria: {
+        isPublicDomain: {
+          AND: [1, 0],
+        },
+      },
+      parentSearchTerm: null,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'contains a group but is not allowed to',
+    },
+  },
+  {
+    name: 'Indexed value pattern should reject terms - TERM validation missing would have missed this',
+    input: {
+      scopeName: 'work',
+      searchCriteria: {
+        isPublicDomain: {
+          name: '1',
+        },
+      },
+      parentSearchTerm: null,
+      mustReturnCtsQuery: true,
+      returnTrueForUnusableTerms: true,
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'contains another term but is not allowed to',
+    },
+  },
 ];
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const processor = new SearchCriteriaProcessor(true, true, true);
 
-    const result = processor.generateQueryFromCriteria(
+    return processor.generateQueryFromCriteria(
       scenario.input.scopeName,
       scenario.input.searchCriteria,
       scenario.input.parentSearchTerm,
       scenario.input.mustReturnCtsQuery,
       scenario.input.returnTrueForUnusableTerms,
     );
-
-    return {
-      result: result,
-      hasCtsQuery: typeof result === 'string' && result.length > 0,
-      resultType: typeof result,
-      isEmpty: result === '' || result === null || result === undefined,
-    };
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);
 
   if (
-    scenarioResults.actualValue &&
+    scenarioResults.actualValue !== undefined &&
     scenarioResults.applyErrorNotExpectedAssertions
   ) {
     const actual = scenarioResults.actualValue;
@@ -310,26 +412,18 @@ for (const scenario of scenarios) {
     if (scenario.expected.hasCtsQuery) {
       assertions.push(
         testHelperProxy.assertTrue(
-          actual.hasCtsQuery,
+          typeof actual === 'string' && actual.length > 0,
           `generateQueryFromCriteria should return a non-empty CTS query string for scenario: ${scenario.name}`,
         ),
       );
     } else {
       assertions.push(
         testHelperProxy.assertTrue(
-          actual.isEmpty || !actual.hasCtsQuery,
-          `generateQueryFromCriteria should return empty or no CTS query for scenario: ${scenario.name}`,
+          actual === '' || actual === null || actual === undefined,
+          `generateQueryFromCriteria should return empty or null for scenario: ${scenario.name}`,
         ),
       );
     }
-
-    // Verify the result type is appropriate
-    assertions.push(
-      testHelperProxy.assertTrue(
-        actual.resultType === 'string' || actual.resultType === 'undefined',
-        `generateQueryFromCriteria should return string or undefined, got: ${actual.resultType} for scenario: ${scenario.name}`,
-      ),
-    );
   }
 
   if (scenarioResults.assertions.length > 0) {

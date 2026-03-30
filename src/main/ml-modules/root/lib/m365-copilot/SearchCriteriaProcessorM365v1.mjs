@@ -181,7 +181,7 @@ const SearchCriteriaProcessorM365v1 = class {
     }
 
     // Protect from a repo-wide search as repo-wide facets are expensive to calculate
-    this._validatePresenceOfUsableCriteria();
+    this._requireCriteria();
 
     // Optionally add type constraint (using tokens for scope-specific estimates)
     if (this.includeTypeConstraint) {
@@ -1440,7 +1440,7 @@ ${this.generateQueryFromCriteria(
     }
   }
 
-  _validatePresenceOfUsableCriteria() {
+  _requireCriteria() {
     if (
       this.criteriaCnt < 1 ||
       !utils.isNonEmptyString(this.ctsQueryStrWithTokens)

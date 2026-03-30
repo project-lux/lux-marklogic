@@ -6,15 +6,12 @@ import {
   SORT_TYPE_NON_SEMANTIC,
   SORT_TYPE_SEMANTIC,
 } from '../SortCriteria.mjs';
-import {
-  SEARCH_OPTIONS_NAME_KEYWORD,
-  SEMANTIC_SORT_TIMEOUT,
-} from '../appConstants.mjs';
+import { SEMANTIC_SORT_TIMEOUT } from '../appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
-import { TOKEN_TYPES } from '../searchLib.mjs';
+import { TOKEN_FIELDS, TOKEN_PREDICATES, TOKEN_TYPES } from '../searchLib.mjs';
 import * as utils from '../../utils/utils.mjs';
 
 // New modules introduced by the split
@@ -22,15 +19,17 @@ import {
   initProcessState,
   resolveAndValidateScope,
 } from './search-criteria/processorConfig.mjs';
-import {
-  generateQueryFromCriteria,
-  resolveTemplateTokens,
-} from './search-criteria/criteriaEngine.mjs';
+import { generateQueryFromCriteria as generateQuery } from './search-criteria/criteriaEngine.mjs';
 import {
   translateStringGrammarToJSON,
   adjustSearchString,
   walkParsedQuery,
 } from './search-criteria/stringGrammar.mjs';
+import {
+  getSearchScopeFields,
+  getSearchScopePredicates,
+  getSearchScopeTypes,
+} from '../searchScope.mjs';
 
 // Once supported, we want to stop calculating scores.
 const FROM_SEARCH_OPTIONS = { scoreMethod: 'simple' };
@@ -114,7 +113,7 @@ const SearchCriteriaProcessorM365v2 = class {
       // Otherwise continue with normal processing for empty criteria validation
     } else {
       // Build CTS query template (string)
-      this.ctsQueryStrWithTokens = generateQueryFromCriteria(
+      this.ctsQueryStrWithTokens = generateQuery(
         this,
         this.scopeName,
         this.resolvedSearchCriteria,
@@ -135,8 +134,11 @@ const SearchCriteriaProcessorM365v2 = class {
       ])`;
     }
 
-    // Resolve tokens to final string
-    this.ctsQueryStr = resolveTemplateTokens(this);
+    // Resolve tokens to final string using scope-derived arrays
+    const fields = getSearchScopeFields(this.scopeName, true);
+    const predicates = getSearchScopePredicates(this.scopeName);
+    const types = getSearchScopeTypes(this.scopeName, false);
+    this.ctsQueryStr = this.resolveTokens(fields, predicates, types);
   }
 
   // ---------------- Public getters (unchanged) ----------------
@@ -157,6 +159,44 @@ const SearchCriteriaProcessorM365v2 = class {
   }
   getValues() {
     return this.values;
+  }
+
+  // Pass-through method for backward compatibility with tests
+  generateQueryFromCriteria(
+    scopeName,
+    searchCriteria,
+    parentSearchTerm = null,
+    mustReturnCtsQuery = false,
+    returnTrueForUnusableTerms = true,
+  ) {
+    return generateQuery(
+      this,
+      scopeName,
+      searchCriteria,
+      parentSearchTerm,
+      mustReturnCtsQuery,
+      returnTrueForUnusableTerms,
+    );
+  }
+
+  // Pass-through method for backward compatibility with tests
+  // Now used by both runtime (process) and tests - single code path!
+  resolveTokens(fieldsArr, predicatesArr, typesArr) {
+    const tokens = [
+      { pattern: TOKEN_FIELDS, value: fieldsArr, scalarType: 'string' },
+      { pattern: TOKEN_PREDICATES, value: predicatesArr, scalarType: 'code' },
+      { pattern: TOKEN_TYPES, value: typesArr, scalarType: 'string' },
+    ];
+
+    let out = this.ctsQueryStrWithTokens;
+    tokens.forEach((t) => {
+      const val = Array.isArray(t.value)
+        ? utils.arrayToString(t.value, t.scalarType)
+        : t.value;
+      const re = new RegExp(t.pattern, 'g');
+      if (utils.isNonEmptyString(out)) out = out.replace(re, val);
+    });
+    return out;
   }
 
   getEstimate() {

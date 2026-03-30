@@ -2,7 +2,7 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v3.1.0 - Unreleased
+## v3.1.0 - 2026-03-30
 
 ### Added
 

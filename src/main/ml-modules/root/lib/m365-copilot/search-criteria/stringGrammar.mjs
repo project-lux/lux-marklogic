@@ -7,7 +7,6 @@ import {
 import { isSearchScopeName } from '../../searchScope.mjs';
 import * as utils from '../../../utils/utils.mjs';
 
-// UNIT TEST CANDIDATE: operator normalization, bracket removal, NEAR downcase, colon quoting
 function adjustSearchString(givenQueryString) {
   const foundOperators = SEARCH_GRAMMAR_OPERATORS.filter((opName) => {
     const re = new RegExp(`\\s${opName}\\s`, 'i');

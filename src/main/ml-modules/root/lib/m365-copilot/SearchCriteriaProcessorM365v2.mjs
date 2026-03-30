@@ -14,10 +14,6 @@ import {
 import { TOKEN_FIELDS, TOKEN_PREDICATES, TOKEN_TYPES } from '../searchLib.mjs';
 import * as utils from '../../utils/utils.mjs';
 
-import {
-  initProcessState,
-  resolveAndValidateScope,
-} from './search-criteria/processorConfig.mjs';
 import { generateQueryFromCriteria as generateQuery } from './search-criteria/criteriaEngine.mjs';
 import { translateStringGrammarToJSON } from './search-criteria/stringGrammar.mjs';
 import {
@@ -25,6 +21,9 @@ import {
   getSearchScopePredicates,
   getSearchScopeTypes,
 } from '../searchScope.mjs';
+import { isSearchScopeName } from '../searchScope.mjs';
+import { SearchPatternOptions } from '../SearchPatternOptions.mjs';
+import { SortCriteria } from '../SortCriteria.mjs';
 //#endregion
 
 //#region Constants
@@ -84,7 +83,7 @@ const SearchCriteriaProcessorM365v2 = class {
     sortCriteria,
     valuesOnly,
   ) {
-    initProcessState(this, {
+    this._initProcessState({
       scopeName,
       allowMultiScope,
       searchPatternOptions,
@@ -104,7 +103,7 @@ const SearchCriteriaProcessorM365v2 = class {
       );
 
     // Validate and finalize scope into this + requestOptions
-    resolveAndValidateScope(this);
+    this._resolveAndValidateScope();
 
     // Early branch for multi-scope (unchanged behavior)
     if (this.scopeName === 'multi') {
@@ -343,6 +342,61 @@ const SearchCriteriaProcessorM365v2 = class {
   //#endregion
 
   //#region Private instance methods
+  // UNIT TEST CANDIDATE: scope normalization and precedence
+  _initProcessState({
+    scopeName,
+    allowMultiScope,
+    searchPatternOptions,
+    includeTypeConstraint,
+    page,
+    pageLength,
+    pageWith,
+    sortCriteria,
+    valuesOnly,
+  }) {
+    this.scopeName = scopeName;
+    this.allowMultiScope = allowMultiScope;
+    this.page = page;
+    this.pageLength = pageLength;
+    this.pageWith = pageWith;
+    this.sortCriteria =
+      sortCriteria instanceof SortCriteria
+        ? sortCriteria
+        : new SortCriteria(sortCriteria || '');
+    this.valuesOnly = valuesOnly;
+
+    this.searchPatternOptions = searchPatternOptions
+      ? searchPatternOptions
+      : new SearchPatternOptions();
+
+    this.includeTypeConstraint = includeTypeConstraint;
+
+    // reset per-invocation fields
+    this.criteriaCnt = 0;
+    this.ignoredTerms = [];
+    this.ctsQueryStrWithTokens = '';
+    this.ctsQueryStr = '';
+    this.values = [];
+  }
+
+  // Resolves the scope from criteria, validates it, and applies it to this + requestOptions
+  _resolveAndValidateScope() {
+    const sc = this.resolvedSearchCriteria;
+    if (sc && utils.isNonEmptyString(sc._scope)) {
+      const normalized = sc._scope.trim().toLowerCase();
+      if (isSearchScopeName(normalized)) {
+        this.scopeName = normalized;
+        delete sc._scope;
+        this.requestOptions.scopeName = normalized; // some patterns need this
+        return;
+      }
+      throw new InvalidSearchRequestError(
+        `'${sc._scope}' is not a valid search scope.`,
+      );
+    }
+    throw new InvalidSearchRequestError(`search scope not specified.`);
+  }
+
   _getMultiScopeSortResults() {
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),

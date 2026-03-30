@@ -8,7 +8,7 @@ import { isSearchScopeName } from '../../searchScope.mjs';
 import * as utils from '../../../utils/utils.mjs';
 
 // UNIT TEST CANDIDATE: operator normalization, bracket removal, NEAR downcase, colon quoting
-export function adjustSearchString(givenQueryString) {
+function adjustSearchString(givenQueryString) {
   const foundOperators = SEARCH_GRAMMAR_OPERATORS.filter((opName) => {
     const re = new RegExp(`\\s${opName}\\s`, 'i');
     return re.test(givenQueryString);
@@ -42,7 +42,7 @@ export function adjustSearchString(givenQueryString) {
 }
 
 // UNIT TEST CANDIDATE: end-to-end parse failures and success paths
-export function translateStringGrammarToJSON(scopeName, searchCriteria) {
+function translateStringGrammarToJSON(scopeName, searchCriteria) {
   if (!isSearchScopeName(scopeName)) {
     throw new InvalidSearchRequestError(
       `'${scopeName}' is not a valid search scope.`,
@@ -64,7 +64,7 @@ export function translateStringGrammarToJSON(scopeName, searchCriteria) {
 }
 
 // UNIT TEST CANDIDATE: mapping shapes from cts.parse to our JSON grammar
-export function walkParsedQuery(ctsQueryObj) {
+function walkParsedQuery(ctsQueryObj) {
   const out = {};
   for (const propName of Object.keys(ctsQueryObj)) {
     if (['andQuery', 'orQuery'].includes(propName)) {
@@ -100,3 +100,5 @@ export function walkParsedQuery(ctsQueryObj) {
   }
   return out;
 }
+
+export { adjustSearchString, translateStringGrammarToJSON, walkParsedQuery };

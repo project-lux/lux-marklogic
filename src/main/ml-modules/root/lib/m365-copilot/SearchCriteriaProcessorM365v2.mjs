@@ -14,8 +14,11 @@ import {
 import { TOKEN_FIELDS, TOKEN_PREDICATES, TOKEN_TYPES } from '../searchLib.mjs';
 import * as utils from '../../utils/utils.mjs';
 
-import { generateQueryFromCriteria as generateQuery } from './search-criteria/criteriaEngine.mjs';
-import { translateStringGrammarToJSON } from './search-criteria/stringGrammar.mjs';
+import { generateQueryFromCriteria } from './search-criteria/criteriaEngine.mjs';
+import {
+  adjustSearchString,
+  translateStringGrammarToJSON,
+} from './search-criteria/stringGrammar.mjs';
 import {
   getSearchScopeFields,
   getSearchScopePredicates,
@@ -114,8 +117,7 @@ const SearchCriteriaProcessorM365v2 = class {
       }
     } else {
       // Build CTS query template (string)
-      this.ctsQueryStrWithTokens = generateQuery(
-        this,
+      this.ctsQueryStrWithTokens = this.generateQueryFromCriteria(
         this.scopeName,
         this.resolvedSearchCriteria,
         null,
@@ -204,7 +206,7 @@ const SearchCriteriaProcessorM365v2 = class {
     mustReturnCtsQuery = false,
     returnTrueForUnusableTerms = true,
   ) {
-    return generateQuery(
+    return generateQueryFromCriteria(
       this,
       scopeName,
       searchCriteria,
@@ -274,6 +276,11 @@ const SearchCriteriaProcessorM365v2 = class {
   // Pass-through method for backward compatibility
   static translateStringGrammarToJSON(scopeName, searchCriteria) {
     return translateStringGrammarToJSON(scopeName, searchCriteria);
+  }
+
+  // Pass-through method in support of unit testing.
+  static adjustSearchString(givenQueryString) {
+    return adjustSearchString(givenQueryString);
   }
 
   static getFirstNonOptionPropertyName(termValue) {

@@ -15,6 +15,11 @@ noMatchCount=0
 
 # Connection settings
 protocol=https
+if [ "$protocol" = "https" ]; then
+  scheme=basic
+else
+  scheme=digest
+fi
 host=OMITTED
 port=8004
 username=lux_consumer_dev
@@ -35,7 +40,7 @@ while read line; do
 
   # Get estimate
   # TODO: Gracefully handle requests that time out.
-  estimate=$(curl --digest --insecure \
+  estimate=$(curl --$scheme --insecure \
     -u "$username":"$password" \
     -F "scope=${scope}" \
     -F "q=${q}" \
@@ -55,7 +60,7 @@ while read line; do
 
   # Get last page, filtered
   # TODO: Gracefully handle requests that time out.
-  pageCount=$(curl --digest --insecure \
+  pageCount=$(curl --$scheme --insecure \
     -u "$username":"$password" \
     "$searchUrl" \
     -F "filterResults=true" \

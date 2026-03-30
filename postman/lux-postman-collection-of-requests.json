@@ -295,8 +295,8 @@
 							"name": "Set",
 							"request": {
 								"auth": {
-									"type": "digest",
-									"digest": [
+									"type": "basic",
+									"basic": [
 										{
 											"key": "password",
 											"value": "{{mlDeployerPassword}}",
@@ -355,8 +355,8 @@
 							},
 							"request": {
 								"auth": {
-									"type": "digest",
-									"digest": [
+									"type": "basic",
+									"basic": [
 										{
 											"key": "password",
 											"value": "{{mlDeployerPassword}}",
@@ -630,8 +630,8 @@
           "name": "Scale Out",
           "request": {
             "auth": {
-              "type": "digest",
-              "digest": [
+              "type": "basic",
+              "basic": [
                 {
                   "key": "password",
                   "value": "{{mlDeployerPassword}}",
@@ -972,8 +972,8 @@
 				}
 			],
 			"auth": {
-				"type": "digest",
-				"digest": [
+				"type": "basic",
+				"basic": [
 					{
 						"key": "password",
 						"value": "{{mlAppPassword}}",
@@ -1412,8 +1412,8 @@
 				}
 			],
 			"auth": {
-				"type": "digest",
-				"digest": [
+				"type": "basic",
+				"basic": [
 					{
 						"key": "password",
 						"value": "{{mlManagePassword}}",

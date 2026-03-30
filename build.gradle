@@ -88,17 +88,6 @@ task startWithAppServicesPort() {
   mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
 }
 
-// Change ML app config's rest port to that of the app services port.  See startWithAppServicesPort's
-// comment for details.
-task switchToAppServicesPort() {
-  doFirst {
-    println ''
-    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
-    println ''
-    mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
-  }
-}
-
 // Change ML app config's rest port to that of the tenant's deploy app server port.  See
 // startWithAppServicesPort's comment for details.
 task switchToDeployPort() {
@@ -373,6 +362,7 @@ task addSupportForExecutingWithServiceAccounts() {
 mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
+// Implementation supports both the basic and digest auth schemes.
 task ensureTenantStatusDocumentExists() {
   doFirst {
     println ""
@@ -392,12 +382,10 @@ task ensureTenantStatusDocumentExists() {
     def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
 
     try {
-      // Use Apache HttpClient 5.x which handles digest auth properly (unlike Java's HttpURLConnection)
       def httpClientBuilder = HttpClients.custom()
         .disableConnectionState()  // Force new connections
         .disableAutomaticRetries() // Prevent connection reuse issues
       
-      // Set up digest authentication
       def credentialsProvider = new BasicCredentialsProvider()
       credentialsProvider.setCredentials(
         new AuthScope(null, -1),

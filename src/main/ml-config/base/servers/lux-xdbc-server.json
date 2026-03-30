@@ -7,6 +7,6 @@
   "port": %%mlXdbcPort%%,
   "content-database": "%%tenantContentDatabase%%",
   "modules-database": "%%tenantModulesDatabase%%",
-  "authentication": "digest",
+  "authentication": "%%mlAuthentication%%",
   "internal-security": "true"
 }

@@ -6,7 +6,7 @@
   "port": %%mlDeployPort%%,
   "content-database": "%%tenantContentDatabase%%",
   "modules-database": "%%tenantModulesDatabase%%",
-  "authentication": "digest",
+  "authentication": "%%mlAuthentication%%",
   "internal-security": "true",
   "external-security": [],
   "threads": %%mlRestMaxThreads%%,

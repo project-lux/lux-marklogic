@@ -2,6 +2,23 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v3.1.0 - 2026-03-30
+
+### Added
+
+### Changed
+
+- The default authentication scheme of all application servers is now controlled by the `mlAuthentication` build property.  Set to `basic` for HTTPS-enabled environments and `digest` for HTTP environments.  For MyCollections-enabled deployments, the [oauth ml-config directory](./src/main/ml-config/oauth/) should be included and will override the primary REST servers to use the `oauth` authentication scheme. ([#666](https://github.com/project-lux/lux-marklogic/issues/666))
+
+### Removed
+  
+### Fixed
+
+- Removed need to manually create the modules database used by the unit tests ([#660](https://github.com/project-lux/lux-marklogic/issues/660)).
+- Fixed the order of search scopes to align with the UI's search tabs ([#663](https://github.com/project-lux/lux-marklogic/issues/663)).
+
+### Security
+
 ## v3.0.0 - 2026-03-16
 
 LUX backend v3.0.0 reduces recurring expenses by changing from clusters to individual MarkLogic hosts and relying on [MarkLogic's dynamic host feature](https://docs.progress.com/bundle/marklogic-server-administrate-12/page/topics/dynamic-hosts.html) to scale out when needed.  See [MarkLogic Dynamic Host for LUX](/docs/lux-dynamic-host.md) for additional design aspects.

@@ -28,7 +28,7 @@ import * as utils from '../../../utils/utils.mjs';
 
 // Builds a CTS query string template from JSON criteria.
 // Mutates `self` for counters/values/includeTypeConstraint exactly like the monolith code.
-export function generateQueryFromCriteria(
+function generateQueryFromCriteria(
   self,
   scopeName,
   searchCriteria,
@@ -408,3 +408,5 @@ function _hasGroup(termValue) {
     (termValue.AND || termValue.OR || termValue.NOT || termValue.BOOST)
   );
 }
+
+export { generateQueryFromCriteria };

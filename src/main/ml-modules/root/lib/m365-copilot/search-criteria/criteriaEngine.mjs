@@ -41,70 +41,37 @@ function generateQueryFromCriteria(
 
   // Group operators
   if (searchCriteria.AND || searchCriteria.OR) {
-    const isAnd = searchCriteria.AND;
-    const groupName = isAnd ? 'AND' : 'OR';
-    const groupArr = searchCriteria[groupName];
-    self.constructor.requireSearchCriteriaArray(groupArr);
-
-    if (groupArr.length === 0) {
-      // Ignore by not modifying ctsQueryStr
-      return '';
-    } else if (!isAnd && groupArr.length === 1) {
-      // Don't group an OR when there is only one item.
-      return generateQueryFromCriteria(
-        self,
-        scopeName,
-        groupArr[0],
-        parentSearchTerm,
-        false,
-        true, // process() will catch if this is the only search criteria term and it gets ignored.
-      );
-    } else {
-      const pieces = groupArr.map((item) =>
-        generateQueryFromCriteria(
-          self,
-          scopeName,
-          item,
-          parentSearchTerm,
-          true,
-          isAnd, // we want cts.trueQuery when within an AND.
-        ),
-      );
-      return _wrapGroup(isAnd ? 'and' : 'or', pieces);
-    }
+    return _handleGroupOperators(
+      self,
+      scopeName,
+      searchCriteria,
+      parentSearchTerm,
+      mustReturnCtsQuery,
+      returnTrueForUnusableTerms,
+    );
   }
 
   // NOT operator
   if (searchCriteria.NOT) {
-    const notCriteria = searchCriteria.NOT;
-    // Accept array or object.
-    if (utils.isArray(notCriteria)) {
-      // Create an OR within NOT
-      const orCriteria = { OR: notCriteria.map((x) => x) };
-      return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, orCriteria, parentSearchTerm, mustReturnCtsQuery, true)})`;
-    } else if (utils.isObject(notCriteria)) {
-      return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, notCriteria, parentSearchTerm, true, true)})`;
-    } else {
-      throw new InvalidSearchRequestError(
-        `object or array expected for NOT search criteria but given ${JSON.stringify(searchCriteria)}`,
-      );
-    }
+    return _handleNotOperator(
+      self,
+      scopeName,
+      searchCriteria,
+      parentSearchTerm,
+      mustReturnCtsQuery,
+      returnTrueForUnusableTerms,
+    );
   }
 
   // BOOST operator
   if (searchCriteria.BOOST) {
-    if (
-      utils.isArray(searchCriteria.BOOST) &&
-      searchCriteria.BOOST.length === 2
-    ) {
-      // Deep copy prevents the matching query from impacting the boost query.
-      return `cts.boostQuery(
-${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[0], parentSearchTerm, true, false)},
-${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSearchTerm, true, false)}
-)`;
-    }
-    throw new InvalidSearchRequestError(
-      `the BOOST operator requires an array of two items.`,
+    return _handleBoostOperator(
+      self,
+      scopeName,
+      searchCriteria,
+      parentSearchTerm,
+      mustReturnCtsQuery,
+      returnTrueForUnusableTerms,
     );
   }
 
@@ -165,6 +132,93 @@ ${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSear
 //#region Internal helpers
 function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
   return `cts.${kind}Query([${pieces.join(', ')}])`;
+}
+
+function _handleGroupOperators(
+  self,
+  scopeName,
+  searchCriteria,
+  parentSearchTerm,
+  mustReturnCtsQuery,
+  returnTrueForUnusableTerms,
+) {
+  const isAnd = searchCriteria.AND;
+  const groupName = isAnd ? 'AND' : 'OR';
+  const groupArr = searchCriteria[groupName];
+  self.constructor.requireSearchCriteriaArray(groupArr);
+
+  if (groupArr.length === 0) {
+    // Ignore by not modifying ctsQueryStr
+    return '';
+  } else if (!isAnd && groupArr.length === 1) {
+    // Don't group an OR when there is only one item.
+    return generateQueryFromCriteria(
+      self,
+      scopeName,
+      groupArr[0],
+      parentSearchTerm,
+      false,
+      true, // process() will catch if this is the only search criteria term and it gets ignored.
+    );
+  } else {
+    const pieces = groupArr.map((item) =>
+      generateQueryFromCriteria(
+        self,
+        scopeName,
+        item,
+        parentSearchTerm,
+        true,
+        isAnd, // we want cts.trueQuery when within an AND.
+      ),
+    );
+    return _wrapGroup(isAnd ? 'and' : 'or', pieces);
+  }
+}
+
+function _handleNotOperator(
+  self,
+  scopeName,
+  searchCriteria,
+  parentSearchTerm,
+  mustReturnCtsQuery,
+  returnTrueForUnusableTerms,
+) {
+  const notCriteria = searchCriteria.NOT;
+  // Accept array or object.
+  if (utils.isArray(notCriteria)) {
+    // Create an OR within NOT
+    const orCriteria = { OR: notCriteria.map((x) => x) };
+    return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, orCriteria, parentSearchTerm, mustReturnCtsQuery, true)})`;
+  } else if (utils.isObject(notCriteria)) {
+    return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, notCriteria, parentSearchTerm, true, true)})`;
+  } else {
+    throw new InvalidSearchRequestError(
+      `object or array expected for NOT search criteria but given ${JSON.stringify(searchCriteria)}`,
+    );
+  }
+}
+
+function _handleBoostOperator(
+  self,
+  scopeName,
+  searchCriteria,
+  parentSearchTerm,
+  mustReturnCtsQuery,
+  returnTrueForUnusableTerms,
+) {
+  if (
+    utils.isArray(searchCriteria.BOOST) &&
+    searchCriteria.BOOST.length === 2
+  ) {
+    // Deep copy prevents the matching query from impacting the boost query.
+    return `cts.boostQuery(
+${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[0], parentSearchTerm, true, false)},
+${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSearchTerm, true, false)}
+)`;
+  }
+  throw new InvalidSearchRequestError(
+    `the BOOST operator requires an array of two items.`,
+  );
 }
 
 function _tokenizeSearchTermValue(value, leaveAsIs) {

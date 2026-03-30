@@ -14,6 +14,7 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
+import { TOKEN_TYPES } from '../searchLib.mjs';
 import * as utils from '../../utils/utils.mjs';
 
 // New modules introduced by the split
@@ -129,7 +130,7 @@ const SearchCriteriaProcessorM365v2 = class {
     // Optional type constraint injection (kept as tokens)
     if (this.includeTypeConstraint) {
       this.ctsQueryStrWithTokens = `cts.andQuery([
-        cts.jsonPropertyValueQuery('dataType', TOKEN_TYPES, ['exact']),
+        cts.jsonPropertyValueQuery('dataType', ${TOKEN_TYPES}, ['exact']),
         ${this.ctsQueryStrWithTokens}
       ])`;
     }

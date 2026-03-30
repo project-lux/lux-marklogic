@@ -122,8 +122,8 @@ const SearchCriteriaProcessorM365v2 = class {
         this.scopeName,
         this.resolvedSearchCriteria,
         null,
-        true, // mustReturnCtsQuery
-        false, // returnTrueForUnusableTerms
+        true, // Must return a CTS query.
+        false, // Return cts.falseQuery when the top-level term is unusable.
       );
     }
 
@@ -137,11 +137,11 @@ const SearchCriteriaProcessorM365v2 = class {
       ])`;
     }
 
-    // Resolve tokens to final query
+    // Resolve tokens to final query with default field, predicate and type values
     this.ctsQueryStr = this.resolveTokens(
-      getSearchScopeFields(this.scopeName, true),
-      getSearchScopePredicates(this.scopeName),
-      getSearchScopeTypes(this.scopeName, false),
+      getSearchScopeFields(this.scopeName, true), // default to all
+      getSearchScopePredicates(this.scopeName), // defaults to any
+      getSearchScopeTypes(this.scopeName, false), // default to none
     );
   }
 
@@ -165,6 +165,7 @@ const SearchCriteriaProcessorM365v2 = class {
     return this.ignoredTerms;
   }
 
+  // Get query. If you're looking for the query with different token values, use resolveTokens.
   getCtsQueryStr() {
     // Finalize the query
     this.ctsQueryStr =
@@ -180,6 +181,7 @@ const SearchCriteriaProcessorM365v2 = class {
     );
   }
 
+  // returns { resultPage: number, results: Array<{id: string, type: string}> }
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
   getSearchResults() {
     const sortType = SearchCriteriaProcessorM365v2.getSortTypeFromSortCriteria(
@@ -277,7 +279,7 @@ const SearchCriteriaProcessorM365v2 = class {
   }
 
   static evalQueryString(queryStr) {
-    // TODO: will the Optic version still need this?  Would prefer to avoid eval or add protection.
+    // TODO: will the Optic version still need this? Would prefer to avoid eval or add protection.
     return fn.head(
       xdmp.eval(
         `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`,
@@ -421,6 +423,7 @@ const SearchCriteriaProcessorM365v2 = class {
     throw new InvalidSearchRequestError(`search scope not specified.`);
   }
 
+  // returns { resultPage: number, results: Array<{id: string, type: string}> }
   _getMultiScopeSortResults() {
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),
@@ -458,6 +461,7 @@ const SearchCriteriaProcessorM365v2 = class {
     );
   }
 
+  // returns { resultPage: number, results: Array<{id: string, type: string}> }
   _getSemanticSortResults() {
     xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
 
@@ -575,6 +579,7 @@ const SearchCriteriaProcessorM365v2 = class {
     return { resultPage: foundUriPage, results };
   }
 
+  // returns { resultPage: number, results: Array<{id: string, type: string}> }
   _getNonSemanticSortResults() {
     const searchOptionsArr = [
       this.requestOptions.filterResults === true ? 'filtered' : 'unfiltered',

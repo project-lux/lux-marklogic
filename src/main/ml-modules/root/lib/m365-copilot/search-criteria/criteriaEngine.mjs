@@ -46,15 +46,17 @@ function generateQueryFromCriteria(
     self.constructor.requireSearchCriteriaArray(groupArr);
 
     if (groupArr.length === 0) {
+      // Ignore by not modifying ctsQueryStr
       return '';
     } else if (!isAnd && groupArr.length === 1) {
+      // Don't group an OR when there is only one item.
       return generateQueryFromCriteria(
         self,
         scopeName,
         groupArr[0],
         parentSearchTerm,
         false,
-        true,
+        true, // process() will catch if this is the only search criteria term and it gets ignored.
       );
     } else {
       const pieces = groupArr.map((item) =>
@@ -64,7 +66,7 @@ function generateQueryFromCriteria(
           item,
           parentSearchTerm,
           true,
-          isAnd,
+          isAnd, // we want cts.trueQuery when within an AND.
         ),
       );
       return _wrapGroup(isAnd ? 'and' : 'or', pieces);
@@ -74,7 +76,9 @@ function generateQueryFromCriteria(
   // NOT operator
   if (searchCriteria.NOT) {
     const notCriteria = searchCriteria.NOT;
+    // Accept array or object.
     if (utils.isArray(notCriteria)) {
+      // Create an OR within NOT
       const orCriteria = { OR: notCriteria.map((x) => x) };
       return `cts.notQuery(${generateQueryFromCriteria(self, scopeName, orCriteria, parentSearchTerm, mustReturnCtsQuery, true)})`;
     } else if (utils.isObject(notCriteria)) {
@@ -92,6 +96,7 @@ function generateQueryFromCriteria(
       utils.isArray(searchCriteria.BOOST) &&
       searchCriteria.BOOST.length === 2
     ) {
+      // Deep copy prevents the matching query from impacting the boost query.
       return `cts.boostQuery(
 ${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[0], parentSearchTerm, true, false)},
 ${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSearchTerm, true, false)}
@@ -162,9 +167,11 @@ function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
 }
 
 function _tokenizeSearchTermValue(value, leaveAsIs) {
+  // Just return the value in an array when told not to manipulate the value.
   if (leaveAsIs) return [value];
   if (utils.isString(value)) {
     let v = value.trim();
+    // Do not tokenize when (there isn't a space or) the value starts and ends with matching quote characters.
     const quoted = v.match(/^('|").+\1$/) != null;
     if (!v.includes(' ') || quoted) return [v];
     return utils.splitHonoringPhrases(v);
@@ -380,6 +387,7 @@ function _getSearchTermConfig(self, scopeName, termName) {
 function _cleanTermValues(searchTerm) {
   // Apply sanitization for wildcard strings when dealing with keyword terms
   if (_isKeywordTerm(searchTerm)) {
+    // The return of this function could include cleaned up values.
     searchTerm.setValue(
       sanitizeAndValidateWildcardedStrings(searchTerm.getValue()),
     );

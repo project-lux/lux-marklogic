@@ -24,8 +24,7 @@ import {
 } from '../../errorClasses.mjs';
 import * as utils from '../../../utils/utils.mjs';
 
-// ------------------ Public engine surface ------------------
-
+//#region Public function(s)
 // Builds a CTS query string template from JSON criteria.
 // Mutates `self` for counters/values/includeTypeConstraint exactly like the monolith code.
 function generateQueryFromCriteria(
@@ -159,9 +158,9 @@ ${generateQueryFromCriteria(self, scopeName, searchCriteria.BOOST[1], parentSear
 
   return returnTrueForUnusableTerms ? 'cts.trueQuery()' : 'cts.falseQuery()';
 }
+//#endregion
 
-// ------------------ Internal helpers ------------------
-
+//#region Internal helpers
 function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
   return `cts.${kind}Query([${pieces.join(', ')}])`;
 }
@@ -429,5 +428,6 @@ function _hasGroup(termValue) {
     (termValue.AND || termValue.OR || termValue.NOT || termValue.BOOST)
   );
 }
+//#endregion
 
 export { generateQueryFromCriteria };

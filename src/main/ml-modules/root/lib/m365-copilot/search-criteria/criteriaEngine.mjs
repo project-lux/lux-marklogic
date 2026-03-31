@@ -1,4 +1,5 @@
 //#region Imports
+import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
 import {
   PATTERN_NAME_INDEXED_VALUE,
   TYPE_GROUP,
@@ -28,8 +29,8 @@ import * as utils from '../../../utils/utils.mjs';
 
 //#region Public function(s)
 // Builds a CTS query string template from JSON criteria.
-// Mutates `self` for counters/values/includeTypeConstraint exactly like the monolith code.
-function generateQueryFromCriteria(self, params) {
+// Mutates `searchCriteriaProcessor` for counters/values/includeTypeConstraint exactly like the monolith code.
+function generateQueryFromCriteria(searchCriteriaProcessor, params) {
   const {
     scopeName,
     searchCriteria,
@@ -37,28 +38,28 @@ function generateQueryFromCriteria(self, params) {
     mustReturnCtsQuery = false,
     returnTrueForUnusableTerms = true,
   } = params;
-  self.constructor.requireSearchCriteriaObject(searchCriteria);
+  SearchCriteriaProcessor.requireSearchCriteriaObject(searchCriteria);
 
   // Group operators
   if (searchCriteria.AND || searchCriteria.OR) {
-    return _handleGroupOperators(self, params);
+    return _handleGroupOperators(searchCriteriaProcessor, params);
   }
 
   // NOT operator
   if (searchCriteria.NOT) {
-    return _handleNotOperator(self, params);
+    return _handleNotOperator(searchCriteriaProcessor, params);
   }
 
   // BOOST operator
   if (searchCriteria.BOOST) {
-    return _handleBoostOperator(self, params);
+    return _handleBoostOperator(searchCriteriaProcessor, params);
   }
 
   // Terminal / term
-  let searchTerm = _parseAndValidateTerm(self, params);
+  let searchTerm = _parseAndValidateTerm(searchCriteriaProcessor, params);
 
   if (searchTerm.hasModifiedCriteria()) {
-    return generateQueryFromCriteria(self, {
+    return generateQueryFromCriteria(searchCriteriaProcessor, {
       scopeName,
       searchCriteria: searchTerm.getModifiedCriteria(),
       parentSearchTerm,
@@ -69,10 +70,10 @@ function generateQueryFromCriteria(self, params) {
 
   if (searchTerm.isUsable()) {
     const patternResponse = applyPattern({
-      searchCriteriaProcessor: self,
+      searchCriteriaProcessor: searchCriteriaProcessor,
       searchTerm,
-      searchPatternOptions: self.searchPatternOptions,
-      requestOptions: self.requestOptions,
+      searchPatternOptions: searchCriteriaProcessor.searchPatternOptions,
+      requestOptions: searchCriteriaProcessor.requestOptions,
     });
 
     let code = '';
@@ -85,15 +86,17 @@ function generateQueryFromCriteria(self, params) {
     // with its introductory purpose of supporting related lists that execute each relationship's
     // query individually.
     if (utils.isNonEmptyArray(patternResponse.values)) {
-      self.values = self.values.concat(patternResponse.values);
+      searchCriteriaProcessor.values = searchCriteriaProcessor.values.concat(
+        patternResponse.values,
+      );
     }
 
     // A single search term has the ability to exclude the type constraint. Introduced for related lists.
     if (patternResponse.includeTypeConstraint === false) {
-      self.includeTypeConstraint = false;
+      searchCriteriaProcessor.includeTypeConstraint = false;
     }
 
-    self.criteriaCnt++;
+    searchCriteriaProcessor.criteriaCnt++;
     return code;
   }
 
@@ -102,7 +105,7 @@ function generateQueryFromCriteria(self, params) {
 //#endregion
 
 //#region Internal helpers
-function _handleGroupOperators(self, params) {
+function _handleGroupOperators(searchCriteriaProcessor, params) {
   const {
     scopeName,
     searchCriteria,
@@ -113,14 +116,14 @@ function _handleGroupOperators(self, params) {
   const isAnd = searchCriteria.AND;
   const groupName = isAnd ? 'AND' : 'OR';
   const groupArr = searchCriteria[groupName];
-  self.constructor.requireSearchCriteriaArray(groupArr);
+  SearchCriteriaProcessor.requireSearchCriteriaArray(groupArr);
 
   if (groupArr.length === 0) {
     // Ignore by not modifying ctsQueryStr
     return '';
   } else if (!isAnd && groupArr.length === 1) {
     // Don't group an OR when there is only one item.
-    return generateQueryFromCriteria(self, {
+    return generateQueryFromCriteria(searchCriteriaProcessor, {
       scopeName,
       searchCriteria: groupArr[0],
       parentSearchTerm,
@@ -129,7 +132,7 @@ function _handleGroupOperators(self, params) {
     });
   } else {
     const pieces = groupArr.map((item) =>
-      generateQueryFromCriteria(self, {
+      generateQueryFromCriteria(searchCriteriaProcessor, {
         scopeName,
         searchCriteria: item,
         parentSearchTerm,
@@ -141,7 +144,7 @@ function _handleGroupOperators(self, params) {
   }
 }
 
-function _handleNotOperator(self, params) {
+function _handleNotOperator(searchCriteriaProcessor, params) {
   const {
     scopeName,
     searchCriteria,
@@ -154,7 +157,7 @@ function _handleNotOperator(self, params) {
   if (utils.isArray(notCriteria)) {
     // Create an OR within NOT
     const orCriteria = { OR: notCriteria.map((x) => x) };
-    return `cts.notQuery(${generateQueryFromCriteria(self, {
+    return `cts.notQuery(${generateQueryFromCriteria(searchCriteriaProcessor, {
       scopeName,
       searchCriteria: orCriteria,
       parentSearchTerm,
@@ -162,7 +165,7 @@ function _handleNotOperator(self, params) {
       returnTrueForUnusableTerms: true,
     })})`;
   } else if (utils.isObject(notCriteria)) {
-    return `cts.notQuery(${generateQueryFromCriteria(self, {
+    return `cts.notQuery(${generateQueryFromCriteria(searchCriteriaProcessor, {
       scopeName,
       searchCriteria: notCriteria,
       parentSearchTerm,
@@ -176,7 +179,7 @@ function _handleNotOperator(self, params) {
   }
 }
 
-function _handleBoostOperator(self, params) {
+function _handleBoostOperator(searchCriteriaProcessor, params) {
   const {
     scopeName,
     searchCriteria,
@@ -190,14 +193,14 @@ function _handleBoostOperator(self, params) {
   ) {
     // Deep copy prevents the matching query from impacting the boost query.
     return `cts.boostQuery(
-${generateQueryFromCriteria(self, {
+${generateQueryFromCriteria(searchCriteriaProcessor, {
   scopeName,
   searchCriteria: searchCriteria.BOOST[0],
   parentSearchTerm,
   mustReturnCtsQuery: true,
   returnTrueForUnusableTerms: false,
 })},
-${generateQueryFromCriteria(self, {
+${generateQueryFromCriteria(searchCriteriaProcessor, {
   scopeName,
   searchCriteria: searchCriteria.BOOST[1],
   parentSearchTerm,
@@ -211,7 +214,7 @@ ${generateQueryFromCriteria(self, {
   );
 }
 
-function _parseAndValidateTerm(self, params) {
+function _parseAndValidateTerm(searchCriteriaProcessor, params) {
   const { scopeName, searchCriteria, parentSearchTerm, mustReturnCtsQuery } =
     params;
   const searchTerm = new SearchTerm()
@@ -232,12 +235,19 @@ function _parseAndValidateTerm(self, params) {
     return tokenizationResult.searchTerm;
   }
 
-  const searchTermConfig = _getSearchTermConfig(self, scopeName, termName);
+  const searchTermConfig = _getSearchTermConfig(
+    searchCriteriaProcessor,
+    scopeName,
+    termName,
+  );
   searchTerm.setSearchTermConfig(searchTermConfig);
 
   // Handle non-atomic values, else perform various validations before accepting the atomic value.
   if (typeof searchTerm.getValue() === 'object') {
-    const objectTermResult = _handleObjectTermValue(self, searchTerm);
+    const objectTermResult = _handleObjectTermValue(
+      searchCriteriaProcessor,
+      searchTerm,
+    );
     if (objectTermResult.replaced) {
       return objectTermResult.searchTerm;
     }
@@ -264,7 +274,7 @@ function _parseAndValidateTerm(self, params) {
   _cleanTermValues(searchTerm);
 
   // Ignore punctuation-only terms and stop words
-  _ignoreIfStopWordOrPunctuationOnly(self, searchTerm);
+  _ignoreIfStopWordOrPunctuationOnly(searchCriteriaProcessor, searchTerm);
 
   return searchTerm;
 }
@@ -359,8 +369,8 @@ function _tokenizeSearchTermValue(value, leaveAsIs) {
 }
 
 // Get a search term's configuration by scope name and term name. Exception thrown when an invalid combination.
-function _getSearchTermConfig(self, scopeName, termName) {
-  const scopedTerms = self.searchTermsConfig[scopeName];
+function _getSearchTermConfig(searchCriteriaProcessor, scopeName, termName) {
+  const scopedTerms = searchCriteriaProcessor.searchTermsConfig[scopeName];
   if (!scopedTerms) {
     throw new InternalServerError(
       `No terms are configured to the '${scopeName}' search scope.`,
@@ -382,13 +392,13 @@ function _getSearchTermConfig(self, scopeName, termName) {
  * When object contains 'id' property and term config has ID index references, creates
  * a normalized ID term. Otherwise validates and processes the object.
  *
- * @param {Object} self - The search criteria processor instance
+ * @param {Object} searchCriteriaProcessor - The search criteria processor instance
  * @param {SearchTerm} searchTerm - The search term being processed (contains all needed info)
  * @returns {{replaced: boolean, searchTerm: SearchTerm}} Result indicating if term was replaced
  *   - replaced: true if object was normalized to ID term (returns new normalized term)
  *   - replaced: false if object was processed in place (returns modified original term)
  */
-function _handleObjectTermValue(self, searchTerm) {
+function _handleObjectTermValue(searchCriteriaProcessor, searchTerm) {
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
 
@@ -399,7 +409,7 @@ function _handleObjectTermValue(self, searchTerm) {
   }
 
   // Validate object term value types and set appropriate value type
-  _validateAndSetValueType(self, searchTerm);
+  _validateAndSetValueType(searchCriteriaProcessor, searchTerm);
 
   // Handle ID to IRI conversion
   if (
@@ -412,7 +422,7 @@ function _handleObjectTermValue(self, searchTerm) {
   }
 
   // Add child info and handle target scope changes
-  _handleChildInfoAndTargetScope(self, searchTerm);
+  _handleChildInfoAndTargetScope(searchCriteriaProcessor, searchTerm);
 
   return { replaced: false, searchTerm };
 }
@@ -437,7 +447,7 @@ function _createNormalizedIdTerm(searchTerm) {
     );
 }
 
-function _validateAndSetValueType(self, searchTerm) {
+function _validateAndSetValueType(searchCriteriaProcessor, searchTerm) {
   const termName = searchTerm.getName();
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
@@ -450,7 +460,7 @@ function _validateAndSetValueType(self, searchTerm) {
         `the '${termName}' term contains a group but is not allowed to.`,
       );
     }
-  } else if (self.constructor.hasNonOptionPropertyName(termValue)) {
+  } else if (SearchCriteriaProcessor.hasNonOptionPropertyName(termValue)) {
     searchTerm.setValueType(TYPE_TERM);
     if (!acceptsTerm(patternName)) {
       throw new InvalidSearchRequestError(
@@ -460,7 +470,7 @@ function _validateAndSetValueType(self, searchTerm) {
   }
 }
 
-function _handleChildInfoAndTargetScope(self, searchTerm) {
+function _handleChildInfoAndTargetScope(searchCriteriaProcessor, searchTerm) {
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
   const scopeName = searchTerm.getScopeName();
@@ -468,7 +478,7 @@ function _handleChildInfoAndTargetScope(self, searchTerm) {
 
   searchTerm.addChildInfo(
     _getPartialChildSearchTermInfo(
-      self,
+      searchCriteriaProcessor,
       targetScopeName || scopeName,
       termValue,
     ),
@@ -484,15 +494,24 @@ function _handleChildInfoAndTargetScope(self, searchTerm) {
   }
 }
 
-function _getPartialChildSearchTermInfo(self, scopeName, termValue) {
+function _getPartialChildSearchTermInfo(
+  searchCriteriaProcessor,
+  scopeName,
+  termValue,
+) {
   const hasGroup = _hasGroup(termValue);
   let willReturnCtsQuery = hasGroup;
   let valueType = TYPE_GROUP;
   let patternName = null;
 
   if (!hasGroup) {
-    const termName = self.constructor.getFirstNonOptionPropertyName(termValue);
-    const searchTermConfig = _getSearchTermConfig(self, scopeName, termName);
+    const termName =
+      SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue);
+    const searchTermConfig = _getSearchTermConfig(
+      searchCriteriaProcessor,
+      scopeName,
+      termName,
+    );
     patternName = searchTermConfig.getPatternName();
     willReturnCtsQuery = returnsCtsQuery(patternName);
     valueType =
@@ -525,7 +544,10 @@ function _isKeywordTerm(searchTerm) {
   );
 }
 
-function _ignoreIfStopWordOrPunctuationOnly(self, searchTerm) {
+function _ignoreIfStopWordOrPunctuationOnly(
+  searchCriteriaProcessor,
+  searchTerm,
+) {
   const v = searchTerm.getValue();
   const punctuationOnly = /^[!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]*$/.test(
     typeof v === 'string' ? v : '',
@@ -535,7 +557,7 @@ function _ignoreIfStopWordOrPunctuationOnly(self, searchTerm) {
     (typeof v === 'string' && STOP_WORDS.has(v.toLowerCase()))
   ) {
     searchTerm.setUsable(false);
-    self.ignoredTerms.push(v);
+    searchCriteriaProcessor.ignoredTerms.push(v);
   }
 }
 

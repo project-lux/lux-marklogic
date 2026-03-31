@@ -85,6 +85,18 @@ const SearchCriteriaProcessor = class {
   static walkParsedQuery(ctsQueryObj) {
     return SearchCriteriaProcessor.getClass().walkParsedQuery(ctsQueryObj);
   }
+
+  static requireSearchCriteriaObject(searchCriteria) {
+    return SearchCriteriaProcessor.getClass().requireSearchCriteriaObject(
+      searchCriteria,
+    );
+  }
+
+  static requireSearchCriteriaArray(searchCriteria) {
+    return SearchCriteriaProcessor.getClass().requireSearchCriteriaArray(
+      searchCriteria,
+    );
+  }
 };
 
 export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };

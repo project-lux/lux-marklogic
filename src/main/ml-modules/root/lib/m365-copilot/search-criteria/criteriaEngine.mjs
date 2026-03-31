@@ -21,6 +21,7 @@ import {
   sanitizeAndValidateWildcardedStrings,
 } from '../../searchLib.mjs';
 import { isSearchScopeName } from '../../searchScope.mjs';
+import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
 import {
   InvalidSearchRequestError,
   InternalServerError,
@@ -553,10 +554,8 @@ function _isKeywordTerm(searchTerm) {
   const cfg = searchTerm.getSearchTermConfig();
   return (
     TYPE_ATOMIC == searchTerm.getValueType() &&
-    resolveSearchOptionsName(
-      cfg.getOptionsReference(),
-      cfg.getPatternName(),
-    ) === 'keyword'
+    SEARCH_OPTIONS_NAME_KEYWORD ===
+      resolveSearchOptionsName(cfg.getOptionsReference(), cfg.getPatternName())
   );
 }
 

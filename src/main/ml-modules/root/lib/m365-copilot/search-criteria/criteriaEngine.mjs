@@ -1,4 +1,5 @@
 //#region Imports
+import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
 import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
 import {
   PATTERN_NAME_INDEXED_VALUE,
@@ -28,8 +29,20 @@ import * as utils from '../../../utils/utils.mjs';
 //#endregion
 
 //#region Public function(s)
-// Builds a CTS query string template from JSON criteria.
-// Mutates `searchCriteriaProcessor` for counters/values/includeTypeConstraint exactly like the monolith code.
+/**
+ * Builds a CTS query string template from JSON criteria. Processes search criteria objects
+ * containing operators (AND, OR, NOT, BOOST) or individual search terms, returning executable
+ * CTS query code. Mutates the searchCriteriaProcessor for counters, values, and type constraints.
+ *
+ * @param {Object} searchCriteriaProcessor - The search criteria processor instance (mutated for state)
+ * @param {Object} params - Parameters object containing search configuration
+ * @param {string} params.scopeName - The search scope name (e.g., 'agent', 'work')
+ * @param {Object} params.searchCriteria - The search criteria object to process
+ * @param {SearchTerm|null} [params.parentSearchTerm=null] - Optional parent search term context
+ * @param {boolean} [params.mustReturnCtsQuery=false] - Whether result must be a CTS query
+ * @param {boolean} [params.returnTrueForUnusableTerms=true] - Whether to return trueQuery for unusable terms
+ * @returns {string} CTS query string template ready for execution
+ */
 function generateQueryFromCriteria(searchCriteriaProcessor, params) {
   const {
     scopeName,
@@ -55,7 +68,7 @@ function generateQueryFromCriteria(searchCriteriaProcessor, params) {
     return _handleBoostOperator(searchCriteriaProcessor, params);
   }
 
-  // Terminal / term
+  // Individual search term
   let searchTerm = _parseAndValidateTerm(searchCriteriaProcessor, params);
 
   if (searchTerm.hasModifiedCriteria()) {
@@ -214,6 +227,20 @@ ${generateQueryFromCriteria(searchCriteriaProcessor, {
   );
 }
 
+/**
+ * Parses and validates an individual search term from criteria object. Handles name extraction,
+ * property copying, string tokenization, object term processing, and validation. When determined
+ * usable (check searchTerm.isUsable), the returned search term is fully configured and ready for
+ * its pattern to be applied.
+ *
+ * @param {Object} searchCriteriaProcessor - The search criteria processor instance
+ * @param {Object} params - Parameters object containing search configuration
+ * @param {string} params.scopeName - The search scope name
+ * @param {Object} params.searchCriteria - The search criteria object containing the term
+ * @param {SearchTerm|null} params.parentSearchTerm - Optional parent search term context
+ * @param {boolean} params.mustReturnCtsQuery - Whether result must be a CTS query
+ * @returns {SearchTerm} Parsed and validated search term with configuration, value, and usability set
+ */
 function _parseAndValidateTerm(searchCriteriaProcessor, params) {
   const { scopeName, searchCriteria, parentSearchTerm, mustReturnCtsQuery } =
     params;
@@ -235,19 +262,12 @@ function _parseAndValidateTerm(searchCriteriaProcessor, params) {
     return tokenizationResult.searchTerm;
   }
 
-  const searchTermConfig = _getSearchTermConfig(
-    searchCriteriaProcessor,
-    scopeName,
-    termName,
-  );
+  const searchTermConfig = _getSearchTermConfig(scopeName, termName);
   searchTerm.setSearchTermConfig(searchTermConfig);
 
   // Handle non-atomic values, else perform various validations before accepting the atomic value.
   if (typeof searchTerm.getValue() === 'object') {
-    const objectTermResult = _handleObjectTermValue(
-      searchCriteriaProcessor,
-      searchTerm,
-    );
+    const objectTermResult = _handleObjectTermValue(searchTerm);
     if (objectTermResult.replaced) {
       return objectTermResult.searchTerm;
     }
@@ -279,7 +299,16 @@ function _parseAndValidateTerm(searchCriteriaProcessor, params) {
   return searchTerm;
 }
 
-// Extract name and copy _options to properties
+/**
+ * Extracts the term name and copies option properties from search criteria to search term.
+ * Iterates through criteria keys, filtering out reserved keys (_scope, _valueType), setting
+ * underscore-prefixed properties as term options, and identifying the single term name.
+ * Validates that exactly one term name exists and has a value (including zero).
+ *
+ * @param {SearchTerm} searchTerm - The search term object to populate (mutated)
+ * @param {Object} searchCriteria - The search criteria object to extract from
+ * @throws {InvalidSearchRequestError} When term has no value, multiple term names, or no term name
+ */
 function _extractTermNameAndProperties(searchTerm, searchCriteria) {
   for (const key of Object.keys(searchCriteria)) {
     if (!['_scope', '_valueType'].includes(key)) {
@@ -369,8 +398,8 @@ function _tokenizeSearchTermValue(value, leaveAsIs) {
 }
 
 // Get a search term's configuration by scope name and term name. Exception thrown when an invalid combination.
-function _getSearchTermConfig(searchCriteriaProcessor, scopeName, termName) {
-  const scopedTerms = searchCriteriaProcessor.searchTermsConfig[scopeName];
+function _getSearchTermConfig(scopeName, termName) {
+  const scopedTerms = getSearchTermsConfig()[scopeName];
   if (!scopedTerms) {
     throw new InternalServerError(
       `No terms are configured to the '${scopeName}' search scope.`,
@@ -392,13 +421,12 @@ function _getSearchTermConfig(searchCriteriaProcessor, scopeName, termName) {
  * When object contains 'id' property and term config has ID index references, creates
  * a normalized ID term. Otherwise validates and processes the object.
  *
- * @param {Object} searchCriteriaProcessor - The search criteria processor instance
  * @param {SearchTerm} searchTerm - The search term being processed (contains all needed info)
  * @returns {{replaced: boolean, searchTerm: SearchTerm}} Result indicating if term was replaced
  *   - replaced: true if object was normalized to ID term (returns new normalized term)
  *   - replaced: false if object was processed in place (returns modified original term)
  */
-function _handleObjectTermValue(searchCriteriaProcessor, searchTerm) {
+function _handleObjectTermValue(searchTerm) {
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
 
@@ -409,7 +437,7 @@ function _handleObjectTermValue(searchCriteriaProcessor, searchTerm) {
   }
 
   // Validate object term value types and set appropriate value type
-  _validateAndSetValueType(searchCriteriaProcessor, searchTerm);
+  _validateAndSetValueType(searchTerm);
 
   // Handle ID to IRI conversion
   if (
@@ -422,7 +450,7 @@ function _handleObjectTermValue(searchCriteriaProcessor, searchTerm) {
   }
 
   // Add child info and handle target scope changes
-  _handleChildInfoAndTargetScope(searchCriteriaProcessor, searchTerm);
+  _handleChildInfoAndTargetScope(searchTerm);
 
   return { replaced: false, searchTerm };
 }
@@ -447,7 +475,7 @@ function _createNormalizedIdTerm(searchTerm) {
     );
 }
 
-function _validateAndSetValueType(searchCriteriaProcessor, searchTerm) {
+function _validateAndSetValueType(searchTerm) {
   const termName = searchTerm.getName();
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
@@ -470,18 +498,14 @@ function _validateAndSetValueType(searchCriteriaProcessor, searchTerm) {
   }
 }
 
-function _handleChildInfoAndTargetScope(searchCriteriaProcessor, searchTerm) {
+function _handleChildInfoAndTargetScope(searchTerm) {
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
   const scopeName = searchTerm.getScopeName();
   const targetScopeName = searchTermConfig.getTargetScopeName();
 
   searchTerm.addChildInfo(
-    _getPartialChildSearchTermInfo(
-      searchCriteriaProcessor,
-      targetScopeName || scopeName,
-      termValue,
-    ),
+    _getPartialChildSearchTermInfo(targetScopeName || scopeName, termValue),
   );
 
   if (targetScopeName && targetScopeName !== scopeName) {
@@ -494,11 +518,7 @@ function _handleChildInfoAndTargetScope(searchCriteriaProcessor, searchTerm) {
   }
 }
 
-function _getPartialChildSearchTermInfo(
-  searchCriteriaProcessor,
-  scopeName,
-  termValue,
-) {
+function _getPartialChildSearchTermInfo(scopeName, termValue) {
   const hasGroup = _hasGroup(termValue);
   let willReturnCtsQuery = hasGroup;
   let valueType = TYPE_GROUP;
@@ -507,11 +527,7 @@ function _getPartialChildSearchTermInfo(
   if (!hasGroup) {
     const termName =
       SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue);
-    const searchTermConfig = _getSearchTermConfig(
-      searchCriteriaProcessor,
-      scopeName,
-      termName,
-    );
+    const searchTermConfig = _getSearchTermConfig(scopeName, termName);
     patternName = searchTermConfig.getPatternName();
     willReturnCtsQuery = returnsCtsQuery(patternName);
     valueType =

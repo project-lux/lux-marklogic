@@ -1,6 +1,5 @@
 //#region Imports
 import op from '/MarkLogic/optic';
-import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
@@ -50,7 +49,6 @@ const SearchCriteriaProcessorM365v2 = class {
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {
     // Capture all constructor parameters as request options, enabling search patterns to utilize.
     this.requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
-    this.searchTermsConfig = getSearchTermsConfig();
 
     // Given to process()
     this.scopeName;

@@ -72,7 +72,24 @@ const SearchCriteriaProcessorM365v2 = class {
   //#endregion
 
   //#region Public instance methods
-  // Processes and validates search criteria, ending with a fully resolved query.
+  /**
+   * Processes and validates search criteria, building a fully resolved CTS query string.
+   * This is the main entry point that orchestrates the entire search criteria processing
+   * pipeline from raw input to executable query. Mutates instance state with results.
+   *
+   * @param {Object|string} searchCriteria - Search criteria in the LUX string grammar or JSON grammar
+   * @param {string} scopeName - Search scope name (e.g., 'agent', 'work', 'multi', 'concept')
+   * @param {boolean} allowMultiScope - Whether multi-scope searches are permitted
+   * @param {SearchPatternOptions} searchPatternOptions - Configuration for search pattern behavior
+   * @param {boolean} includeTypeConstraint - Whether to add dataType constraint to query
+   * @param {number} page - Page number for pagination (1-based)
+   * @param {number} pageLength - Number of results per page
+   * @param {string|null} pageWith - Optional document ID to find page containing this document
+   * @param {SortCriteria|Object|string} sortCriteria - Sort configuration or parseable sort string
+   * @param {boolean} valuesOnly - Whether patterns should return values instead of queries
+   * @throws {InvalidSearchRequestError} When criteria invalid, scope invalid, or insufficient criteria
+   * @throws {InternalServerError} When configuration issues detected
+   */
   process(
     searchCriteria,
     scopeName,
@@ -180,7 +197,6 @@ const SearchCriteriaProcessorM365v2 = class {
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
-  // returns { resultPage: number, results: Array<{id: string, type: string}> }
   getSearchResults() {
     const sortType = SearchCriteriaProcessorM365v2.getSortTypeFromSortCriteria(
       this.sortCriteria,
@@ -201,7 +217,7 @@ const SearchCriteriaProcessorM365v2 = class {
     return this.values;
   }
 
-  // Pass-through method for backward compatibility
+  // Pass-through method
   generateQueryFromCriteria(
     scopeName,
     searchCriteria,
@@ -401,7 +417,14 @@ const SearchCriteriaProcessorM365v2 = class {
     this.values = [];
   }
 
-  // Resolves the scope from criteria, validates it, and applies it to this + requestOptions
+  /**
+   * Resolves the scope from criteria, validates it, and applies it to instance and requestOptions.
+   * Extracts scope from resolvedSearchCriteria._scope, normalizes it (trim + lowercase),
+   * validates it's a recognized scope name, then sets this.scopeName and requestOptions.scopeName.
+   * Removes the _scope property from criteria after processing.
+   *
+   * @throws {InvalidSearchRequestError} When scope is invalid or not specified
+   */
   _resolveAndValidateScope() {
     const sc = this.resolvedSearchCriteria;
     if (sc && utils.isNonEmptyString(sc._scope)) {

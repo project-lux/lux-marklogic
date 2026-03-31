@@ -211,21 +211,6 @@ ${generateQueryFromCriteria(self, {
   );
 }
 
-function _tokenizeSearchTermValue(value, leaveAsIs) {
-  // Just return the value in an array when told not to manipulate the value.
-  if (leaveAsIs) return utils.toArray(value);
-  if (utils.isString(value)) {
-    let v = value.trim();
-    // Do not tokenize when (there isn't a space or) the value starts and ends with matching quote characters.
-    const quoted = v.match(/^('|").+\1$/) != null;
-    if (!v.includes(' ') || quoted) return [v];
-    return utils.splitHonoringPhrases(v);
-  }
-  throw new InternalServerError(
-    `_tokenizeSearchTermValue must be given a non-null string.`,
-  );
-}
-
 function _parseAndValidateTerm(self, params) {
   const { scopeName, searchCriteria, parentSearchTerm, mustReturnCtsQuery } =
     params;
@@ -235,128 +220,26 @@ function _parseAndValidateTerm(self, params) {
     .addParentSearchTerm(parentSearchTerm);
 
   // Extract name and copy _options to properties
-  for (const key of Object.keys(searchCriteria)) {
-    if (!['_scope', '_valueType'].includes(key)) {
-      if (key.startsWith('_')) {
-        searchTerm.setProperty(key.substring(1), searchCriteria[key]);
-      } else if (!searchTerm.hasName()) {
-        const termName = key;
-        searchTerm.setName(termName);
-        // Need to check for the property's existence as zero is a valid value.
-        if (!searchCriteria.hasOwnProperty(termName)) {
-          throw new InvalidSearchRequestError(
-            `the '${termName}' term requires a value.`,
-          );
-        }
-      } else {
-        throw new InvalidSearchRequestError(
-          `search term defines more than one term name in criteria ${JSON.stringify(searchCriteria)}`,
-        );
-      }
-    }
-  }
-
-  if (!searchTerm.hasName()) {
-    throw new InvalidSearchRequestError(
-      `search term does not specify a term name in criteria ${JSON.stringify(searchCriteria)}`,
-    );
-  }
-
+  _extractTermNameAndProperties(searchTerm, searchCriteria);
   const termName = searchTerm.getName();
-  let termValue = searchCriteria[termName];
 
   // Tokenize string values into AND unless told to leave as-is
-  if (utils.isString(termValue)) {
-    const tokenizedValues = _tokenizeSearchTermValue(
-      searchCriteria[termName],
-      searchTerm.isCompleteMatch() || searchTerm.isTokenized(),
-    );
-    if (tokenizedValues.length > 1) {
-      return searchTerm.addModifiedCriteria({
-        _scope: searchTerm.getScopeName(),
-        AND: tokenizedValues.map((value) => {
-          const criterion = {};
-          criterion[termName] = value;
-          searchTerm.getPropertyNames().forEach((name) => {
-            criterion[`_${name}`] = searchTerm.getProperty(name);
-          });
-          // #273: Prevent re-tokenization when the encapsulating AND gets processed.
-          criterion._tokenized = true; // prevent re-tokenization
-          return criterion;
-        }),
-      });
-    }
-    termValue = tokenizedValues[0];
+  const tokenizationResult = _handleStringTokenization(
+    searchTerm,
+    searchCriteria,
+  );
+  if (tokenizationResult.replaced) {
+    return tokenizationResult.searchTerm;
   }
-
-  searchTerm.setValue(termValue);
 
   const searchTermConfig = _getSearchTermConfig(self, scopeName, termName);
   searchTerm.setSearchTermConfig(searchTermConfig);
 
-  // Normalize ID child → indexed string match
-  if (typeof termValue === 'object') {
-    // When the term value has the 'id' property and the term config specifies an ID index
-    // reference, redefine the term to match on an ID value.
-    if (_hasIdChildTerm(termValue) && searchTermConfig.hasIdIndexReferences()) {
-      const normalized = new SearchTerm()
-        .addName(`${termName}Id`)
-        .addValue(termValue.id)
-        .addValueType(TYPE_ATOMIC)
-        .addScopeName(scopeName)
-        .addSearchTermConfig(
-          new SearchTermConfig({
-            indexReferences: searchTermConfig.getIdIndexReferences(),
-            patternName: PATTERN_NAME_INDEXED_VALUE,
-            scalarType: 'string',
-          }),
-        );
-      return normalized; // return early; caller treats modified criteria vs returned term equivalently
-    } else {
-      // Validate object term value types and set appropriate value type
-      const patternName = searchTermConfig.getPatternName();
-      if (_hasGroup(termValue)) {
-        searchTerm.setValueType(TYPE_GROUP);
-        if (!acceptsGroup(patternName)) {
-          throw new InvalidSearchRequestError(
-            `the '${termName}' term contains a group but is not allowed to.`,
-          );
-        }
-      } else if (self.constructor.hasNonOptionPropertyName(termValue)) {
-        searchTerm.setValueType(TYPE_TERM);
-        if (!acceptsTerm(patternName)) {
-          throw new InvalidSearchRequestError(
-            `the '${termName}' term contains another term but is not allowed to.`,
-          );
-        }
-      }
-
-      if (
-        _hasIdChildTerm(termValue) &&
-        isConvertIdChildToIri(searchTermConfig.getPatternName())
-      ) {
-        termValue.iri = termValue.id;
-        delete termValue.id;
-        searchTerm.setValue(termValue);
-      }
-      // child info
-      const targetScopeName = searchTermConfig.getTargetScopeName();
-      searchTerm.addChildInfo(
-        _getPartialChildSearchTermInfo(
-          self,
-          targetScopeName || scopeName,
-          termValue,
-        ),
-      );
-
-      if (targetScopeName && targetScopeName !== scopeName) {
-        if (!isSearchScopeName(targetScopeName)) {
-          throw new InternalServerError(
-            `The '${termName}' search term is configured to an invalid target scope: '${targetScopeName}'`,
-          );
-        }
-        searchTerm.setScopeName(targetScopeName);
-      }
+  // Handle non-atomic values, else perform various validations before accepting the atomic value.
+  if (typeof searchTerm.getValue() === 'object') {
+    const objectTermResult = _handleObjectTermValue(self, searchTerm);
+    if (objectTermResult.replaced) {
+      return objectTermResult.searchTerm;
     }
   } else if (
     searchTermConfig.hasIdIndexReferences() &&
@@ -386,24 +269,93 @@ function _parseAndValidateTerm(self, params) {
   return searchTerm;
 }
 
-function _getPartialChildSearchTermInfo(self, scopeName, termValue) {
-  const hasGroup = _hasGroup(termValue);
-  let willReturnCtsQuery = hasGroup;
-  let valueType = TYPE_GROUP;
-  let patternName = null;
-
-  if (!hasGroup) {
-    const termName = self.constructor.getFirstNonOptionPropertyName(termValue);
-    const searchTermConfig = _getSearchTermConfig(self, scopeName, termName);
-    patternName = searchTermConfig.getPatternName();
-    willReturnCtsQuery = returnsCtsQuery(patternName);
-    valueType =
-      utils.isArray(termValue[termName]) || utils.isObject(termValue[termName])
-        ? TYPE_TERM
-        : TYPE_ATOMIC;
+// Extract name and copy _options to properties
+function _extractTermNameAndProperties(searchTerm, searchCriteria) {
+  for (const key of Object.keys(searchCriteria)) {
+    if (!['_scope', '_valueType'].includes(key)) {
+      if (key.startsWith('_')) {
+        searchTerm.setProperty(key.substring(1), searchCriteria[key]);
+      } else if (!searchTerm.hasName()) {
+        const termName = key;
+        searchTerm.setName(termName);
+        // Need to check for the property's existence as zero is a valid value.
+        if (!searchCriteria.hasOwnProperty(termName)) {
+          throw new InvalidSearchRequestError(
+            `the '${termName}' term requires a value.`,
+          );
+        }
+      } else {
+        throw new InvalidSearchRequestError(
+          `search term defines more than one term name in criteria ${JSON.stringify(searchCriteria)}`,
+        );
+      }
+    }
   }
 
-  return { patternName, valueType, willReturnCtsQuery };
+  if (!searchTerm.hasName()) {
+    throw new InvalidSearchRequestError(
+      `search term does not specify a term name in criteria ${JSON.stringify(searchCriteria)}`,
+    );
+  }
+}
+
+/**
+ * Handles string tokenization for search terms. Splits multi-word strings into AND queries
+ * or sets single token values on the search term.
+ *
+ * @param {SearchTerm} searchTerm - The search term being processed
+ * @param {Object} searchCriteria - The original search criteria object
+ * @returns {{replaced: boolean, searchTerm: SearchTerm}} Result indicating if term was tokenized
+ *   - replaced: true if string was split into multiple tokens (returns modified term)
+ *   - replaced: false if single token or non-string (returns original term with value set)
+ */
+function _handleStringTokenization(searchTerm, searchCriteria) {
+  const termName = searchTerm.getName();
+  const termValue = searchCriteria[termName];
+  if (!utils.isString(termValue)) {
+    searchTerm.setValue(termValue);
+    return { replaced: false, searchTerm };
+  }
+
+  const tokenizedValues = _tokenizeSearchTermValue(
+    searchCriteria[termName],
+    searchTerm.isCompleteMatch() || searchTerm.isTokenized(),
+  );
+
+  if (tokenizedValues.length > 1) {
+    const modifiedTerm = searchTerm.addModifiedCriteria({
+      _scope: searchTerm.getScopeName(),
+      AND: tokenizedValues.map((value) => {
+        const criterion = {};
+        criterion[termName] = value;
+        searchTerm.getPropertyNames().forEach((name) => {
+          criterion[`_${name}`] = searchTerm.getProperty(name);
+        });
+        // #273: Prevent re-tokenization when the encapsulating AND gets processed.
+        criterion._tokenized = true; // prevent re-tokenization
+        return criterion;
+      }),
+    });
+    return { replaced: true, searchTerm: modifiedTerm };
+  }
+
+  searchTerm.setValue(tokenizedValues[0]);
+  return { replaced: false, searchTerm };
+}
+
+function _tokenizeSearchTermValue(value, leaveAsIs) {
+  // Just return the value in an array when told not to manipulate the value.
+  if (leaveAsIs) return utils.toArray(value);
+  if (utils.isString(value)) {
+    let v = value.trim();
+    // Do not tokenize when (there isn't a space or) the value starts and ends with matching quote characters.
+    const quoted = v.match(/^('|").+\1$/) != null;
+    if (!v.includes(' ') || quoted) return [v];
+    return utils.splitHonoringPhrases(v);
+  }
+  throw new InternalServerError(
+    `_tokenizeSearchTermValue must be given a non-null string.`,
+  );
 }
 
 // Get a search term's configuration by scope name and term name. Exception thrown when an invalid combination.
@@ -423,6 +375,133 @@ function _getSearchTermConfig(self, scopeName, termName) {
     );
   }
   return new SearchTermConfig(scopedTerms[termName]);
+}
+
+/**
+ * Handles object term values, normalizing ID child terms or processing complex objects.
+ * When object contains 'id' property and term config has ID index references, creates
+ * a normalized ID term. Otherwise validates and processes the object.
+ *
+ * @param {Object} self - The search criteria processor instance
+ * @param {SearchTerm} searchTerm - The search term being processed (contains all needed info)
+ * @returns {{replaced: boolean, searchTerm: SearchTerm}} Result indicating if term was replaced
+ *   - replaced: true if object was normalized to ID term (returns new normalized term)
+ *   - replaced: false if object was processed in place (returns modified original term)
+ */
+function _handleObjectTermValue(self, searchTerm) {
+  const termValue = searchTerm.getValue();
+  const searchTermConfig = searchTerm.getSearchTermConfig();
+
+  // When the term value has the 'id' property and the term config specifies an ID index
+  // reference, redefine the term to match on an ID value.
+  if (_hasIdChildTerm(termValue) && searchTermConfig.hasIdIndexReferences()) {
+    return { replaced: true, searchTerm: _createNormalizedIdTerm(searchTerm) };
+  }
+
+  // Validate object term value types and set appropriate value type
+  _validateAndSetValueType(self, searchTerm);
+
+  // Handle ID to IRI conversion
+  if (
+    _hasIdChildTerm(termValue) &&
+    isConvertIdChildToIri(searchTermConfig.getPatternName())
+  ) {
+    termValue.iri = termValue.id;
+    delete termValue.id;
+    searchTerm.setValue(termValue);
+  }
+
+  // Add child info and handle target scope changes
+  _handleChildInfoAndTargetScope(self, searchTerm);
+
+  return { replaced: false, searchTerm };
+}
+
+function _createNormalizedIdTerm(searchTerm) {
+  const termName = searchTerm.getName();
+  const termValue = searchTerm.getValue();
+  const searchTermConfig = searchTerm.getSearchTermConfig();
+  const scopeName = searchTerm.getScopeName();
+
+  return new SearchTerm()
+    .addName(`${termName}Id`)
+    .addValue(termValue.id)
+    .addValueType(TYPE_ATOMIC)
+    .addScopeName(scopeName)
+    .addSearchTermConfig(
+      new SearchTermConfig({
+        indexReferences: searchTermConfig.getIdIndexReferences(),
+        patternName: PATTERN_NAME_INDEXED_VALUE,
+        scalarType: 'string',
+      }),
+    );
+}
+
+function _validateAndSetValueType(self, searchTerm) {
+  const termName = searchTerm.getName();
+  const termValue = searchTerm.getValue();
+  const searchTermConfig = searchTerm.getSearchTermConfig();
+  const patternName = searchTermConfig.getPatternName();
+
+  if (_hasGroup(termValue)) {
+    searchTerm.setValueType(TYPE_GROUP);
+    if (!acceptsGroup(patternName)) {
+      throw new InvalidSearchRequestError(
+        `the '${termName}' term contains a group but is not allowed to.`,
+      );
+    }
+  } else if (self.constructor.hasNonOptionPropertyName(termValue)) {
+    searchTerm.setValueType(TYPE_TERM);
+    if (!acceptsTerm(patternName)) {
+      throw new InvalidSearchRequestError(
+        `the '${termName}' term contains another term but is not allowed to.`,
+      );
+    }
+  }
+}
+
+function _handleChildInfoAndTargetScope(self, searchTerm) {
+  const termValue = searchTerm.getValue();
+  const searchTermConfig = searchTerm.getSearchTermConfig();
+  const scopeName = searchTerm.getScopeName();
+  const targetScopeName = searchTermConfig.getTargetScopeName();
+
+  searchTerm.addChildInfo(
+    _getPartialChildSearchTermInfo(
+      self,
+      targetScopeName || scopeName,
+      termValue,
+    ),
+  );
+
+  if (targetScopeName && targetScopeName !== scopeName) {
+    if (!isSearchScopeName(targetScopeName)) {
+      throw new InternalServerError(
+        `The '${searchTerm.getName()}' search term is configured to an invalid target scope: '${targetScopeName}'`,
+      );
+    }
+    searchTerm.setScopeName(targetScopeName);
+  }
+}
+
+function _getPartialChildSearchTermInfo(self, scopeName, termValue) {
+  const hasGroup = _hasGroup(termValue);
+  let willReturnCtsQuery = hasGroup;
+  let valueType = TYPE_GROUP;
+  let patternName = null;
+
+  if (!hasGroup) {
+    const termName = self.constructor.getFirstNonOptionPropertyName(termValue);
+    const searchTermConfig = _getSearchTermConfig(self, scopeName, termName);
+    patternName = searchTermConfig.getPatternName();
+    willReturnCtsQuery = returnsCtsQuery(patternName);
+    valueType =
+      utils.isArray(termValue[termName]) || utils.isObject(termValue[termName])
+        ? TYPE_TERM
+        : TYPE_ATOMIC;
+  }
+
+  return { patternName, valueType, willReturnCtsQuery };
 }
 
 function _cleanTermValues(searchTerm) {

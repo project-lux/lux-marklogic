@@ -10,6 +10,37 @@ import * as utils from '../../../utils/utils.mjs';
 
 //#region Public functions
 /**
+ * Translates LUX string grammar search criteria into JSON search criteria format.
+ * Converts user-friendly string queries into the structured JSON format used internally
+ * for search processing, with proper scope assignment and operator structuring.
+ *
+ * @param {string} scopeName - The search scope name (must be valid scope)
+ * @param {string} searchCriteria - Search criteria in LUX string grammar format
+ * @returns {Object} JSON search criteria object with _scope and structured query
+ * @throws {InvalidSearchRequestError} When scope is invalid or parsing fails
+ */
+function translateStringGrammarToJSON(scopeName, searchCriteria) {
+  if (!isSearchScopeName(scopeName)) {
+    throw new InvalidSearchRequestError(
+      `'${scopeName}' is not a valid search scope.`,
+    );
+  }
+  const adjusted = adjustSearchString(searchCriteria);
+  let ctsQueryObj = null;
+  try {
+    ctsQueryObj = cts.parse(adjusted).toObject();
+  } catch (e) {
+    throw new InvalidSearchRequestError(
+      `unable to parse criteria ${searchCriteria}`,
+    );
+  }
+  return {
+    _scope: scopeName,
+    ...walkParsedQuery(ctsQueryObj),
+  };
+}
+
+/**
  * Adjusts a search string to be compatible with MarkLogic's cts.parse() function.
  * Transforms user input to prevent parsing errors and ensure proper query interpretation.
  *
@@ -64,37 +95,6 @@ function adjustSearchString(givenQueryString) {
   });
 
   return adjusted;
-}
-
-/**
- * Translates LUX string grammar search criteria into JSON search criteria format.
- * Converts user-friendly string queries into the structured JSON format used internally
- * for search processing, with proper scope assignment and operator structuring.
- *
- * @param {string} scopeName - The search scope name (must be valid scope)
- * @param {string} searchCriteria - Search criteria in LUX string grammar format
- * @returns {Object} JSON search criteria object with _scope and structured query
- * @throws {InvalidSearchRequestError} When scope is invalid or parsing fails
- */
-function translateStringGrammarToJSON(scopeName, searchCriteria) {
-  if (!isSearchScopeName(scopeName)) {
-    throw new InvalidSearchRequestError(
-      `'${scopeName}' is not a valid search scope.`,
-    );
-  }
-  const adjusted = adjustSearchString(searchCriteria);
-  let ctsQueryObj = null;
-  try {
-    ctsQueryObj = cts.parse(adjusted).toObject();
-  } catch (e) {
-    throw new InvalidSearchRequestError(
-      `unable to parse criteria ${searchCriteria}`,
-    );
-  }
-  return {
-    _scope: scopeName,
-    ...walkParsedQuery(ctsQueryObj),
-  };
 }
 
 /**

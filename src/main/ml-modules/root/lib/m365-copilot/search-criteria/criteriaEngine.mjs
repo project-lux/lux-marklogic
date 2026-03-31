@@ -102,10 +102,6 @@ function generateQueryFromCriteria(self, params) {
 //#endregion
 
 //#region Internal helpers
-function _wrapGroup(kind /* 'and' | 'or' */, pieces) {
-  return `cts.${kind}Query([${pieces.join(', ')}])`;
-}
-
 function _handleGroupOperators(self, params) {
   const {
     scopeName,
@@ -141,7 +137,7 @@ function _handleGroupOperators(self, params) {
         returnTrueForUnusableTerms: isAnd, // we want cts.trueQuery when within an AND.
       }),
     );
-    return _wrapGroup(isAnd ? 'and' : 'or', pieces);
+    return `cts.${isAnd ? 'and' : 'or'}Query([${pieces.join(', ')}])`;
   }
 }
 
@@ -217,7 +213,7 @@ ${generateQueryFromCriteria(self, {
 
 function _tokenizeSearchTermValue(value, leaveAsIs) {
   // Just return the value in an array when told not to manipulate the value.
-  if (leaveAsIs) return [value];
+  if (leaveAsIs) return utils.toArray(value);
   if (utils.isString(value)) {
     let v = value.trim();
     // Do not tokenize when (there isn't a space or) the value starts and ends with matching quote characters.
@@ -247,7 +243,7 @@ function _parseAndValidateTerm(self, params) {
         const termName = key;
         searchTerm.setName(termName);
         // Need to check for the property's existence as zero is a valid value.
-        if (!searchCriteria[termName]) {
+        if (!searchCriteria.hasOwnProperty(termName)) {
           throw new InvalidSearchRequestError(
             `the '${termName}' term requires a value.`,
           );

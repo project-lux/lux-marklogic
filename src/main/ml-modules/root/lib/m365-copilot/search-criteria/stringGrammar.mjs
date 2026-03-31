@@ -9,6 +9,13 @@ import * as utils from '../../../utils/utils.mjs';
 //#endregion
 
 //#region Public functions
+/**
+ * Adjusts a search string to be compatible with MarkLogic's cts.parse() function.
+ * Transforms user input to prevent parsing errors and ensure proper query interpretation.
+ *
+ * @param {string} givenQueryString - The raw search string from user input
+ * @returns {string} Adjusted search string ready for cts.parse()
+ */
 function adjustSearchString(givenQueryString) {
   // Find all operators within the search string. These are used later.
   const foundOperators = SEARCH_GRAMMAR_OPERATORS.filter((opName) => {
@@ -59,6 +66,16 @@ function adjustSearchString(givenQueryString) {
   return adjusted;
 }
 
+/**
+ * Translates LUX string grammar search criteria into JSON search criteria format.
+ * Converts user-friendly string queries into the structured JSON format used internally
+ * for search processing, with proper scope assignment and operator structuring.
+ *
+ * @param {string} scopeName - The search scope name (must be valid scope)
+ * @param {string} searchCriteria - Search criteria in LUX string grammar format
+ * @returns {Object} JSON search criteria object with _scope and structured query
+ * @throws {InvalidSearchRequestError} When scope is invalid or parsing fails
+ */
 function translateStringGrammarToJSON(scopeName, searchCriteria) {
   if (!isSearchScopeName(scopeName)) {
     throw new InvalidSearchRequestError(
@@ -80,6 +97,14 @@ function translateStringGrammarToJSON(scopeName, searchCriteria) {
   };
 }
 
+/**
+ * Recursively walks a cts.parse() result object and converts it to LUX JSON search format.
+ * Transforms MarkLogic's internal query structure into LUX's standardized JSON criteria format.
+ *
+ * @param {Object} ctsQueryObj - MarkLogic CTS query object from cts.parse().toObject()
+ * @returns {Object} LUX JSON search criteria object with structured operators and terms
+ * @throws {InvalidSearchRequestError} When encountering unsupported query types
+ */
 function walkParsedQuery(ctsQueryObj) {
   const out = {};
   for (const propName of Object.keys(ctsQueryObj)) {

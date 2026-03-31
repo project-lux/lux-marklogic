@@ -684,14 +684,7 @@ const SearchCriteriaProcessorM365v2 = class {
         this.resolvedSearchCriteria = {};
         return;
       } else if (orArr.length === 1) {
-        const { filterResults, facetsAreLikely, synonymsEnabled } =
-          this.requestOptions;
-        const searchCriteriaProcessor = new SearchCriteriaProcessorM365v2(
-          filterResults,
-          facetsAreLikely,
-          synonymsEnabled,
-        );
-        searchCriteriaProcessor.process(
+        this.process(
           orArr[0],
           null, // search criteria must define scope.
           false, // reject nested multi scope requests.
@@ -703,9 +696,7 @@ const SearchCriteriaProcessorM365v2 = class {
           this.sortCriteria,
           this.valuesOnly,
         );
-        this.ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr();
-        this.scopeName = searchCriteriaProcessor.scopeName;
-        // return since we are making a new call to this.process()
+        // return since we are making a recursive call to this.process()
         return;
       } else {
         const parts = orArr.map((subCriteria) => {

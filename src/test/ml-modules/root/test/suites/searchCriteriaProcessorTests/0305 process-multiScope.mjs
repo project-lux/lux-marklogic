@@ -104,6 +104,56 @@ const scenarios = [
       error: false,
       scopeName: 'agent',
       ctsQueryContains: ['agentAnyText', 'artist'],
+      criteriaCntGte: 1,
+      ignoredTermsLength: 0,
+      requestOptionsScopeName: 'agent',
+    },
+  },
+  {
+    name: 'Single-element unwrap with AND group propagates criteriaCnt',
+    input: {
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [
+          {
+            _scope: 'agent',
+            AND: [{ text: 'Pablo' }, { text: 'Picasso' }],
+          },
+        ],
+      },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: false,
+      scopeName: 'agent',
+      ctsQueryIncludes: 'cts.andQuery',
+      ctsQueryContains: ['Pablo', 'Picasso'],
+      criteriaCntGte: 2,
+      ignoredTermsLength: 0,
+      requestOptionsScopeName: 'agent',
+    },
+  },
+  {
+    name: 'Single-element unwrap propagates ignoredTerms for mixed valid and stop words',
+    input: {
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [
+          {
+            _scope: 'work',
+            AND: [{ text: 'painting' }, { text: 'a' }],
+          },
+        ],
+      },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: false,
+      scopeName: 'work',
+      ctsQueryContains: ['painting'],
+      criteriaCntGte: 1,
+      ignoredTermsLength: 1,
+      requestOptionsScopeName: 'work',
     },
   },
   {
@@ -165,6 +215,10 @@ for (const scenario of scenarios) {
     return {
       scopeName: processor.getSearchScope(),
       ctsQueryStr: processor.getCtsQueryStr(),
+      criteriaCnt: processor.criteriaCnt,
+      ignoredTerms: processor.getIgnoredTerms(),
+      values: processor.getValues(),
+      requestOptionsScopeName: processor.getRequestOptions().scopeName,
     };
   };
 
@@ -212,6 +266,35 @@ for (const scenario of scenarios) {
           ),
         );
       });
+    }
+
+    if (scenario.expected.criteriaCntGte !== undefined) {
+      assertions.push(
+        testHelperProxy.assertTrue(
+          actual.criteriaCnt >= scenario.expected.criteriaCntGte,
+          `Scenario '${scenario.name}' - criteriaCnt should be >= ${scenario.expected.criteriaCntGte}. Actual: ${actual.criteriaCnt}`,
+        ),
+      );
+    }
+
+    if (scenario.expected.ignoredTermsLength !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.ignoredTermsLength,
+          actual.ignoredTerms.length,
+          `Scenario '${scenario.name}' - ignoredTerms length should be ${scenario.expected.ignoredTermsLength}`,
+        ),
+      );
+    }
+
+    if (scenario.expected.requestOptionsScopeName !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.requestOptionsScopeName,
+          actual.requestOptionsScopeName,
+          `Scenario '${scenario.name}' - requestOptions.scopeName should be '${scenario.expected.requestOptionsScopeName}'`,
+        ),
+      );
     }
   }
 

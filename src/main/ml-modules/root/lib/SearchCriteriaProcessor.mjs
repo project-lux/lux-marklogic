@@ -49,9 +49,22 @@ const SearchCriteriaProcessor = class {
   }
 
   // Static method delegations
+  static getSortType(isMultiScope, isSemantic) {
+    return SearchCriteriaProcessor.getClass().getSortType(
+      isMultiScope,
+      isSemantic,
+    );
+  }
+
   static getSortTypeFromSortBinding(sortBinding) {
     return SearchCriteriaProcessor.getClass().getSortTypeFromSortBinding(
       sortBinding,
+    );
+  }
+
+  static getSortTypeFromSortCriteria(sortCriteria) {
+    return SearchCriteriaProcessor.getClass().getSortTypeFromSortCriteria(
+      sortCriteria,
     );
   }
 
@@ -94,6 +107,13 @@ const SearchCriteriaProcessor = class {
 
   static requireSearchCriteriaArray(searchCriteria) {
     return SearchCriteriaProcessor.getClass().requireSearchCriteriaArray(
+      searchCriteria,
+    );
+  }
+
+  static requireSearchCriteriaJson(scopeName, searchCriteria) {
+    return SearchCriteriaProcessor.getClass().requireSearchCriteriaJson(
+      scopeName,
       searchCriteria,
     );
   }

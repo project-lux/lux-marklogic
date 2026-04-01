@@ -35,7 +35,7 @@ To deploy locally, start with the [LUX Backend Local Developer Environment](/doc
 
 What follows is a mix of deployment and runtime dependencies and prerequisites for the target environment.
 
-1. MarkLogic is installed.  Any MarkLogic 11 and MarkLogic 12 version should work.
+1. MarkLogic is installed.  MarkLogic 12.0.1 or later should be used.
 
     LUX creates its clusters in AWS using Terraform and a modified version of [MarkLogic's CloudFormation template](https://developer.marklogic.com/products/cloud/aws/).  This portion of LUX is not publicly available.  If more interested in Azure, there's also an [Azure solution template for MarkLogic](https://github.com/marklogic/cloud-enablement-azure).
 

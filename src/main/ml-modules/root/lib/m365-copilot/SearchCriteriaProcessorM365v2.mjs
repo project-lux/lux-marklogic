@@ -46,32 +46,33 @@ const MAXIMUM_PAGE_WITH_LENGTH = 100000;
 //#endregion
 
 const SearchCriteriaProcessorM365v2 = class {
+  //#region Private fields
+  #allowMultiScope;
+  #criteriaCnt = 0;
+  #ctsQueryStr = '';
+  #ctsQueryStrWithTokens = '';
+  #ignoredTerms = [];
+  #includeTypeConstraint;
+  #page;
+  #pageLength;
+  #pageWith;
+  #requestOptions;
+  #resolvedSearchCriteria = null;
+  #scopeName;
+  #searchPatternOptions;
+  #searchTermsConfig;
+  #sortCriteria;
+  #values = [];
+  #valuesOnly = false;
+  //#endregion
+
   //#region Constructor(s)
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {
     // Capture all constructor parameters as request options, enabling search patterns to utilize.
-    this.requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
+    this.#requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
 
     // Once per instance, which technically presumes this shouldn't change when reused.
-    this.searchTermsConfig = getSearchTermsConfig();
-
-    // Given to process()
-    this.scopeName;
-    this.allowMultiScope;
-    this.searchPatternOptions;
-    this.includeTypeConstraint;
-    this.page;
-    this.pageLength;
-    this.pageWith;
-    this.sortCriteria;
-
-    // Populated via process()
-    this.resolvedSearchCriteria = null;
-    this.criteriaCnt = 0;
-    this.ignoredTerms = [];
-    this.ctsQueryStrWithTokens = '';
-    this.ctsQueryStr = '';
-    this.valuesOnly = false;
-    this.values = [];
+    this.#searchTermsConfig = getSearchTermsConfig();
   }
   //#endregion
 
@@ -106,7 +107,7 @@ const SearchCriteriaProcessorM365v2 = class {
     sortCriteria,
     valuesOnly,
   ) {
-    this._initProcessState({
+    this.#initProcessState({
       scopeName,
       allowMultiScope,
       searchPatternOptions,
@@ -119,79 +120,91 @@ const SearchCriteriaProcessorM365v2 = class {
     });
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
-    this.resolvedSearchCriteria =
+    this.#resolvedSearchCriteria =
       SearchCriteriaProcessorM365v2.requireSearchCriteriaJson(
-        this.scopeName,
+        this.#scopeName,
         searchCriteria,
       );
 
     // Validate and finalize scope into this + requestOptions
-    this._resolveAndValidateScope();
+    this.#resolveAndValidateScope();
 
     // Early branch for multi-scope (unchanged behavior)
-    if (this.scopeName === 'multi') {
-      this._buildMultiScopeQueryOrRecurse();
+    if (this.#scopeName === 'multi') {
+      this.#buildMultiScopeQueryOrRecurse();
       // Return if we have a query, else allow to flow through to empty criteria check.
-      if (utils.isNonEmptyString(this.ctsQueryStr)) {
+      if (utils.isNonEmptyString(this.#ctsQueryStr)) {
         return;
       }
     } else {
       // Build CTS query template (string)
-      this.ctsQueryStrWithTokens = this.generateQueryFromCriteria(
-        this.scopeName,
-        this.resolvedSearchCriteria,
+      this.#ctsQueryStrWithTokens = this.generateQueryFromCriteria(
+        this.#scopeName,
+        this.#resolvedSearchCriteria,
         null,
         true, // Must return a CTS query.
         false, // Return cts.falseQuery when the top-level term is unusable.
       );
     }
 
-    this._requireCriteria();
+    this.#requireCriteria();
 
     // Conditionally add type constraint, using a token for search scope-specific estimates.
-    if (this.includeTypeConstraint) {
-      this.ctsQueryStrWithTokens = `cts.andQuery([
+    if (this.#includeTypeConstraint) {
+      this.#ctsQueryStrWithTokens = `cts.andQuery([
         cts.jsonPropertyValueQuery('dataType', ${TOKEN_TYPES}, ['exact']),
-        ${this.ctsQueryStrWithTokens}
+        ${this.#ctsQueryStrWithTokens}
       ])`;
     }
 
     // Resolve tokens to final query with default field, predicate and type values
-    this.ctsQueryStr = this.resolveTokens(
-      getSearchScopeFields(this.scopeName, true), // default to all
-      getSearchScopePredicates(this.scopeName), // defaults to any
-      getSearchScopeTypes(this.scopeName, false), // default to none
+    this.#ctsQueryStr = this.resolveTokens(
+      getSearchScopeFields(this.#scopeName, true), // default to all
+      getSearchScopePredicates(this.#scopeName), // defaults to any
+      getSearchScopeTypes(this.#scopeName, false), // default to none
     );
   }
 
   getSearchCriteria() {
-    return this.resolvedSearchCriteria;
+    return this.#resolvedSearchCriteria;
   }
 
   hasSearchScope() {
-    return utils.isNonEmptyString(this.scopeName);
+    return utils.isNonEmptyString(this.#scopeName);
   }
 
   getSearchScope() {
-    return this.scopeName;
+    return this.#scopeName;
   }
 
   getRequestOptions() {
-    return this.requestOptions;
+    return this.#requestOptions;
   }
 
   getIgnoredTerms() {
-    return this.ignoredTerms;
+    return this.#ignoredTerms;
+  }
+
+  getPage() {
+    return this.#page;
+  }
+
+  getPageLength() {
+    return this.#pageLength;
+  }
+
+  getPageWith() {
+    return this.#pageWith;
   }
 
   // Get query. If you're looking for the query with different token values, use resolveTokens.
   getCtsQueryStr() {
     // Finalize the query
-    this.ctsQueryStr =
-      this.ctsQueryStr && this.ctsQueryStr.length > 0
-        ? this.ctsQueryStr
+    this.#ctsQueryStr =
+      this.#ctsQueryStr && this.#ctsQueryStr.length > 0
+        ? this.#ctsQueryStr
         : cts.parse('');
-    return this.ctsQueryStr;
+    return this.#ctsQueryStr;
   }
 
   getEstimate() {
@@ -203,22 +216,58 @@ const SearchCriteriaProcessorM365v2 = class {
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
   getSearchResults() {
     const sortType = SearchCriteriaProcessorM365v2.getSortTypeFromSortCriteria(
-      this.sortCriteria,
+      this.#sortCriteria,
     );
     // TODO: these are the three to consolidate in the Optic version.
     if (SORT_TYPE_MULTI_SCOPE === sortType) {
-      return this._getMultiScopeSortResults();
+      return this.#getMultiScopeSortResults();
     } else if (SORT_TYPE_SEMANTIC === sortType) {
-      return this._getSemanticSortResults();
+      return this.#getSemanticSortResults();
     } else {
-      return this._getNonSemanticSortResults();
+      return this.#getNonSemanticSortResults();
     }
   }
 
   // Certain search patterns implement an option compelling them to return values versus a CTS query.
   // This was introduced in support of related lists.
+  isValuesOnly() {
+    return this.#valuesOnly;
+  }
+
+  appendValues(arr) {
+    this.#values = this.#values.concat(arr);
+  }
+
   getValues() {
-    return this.values;
+    return this.#values;
+  }
+
+  getSearchPatternOptions() {
+    return this.#searchPatternOptions;
+  }
+
+  getSearchTermsConfig() {
+    return this.#searchTermsConfig;
+  }
+
+  setIsTypeConstraintEnabled(enabled) {
+    this.#includeTypeConstraint = enabled;
+  }
+
+  isTypeConstraintEnabled() {
+    return this.#includeTypeConstraint;
+  }
+
+  incrementCriteriaCnt() {
+    this.#criteriaCnt++;
+  }
+
+  getCriteriaCount() {
+    return this.#criteriaCnt;
+  }
+
+  addIgnoredTerm(v) {
+    this.#ignoredTerms.push(v);
   }
 
   // Pass-through method
@@ -254,7 +303,7 @@ const SearchCriteriaProcessorM365v2 = class {
     ];
 
     // Replace tokens within the query string template
-    let out = this.ctsQueryStrWithTokens;
+    let out = this.#ctsQueryStrWithTokens;
     tokens.forEach((t) => {
       const val = Array.isArray(t.value)
         ? utils.arrayToString(t.value, t.scalarType)
@@ -385,7 +434,7 @@ const SearchCriteriaProcessorM365v2 = class {
   //#endregion
 
   //#region Private instance methods
-  _initProcessState({
+  #initProcessState({
     scopeName,
     allowMultiScope,
     searchPatternOptions,
@@ -396,29 +445,29 @@ const SearchCriteriaProcessorM365v2 = class {
     sortCriteria,
     valuesOnly,
   }) {
-    this.scopeName = scopeName;
-    this.allowMultiScope = allowMultiScope;
-    this.page = page;
-    this.pageLength = pageLength;
-    this.pageWith = pageWith;
-    this.sortCriteria =
+    this.#scopeName = scopeName;
+    this.#allowMultiScope = allowMultiScope;
+    this.#page = page;
+    this.#pageLength = pageLength;
+    this.#pageWith = pageWith;
+    this.#sortCriteria =
       sortCriteria instanceof SortCriteria
         ? sortCriteria
         : new SortCriteria(sortCriteria || '');
-    this.valuesOnly = valuesOnly;
+    this.#valuesOnly = valuesOnly;
 
-    this.searchPatternOptions = searchPatternOptions
+    this.#searchPatternOptions = searchPatternOptions
       ? searchPatternOptions
       : new SearchPatternOptions();
 
-    this.includeTypeConstraint = includeTypeConstraint;
+    this.#includeTypeConstraint = includeTypeConstraint;
 
     // reset per-invocation fields
-    this.criteriaCnt = 0;
-    this.ignoredTerms = [];
-    this.ctsQueryStrWithTokens = '';
-    this.ctsQueryStr = '';
-    this.values = [];
+    this.#criteriaCnt = 0;
+    this.#ignoredTerms = [];
+    this.#ctsQueryStrWithTokens = '';
+    this.#ctsQueryStr = '';
+    this.#values = [];
   }
 
   /**
@@ -429,14 +478,14 @@ const SearchCriteriaProcessorM365v2 = class {
    *
    * @throws {InvalidSearchRequestError} When scope is invalid or not specified
    */
-  _resolveAndValidateScope() {
-    const sc = this.resolvedSearchCriteria;
+  #resolveAndValidateScope() {
+    const sc = this.#resolvedSearchCriteria;
     if (sc && utils.isNonEmptyString(sc._scope)) {
       const normalized = sc._scope.trim().toLowerCase();
       if (isSearchScopeName(normalized)) {
-        this.scopeName = normalized;
+        this.#scopeName = normalized;
         delete sc._scope;
-        this.requestOptions.scopeName = normalized; // some patterns need this
+        this.#requestOptions.scopeName = normalized; // some patterns need this
         return;
       }
       throw new InvalidSearchRequestError(
@@ -447,7 +496,7 @@ const SearchCriteriaProcessorM365v2 = class {
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
-  _getMultiScopeSortResults() {
+  #getMultiScopeSortResults() {
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),
     );
@@ -458,8 +507,8 @@ const SearchCriteriaProcessorM365v2 = class {
       FROM_SEARCH_OPTIONS,
     );
     const { order, subSortConfigs } =
-      this.sortCriteria.getMultiScopeSortOption();
-    const subSortPlans = subSortConfigs.map((cfg) => this._getSubSortPlan(cfg));
+      this.#sortCriteria.getMultiScopeSortOption();
+    const subSortPlans = subSortConfigs.map((cfg) => this.#getSubSortPlan(cfg));
     const unionSubSortPlan = subSortPlans.reduce(
       (acc, p) => (acc === null ? p : acc.union(p)),
       null,
@@ -467,16 +516,16 @@ const SearchCriteriaProcessorM365v2 = class {
     const finalPlan = docPlan
       .joinLeftOuter(unionSubSortPlan, op.on('fragmentId', 'fragmentId'))
       .joinDocUri(op.col('uri'), op.fragmentIdCol('fragmentId'));
-    return this.pageWith
-      ? this._getOpticPageWithResults(finalPlan, order)
-      : this._getOpticPaginatedResults(finalPlan, order);
+    return this.#pageWith
+      ? this.#getOpticPageWithResults(finalPlan, order)
+      : this.#getOpticPaginatedResults(finalPlan, order);
   }
 
-  _getSubSortPlan(subSortConfig) {
-    return this._getFieldReferencePlan(subSortConfig);
+  #getSubSortPlan(subSortConfig) {
+    return this.#getFieldReferencePlan(subSortConfig);
   }
 
-  _getFieldReferencePlan(subSortConfig) {
+  #getFieldReferencePlan(subSortConfig) {
     return op.fromLexicons(
       { sortByMe: cts.fieldReference(subSortConfig.indexReference) },
       null,
@@ -485,7 +534,7 @@ const SearchCriteriaProcessorM365v2 = class {
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
-  _getSemanticSortResults() {
+  #getSemanticSortResults() {
     xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
 
     // This variable determines if each search result should be represented once yet has more than one triple with sortPredicate
@@ -494,7 +543,7 @@ const SearchCriteriaProcessorM365v2 = class {
     const oneSortValuePerResult = true;
 
     const { predicate, indexReference, order } =
-      this.sortCriteria.getSemanticSortOption();
+      this.#sortCriteria.getSemanticSortOption();
     const ctsQuery = SearchCriteriaProcessorM365v2.evalQueryString(
       this.getCtsQueryStr(),
     );
@@ -548,28 +597,28 @@ const SearchCriteriaProcessorM365v2 = class {
       );
     }
 
-    return this.pageWith
-      ? this._getOpticPageWithResults(semanticSortPlan, order)
-      : this._getOpticPaginatedResults(semanticSortPlan, order);
+    return this.#pageWith
+      ? this.#getOpticPageWithResults(semanticSortPlan, order)
+      : this.#getOpticPaginatedResults(semanticSortPlan, order);
   }
 
-  _getOpticPaginatedResults(opticPlan, order) {
+  #getOpticPaginatedResults(opticPlan, order) {
     const results = opticPlan
       .orderBy(
         order === 'ascending'
           ? op.asc(op.col('sortByMe'))
           : op.desc(op.col('sortByMe')),
       )
-      .offset((this.page - 1) * this.pageLength)
-      .limit(this.pageLength)
+      .offset((this.#page - 1) * this.#pageLength)
+      .limit(this.#pageLength)
       .result()
       .toArray()
       .map(({ uri }) => ({ id: uri, type: cts.doc(uri).xpath('/json/type') }));
-    return { resultPage: this.page, results };
+    return { resultPage: this.#page, results };
   }
 
-  _getOpticPageWithResults(opticPlan, order) {
-    const uriToFind = this.pageWith;
+  #getOpticPageWithResults(opticPlan, order) {
+    const uriToFind = this.#pageWith;
     const planOutput = opticPlan
       .orderBy(
         order === 'ascending'
@@ -589,32 +638,32 @@ const SearchCriteriaProcessorM365v2 = class {
     const foundUriIndex = planOutput.findIndex(({ uri }) => uri === uriToFind);
     if (foundUriIndex === -1) {
       throw new InvalidSearchRequestError(
-        `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`,
+        `The document ID specified by pageWith (${this.#pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`,
       );
     }
-    const foundUriPage = Math.ceil((foundUriIndex + 1) / this.pageLength);
+    const foundUriPage = Math.ceil((foundUriIndex + 1) / this.#pageLength);
     const results = planOutput
       .slice(
-        (foundUriPage - 1) * this.pageLength,
-        foundUriPage * this.pageLength,
+        (foundUriPage - 1) * this.#pageLength,
+        foundUriPage * this.#pageLength,
       )
       .map(({ uri }) => ({ id: uri, type: cts.doc(uri).xpath('/json/type') }));
     return { resultPage: foundUriPage, results };
   }
 
   // returns { resultPage: number, results: Array<{id: string, type: string}> }
-  _getNonSemanticSortResults() {
+  #getNonSemanticSortResults() {
     const searchOptionsArr = [
-      this.requestOptions.filterResults === true ? 'filtered' : 'unfiltered',
-      this.requestOptions.facetsAreLikely === true ? 'faceted' : 'unfaceted',
-      this.sortCriteria.getNonSemanticSortOptions(),
+      this.#requestOptions.filterResults === true ? 'filtered' : 'unfiltered',
+      this.#requestOptions.facetsAreLikely === true ? 'faceted' : 'unfaceted',
+      this.#sortCriteria.getNonSemanticSortOptions(),
     ];
-    if (!this.sortCriteria.areScoresRequired())
+    if (!this.#sortCriteria.areScoresRequired())
       searchOptionsArr.push('score-zero');
 
-    if (this.pageWith) {
+    if (this.#pageWith) {
       // if pageWith is set, find the page that contains the document with the specified ID
-      const docToFind = this.pageWith;
+      const docToFind = this.#pageWith;
       const docs = fn
         .subsequence(
           cts.search(
@@ -637,14 +686,14 @@ const SearchCriteriaProcessorM365v2 = class {
       const foundDocIndex = docs.findIndex((doc) => doc.baseURI === docToFind);
       if (foundDocIndex === -1) {
         throw new InvalidSearchRequestError(
-          `The document ID specified by pageWith (${this.pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`,
+          `The document ID specified by pageWith (${this.#pageWith}) could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} search results`,
         );
       }
-      const foundDocPage = Math.ceil((foundDocIndex + 1) / this.pageLength);
+      const foundDocPage = Math.ceil((foundDocIndex + 1) / this.#pageLength);
       const results = docs
         .slice(
-          (foundDocPage - 1) * this.pageLength,
-          foundDocPage * this.pageLength,
+          (foundDocPage - 1) * this.#pageLength,
+          foundDocPage * this.#pageLength,
         )
         .map((doc) => ({ id: doc.baseURI, type: doc.xpath('/json/type') }));
       return { resultPage: foundDocPage, results };
@@ -659,46 +708,46 @@ const SearchCriteriaProcessorM365v2 = class {
             searchOptionsArr,
           ),
           utils.getStartingPaginationIndexForSubsequence(
-            this.page,
-            this.pageLength,
+            this.#page,
+            this.#pageLength,
           ),
-          this.pageLength,
+          this.#pageLength,
         )
         .toArray();
       const results = docs.map((doc) => ({
         id: doc.baseURI,
         type: doc.xpath('/json/type'),
       }));
-      return { resultPage: this.page, results };
+      return { resultPage: this.#page, results };
     }
   }
 
-  _buildMultiScopeQueryOrRecurse() {
-    if (!this.allowMultiScope) {
+  #buildMultiScopeQueryOrRecurse() {
+    if (!this.#allowMultiScope) {
       throw new InvalidSearchRequestError(
         `search scope of 'multi' not supported by this operation or level.`,
       );
     }
-    if (this.resolvedSearchCriteria.OR) {
-      const orArr = this.resolvedSearchCriteria.OR;
+    if (this.#resolvedSearchCriteria.OR) {
+      const orArr = this.#resolvedSearchCriteria.OR;
       SearchCriteriaProcessorM365v2.requireSearchCriteriaArray(orArr);
 
       if (orArr.length === 0) {
         // if OR array is empty, do nothing, we will try to generate with empty criteria which will throw an error
-        this.resolvedSearchCriteria = {};
+        this.#resolvedSearchCriteria = {};
         return;
       } else if (orArr.length === 1) {
         this.process(
           orArr[0],
           null, // search criteria must define scope.
           false, // reject nested multi scope requests.
-          this.searchPatternOptions,
-          this.includeTypeConstraint,
-          this.page,
-          this.pageLength,
-          this.pageWith,
-          this.sortCriteria,
-          this.valuesOnly,
+          this.#searchPatternOptions,
+          this.#includeTypeConstraint,
+          this.#page,
+          this.#pageLength,
+          this.#pageWith,
+          this.#sortCriteria,
+          this.#valuesOnly,
         );
         // return since we are making a recursive call to this.process()
         return;
@@ -706,7 +755,7 @@ const SearchCriteriaProcessorM365v2 = class {
         const parts = orArr.map((subCriteria) => {
           const subScope = subCriteria._scope;
           const { filterResults, facetsAreLikely, synonymsEnabled } =
-            this.requestOptions;
+            this.#requestOptions;
           const searchCriteriaProcessor = new SearchCriteriaProcessorM365v2(
             filterResults,
             facetsAreLikely,
@@ -717,13 +766,13 @@ const SearchCriteriaProcessorM365v2 = class {
               subCriteria,
               null, // search criteria must define scope.
               false, // reject nested multi scope requests.
-              this.searchPatternOptions,
-              this.includeTypeConstraint,
-              this.page,
-              this.pageLength,
-              this.pageWith,
-              this.sortCriteria,
-              this.valuesOnly,
+              this.#searchPatternOptions,
+              this.#includeTypeConstraint,
+              this.#page,
+              this.#pageLength,
+              this.#pageWith,
+              this.#sortCriteria,
+              this.#valuesOnly,
             );
           } catch (e) {
             e.message = `Error in scope '${subScope}': ${e.message}`;
@@ -732,8 +781,8 @@ const SearchCriteriaProcessorM365v2 = class {
           return searchCriteriaProcessor.getCtsQueryStr();
         });
 
-        this.ctsQueryStr = `cts.orQuery([${parts.join(',')}])`;
-        // return since we have set this.ctsQueryStr based on other calls to searchCriteriaProcessor.process()
+        this.#ctsQueryStr = `cts.orQuery([${parts.join(',')}])`;
+        // return since we have set this.#ctsQueryStr based on other calls to searchCriteriaProcessor.process()
         return;
       }
     } else {
@@ -745,14 +794,14 @@ const SearchCriteriaProcessorM365v2 = class {
 
   // Protect from a repo-wide search as repo-wide facets are expensive to calculate, even when
   // applying a scope search.
-  _requireCriteria() {
+  #requireCriteria() {
     if (
-      this.criteriaCnt < 1 ||
-      !utils.isNonEmptyString(this.ctsQueryStrWithTokens)
+      this.#criteriaCnt < 1 ||
+      !utils.isNonEmptyString(this.#ctsQueryStrWithTokens)
     ) {
-      if (this.ignoredTerms.length > 0) {
+      if (this.#ignoredTerms.length > 0) {
         throw new InvalidSearchRequestError(
-          `the search criteria given only contains '${JSON.stringify(this.ignoredTerms)}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
+          `the search criteria given only contains '${JSON.stringify(this.#ignoredTerms)}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
         );
       }
       throw new InvalidSearchRequestError(`more search criteria is required.`);

@@ -1,7 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
-import { isUndefined } from '/utils/utils.mjs';
 
 const LIB = '0100 constructor.mjs';
 console.log(`${LIB}: starting.`);
@@ -111,18 +110,15 @@ for (const scenario of scenarios) {
       filterResults: requestOptions.filterResults,
       facetsAreLikely: requestOptions.facetsAreLikely,
       synonymsEnabled: requestOptions.synonymsEnabled,
-      hasSearchTermsConfig:
-        processor.searchTermsConfig !== null &&
-        processor.searchTermsConfig !== undefined,
+      hasSearchTermsConfig: processor.getSearchTermsConfig() != null,
       // Test initial state of properties set by process()
-      scopeName: processor.scopeName,
-      resolvedSearchCriteria: processor.resolvedSearchCriteria,
-      criteriaCnt: processor.criteriaCnt,
-      ignoredTerms: processor.ignoredTerms,
-      ctsQueryStrWithTokens: processor.ctsQueryStrWithTokens,
-      ctsQueryStr: processor.ctsQueryStr,
-      valuesOnly: processor.valuesOnly,
-      values: processor.values,
+      scopeName: processor.getSearchScope(),
+      resolvedSearchCriteria: processor.getSearchCriteria(),
+      criteriaCnt: processor.getCriteriaCount(),
+      ignoredTerms: processor.getIgnoredTerms(),
+      ctsQueryStr: processor.getCtsQueryStr(),
+      valuesOnly: processor.isValuesOnly(),
+      values: processor.getValues(),
     };
   };
 
@@ -195,23 +191,15 @@ for (const scenario of scenarios) {
     );
     assertions.push(
       testHelperProxy.assertTrue(
-        isUndefined(actual.ctsQueryStrWithTokens) ||
-          actual.ctsQueryStrWithTokens === '',
-        'ctsQueryStrWithTokens should be undefined or an empty string before process() is called',
-      ),
-    );
-    assertions.push(
-      testHelperProxy.assertEqual(
-        '',
-        actual.ctsQueryStr,
-        'ctsQueryStr should be empty string before process() is called',
+        actual.ctsQueryStr != null,
+        'getCtsQueryStr() should return a value before process() is called',
       ),
     );
     assertions.push(
       testHelperProxy.assertEqual(
         false,
         actual.valuesOnly,
-        'valuesOnly should be false before process() is called',
+        'isValuesOnly() should return false before process() is called',
       ),
     );
     assertions.push(

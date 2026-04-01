@@ -6,6 +6,7 @@ import {
   SORT_TYPE_SEMANTIC,
 } from '../SortCriteria.mjs';
 import { SEMANTIC_SORT_TIMEOUT } from '../appConstants.mjs';
+import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
@@ -49,6 +50,9 @@ const SearchCriteriaProcessorM365v2 = class {
   constructor(filterResults, facetsAreLikely, synonymsEnabled) {
     // Capture all constructor parameters as request options, enabling search patterns to utilize.
     this.requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
+
+    // Once per instance, which technically presumes this shouldn't change when reused.
+    this.searchTermsConfig = getSearchTermsConfig();
 
     // Given to process()
     this.scopeName;
@@ -748,9 +752,7 @@ const SearchCriteriaProcessorM365v2 = class {
     ) {
       if (this.ignoredTerms.length > 0) {
         throw new InvalidSearchRequestError(
-          `the search criteria given only contains '${this.ignoredTerms.join(
-            "', '",
-          )}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
+          `the search criteria given only contains '${JSON.stringify(this.ignoredTerms)}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
         );
       }
       throw new InvalidSearchRequestError(`more search criteria is required.`);

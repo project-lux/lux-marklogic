@@ -1,5 +1,4 @@
 //#region Imports
-import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
 import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
 import {
   PATTERN_NAME_INDEXED_VALUE,
@@ -127,7 +126,7 @@ function _handleGroupOperators(searchCriteriaProcessor, params) {
     mustReturnCtsQuery,
     returnTrueForUnusableTerms,
   } = params;
-  const isAnd = searchCriteria.AND;
+  const isAnd = searchCriteria.hasOwnProperty('AND');
   const groupName = isAnd ? 'AND' : 'OR';
   const groupArr = searchCriteria[groupName];
   SearchCriteriaProcessor.requireSearchCriteriaArray(groupArr);
@@ -170,7 +169,7 @@ function _handleNotOperator(searchCriteriaProcessor, params) {
   // Accept array or object.
   if (utils.isArray(notCriteria)) {
     // Create an OR within NOT
-    const orCriteria = { OR: notCriteria.map((x) => x) };
+    const orCriteria = { OR: [...notCriteria] };
     return `cts.notQuery(${generateQueryFromCriteria(searchCriteriaProcessor, {
       scopeName,
       searchCriteria: orCriteria,
@@ -205,7 +204,6 @@ function _handleBoostOperator(searchCriteriaProcessor, params) {
     utils.isArray(searchCriteria.BOOST) &&
     searchCriteria.BOOST.length === 2
   ) {
-    // Deep copy prevents the matching query from impacting the boost query.
     return `cts.boostQuery(
 ${generateQueryFromCriteria(searchCriteriaProcessor, {
   scopeName,
@@ -263,12 +261,19 @@ function _parseAndValidateTerm(searchCriteriaProcessor, params) {
     return tokenizationResult.searchTerm;
   }
 
-  const searchTermConfig = _getSearchTermConfig(scopeName, termName);
+  const searchTermConfig = _getSearchTermConfig(
+    searchCriteriaProcessor.searchTermsConfig,
+    scopeName,
+    termName,
+  );
   searchTerm.setSearchTermConfig(searchTermConfig);
 
   // Handle non-atomic values, else perform various validations before accepting the atomic value.
   if (typeof searchTerm.getValue() === 'object') {
-    const objectTermResult = _handleObjectTermValue(searchTerm);
+    const objectTermResult = _handleObjectTermValue(
+      searchCriteriaProcessor.searchTermsConfig,
+      searchTerm,
+    );
     if (objectTermResult.replaced) {
       return objectTermResult.searchTerm;
     }
@@ -399,8 +404,8 @@ function _tokenizeSearchTermValue(value, leaveAsIs) {
 }
 
 // Get a search term's configuration by scope name and term name. Exception thrown when an invalid combination.
-function _getSearchTermConfig(scopeName, termName) {
-  const scopedTerms = getSearchTermsConfig()[scopeName];
+function _getSearchTermConfig(searchTermsConfig, scopeName, termName) {
+  const scopedTerms = searchTermsConfig[scopeName];
   if (!scopedTerms) {
     throw new InternalServerError(
       `No terms are configured to the '${scopeName}' search scope.`,
@@ -422,12 +427,13 @@ function _getSearchTermConfig(scopeName, termName) {
  * When object contains 'id' property and term config has ID index references, creates
  * a normalized ID term. Otherwise validates and processes the object.
  *
+ * @param {Object} searchTermsConfig - The resolved search terms configuration for the current user's unit
  * @param {SearchTerm} searchTerm - The search term being processed (contains all needed info)
  * @returns {{replaced: boolean, searchTerm: SearchTerm}} Result indicating if term was replaced
  *   - replaced: true if object was normalized to ID term (returns new normalized term)
  *   - replaced: false if object was processed in place (returns modified original term)
  */
-function _handleObjectTermValue(searchTerm) {
+function _handleObjectTermValue(searchTermsConfig, searchTerm) {
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
 
@@ -451,7 +457,7 @@ function _handleObjectTermValue(searchTerm) {
   }
 
   // Add child info and handle target scope changes
-  _handleChildInfoAndTargetScope(searchTerm);
+  _handleChildInfoAndTargetScope(searchTermsConfig, searchTerm);
 
   return { replaced: false, searchTerm };
 }
@@ -499,14 +505,18 @@ function _validateAndSetValueType(searchTerm) {
   }
 }
 
-function _handleChildInfoAndTargetScope(searchTerm) {
+function _handleChildInfoAndTargetScope(searchTermsConfig, searchTerm) {
   const termValue = searchTerm.getValue();
   const searchTermConfig = searchTerm.getSearchTermConfig();
   const scopeName = searchTerm.getScopeName();
   const targetScopeName = searchTermConfig.getTargetScopeName();
 
   searchTerm.addChildInfo(
-    _getPartialChildSearchTermInfo(targetScopeName || scopeName, termValue),
+    _getPartialChildSearchTermInfo(
+      searchTermsConfig,
+      targetScopeName || scopeName,
+      termValue,
+    ),
   );
 
   if (targetScopeName && targetScopeName !== scopeName) {
@@ -519,7 +529,11 @@ function _handleChildInfoAndTargetScope(searchTerm) {
   }
 }
 
-function _getPartialChildSearchTermInfo(scopeName, termValue) {
+function _getPartialChildSearchTermInfo(
+  searchTermsConfig,
+  scopeName,
+  termValue,
+) {
   const hasGroup = _hasGroup(termValue);
   let willReturnCtsQuery = hasGroup;
   let valueType = TYPE_GROUP;
@@ -528,7 +542,11 @@ function _getPartialChildSearchTermInfo(scopeName, termValue) {
   if (!hasGroup) {
     const termName =
       SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue);
-    const searchTermConfig = _getSearchTermConfig(scopeName, termName);
+    const searchTermConfig = _getSearchTermConfig(
+      searchTermsConfig,
+      scopeName,
+      termName,
+    );
     patternName = searchTermConfig.getPatternName();
     willReturnCtsQuery = returnsCtsQuery(patternName);
     valueType =
@@ -553,7 +571,7 @@ function _cleanTermValues(searchTerm) {
 function _isKeywordTerm(searchTerm) {
   const cfg = searchTerm.getSearchTermConfig();
   return (
-    TYPE_ATOMIC == searchTerm.getValueType() &&
+    TYPE_ATOMIC === searchTerm.getValueType() &&
     SEARCH_OPTIONS_NAME_KEYWORD ===
       resolveSearchOptionsName(cfg.getOptionsReference(), cfg.getPatternName())
   );
@@ -564,15 +582,12 @@ function _ignoreIfStopWordOrPunctuationOnly(
   searchTerm,
 ) {
   const v = searchTerm.getValue();
-  const punctuationOnly = /^[!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]*$/.test(
-    typeof v === 'string' ? v : '',
-  );
-  if (
-    punctuationOnly ||
-    (typeof v === 'string' && STOP_WORDS.has(v.toLowerCase()))
-  ) {
-    searchTerm.setUsable(false);
-    searchCriteriaProcessor.ignoredTerms.push(v);
+  if (typeof v === 'string') {
+    const punctuationOnly = /^[!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]+$/.test(v);
+    if (v.length === 0 || punctuationOnly || STOP_WORDS.has(v.toLowerCase())) {
+      searchTerm.setUsable(false);
+      searchCriteriaProcessor.ignoredTerms.push(v);
+    }
   }
 }
 

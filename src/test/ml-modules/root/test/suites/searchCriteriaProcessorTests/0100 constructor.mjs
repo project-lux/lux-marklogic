@@ -157,6 +157,14 @@ for (const scenario of scenarios) {
       ),
     );
 
+    // Test that searchTermsConfig is initialized and accesses lux property correctly
+    assertions.push(
+      testHelperProxy.assertTrue(
+        actual.hasSearchTermsConfig,
+        'Constructor should initialize searchTermsConfig.lux from getSearchTermsConfig()',
+      ),
+    );
+
     // Test that process() properties are in their initial state
     assertions.push(
       testHelperProxy.assertEqual(

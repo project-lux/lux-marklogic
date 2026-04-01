@@ -19,7 +19,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['cts.andQuery', 'agentAnyText', 'Pablo', 'Picasso'],
     },
   },
   {
@@ -33,7 +33,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['cts.andQuery', 'workAnyText', 'Mona', 'Lisa'],
     },
   },
   {
@@ -49,7 +49,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['cts.andQuery', 'agentAnyText', 'Pablo', 'Picasso'],
     },
   },
   {
@@ -65,7 +65,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['cts.orQuery', 'agentAnyText', 'Pablo', 'Vincent'],
     },
   },
   {
@@ -81,7 +81,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['cts.notQuery', 'agentName', 'Unknown'],
     },
   },
   {
@@ -97,7 +97,13 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: [
+        'cts.notQuery',
+        'cts.orQuery',
+        'agentName',
+        'Unknown',
+        'Anonymous',
+      ],
     },
   },
   {
@@ -113,7 +119,13 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: [
+        'cts.boostQuery',
+        'workAnyText',
+        'Mona',
+        'Lisa',
+        'painting',
+      ],
     },
   },
   {
@@ -134,7 +146,14 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: [
+        'cts.andQuery',
+        'cts.orQuery',
+        'agentName',
+        'Pablo',
+        'Vincent',
+        'artist',
+      ],
     },
   },
   {
@@ -150,7 +169,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: false,
+      value: '',
     },
   },
   {
@@ -166,7 +185,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: false,
+      value: '',
     },
   },
   {
@@ -182,7 +201,8 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['agentName', 'Pablo'],
+      ctsQueryExcludes: ['cts.orQuery'],
     },
   },
   {
@@ -200,7 +220,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['agentTypeId', 'https://example.org/concept/painter'],
     },
   },
   {
@@ -209,7 +229,7 @@ const scenarios = [
       scopeName: 'agent',
       searchCriteria: {
         activeAt: {
-          AND: [{ name: 'New York' }, { name: 'Paris' }],
+          AND: [{ name: '"New York"' }, { name: 'Paris' }],
         },
       },
       parentSearchTerm: null,
@@ -218,7 +238,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['cts.andQuery', 'placeName', 'New York', 'Paris'],
     },
   },
   {
@@ -232,11 +252,11 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      ctsQueryContains: ['agentName', 'Pablo'],
     },
   },
   {
-    name: 'returnTrueForUnusableTerms false',
+    name: 'returnTrueForUnusableTerms false with stop word',
     input: {
       scopeName: 'agent',
       searchCriteria: { name: 'a' }, // stop word
@@ -246,7 +266,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      hasCtsQuery: true,
+      value: 'cts.falseQuery()',
     },
   },
   {
@@ -409,20 +429,36 @@ for (const scenario of scenarios) {
   ) {
     const actual = scenarioResults.actualValue;
 
-    if (scenario.expected.hasCtsQuery) {
+    if (scenario.expected.value !== undefined) {
       assertions.push(
-        testHelperProxy.assertTrue(
-          typeof actual === 'string' && actual.length > 0,
-          `generateQueryFromCriteria should return a non-empty CTS query string for scenario: ${scenario.name}`,
+        testHelperProxy.assertEqual(
+          scenario.expected.value,
+          actual,
+          `Scenario '${scenario.name}' did not return the expected value.`,
         ),
       );
-    } else {
-      assertions.push(
-        testHelperProxy.assertTrue(
-          actual === '' || actual === null || actual === undefined,
-          `generateQueryFromCriteria should return empty or null for scenario: ${scenario.name}`,
-        ),
-      );
+    }
+
+    if (scenario.expected.ctsQueryContains) {
+      scenario.expected.ctsQueryContains.forEach((expectedText) => {
+        assertions.push(
+          testHelperProxy.assertTrue(
+            typeof actual === 'string' && actual.includes(expectedText),
+            `Scenario '${scenario.name}' - query should contain '${expectedText}'. Actual: ${actual}`,
+          ),
+        );
+      });
+    }
+
+    if (scenario.expected.ctsQueryExcludes) {
+      scenario.expected.ctsQueryExcludes.forEach((excludedText) => {
+        assertions.push(
+          testHelperProxy.assertFalse(
+            typeof actual === 'string' && actual.includes(excludedText),
+            `Scenario '${scenario.name}' - query should NOT contain '${excludedText}'. Actual: ${actual}`,
+          ),
+        );
+      });
     }
   }
 

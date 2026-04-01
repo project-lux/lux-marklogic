@@ -1,11 +1,11 @@
 //#region Imports
-import { InvalidSearchRequestError } from '../../errorClasses.mjs';
+import { InvalidSearchRequestError } from '../errorClasses.mjs';
 import {
   REG_EXP_NEAR_OPERATOR,
   SEARCH_GRAMMAR_OPERATORS,
-} from '../../appConstants.mjs';
-import { isSearchScopeName } from '../../searchScope.mjs';
-import * as utils from '../../../utils/utils.mjs';
+} from '../appConstants.mjs';
+import { isSearchScopeName } from '../searchScope.mjs';
+import * as utils from '../../utils/utils.mjs';
 //#endregion
 
 //#region Public functions

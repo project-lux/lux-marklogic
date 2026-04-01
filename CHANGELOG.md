@@ -27,7 +27,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
-- Refactored the [search criteria processor](/src/main/ml-modules/root/lib/SearchCriteriaProcessor.mjs) ([#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+- Refactored the [search criteria processor](/src/main/ml-modules/root/lib/SearchCriteriaProcessor.mjs). Requires MarkLogic 12 or later. ([#662](https://github.com/project-lux/lux-marklogic/issues/662))
+- Consolidated the `/src/main/ml-config/dynamic-host/` MarkLogic Gradle configuration directory into [/src/main/ml-config/base/](/src/main/ml-config/base/) since MarkLogic 12 is required (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 
 ### Removed
   

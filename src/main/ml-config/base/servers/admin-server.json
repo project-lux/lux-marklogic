@@ -3,5 +3,6 @@
   "server-type": "http",
   "enabled": "true",
   "authentication": "%%mlAuthentication%%",
-  "internal-security": "true"
+  "internal-security": "true",
+  "API-token-authentication": %%enableApiTokenAuthentication%%
 }

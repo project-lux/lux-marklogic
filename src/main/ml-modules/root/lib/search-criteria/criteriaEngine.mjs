@@ -1,5 +1,5 @@
 //#region Imports
-import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 import {
   PATTERN_NAME_INDEXED_VALUE,
   TYPE_GROUP,
@@ -11,21 +11,21 @@ import {
   applyPattern,
   isConvertIdChildToIri,
   returnsCtsQuery,
-} from '../../searchPatternsLib.mjs';
-import { SearchTerm } from '../../SearchTerm.mjs';
-import { SearchTermConfig } from '../../SearchTermConfig.mjs';
-import { STOP_WORDS } from '../../../data/stopWords.mjs';
+} from '../searchPatternsLib.mjs';
+import { SearchTerm } from '../SearchTerm.mjs';
+import { SearchTermConfig } from '../SearchTermConfig.mjs';
+import { STOP_WORDS } from '../../data/stopWords.mjs';
 import {
   resolveSearchOptionsName,
   sanitizeAndValidateWildcardedStrings,
-} from '../../searchLib.mjs';
-import { isSearchScopeName } from '../../searchScope.mjs';
-import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
+} from '../searchLib.mjs';
+import { isSearchScopeName } from '../searchScope.mjs';
+import { SEARCH_OPTIONS_NAME_KEYWORD } from '../appConstants.mjs';
 import {
   InvalidSearchRequestError,
   InternalServerError,
-} from '../../errorClasses.mjs';
-import * as utils from '../../../utils/utils.mjs';
+} from '../errorClasses.mjs';
+import * as utils from '../../utils/utils.mjs';
 //#endregion
 
 //#region Public function(s)

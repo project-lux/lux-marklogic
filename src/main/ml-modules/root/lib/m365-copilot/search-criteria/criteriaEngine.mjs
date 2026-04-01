@@ -85,8 +85,8 @@ function generateQueryFromCriteria(searchCriteriaProcessor, params) {
     const patternResponse = applyPattern({
       searchCriteriaProcessor: searchCriteriaProcessor,
       searchTerm,
-      searchPatternOptions: searchCriteriaProcessor.searchPatternOptions,
-      requestOptions: searchCriteriaProcessor.requestOptions,
+      searchPatternOptions: searchCriteriaProcessor.getSearchPatternOptions(),
+      requestOptions: searchCriteriaProcessor.getRequestOptions(),
     });
 
     let code = '';
@@ -99,17 +99,15 @@ function generateQueryFromCriteria(searchCriteriaProcessor, params) {
     // with its introductory purpose of supporting related lists that execute each relationship's
     // query individually.
     if (utils.isNonEmptyArray(patternResponse.values)) {
-      searchCriteriaProcessor.values = searchCriteriaProcessor.values.concat(
-        patternResponse.values,
-      );
+      searchCriteriaProcessor.appendValues(patternResponse.values);
     }
 
     // A single search term has the ability to exclude the type constraint. Introduced for related lists.
     if (patternResponse.includeTypeConstraint === false) {
-      searchCriteriaProcessor.includeTypeConstraint = false;
+      searchCriteriaProcessor.setIsTypeConstraintEnabled(false);
     }
 
-    searchCriteriaProcessor.criteriaCnt++;
+    searchCriteriaProcessor.incrementCriteriaCnt();
     return code;
   }
 
@@ -262,7 +260,7 @@ function _parseAndValidateTerm(searchCriteriaProcessor, params) {
   }
 
   const searchTermConfig = _getSearchTermConfig(
-    searchCriteriaProcessor.searchTermsConfig,
+    searchCriteriaProcessor.getSearchTermsConfig(),
     scopeName,
     termName,
   );
@@ -271,7 +269,7 @@ function _parseAndValidateTerm(searchCriteriaProcessor, params) {
   // Handle non-atomic values, else perform various validations before accepting the atomic value.
   if (typeof searchTerm.getValue() === 'object') {
     const objectTermResult = _handleObjectTermValue(
-      searchCriteriaProcessor.searchTermsConfig,
+      searchCriteriaProcessor.getSearchTermsConfig(),
       searchTerm,
     );
     if (objectTermResult.replaced) {
@@ -586,7 +584,7 @@ function _ignoreIfStopWordOrPunctuationOnly(
     const punctuationOnly = /^[!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]+$/.test(v);
     if (v.length === 0 || punctuationOnly || STOP_WORDS.has(v.toLowerCase())) {
       searchTerm.setUsable(false);
-      searchCriteriaProcessor.ignoredTerms.push(v);
+      searchCriteriaProcessor.addIgnoredTerm(v);
     }
   }
 }

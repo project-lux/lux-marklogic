@@ -215,7 +215,7 @@ for (const scenario of scenarios) {
     return {
       scopeName: processor.getSearchScope(),
       ctsQueryStr: processor.getCtsQueryStr(),
-      criteriaCnt: processor.criteriaCnt,
+      criteriaCnt: processor.getCriteriaCount(),
       ignoredTerms: processor.getIgnoredTerms(),
       values: processor.getValues(),
       requestOptionsScopeName: processor.getRequestOptions().scopeName,

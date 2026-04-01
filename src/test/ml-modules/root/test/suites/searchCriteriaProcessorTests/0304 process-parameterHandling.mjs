@@ -169,10 +169,10 @@ for (const scenario of scenarios) {
 
     return {
       scopeName: processor.getSearchScope(),
-      page: processor.page,
-      pageLength: processor.pageLength,
-      pageWith: processor.pageWith,
-      valuesOnly: processor.valuesOnly,
+      page: processor.getPage(),
+      pageLength: processor.getPageLength(),
+      pageWith: processor.getPageWith(),
+      valuesOnly: processor.isValuesOnly(),
       ctsQueryStr: processor.getCtsQueryStr(),
     };
   };

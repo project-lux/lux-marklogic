@@ -31,8 +31,9 @@ import { SortCriteria } from './SortCriteria.mjs';
 //#endregion
 
 //#region Constants
-// TODO: Now that we're ML 12, can and should we set this to none?  Unless made conditional,
-// doing so could be the first non-ML11 compatible change.
+// TODO: Now that we're ML 12, we can set scoreMethod to 'none'.  Note there are two fromSearch
+// calls.  The one that uses FROM_SEARCH_OPTIONS may want to stick with 'simple'.  The other
+// one should use 'none'.
 const FROM_SEARCH_OPTIONS = { scoreMethod: 'simple' };
 
 const START_OF_GENERATED_QUERY = `
@@ -500,7 +501,7 @@ const SearchCriteriaProcessor = class {
       ctsQuery,
       ['fragmentId'],
       null,
-      FROM_SEARCH_OPTIONS,
+      FROM_SEARCH_OPTIONS, // TODO: stick with 'simple' for scoreMethod?
     );
     const { order, subSortConfigs } =
       this.#sortCriteria.getMultiScopeSortOption();
@@ -546,7 +547,7 @@ const SearchCriteriaProcessor = class {
     // get cts results into an optic plan.
     // add a column for the document uri for each result, which we will use later
     const ctsPlan = op
-      .fromSearch(ctsQuery)
+      .fromSearch(ctsQuery) // TODO: set scoreMethod to 'none'?
       .joinDocUri('uri', op.fragmentIdCol('fragmentId'));
 
     // create a plan from all of the triples linked to our predicate

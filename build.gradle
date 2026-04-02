@@ -75,6 +75,11 @@ ext.getUnitTestingDeploymentStatus = {
 
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
+def buildTasks = gradle.startParameter.taskNames
+gradle.buildFinished {
+    println "\u001B[1;35m\nBuild completed at: ${new Date()} (tasks: ${buildTasks.join(', ')})\u001B[0m"
+}
+
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
 // from the default default REST port (8003) to the app services port.  This port is used by the
 // majority of the tasks, and has been proven necessary for setBanner (tenant app server may not

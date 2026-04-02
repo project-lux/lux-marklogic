@@ -31,7 +31,9 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Consolidated the `/src/main/ml-config/dynamic-host/` MarkLogic Gradle configuration directory into [/src/main/ml-config/base/](/src/main/ml-config/base/) since MarkLogic 12 is required (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 
 ### Removed
-  
+
+- Removed the disableDeprecatedSSLProtocols and showDeprecatedSslProtocols Gradle build tasks as they only apply to MarkLogic 11 and earlier (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+
 ### Fixed
 - Remove Disconnected Hosts While Deploying Databases ([#674](https://github.com/project-lux/lux-marklogic/issues/674))
 

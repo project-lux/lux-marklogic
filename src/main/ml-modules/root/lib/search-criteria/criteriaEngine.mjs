@@ -107,7 +107,7 @@ function generateQueryFromCriteria(searchCriteriaProcessor, params) {
       searchCriteriaProcessor.setIsTypeConstraintEnabled(false);
     }
 
-    searchCriteriaProcessor.incrementCriteriaCnt();
+    searchCriteriaProcessor.incrementCriteriaCount();
     return code;
   }
 

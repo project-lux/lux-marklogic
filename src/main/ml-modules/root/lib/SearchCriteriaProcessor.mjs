@@ -181,6 +181,10 @@ const SearchCriteriaProcessor = class {
     return this.#requestOptions;
   }
 
+  addIgnoredTerm(term) {
+    this.#ignoredTerms.push(term);
+  }
+
   getIgnoredTerms() {
     return this.#ignoredTerms;
   }
@@ -258,16 +262,12 @@ const SearchCriteriaProcessor = class {
     return this.#includeTypeConstraint;
   }
 
-  incrementCriteriaCnt() {
+  incrementCriteriaCount() {
     this.#criteriaCnt++;
   }
 
   getCriteriaCount() {
     return this.#criteriaCnt;
-  }
-
-  addIgnoredTerm(v) {
-    this.#ignoredTerms.push(v);
   }
 
   // Pass-through method

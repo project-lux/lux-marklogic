@@ -118,6 +118,17 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['agentAnyText'],
       scalarType: 'string',
     },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['agentAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("agentAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
+    },
     userId: {
       patternName: 'indexedValue',
       indexReferences: ['agentUserId'],
@@ -211,6 +222,17 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['conceptAnyText'],
       scalarType: 'string',
     },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['conceptAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("conceptAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
+    }
   },
   event: {
     carriedOutBy: {
@@ -237,6 +259,17 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'text',
       indexReferences: ['eventAnyText'],
       scalarType: 'string',
+    },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['eventAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("eventAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
     },
     tookPlaceAt: {
       patternName: 'hopWithField',
@@ -337,6 +370,17 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['itemAnyText'],
       scalarType: 'string',
     },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['itemAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("itemAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
+    }
   },
   place: {
     classification: {
@@ -387,6 +431,17 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['placeAnyText'],
       scalarType: 'string',
     },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['placeAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("placeAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
+    }
   },
   reference: {
     classification: {
@@ -412,6 +467,17 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'text',
       indexReferences: ['referenceAnyText'],
       scalarType: 'string',
+    },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['referenceAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("referenceAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
     },
   },
   set: {
@@ -550,6 +616,17 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setAnyText'],
       scalarType: 'string',
     },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['setAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("setAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
+    }
   },
   work: {
     aboutAgent: {
@@ -680,12 +757,23 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['workAnyText'],
       scalarType: 'string',
     },
+    textNoHop: {
+      patternName: 'indexedWord',
+      indexReferences: ['workAnyText'],
+      scalarType: 'string'
+    },
+    referencedBy: {
+      patternName: 'hopWithField',
+      predicates: ['lux("workAny")'],
+      targetScope: 'reference',
+      indexReferences: ['referenceName']
+    }
   },
 };
 
 // Stub required during deployment, before the generateRemainingSearchTerms task
 // has a chance to provide the runtime version.
-function dummy() {}
+function dummy() { }
 export {
   SEARCH_TERMS_CONFIG, // only generators are to import this.
   dummy as getInverseSearchTermInfo,

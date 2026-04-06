@@ -1,0 +1,656 @@
+/* mlxprs:settings
+{
+  "host": "localhost",
+  "port": 8003,
+  "contentDb": "lux-content"
+}
+*/
+
+// This script may be used to convert search criteria into an Optic query,
+// formatted as a plan, JSON object or source string.
+'use strict';
+
+import op from '/MarkLogic/optic.mjs';
+import { getSearchScopeTypes } from '/lib/searchScope.mjs';
+import { getSearchTermNames, getSearchTermConfig } from '/config/searchTermsConfig.mjs';
+import { processSearchCriteria } from '/lib/searchLib.mjs';
+import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
+
+const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
+const la = op.prefixer("https://linked.art/ns/terms/");
+const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
+const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
+
+const debug = [];
+
+// format: Enum with options for "plan", "json", "source", "result" or "debug"
+// plan will return an object that can be executed with .result().
+// json will return a JSON object that can be easily serialized.
+// source will return human-readable source code.
+// result will execute the query and return the results.
+// Default fallback is plan.
+const format = "result";
+//
+//
+// searchCriteria: the search criteria to convert.
+const searchCriteria =
+
+{
+  "AND": [
+    { "text": "lobster" }
+  ]
+}
+
+//FIXME: This returns an extra null value from the full outer.  It's also way worse performing than the AND
+//{
+//  "OR": [
+//    { "text": "lobster" }
+//  ]
+//}
+
+//{
+//  "OR": [
+//    {
+//      "AND": [
+//        { "depth": "100", "_comp": ">=" },
+//        { "width": "100", "_comp": ">=" }
+//      ]
+//    },
+//    { "name": "box" },
+//    { "producedBy": { "name": "john" } },
+//    { "producedBy": "james" },
+//  ]
+//};
+
+//{"AND":[
+//  {"OR":[
+//    {"depth":"100","_comp":">="},
+//    {"width":"100","_comp":">="}
+//  ]},
+//  { "name": "box" }
+//]};
+
+//{
+//  "AND": [
+//    {
+//      "OR": [
+//        { "depth": "100", "_comp": ">=" },
+//        { "width": "100", "_comp": ">=" }
+//      ]
+//    },
+//    { "name": "box" },
+//    {
+//      "NOT": [
+//        { "name": "giraffe" },
+//        { "recordType": "DigitalObject" }
+//      ]
+//    }
+//  ]
+//};
+
+//{"OR":[
+//  {"height":"100","_comp":">="},
+//  {"width":"100","_comp":">="},
+//  {"name":"tool"},
+//  {"text":"gate"},
+//]}
+//
+// searchScope: required by the string search grammar and when not specified
+// by the _scope property in the JSON search grammar.
+const searchScope = 'item';
+
+// Optic comparison operators
+const comparators = {
+  '=': op.eq,
+  '!=': op.ne,
+  '<': op.lt,
+  '>': op.gt,
+  '<=': op.le,
+  '>=': op.ge
+};
+
+// TODO: Add support for overriding these
+const defaultCtsOptions = [
+  "case-insensitive",
+  "diacritic-insensitive",
+  "punctuation-insensitive",
+  "whitespace-insensitive",
+  "stemmed",
+  "wildcarded"
+];
+
+const defaultPlanOptions = {
+  preferFragJoins: false
+}
+
+function ProcessPredicates(predicates) {
+  // FIXME: This currently uses eval for backwards compatibility.
+  //   Change to `sem.curieExpand(curie, [mapping])` for performance and security!
+  const header = `const op = require("/MarkLogic/optic");
+const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
+const la = op.prefixer("https://linked.art/ns/terms/");
+const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
+const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
+`;
+
+  debug.push("processing predicates");
+  debug.push(predicates);
+
+  const result = predicates.map(predicate => {
+    return xdmp.eval(header + predicate);
+  });
+
+  debug.push(result);
+  return result;
+}
+
+function GetOpticPlan(
+  planCriteria,
+  planScope = 'item',
+  groups = null,
+  parentId = null,
+  options = defaultPlanOptions
+) {
+  debug.push("Called GetOpticPlan");
+  debug.push(xdmp.toJSON({
+    planCriteria: planCriteria,
+    planScope: planScope,
+    parentId: parentId,
+    options: options
+  }));
+
+  // It's possible to implement an "all" option as a default, although this may not have been done for performance reasons possibly?  Defaulting to 'item' for now.
+  const scope = planCriteria._scope ?? planScope;
+
+  // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs
+  // Is there a reason the term isn't a value?
+  // Get a list of names now so we can efficiently find them in the criteria.
+  const searchTermNames = getSearchTermNames(scope);
+
+  const uriCol = parentId ? parentId + '_uri' : 'uri'; // If this isn't the root criteria, it needs to be joined back
+  const fragCol = parentId ? parentId + '_frag' : 'frag'; // Joining on frag can result in different plans (more D-Node pushdown)
+  const iriCol = parentId ? parentId + '_iri' : 'iri'; // IRI is used for semantic hops
+
+
+  // Queries always return URIs and dataType so we start from these lexicons.  This may be optimized differently for different queries later.
+  // I will note where additional indexes were added in comments so they can be moved into the DB config later.
+  // I am using Range Path Indexes for this so they can be easily found and because Optic needs range indexes, but Fields can be used if desired as long as a range index is assigned.
+  const lexicons = {
+    [uriCol]: cts.uriReference(),
+    [iriCol]: cts.iriReference(),
+    // Switched from single index for all scopes to per-scope index
+    //dataType: cts.pathReference('/indexedProperties/dataType'), // Added Path Index
+    dataType: cts.fieldReference(scope + 'DataTypeName'),
+  };
+
+  // Some constraints are more efficient when combined, so we track them here to assemble later
+  const constraints = [
+    // If using scope-specific indexes, we don't need this constraint explicitly filtered.
+    //op.in(op.col('dataType'), getSearchScopeTypes(scope))
+  ];
+
+  // CTS constraints may need to be AND, OR, or NOT(OR) depending on the context, so build them separately;
+  const ctsConstraints = [];
+
+  // {type: "joinInner", right: plan, on: op.on(...), condition: op.eq(...)}
+  const joins = [];
+
+  let criteria;
+  let logicType;
+
+  // Look for `AND:[]`, `OR:[]`, or `NOT:[]` in the root.
+  // Note: This code may add addtitional elements to the array, hence the manual iteration and deep copy.
+  if (planCriteria.AND) {
+    criteria = xdmp.toJSON(planCriteria.AND).toObject();
+    logicType = 'and';
+  } else if (planCriteria.OR) {
+    criteria = xdmp.toJSON(planCriteria.OR).toObject();
+    logicType = 'or';
+  } else if (planCriteria.NOT) {
+    criteria = xdmp.toJSON(planCriteria.NOT).toObject();
+    logicType = 'not';
+  } else {
+    // Single criteria are equivalent to AND
+    criteria = {
+      AND:
+        [xdmp.toJSON(planCriteria).toObject()]
+    };
+    logicType = 'and';
+  }
+
+  debug.push(`Logic Type: ${logicType}`);
+
+  // Loop through search criteria, adding operators
+  for (let idx = 0; idx < criteria.length; idx++) {
+    const criterion = criteria[idx];
+
+    debug.push(`Processing Criterion ${idx}`);
+    debug.push(xdmp.toJSON(criterion));
+
+    // Used when creating a new column that needs to be joined or filtered.
+    // Logical names might make sense for debugging, but just use UUIDs for now.
+    const id = sem.uuidString();
+
+    // If the criterion is a nested conjunction, handle it recursively
+    if (criterion.AND) {
+      switch (logicType) {
+        case "and":
+          // AND can be inlined because we're already in an AND here
+          criteria.push(...criterion.AND);
+          break
+
+        case "or":
+          // We are in an OR and encounter an AND - full outer join
+          // Full outer joins need the same columns from both sides
+          // This will result in a natural join
+
+          const _joinCol = options.preferFragJoins ?
+            op.as(fragCol, op.fragmentIdCol(id + '_frag')) :
+            op.as(uriCol, op.col(id + '_uri'));
+
+          joins.push({
+            type: "joinFullOuter",
+            right: GetOpticPlan(criterion, scope, null, id, options)
+              .select([
+                _joinCol,
+                "dataType"
+              ]),
+            on: null,
+            condition: null
+          });
+          break;
+
+        case "not":
+          // We are in a NOT and encounter an AND - not exists join
+          joins.push({
+            type: "notExistsJoin",
+            right: GetOpticPlan(criterion, scope, null, id, options)
+              .select(
+                options.preferFragJoins ? [id + '_frag'] : [id + '_uri']
+              ),
+            on: options.preferFragJoins ?
+              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag')) :
+              op.on(op.col(uriCol), op.col(id + '_uri')),
+            condition: null
+          });
+          break;
+      }
+      continue;
+    }
+
+    if (criterion.OR) {
+      switch (logicType) {
+        case "and":
+          // We are in an AND and encounter an OR - inner join
+          joins.push({
+            type: "joinInner",
+            right: GetOpticPlan(criterion, scope, null, id, options)
+              .select(
+                options.preferFragJoins ?
+                  [id + '_frag'] :
+                  [id + '_uri']
+              ),
+            on: options.preferFragJoins ?
+              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag')) :
+              op.on(op.col(uriCol), op.col(id + '_uri')),
+            condition: null
+          })
+          break
+
+        case "or":
+          // OR can be inlined because we're already in an OR here
+          criteria.push(...criterion.OR);
+          break;
+
+        case "not":
+          // We are in a NOT and encounter an OR - not exists join
+          joins.push({
+            type: "notExistsJoin",
+            right: GetOpticPlan(criterion, scope, null, id, options)
+              .select(
+                options.preferFragJoins ? [id + '_frag'] : [id + '_uri']
+              ),
+            on: options.preferFragJoins ?
+              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag')) :
+              op.on(op.col(uriCol), op.col(id + '_uri')),
+            condition: null
+          });
+          break;
+      }
+      continue;
+    }
+
+    if (criterion.NOT) {
+      switch (logicType) {
+        case "and":
+          // We are in an AND and encounter a NOT - not exists join and change to OR
+          // This is equivalent and likely more performant (needs testing)
+          joins.push({
+            type: "notExistsJoin",
+            right: GetOpticPlan({ OR: criterion.NOT }, scope, null, id, options)
+              .select(
+                options.preferFragJoins ? [id + '_frag'] : [id + '_uri']
+              ),
+            on: options.preferFragJoins ?
+              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag')) :
+              op.on(op.col(uriCol), op.col(id + '_uri')),
+            condition: null
+          });
+          break
+
+        case "or":
+          // We are in an OR and encounter a NOT - full outer join
+          // I don't think there's a faster equivalent here, unfortunately
+          // Full outer joins need the same columns from both sides
+          // This will result in a natural join
+
+          const _joinCol = options.preferFragJoins ?
+            op.as(fragCol, op.fragmentIdCol(id + '_frag')) :
+            op.as(uriCol, op.col(id + '_uri'));
+
+          joins.push({
+            type: "joinFullOuter",
+            right: GetOpticPlan(criterion, scope, null, id, options)
+              .select([
+                _joinCol,
+                'dataType'
+              ]),
+            on: null,
+            condition: null
+          });
+          break;
+
+        case "not":
+          // We are in a NOT and encounter a NOT - inner join and change to OR
+          // This is equivalent and likely more performant (needs testing)
+          joins.push({
+            type: "joinInner",
+            right: GetOpticPlan({ OR: criterion.NOT }, scope, null, id, options)
+              .select(
+                options.preferFragJoins ? [id + '_frag'] : [id + '_uri']
+              ),
+            on: options.preferFragJoins ?
+              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag')) :
+              op.on(op.col(uriCol), op.col(id + '_uri')),
+            condition: null
+          });
+          break;
+      }
+      continue;
+    }
+
+    // I don't think multiple search terms can exist in the same object, but I guess it might be possible.  Need to double check.
+    const termName = Object.keys(criterion).find((k) => k[0] !== '_' && searchTermNames.includes(k));
+    const termConfig = getSearchTermConfig(scope, termName);
+
+    debug.push("Found Term Config");
+    debug.push(xdmp.toJSON(termConfig));
+
+    // Cast value to the correct type if scalar
+    const caster = termConfig.scalarType ? xs[termConfig.scalarType] : null;
+    const termValue = caster ?
+      caster(criterion[termName]) :
+      typeof criterion[termName] === 'string' ?
+        criterion[termName] :
+        null;
+
+    debug.push(termValue);
+    debug.push(typeof criterion[termName]);
+
+    // TODO: Get additional options
+
+    // TODO: Add support for views and other index types
+    switch (termConfig.patternName) {
+      case "text":
+        {
+          debug.push("processing text");
+
+          const newCriteria = {
+            OR: [
+              {
+                textNoHop: criterion[termName]
+              },
+              {
+                referencedBy: criterion[termName]
+              }
+            ]
+          };
+
+          criteria.push(newCriteria);
+          break;
+        }
+      case "indexedWord":
+        {
+          debug.push("processing indexedWord");
+
+          if (criterion._complete) {
+            if (logicType === 'and') {
+              // Should be more efficient to add to existing lexicon join (validate through testing!)
+              // This requires adding range lexicons for every field!
+              // It also requires that each term config only has one index reference. This is true today, but is it guaranteed?
+              lexicons[id + '_field'] = cts.fieldReference(termConfig.indexReferences[0]);
+              constraints.push(op.eq(op.col(id + '_field'), termValue));
+            } else {
+              // OR and NOT
+              ctsConstraints.push(cts.fieldValueQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
+            }
+          } else {
+            ctsConstraints.push(cts.fieldWordQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
+          }
+          break;
+        }
+      case "indexedRange":
+        {
+          // TODO: I think this would be better with fromView, as it would give more flexibility in selecting measures
+          debug.push("processing indexedRange");
+
+          if (logicType === 'and') {
+            const constraint = comparators[criterion._comp];
+            // This requires that each term config only has one index reference. This is true today, but is it guaranteed?
+            lexicons[id + '_field'] = cts.fieldReference(termConfig.indexReferences[0]);
+            constraints.push(constraint(op.col(id + '_field'), termValue));
+          } else {
+            // OR and NOT
+            ctsConstraints.push(cts.fieldRangeQuery(termConfig.indexReferences, criterion._comp, termValue));
+          }
+          break;
+        }
+      case "propertyValue":
+        {
+          // CTS version has special handling for recordType, but this is the only kind in the config
+          // For now, I'm only implementing this for recordType
+          debug.push("processing propertyValue");
+
+          if (logicType === 'and') {
+            constraints.push(op.eq(op.col('dataType'), termValue));
+          } else {
+            // OR and NOT
+            ctsConstraints.push(cts.fieldValueQuery(scope + 'DataTypeName', termValue));
+          }
+          break;
+        }
+      case "hopWithField":
+        {
+          debug.push("processing hopWithField");
+
+          const _triFragCol = id + '_triFrag';
+          const predicates = ProcessPredicates(termConfig.predicates);
+          const tri = op.fromTriples([
+            op.pattern(op.col(id + '_s'), predicates, op.col(id + '_o'), op.fragmentIdCol(_triFragCol))
+          ]);
+
+          let right;
+
+          if (termValue) {
+            // Simple hop that doesn't need recursion
+            // I *believe* this only currently happens as a child to `text`
+            const _refIri = id + '_iri';
+
+            const refLex = criterion._complete
+              // This requires a range lexicon for the name field!
+              // It also requires that each term config only has one index reference. This is true today, but is it guaranteed?
+              ? op.fromLexicons({
+                [_refIri]: cts.iriReference(),
+                [id + '_field']: cts.fieldReference(termConfig.indexReferences[0])
+              })
+                .where(op.eq(op.col(id + '_field'), termValue))
+
+              : op.fromLexicons({
+                [_refIri]: cts.iriReference(),
+              })
+                .where(cts.fieldWordQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
+
+            right = tri
+              .joinInner(
+                refLex,
+                op.on(op.col(id + '_o'), op.col(_refIri)))
+
+          } else {
+            // Hop with complex criteria
+
+            const rightGroups = {
+              by: [_refIri]
+            };
+
+            right = tri
+              .joinInner(
+                GetOpticPlan(criterion[termName], termConfig.targetScope, rightGroups, id, options),
+                op.on(op.col(id + '_s'), op.col(_refIri))
+              )
+          }
+
+          debug.push("Generated right plan:");
+          debug.push(op.toSource(right.export()));
+
+          if (logicType === 'or') {
+            // Need another copy of the lexicon plan to do an outer join
+            // TODO: Check to see if this needs to be done later since the lexicon plan
+            //   can theoretically change after this (but shouldn't be possible currently?)
+            // TODO: This kind of "duplicate lexicon then outer join" pattern
+            //   will likely be repeated for OR logic - could use a helper function
+            right = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
+              .joinInner(
+                right,
+                op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol))
+              );
+
+            joins.push({
+              // Full outer joins need the same columns from both sides
+              // This will result in a natural join
+              type: "joinFullOuter",
+              right: right.select([
+                fragCol,
+                "dataType"
+              ]),
+              on: null,
+              condition: null
+            });
+          } else {
+            // AND and NOT are similar except join type
+            const joinType = logicType === 'and' ?
+              "joinInner" :
+              "notExistsJoin";
+
+            joins.push({
+              type: joinType,
+              right: right,
+              // op.fromTriples doesn't return URIs so we are using fragment regardless of config
+              on: [
+                op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
+                op.on(op.col(iriCol), op.col(id + '_s'))
+              ],
+              condition: null
+            });
+          }
+          break;
+        }
+      default:
+        throw new Error(`Unimplemented pattern name: ${termConfig.patternName}.`)
+    }
+  }
+
+  // Optic uses functional programming patterns, so we will assign plan temporarily and replace it with each modification unless/until we need a more complex pattern.
+  let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
+  debug.push("Initial lexicon plan:");
+  debug.push(op.toSource(plan.export()));
+
+  if (constraints.length) {
+    debug.push("Applying Constraints");
+    for (const constraint of constraints) {
+      debug.push({
+        constraint
+      });
+      plan = plan.where(constraint);
+    }
+    debug.push(op.toSource(plan.export()));
+  }
+
+  if (ctsConstraints.length) {
+    debug.push("Applying CTS Constraints");
+    const ctsWrapper = logicType === 'and' ?
+      cts.andQuery : logicType === 'or' ?
+        cts.orQuery : // NOT
+        x => cts.notQuery(cts.orQuery(x));
+
+    plan = plan.where(ctsWrapper(ctsConstraints));
+    debug.push(op.toSource(plan.export()));
+  }
+
+  if (joins.length) {
+    debug.push("Applying Joins");
+    for (const join of joins) {
+      debug.push({
+        type: join.type,
+        left: op.toSource(plan.export()),
+        right: op.toSource(join.right.export()),
+        on: join.on?.toString(),
+        condition: join.condition
+      });
+      // Join functions are a method on the plan, so we have to reference them by name instead of storing the join itself in the array
+      plan = plan[join.type](join.right, join.on, join.condition);
+    }
+    debug.push(op.toSource(plan.export()));
+  }
+
+  if (groups) {
+    debug.push("Applying Groups");
+    plan = plan.groupBy(groups.by, groups.agg);
+    debug.push(op.toSource(plan.export()));
+  }
+
+  return plan;
+}
+
+function execute() {
+  try {
+    // We need to group by uri because lexicons can hit multiple times in a doc
+    const finalGroups = {
+      by: ['uri'],
+      agg: [op.sample('dataType', op.col('dataType'))]
+    };
+
+    const opticPlan = GetOpticPlan(searchCriteria, searchScope, finalGroups);
+
+    const requestedQuery = (function () {
+      switch (format) {
+        case "json":
+          return opticPlan.export();
+        case "source":
+          return op.toSource(opticPlan.export());
+        case "debug":
+          return debug;
+        case "result":
+          return opticPlan.result();
+        default:
+          return opticPlan;
+      }
+    })(); //Execute anonymous function immediately
+
+    return requestedQuery;
+  } catch (ex) {
+    throw (ex);
+    return debug;
+  }
+}
+
+export default execute();

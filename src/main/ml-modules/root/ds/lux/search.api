@@ -16,11 +16,6 @@
       "nullable": true
     },
     {
-      "name": "mayChangeScope",
-      "datatype": "boolean",
-      "nullable": true
-    },
-    {
       "name": "page",
       "datatype": "int",
       "nullable": true

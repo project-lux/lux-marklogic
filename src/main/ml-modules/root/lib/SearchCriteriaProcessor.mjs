@@ -11,7 +11,6 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from './errorClasses.mjs';
-import { TOKEN_FIELDS, TOKEN_PREDICATES, TOKEN_TYPES } from './searchLib.mjs';
 import * as utils from '../utils/utils.mjs';
 
 import { generateQueryFromCriteria } from './search-criteria/criteriaEngine.mjs';
@@ -20,11 +19,7 @@ import {
   translateStringGrammarToJSON,
   walkParsedQuery,
 } from './search-criteria/stringGrammar.mjs';
-import {
-  getSearchScopeFields,
-  getSearchScopePredicates,
-  getSearchScopeTypes,
-} from './searchScope.mjs';
+import { getSearchScopeTypes } from './searchScope.mjs';
 import { isSearchScopeName } from './searchScope.mjs';
 import { SearchPatternOptions } from './SearchPatternOptions.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
@@ -51,7 +46,6 @@ const SearchCriteriaProcessor = class {
   #allowMultiScope;
   #criteriaCnt = 0;
   #ctsQueryStr = '';
-  #ctsQueryStrWithTokens = '';
   #ignoredTerms = [];
   #includeTypeConstraint;
   #page;
@@ -139,7 +133,7 @@ const SearchCriteriaProcessor = class {
       }
     } else {
       // Build CTS query template (string)
-      this.#ctsQueryStrWithTokens = this.generateQueryFromCriteria(
+      this.#ctsQueryStr = this.generateQueryFromCriteria(
         this.#scopeName,
         this.#resolvedSearchCriteria,
         null,
@@ -152,18 +146,15 @@ const SearchCriteriaProcessor = class {
 
     // Conditionally add type constraint, using a token for search scope-specific estimates.
     if (this.#includeTypeConstraint) {
-      this.#ctsQueryStrWithTokens = `cts.andQuery([
-        cts.jsonPropertyValueQuery('dataType', ${TOKEN_TYPES}, ['exact']),
-        ${this.#ctsQueryStrWithTokens}
+      this.#ctsQueryStr = `cts.andQuery([
+        cts.jsonPropertyValueQuery(
+          'dataType',
+          ${utils.arrayToString(getSearchScopeTypes(this.#scopeName, false))},
+          ['exact']
+        ),
+        ${this.#ctsQueryStr}
       ])`;
     }
-
-    // Resolve tokens to final query with default field, predicate and type values
-    this.#ctsQueryStr = this.resolveTokens(
-      getSearchScopeFields(this.#scopeName, true), // default to all
-      getSearchScopePredicates(this.#scopeName), // defaults to any
-      getSearchScopeTypes(this.#scopeName, false), // default to none
-    );
   }
 
   getSearchCriteria() {
@@ -202,7 +193,6 @@ const SearchCriteriaProcessor = class {
     return this.#pageWith;
   }
 
-  // Get query. If you're looking for the query with different token values, use resolveTokens.
   getCtsQueryStr() {
     // Finalize the query
     this.#ctsQueryStr =
@@ -286,33 +276,6 @@ const SearchCriteriaProcessor = class {
       mustReturnCtsQuery,
       returnTrueForUnusableTerms,
     });
-  }
-
-  /**
-   * Public: resolve tokens within query string. This assists in the support of providing estimates for additional search scopes.
-   *
-   * @param {Array} fieldsArr - Array of field names to apply within the returned query string.
-   * @param {Array} predicatesArr - Array of predicates to apply within the returned query string.
-   * @param {Array} typesArr - Array of types to apply within the returned query string.
-   * @returns {String} Query string after applying parameter values.
-   */
-  resolveTokens(fieldsArr, predicatesArr, typesArr) {
-    const tokens = [
-      { pattern: TOKEN_FIELDS, value: fieldsArr, scalarType: 'string' },
-      { pattern: TOKEN_PREDICATES, value: predicatesArr, scalarType: 'code' },
-      { pattern: TOKEN_TYPES, value: typesArr, scalarType: 'string' },
-    ];
-
-    // Replace tokens within the query string template
-    let out = this.#ctsQueryStrWithTokens;
-    tokens.forEach((t) => {
-      const val = Array.isArray(t.value)
-        ? utils.arrayToString(t.value, t.scalarType)
-        : t.value;
-      const re = new RegExp(t.pattern, 'g');
-      if (utils.isNonEmptyString(out)) out = out.replace(re, val);
-    });
-    return out;
   }
   //#endregion
 
@@ -462,7 +425,6 @@ const SearchCriteriaProcessor = class {
     // reset per-invocation fields
     this.#criteriaCnt = 0;
     this.#ignoredTerms = [];
-    this.#ctsQueryStrWithTokens = '';
     this.#ctsQueryStr = '';
     this.#values = [];
   }
@@ -788,10 +750,7 @@ const SearchCriteriaProcessor = class {
   // Protect from a repo-wide search as repo-wide facets are expensive to calculate, even when
   // applying a scope search.
   #requireCriteria() {
-    if (
-      this.#criteriaCnt < 1 ||
-      !utils.isNonEmptyString(this.#ctsQueryStrWithTokens)
-    ) {
+    if (this.#criteriaCnt < 1 || !utils.isNonEmptyString(this.#ctsQueryStr)) {
       if (this.#ignoredTerms.length > 0) {
         throw new InvalidSearchRequestError(
           `the search criteria given only contains '${JSON.stringify(this.#ignoredTerms)}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,

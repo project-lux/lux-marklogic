@@ -539,7 +539,6 @@ function getExceptionObjectElseMessage(e) {
 function buildSearchUri({
   searchCriteria = null,
   scope = null,
-  mayChangeScope = null,
   page = null,
   pageLength = null,
   sortDelimitedStr = null,
@@ -549,9 +548,6 @@ function buildSearchUri({
   const prefixAndQParam = `${SEARCH_PREFIX}/${scope}?q=${encodeURIComponent(
     JSON.stringify(searchCriteria),
   )}`;
-  const mayChangeScopeParam = mayChangeScope
-    ? `&mayChangeScope=${encodeURIComponent(mayChangeScope)}`
-    : '';
 
   const pageParam = page ? `&page=${encodeURIComponent(page)}` : '';
   const pageLengthParam = pageLength
@@ -568,7 +564,6 @@ function buildSearchUri({
     : '';
   return (
     prefixAndQParam +
-    mayChangeScopeParam +
     pageParam +
     pageLengthParam +
     sortDelimitedStrParam +

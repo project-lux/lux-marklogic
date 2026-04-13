@@ -702,12 +702,6 @@
 									"type": "text"
 								},
 								{
-									"key": "mayChangeScope",
-									"value": "true",
-									"type": "text",
-									"disabled": true
-								},
-								{
 									"key": "facetsSoon",
 									"value": "true",
 									"description": "Set to true if a seperate call for facets using same criteria will be made soon.",
@@ -1740,11 +1734,6 @@
 								{
 									"key": "q",
 									"value": "ma??ingly"
-								},
-								{
-									"key": "mayChangeScope",
-									"value": "false",
-									"disabled": true
 								},
 								{
 									"key": "page",

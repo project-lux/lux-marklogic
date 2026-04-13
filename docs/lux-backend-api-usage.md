@@ -1059,7 +1059,6 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 | `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The `BOOST` property may be used to provide an array containing two search terms. The first term is used for matching results and the second term will boost the score of results that match the first term.  The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a near complete list of available search scopes, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example).
-| `mayChangeScope` | `true` | **OPTIONAL** - Submit `true` if the endpoint is allowed to change the search scope when the requested search's results estimate is zero yet another search scope's estimate is greater than zero.  Only applicable to search scopes associated with the user interface.  When the search scope is changed, the `metadata.changedScope` response body property value will be `true`.  Regardless, the `metadata.scope` parameter value will always align with the search *performed*.  The selected search scope is based on a user interface order specified in the endpoint.  No other part of the search is adjusted, specifically including the values of the `sort` and `facetNames` parameters.  Endpoint consumers are encouraged to submit `true` for search requests that do not require a specific user interface scope.  Subsequent requests that need to stick to a specific search should submit `false`.  Defaults to `false`. |
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
 | `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100. An error will be thrown if this value is less than 1. |
 | `pageWith` | https://lux.collections.yale.edu/data/set/6ec47e23-211d-414d-a6ef-7127031dffa4 | **OPTIONAL** - Return a page with the specified document ID. Submitting this parameter causes the `page` parameter to be ignored. Not available for related lists. |
@@ -1078,7 +1077,6 @@ Parameters:
 |-----------|-------|
 | `q` | `{"BOOST":[{"text":"ben","_lang":"en"},{"text":"franklin","_lang":"en"}]}` |
 | `scope` | `item` |
-| `mayChangeScope` | `true` |
 | `page` | `1` |
 | `pageLength` | `20` |
 | `sort` | `itemProductionDate:desc` |
@@ -1094,7 +1092,7 @@ Response Body:
 ```
 {
    "@context":"https://linked.art/ns/v1/search.json",
-   "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&mayChangeScope=true&page=1&pageLength=20&sort=itemProductionDate%3Adesc",
+   "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&page=1&pageLength=20&sort=itemProductionDate%3Adesc",
    "type":"OrderedCollectionPage",
    "partOf":[
       {
@@ -1125,7 +1123,7 @@ Response Body:
       ...more search results
    ],
    "next":{
-      "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&mayChangeScope=true&page=2&pageLength=20&sort=itemProductionDate%3Adesc",
+      "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&page=2&pageLength=20&sort=itemProductionDate%3Adesc",
       "type":"OrderedCollectionPage"
    }
 }
@@ -1156,7 +1154,7 @@ Response Body:
 ```
 {
   "@context":"https://linked.art/ns/v1/search.json",
-  "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&mayChangeScope=true&page=1&pageLength=20&sort=archiveSortId",
+  "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=1&pageLength=20&sort=archiveSortId",
   "type":"OrderedCollectionPage",
   "partOf":[
     {
@@ -1191,7 +1189,7 @@ Response Body:
     ...more search results
   ],
   "next":{
-    "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&mayChangeScope=true&page=2&pageLength=20&sort=archiveSortId",
+    "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=2&pageLength=20&sort=archiveSortId",
     "type":"OrderedCollectionPage"
   }
 }

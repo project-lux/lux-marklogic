@@ -4,7 +4,6 @@ import { search } from '../../lib/searchLib.mjs';
 const unitName = external.unitName;
 const searchCriteria = external.q;
 const searchScope = external.scope;
-const mayChangeScope = external.mayChangeScope;
 const page = external.page;
 const pageLength = external.pageLength;
 const pageWith = external.pageWith;
@@ -18,7 +17,6 @@ const response = handleRequest(function () {
   return search({
     searchCriteria,
     searchScope,
-    mayChangeScope,
     page,
     pageLength,
     pageWith,

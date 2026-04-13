@@ -14,11 +14,6 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
-import {
-  getOrderedUserInterfaceSearchScopeNames,
-  getSearchScope,
-  isUserInterfaceSearchScopeName,
-} from './searchScope.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import { getDefaultSearchOptionsNameByPatternName } from './searchPatternsLib.mjs';
 import {
@@ -34,7 +29,6 @@ const MAXIMUM_PAGE_LENGTH = 100;
 
 const EMPTY_STRING = '';
 const DEFAULT_ALLOW_MULTI_SCOPE = true;
-const DEFAULT_MAY_CHANGE_SCOPE = false;
 const DEFAULT_INCLUDE_TYPE_CONSTRAINT = true;
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
@@ -75,7 +69,6 @@ const SCOPE_DESCRIPTORS = {
 function search({
   searchCriteria = null,
   searchScope = null,
-  mayChangeScope = DEFAULT_MAY_CHANGE_SCOPE,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
   pageWith = null,
@@ -92,7 +85,6 @@ function search({
     {
       searchCriteria,
       searchScope,
-      mayChangeScope,
       page,
       pageLength,
       pageWith,
@@ -114,7 +106,6 @@ function _search(
   {
     searchCriteria = null,
     searchScope = null,
-    mayChangeScope = DEFAULT_MAY_CHANGE_SCOPE,
     page = DEFAULT_PAGE,
     pageLength = DEFAULT_PAGE_LENGTH,
     pageWith = null,
@@ -149,7 +140,6 @@ function _search(
         `Search ${requestId} parameters: ${JSON.stringify({
           searchCriteria,
           searchScope: resolvedSearchScope,
-          mayChangeScope,
           page,
           pageLength,
           pageWith,
@@ -197,56 +187,6 @@ function _search(
     // When evaluated as follows, need to convert the return to an array and take the first item.
     ({ resultPage, results } = searchCriteriaProcessor.getSearchResults());
     stopWatch.lap('search');
-    // When the requested scope has zero results and we're allowed to change the scope, do so.
-    if (
-      results.length == 0 &&
-      mayChangeScope &&
-      isUserInterfaceSearchScopeName(resolvedSearchScope)
-    ) {
-      const names = getOrderedUserInterfaceSearchScopeNames();
-      for (let i = 0; i < names.length; i++) {
-        const candidateSearchScopeName = names[i];
-        const candidateSearchScopeObj = getSearchScope(
-          candidateSearchScopeName,
-        );
-        const estimate = _calculateEstimate(
-          searchCriteriaProcessor,
-          candidateSearchScopeObj,
-        );
-        stopWatch.addTo('estimates');
-
-        if (estimate > 0) {
-          searchAgain = true;
-          resolvedSearchScope = candidateSearchScopeName;
-          if (xdmp.traceEnabled(traceName)) {
-            // Not associated with monitoring tests or the log mining script.
-            xdmp.trace(
-              traceName,
-              `Changed search request ${requestId}'s scope from '${searchScope}' to '${resolvedSearchScope}'`,
-            );
-          }
-          return _search(
-            {
-              searchCriteria,
-              searchScope: resolvedSearchScope,
-              mayChangeScope: false, // avoid recursion when the unfiltered count is greater than the filtered count.
-              page,
-              pageLength,
-              pageWith,
-              filterResults,
-              requestContext,
-              mayExceedMaximumPageLength,
-              mayEstimate: true,
-              sortDelimitedStr,
-              facetsSoon,
-              synonymsEnabled,
-              valuesOnly,
-            },
-            true,
-          );
-        }
-      }
-    }
 
     if (results.length > 0 && mayEstimate) {
       estimate = _getCurrentRequestEstimate(
@@ -263,7 +203,6 @@ function _search(
       id: utils.buildSearchUri({
         searchCriteria: resolvedSearchCriteria,
         scope: resolvedSearchScope,
-        mayChangeScope,
         page: resultPage,
         pageLength,
         sortDelimitedStr,
@@ -298,7 +237,6 @@ function _search(
         id: utils.buildSearchUri({
           searchCriteria: resolvedSearchCriteria,
           scope: resolvedSearchScope,
-          mayChangeScope,
           page: resultPage - 1,
           pageLength,
           sortDelimitedStr,
@@ -313,7 +251,6 @@ function _search(
         id: utils.buildSearchUri({
           searchCriteria: resolvedSearchCriteria,
           scope: resolvedSearchScope,
-          mayChangeScope,
           page: resultPage + 1,
           pageLength,
           sortDelimitedStr,
@@ -443,19 +380,6 @@ function _getCurrentRequestEstimate(
   }
   // Else, we need to calculate.
   return searchCriteriaProcessor.getEstimate();
-}
-
-// Calculate an estimate for the specified scope.
-function _calculateEstimate(searchCriteriaProcessor, searchScopeObj) {
-  return cts.estimate(
-    SearchCriteriaProcessor.evalQueryString(
-      searchCriteriaProcessor.resolveTokens(
-        searchScopeObj.fields,
-        searchScopeObj.predicates,
-        searchScopeObj.types,
-      ),
-    ),
-  );
 }
 
 function calculateEstimate(searchCriteria, scope) {

@@ -173,7 +173,7 @@ for (const scenario of scenarios) {
       pageLength: processor.getPageLength(),
       pageWith: processor.getPageWith(),
       valuesOnly: processor.isValuesOnly(),
-      ctsQueryStr: processor.getCtsQueryStr(),
+      ctsQueryStr: processor.getQueryStr(),
     };
   };
 

@@ -298,7 +298,10 @@ function _search(
           ? searchCriteriaProcessor.getIgnoredTerms()
           : null,
         query: searchCriteriaProcessor
-          ? searchCriteriaProcessor.getCtsQueryStr()
+          ? searchCriteriaProcessor.getQueryStr()
+          : null,
+        debug: searchCriteriaProcessor
+          ? searchCriteriaProcessor.getDebugMsgs()
           : null,
       };
       xdmp.trace(traceName, searchInfo);

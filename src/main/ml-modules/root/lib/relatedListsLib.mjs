@@ -524,51 +524,6 @@ function _convertToObjectsOrWorksSearch(
   return objectsOrWorksCriteria;
 }
 
-// Responsible for returning the query that terms configured to the related list search pattern.
-function getRelatedListQuery(
-  searchTerm,
-  resolvedSearchOptions,
-  searchPatternOptions,
-  requestOptions,
-) {
-  const searchScopeName = searchTerm.getScopeName();
-  const relatedListName = searchTerm.getName();
-
-  // In this non-aggregate context, exclude type criteria and have the patterns return queries.
-  const includeTypeConstraint = false;
-  const relatedListSearchPatternOptions = new SearchPatternOptions();
-  relatedListSearchPatternOptions.set(OPTION_NAME_RETURN_VALUES, false);
-
-  // Create a flat OR query out of all the individual relationship queries.  Should a hierarchial query be
-  // more performant and we need that improvement, the related list configuration generator could be modified
-  // to create flat and hierarchial versions.
-  const relatedListConfig = getRelatedListConfig(
-    searchScopeName,
-    relatedListName,
-  );
-  const query = {
-    OR: relatedListConfig.searchConfigs.map((searchConfig) => {
-      return searchConfig.criteria;
-    }),
-  };
-
-  const searchCriteriaProcessor = processSearchCriteria({
-    searchCriteria: utils.replaceMatchingPropertyValues(
-      query,
-      TOKEN_RUNTIME_PARAM,
-      searchTerm.getValue(),
-    ),
-    searchScope: relatedListConfig.targetScope,
-    allowMultiScope: false,
-    searchPatternOptions: relatedListSearchPatternOptions,
-    includeTypeConstraint,
-    filterResults: requestOptions.filterResults,
-    valuesOnly: false,
-  });
-
-  return searchCriteriaProcessor.getCtsQueryStr();
-}
-
 function getRelatedListSearchInfo(criteria) {
   const searchTermConfig = _getFirstSearchTermConfig(criteria);
   const isRelatedList =
@@ -593,4 +548,4 @@ function _getFirstSearchTermConfig(criteria) {
   };
 }
 
-export { getRelatedList, getRelatedListQuery, getRelatedListSearchInfo };
+export { getRelatedList, getRelatedListSearchInfo };

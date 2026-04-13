@@ -1226,7 +1226,7 @@ Response Body:
         "statusCode": 400,
         "status": "Bad Request",
         "messageCode": "BadRequestError",
-        "message": "Invalid search request: the 'producedFor' term is invalid for the 'item' search scope. Valid choices: carries, classification, depth, dimension, encounteredAt, encounteredBy, encounteredDate, hasDigitalImage, height, id, identifier, iri, isOnline, material, memberOf, name, producedAt, producedBy, producedDate, producedUsing, productionInfluencedBy, recordType, similar, subjectOfItem, text, width"
+        "message": "Invalid search request: the 'producedFor' term is invalid for the 'item' search scope. Valid choices: carries, classification, depth, dimension, encounteredAt, encounteredBy, encounteredDate, hasDigitalImage, height, id, identifier, iri, isOnline, material, memberOf, name, producedAt, producedBy, producedDate, producedUsing, productionInfluencedBy, recordType, subjectOfItem, text, width"
     }
 }
 ```

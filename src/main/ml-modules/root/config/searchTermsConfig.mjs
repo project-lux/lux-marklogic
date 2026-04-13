@@ -105,7 +105,6 @@ const SEARCH_TERMS_CONFIG = {
       inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
-    similar: { patternName: 'similar' },
     startAt: {
       patternName: 'hopWithField',
       predicates: ['lux("placeOfBeginning")'],
@@ -121,13 +120,13 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['agentAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("agentAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
+      indexReferences: ['referenceName'],
     },
     userId: {
       patternName: 'indexedValue',
@@ -225,14 +224,14 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['conceptAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("conceptAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
-    }
+      indexReferences: ['referenceName'],
+    },
   },
   event: {
     carriedOutBy: {
@@ -263,13 +262,13 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['eventAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("eventAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
+      indexReferences: ['referenceName'],
     },
     tookPlaceAt: {
       patternName: 'hopWithField',
@@ -364,7 +363,6 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'usedToProduce',
       indexReferences: ['conceptPrimaryName'],
     },
-    similar: { patternName: 'similar' },
     text: {
       patternName: 'text',
       indexReferences: ['itemAnyText'],
@@ -373,14 +371,14 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['itemAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("itemAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
-    }
+      indexReferences: ['referenceName'],
+    },
   },
   place: {
     classification: {
@@ -435,14 +433,14 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['placeAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("placeAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
-    }
+      indexReferences: ['referenceName'],
+    },
   },
   reference: {
     classification: {
@@ -472,13 +470,13 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['referenceAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("referenceAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
+      indexReferences: ['referenceName'],
     },
   },
   set: {
@@ -620,14 +618,14 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['setAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("setAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
-    }
+      indexReferences: ['referenceName'],
+    },
   },
   work: {
     aboutAgent: {
@@ -761,20 +759,20 @@ const SEARCH_TERMS_CONFIG = {
     textNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['workAnyText'],
-      scalarType: 'string'
+      scalarType: 'string',
     },
     referencedBy: {
       patternName: 'hopWithField',
       predicates: ['lux("workAny")'],
       targetScope: 'reference',
-      indexReferences: ['referenceName']
-    }
+      indexReferences: ['referenceName'],
+    },
   },
 };
 
 // Stub required during deployment, before the generateRemainingSearchTerms task
 // has a chance to provide the runtime version.
-function dummy() { }
+function dummy() {}
 export {
   SEARCH_TERMS_CONFIG, // only generators are to import this.
   dummy as getInverseSearchTermInfo,

@@ -137,7 +137,7 @@ const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
   debug.push(predicates);
 
   const result = predicates.map(predicate => {
-    return xdmp.eval(header + predicate);
+    return fn.head(xdmp.eval(header + predicate));
   });
 
   debug.push(result);
@@ -211,10 +211,7 @@ function GetOpticPlan(
     logicType = 'not';
   } else {
     // Single criteria are equivalent to AND
-    criteria = {
-      AND:
-        [xdmp.toJSON(planCriteria).toObject()]
-    };
+    criteria = [xdmp.toJSON(planCriteria).toObject()];
     logicType = 'and';
   }
 
@@ -621,7 +618,18 @@ function GetOpticPlan(
   return plan;
 }
 
-function execute() {
+// returns {
+//   results: Array<object> | null,
+//   planAsJson: object,
+//   planAsSource: string,
+//   debug: Array<string>,
+// }
+//
+// TODO: implement 'values' mode for related lists (i.e., array of IRIs).
+// TODO: verify multi-scope searches are supported.
+// TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
+// TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
+function execute(searchCriteria, searchScope, includeResults = true) {
   try {
     // We need to group by uri because lexicons can hit multiple times in a doc
     const finalGroups = {
@@ -631,26 +639,18 @@ function execute() {
 
     const opticPlan = GetOpticPlan(searchCriteria, searchScope, finalGroups);
 
-    const requestedQuery = (function () {
-      switch (format) {
-        case "json":
-          return opticPlan.export();
-        case "source":
-          return op.toSource(opticPlan.export());
-        case "debug":
-          return debug;
-        case "result":
-          return opticPlan.result();
-        default:
-          return opticPlan;
-      }
-    })(); //Execute anonymous function immediately
-
-    return requestedQuery;
+    const planAsJson = opticPlan.export();
+    return {
+      results: includeResults ? opticPlan.result() : null,
+      planAsJson,
+      planAsSource: op.toSource(planAsJson).replace(/\n\s*/g, ''),
+      debug,
+    }
   } catch (ex) {
+    console.dir(debug);
     throw (ex);
     return debug;
   }
 }
 
-export default execute();
+export { execute };

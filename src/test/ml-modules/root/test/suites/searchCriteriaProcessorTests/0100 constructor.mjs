@@ -116,7 +116,7 @@ for (const scenario of scenarios) {
       resolvedSearchCriteria: processor.getSearchCriteria(),
       criteriaCnt: processor.getCriteriaCount(),
       ignoredTerms: processor.getIgnoredTerms(),
-      ctsQueryStr: processor.getCtsQueryStr(),
+      ctsQueryStr: processor.getQueryStr(),
       valuesOnly: processor.isValuesOnly(),
       values: processor.getValues(),
     };
@@ -192,7 +192,7 @@ for (const scenario of scenarios) {
     assertions.push(
       testHelperProxy.assertTrue(
         actual.ctsQueryStr != null,
-        'getCtsQueryStr() should return a value before process() is called',
+        'getQueryStr() should return a value before process() is called',
       ),
     );
     assertions.push(

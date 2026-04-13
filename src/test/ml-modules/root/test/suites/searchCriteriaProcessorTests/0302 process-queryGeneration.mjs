@@ -177,7 +177,7 @@ for (const scenario of scenarios) {
     );
 
     return {
-      ctsQueryStr: processor.getCtsQueryStr(),
+      ctsQueryStr: processor.getQueryStr(),
     };
   };
 

@@ -1,6 +1,5 @@
 import * as utils from '../utils/utils.mjs';
 import { convertPartialDateTimeToSeconds } from '../utils/dateUtils.mjs';
-import { resolveSearchOptions } from './searchLib.mjs';
 import {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
@@ -15,7 +14,6 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from './errorClasses.mjs';
-import { getRelatedListQuery } from './relatedListsLib.mjs';
 import {
   getCorrectlyCasedType,
   getSearchScopeFields,
@@ -35,7 +33,7 @@ const PATTERN_NAME_INDEXED_VALUE = 'indexedValue';
 const PATTERN_NAME_INDEXED_WORD = 'indexedWord';
 const PATTERN_NAME_IRI = 'iri';
 const PATTERN_NAME_PROPERTY_VALUE = 'propertyValue';
-const PATTERN_NAME_RELATED_LIST = 'relatedList';
+const PATTERN_NAME_RELATED_LIST = 'relatedList'; // for related list configs
 const PATTERN_NAME_TEXT = 'text'; // for keyword search
 
 const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
@@ -52,46 +50,6 @@ function getPatternConfig(patternName) {
   }
   throw new InternalServerError(
     `Unknown search pattern '${patternName}' configured to a term.`,
-  );
-}
-
-// Exported function intended to be called by the search criteria processor.  This function
-// is able to call a search criteria processor instance function, leading to indirect recursion.
-function applyPattern({
-  searchCriteriaProcessor,
-  searchTerm,
-  searchPatternOptions,
-  requestOptions,
-}) {
-  // If not yet dealing with an atomic value, request the resolved CTS query for this term's value.
-  if (!searchTerm.hasValueType()) {
-    throw new InternalServerError(
-      `Unable to determine a search term's value type.`,
-    );
-  } else if (searchTerm.getValueType() !== TYPE_ATOMIC) {
-    searchTerm.setValue(
-      searchCriteriaProcessor.generateQueryFromCriteria(
-        searchTerm.getScopeName(),
-        searchTerm.getValue(),
-        searchTerm,
-        false, // Given we're not in a group, we need not require the child to return a CTS query.
-      ),
-    );
-  }
-
-  const termConfig = searchTerm.getSearchTermConfig();
-  const patternName = termConfig.getPatternName();
-  const resolvedSearchOptions = resolveSearchOptions(
-    termConfig.getOptionsReference(),
-    patternName,
-    requestOptions,
-    searchTerm.getSearchOptions(),
-  );
-  return getPatternConfig(patternName).function(
-    searchTerm,
-    resolvedSearchOptions,
-    searchPatternOptions,
-    requestOptions,
   );
 }
 
@@ -561,33 +519,6 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_PROPERTY_VALUE] = {
   },
 };
 
-SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
-  allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
-  allowedOptionsName: null,
-  defaultOptionsName: null,
-  // This pattern conditionally returns a CTS query, but not believed when this setting is relied upon by nested terms;
-  // should this become an issue, perhaps we need to make this a function that determines what it returns by context.
-  returnsCtsQuery: false,
-  function: (
-    searchTerm,
-    resolvedSearchOptions,
-    searchPatternOptions,
-    requestOptions,
-  ) => {
-    return _formattedPatternResponse(
-      getRelatedListQuery(
-        searchTerm,
-        resolvedSearchOptions,
-        searchPatternOptions,
-        requestOptions,
-      ),
-      null,
-      false, // Exclude type constraint as related lists are already specific.
-    );
-  },
-};
-
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
   allowedChildren: TYPE_ATOMIC,
   isConvertIdChildToIri: false,
@@ -820,7 +751,6 @@ export {
   acceptsGroup,
   acceptsTerm,
   acceptsAtomicValue,
-  applyPattern,
   getAllowedSearchOptionsByOptionsName,
   getAllowedSearchOptionsNameByPatternName,
   getDefaultSearchOptionsByOptionsName,

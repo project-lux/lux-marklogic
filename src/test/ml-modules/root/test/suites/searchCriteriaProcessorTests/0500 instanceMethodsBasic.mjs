@@ -33,7 +33,7 @@ const scenarios = [
     },
   },
   {
-    name: 'getCtsQueryStr after successful process',
+    name: 'getQueryStr after successful process',
     input: {
       searchCriteria: { _scope: 'agent', name: 'Pablo' },
       setupProcessor: true,
@@ -113,7 +113,7 @@ for (const scenario of scenarios) {
     return {
       searchCriteria: processor.getSearchCriteria(),
       searchScope: processor.getSearchScope(),
-      ctsQueryStr: processor.getCtsQueryStr(),
+      ctsQueryStr: processor.getQueryStr(),
       ignoredTerms: processor.getIgnoredTerms(),
       values: processor.getValues(),
       hasSearchScope: processor.hasSearchScope(),
@@ -169,7 +169,7 @@ for (const scenario of scenarios) {
         testHelperProxy.assertTrue(
           typeof actual.ctsQueryStr === 'string' &&
             actual.ctsQueryStr.length > 0,
-          `getCtsQueryStr should return non-empty query string for scenario: ${scenario.name}`,
+          `getQueryStr should return non-empty query string for scenario: ${scenario.name}`,
         ),
       );
     }

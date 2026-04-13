@@ -224,7 +224,7 @@ function _calculateNonSemanticFacet(
 
   // Require search criteria.
   const ctsQueryStr = searchCriteriaProcessor
-    ? searchCriteriaProcessor.getCtsQueryStr()
+    ? searchCriteriaProcessor.getQueryStr()
     : null;
   if (!utils.isNonEmptyString(ctsQueryStr)) {
     _throwSearchCriteriaRequiredError();
@@ -274,7 +274,7 @@ function _calculateSemanticFacet(
   // Require search criteria.
   const baseSearchCtsQuery = searchCriteriaProcessor
     ? SearchCriteriaProcessor.evalQueryString(
-        searchCriteriaProcessor.getCtsQueryStr(),
+        searchCriteriaProcessor.getQueryStr(),
       )
     : null;
   if (!baseSearchCtsQuery) {

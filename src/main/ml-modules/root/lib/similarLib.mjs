@@ -39,7 +39,7 @@ function getSimilarQuery(
     includeTypeConstraint: false,
     filterResults: requestOptions.filterResults,
   });
-  return searchCriteriaProcessor.getCtsQueryStr();
+  return searchCriteriaProcessor.getQueryStr();
 }
 
 function getSimilarValues(scopeName, iri, aspects) {

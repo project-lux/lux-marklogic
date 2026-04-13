@@ -16,7 +16,6 @@ import {
   InvalidSearchRequestError,
 } from './errorClasses.mjs';
 import { getRelatedListQuery } from './relatedListsLib.mjs';
-import { getSimilarQuery } from './similarLib.mjs';
 import {
   getCorrectlyCasedType,
   getSearchScopeFields,
@@ -37,7 +36,6 @@ const PATTERN_NAME_INDEXED_WORD = 'indexedWord';
 const PATTERN_NAME_IRI = 'iri';
 const PATTERN_NAME_PROPERTY_VALUE = 'propertyValue';
 const PATTERN_NAME_RELATED_LIST = 'relatedList';
-const PATTERN_NAME_SIMILAR = 'similar';
 const PATTERN_NAME_TEXT = 'text'; // for keyword search
 
 const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
@@ -590,31 +588,6 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
   },
 };
 
-SEARCH_PATTERN_CONFIG[PATTERN_NAME_SIMILAR] = {
-  allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
-  allowedOptionsName: null,
-  defaultOptionsName: null,
-  returnsCtsQuery: true,
-  function: (
-    searchTerm,
-    resolvedSearchOptions,
-    searchPatternOptions,
-    requestOptions,
-  ) => {
-    return _formattedPatternResponse(
-      getSimilarQuery(
-        searchTerm,
-        resolvedSearchOptions,
-        searchPatternOptions,
-        requestOptions,
-      ),
-      null,
-      false, // Exclude type constraint as similar specifies one.
-    );
-  },
-};
-
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
   allowedChildren: TYPE_ATOMIC,
   isConvertIdChildToIri: false,
@@ -840,7 +813,6 @@ export {
   PATTERN_NAME_IRI,
   PATTERN_NAME_PROPERTY_VALUE,
   PATTERN_NAME_RELATED_LIST,
-  PATTERN_NAME_SIMILAR,
   PATTERN_NAME_TEXT,
   TYPE_GROUP,
   TYPE_TERM,

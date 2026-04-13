@@ -14,6 +14,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
 
 - Removed the `mayChangeScope` parameter of the [Search endpoint](/docs/lux-backend-api-usage.md#search) (part of [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+- Removed the Similar search terms and pattern, which were not exposed in the advanced search configuration (part of [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 - Removed the disableDeprecatedSSLProtocols and showDeprecatedSslProtocols Gradle build tasks as they only apply to MarkLogic 11 and earlier (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 
 ### Fixed

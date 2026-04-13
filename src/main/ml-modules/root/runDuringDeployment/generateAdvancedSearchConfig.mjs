@@ -1,7 +1,6 @@
 import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_RELATED_LIST,
-  PATTERN_NAME_SIMILAR,
   PATTERN_NAME_TEXT,
   getAllowedSearchOptionsByOptionsName,
   getAllowedSearchOptionsNameByPatternName,
@@ -69,8 +68,6 @@ function createEntry(scopeName, termName, termConfig, report) {
     entry.relation = 'text';
   } else if (PATTERN_NAME_TEXT == patternName) {
     entry.relation = 'text';
-  } else if (PATTERN_NAME_SIMILAR == patternName) {
-    entry.relation = 'id';
   } else if (scalarTypeIsBoolean) {
     entry.relation = 'boolean';
   } else {
@@ -156,13 +153,7 @@ const advancedSearchConfigs = {};
             }
           } else if (termName.endsWith('Id')) {
             add = false;
-          }
-          // 20230420, bhartwig: asked to suppress Similar terms.
-          else if (
-            [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-              patternName,
-            )
-          ) {
+          } else if ([PATTERN_NAME_RELATED_LIST].includes(patternName)) {
             add = false;
           } else if (
             termConfig.isMyCollectionTerm() &&

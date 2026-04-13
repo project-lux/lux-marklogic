@@ -41,9 +41,6 @@ const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
 const DEFAULT_SYNONYMS_ENABLED = SYNONYMS_ENABLED;
 const DEFAULT_VALUES_ONLY = false;
 
-const TOKEN_FIELDS = '@@FIELDS@@';
-const TOKEN_PREDICATES = '@@PREDICATES@@';
-const TOKEN_TYPES = '@@TYPES@@';
 const SCOPE_LABELS = {
   item: 'Objects',
   work: 'Works',
@@ -765,7 +762,4 @@ export {
   processSearchCriteria,
   sanitizeAndValidateWildcardedStrings,
   search,
-  TOKEN_FIELDS,
-  TOKEN_PREDICATES,
-  TOKEN_TYPES,
 };

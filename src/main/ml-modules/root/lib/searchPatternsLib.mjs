@@ -1,10 +1,6 @@
 import * as utils from '../utils/utils.mjs';
 import { convertPartialDateTimeToSeconds } from '../utils/dateUtils.mjs';
-import {
-  resolveSearchOptions,
-  TOKEN_FIELDS,
-  TOKEN_PREDICATES,
-} from './searchLib.mjs';
+import { resolveSearchOptions } from './searchLib.mjs';
 import {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
@@ -637,13 +633,9 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
     const termScopeName = searchTerm.getScopeName();
     const isRequestedScope = termScopeName == requestOptions.scopeName;
 
-    const fields = isRequestedScope
-      ? TOKEN_FIELDS
-      : getSearchScopeFields(termScopeName);
-
     const nonSemanticWordQuery = _getWordQueries(
       'field',
-      fields,
+      getSearchScopeFields(termScopeName),
       termValues,
       searchTerm.isCompleteMatch(),
       resolvedSearchOptions,
@@ -662,9 +654,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
     const codeStr = `cts.orQuery([
       ${nonSemanticWordQuery},
       ${_getTripleRangeQuery(
-        isRequestedScope
-          ? TOKEN_PREDICATES
-          : getSearchScopePredicates(termScopeName),
+        getSearchScopePredicates(termScopeName),
         semanticWordQuery,
         termWeight,
       )}
@@ -702,17 +692,12 @@ function _getWordQueries(
   resolvedSearchOptions,
   weight,
 ) {
-  const indexReferencesFormatted =
-    indexReferences == TOKEN_FIELDS
-      ? TOKEN_FIELDS
-      : utils.arrayToString(indexReferences);
-
   const wordQueries = termValues.map((value) => {
     // Double-quote the value.
     return `${_getCtsQueryFunctionName(
       indexType,
       isCompleteMatch,
-    )}(${indexReferencesFormatted}, "${utils.escapeCharacters(
+    )}(${utils.arrayToString(indexReferences)}, "${utils.escapeCharacters(
       value,
       '"',
     )}", ${utils.arrayToString(resolvedSearchOptions)}, ${weight})`;

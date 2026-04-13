@@ -75,6 +75,11 @@ ext.getUnitTestingDeploymentStatus = {
 
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
+def buildTasks = gradle.startParameter.taskNames
+gradle.buildFinished {
+    println "\u001B[1;35m\nBuild completed at: ${new Date()} (tasks: ${buildTasks.join(', ')})\u001B[0m"
+}
+
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
 // from the default default REST port (8003) to the app services port.  This port is used by the
 // majority of the tasks, and has been proven necessary for setBanner (tenant app server may not
@@ -86,17 +91,6 @@ task startWithAppServicesPort() {
   println "Setting mlAppConfig's port to " + project.property("mlAppServicesPort") + " (from " + mlAppConfig.getRestPort() + ")"
   println ''
   mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
-}
-
-// Change ML app config's rest port to that of the app services port.  See startWithAppServicesPort's
-// comment for details.
-task switchToAppServicesPort() {
-  doFirst {
-    println ''
-    println "Changing mlAppConfig's port from " + mlAppConfig.getRestPort() + " to " + project.property("mlAppServicesPort")
-    println ''
-    mlAppConfig.setRestPort(project.property("mlAppServicesPort").toInteger())
-  }
 }
 
 // Change ML app config's rest port to that of the tenant's deploy app server port.  See
@@ -373,6 +367,7 @@ task addSupportForExecutingWithServiceAccounts() {
 mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
 
+// Implementation supports both the basic and digest auth schemes.
 task ensureTenantStatusDocumentExists() {
   doFirst {
     println ""
@@ -392,12 +387,10 @@ task ensureTenantStatusDocumentExists() {
     def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
 
     try {
-      // Use Apache HttpClient 5.x which handles digest auth properly (unlike Java's HttpURLConnection)
       def httpClientBuilder = HttpClients.custom()
         .disableConnectionState()  // Force new connections
         .disableAutomaticRetries() // Prevent connection reuse issues
       
-      // Set up digest authentication
       def credentialsProvider = new BasicCredentialsProvider()
       credentialsProvider.setCredentials(
         new AuthScope(null, -1),
@@ -596,16 +589,6 @@ mlDeploySecurity.finalizedBy setBanner
 task showAppServerCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
   xquery = new File('./build/buildSupport/showAppServerCiphers.xqy').getText('UTF-8')
 }
-
-//TODO: remove <show/disable>DeprecatedSSLProtocols tasks and scripts after LUX no longer uses ML 11
-task showDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
-  javascript = new File('./build/buildSupport/showDeprecatedSSLProtocols.sjs').getText('UTF-8')
-}
-
-task disableDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
-  javascript = new File('./build/buildSupport/disableDeprecatedSSLProtocols.sjs').getText('UTF-8')
-}
-mlDeployServers.finalizedBy disableDeprecatedSSLProtocols
 
 task getSslMinAllowTls(type: com.marklogic.gradle.task.ServerEvalTask) {
   javascript = new File('./build/buildSupport/getSslMinAllowTls.sjs').getText('UTF-8')

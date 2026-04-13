@@ -6,7 +6,7 @@
   "port": %%mlRestPortGroup2%%,
   "content-database": "%%tenantContentDatabase%%",
   "modules-database": "%%tenantModulesDatabase%%",
-  "authentication": "%%mlRestAuthenticationGroup2%%",
+  "authentication": "%%mlAuthentication%%",
   "internal-security": "true",
   "external-security": [],
   "threads": %%mlRestMaxThreadsGroup2%%,

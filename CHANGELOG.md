@@ -6,6 +6,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Added
 
+- TDE to index `/vectors/main` ([#678](https://github.com/project-lux/lux-marklogic/issues/678)).
+
 ### Changed
 
 ### Removed

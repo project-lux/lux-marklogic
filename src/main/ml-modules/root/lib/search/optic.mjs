@@ -561,6 +561,17 @@ function GetOpticPlan(
           }
           break;
         }
+      // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
+      case "documentId":
+      case "iri":
+        {
+          if (logicType === 'and') {
+            constraints.push(op.eq(op.col(uriCol), termValue));
+          } else {
+            ctsConstraints.push(cts.documentQuery(termValue));
+          }
+          break;
+        }
       default:
         throw new Error(`Unimplemented pattern name: ${termConfig.patternName}.`)
     }
@@ -649,7 +660,6 @@ function execute(searchCriteria, searchScope, includeResults = true) {
   } catch (ex) {
     console.dir(debug);
     throw (ex);
-    return debug;
   }
 }
 

@@ -512,7 +512,7 @@ function GetOpticPlan(
             right = tri
               .joinInner(
                 GetOpticPlan(criterion[termName], termConfig.targetScope, rightGroups, id, options),
-                op.on(op.col(id + '_s'), op.col(_refIri))
+                op.on(op.col(id + '_o'), op.col(_refIri))
               )
           }
 
@@ -536,7 +536,7 @@ function GetOpticPlan(
               // This will result in a natural join
               type: "joinFullOuter",
               right: right.select([
-                fragCol,
+                options.preferFragJoins ? fragCol : uriCol,
                 "dataType"
               ]),
               on: null,

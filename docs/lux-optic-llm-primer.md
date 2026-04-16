@@ -1,238 +1,158 @@
-## **LUX Optic LLM Primer**
+﻿## **LUX Optic LLM Primer**
 
-- [Introduction](#introduction)
-  - [Why Optic?](#why-optic)
-  - [Single Export](#single-export)
-- [MarkLogic Optic Primer](#marklogic-optic-primer)
-  - [Key Optic Behavior](#key-optic-behavior)
-- [Architecture Overview](#architecture-overview)
-- [The Three Constraint Buckets (Critical Concept)](#the-three-constraint-buckets-critical-concept)
-  - [Why This Matters](#why-this-matters)
-  - [The Rule Every Pattern Follows](#the-rule-every-pattern-follows)
-  - [Summary Table for Pattern Implementors](#summary-table-for-pattern-implementors)
-- [Nested Conjunction Handling (The 3×3 Matrix)](#nested-conjunction-handling-the-33-matrix)
-  - [Key Optimizations in This Matrix](#key-optimizations-in-this-matrix)
-- [Column Naming Strategy](#column-naming-strategy)
-  - [Join Column Alignment](#join-column-alignment)
-- [Pattern Implementation Details](#pattern-implementation-details)
-  - [`text` (a.k.a., `keyword`)](#text-aka-keyword)
-  - [`indexedWord`](#indexedword)
-  - [`indexedRange`](#indexedrange)
-  - [`propertyValue`](#propertyvalue)
-  - [`hopWithField`](#hopwithfield)
-    - [Simple hop (termValue is a string):](#simple-hop-termvalue-is-a-string)
-    - [Complex hop (termValue is an object—nested criteria):](#complex-hop-termvalue-is-an-objectnested-criteria)
-  - [`documentId` / `iri`](#documentid--iri)
-  - [`annTopK`](#anntopk)
-    - [Row source](#row-source)
-    - [Term config properties (new for this pattern)](#term-config-properties-new-for-this-pattern)
-    - [`k` — the neighbor count](#k--the-neighbor-count)
-    - [Distance column and the `GetOpticPlan` return type](#distance-column-and-the-getopticplan-return-type)
-    - [Join pattern by logicType](#join-pattern-by-logictype)
-    - [Multiple `annTopK` criteria in the same AND](#multiple-anntopk-criteria-in-the-same-and)
-- [The `execute()` Function](#the-execute-function)
-- [Configuration Dependencies](#configuration-dependencies)
-  - [Imports](#imports)
-  - [Search Term Config Shape](#search-term-config-shape)
-  - [RDF Prefixers](#rdf-prefixers)
-- [The `ProcessPredicates` Helper](#the-processpredicates-helper)
-- [Plan Options](#plan-options)
-  - [`annTopK` build constants](#anntopk-build-constants)
-- [The `_scope` Property Override](#the-_scope-property-override)
-- [Deep-Copy via `xdmp.toJSON`](#deep-copy-via-xdmptojson)
-- [The Dynamic `for` Loop](#the-dynamic-for-loop)
-- [Known Issues and TODOs](#known-issues-and-todos)
-- [Unimplemented Patterns](#unimplemented-patterns)
-- [Glossary](#glossary)
-- [Worked Example: `{ "AND": [{ "text": "lobster" }] }`](#worked-example--and--text-lobster--)
+**File:** [/src/main/ml-modules/root/lib/search/optic.mjs](/src/main/ml-modules/root/lib/search/optic.mjs)
+**Audience:** LLMs assisting developers reading, modifying, or extending this file.
+**Single export:** `execute(searchCriteria, searchScope, includeResults)` — accepts the same JSON search criteria grammar used throughout LUX.
+
+`optic.mjs` is the replacement search implementation for LUX. It expresses searches as relational-style Optic plans (lexicon scans, joins, filters) rather than CTS query strings. `searchPatternsLib.mjs` and `SearchTerm.mjs` are **not** runtime dependencies — referenced here only where their semantics explain what an Optic pattern does. The CTS-based implementation is being dismantled.
+
 
 ---
 
-# Introduction
+# MarkLogic Optic API Reference
 
-**Primary Audience:** LLMs assisting developers who are reading, modifying, or extending [/src/main/ml-modules/root/lib/search/optic.mjs](/src/main/ml-modules/root/lib/search/optic.mjs). This document is intended to pass on key insights to the LLM to improve its ability to help developers.
+All are server-side MarkLogic APIs.
 
-`optic.mjs` is an **replacement search implementation** for Yale's LUX discovery platform. The previous production search pipeline builds CTS (Core Text Search) query strings via `SearchCriteriaProcessor` and `searchPatternsLib`. `SearchCriteriaProcessor` lives on but has been updated to use `optic.mjs`, which implement's MarkLogic's **Optic API**, expressing the same searches (and new ones!) as relational-style plans composed of lexicon scans, joins, and filters.
-
-> **Note:** The CTS-based implementation is still being dismantled.  More code is expected to be removed, including parts or all of `searchPatternsLib.mjs` and `SearchTerm.mjs`. Those files are **not runtime dependencies** of `optic.mjs`. They are referenced in this guide only where their pattern semantics help explain what an Optic pattern is supposed to do.
-
-## Why Optic?
-
-Yale's reasons are two-fold:
-
-1. **Investment alignment.** Optic is where MarkLogic Engineering is investing most heavily among their APIs. Building on Optic aligns with the platform's future direction.
-2. **Exclusive capabilities.** Some functionality is only available in Optic — for example, **transitive triples** — which the CTS API cannot express at all.
-
-## Single Export
-
-```javascript
-export { execute };
-```
-
-`execute(searchCriteria, searchScope, includeResults)` is the only public entry point. It accepts the same JSON search criteria grammar used by the rest of LUX.
-
----
-
-# MarkLogic Optic Primer
-
-These are the Optic concepts the code relies on. All are server-side MarkLogic APIs.
-
-| Concept | What it does |
+| API | Purpose |
 |---|---|
-| `op.fromLexicons(lexiconMap, qualifier, fragmentIdCol)` | Creates a plan that scans one or more range indexes. Each key in `lexiconMap` becomes a column name; its value is a range reference (e.g. `cts.uriReference()`, `cts.fieldReference('name')`). Returns one row per co-occurring index tuple within a fragment. |
-| `op.fromTriples([op.pattern(s, p, o, frag)])` | Creates a plan that scans the triple index. Columns are bound to subject, predicate, object, and optionally fragment. Constants in the pattern act as filters. |
-| `op.fromView(schema, view, qualifier, fragmentIdCol)` | Creates a plan backed by a TDE (Template-Driven Extraction) view. Rows correspond to TDE-projected values from documents. The `fragmentIdCol` arg names the fragment column so the plan can be joined back to other plans by fragment ID. |
-| `plan.annTopK(k, vectorCol, queryVector, distanceCol, options)` | Approximate nearest-neighbor search within a `fromView` plan. Scores each row by cosine distance between `vectorCol` and `queryVector`, keeps the `k` closest rows, and writes the distance into `distanceCol`. Must be called on a `fromView` plan that contains the vector column. |
-| `plan.where(condition)` | Filters rows. Accepts Optic expressions (`op.eq(...)`) or CTS queries (`cts.fieldWordQuery(...)`). Multiple `.where()` calls are implicitly AND'd. |
-| `plan.joinInner(right, on, condition)` | Inner join—only rows that match in both sides survive. Equivalent to SQL `INNER JOIN`. |
-| `plan.joinFullOuter(right, on, condition)` | Full outer join—all rows from both sides, nulls where no match. Equivalent to SQL `FULL OUTER JOIN`. Used to express OR when the two sides produce rows from different index scans. |
-| `plan.notExistsJoin(right, on, condition)` | Anti-join—keeps left rows that have **no** match on the right. Equivalent to SQL `WHERE NOT EXISTS (...)`. Expresses NOT/exclusion. |
-| `op.on(left, right)` | Specifies the join condition: which columns (or fragment IDs) to equate. |
-| `op.fragmentIdCol(name)` | A special column representing the internal fragment ID of a document. Joining on fragment ID can enable "D-Node pushdown"—MarkLogic routes the join computation to the data node that owns the fragment, avoiding network hops. |
-| `plan.select(columns)` | Projects (keeps) only the listed columns. Used to normalize both sides of a join to the same column set, which is required for `joinFullOuter` natural joins. |
-| `plan.groupBy(keys, aggregates)` | Groups rows and applies aggregates. E.g. `groupBy(['uri'], [op.sample('dataType', ...)])` deduplicates to one row per URI. |
-| `op.as(newName, expression)` | Renames/aliases a column. Critical for making child-plan columns match the parent's expected names before a join. |
-| `plan.export()` | Serializes the plan to a JSON object (the plan AST). |
-| `op.toSource(planJson)` | Converts a plan AST back to human-readable Optic source code. Useful for debugging. |
-| `plan.result()` | Executes the plan and returns result rows. |
+| `op.fromLexicons(map, qualifier, fragIdCol)` | Scans range indexes. Each key→column name, value→range ref (`cts.uriReference()`, `cts.fieldReference('name')`, etc.). One row per co-occurring index tuple per fragment. |
+| `op.fromTriples([op.pattern(s,p,o,frag)])` | Scans triple index. Constants in pattern act as filters. **Does not return URIs.** |
+| `op.fromView(schema, view, qualifier, fragIdCol)` | Scans a TDE view. Used by `annTopK`. `qualifier` namespaces columns; `fragIdCol` names the fragment column for subsequent joins. |
+| `plan.annTopK(k, vectorCol, queryVec, distCol, opts)` | ANN search on a `fromView` plan. Scores rows by cosine distance, keeps `k` closest, writes distance to `distCol`. |
+| `plan.where(condition)` | Filters rows. Accepts Optic expressions or CTS queries. **Multiple calls are AND'd — no `.whereOr()` exists.** |
+| `plan.joinInner(right, on, cond)` | SQL INNER JOIN — AND between row sources. |
+| `plan.joinFullOuter(right, on, cond)` | SQL FULL OUTER JOIN — OR between row sources. Known issue: can return extra null rows. |
+| `plan.notExistsJoin(right, on, cond)` | Anti-join — NOT/exclusion. Keeps left rows with **no** match on the right. |
+| `op.on(left, right)` | Join condition: equates columns or fragment IDs. |
+| `op.fragmentIdCol(name)` | Fragment ID column. Enables D-Node pushdown (computation routed to the data node owning the fragment). |
+| `plan.select(cols)` | Projects columns. Required to normalize both sides of `joinFullOuter` to the same column set. |
+| `plan.groupBy(keys, aggs)` | Groups and aggregates. Used to deduplicate to one row per URI. |
+| `op.as(newName, expr)` | Aliases a column. Critical for aligning child-plan column names before joins. |
+| `plan.export()` | Serializes plan to JSON AST. |
+| `op.toSource(planJson)` | Converts plan AST to readable source. Debugging only. |
 
-## Key Optic Behavior
+**Key behaviors:**
+- `.where()` is always AND. OR and NOT between row sets require joins.
+- CTS queries can be passed directly into `.where()` — the bridge between CTS and Optic.
+- `preferFragJoins` option (default `false`): controls whether joins use `op.fragmentIdCol` (D-Node pushdown, faster) or `op.col(uriCol)` (URI-based, more predictable). Permeates the entire recursive tree.
 
-- **`.where()` is always AND.** Calling `.where(A).where(B)` means both A and B must be true. There is no `.whereOr()`.
-- **Joins are the only way to express OR and NOT between row sets.** `joinFullOuter` = union (OR). `notExistsJoin` = exclusion (NOT).
-- **CTS queries can be passed into `.where()`.** This is the bridge: when a constraint is naturally expressible as CTS, the code can pass it directly instead of constructing lexicon columns and Optic expressions.
-- **Fragment ID vs URI joins.** The `preferFragJoins` option controls whether joins use `op.fragmentIdCol` (potential D-Node pushdown, faster) or `op.col(uriCol)` (predictable, URI-based). Currently defaults to `false` (URI joins).
+**MarkLogic server-side globals** (no import needed): `cts`, `fn`, `xdmp`, `sem`, `xs`, `vec`. These are injected into the SJS runtime by MarkLogic. `vec` (MarkLogic 12+) provides vector operations like `vec.vector()`.
+
 
 ---
 
 # Architecture Overview
 
 ```
-execute(searchCriteria, searchScope)
-  │
-  ├─ Creates finalGroups: groupBy(['uri'], sample('dataType'))
-  │
-  └─ GetOpticPlan(searchCriteria, searchScope, finalGroups)
-       │
-       ├─ Determines logicType: 'and' | 'or' | 'not'
-       │
-       ├─ Initializes base lexicons: { uri, iri, dataType }
-       │
-       ├─ Initializes THREE CONSTRAINT BUCKETS:
-       │    ├─ constraints[]       (Optic expressions)
-       │    ├─ ctsConstraints[]    (CTS query objects)
-       │    └─ joins[]             (join descriptors)
-       │
-       ├─ Iterates criteria[], for each criterion:
-       │    ├─ If nested AND/OR/NOT → handle via recursive call + join
-       │    └─ If search term → dispatch on patternName via switch
-       │         └─ Each pattern places work into one of the three buckets
-       │
-       └─ ASSEMBLY PHASE (in order):
-            ├─ plan = op.fromLexicons(lexicons)
-            ├─ for each constraint:   plan = plan.where(constraint)
-            ├─ for ctsConstraints:    plan = plan.where(ctsWrapper(ctsConstraints))
-            ├─ for each join:         plan = plan[join.type](join.right, ...)
-            └─ if groups:             plan = plan.groupBy(...)
+execute(searchCriteria, searchScope, includeResults)
+  |
+  |-- Creates finalGroups: groupBy(['uri'], sample('dataType'))
+  |
+  +-- GetOpticPlan(searchCriteria, searchScope, finalGroups)
+       |     returns { plan, distanceCols }
+       |
+       |-- Determines logicType: 'and' | 'or' | 'not'
+       |
+       |-- Initializes base lexicons: { uri, iri, dataType }
+       |
+       |-- Initializes THREE CONSTRAINT BUCKETS:
+       |    |-- constraints[]       (Optic expressions)
+       |    |-- ctsConstraints[]    (CTS query objects)
+       |    +-- joins[]             (join descriptors)
+       |
+       |-- Initializes distanceCols[] (for annTopK distance propagation)
+       |
+       |-- Iterates criteria[] (dynamic length — see Non-obvious Behaviors):
+       |    |-- If nested AND/OR/NOT -> handle via 3×3 matrix (recursive call + join)
+       |    +-- If search term -> dispatch on patternName via switch
+       |         +-- Each pattern places work into one of the three buckets
+       |
+       +-- ASSEMBLY PHASE (in order):
+            |-- plan = op.fromLexicons(lexicons)
+            |-- for each constraint:   plan = plan.where(constraint)
+            |-- for ctsConstraints:    plan = plan.where(ctsWrapper(ctsConstraints))
+            |-- for each join:         plan = plan[join.type](join.right, ...)
+            +-- if groups:             plan = plan.groupBy(groups.by, agg)
+                                       (agg includes distanceCols via op.sample)
 ```
+
+`execute()` post-processes results when `distanceCols` is non-empty (collates distance columns, filters pure-similarity queries) and returns `{ results, planAsJson, planAsSource, distanceCols, debug }`. On error, dumps `debug` to console before re-throwing.
+
 
 ---
 
 # The Three Constraint Buckets (Critical Concept)
 
-The function collects criteria into **three buckets**, then assembles the final plan at the end. Understanding *how* each bucket is assembled is the key to everything.
+Criteria are collected into three buckets during the iteration phase, then assembled at the end.
 
-| Bucket | Assembly Logic | Effect |
+| Bucket | Assembly | Effect |
 |---|---|---|
 | `constraints[]` | Sequential `.where(c)` calls | **Always AND'd**, regardless of `logicType` |
-| `ctsConstraints[]` | Wrapped by `ctsWrapper` at assembly time | AND, OR, or `NOT(OR(...))` based on `logicType` |
-| `joins[]` | Sequential join method calls | `joinInner`, `joinFullOuter`, or `notExistsJoin` |
+| `ctsConstraints[]` | `ctsWrapper` at assembly time | `cts.andQuery` / `cts.orQuery` / `cts.notQuery(cts.orQuery(...))` based on `logicType` |
+| `joins[]` | Sequential join method calls | Each descriptor carries its own join type, chosen at criterion-processing time |
 
-## Why This Matters
+**`constraints[]` is only safe in AND context.** Placing a constraint here in OR/NOT context incorrectly ANDs it with all other criteria. Every pattern must check `logicType` before choosing a bucket.
 
-- **`constraints[]` is only safe in AND context.** Because `.where()` calls are implicitly AND'd, placing a constraint here when the parent `logicType` is `'or'` would incorrectly require *all* criteria to match instead of *any*. Every pattern must check `logicType` before choosing which bucket to use.
+## Bucket Selection Rule
 
-- **`ctsConstraints[]` adapts to logicType.** The `ctsWrapper` function chosen at assembly time handles the logical combination:
-  - `logicType === 'and'` → `cts.andQuery(ctsConstraints)`
-  - `logicType === 'or'` → `cts.orQuery(ctsConstraints)`
-  - `logicType === 'not'` → `cts.notQuery(cts.orQuery(ctsConstraints))`
+| Parent logicType | CTS/Optic-expressible (single filter on base plan) | Requires own row source (triples, sub-plan, vector index) |
+|---|---|---|
+| **AND** | `constraints[]` | `joins[]` with `joinInner` |
+| **OR** | `ctsConstraints[]` | `joins[]` with `joinFullOuter` |
+| **NOT** | `ctsConstraints[]` | `joins[]` with `notExistsJoin` |
 
-- **`joins[]` carry their own join type.** Each join descriptor specifies `joinInner`, `joinFullOuter`, or `notExistsJoin`, chosen at the time the criterion is processed (not at assembly time).
+Patterns with **no CTS equivalent** (e.g., `annTopK`): always `joins[]` for all logicTypes. Join type follows the right column above.
 
-## The Rule Every Pattern Follows
-
-`propertyValue` is the clearest exemplar:
+### Exemplar — `propertyValue`
 
 ```javascript
 case "propertyValue":
   if (logicType === 'and') {
-    constraints.push(op.eq(op.col('dataType'), termValue));  // ← constraints bucket
+    constraints.push(op.eq(op.col('dataType'), termValue));  // <-- constraints bucket
   } else {
-    ctsConstraints.push(cts.fieldValueQuery(...));            // ← ctsConstraints bucket
+    ctsConstraints.push(cts.fieldValueQuery(...));            // <-- ctsConstraints bucket
   }
 ```
 
-- `indexedWord` with `_complete` AND context → `constraints[]`; `_complete` in OR/NOT, or any non-`_complete` usage (word query) → `ctsConstraints[]`. **Word queries (`cts.fieldWordQuery`) always go to `ctsConstraints`, even in AND context**, because word-match semantics (stemming, wildcards) have no native Optic equivalent.
-- `indexedRange` follows the same split.
-- `hopWithField` **always uses joins** because triple navigation fundamentally cannot be expressed as a single CTS constraint — the join type varies by logicType.
-- `documentId` and `iri` follow the constraints/ctsConstraints split.
-
-## Summary Table for Pattern Implementors
-
-Use this table when implementing a new pattern to decide which bucket to target:
-
-| Parent logicType | CTS-expressible constraint (e.g. `documentId`, `indexedWord`) | NOT CTS-expressible (e.g. `hopWithField`, `iri` with complex criteria) |
-|---|---|---|
-| **AND** | → `constraints[]` (direct lexicon filter via `.where()`) | → `joins[]` with `joinInner` |
-| **OR** | → `ctsConstraints[]` (combined via `cts.orQuery`) | → `joins[]` with `joinFullOuter` |
-| **NOT** | → `ctsConstraints[]` (wrapped by `cts.notQuery(cts.orQuery(...))`) | → `joins[]` with `notExistsJoin` |
-
-**Decision rule:** If the constraint can be expressed as a single CTS query or Optic expression that filters the base lexicon plan, prefer `constraints` (AND only) or `ctsConstraints`. If the constraint requires its own row source (triples, a second lexicon scan, a recursive sub-plan), it must be a join.
-
-> **Special case — patterns with no CTS equivalent whatsoever** (e.g., `annTopK`): These always go to `joins[]` for all three logicTypes. There is no fallback path. The join type follows the same rule as the "NOT CTS-expressible" column above: `joinInner` for AND, `joinFullOuter` for OR, `notExistsJoin` for NOT.
 
 ---
 
-# Nested Conjunction Handling (The 3×3 Matrix)
+# Nested Conjunction Handling — The 3×3 Matrix
 
-When a criterion is itself an `AND`, `OR`, or `NOT` group, the code must decide how to merge the child's results with the current plan. This produces a 3×3 matrix of parent `logicType` × child conjunction type:
+When a criterion is itself an `AND`/`OR`/`NOT` group, the code merges the child's results with the current plan. Parent logicType × child conjunction type:
 
-| Parent \ Child | Child is AND | Child is OR | Child is NOT |
+| Parent \ Child | AND | OR | NOT |
 |---|---|---|---|
-| **Parent AND** | **Inline:** Append child items to current `criteria[]` (no join needed—already in AND) | **Inner join:** Recurse child as sub-plan, `joinInner` to keep only rows matching the child | **NotExists join:** Recurse `{ OR: child.NOT }`, `notExistsJoin` to exclude matching rows |
-| **Parent OR** | **Full outer join:** Recurse child as sub-plan, `joinFullOuter` to union results | **Inline:** Append child items to current `criteria[]` (no join needed—already in OR) | **Full outer join:** Recurse child as sub-plan, `joinFullOuter` to union results |
-| **Parent NOT** | **NotExists join:** Recurse child as sub-plan, `notExistsJoin` to exclude | **NotExists join:** Recurse child as sub-plan, `notExistsJoin` to exclude | **Inner join:** Double negation = AND. Recurse `{ OR: child.NOT }`, `joinInner` |
+| **AND** | Inline (push to `criteria[]`) | `joinInner` on child sub-plan | `notExistsJoin` on `{ OR: child.NOT }` |
+| **OR** | `joinFullOuter` on child sub-plan | Inline (push to `criteria[]`) | `joinFullOuter` on child sub-plan |
+| **NOT** | `notExistsJoin` on child sub-plan | `notExistsJoin` on child sub-plan | `joinInner` on `{ OR: child.NOT }` (double negation = AND) |
 
-## Key Optimizations in This Matrix
+**Inlining** (AND-in-AND, OR-in-OR): push child items onto `criteria[]`. The dynamic `for` loop picks them up in subsequent iterations — no join, no recursion needed.
+**NOT-in-AND**: wraps as `{ OR: child.NOT }` then `notExistsJoin` — "exclude docs matching A OR B."
+**NOT-in-NOT**: double negation → `joinInner` against `{ OR: child.NOT }`.
 
-- **AND-in-AND and OR-in-OR are inlined** by pushing child criteria into the parent's `criteria[]` array. This avoids unnecessary sub-plans and joins. The `for` loop uses `criteria.length` dynamically, so pushed items are processed in subsequent iterations.
-
-- **NOT-in-AND wraps as OR then anti-joins.** `{ NOT: [A, B] }` in an AND context becomes `notExistsJoin` against `{ OR: [A, B] }`. This is logically: "exclude documents matching A OR B."
-
-- **NOT-in-NOT is double negation.** Converts to `joinInner` against `{ OR: child.NOT }`, effectively turning two negations into an intersection.
 
 ---
 
 # Column Naming Strategy
 
-Every recursive call to `GetOpticPlan` receives a `parentId` (UUID or `null` for root). This produces **namespaced column names** that prevent collisions when multiple sub-plans are joined.
+Every `GetOpticPlan` call receives a `parentId` (UUID or `null` for root), producing namespaced columns that prevent collisions across sub-plans.
 
-| Column | Root call (`parentId = null`) | Recursive call (`parentId = <uuid>`) |
+| Column | Root (`parentId=null`) | Recursive (`parentId=<uuid>`) |
 |---|---|---|
-| URI column | `'uri'` | `'<uuid>_uri'` |
-| Fragment column | `'frag'` | `'<uuid>_frag'` |
-| IRI column | `'iri'` | `'<uuid>_iri'` |
+| URI | `'uri'` | `'<uuid>_uri'` |
+| Fragment | `'frag'` | `'<uuid>_frag'` |
+| IRI | `'iri'` | `'<uuid>_iri'` |
 
-Within a single `GetOpticPlan` call, each criterion also gets its own UUID (`id = sem.uuidString()`) used for:
-- Dynamically added lexicon columns: `id + '_field'`
-- Triple pattern columns: `id + '_s'`, `id + '_o'`, `id + '_triFrag'`
-- Lexicon reference columns: `id + '_iri'`
-
-This ensures every column in the plan tree is globally unique.
+Within a call, each criterion also gets its own UUID (`id = sem.uuidString()`):
+- Lexicon columns: `id + '_field'`
+- Triple columns: `id + '_s'`, `id + '_o'`, `id + '_triFrag'`
+- IRI ref columns: `id + '_iri'`
+- ANN columns: `id + '_vecFrag'`, `id + '_distance'`, `id + '_vectorUri'`
 
 ## Join Column Alignment
 
-When building joins (especially `joinFullOuter` for OR), both sides must produce the **same column names**. The code uses `op.as()` to rename child columns:
+`joinFullOuter` requires identical column sets on both sides. Use `op.as()` to rename, then `select()` to project:
 
 ```javascript
 const _joinCol = options.preferFragJoins
@@ -242,208 +162,72 @@ const _joinCol = options.preferFragJoins
 joins.push({
   type: "joinFullOuter",
   right: childPlan.select([_joinCol, "dataType"]),    // project to matching columns
-  on: null,       // null on = natural join (match on shared column names)
+  on: null,       // null = natural join on shared column names
   condition: null
 });
 ```
+
 
 ---
 
 # Pattern Implementation Details
 
-## `text` (a.k.a., `keyword`)
+## Bucket decisions by pattern
 
-> **Known issue:** This pattern is **not yet the functional equivalent** of the CTS implementation. The suspected source of the discrepancy is the `hopWithField` sub-pattern (invoked via `referencedBy`), not the `indexedWord` sub-pattern (invoked via `textNoHop`). Do not treat this as a gold standard until the issues are resolved.
-
-**Does not produce constraints directly.** Instead, it rewrites itself into an OR of two sub-terms:
-
-```javascript
-criteria.push({
-  OR: [
-    { textNoHop: criterion[termName] },     // field-based full text  → indexedWord pattern
-    { referencedBy: criterion[termName] }    // semantic hop           → hopWithField pattern
-  ]
-});
-```
-
-This pushed OR criterion will be processed on a subsequent loop iteration, where it triggers the `OR` child conjunction handler and eventually the `indexedWord` and `hopWithField` patterns.
-
-**Implication:** The `text` pattern is a macro—it delegates entirely. The `textNoHop` and `referencedBy` terms must exist in `searchTermsConfig.mjs` for the target scope.
-
-## `indexedWord`
-
-Handles both fuzzy (word) and exact (value) matching, controlled by `criterion._complete`.
-
-**AND context with `_complete` (exact/value match):**
-```
-→ Add field range index to lexicons{}
-→ Add op.eq() to constraints[]
-```
-This is the most efficient path: the value check happens inside the base lexicon scan.
-
-**OR/NOT context with `_complete` (exact/value match):**
-```
-→ cts.fieldValueQuery() → ctsConstraints[]
-```
-
-**All contexts — without `_complete` (word/fuzzy match):**
-```
-→ cts.fieldWordQuery() → ctsConstraints[]
-```
-Word queries **always** go to `ctsConstraints` regardless of `logicType`, because word-match semantics (stemming, wildcards) have no native Optic equivalent. There is no Optic-native word query path.
-
-**Index requirement:** When using the `constraints` path, a **range index** must exist for the field (not just a field definition). The code accesses `termConfig.indexReferences[0]` and assumes exactly one index reference.
-
-## `indexedRange`
-
-Numeric/comparable range queries using operators like `>=`, `<`, etc.
-
-**AND context:**
-```
-→ Add field range index to lexicons{}
-→ Add comparator expression (op.ge, op.lt, etc.) to constraints[]
-```
-
-**OR/NOT context:**
-```
-→ cts.fieldRangeQuery() → ctsConstraints[]
-```
-
-The `comparators` map translates string operators (`">="`→`op.ge`, etc.).
-
-## `propertyValue`
-
-Currently only implemented for `recordType` (the `dataType` column). The simplest pattern and the best exemplar for the bucket-selection rule.
-
-**AND context:**
-```
-→ op.eq(op.col('dataType'), termValue) → constraints[]
-```
-
-**OR/NOT context:**
-```
-→ cts.fieldValueQuery(scope + 'DataTypeName', termValue) → ctsConstraints[]
-```
-
-> **Note:** `propertyValue` does **not** pass `defaultCtsOptions` to `cts.fieldValueQuery`. This is intentional: record type is an exact, case-sensitive system value so the standard stemming/wildcard/case-insensitive options are inappropriate.
-
-## `hopWithField`
-
-The most complex pattern. Navigates RDF triples to find documents related via predicates, optionally filtering the hop target by field values or nested criteria.
-
-**Always uses joins** (never `constraints` or `ctsConstraints` alone) because triple navigation requires its own row source.
-
-### Simple hop (termValue is a string):
-
-```
-1. Build triple scan: op.fromTriples(pattern(subject, predicates, object, triFrag))
-2. Build reference lexicon scan filtered by term value
-3. Inner-join triples to reference lexicon on object = iri
-4. Join result back to parent plan
-```
-
-### Complex hop (termValue is an object—nested criteria):
-
-```
-1. Build triple scan (same as above)
-2. Recursively call GetOpticPlan on the nested criteria
-3. Inner-join triples to recursive plan on subject = iri
-4. Join result back to parent plan
-```
-
-**Join type depends on parent logicType:**
-- AND → `joinInner` (on fragment + IRI)
-- OR → special: duplicates the base lexicon, inner-joins to the triple result, then `joinFullOuter` with column alignment
-- NOT → `notExistsJoin` (on fragment + IRI)
-
-> **Fragment joins are unconditional for `hopWithField`.** `op.fromTriples` does not return URIs, so AND and NOT joins always use `op.fragmentIdCol` regardless of the `preferFragJoins` option. The code comments this explicitly.
-
-**The OR case for hopWithField** is notably different from other patterns. Because triple results need to be combined with the parent's base lexicon via a full outer join, the code creates a **second copy of the base lexicons**, joins the triple result to it, then full-outer-joins that combined plan back. This is the "duplicate lexicon then outer join" pattern noted in the TODOs.
-
-**Complex hop grouping:** When `termValue` is an object (nested criteria), the recursive call receives `rightGroups = { by: [id + '_iri'] }`. This groups the child sub-plan by IRI before joining to the triples, deduplicating so each subject IRI appears at most once and preventing row inflation.
-
-## `documentId` / `iri`
-
-The simplest value-based patterns. Both are treated identically: compare against `uriCol`.
-
-**AND context:**
-```
-→ op.eq(op.col(uriCol), termValue) → constraints[]
-```
-
-**OR/NOT context:**
-```
-→ cts.documentQuery(termValue) → ctsConstraints[]
-```
-
-## `annTopK`
-
-Approximate nearest-neighbor vector similarity search. Finds documents whose stored embedding vectors are closest to a query vector, measured by cosine distance. Works across all search scopes.
-
-**Always uses joins for all logicTypes** — there is no CTS expression for vector similarity. The row source is `op.fromView` (a TDE view containing pre-computed embedding vectors), not `op.fromLexicons` or `op.fromTriples`.
-
-### Row source
-
-```javascript
-const vecFrag = id + '_vecFrag';
-const distCol = id + '_distance';
-const vectorCol = termConfig.vectorColumn ?? 'main';
-const queryVector = vec.vector(
-  cts.doc(termValue).xpath(`vectors/${vectorCol}`).toArray()
-);
-
-const view = op.fromView('lux', 'vectors', null, op.fragmentIdCol(vecFrag));
-const right = view.annTopK(
-  MAX_ANN_K,
-  op.col(vectorCol),
-  queryVector,
-  op.col(distCol),
-  { distance: 'cosine', 'max-distance': termConfig.maxDistance ?? ANN_MAX_DISTANCE_DEFAULT }
-);
-```
-
-The term value in the search JSON is the **URI of the document whose vector is used as the query vector** (i.e., "find documents similar to this one"). The query vector is retrieved at plan-construction time by reading the TDE view column from the document at that URI.
-
-### Term config properties (new for this pattern)
-
-See the extended `searchTermConfig` shape in Section 9. Relevant fields:
-
-| Property | Type | Default | Meaning |
+| Pattern | AND | OR/NOT | Non-obvious notes |
 |---|---|---|---|
-| `vectorColumn` | `string` | `'main'` | TDE column name holding the vector in the `vectors` view |
-| `maxDistance` | `number` | `ANN_MAX_DISTANCE_DEFAULT` | Maximum cosine distance; rows beyond this threshold are excluded |
+| `propertyValue` | `constraints[]` (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | No `defaultCtsOptions` — record type is a case-sensitive exact system value, so stemming/wildcards are inappropriate. |
+| `indexedValue` | `constraints[]` + lexicon (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | Shares `case` block with `indexedWord`. Always takes the exact-match path (equivalent to `_complete`). Uses `indexReferences[0]`. |
+| `indexedWord` + `_complete` | `constraints[]` + lexicon (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | Requires range index (not just field def). Uses `indexReferences[0]`. |
+| `indexedWord` no `_complete` | `ctsConstraints[]` | `ctsConstraints[]` | Word queries **always** go to `ctsConstraints` — no Optic-native word query (stemming, wildcards). |
+| `indexedRange` | `constraints[]` + lexicon (comparator expr) | `ctsConstraints[]` (`cts.fieldRangeQuery`) | `comparators` map: `">="` → `op.ge`, `"<"` → `op.lt`, etc. |
+| `documentId` / `iri` | `constraints[]` (`op.eq(uriCol, v)`) | `ctsConstraints[]` (`cts.documentQuery`) | Treated identically. |
+| `hopWithField` | `joins[]` `joinInner` | `joins[]` `joinFullOuter` / `notExistsJoin` | Always joins — triples require own row source. See details below. |
+| `annTopK` | `joins[]` `joinInner` | `joins[]` `joinFullOuter` / `notExistsJoin` | Always joins for all logicTypes. See details below. |
+| `text` | — macro — | — macro — | Rewrites to `{ OR: [{ textNoHop: v }, { referencedBy: v }] }`, pushes to `criteria[]`. Known issue: not yet functionally equivalent to CTS implementation. |
 
-### `k` — the neighbor count
+## `hopWithField` details
 
-`k` is controlled by the `MAX_ANN_K` module constant (a build property). It is **not** controllable per search request. Rationale: correct paging requires `k ≥ page × pageLength`; allowing callers to set `k` would let them bypass server resource limits. When `execute()` gains `page`/`pageLength` parameters, `k` should be computed as `Math.min(MAX_ANN_K, page * pageLength)`.
+Always joins — triple navigation requires its own row source (`op.fromTriples`). Fragment joins are **unconditional** for `hopWithField`: `op.fromTriples` does not return URIs, so `op.fragmentIdCol` must be used for AND/NOT joins regardless of `preferFragJoins`.
 
-### Distance column and the `GetOpticPlan` return type
+**Simple hop** (string `termValue`): triple scan → reference lexicon filtered by value → inner-join on object=iri → join result to parent plan. Supports `_complete` flag: if set, uses exact-match (`op.eq`) on a range lexicon; otherwise, uses `cts.fieldWordQuery`.
 
-Each `annTopK` criterion creates a UUID-namespaced distance column (`id + '_distance'`) so multiple `annTopK` criteria in the same plan do not collide. However, `execute()` wraps the plan in a `groupBy(['uri'], ...)` that drops any column not listed as a key or aggregate — which would silently discard distance values.
+**Complex hop** (object `termValue` / nested criteria): triple scan → recursive `GetOpticPlan` on nested criteria → inner-join on object=iri → join result to parent plan. Recursive call receives `rightGroups = { by: [id+'_iri'] }` to deduplicate by IRI before joining (prevents row inflation).
 
-**Architectural implication:** `GetOpticPlan` should return `{ plan, distanceCols: string[] }` instead of a bare plan. The pattern appends `distCol` to a local `distanceCols` array. `execute()` adds `op.sample(col, op.col(col))` for each `distanceCol` to `finalGroups.agg` before calling `groupBy`. Distance columns then appear in `execute()`'s `.results` rows and are available to `SearchCriteriaProcessor`.
+**OR case — "duplicate lexicon then outer join":** Because `op.fromTriples` has no URI column, the triple result cannot be directly outer-joined to the base plan. The code creates a **second copy** of the base `op.fromLexicons`, inner-joins it to the triple result on `fragmentIdCol`, then `joinFullOuter`s that combined plan back to the base plan with column alignment (`select` to `[uriCol or fragCol, "dataType"]`).
 
-Implications for existing code:
-- `execute()` must unwrap: `const { plan: opticPlan, distanceCols } = GetOpticPlan(...)`.
-- All recursive calls to `GetOpticPlan` within `GetOpticPlan` must also unwrap and forward any `distanceCols` from child plans.
+**AND/NOT join condition** uses two `op.on` keys: `[fragmentIdCol, iriCol ↔ id+'_s']`. This joins on both fragment and IRI, ensuring the correct subject is matched.
 
-### Join pattern by logicType
+## `annTopK` details
 
-Follows the same join-type rule as `hopWithField`:
+Approximate nearest-neighbor vector similarity search. Term value is the **URI of a seed document** — its stored vector becomes the query vector, read at plan-construction time via `vec.vector(cts.doc(termValue).xpath('vectors/<col>').toArray())`. (`vec` is a MarkLogic 12+ server-side global; no import needed.)
 
-| logicType | Join type | Join key |
-|---|---|---|
-| **AND** | `joinInner` | `op.fragmentIdCol(fragCol)` ↔ `op.fragmentIdCol(vecFrag)` |
-| **OR** | `joinFullOuter` (duplicate-lexicon pattern) | natural join on aligned column names |
-| **NOT** | `notExistsJoin` | `op.fragmentIdCol(fragCol)` ↔ `op.fragmentIdCol(vecFrag)` |
+**Validation:** The pattern throws if:
+- The seed document does not exist (`fn.docAvailable` check).
+- The vector data is missing for the specified column.
 
-**OR case:** Use the same "duplicate lexicon then outer join" pattern as `hopWithField` OR. Clone the current `lexicons` into a second `op.fromLexicons` plan (using `fragCol` as its fragment column), inner-join it to the `annTopK` result on `fragmentIdCol`, then `joinFullOuter` that combined plan back to the base plan using column alignment (select to `[fragCol, 'dataType', distCol]`).
+**Row source:** `op.fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag))` — the `id` UUID is used as the qualifier to namespace columns.
 
-### Multiple `annTopK` criteria in the same AND
+**k resolution** *(volatile — verify in source)*:
+```
+Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K_MAX)
+```
+`ANN_K_DEFAULT` and `ANN_K_MAX` are imported from `appConstants.mjs` (Gradle-injected build properties with fallback defaults).
 
-Each becomes a separate `joinInner`. Documents must rank in top-K for every criterion independently. Each criterion gets its own UUID-namespaced distance column; all are forwarded through `distanceCols` and preserved in `groupBy`. No special-casing is needed — this is identical to how any two `joinInner`-based patterns compose.
+**Seed-document exclusion:** For single similarity queries, the seed URI is excluded via `op.ne(op.col('uri'), termValue)`. For multi-OR similarity queries (`isMultipleSimilarity` heuristic: checks whether there are multiple criteria in the OR), the seed is kept to allow cross-matching.
 
-Merging multiple `annTopK` calls into a single API call is not possible: `annTopK` accepts exactly one target vector.
+**Column handling:** The view's `uri` column is renamed to `id + '_vectorUri'` via `op.as()` to avoid collision with the main lexicon's `uri`. The plan selects `[id+'_vectorUri', vecFrag, distCol]`.
+
+**Distance column registration:** `distanceCols.push(distCol)` for AND/OR contexts. NOT context is excluded — `notExistsJoin` only keeps left-side rows so distance is irrelevant.
+
+| logicType | Join type | Join key | OR detail |
+|---|---|---|---|
+| AND | `joinInner` | `fragCol ↔ vecFrag` | — |
+| OR | `joinFullOuter` | natural join (aligned columns) | Same "duplicate lexicon then outer join" pattern as `hopWithField` OR: creates a fresh `fromLexicons`, inner-joins it to `annPlan` on `fragCol ↔ vecFrag`, then `joinFullOuter` back to base plan. Select: `[fragCol, 'dataType', distCol]`. |
+| NOT | `notExistsJoin` | `fragCol ↔ vecFrag` | — |
+
+**Multiple `annTopK` in AND:** Each becomes a separate `joinInner`. Documents must rank in top-K for every criterion independently. Each criterion has its own UUID-namespaced distance column; all are forwarded through `distanceCols` and preserved by `groupBy`.
+
 
 ---
 
@@ -453,17 +237,57 @@ Merging multiple `annTopK` calls into a single API call is not possible: `annTop
 function execute(searchCriteria, searchScope, includeResults = true)
 ```
 
-1. Creates `finalGroups` that deduplicate to one row per URI (since lexicon scans can produce multiple rows per document).
-2. Calls `GetOpticPlan` with those groups.
-3. Returns an object with:
-   - `results` — Array of result rows (or `null` if `includeResults` is false)
-   - `planAsJson` — The plan's AST as a JSON object
-   - `planAsSource` — Human-readable Optic source code (newlines stripped)
-   - `debug` — Array of debug entries accumulated during plan construction
+**Steps:**
 
-On error, dumps the debug array to console before re-throwing.
+1. Creates `finalGroups` that deduplicate to one row per URI:
+   `{ by: ['uri'], agg: [op.sample('dataType', op.col('dataType'))] }`.
 
-> **`debug` is module-level.** `const debug = []` is declared at module scope and is never cleared between calls. In normal MarkLogic server-side execution, modules are re-evaluated per request, so this is harmless. However, if `optic.mjs` is ever tested in a persistent Node.js environment or called multiple times within a single evaluation, debug entries will accumulate across calls.
+2. Calls `GetOpticPlan(searchCriteria, searchScope, finalGroups)`, destructuring `{ plan: opticPlan, distanceCols }`.
+
+3. Exports the plan to JSON (`planAsJson`), optionally executes `.result()`.
+
+4. Converts `Sequence`/`ValueIterator` results to a plain array (MarkLogic `.result()` may return either).
+
+5. **Post-processing** (when `distanceCols` is non-empty):
+   - **Distance collation:** Maps each result row, collects all UUID-namespaced distance column values, picks the minimum non-null value, and writes it as a single `distance` property. Removes the original UUID-namespaced columns.
+   - **Pure-similarity filtering** *(volatile)*: If the top-level criteria is an OR where every criterion key is `'similar'` or `'annTopK'`, filters out result rows with null/undefined distance (these are artifacts of `joinFullOuter`).
+
+6. Returns:
+   ```javascript
+   {
+     results,          // Array<object> | null
+     planAsJson,       // object — the plan AST
+     planAsSource,     // string — human-readable Optic source (newlines stripped)
+     distanceCols,     // string[] — UUID-namespaced distance column names (empty if no annTopK)
+     debug,            // Array — debug entries accumulated during plan construction
+   }
+   ```
+
+On error, dumps `debug` to console before re-throwing.
+
+
+---
+
+# Non-obvious Behaviors
+
+- **Dynamic `for` loop:** `for (let idx = 0; idx < criteria.length; idx++)` reads live `.length`. AND-in-AND inlining, OR-in-OR inlining, and `text` rewriting all push to `criteria[]` mid-loop. Deliberate — avoids recursion for flattenable cases.
+
+- **Deep copy via `xdmp.toJSON`:** `criteria = xdmp.toJSON(planCriteria.AND).toObject()` is required because the loop mutates `criteria[]`. Without it, recursive calls would corrupt the caller's input.
+
+- **`_scope` override:** Any criteria object (including nested) can carry `_scope` to override the search scope for that sub-plan: `const scope = planCriteria._scope ?? planScope`. Mechanism is in place; verified behavior is a TODO.
+
+- **`debug` is module-level:** `const debug = []` is never cleared between calls. Harmless in MarkLogic (modules re-evaluated per request) but accumulates across calls in persistent Node.js environments.
+
+- **`ProcessPredicates` uses `xdmp.eval()`:** Evaluates predicate expression strings (e.g., `'lux("agentAny")'`) against module-scope prefixer functions (`crm`, `la`, `lux`, `skos`). Security FIXME in code — migrate to `sem.curieExpand()`.
+
+- **`vec` is a MarkLogic built-in global** (MarkLogic 12+), not imported. Provides vector operations like `vec.vector()`. Will fail in any non-MarkLogic runtime.
+
+- **Single criteria fallback:** If `planCriteria` has no `AND`/`OR`/`NOT` key, it's treated as a single-element AND: `criteria = [xdmp.toJSON(planCriteria).toObject()]; logicType = 'and';`.
+
+- **Term name lookup:** `Object.keys(criterion).find((k) => k[0] !== '_' && searchTermNames.includes(k))` — keys starting with `_` (e.g., `_comp`, `_complete`, `_scope`, `_maxAnnK`) are reserved for options, not treated as search term names.
+
+- **Scalar type casting:** If `termConfig.scalarType` is set, the criterion value is cast via `xs[scalarType](value)` before use.
+
 
 ---
 
@@ -474,32 +298,20 @@ On error, dumps the debug array to console before re-throwing.
 | Import | Source | Purpose |
 |---|---|---|
 | `op` | `/MarkLogic/optic.mjs` | The Optic API module |
-| `getSearchScopeTypes` | `/lib/searchScope.mjs` | Maps scope name → array of RDF type names (currently unused—commented out) |
+| `getSearchScopeTypes` | `/lib/searchScope.mjs` | Maps scope name → array of RDF type names (currently unused — commented out) |
 | `getSearchTermNames` | `/config/searchTermsConfig.mjs` | Returns all term names for a scope (used to identify which JSON key is the search term) |
 | `getSearchTermConfig` | `/config/searchTermsConfig.mjs` | Returns config object for a specific scope+term pair |
+| `ANN_K_DEFAULT` | `/lib/appConstants.mjs` | Default neighbor count for `annTopK` (Gradle-injected, fallback: 50) |
+| `ANN_K_MAX` | `/lib/appConstants.mjs` | Hard ceiling for `annTopK` k value (Gradle-injected, fallback: 1000) |
+| `ANN_MAX_DISTANCE_DEFAULT` | `/lib/appConstants.mjs` | Default cosine distance threshold (Gradle-injected, fallback: 0.14) |
 | `processSearchCriteria` | `/lib/searchLib.mjs` | Imported but **not used** in current code |
 | `START_OF_GENERATED_QUERY` | `/lib/SearchCriteriaProcessor.mjs` | Imported but **not used** in current code |
 
-## Search Term Config Shape
-
-The code reads these properties from `getSearchTermConfig(scope, termName)`:
-
-```javascript
-{
-  patternName: string,           // Dispatches to the switch/case: "text", "indexedWord", etc.
-  indexReferences: string[],     // Field names for CTS/range queries. Code assumes [0] exists.
-  scalarType: string | null,     // If set, value is cast via xs[scalarType](value)
-  predicates: string[],          // For hopWithField: array of predicate expression strings
-  targetScope: string,           // For hopWithField: scope of the hop target (e.g. "agent")
-  // annTopK-specific (optional; ignored by all other patterns):
-  vectorColumn: string,          // TDE view column holding the vector. Defaults to 'main'.
-  maxDistance: number,           // Max cosine distance threshold. Defaults to ANN_MAX_DISTANCE_DEFAULT.
-}
-```
+> **Note:** `getSearchTermNames` and `getSearchTermConfig` are **build-time generated**. The source file exports stub (`dummy`) functions; real implementations are injected by the `generateRemainingSearchTerms` Gradle task at deployment.
 
 ## RDF Prefixers
 
-Four namespace prefixers are defined at module scope for constructing IRIs:
+Four namespace prefixers defined at module scope, used by `ProcessPredicates`:
 
 | Prefix | Namespace |
 |---|---|
@@ -508,23 +320,29 @@ Four namespace prefixers are defined at module scope for constructing IRIs:
 | `lux` | `https://lux.collections.yale.edu/ns/` |
 | `skos` | `http://www.w3.org/2004/02/skos/core#` |
 
-These are used inside `ProcessPredicates` via `xdmp.eval()` to resolve predicate strings like `lux("agentAny")` to full IRIs.
 
 ---
 
-# The `ProcessPredicates` Helper
+# Search Term Config Shape
+
+Properties read from `getSearchTermConfig(scope, termName)`:
 
 ```javascript
-function ProcessPredicates(predicates) → Array<sem.iri>
+{
+  patternName: string,        // switch dispatch: "text", "indexedWord", "indexedValue",
+                              //   "indexedRange", "propertyValue", "hopWithField",
+                              //   "documentId", "iri", "annTopK"
+  indexReferences: string[],  // [0] assumed to exist; multiple references not supported
+  scalarType: string | null,  // if set, value is cast via xs[scalarType](value)
+  predicates: string[],       // hopWithField: predicate expression strings for ProcessPredicates
+  targetScope: string,        // hopWithField: scope of the hop target (e.g., "agent")
+  vectorColumn: string,       // annTopK only; default 'main'
+  maxDistance: number,        // annTopK only; default ANN_MAX_DISTANCE_DEFAULT
+  defaultMaxAnnK: number,    // annTopK only; default ANN_K_DEFAULT (can be overridden per-request via _maxAnnK)
+}
 ```
 
-Converts predicate expression strings (e.g. `'lux("agentOfBeginning")'`) into resolved `sem.iri` values by evaluating them with `xdmp.eval()`.
-
-**Security note (flagged in code):** This uses `eval` for backwards compatibility with the existing config format. The config stores predicates as JavaScript expression strings that reference the prefixer functions. The FIXME comment recommends replacing with `sem.curieExpand(curie, [mapping])`.
-
----
-
-# Plan Options
+## Plan Options
 
 ```javascript
 const defaultPlanOptions = {
@@ -532,131 +350,44 @@ const defaultPlanOptions = {
 }
 ```
 
-| Option | Effect when `true` | Effect when `false` (default) |
+| Option | `true` | `false` (default) |
 |---|---|---|
-| `preferFragJoins` | Joins use `op.fragmentIdCol` — enables D-Node pushdown for potentially better distributed performance | Joins use `op.col(uriCol)` — URI-based, more predictable behavior |
+| `preferFragJoins` | Joins use `op.fragmentIdCol` — D-Node pushdown, potentially faster | Joins use `op.col(uriCol)` — URI-based, more predictable |
 
-This option permeates the entire recursive tree. It affects:
-- Join `on` clauses (fragment vs URI)
-- Select projections passed to child plans
-- Column aliasing in full outer joins
+Affects: join `on` clauses, `select` projections, column aliasing in full outer joins. Threaded through the entire recursive tree via `options`.
 
-## `annTopK` build constants
-
-Two module-level constants govern `annTopK` behavior. These are **build properties** — not controllable by search request callers:
-
-```javascript
-const MAX_ANN_K = 1000;              // Maximum neighbors to retrieve. Must be ≥ page × pageLength
-                                     // for correct paging. Increase if deep pagination is needed.
-const ANN_MAX_DISTANCE_DEFAULT = 0.14; // Default cosine distance threshold. Individual term
-                                       // configs may override via termConfig.maxDistance.
-```
-
-When `execute()` gains `page`/`pageLength` parameters, `k` should be computed as `Math.min(MAX_ANN_K, page * pageLength)` and passed into the pattern rather than using `MAX_ANN_K` directly.
-
----
-
-# The `_scope` Property Override
-
-At the start of each `GetOpticPlan` call, the effective scope is resolved as:
-
-```javascript
-const scope = planCriteria._scope ?? planScope;
-```
-
-Any criteria object — including nested ones — can carry a `_scope` key to override the search scope for that sub-plan. This is how multi-scope searches can be expressed without separate top-level calls. This override is currently listed as a TODO to verify but the mechanism is already in place.
-
----
-
-# Deep-Copy via `xdmp.toJSON`
-
-The criteria array is deep-copied at initialization:
-
-```javascript
-criteria = xdmp.toJSON(planCriteria.AND).toObject();
-```
-
-This is necessary because the loop **mutates `criteria[]`** by pushing inlined child criteria (AND-in-AND, OR-in-OR). Without the deep copy, the original input would be modified across recursive calls.
-
----
-
-# The Dynamic `for` Loop
-
-```javascript
-for (let idx = 0; idx < criteria.length; idx++) {
-```
-
-This uses `criteria.length` (not a cached length) intentionally. Several code paths push new items onto `criteria[]`:
-
-- AND-in-AND inlining: `criteria.push(...criterion.AND)`
-- OR-in-OR inlining: `criteria.push(...criterion.OR)`
-- `text` pattern rewriting: `criteria.push({ OR: [...] })`
-
-These pushed items are processed in later iterations of the same loop. This is a deliberate design choice that avoids recursion for cases that can be flattened.
-
----
-
-# Known Issues and TODOs
-
-From code comments:
-
-| Category | Detail | Location |
-|---|---|---|
-| **Bug** | OR queries return an extra null value from the full outer join | ~line 43 (commented example) |
-| **Bug** | OR queries perform significantly worse than AND equivalents | ~line 43 |
-| **Security** | `ProcessPredicates` uses `xdmp.eval()` — should migrate to `sem.curieExpand()` | `ProcessPredicates` function |
-| **Feature** | Implement `values` mode for related lists (array of IRIs) | `execute()` comments |
-| **Feature** | Verify multi-scope search support | `execute()` comments |
-| **Feature** | Verify semantic sort + `SEMANTIC_SORT_TIMEOUT` | `execute()` comments |
-| **Feature** | Implement `pageWith` with `MAXIMUM_PAGE_WITH_LENGTH = 100000` | `execute()` comments |
-| **Feature** | Add support for overriding `defaultCtsOptions` | ~line 105 |
-| **Feature** | Add support for views and other index types | ~line 396 |
-| **Design** | `indexedRange` might be better with `fromView` for measure flexibility | `indexedRange` case |
-| **Design** | OR `hopWithField` "duplicate lexicon then outer join" pattern could use a helper function | `hopWithField` OR case |
-| **Assumption** | Each term config only has one index reference (`indexReferences[0]`) — several patterns depend on this | Multiple locations |
-| **Feature** | `annTopK`: compute `k` dynamically as `min(MAX_ANN_K, page * pageLength)` once `execute()` accepts page/pageLength params | `annTopK` pattern, `execute()` |
-| **Design** | `GetOpticPlan` return type should change from bare plan to `{ plan, distanceCols }` to support `annTopK` distance propagation | `GetOpticPlan`, `execute()` |
 
 ---
 
 # Unimplemented Patterns
 
-The `default` case in the switch throws:
+The `default` case in the switch throws: `throw new Error('Unimplemented pattern name: ...')`.
 
-```javascript
-throw new Error(`Unimplemented pattern name: ${termConfig.patternName}.`)
-```
+From `searchPatternsLib.mjs`, not yet in `optic.mjs`:
+- `dateRange` — date range queries with start/end field pairs
+- `hopInverse` — reverse triple navigation (object→subject)
 
-The following patterns exist in `searchPatternsLib.mjs` but are not yet handled in `optic.mjs`:
+New to LUX (no CTS equivalent):
+- `transitive` — planned; distinct from `hopWithField` in that it supports transitive triple traversal
 
-- `dateRange` — Date range queries with start/end field pairs
-- `hopInverse` — Reverse triple navigation (object→subject)
-- `indexedValue` — Exact field value match (or simply `indexedWord` with `_complete`?)
-
-The following patterns are **new to LUX** (no CTS equivalent; not in `searchPatternsLib.mjs`):
-
-- `annTopK` — Approximate nearest-neighbor vector similarity search. Full design spec in Section 7.7.
-- `transitive` — Planned.  One or two such patterns.  Distinct from existing hop patterns as existing ones are more performant but do not support transitive triples.
 
 ---
 
-# Glossary
+# Known Issues / TODOs
 
-| Term | Meaning |
+| Category | Detail |
 |---|---|
-| **Scope** | A record type group (e.g. `item`, `agent`, `work`, `concept`, `event`, `place`, `set`). Each scope defines its own fields, predicates, and RDF types. |
-| **Search Term** | A named criterion within a scope (e.g. `name`, `text`, `producedBy`, `classification`). Configured in `searchTermsConfig.mjs`. |
-| **Pattern** | The implementation strategy for a search term (e.g. `indexedWord`, `hopWithField`). Determines how the term translates to Optic constructs. |
-| **Criterion** | A single element in the search criteria JSON. Either a conjunction (`AND`/`OR`/`NOT` wrapping an array) or a leaf (a search term + value). |
-| **logicType** | The boolean context of the current `GetOpticPlan` call: `'and'`, `'or'`, or `'not'`. Determines which constraint bucket a pattern should target. |
-| **D-Node pushdown** | A MarkLogic optimization where computation is sent to the data node that stores the fragment, avoiding network transfer. Enabled by joining on fragment IDs. |
-| **Fragment** | MarkLogic's internal unit of document storage. A document may be stored across one or more fragments. Fragment IDs are internal, not exposed as URIs. |
-| **Lexicon** | A range index that Optic can scan to produce rows. Created from `cts.uriReference()`, `cts.iriReference()`, `cts.fieldReference()`, etc. |
-| **Prefixer** | An `op.prefixer(namespace)` function that, when called with a local name, produces a full IRI. E.g. `lux("agentAny")` → `https://lux.collections.yale.edu/ns/agentAny`. |
-| **TDE** | Template-Driven Extraction. A MarkLogic feature that projects document content into relational-style views using declarative templates. The `vectors` view used by `annTopK` is a TDE view. |
-| **View** | A TDE-backed virtual table. Accessed via `op.fromView(schema, viewName)`. Rows correspond to TDE template matches within documents. |
-| **ANN** | Approximate Nearest Neighbor. A class of algorithms that efficiently find the closest vectors in high-dimensional space without an exhaustive scan. MarkLogic's `annTopK` uses a vector index for this. |
-| **Cosine distance** | A measure of similarity between two vectors: 0 = identical direction, 1 = orthogonal, 2 = opposite. Lower values mean greater similarity. Used as the distance metric in `annTopK`. |
+| Bug | OR queries return an extra null row from `joinFullOuter` |
+| Bug | OR queries perform significantly worse than AND equivalents |
+| Security | `ProcessPredicates`: `xdmp.eval()` → migrate to `sem.curieExpand()` |
+| Design | OR `hopWithField` "duplicate lexicon then outer join" pattern → extract helper function |
+| Design | `indexedRange` may be better with `fromView` for measure flexibility |
+| Feature | `values` mode for related lists (array of IRIs) |
+| Feature | Verify multi-scope search, semantic sort + `SEMANTIC_SORT_TIMEOUT`, `pageWith` (max 100,000) |
+| Feature | Add support for overriding `defaultCtsOptions` |
+| Feature | Add support for views and other index types |
+| Assumption | `indexReferences[0]` assumed to exist throughout; multiple index references not supported |
+
 
 ---
 
@@ -666,14 +397,14 @@ Tracing through the code with scope `'item'`:
 
 1. **`execute()`** creates `finalGroups = { by: ['uri'], agg: [sample('dataType')] }`.
 
-2. **`GetOpticPlan()`** is called. `logicType = 'and'`, `criteria = [{ text: "lobster" }]`.
+2. **`GetOpticPlan()`** is called with `finalGroups`. `logicType = 'and'`, `criteria = [{ text: "lobster" }]`.
 
 3. **Criterion 0:** `{ text: "lobster" }`.
    - Term name: `"text"`, pattern: `"text"`.
    - **Rewrites** by pushing `{ OR: [{ textNoHop: "lobster" }, { referencedBy: "lobster" }] }` onto `criteria[]`.
 
 4. **Criterion 1** (pushed): `{ OR: [{ textNoHop: "lobster" }, { referencedBy: "lobster" }] }`.
-   - This is a child OR inside parent AND → triggers `joinInner` path.
+   - This is a child OR inside parent AND → triggers `joinInner` path (3×3 matrix: AND×OR = `joinInner`).
    - Recursively calls `GetOpticPlan({ OR: [...] }, 'item', null, <uuid>, options)`.
 
 5. **Recursive call** with `logicType = 'or'`:
@@ -681,8 +412,110 @@ Tracing through the code with scope `'item'`:
      - OR context → `ctsConstraints.push(cts.fieldWordQuery(...))`.
    - **Criterion 1:** `{ referencedBy: "lobster" }` — a `hopWithField` pattern.
      - OR context → builds triple scan + reference lexicon, wraps in duplicate-lexicon full outer join.
-   - **Assembly:** `cts.orQuery([fieldWordQuery])` for CTS constraints, then the hop full outer join.
+   - **Assembly:** `plan.where(cts.orQuery([fieldWordQuery]))` for CTS constraints, then the hop full outer join.
+   - Returns `{ plan, distanceCols: [] }`.
 
 6. **Back in parent:** The inner join constrains the base lexicon plan to only documents matching the OR sub-plan.
 
-7. **Assembly:** Base lexicons → inner join with OR sub-plan → `groupBy(['uri'])` → `result()`.
+7. **Assembly:** Base lexicons → inner join with OR sub-plan → `groupBy(['uri'], [sample('dataType')])`.
+
+8. **`execute()`:** No `distanceCols`, so no post-processing. Returns `{ results, planAsJson, planAsSource, distanceCols: [], debug }`.
+
+
+---
+
+# Glossary
+
+| Term | Meaning |
+|---|---|
+| **Scope** | A record type group (e.g. `item`, `agent`, `work`, `concept`, `event`, `place`, `set`). Each scope defines its own fields, predicates, and RDF types. |
+| **Search Term** | A named criterion within a scope (e.g. `name`, `text`, `producedBy`, `classification`). Configured in `searchTermsConfig.mjs`. |
+| **Pattern** | The implementation strategy for a search term (e.g. `indexedWord`, `hopWithField`). Determines how the term translates to Optic constructs. The `patternName` field in the term config dispatches to the `switch/case` in `GetOpticPlan`. |
+| **Criterion** | A single element in the search criteria JSON. Either a conjunction (`AND`/`OR`/`NOT` wrapping an array) or a leaf (a search term + value). |
+| **logicType** | The boolean context of the current `GetOpticPlan` call: `'and'`, `'or'`, or `'not'`. Determines which constraint bucket a pattern should target. |
+| **D-Node pushdown** | A MarkLogic optimization where computation is sent to the data node that stores the fragment, avoiding network transfer. Enabled by joining on fragment IDs instead of URIs. |
+| **Fragment** | MarkLogic's internal unit of document storage. Fragment IDs are internal, not exposed as URIs. |
+| **Lexicon** | A range index that Optic can scan to produce rows. Created from `cts.uriReference()`, `cts.iriReference()`, `cts.fieldReference()`, etc. |
+| **Prefixer** | An `op.prefixer(namespace)` function that, when called with a local name, produces a full IRI. E.g. `lux("agentAny")` → `https://lux.collections.yale.edu/ns/agentAny`. |
+| **TDE** | Template-Driven Extraction. A MarkLogic feature that projects document content into relational-style views. The `vectors` view used by `annTopK` is a TDE view. |
+| **ANN** | Approximate Nearest Neighbor. A class of algorithms that efficiently find the closest vectors in high-dimensional space. MarkLogic's `annTopK` uses a vector index for this. |
+| **Cosine distance** | A measure of similarity between two vectors: 0 = identical direction, 1 = orthogonal, 2 = opposite. Lower = more similar. Used as the distance metric in `annTopK`. |
+
+
+---
+
+# LLM Operational Checklist
+
+## When implementing a developer request against `optic.mjs`:
+
+### 1. Classify the request
+
+- [ ] New pattern (new `case` in the switch)?
+- [ ] Modify existing pattern behavior?
+- [ ] Change `execute()` (post-processing, return type, options)?
+- [ ] Change plan options or constants?
+- [ ] Change conjunction handling (3×3 matrix)?
+
+### 2. Understand the scope of change
+
+- [ ] Read the relevant `case` block(s) in `GetOpticPlan`.
+- [ ] Identify which bucket(s) the pattern uses: `constraints[]`, `ctsConstraints[]`, or `joins[]`.
+- [ ] Check all three logicType branches (`'and'`, `'or'`, `'not'`).
+- [ ] If the pattern uses joins, check the column naming and join alignment.
+- [ ] If the pattern produces metadata columns (like distance), check `distanceCols` propagation.
+
+### 3. For new patterns — follow the template
+
+- [ ] Determine: Is the constraint CTS/Optic-expressible, or does it need its own row source?
+- [ ] Consult the **Bucket Selection Rule** table.
+- [ ] For AND: use `constraints[]` (if expressible) or `joins[]` with `joinInner`.
+- [ ] For OR: use `ctsConstraints[]` (if expressible) or `joins[]` with `joinFullOuter` (requires column alignment via `select` + `op.as`).
+- [ ] For NOT: use `ctsConstraints[]` (if expressible) or `joins[]` with `notExistsJoin`.
+- [ ] Use `id = sem.uuidString()` for all new column names to prevent collisions.
+- [ ] If the pattern returns metadata columns, add them to `distanceCols[]` and handle in `execute()` post-processing.
+
+### 4. Preserve invariants
+
+- [ ] Never place constraints in `constraints[]` for OR/NOT context.
+- [ ] Always deep-copy criteria if you mutate the array.
+- [ ] Ensure column uniqueness via UUID namespacing.
+- [ ] If adding a `joinFullOuter`, both sides must `select` to the same column set.
+- [ ] Forward `distanceCols` through `groupBy` via `op.sample()`.
+- [ ] Validate inputs at system boundaries (as `annTopK` validates seed document existence).
+- [ ] If recursing `GetOpticPlan`, destructure `{ plan, distanceCols }` — do not treat the return as a bare plan.
+
+### 5. How to verify
+
+1. **Plan inspection:** Call `execute(criteria, scope, false)` (no results) and examine `planAsSource`. Look for:
+   - Correct join types (`join-inner` vs `full-outer-join` vs `not-exists-join`)
+   - Correct column names in join conditions
+   - Expected CTS queries in `.where()` clauses
+
+2. **Result inspection:** Call `execute(criteria, scope, true)` and check:
+   - Result count is plausible
+   - No unexpected `null` values (especially in OR queries — known `joinFullOuter` issue)
+   - `dataType` column is present and correct
+   - `distance` column appears when expected (`annTopK` patterns)
+
+3. **Regression check:** Run the same query through both the old CTS pipeline and the new Optic pipeline (where applicable) and compare result URIs.
+
+4. **Debug array:** Inspect `debug` for unexpected entries or error messages.
+
+
+---
+
+# Volatile Details Appendix
+
+The following details are implementation-specific and may change. An LLM should **re-read the relevant source code** before relying on them.
+
+| Detail | Where to verify | Current value/behavior |
+|---|---|---|
+| ANN constant values (`ANN_K_DEFAULT`, `ANN_K_MAX`, `ANN_MAX_DISTANCE_DEFAULT`) | `appConstants.mjs` and `gradle.properties` | Fallbacks: 50, 1000, 0.14 (Gradle may inject different values) |
+| `k` resolution chain | `annTopK` case in `GetOpticPlan` | `Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K_MAX)` |
+| Seed-document exclusion heuristic | `annTopK` case, `isMultipleSimilarity` variable | Excludes for single similarity; keeps for multi-OR |
+| Pure-similarity OR filter in `execute()` | `execute()` post-processing block | Checks criterion keys for `'similar'` or `'annTopK'` |
+| `execute()` return shape | `execute()` return statement | `{ results, planAsJson, planAsSource, distanceCols, debug }` |
+| `GetOpticPlan` return shape | `GetOpticPlan` return statement | `{ plan, distanceCols }` |
+| `annTopK` OR join pattern | `annTopK` case, `logicType === 'or'` branch | Same "duplicate lexicon then outer join" pattern as `hopWithField` OR — fresh `fromLexicons` → `joinInner` to annPlan → `joinFullOuter` back to base |
+| Search term config stubs | `searchTermsConfig.mjs` | Functions are Gradle-generated at build time; source shows `dummy` exports |
+| Unused imports | Top of `optic.mjs` | `processSearchCriteria`, `START_OF_GENERATED_QUERY` |

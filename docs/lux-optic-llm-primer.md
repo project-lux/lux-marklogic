@@ -49,7 +49,7 @@ execute(searchCriteria, searchScope, includeResults)
   |-- Creates finalGroups: groupBy(['uri'], sample('dataType'))
   |
   +-- GetOpticPlan(searchCriteria, searchScope, finalGroups)
-       |     returns { plan, distanceCols }
+       |     returns plan directly
        |
        |-- Determines logicType: 'and' | 'or' | 'not'
        |
@@ -60,7 +60,7 @@ execute(searchCriteria, searchScope, includeResults)
        |    |-- ctsConstraints[]    (CTS query objects)
        |    +-- joins[]             (join descriptors)
        |
-       |-- Initializes distanceCols[] (for annTopK distance propagation)
+       |-- Initializes distanceCols[] (for annTopK distance consolidation)
        |
        |-- Iterates criteria[] (dynamic length — see Non-obvious Behaviors):
        |    |-- If nested AND/OR/NOT -> handle via 3×3 matrix (recursive call + join)
@@ -72,11 +72,11 @@ execute(searchCriteria, searchScope, includeResults)
             |-- for each constraint:   plan = plan.where(constraint)
             |-- for ctsConstraints:    plan = plan.where(ctsWrapper(ctsConstraints))
             |-- for each join:         plan = plan[join.type](join.right, ...)
-            +-- if groups:             plan = plan.groupBy(groups.by, agg)
-                                       (agg includes distanceCols via op.sample)
+            |-- if groups:             plan = plan.groupBy(groups.by, agg)
+            +-- if distanceCols:       plan = plan.select() with op.least() consolidation
 ```
 
-`execute()` post-processes results when `distanceCols` is non-empty (collates distance columns, filters pure-similarity queries) and returns `{ results, planAsJson, planAsSource, distanceCols, debug }`. On error, dumps `debug` to console before re-throwing.
+`execute()` exports the plan to JSON, optionally executes `.result()`, and returns `{ results, planAsJson, planAsSource, debug }`.
 
 
 ---
@@ -218,7 +218,7 @@ Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K
 
 **Column handling:** The view's `uri` column is renamed to `id + '_vectorUri'` via `op.as()` to avoid collision with the main lexicon's `uri`. The plan selects `[id+'_vectorUri', vecFrag, distCol]`.
 
-**Distance column registration:** `distanceCols.push(distCol)` for AND/OR contexts. NOT context is excluded — `notExistsJoin` only keeps left-side rows so distance is irrelevant.
+**Distance consolidation:** UUID-namespaced distance columns are consolidated at the Optic level using `op.least()` for multiple distances or simple `op.as()` for single distances. This creates a clean `distance` field without JavaScript post-processing.
 
 | logicType | Join type | Join key | OR detail |
 |---|---|---|---|
@@ -226,7 +226,7 @@ Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K
 | OR | `joinFullOuter` | natural join (aligned columns) | Same "duplicate lexicon then outer join" pattern as `hopWithField` OR: creates a fresh `fromLexicons`, inner-joins it to `annPlan` on `fragCol ↔ vecFrag`, then `joinFullOuter` back to base plan. Select: `[fragCol, 'dataType', distCol]`. |
 | NOT | `notExistsJoin` | `fragCol ↔ vecFrag` | — |
 
-**Multiple `annTopK` in AND:** Each becomes a separate `joinInner`. Documents must rank in top-K for every criterion independently. Each criterion has its own UUID-namespaced distance column; all are forwarded through `distanceCols` and preserved by `groupBy`.
+**Multiple `annTopK` in AND:** Each becomes a separate `joinInner`. Documents must rank in top-K for every criterion independently. Each criterion has its own UUID-namespaced distance column; all are consolidated via `op.least()` during the final select operation.
 
 
 ---
@@ -413,13 +413,13 @@ Tracing through the code with scope `'item'`:
    - **Criterion 1:** `{ referencedBy: "lobster" }` — a `hopWithField` pattern.
      - OR context → builds triple scan + reference lexicon, wraps in duplicate-lexicon full outer join.
    - **Assembly:** `plan.where(cts.orQuery([fieldWordQuery]))` for CTS constraints, then the hop full outer join.
-   - Returns `{ plan, distanceCols: [] }`.
+   - Returns plan directly.
 
 6. **Back in parent:** The inner join constrains the base lexicon plan to only documents matching the OR sub-plan.
 
 7. **Assembly:** Base lexicons → inner join with OR sub-plan → `groupBy(['uri'], [sample('dataType')])`.
 
-8. **`execute()`:** No `distanceCols`, so no post-processing. Returns `{ results, planAsJson, planAsSource, distanceCols: [], debug }`.
+8. **`execute()`:** No distance consolidation needed at JavaScript level. Returns `{ results, planAsJson, planAsSource, debug }`.
 
 
 ---
@@ -445,6 +445,29 @@ Tracing through the code with scope `'item'`:
 ---
 
 # LLM Operational Checklist
+
+## Core Principle: Prefer Optic-Level Operations
+
+**ALWAYS prioritize Optic-native operations over JavaScript post-processing.** Post-processing should be a last resort when the Optic API genuinely cannot handle the required operation.
+
+### Why Optic-Level is Preferred:
+- **Performance**: Optic operations execute at the database engine level
+- **Scalability**: Handles large result sets without bringing all data to JavaScript
+- **Memory efficiency**: Avoids loading entire result sets into memory
+- **Correctness**: Leverages MarkLogic's optimized query planning
+- **Maintainability**: Keeps all query logic in one cohesive plan
+
+### When Post-Processing is Acceptable:
+- Complex string manipulations not available in Optic
+- Business logic that requires external API calls
+- Data transformations that would require extremely complex Optic expressions
+
+### Key Optic Functions for Data Transformation:
+- `op.least()` / `op.greatest()` — Min/max across columns in same row
+- `op.case()` — Conditional expressions
+- `op.coalesce()` — First non-null value
+- `op.as()` — Column aliasing and transformation
+- Aggregation functions: `op.min()`, `op.max()`, `op.sum()`, `op.avg()`, `op.sample()`
 
 ## When implementing a developer request against `optic.mjs`:
 
@@ -472,7 +495,7 @@ Tracing through the code with scope `'item'`:
 - [ ] For OR: use `ctsConstraints[]` (if expressible) or `joins[]` with `joinFullOuter` (requires column alignment via `select` + `op.as`).
 - [ ] For NOT: use `ctsConstraints[]` (if expressible) or `joins[]` with `notExistsJoin`.
 - [ ] Use `id = sem.uuidString()` for all new column names to prevent collisions.
-- [ ] If the pattern returns metadata columns, add them to `distanceCols[]` and handle in `execute()` post-processing.
+- [ ] If the pattern returns metadata columns, consolidate them using Optic operations (`op.least()`, `op.as()`, etc.) rather than post-processing.
 
 ### 4. Preserve invariants
 
@@ -480,9 +503,9 @@ Tracing through the code with scope `'item'`:
 - [ ] Always deep-copy criteria if you mutate the array.
 - [ ] Ensure column uniqueness via UUID namespacing.
 - [ ] If adding a `joinFullOuter`, both sides must `select` to the same column set.
-- [ ] Forward `distanceCols` through `groupBy` via `op.sample()`.
+- [ ] Forward metadata through `groupBy` via `op.sample()` if needed, then consolidate in final `select()`.
 - [ ] Validate inputs at system boundaries (as `annTopK` validates seed document existence).
-- [ ] If recursing `GetOpticPlan`, destructure `{ plan, distanceCols }` — do not treat the return as a bare plan.
+- [ ] If recursing `GetOpticPlan`, use the returned plan directly — the function returns the plan, not an object wrapper.
 
 ### 5. How to verify
 
@@ -495,7 +518,7 @@ Tracing through the code with scope `'item'`:
    - Result count is plausible
    - No unexpected `null` values (especially in OR queries — known `joinFullOuter` issue)
    - `dataType` column is present and correct
-   - `distance` column appears when expected (`annTopK` patterns)
+   - `distance` column appears when expected (`annTopK` patterns) with properly consolidated values
 
 3. **Regression check:** Run the same query through both the old CTS pipeline and the new Optic pipeline (where applicable) and compare result URIs.
 
@@ -513,9 +536,9 @@ The following details are implementation-specific and may change. An LLM should 
 | ANN constant values (`ANN_K_DEFAULT`, `ANN_K_MAX`, `ANN_MAX_DISTANCE_DEFAULT`) | `appConstants.mjs` and `gradle.properties` | Fallbacks: 50, 1000, 0.14 (Gradle may inject different values) |
 | `k` resolution chain | `annTopK` case in `GetOpticPlan` | `Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K_MAX)` |
 | Seed-document exclusion heuristic | `annTopK` case, `isMultipleSimilarity` variable | Excludes for single similarity; keeps for multi-OR |
-| Pure-similarity OR filter in `execute()` | `execute()` post-processing block | Checks criterion keys for `'similar'` or `'annTopK'` |
-| `execute()` return shape | `execute()` return statement | `{ results, planAsJson, planAsSource, distanceCols, debug }` |
-| `GetOpticPlan` return shape | `GetOpticPlan` return statement | `{ plan, distanceCols }` |
+| Distance consolidation | Distance handling in `GetOpticPlan` | Uses `op.least()` for multiple distances, `op.as()` for single distance at Optic level |
+| `execute()` return shape | `execute()` return statement | `{ results, planAsJson, planAsSource, debug }` |
+| `GetOpticPlan` return shape | `GetOpticPlan` return statement | Returns plan directly |
 | `annTopK` OR join pattern | `annTopK` case, `logicType === 'or'` branch | Same "duplicate lexicon then outer join" pattern as `hopWithField` OR — fresh `fromLexicons` → `joinInner` to annPlan → `joinFullOuter` back to base |
 | Search term config stubs | `searchTermsConfig.mjs` | Functions are Gradle-generated at build time; source shows `dummy` exports |
 | Unused imports | Top of `optic.mjs` | `processSearchCriteria`, `START_OF_GENERATED_QUERY` |

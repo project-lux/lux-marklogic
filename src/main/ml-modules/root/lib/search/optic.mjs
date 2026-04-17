@@ -15,6 +15,7 @@ import { getSearchScopeTypes } from '/lib/searchScope.mjs';
 import { getSearchTermNames, getSearchTermConfig } from '/config/searchTermsConfig.mjs';
 import { processSearchCriteria } from '/lib/searchLib.mjs';
 import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
+import { ANN_K_DEFAULT, ANN_K_MAX, ANN_MAX_DISTANCE_DEFAULT } from '/lib/appConstants.mjs';
 
 const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
 const la = op.prefixer("https://linked.art/ns/terms/");
@@ -194,6 +195,10 @@ function GetOpticPlan(
 
   // {type: "joinInner", right: plan, on: op.on(...), condition: op.eq(...)}
   const joins = [];
+
+  // Names of distance columns added by annTopK criteria at this plan level.
+  // Propagated to execute() so they can be preserved through groupBy.
+  const distanceCols = [];
 
   let criteria;
   let logicType;
@@ -416,11 +421,12 @@ function GetOpticPlan(
           criteria.push(newCriteria);
           break;
         }
+      case "indexedValue":
       case "indexedWord":
         {
-          debug.push("processing indexedWord");
+          debug.push(`processing ${termConfig.patternName}`);
 
-          if (criterion._complete) {
+          if (termConfig.patternName === 'indexedValue' || criterion._complete) {
             if (logicType === 'and') {
               // Should be more efficient to add to existing lexicon join (validate through testing!)
               // This requires adding range lexicons for every field!
@@ -572,6 +578,99 @@ function GetOpticPlan(
           }
           break;
         }
+      case "annTopK":
+        {
+          debug.push("processing annTopK");
+
+          const vecFrag = id + '_vecFrag';
+          const distCol = id + '_distance';
+          const vectorColumn = termConfig.vectorColumn ?? 'main';
+          const maxDistance = termConfig.maxDistance ?? ANN_MAX_DISTANCE_DEFAULT;
+
+          // k resolution: per-request option > term config default > build property default, capped by build property max.
+          const requestedK = criterion._annK ?? termConfig.annKMaxDefault ?? ANN_K_DEFAULT;
+          const k = Math.min(requestedK, ANN_K_MAX);
+          debug.push(`annTopK k resolved to ${k} (requested ${requestedK}, max ${ANN_K_MAX})`);
+
+          // Require the seed document have the specified vector.
+          if (!fn.docAvailable(termValue)) {
+            throw new Error(`Document specified by search term ${termName} is not available: ${termValue}`);
+          }
+          const vectorData = cts.doc(termValue).xpath(`vectors/${vectorColumn}`).toArray();
+          if (!vectorData || vectorData.length === 0) {
+            throw new Error(`Document specified by search term ${termName} is missing vector data for column '${vectorColumn}': ${termValue}`);
+          }
+          const queryVector = vec.vector(vectorData);
+          
+          // Create annTopK plan with URI column renamed to avoid conflicts with main lexicons
+          // TODO: Replace hardcoded schema and view names.
+          let annPlan = op.fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag));
+          
+          // Determine if we should exclude seed document - only exclude for single similarity queries
+          const isMultipleSimilarity = (planCriteria.OR && planCriteria.OR.length > 1) || 
+                                      (criteria.length > 1 && logicType === 'or');
+
+          // Only exclude seed document for single similarity queries  
+          if (!isMultipleSimilarity) {
+            annPlan = annPlan.where(op.ne(op.col('uri'), termValue));
+          }
+          
+          // annTopK should naturally filter out documents without valid vector data
+          annPlan = annPlan.annTopK(
+              k,
+              op.col(vectorColumn),
+              queryVector,
+              op.col(distCol),
+              { distance: 'cosine', 'max-distance': maxDistance }
+            )
+
+            // Rename uri to avoid conflict, select only needed columns
+            .select([
+              op.as(id + '_vectorUri', op.col('uri')), 
+              op.fragmentIdCol(vecFrag), 
+              distCol
+            ]);
+
+          // annPlan includes the entire vector.
+          debug.push("Generated annTopK plan:");
+          debug.push(`k=${k}, vectorColumn='${vectorColumn}', maxDistance=${maxDistance}, seedURI='${termValue}'`);
+
+          if (logicType === 'or') {
+            // For annTopK in OR context, avoid duplicate-lexicon pattern to prevent 
+            // including all documents. Instead, join annTopK results directly to 
+            // main lexicons and let the full outer join handle the union.
+            const annWithLex = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
+              .joinInner(
+                annPlan,
+                op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag))
+              );
+
+            joins.push({
+              type: "joinFullOuter",
+              right: annWithLex.select([fragCol, 'dataType', distCol]),
+              on: null,
+              condition: null
+            });
+          } else {
+            // AND and NOT use direct fragment joins (annTopK has no URI column to join on).
+            const joinType = logicType === 'and' ? 'joinInner' : 'notExistsJoin';
+
+            joins.push({
+              type: joinType,
+              right: annPlan,
+              on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag)),
+              condition: null
+            });
+          }
+
+          // Register the distance column so execute() can preserve it through groupBy.
+          // NOT context excluded: notExistsJoin only keeps left-side rows; distance is irrelevant.
+          if (logicType !== 'not') {
+            distanceCols.push(distCol);
+          }
+
+          break;
+        }
       default:
         throw new Error(`Unimplemented pattern name: ${termConfig.patternName}.`)
     }
@@ -622,7 +721,35 @@ function GetOpticPlan(
 
   if (groups) {
     debug.push("Applying Groups");
-    plan = plan.groupBy(groups.by, groups.agg);
+    const agg = distanceCols.length
+      ? [...groups.agg, ...distanceCols.map(col => op.sample(col, op.col(col)))]
+      : groups.agg;
+    plan = plan.groupBy(groups.by, agg);
+    debug.push(op.toSource(plan.export()));
+  }
+
+  // Consolidate distance columns using Optic instead of post-processing
+  if (distanceCols.length > 0) {
+    debug.push("Consolidating distance columns");
+    const allCols = ['uri', 'dataType'];
+    
+    if (distanceCols.length === 1) {
+      // Single distance column - just rename it
+      plan = plan.select([
+        ...allCols,
+        op.as('distance', op.col(distanceCols[0]))
+      ]);
+    } else {
+      // Multiple distance columns - use op.fn.min to find minimum across the row.
+      // Pass all columns as a single array (the sequence arg); do NOT spread —
+      // fn:min's second argument is a collation string, not another value.
+      plan = plan.select([
+        ...allCols,
+        op.as('distance', op.fn.min(distanceCols.map(col => op.col(col))))
+      ]);
+    }
+
+    plan = plan.where(op.isDefined(op.col('distance')));
     debug.push(op.toSource(plan.export()));
   }
 
@@ -651,8 +778,9 @@ function execute(searchCriteria, searchScope, includeResults = true) {
     const opticPlan = GetOpticPlan(searchCriteria, searchScope, finalGroups);
 
     const planAsJson = opticPlan.export();
+
     return {
-      results: includeResults ? opticPlan.result() : null,
+      results: includeResults ? opticPlan.result().toArray() : null,
       planAsJson,
       planAsSource: op.toSource(planAsJson).replace(/\n\s*/g, ''),
       debug,

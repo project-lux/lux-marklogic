@@ -717,15 +717,21 @@ function GetOpticPlan(
     debug.push(op.toSource(plan.export()));
   }
 
+  // Rename output columns: uri → id, dataType → type.
+  // Folded into the distance select() when present; standalone otherwise.
+  const outputCols = [
+    op.as('id', op.col('uri')),
+    op.as('type', op.col('dataType')),
+  ];
+
   // Consolidate distance columns using Optic instead of post-processing
   if (distanceCols.length > 0) {
     debug.push("Consolidating distance columns");
-    const allCols = ['uri', 'dataType'];
     
     if (distanceCols.length === 1) {
       // Single distance column - just rename it
       plan = plan.select([
-        ...allCols,
+        ...outputCols,
         op.as('distance', op.col(distanceCols[0]))
       ]);
     } else {
@@ -733,13 +739,16 @@ function GetOpticPlan(
       // Pass all columns as a single array (the sequence arg); do NOT spread —
       // fn:min's second argument is a collation string, not another value.
       plan = plan.select([
-        ...allCols,
+        ...outputCols,
         op.as('distance', op.fn.min(distanceCols.map(col => op.col(col))))
       ]);
     }
 
     plan = plan.where(op.isDefined(op.col('distance')));
     debug.push(op.toSource(plan.export()));
+  } else if (groups) {
+    // Rename output columns for root-level plans (no distance consolidation)
+    plan = plan.select(outputCols);
   }
 
   return plan;

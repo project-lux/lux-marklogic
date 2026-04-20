@@ -3,7 +3,7 @@ import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
 import { SearchPatternOptions } from '/lib/SearchPatternOptions.mjs';
 
-const LIB = '0800 getSearchResultsTests.mjs';
+const LIB = '0700 getSearchResultsTests.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];

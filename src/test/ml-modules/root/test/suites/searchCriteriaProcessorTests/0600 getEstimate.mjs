@@ -27,7 +27,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 4868,
+      value: 4917,
     },
   },
   {
@@ -40,7 +40,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 42,
+      value: 43,
     },
   },
   {
@@ -62,7 +62,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 761,
+      value: 10912,
     },
   },
   {
@@ -146,7 +146,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 9754,
+      value: 9755,
     },
   },
   {
@@ -160,6 +160,75 @@ const scenarios = [
     expected: {
       error: false,
       value: 10170,
+    },
+  },
+  {
+    name: 'agent AND with name and produced (hopInverse) OR ranges',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { name: 'john' },
+          {
+            produced: {
+              OR: [
+                { depth: '100', _comp: '>=' },
+                { width: '100', _comp: '>=' },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 140,
+    },
+  },
+  {
+    name: 'agent AND with text and produced (hopInverse) OR ranges',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { text: 'foundation' },
+          {
+            produced: {
+              OR: [
+                { depth: '100', _comp: '>=' },
+                { width: '100', _comp: '>=' },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 17,
+    },
+  },
+  {
+    name: 'agent OR with unlikely name and produced (hopInverse) OR ranges',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        OR: [
+          { name: 'very_unlikely_string_123' },
+          {
+            produced: {
+              OR: [
+                { depth: '100', _comp: '>=' },
+                { width: '100', _comp: '>=' },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 2135,
     },
   },
 ];

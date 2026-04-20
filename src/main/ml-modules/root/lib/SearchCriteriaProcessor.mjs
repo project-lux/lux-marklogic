@@ -40,8 +40,6 @@ const SearchCriteriaProcessor = class {
   #searchState = SEARCH_STATE_NOT_REQUESTED;
   #allowMultiScope;
   #criteriaCnt = 0;
-  #queryStr = '';
-  #queryJson = null;
   #ignoredTerms = [];
   #includeTypeConstraint;
   #page;
@@ -51,11 +49,11 @@ const SearchCriteriaProcessor = class {
   #resolvedSearchCriteria = null;
   #scopeName;
   #searchPatternOptions;
+  #searchResults;
   #searchTermsConfig;
   #sortCriteria;
   #values = [];
   #valuesOnly = false;
-  #debugMsgs = [];
   //#endregion
 
   //#region Constructor(s)
@@ -164,14 +162,14 @@ const SearchCriteriaProcessor = class {
 
   getQueryStr() {
     if (this.getSearchState() === 'completed') {
-      return this.#queryStr;
+      return this.#searchResults.planAsSource;
     }
     return `Search not completed - current state: ${this.getSearchState()}`;
   }
 
   getQueryJson() {
     if (this.getSearchState() === 'completed') {
-      return this.#queryJson;
+      return this.#searchResults.planAsJson;
     }
     return {
       message: 'Search not completed',
@@ -179,15 +177,15 @@ const SearchCriteriaProcessor = class {
     };
   }
 
-  getDebugMsgs() {
+  getDebugMessages() {
     if (this.getSearchState() === 'completed') {
-      return this.#debugMsgs;
+      return this.#searchResults.debug;
     }
     return [`Search not completed - current state: ${this.getSearchState()}`];
   }
 
   getEstimate() {
-    return 0; // TODO
+    return this.getSearchResults().results.length;
   }
 
   // returns {
@@ -197,17 +195,17 @@ const SearchCriteriaProcessor = class {
   //   debug: Array<string>,
   // }
   getSearchResults() {
+    if (this.#searchResults) {
+      return this.#searchResults;
+    }
     this.#searchState = SEARCH_STATE_REQUESTED;
-    const response = execute(
+    this.#searchResults = execute(
       this.#resolvedSearchCriteria,
       this.#scopeName,
       true,
     );
-    this.#queryJson = response.planAsJson;
-    this.#queryStr = response.planAsSource;
-    this.#debugMsgs = response.debug;
     this.#searchState = SEARCH_STATE_COMPLETED;
-    return response;
+    return this.#searchResults;
   }
 
   // Certain search patterns implement an option compelling them to return values versus a CTS query.
@@ -396,10 +394,8 @@ const SearchCriteriaProcessor = class {
     this.#searchState = SEARCH_STATE_NOT_REQUESTED;
     this.#criteriaCnt = 0;
     this.#ignoredTerms = [];
-    this.#queryStr = '';
-    this.#queryJson = null;
+    this.#searchResults = null;
     this.#values = [];
-    this.#debugMsgs = [];
   }
 
   /**

@@ -34,7 +34,6 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
 const DEFAULT_REQUEST_CONTEXT = 'unspecified';
 const DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH = false;
-const DEFAULT_MAY_ESTIMATE = true;
 const DEFAULT_FILTER_RESULTS_NO_CONTEXT = true;
 const DEFAULT_FACETS_SOON = false;
 const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
@@ -71,7 +70,6 @@ function search({
   pageWith = null,
   requestContext = DEFAULT_REQUEST_CONTEXT,
   mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
-  mayEstimate = DEFAULT_MAY_ESTIMATE,
   sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
   facetsSoon = DEFAULT_FACETS_SOON,
@@ -87,7 +85,6 @@ function search({
       pageWith,
       requestContext,
       mayExceedMaximumPageLength,
-      mayEstimate,
       sortDelimitedStr,
       filterResults,
       facetsSoon,
@@ -108,7 +105,6 @@ function _search(
     pageWith = null,
     requestContext = DEFAULT_REQUEST_CONTEXT,
     mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
-    mayEstimate = DEFAULT_MAY_ESTIMATE,
     sortDelimitedStr = EMPTY_STRING,
     filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
     facetsSoon = DEFAULT_FACETS_SOON,
@@ -142,7 +138,6 @@ function _search(
           pageWith,
           requestContext,
           mayExceedMaximumPageLength,
-          mayEstimate,
           sortDelimitedStr,
           filterResults,
           facetsSoon,
@@ -181,19 +176,11 @@ function _search(
     resolvedSearchScope = searchCriteriaProcessor.getSearchScope();
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
 
-    // When evaluated as follows, need to convert the return to an array and take the first item.
+    // Perform the search
     ({ resultPage, results } = searchCriteriaProcessor.getSearchResults());
     stopWatch.lap('search');
+    estimate = searchCriteriaProcessor.getEstimate();
 
-    if (results.length > 0 && mayEstimate) {
-      estimate = _getCurrentRequestEstimate(
-        searchCriteriaProcessor,
-        resultPage,
-        pageLength,
-        results.length,
-      );
-      stopWatch.addTo('estimates');
-    }
     // Prepare response
     const response = {
       '@context': LUX_CONTEXT,
@@ -301,7 +288,7 @@ function _search(
           ? searchCriteriaProcessor.getQueryStr()
           : null,
         debug: searchCriteriaProcessor
-          ? searchCriteriaProcessor.getDebugMsgs()
+          ? searchCriteriaProcessor.getDebugMessages()
           : null,
       };
       xdmp.trace(traceName, searchInfo);
@@ -366,20 +353,6 @@ function processSearchCriteria({
   );
   stopWatch.lap('process');
   return searchCriteriaProcessor;
-}
-
-function _getCurrentRequestEstimate(
-  searchCriteriaProcessor,
-  page,
-  pageLength,
-  currentPageResultCount,
-) {
-  // If the current page's result count is less than the page length, we can now determine the exact number of results.
-  if (currentPageResultCount > 0 && pageLength > currentPageResultCount) {
-    return (page - 1) * pageLength + currentPageResultCount;
-  }
-  // Else, we need to calculate.
-  return searchCriteriaProcessor.getEstimate();
 }
 
 function calculateEstimate(searchCriteria, scope) {

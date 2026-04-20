@@ -124,26 +124,35 @@ const defaultPlanOptions = {
   preferFragJoins: false
 }
 
+// TODO: switch to sem.curieExpand.  The regex method was temporary.
+const prefixers = { crm, la, lux, skos };
 function ProcessPredicates(predicates) {
-  // FIXME: This currently uses eval for backwards compatibility.
-  //   Change to `sem.curieExpand(curie, [mapping])` for performance and security!
-  const header = `const op = require("/MarkLogic/optic");
-const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
-const la = op.prefixer("https://linked.art/ns/terms/");
-const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
-const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
-`;
-
-  debug.push("processing predicates");
-  debug.push(predicates);
-
-  const result = predicates.map(predicate => {
-    return fn.head(xdmp.eval(header + predicate));
+  return predicates.map(predicate => {
+    const match = predicate.match(/^(\w+)\("(.+)"\)$/);
+    return prefixers[match[1]](match[2]);
   });
-
-  debug.push(result);
-  return result;
 }
+
+// function ProcessPredicates(predicates) {
+//   // FIXME: This currently uses eval for backwards compatibility.
+//   //   Change to `sem.curieExpand(curie, [mapping])` for performance and security!
+//   const header = `const op = require("/MarkLogic/optic");
+// const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
+// const la = op.prefixer("https://linked.art/ns/terms/");
+// const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
+// const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
+// `;
+
+//   debug.push("processing predicates");
+//   debug.push(predicates);
+
+//   const result = predicates.map(predicate => {
+//     return fn.head(xdmp.eval(header + predicate));
+//   });
+
+//   debug.push(result);
+//   return result;
+// }
 
 function getPlanSource(plan) {
   return op.toSource(plan.export ? plan.export() : plan)

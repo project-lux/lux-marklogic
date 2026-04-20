@@ -526,28 +526,40 @@ function GetOpticPlan(
           debug.push(op.toSource(right.export()));
 
           if (logicType === 'or') {
-            // Need another copy of the lexicon plan to do an outer join
-            // TODO: Check to see if this needs to be done later since the lexicon plan
-            //   can theoretically change after this (but shouldn't be possible currently?)
-            // TODO: This kind of "duplicate lexicon then outer join" pattern
-            //   will likely be repeated for OR logic - could use a helper function
-            right = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
-              .joinInner(
-                right,
-                op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol))
-              );
+            if (idx === 0) {
+              joins.push({
+                type: "joinInner",
+                right: right.select([
+                  fragCol,
+                  "dataType"
+                ]),
+                on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
+                condition: null
+              });
+            } else {
+              // Need another copy of the lexicon plan to do an outer join when the initial lexicon is already "claimed"
+              // TODO: Check to see if this needs to be done later since the lexicon plan
+              //   can theoretically change after this (but shouldn't be possible currently?)
+              // TODO: This kind of "duplicate lexicon then outer join" pattern
+              //   will likely be repeated for OR logic - could use a helper function            
+              right = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
+                .joinInner(
+                  right,
+                  op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol))
+                );
 
-            joins.push({
-              // Full outer joins need the same columns from both sides
-              // This will result in a natural join
-              type: "joinFullOuter",
-              right: right.select([
-                options.preferFragJoins ? fragCol : uriCol,
-                "dataType"
-              ]),
-              on: null,
-              condition: null
-            });
+              joins.push({
+                // Full outer joins need the same columns from both sides
+                // This will result in a natural join
+                type: "joinFullOuter",
+                right: right.select([
+                  fragCol,
+                  "dataType"
+                ]),
+                on: null,
+                condition: null
+              });
+            }
           } else {
             // AND and NOT are similar except join type
             const joinType = logicType === 'and' ?

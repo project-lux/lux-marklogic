@@ -489,11 +489,11 @@ function GetOpticPlan(
           ]);
 
           let right;
+          const _refIri = id + '_iri';
 
           if (termValue) {
             // Simple hop that doesn't need recursion
             // I *believe* this only currently happens as a child to `text`
-            const _refIri = id + '_iri';
 
             const refLex = criterion._complete
               // This requires a range lexicon for the name field!

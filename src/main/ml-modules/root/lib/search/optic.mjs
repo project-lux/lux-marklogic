@@ -145,6 +145,12 @@ const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
   return result;
 }
 
+function getPlanSource(plan) {
+  return op.toSource(plan.export ? plan.export() : plan)
+    .replace(/\n\s*/g, '')
+    .replace(/"/g, "'");
+}
+
 function GetOpticPlan(
   planCriteria,
   planScope = 'item',
@@ -529,7 +535,7 @@ function GetOpticPlan(
           }
 
           debug.push("Generated right plan:");
-          debug.push(op.toSource(right.export()));
+          debug.push(getPlanSource(right));
 
           patternJoins.push({
             right: right,
@@ -626,7 +632,7 @@ function GetOpticPlan(
   // Optic uses functional programming patterns, so we will assign plan temporarily and replace it with each modification unless/until we need a more complex pattern.
   let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
   debug.push("Initial lexicon plan:");
-  debug.push(op.toSource(plan.export()));
+  debug.push(getPlanSource(plan));
 
   if (constraints.length) {
     debug.push("Applying Constraints");
@@ -636,7 +642,7 @@ function GetOpticPlan(
       });
       plan = plan.where(constraint);
     }
-    debug.push(op.toSource(plan.export()));
+    debug.push(getPlanSource(plan));
   }
 
   if (ctsConstraints.length) {
@@ -647,7 +653,7 @@ function GetOpticPlan(
         x => cts.notQuery(cts.orQuery(x));
 
     plan = plan.where(ctsWrapper(ctsConstraints));
-    debug.push(op.toSource(plan.export()));
+    debug.push(getPlanSource(plan));
   }
 
   if (conjunctionJoins.length) {
@@ -655,15 +661,15 @@ function GetOpticPlan(
     for (const join of conjunctionJoins) {
       debug.push({
         type: join.type,
-        left: op.toSource(plan.export()),
-        right: op.toSource(join.right.export()),
+        left: getPlanSource(plan),
+        right: getPlanSource(join.right),
         on: join.on?.toString(),
         condition: join.condition
       });
       // Join functions are a method on the plan, so we have to reference them by name instead of storing the join itself in the array
       plan = plan[join.type](join.right, join.on, join.condition);
     }
-    debug.push(op.toSource(plan.export()));
+    debug.push(getPlanSource(plan));
   }
 
   if (patternJoins.length) {
@@ -707,7 +713,7 @@ function GetOpticPlan(
       }
     }
 
-    debug.push(op.toSource(plan.export()));
+    debug.push(getPlanSource(plan));
   }
 
   if (groups) {
@@ -716,7 +722,7 @@ function GetOpticPlan(
       ? [...groups.agg, ...distanceCols.map(col => op.sample(col, op.col(col)))]
       : groups.agg;
     plan = plan.groupBy(groups.by, agg);
-    debug.push(op.toSource(plan.export()));
+    debug.push(getPlanSource(plan));
   }
 
   // Rename output columns: uri → id, dataType → type.
@@ -745,8 +751,8 @@ function GetOpticPlan(
       plan = plan.select(outputCols);
     }
 
-    debug.push("Final plan with renamed output columns:");
-    debug.push(op.toSource(plan.export()));
+    debug.push("***********************************FINAL PLAN:");
+    debug.push(getPlanSource(plan));
   }
 
   return plan;
@@ -778,7 +784,7 @@ function execute(searchCriteria, searchScope, includeResults = true) {
     return {
       results: includeResults ? opticPlan.result().toArray() : null,
       planAsJson,
-      planAsSource: op.toSource(planAsJson).replace(/\n\s*/g, ''),
+      planAsSource: getPlanSource(planAsJson),
       debug,
     }
   } catch (ex) {

@@ -2,27 +2,174 @@ import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
 import { SearchPatternOptions } from '/lib/SearchPatternOptions.mjs';
+import { ML_APP_NAME } from '/lib/appConstants.mjs';
 
-const LIB = '0700 getEstimateTests.mjs';
+const LIB = '0600 getEstimateTests.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
 const scenarios = [
   {
-    name: 'getEstimate returns valid number',
+    name: 'agent name search',
     input: {
       searchCriteria: { _scope: 'agent', name: 'Pablo' },
     },
     expected: {
       error: false,
-      isNumber: true,
-      minimumValue: 0,
+      value: 16,
+    },
+  },
+  {
+    name: 'item text search',
+    input: {
+      searchCriteria: { _scope: 'item', text: 'blue' },
+    },
+    expected: {
+      error: false,
+      value: 4868,
+    },
+  },
+  {
+    name: 'item AND text search',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        AND: [{ text: 'lobster' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 42,
+    },
+  },
+  {
+    name: 'item OR with nested AND, name, and producedBy',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        OR: [
+          {
+            AND: [
+              { depth: '100', _comp: '>=' },
+              { width: '100', _comp: '>=' },
+            ],
+          },
+          { name: 'box' },
+          { producedBy: { name: 'john' } },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 761,
+    },
+  },
+  {
+    name: 'item AND with nested AND and producedBy',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        AND: [
+          {
+            AND: [
+              { depth: '100', _comp: '>=' },
+              { width: '100', _comp: '>=' },
+            ],
+          },
+          { producedBy: { name: 'john' } },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 3,
+    },
+  },
+  {
+    name: 'item AND with nested OR and name',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        AND: [
+          {
+            OR: [
+              { depth: '100', _comp: '>=' },
+              { width: '100', _comp: '>=' },
+            ],
+          },
+          { name: 'box' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 10,
+    },
+  },
+  {
+    name: 'item AND with nested OR and NOT',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        AND: [
+          {
+            OR: [
+              { depth: '100', _comp: '>=' },
+              { width: '100', _comp: '>=' },
+            ],
+          },
+          { name: 'box' },
+          {
+            NOT: [{ name: 'giraffe' }, { recordType: 'DigitalObject' }],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 10,
+    },
+  },
+  {
+    name: 'item OR with ranges, name, and text',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        OR: [
+          { height: '100', _comp: '>=' },
+          { width: '100', _comp: '>=' },
+          { name: 'tool' },
+          { text: 'gate' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 9754,
+    },
+  },
+  {
+    name: 'item OR with single producedBy hop',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        OR: [{ producedBy: { name: 'john' } }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 10170,
     },
   },
 ];
 
 // Test getEstimate scenarios
+const failures = [];
+
+const invokeFunOptions = {
+  database: xdmp.database(`${ML_APP_NAME}-content`),
+};
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const processor = new SearchCriteriaProcessor(true, true, true);
@@ -43,33 +190,49 @@ for (const scenario of scenarios) {
     return processor.getEstimate();
   };
 
-  const scenarioResults = executeScenario(scenario, zeroArityFun);
+  const scenarioResults = executeScenario(
+    scenario,
+    zeroArityFun,
+    invokeFunOptions,
+  );
 
   if (scenarioResults.applyErrorNotExpectedAssertions) {
     const estimate = scenarioResults.actualValue;
 
-    if (scenario.expected.isNumber) {
-      assertions.push(
-        testHelperProxy.assertTrue(
-          typeof estimate === 'number',
-          `Scenario '${scenario.name}' should return a number.`,
-        ),
-      );
+    if (
+      scenario.expected.value !== undefined &&
+      estimate !== scenario.expected.value
+    ) {
+      failures.push({
+        name: scenario.name,
+        expected: scenario.expected.value,
+        actual: estimate,
+      });
     }
-
-    if (scenario.expected.minimumValue !== undefined) {
-      assertions.push(
-        testHelperProxy.assertTrue(
-          estimate >= scenario.expected.minimumValue,
-          `Scenario '${scenario.name}' should return value >= ${scenario.expected.minimumValue}.`,
-        ),
-      );
-    }
+  } else if (scenarioResults.assertions.length > 0) {
+    // Error was expected but something went wrong
+    failures.push({
+      name: scenario.name,
+      expected: scenario.expected.value,
+      actual: `ERROR: ${scenarioResults.assertions.map((a) => a.toString()).join('; ')}`,
+    });
   }
+}
 
-  if (scenarioResults.assertions.length > 0) {
-    assertions = assertions.concat(scenarioResults.assertions);
-  }
+if (failures.length > 0) {
+  const details = failures
+    .map((f) => `  '${f.name}': expected ${f.expected}, got ${f.actual}`)
+    .join('\n');
+  assertions.push(
+    testHelperProxy.assertTrue(
+      false,
+      `${failures.length} of ${scenarios.length} scenario(s) failed:\n${details}`,
+    ),
+  );
+} else {
+  scenarios.forEach((scenario) => {
+    assertions.push(testHelperProxy.success());
+  });
 }
 
 console.log(

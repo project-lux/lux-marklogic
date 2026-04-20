@@ -193,8 +193,15 @@ function GetOpticPlan(
   // CTS constraints may need to be AND, OR, or NOT(OR) depending on the context, so build them separately;
   const ctsConstraints = [];
 
-  // {type: "joinInner", right: plan, on: op.on(...), condition: op.eq(...)}
-  const joins = [];
+  // Conjunction joins: from the 3×3 matrix (AND/OR/NOT encountering child AND/OR/NOT).
+  // Type is determined eagerly because the matrix has non-trivial mappings.
+  // { type: string, right: plan, on: op.on(...), condition: op.eq(...) }
+  const conjunctionJoins = [];
+
+  // Pattern joins: from leaf patterns (hopWithField, annTopK) that need their own
+  // row source. Type is deferred to assembly — always a simple function of logicType.
+  // { right: plan, on: joinCondition, extraCols: string[] }
+  const patternJoins = [];
 
   // Names of distance columns added by annTopK criteria at this plan level.
   // Propagated to execute() so they can be preserved through groupBy.
@@ -250,7 +257,7 @@ function GetOpticPlan(
             op.as(fragCol, op.fragmentIdCol(id + '_frag')) :
             op.as(uriCol, op.col(id + '_uri'));
 
-          joins.push({
+          conjunctionJoins.push({
             type: "joinFullOuter",
             right: GetOpticPlan(criterion, scope, null, id, options)
               .select([
@@ -264,7 +271,7 @@ function GetOpticPlan(
 
         case "not":
           // We are in a NOT and encounter an AND - not exists join
-          joins.push({
+          conjunctionJoins.push({
             type: "notExistsJoin",
             right: GetOpticPlan(criterion, scope, null, id, options)
               .select(
@@ -284,7 +291,7 @@ function GetOpticPlan(
       switch (logicType) {
         case "and":
           // We are in an AND and encounter an OR - inner join
-          joins.push({
+          conjunctionJoins.push({
             type: "joinInner",
             right: GetOpticPlan(criterion, scope, null, id, options)
               .select(
@@ -306,7 +313,7 @@ function GetOpticPlan(
 
         case "not":
           // We are in a NOT and encounter an OR - not exists join
-          joins.push({
+          conjunctionJoins.push({
             type: "notExistsJoin",
             right: GetOpticPlan(criterion, scope, null, id, options)
               .select(
@@ -327,7 +334,7 @@ function GetOpticPlan(
         case "and":
           // We are in an AND and encounter a NOT - not exists join and change to OR
           // This is equivalent and likely more performant (needs testing)
-          joins.push({
+          conjunctionJoins.push({
             type: "notExistsJoin",
             right: GetOpticPlan({ OR: criterion.NOT }, scope, null, id, options)
               .select(
@@ -350,7 +357,7 @@ function GetOpticPlan(
             op.as(fragCol, op.fragmentIdCol(id + '_frag')) :
             op.as(uriCol, op.col(id + '_uri'));
 
-          joins.push({
+          conjunctionJoins.push({
             type: "joinFullOuter",
             right: GetOpticPlan(criterion, scope, null, id, options)
               .select([
@@ -365,7 +372,7 @@ function GetOpticPlan(
         case "not":
           // We are in a NOT and encounter a NOT - inner join and change to OR
           // This is equivalent and likely more performant (needs testing)
-          joins.push({
+          conjunctionJoins.push({
             type: "joinInner",
             right: GetOpticPlan({ OR: criterion.NOT }, scope, null, id, options)
               .select(
@@ -525,58 +532,15 @@ function GetOpticPlan(
           debug.push("Generated right plan:");
           debug.push(op.toSource(right.export()));
 
-          if (logicType === 'or') {
-            if (idx === 0) {
-              joins.push({
-                type: "joinInner",
-                right: right.select([
-                  fragCol,
-                  "dataType"
-                ]),
-                on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
-                condition: null
-              });
-            } else {
-              // Need another copy of the lexicon plan to do an outer join when the initial lexicon is already "claimed"
-              // TODO: Check to see if this needs to be done later since the lexicon plan
-              //   can theoretically change after this (but shouldn't be possible currently?)
-              // TODO: This kind of "duplicate lexicon then outer join" pattern
-              //   will likely be repeated for OR logic - could use a helper function            
-              right = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
-                .joinInner(
-                  right,
-                  op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol))
-                );
-
-              joins.push({
-                // Full outer joins need the same columns from both sides
-                // This will result in a natural join
-                type: "joinFullOuter",
-                right: right.select([
-                  fragCol,
-                  "dataType"
-                ]),
-                on: null,
-                condition: null
-              });
-            }
-          } else {
-            // AND and NOT are similar except join type
-            const joinType = logicType === 'and' ?
-              "joinInner" :
-              "notExistsJoin";
-
-            joins.push({
-              type: joinType,
-              right: right,
-              // op.fromTriples doesn't return URIs so we are using fragment regardless of config
-              on: [
-                op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
-                op.on(op.col(iriCol), op.col(id + '_s'))
-              ],
-              condition: null
-            });
-          }
+          patternJoins.push({
+            right: right,
+            // op.fromTriples doesn't return URIs so we are using fragment regardless of config
+            on: [
+              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
+              op.on(op.col(iriCol), op.col(id + '_s'))
+            ],
+            extraCols: []
+          });
           break;
         }
       // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
@@ -647,39 +611,11 @@ function GetOpticPlan(
           debug.push("Generated annTopK plan:");
           debug.push(`k=${k}, vectorColumn='${vectorColumn}', maxDistance=${maxDistance}, seedURI='${termValue}'`);
 
-          if (logicType === 'or') {
-            // For annTopK in OR context, avoid duplicate-lexicon pattern to prevent 
-            // including all documents. Instead, join annTopK results directly to 
-            // main lexicons and let the full outer join handle the union.
-            const annWithLex = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
-              .joinInner(
-                annPlan,
-                op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag))
-              );
-
-            joins.push({
-              type: "joinFullOuter",
-              right: annWithLex.select([fragCol, 'dataType', distCol]),
-              on: null,
-              condition: null
-            });
-          } else {
-            // AND and NOT use direct fragment joins (annTopK has no URI column to join on).
-            const joinType = logicType === 'and' ? 'joinInner' : 'notExistsJoin';
-
-            joins.push({
-              type: joinType,
-              right: annPlan,
-              on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag)),
-              condition: null
-            });
-          }
-
-          // Register the distance column so execute() can preserve it through groupBy.
-          // NOT context excluded: notExistsJoin only keeps left-side rows; distance is irrelevant.
-          if (logicType !== 'not') {
-            distanceCols.push(distCol);
-          }
+          patternJoins.push({
+            right: annPlan,
+            on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag)),
+            extraCols: [distCol]
+          });
 
           break;
         }
@@ -715,9 +651,9 @@ function GetOpticPlan(
     debug.push(op.toSource(plan.export()));
   }
 
-  if (joins.length) {
-    debug.push("Applying Joins");
-    for (const join of joins) {
+  if (conjunctionJoins.length) {
+    debug.push("Applying Conjunction Joins");
+    for (const join of conjunctionJoins) {
       debug.push({
         type: join.type,
         left: op.toSource(plan.export()),
@@ -728,6 +664,48 @@ function GetOpticPlan(
       // Join functions are a method on the plan, so we have to reference them by name instead of storing the join itself in the array
       plan = plan[join.type](join.right, join.on, join.condition);
     }
+    debug.push(op.toSource(plan.export()));
+  }
+
+  if (patternJoins.length) {
+    debug.push("Applying Pattern Joins");
+
+    if (logicType === 'or') {
+      const hasNonJoinConstraints = constraints.length > 0 || ctsConstraints.length > 0 || conjunctionJoins.length > 0;
+
+      for (let i = 0; i < patternJoins.length; i++) {
+        const pj = patternJoins[i];
+
+        if (!hasNonJoinConstraints && i === 0) {
+          // No other constraints exist: inner join constrains the base plan
+          // instead of outer joining to an unconstrained lexicon scan.
+          debug.push("OR first join (inner): no non-join constraints, constraining base plan");
+          plan = plan.joinInner(pj.right, pj.on);
+        } else {
+          // Duplicate lexicon → inner join with right → align columns → full outer join
+          debug.push("OR join (full outer via lexicon copy)");
+          const wrapped = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
+            .joinInner(pj.right, pj.on)
+            .select([fragCol, 'dataType', ...pj.extraCols]);
+
+          plan = plan.joinFullOuter(wrapped, null);
+        }
+
+        distanceCols.push(...pj.extraCols);
+      }
+    } else if (logicType === 'not') {
+      for (const pj of patternJoins) {
+        plan = plan.notExistsJoin(pj.right, pj.on);
+        // Extra columns not registered — notExistsJoin discards right-side data
+      }
+    } else {
+      // AND
+      for (const pj of patternJoins) {
+        plan = plan.joinInner(pj.right, pj.on);
+        distanceCols.push(...pj.extraCols);
+      }
+    }
+
     debug.push(op.toSource(plan.export()));
   }
 

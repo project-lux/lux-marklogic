@@ -548,6 +548,41 @@ function GetOpticPlan(
           });
           break;
         }
+      case "hopInverse":
+        {
+          debug.push("processing hopInverse");
+
+          const _triFragCol = id + '_triFrag';
+          const _refFrag = id + '_frag';
+          const predicates = ProcessPredicates(termConfig.predicates);
+          const tri = op.fromTriples([
+            op.pattern(op.col(id + '_s'), predicates, op.col(id + '_o'), op.fragmentIdCol(_triFragCol))
+          ]);
+
+          const rightGroups = {
+            by: [_refFrag]
+          };
+
+          const right = tri
+            .joinInner(
+              GetOpticPlan(criterion[termName], termConfig.targetScope, rightGroups, id, options),
+              [
+                // Hop Inverse: the triple is on the referenced document, not the source document.
+                op.on(op.fragmentIdCol(_triFragCol), op.fragmentIdCol(_refFrag)),
+              ]
+            );
+
+          debug.push("Generated right plan:");
+          debug.push(getPlanSource(right));
+
+          patternJoins.push({
+            right: right,
+            // Can't join on frag because the triple isn't on the source document
+            on: op.on(op.col(iriCol), op.col(id + '_o')),
+            extraCols: []
+          });
+          break;
+        }
       // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
       case "documentId":
       case "iri":

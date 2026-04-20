@@ -718,37 +718,33 @@ function GetOpticPlan(
   }
 
   // Rename output columns: uri → id, dataType → type.
-  // Folded into the distance select() when present; standalone otherwise.
-  const outputCols = [
-    op.as('id', op.col('uri')),
-    op.as('type', op.col('dataType')),
-  ];
+  // Only at root level — recursive calls use parentId-prefixed column names
+  // and the parent join still needs the original columns.
+  if (!parentId) {
+    const outputCols = [
+      op.as('id', op.col('uri')),
+      op.as('type', op.col('dataType')),
+    ];
 
-  // Consolidate distance columns using Optic instead of post-processing
-  if (distanceCols.length > 0) {
-    debug.push("Consolidating distance columns");
-    
-    if (distanceCols.length === 1) {
-      // Single distance column - just rename it
+    // Consolidate distance columns using Optic instead of post-processing
+    const distanceColCnt = distanceCols.length;
+    if (distanceColCnt > 0) {
+      debug.push("Consolidating distance columns");
+      
       plan = plan.select([
         ...outputCols,
-        op.as('distance', op.col(distanceCols[0]))
-      ]);
-    } else {
-      // Multiple distance columns - use op.fn.min to find minimum across the row.
-      // Pass all columns as a single array (the sequence arg); do NOT spread —
-      // fn:min's second argument is a collation string, not another value.
-      plan = plan.select([
-        ...outputCols,
-        op.as('distance', op.fn.min(distanceCols.map(col => op.col(col))))
-      ]);
+        op.as('distance', distanceColCnt === 1
+          ? op.col(distanceCols[0])
+          : op.fn.min(distanceCols.map(col => op.col(col)))
+        )
+      ]).where(op.isDefined(op.col('distance')));
+    } else if (groups) {
+      // Rename output columns for root-level plans (no distance consolidation)
+      plan = plan.select(outputCols);
     }
 
-    plan = plan.where(op.isDefined(op.col('distance')));
+    debug.push("Final plan with renamed output columns:");
     debug.push(op.toSource(plan.export()));
-  } else if (groups) {
-    // Rename output columns for root-level plans (no distance consolidation)
-    plan = plan.select(outputCols);
   }
 
   return plan;

@@ -429,21 +429,20 @@ function GetOpticPlan(
           break;
         }
       case "indexedValue":
+        {
+          // CTS constraint rather than op.eq on a range lexicon: simple column value
+          // comparisons do not support wildcarding, stemming, or sensitivity options
+          // (case, whitespace, diacritics, and punctuation).
+          ctsConstraints.push(cts.fieldValueQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
+          break;
+        }
       case "indexedWord":
         {
           debug.push(`processing ${termConfig.patternName}`);
 
-          if (termConfig.patternName === 'indexedValue' || criterion._complete) {
-            if (logicType === 'and') {
-              // Should be more efficient to add to existing lexicon join (validate through testing!)
-              // This requires adding range lexicons for every field!
-              // It also requires that each term config only has one index reference. This is true today, but is it guaranteed?
-              lexicons[id + '_field'] = cts.fieldReference(termConfig.indexReferences[0]);
-              constraints.push(op.eq(op.col(id + '_field'), termValue));
-            } else {
-              // OR and NOT
-              ctsConstraints.push(cts.fieldValueQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
-            }
+          // CTS constraint for same reason as indexedValue pattern.
+          if (criterion._complete) {
+            ctsConstraints.push(cts.fieldValueQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
           } else {
             ctsConstraints.push(cts.fieldWordQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
           }

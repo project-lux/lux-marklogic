@@ -681,11 +681,13 @@ function GetOpticPlan(
           debug.push("OR first join (inner): no non-join constraints, constraining base plan");
           plan = plan.joinInner(pj.right, pj.on);
         } else {
-          // Duplicate lexicon → inner join with right → align columns → full outer join
+          // Duplicate lexicon → inner join with right → align columns → full outer join.
+          // Select uriCol (not fragCol) so the natural join key matches conjunction
+          // joins and the final groupBy(['uri']) sees every matched document.
           debug.push("OR join (full outer via lexicon copy)");
           const wrapped = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
-            .select([fragCol, 'dataType', ...pj.extraCols]);
+            .select([uriCol, fragCol, 'dataType', ...pj.extraCols]);
 
           plan = plan.joinFullOuter(wrapped, null);
         }

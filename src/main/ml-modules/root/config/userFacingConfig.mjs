@@ -158,6 +158,11 @@ const searchTermText = {
       helpText:
         'Search People & Groups by the date on which they were born or formed.',
     },
+    similar: {
+      label: 'are similar to',
+      helpText:
+        'Search for People & Groups that are similar to the specified People & Groups.',
+    },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -304,6 +309,11 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Measurement Unit", "Language", "Material", "Currency" or a "General Concept". Measurement Units are Concepts that are used as the unit of a measurement, such as inches, seconds, kilograms or bytes. Languages are Concepts that represent human-spoken languages, such as English, Spanish or Latin. Materials are Concepts that represent a class of physical material, such as bronze, paper, or agate. Currencies are Concepts that represent monetary currencies, such as dollars, euros, or francs. General Concepts are Concepts that represent more general ideas or subjects, which excludes the more specific classes of Measurement Unit, Language, Material, and Currency.',
     },
+    similar: {
+      label: 'are similar to',
+      helpText:
+        'Search for Concept & Type that are similar to the specified Concept & Type.',
+    },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -372,6 +382,10 @@ const searchTermText = {
     startDate: {
       label: 'started on',
       helpText: 'Search for Events by the date on which they started.',
+    },
+    similar: {
+      label: 'are similar to',
+      helpText: 'Search for Events that are similar to the specified Events.',
     },
     subjectOfWork: {
       label: 'are the subject of',
@@ -499,6 +513,10 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Physical Object" or a "Digital Object". Physical Objects are physical items, such as paintings, sculptures, fossils and other specimens, and archival objects. Individual physical copies of books are included in this class. Digital Object are digital items, such as internet resources (datasets, e-books, and other digital files). Digitized images of collection items that are physical objects can be found with the “Is Online” facet on Physical Objects.',
     },
+    similar: {
+      label: 'are similar to',
+      helpText: 'Search for Objects that are similar to the specified Objects.',
+    },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -588,6 +606,10 @@ const searchTermText = {
       label: 'are the location of publication of',
       helpText:
         'Search for Places where the specified Collections were published.',
+    },
+    similar: {
+      label: 'are similar to',
+      helpText: 'Search for Places that are similar to the specified Places.',
     },
     startPlaceOfAgent: {
       label: 'are the location of birth or formation of',
@@ -732,6 +754,11 @@ const searchTermText = {
       helpText:
         'Search for Collections by the date on which they were published. Note the difference with Creation Date, which is when the collection was originally conceived by its creator.',
     },
+    similar: {
+      label: 'are similar to',
+      helpText:
+        'Search for Collections that are similar to the specified Collections.',
+    },
     text: {
       label: 'contain, anywhere in the record',
       helpText:
@@ -863,6 +890,10 @@ const searchTermText = {
       label: 'have a work class of',
       helpText:
         'Search for records categorized as either a "Visual Work" or a "Textual Work. Visual Works are Works that are primarily visual, such as the images shown by paintings or photographs, sculptures, or other non language oriented creative expressions. Textual Works are Works that are primarily textual or otherwise convey information via human language. An Object may include both visual and textual works, such as a poster with graphics and text. In addition, Textual Works encompasses most items from the Library collections, including posters, artworks, musical scores, video and sound recordings.',
+    },
+    similar: {
+      label: 'are similar to',
+      helpText: 'Search for Works that are similar to the specified Works.',
     },
     subjectOfWork: {
       label: 'are the subject of',

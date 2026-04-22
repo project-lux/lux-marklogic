@@ -2194,6 +2194,13 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "anyDataTypeName",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "referenceName",
       "range-value-positions": false,
       "invalid-values": "ignore",

@@ -24,82 +24,6 @@ const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
 
 const debug = [];
 
-// format: Enum with options for "plan", "json", "source", "result" or "debug"
-// plan will return an object that can be executed with .result().
-// json will return a JSON object that can be easily serialized.
-// source will return human-readable source code.
-// result will execute the query and return the results.
-// Default fallback is plan.
-const format = "result";
-//
-//
-// searchCriteria: the search criteria to convert.
-const searchCriteria =
-
-{
-  "AND": [
-    { "text": "lobster" }
-  ]
-}
-
-//FIXME: This returns an extra null value from the full outer.  It's also way worse performing than the AND
-//{
-//  "OR": [
-//    { "text": "lobster" }
-//  ]
-//}
-
-//{
-//  "OR": [
-//    {
-//      "AND": [
-//        { "depth": "100", "_comp": ">=" },
-//        { "width": "100", "_comp": ">=" }
-//      ]
-//    },
-//    { "name": "box" },
-//    { "producedBy": { "name": "john" } },
-//    { "producedBy": "james" },
-//  ]
-//};
-
-//{"AND":[
-//  {"OR":[
-//    {"depth":"100","_comp":">="},
-//    {"width":"100","_comp":">="}
-//  ]},
-//  { "name": "box" }
-//]};
-
-//{
-//  "AND": [
-//    {
-//      "OR": [
-//        { "depth": "100", "_comp": ">=" },
-//        { "width": "100", "_comp": ">=" }
-//      ]
-//    },
-//    { "name": "box" },
-//    {
-//      "NOT": [
-//        { "name": "giraffe" },
-//        { "recordType": "DigitalObject" }
-//      ]
-//    }
-//  ]
-//};
-
-//{"OR":[
-//  {"height":"100","_comp":">="},
-//  {"width":"100","_comp":">="},
-//  {"name":"tool"},
-//  {"text":"gate"},
-//]}
-//
-// searchScope: required by the string search grammar and when not specified
-// by the _scope property in the JSON search grammar.
-const searchScope = 'item';
-
 // Optic comparison operators
 const comparators = {
   '=': op.eq,
@@ -131,6 +55,15 @@ function ProcessPredicates(predicates) {
     const match = predicate.match(/^(\w+)\("(.+)"\)$/);
     return prefixers[match[1]](match[2]);
   });
+}
+
+// TODO: yet another temp function
+function getPredicatesForSPARQL(predicates) {
+  const reformatted = predicates.map(predicate => {
+    const match = predicate.match(/^(\w+)\("(.+)"\)$/);
+    return `${match[1]}:${match[2]}`; // TODO: restore + after functional parity w/ hopWithField
+  });
+  return `(${reformatted.join(" | ")})`;
 }
 
 // function ProcessPredicates(predicates) {
@@ -187,26 +120,15 @@ function GetOpticPlan(
   const fragCol = parentId ? parentId + '_frag' : 'frag'; // Joining on frag can result in different plans (more D-Node pushdown)
   const iriCol = parentId ? parentId + '_iri' : 'iri'; // IRI is used for semantic hops
 
-
   // Queries always return URIs and dataType so we start from these lexicons.  This may be optimized differently for different queries later.
   // I will note where additional indexes were added in comments so they can be moved into the DB config later.
   // I am using Range Path Indexes for this so they can be easily found and because Optic needs range indexes, but Fields can be used if desired as long as a range index is assigned.
   const lexicons = {
     [uriCol]: cts.uriReference(),
     [iriCol]: cts.iriReference(),
-    // Switched from single index for all scopes to per-scope index
-    //dataType: cts.pathReference('/indexedProperties/dataType'), // Added Path Index
-    dataType: cts.fieldReference(scope + 'DataTypeName'),
+    dataType: cts.fieldReference('anyDataTypeName'),
+    primaryName: cts.fieldReference(scope + 'PrimaryName')
   };
-
-  // Some constraints are more efficient when combined, so we track them here to assemble later
-  const constraints = [
-    // If using scope-specific indexes, we don't need this constraint explicitly filtered.
-    //op.in(op.col('dataType'), getSearchScopeTypes(scope))
-  ];
-
-  // CTS constraints may need to be AND, OR, or NOT(OR) depending on the context, so build them separately;
-  const ctsConstraints = [];
 
   // Conjunction joins: from the 3×3 matrix (AND/OR/NOT encountering child AND/OR/NOT).
   // Type is determined eagerly because the matrix has non-trivial mappings.
@@ -216,11 +138,27 @@ function GetOpticPlan(
   // Pattern joins: from leaf patterns (hopWithField, annTopK) that need their own
   // row source. Type is deferred to assembly — always a simple function of logicType.
   // { right: plan, on: joinCondition, extraCols: string[] }
-  const patternJoins = [];
+  let patternJoins = [];
+
+  // Some constraints are more efficient when combined, so we track them here to assemble later
+  let constraints = [
+    // If using scope-specific indexes, we don't need this constraint explicitly filtered.
+    //op.in(op.col('dataType'), getSearchScopeTypes(scope))
+  ];
+
+  // CTS constraints may need to be AND, OR, or NOT(OR) depending on the context, so build them separately;
+  let ctsConstraints = [];
 
   // Names of distance columns added by annTopK criteria at this plan level.
   // Propagated to execute() so they can be preserved through groupBy.
-  const distanceCols = [];
+  let distanceCols = [];
+
+  const addToPlanArrays = (termPlanArrays) => { 
+    constraints = constraints.concat(termPlanArrays?.constraints ?? []);
+    ctsConstraints = ctsConstraints.concat(termPlanArrays?.ctsConstraints ?? []);
+    patternJoins = patternJoins.concat(termPlanArrays?.patternJoins ?? []);
+    distanceCols = distanceCols.concat(termPlanArrays?.distanceCols ?? []);
+  }
 
   let criteria;
   let logicType;
@@ -253,7 +191,7 @@ function GetOpticPlan(
 
     // Used when creating a new column that needs to be joined or filtered.
     // Logical names might make sense for debugging, but just use UUIDs for now.
-    const id = sem.uuidString();
+    const id = sem.uuidString().replace(/-/g, '_');
 
     // If the criterion is a nested conjunction, handle it recursively
     if (criterion.AND) {
@@ -496,65 +434,13 @@ function GetOpticPlan(
       case "hopWithField":
         {
           debug.push("processing hopWithField");
-
-          const _triFragCol = id + '_triFrag';
-          const predicates = ProcessPredicates(termConfig.predicates);
-          const tri = op.fromTriples([
-            op.pattern(op.col(id + '_s'), predicates, op.col(id + '_o'), op.fragmentIdCol(_triFragCol))
-          ]);
-
-          let right;
-          const _refIri = id + '_iri';
-
-          if (termValue) {
-            // Simple hop that doesn't need recursion
-            // I *believe* this only currently happens as a child to `text`
-
-            const refLex = criterion._complete
-              // This requires a range lexicon for the name field!
-              // It also requires that each term config only has one index reference. This is true today, but is it guaranteed?
-              ? op.fromLexicons({
-                [_refIri]: cts.iriReference(),
-                [id + '_field']: cts.fieldReference(termConfig.indexReferences[0])
-              })
-                .where(op.eq(op.col(id + '_field'), termValue))
-
-              : op.fromLexicons({
-                [_refIri]: cts.iriReference(),
-              })
-                .where(cts.fieldWordQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
-
-            right = tri
-              .joinInner(
-                refLex,
-                op.on(op.col(id + '_o'), op.col(_refIri)))
-
+          let termPlanArrays;
+          if (termConfig.transitive) {
+            termPlanArrays = processTransitiveHopWithFieldTerm({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options});
           } else {
-            // Hop with complex criteria
-
-            const rightGroups = {
-              by: [_refIri]
-            };
-
-            right = tri
-              .joinInner(
-                GetOpticPlan(criterion[termName], termConfig.targetScope, rightGroups, id, options),
-                op.on(op.col(id + '_o'), op.col(_refIri))
-              )
+            termPlanArrays = processHopWithFieldTerm({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options});
           }
-
-          debug.push("Generated right plan:");
-          debug.push(getPlanSource(right));
-
-          patternJoins.push({
-            right: right,
-            // op.fromTriples doesn't return URIs so we are using fragment regardless of config
-            on: [
-              op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
-              op.on(op.col(iriCol), op.col(id + '_s'))
-            ],
-            extraCols: []
-          });
+          addToPlanArrays(termPlanArrays)
           break;
         }
       case "hopInverse":
@@ -776,6 +662,7 @@ function GetOpticPlan(
     const outputCols = [
       op.as('id', op.col('uri')),
       op.as('type', op.col('dataType')),
+      op.as('name', op.col('primaryName'))
     ];
 
     // Consolidate distance columns using Optic instead of post-processing
@@ -800,6 +687,116 @@ function GetOpticPlan(
   }
 
   return plan;
+}
+
+/*
+  Return: 
+  {
+    constraints,
+    ctsConstraints,
+    patternJoins,
+    distanceCols
+  }
+*/
+function processTransitiveHopWithFieldTerm({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options}) {
+  // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
+  const _refIri = id + '_iri';
+  const rightGroups = {
+    by: [_refIri]
+  };
+  debug.push(`GAMMA Processing transitive hop with field for term ${termName} with value '${termValue}'`);
+  const constraintPlan = termValue
+    ? getHopWithFieldAtomicPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options})
+    : getHopWithFieldNestedPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, rightGroups, options});
+  debug.push(`constraintPlan: ${getPlanSource(constraintPlan)}`);
+  const sparql = `
+PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+PREFIX la: <https://linked.art/ns/terms/>
+PREFIX lux: <https://lux.collections.yale.edu/ns/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+select ?${id}_s ?${id}_o where {
+  VALUES ?${id}_o {
+    ${constraintPlan.result().toArray().map(row => `<${row[_refIri]}>`).join("\n    ")}
+  }
+  ?${id}_s ${getPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
+}`;
+  debug.push(`op.fromSPARQL: ${sparql}`)
+  return {
+    patternJoins: [{
+      right: op.fromSPARQL(sparql, null, { dedup: 'on' }),
+      on: [
+        op.on(op.col(iriCol), op.col(id + '_s'))
+      ],
+      extraCols: []
+    }]
+  }
+}
+
+function processHopWithFieldTerm({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options}) {
+  const predicates = ProcessPredicates(termConfig.predicates);
+  const _triFragCol = id + '_triFrag';
+  let tri = op.fromTriples([
+    op.pattern(op.col(id + '_s'), predicates, op.col(id + '_o'), op.fragmentIdCol(_triFragCol))
+  ]);
+  const _refIri = id + '_iri';
+
+  let right;
+  if (termValue) {
+    const refLex = getHopWithFieldAtomicPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options});
+
+    right = tri
+      .joinInner(
+        refLex,
+        op.on(op.col(id + '_o'), op.col(_refIri)))
+
+  } else {
+    // Hop with complex criteria
+
+    const rightGroups = {
+      by: [_refIri]
+    };
+
+    right = tri
+      .joinInner(
+        getHopWithFieldNestedPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, rightGroups, options}),
+        op.on(op.col(id + '_o'), op.col(_refIri))
+      )
+  }
+
+  debug.push("Generated right plan:");
+  debug.push(getPlanSource(right));
+
+  return {
+    patternJoins: [{
+      right: right,
+      // op.fromTriples doesn't return URIs so we are using fragment regardless of config
+      on: [
+        op.on(op.col(iriCol), op.col(id + '_s')),
+        op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol))
+      ],
+      extraCols: []
+    }]
+  }
+}
+
+function getHopWithFieldNestedPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, rightGroups, options}) {
+  return GetOpticPlan(criterion[termName], termConfig.targetScope, rightGroups, id, options)
+}
+
+function getHopWithFieldAtomicPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options}) {
+  const _refIri = id + '_iri';
+  return criterion._complete
+      ? op.fromLexicons({
+        [_refIri]: cts.iriReference(),
+        // TODO: determine if support for a single index is an issue.
+        [id + '_field']: cts.fieldReference(termConfig.indexReferences[0])
+      })
+        .where(op.eq(op.col(id + '_field'), termValue))
+
+      : op.fromLexicons({
+        [_refIri]: cts.iriReference(),
+      })
+      .where(cts.fieldWordQuery(termConfig.indexReferences, termValue, defaultCtsOptions));
 }
 
 // returns {

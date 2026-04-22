@@ -24,6 +24,7 @@ import {
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import { getSearchScopes } from './searchScope.mjs';
 
+const PATTERN_NAME_ANN_TOP_K = 'annTopK';
 const PATTERN_NAME_DATE_RANGE = 'dateRange';
 const PATTERN_NAME_DOCUMENT_ID = 'documentId';
 const PATTERN_NAME_HOP_INVERSE = 'hopInverse';
@@ -138,6 +139,25 @@ function getDefaultSearchOptionsByOptionsName(optionsName) {
  *
  */
 const SEARCH_PATTERN_CONFIG = {};
+
+// TODO: Only here because the generators require some pattern-level configuration.
+// We plan to redefine all pattern configurations after getting further along with the
+// (Optic) patterns themselves.
+SEARCH_PATTERN_CONFIG[PATTERN_NAME_ANN_TOP_K] = {
+  allowedChildren: TYPE_GROUP + TYPE_TERM,
+  isConvertIdChildToIri: false,
+  allowedOptionsName: null,
+  defaultOptionsName: null,
+  returnsCtsQuery: true,
+  function: (
+    searchTerm,
+    resolvedSearchOptions,
+    searchPatternOptions,
+    requestOptions,
+  ) => {
+    // Not implemented in CTS.
+  },
+};
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
   allowedChildren: TYPE_ATOMIC,

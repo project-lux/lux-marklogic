@@ -105,6 +105,10 @@ const SEARCH_TERMS_CONFIG = {
       inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
+    },
     startAt: {
       patternName: 'hopWithField',
       predicates: ['lux("placeOfBeginning")'],
@@ -142,6 +146,7 @@ const SEARCH_TERMS_CONFIG = {
   concept: {
     broader: {
       patternName: 'hopWithField',
+      transitive: true,
       predicates: ['skos("broader")'],
       targetScope: 'concept',
       hopInverseName: 'narrower',
@@ -216,6 +221,10 @@ const SEARCH_TERMS_CONFIG = {
       inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
     },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
+    },
     text: {
       patternName: 'text',
       indexReferences: ['conceptAnyText'],
@@ -269,6 +278,10 @@ const SEARCH_TERMS_CONFIG = {
       predicates: ['lux("eventAny")'],
       targetScope: 'reference',
       indexReferences: ['referenceName'],
+    },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
     },
     tookPlaceAt: {
       patternName: 'hopWithField',
@@ -363,6 +376,10 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'usedToProduce',
       indexReferences: ['conceptPrimaryName'],
     },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
+    },
     text: {
       patternName: 'text',
       indexReferences: ['itemAnyText'],
@@ -396,6 +413,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     partOf: {
       patternName: 'hopWithField',
+      transitive: true,
       predicates: ['crm("P89_falls_within")'],
       targetScope: 'place',
       indexReferences: ['placePrimaryName'],
@@ -424,6 +442,10 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'place',
       inBetweenScopes: ['item', 'work', 'set'],
       maxLevel: 1,
+    },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
     },
     text: {
       patternName: 'text',
@@ -610,6 +632,10 @@ const SEARCH_TERMS_CONFIG = {
       hopInverseName: 'publishedSet',
       indexReferences: ['agentPrimaryName'],
     },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
+    },
     text: {
       patternName: 'text',
       indexReferences: ['setAnyText'],
@@ -750,6 +776,10 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'agent',
       hopInverseName: 'published',
       indexReferences: ['agentPrimaryName'],
+    },
+    similar: {
+      patternName: 'annTopK',
+      vectorColumn: 'main',
     },
     text: {
       patternName: 'text',

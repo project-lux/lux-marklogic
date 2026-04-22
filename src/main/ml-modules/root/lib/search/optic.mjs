@@ -708,11 +708,11 @@ function processTransitiveHopWithFieldTerm({fragCol, iriCol, id, termConfig, ter
   const rightGroups = {
     by: [_refIri]
   };
-  debug.push(`GAMMA Processing transitive hop with field for term ${termName} with value '${termValue}'`);
   const constraintPlan = termValue
     ? getHopWithFieldAtomicPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, options})
     : getHopWithFieldNestedPlan({fragCol, iriCol, id, termConfig, termValue, termName, criterion, rightGroups, options});
-  debug.push(`constraintPlan: ${getPlanSource(constraintPlan)}`);
+  debug.push(`Transitive constraintPlan: ${getPlanSource(constraintPlan)}`);
+  // TODO: if there are zero results from the constraintPlan, should we do anything different?
   const sparql = `
 PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
 PREFIX la: <https://linked.art/ns/terms/>
@@ -724,7 +724,7 @@ select ?${id}_s ?${id}_o where {
   }
   ?${id}_s ${getPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
 }`;
-  debug.push(`op.fromSPARQL: ${sparql}`)
+  debug.push(`Transitive SPARQL: ${sparql}`)
   return {
     patternJoins: [{
       right: op.fromSPARQL(sparql, null, { dedup: 'on' }),

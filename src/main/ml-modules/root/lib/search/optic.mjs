@@ -61,7 +61,9 @@ function ProcessPredicates(predicates) {
 function getPredicatesForSPARQL(predicates) {
   const reformatted = predicates.map(predicate => {
     const match = predicate.match(/^(\w+)\("(.+)"\)$/);
-    return `${match[1]}:${match[2]}`; // TODO: restore + after functional parity w/ hopWithField
+    // TODO: restore + after functional parity w/ hopWithField
+    // TODO: optimization idea = omit + when single criterion as group by nullifies need.
+    return `${match[1]}:${match[2]}`;
   });
   return `(${reformatted.join(" | ")})`;
 }
@@ -423,6 +425,7 @@ function GetOpticPlan(
           // For now, I'm only implementing this for recordType
           debug.push("processing propertyValue");
 
+          // TODO: the property value pattern is not restricted to dataType.
           if (logicType === 'and') {
             constraints.push(op.eq(op.col('dataType'), termValue));
           } else {

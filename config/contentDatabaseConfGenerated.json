@@ -79,6 +79,15 @@
       ]
     },
     {
+      "field-name": "anyDataTypeName",
+      "field-path": [
+        {
+          "path": "/json/type",
+          "weight": 1
+        }
+      ]
+    },
+    {
       "field-name": "referenceName",
       "field-path": [
         {

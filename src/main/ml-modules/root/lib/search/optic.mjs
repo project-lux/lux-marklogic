@@ -91,7 +91,7 @@ function getPredicatesForSPARQL(predicates) {
 
 function getPlanSource(plan) {
   return op.toSource(plan.export ? plan.export() : plan)
-    .replace(/\n\s*/g, '')
+    .replace(/\n\s*/g, ' ')
     .replace(/"/g, "'");
 }
 
@@ -129,7 +129,8 @@ function GetOpticPlan(
     [uriCol]: cts.uriReference(),
     [iriCol]: cts.iriReference(),
     dataType: cts.fieldReference('anyDataTypeName'),
-    primaryName: cts.fieldReference(scope + 'PrimaryName')
+    // TODO: if wanted, must configure as field range indexes
+    // primaryName: cts.fieldReference(scope + 'PrimaryName')
   };
 
   // Conjunction joins: from the 3×3 matrix (AND/OR/NOT encountering child AND/OR/NOT).
@@ -665,7 +666,7 @@ function GetOpticPlan(
     const outputCols = [
       op.as('id', op.col('uri')),
       op.as('type', op.col('dataType')),
-      op.as('name', op.col('primaryName'))
+      // op.as('name', op.col('primaryName'))
     ];
 
     // Consolidate distance columns using Optic instead of post-processing

@@ -147,7 +147,8 @@ with open(script_dir + '/input.tsv') as csv_file:
             if stn.endswith('Boolean'):
                 accept_if_not_default(field, "field-value-searches", True)
         else:
-            field_range_index = False            
+            if not force_range_index:
+                field_range_index = False            
 
         fields.append(field)
         if field_range_index:

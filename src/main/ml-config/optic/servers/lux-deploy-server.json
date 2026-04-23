@@ -1,0 +1,21 @@
+{
+  "server-name": "%%mlAppName%%-optic-deploy",
+  "server-type": "http",
+  "enabled": "true",
+  "root": "/",
+  "port": %%mlDeployPort%%,
+  "content-database": "%%tenantContentDatabase%%",
+  "modules-database": "%%tenantModulesDatabase%%",
+  "authentication": "%%mlAuthentication%%",
+  "internal-security": "true",
+  "external-security": [],
+  "threads": %%mlRestMaxThreads%%,
+  "max-time-limit": %%mlRestMaxTimeout%%,
+  "default-time-limit": %%mlRestDefaultTimeout%%,
+  "url-rewriter": "/MarkLogic/rest-api/rewriter.xml",
+  "rewrite-resolves-globally": true,
+  "error-handler": "/MarkLogic/rest-api/error-handler.xqy",
+  "default-user": "nobody",
+  "ssl-certificate-template": "%%mlAppCertificateName%%"
+
+}

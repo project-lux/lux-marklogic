@@ -842,7 +842,7 @@ function processTransitiveHopWithFieldTerm({
         termValue,
         termName,
         criterion,
-        rightGroups,
+        rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
       });
   debug.push(`Transitive constraintPlan: ${getPlanSource(constraintPlan)}`);

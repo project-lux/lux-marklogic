@@ -70,7 +70,7 @@ function getPredicatesForSPARQL(predicates) {
     const match = predicate.match(/^(\w+)\("(.+)"\)$/);
     // TODO: restore + after functional parity w/ hopWithField
     // TODO: optimization idea = omit + when single criterion as group by nullifies need.
-    return `${match[1]}:${match[2]}`;
+    return `${match[1]}:${match[2]}+`;
   });
   return `(${reformatted.join(' | ')})`;
 }
@@ -120,6 +120,11 @@ function GetOpticPlan(
     }),
   );
 
+  const topLevel = !parentId;
+  const uriCol = topLevel ? 'uri' : parentId + '_uri'; // If this isn't the root criteria, it needs to be joined back
+  const fragCol = topLevel ? 'frag' : parentId + '_frag'; // Joining on frag can result in different plans (more D-Node pushdown)
+  const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
+
   // It's possible to implement an "all" option as a default, although this may not have been done for performance reasons possibly?  Defaulting to 'item' for now.
   const scope = planCriteria._scope ?? planScope;
 
@@ -128,20 +133,18 @@ function GetOpticPlan(
   // Get a list of names now so we can efficiently find them in the criteria.
   const searchTermNames = getSearchTermNames(scope);
 
-  const uriCol = parentId ? parentId + '_uri' : 'uri'; // If this isn't the root criteria, it needs to be joined back
-  const fragCol = parentId ? parentId + '_frag' : 'frag'; // Joining on frag can result in different plans (more D-Node pushdown)
-  const iriCol = parentId ? parentId + '_iri' : 'iri'; // IRI is used for semantic hops
-
   // Queries always return URIs and dataType so we start from these lexicons.  This may be optimized differently for different queries later.
   // I will note where additional indexes were added in comments so they can be moved into the DB config later.
   // I am using Range Path Indexes for this so they can be easily found and because Optic needs range indexes, but Fields can be used if desired as long as a range index is assigned.
   const lexicons = {
     [uriCol]: cts.uriReference(),
     [iriCol]: cts.iriReference(),
-    dataType: cts.fieldReference('anyDataTypeName'),
+  };
+  if (topLevel) {
+    lexicons.dataType = cts.fieldReference('anyDataTypeName');
     // TODO: if wanted, must configure as field range indexes
     // primaryName: cts.fieldReference(scope + 'PrimaryName')
-  };
+  }
 
   // Conjunction joins: from the 3×3 matrix (AND/OR/NOT encountering child AND/OR/NOT).
   // Type is determined eagerly because the matrix has non-trivial mappings.
@@ -485,6 +488,30 @@ function GetOpticPlan(
             criterion,
             options,
           });
+        } else if (termConfig.transitive2) {
+          termPlanArrays = processAlternativeTransitiveHopWithFieldTerm({
+            hopPlanFirst: true,
+            fragCol,
+            iriCol,
+            id,
+            termConfig,
+            termValue,
+            termName,
+            criterion,
+            options,
+          });
+        } else if (termConfig.transitive3) {
+          termPlanArrays = processAlternativeTransitiveHopWithFieldTerm({
+            hopPlanFirst: false,
+            fragCol,
+            iriCol,
+            id,
+            termConfig,
+            termValue,
+            termName,
+            criterion,
+            options,
+          });
         } else {
           termPlanArrays = processHopWithFieldTerm({
             fragCol,
@@ -737,7 +764,7 @@ function GetOpticPlan(
   }
 
   if (groups) {
-    debug.push('Applying Groups');
+    debug.push(`Grouping by ${groups.by ? groups.by.join(', ') : 'none'}...`);
     const agg = distanceCols.length
       ? [
           ...groups.agg,
@@ -751,7 +778,7 @@ function GetOpticPlan(
   // Rename output columns: uri → id, dataType → type.
   // Only at root level — recursive calls use parentId-prefixed column names
   // and the parent join still needs the original columns.
-  if (!parentId) {
+  if (topLevel) {
     const outputCols = [
       op.as('id', op.col('uri')),
       op.as('type', op.col('dataType')),
@@ -795,6 +822,10 @@ function GetOpticPlan(
     distanceCols
   }
 */
+// Approach: embeds field plan's results into SPARQL.
+//
+// TODO: is there a limit on the number of IRIs we can embed and if so, can the likes of op.param
+// or op.fromLiterals get around that?  Perhaps test with words that match 100K+ docs.
 function processTransitiveHopWithFieldTerm({
   fragCol,
   iriCol,
@@ -807,24 +838,11 @@ function processTransitiveHopWithFieldTerm({
 }) {
   // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
   const _refIri = id + '_iri';
-  const rightGroups = {
-    by: [_refIri],
-  };
-  // TODO: test perf of three ways:
-  //
-  // 1. Execute constraint plan and feed SPARQL
-  // 2. op.fromSPARQL().joinInner(constraintPlan)
-  // 3. constraintPlan.joinInner(op.fromSPARQL())
-  //
-  // Test words in many records (>100K)
-  //
-  // Perf of op.param may be better than VALUES
-  //
-  // If perf varies by number of field word matches, could we use decide based
-  // on cts.estimate's return when termValue is provided (atomic).
-  //
+  // const rightGroups = {
+  //   by: [_refIri],
+  // };
   const constraintPlan = termValue
-    ? getHopWithFieldAtomicPlan({
+    ? getFieldAtomicPlan({
         fragCol,
         iriCol,
         id,
@@ -834,7 +852,7 @@ function processTransitiveHopWithFieldTerm({
         criterion,
         options,
       })
-    : getHopWithFieldNestedPlan({
+    : getFieldNestedPlan({
         fragCol,
         iriCol,
         id,
@@ -874,6 +892,73 @@ select ?${id}_s ?${id}_o where {
   };
 }
 
+// Transitive 2: Join the hop and field plans (order controlled by hopPlanFirst).
+function processAlternativeTransitiveHopWithFieldTerm({
+  hopPlanFirst,
+  fragCol,
+  iriCol,
+  id,
+  termConfig,
+  termValue,
+  termName,
+  criterion,
+  options,
+}) {
+  // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
+  const _refIri = id + '_iri';
+  // const rightGroups = {
+  //   by: [_refIri],
+  // };
+
+  const sparql = `
+PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+PREFIX la: <https://linked.art/ns/terms/>
+PREFIX lux: <https://lux.collections.yale.edu/ns/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+select ?${id}_s ?${id}_o where {
+  ?${id}_s ${getPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
+}`;
+
+  const hopPlan = op.fromSPARQL(sparql, null, { dedup: 'on' });
+
+  const fieldPlan = termValue
+    ? getFieldAtomicPlan({
+        fragCol,
+        iriCol,
+        id,
+        termConfig,
+        termValue,
+        termName,
+        criterion,
+        options,
+      })
+    : getFieldNestedPlan({
+        fragCol,
+        iriCol,
+        id,
+        termConfig,
+        termValue,
+        termName,
+        criterion,
+        rightGroups: null, // Grouping by here prevents grouping by at the end.
+        options,
+      });
+
+  const right = hopPlanFirst
+    ? hopPlan.joinInner(fieldPlan, op.on(op.col(id + '_o'), op.col(_refIri)))
+    : fieldPlan.joinInner(hopPlan, op.on(op.col(id + '_o'), op.col(_refIri)));
+
+  return {
+    patternJoins: [
+      {
+        right: right,
+        on: [op.on(op.col(iriCol), op.col(id + '_s'))],
+        extraCols: [],
+      },
+    ],
+  };
+}
+
 function processHopWithFieldTerm({
   fragCol,
   iriCol,
@@ -884,41 +969,22 @@ function processHopWithFieldTerm({
   criterion,
   options,
 }) {
-  const predicates = ProcessPredicates(termConfig.predicates);
-  const _triFragCol = id + '_triFrag';
-  let tri = op.fromTriples([
+  const _hopFragCol = id + '_hopFrag';
+  const hopPlan = op.fromTriples([
     op.pattern(
       op.col(id + '_s'),
-      predicates,
+      ProcessPredicates(termConfig.predicates),
       op.col(id + '_o'),
-      op.fragmentIdCol(_triFragCol),
+      op.fragmentIdCol(_hopFragCol),
     ),
   ]);
+
   const _refIri = id + '_iri';
-
-  let right;
-  if (termValue) {
-    const refLex = getHopWithFieldAtomicPlan({
-      fragCol,
-      iriCol,
-      id,
-      termConfig,
-      termValue,
-      termName,
-      criterion,
-      options,
-    });
-
-    right = tri.joinInner(refLex, op.on(op.col(id + '_o'), op.col(_refIri)));
-  } else {
-    // Hop with complex criteria
-
-    const rightGroups = {
-      by: [_refIri],
-    };
-
-    right = tri.joinInner(
-      getHopWithFieldNestedPlan({
+  // const rightGroups = {
+  //   by: [_refIri],
+  // };
+  const fieldPlan = termValue
+    ? getFieldAtomicPlan({
         fragCol,
         iriCol,
         id,
@@ -926,12 +992,19 @@ function processHopWithFieldTerm({
         termValue,
         termName,
         criterion,
-        rightGroups,
         options,
-      }),
-      op.on(op.col(id + '_o'), op.col(_refIri)),
-    );
-  }
+      })
+    : getFieldNestedPlan({
+        fragCol,
+        iriCol,
+        id,
+        termConfig,
+        termValue,
+        termName,
+        criterion,
+        rightGroups: null, // Grouping by here prevents grouping by at the end.
+        options,
+      });
 
   // debug.push('Generated right plan:');
   // debug.push(getPlanSource(right));
@@ -939,11 +1012,14 @@ function processHopWithFieldTerm({
   return {
     patternJoins: [
       {
-        right: right,
+        right: hopPlan.joinInner(
+          fieldPlan,
+          op.on(op.col(id + '_o'), op.col(_refIri)),
+        ),
         // op.fromTriples doesn't return URIs so we are using fragment regardless of config
         on: [
           op.on(op.col(iriCol), op.col(id + '_s')),
-          op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_triFragCol)),
+          op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_hopFragCol)),
         ],
         extraCols: [],
       },
@@ -951,7 +1027,7 @@ function processHopWithFieldTerm({
   };
 }
 
-function getHopWithFieldNestedPlan({
+function getFieldNestedPlan({
   fragCol,
   iriCol,
   id,
@@ -971,7 +1047,7 @@ function getHopWithFieldNestedPlan({
   );
 }
 
-function getHopWithFieldAtomicPlan({
+function getFieldAtomicPlan({
   fragCol,
   iriCol,
   id,

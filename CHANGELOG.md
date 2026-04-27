@@ -13,6 +13,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Removed
   
 ### Fixed
+- Remove Disconnected Hosts While Deploying Databases ([#674](https://github.com/project-lux/lux-marklogic/issues/674))
 
 ### Security
 

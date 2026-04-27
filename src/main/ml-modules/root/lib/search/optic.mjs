@@ -533,8 +533,8 @@ function GetOpticPlan(
           ],
         );
 
-        debug.push('Generated right plan:');
-        debug.push(getPlanSource(right));
+        // debug.push('Generated right plan:');
+        // debug.push(getPlanSource(right));
 
         patternJoins.push({
           right: right,
@@ -643,8 +643,8 @@ function GetOpticPlan(
 
   // Optic uses functional programming patterns, so we will assign plan temporarily and replace it with each modification unless/until we need a more complex pattern.
   let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
-  debug.push('Initial lexicon plan:');
-  debug.push(getPlanSource(plan));
+  // debug.push('Initial lexicon plan:');
+  // debug.push(getPlanSource(plan));
 
   if (constraints.length) {
     debug.push('Applying Constraints');
@@ -654,7 +654,7 @@ function GetOpticPlan(
       });
       plan = plan.where(constraint);
     }
-    debug.push(getPlanSource(plan));
+    // debug.push(getPlanSource(plan));
   }
 
   if (ctsConstraints.length) {
@@ -667,23 +667,23 @@ function GetOpticPlan(
           : (x) => cts.notQuery(cts.orQuery(x));
 
     plan = plan.where(ctsWrapper(ctsConstraints));
-    debug.push(getPlanSource(plan));
+    // debug.push(getPlanSource(plan));
   }
 
   if (conjunctionJoins.length) {
     debug.push('Applying Conjunction Joins');
     for (const join of conjunctionJoins) {
-      debug.push({
-        type: join.type,
-        left: getPlanSource(plan),
-        right: getPlanSource(join.right),
-        on: join.on?.toString(),
-        condition: join.condition,
-      });
+      // debug.push({
+      //   type: join.type,
+      //   left: getPlanSource(plan),
+      //   right: getPlanSource(join.right),
+      //   on: join.on?.toString(),
+      //   condition: join.condition,
+      // });
       // Join functions are a method on the plan, so we have to reference them by name instead of storing the join itself in the array
       plan = plan[join.type](join.right, join.on, join.condition);
     }
-    debug.push(getPlanSource(plan));
+    // debug.push(getPlanSource(plan));
   }
 
   if (patternJoins.length) {
@@ -733,7 +733,7 @@ function GetOpticPlan(
       }
     }
 
-    debug.push(getPlanSource(plan));
+    // debug.push(getPlanSource(plan));
   }
 
   if (groups) {
@@ -745,7 +745,7 @@ function GetOpticPlan(
         ]
       : groups.agg;
     plan = plan.groupBy(groups.by, agg);
-    debug.push(getPlanSource(plan));
+    // debug.push(getPlanSource(plan));
   }
 
   // Rename output columns: uri → id, dataType → type.
@@ -810,6 +810,19 @@ function processTransitiveHopWithFieldTerm({
   const rightGroups = {
     by: [_refIri],
   };
+  // TODO: test perf of three ways:
+  //
+  // 1. Execute constraint plan and feed SPARQL
+  // 2. op.fromSPARQL().joinInner(constraintPlan)
+  // 3. constraintPlan.joinInner(op.fromSPARQL())
+  //
+  // Test words in many records (>100K)
+  //
+  // Perf of op.param may be better than VALUES
+  //
+  // If perf varies by number of field word matches, could we use decide based
+  // on cts.estimate's return when termValue is provided (atomic).
+  //
   const constraintPlan = termValue
     ? getHopWithFieldAtomicPlan({
         fragCol,
@@ -920,8 +933,8 @@ function processHopWithFieldTerm({
     );
   }
 
-  debug.push('Generated right plan:');
-  debug.push(getPlanSource(right));
+  // debug.push('Generated right plan:');
+  // debug.push(getPlanSource(right));
 
   return {
     patternJoins: [
@@ -1016,7 +1029,7 @@ function execute(searchCriteria, searchScope, includeResults = true) {
     return {
       results: includeResults ? opticPlan.result().toArray() : null,
       planAsJson,
-      planAsSource: getPlanSource(planAsJson),
+      planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
       debug,
     };
   } catch (ex) {

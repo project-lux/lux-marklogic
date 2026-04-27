@@ -26,6 +26,34 @@ function scaleOut(dynamicHost) {
   return result;
 }
 
+function removeDynamicHosts(user, offlineOnly = false) {
+  if (!mayScaleEnvironment()) {
+    throw new ScaleEnvironmentError(
+      `User '${user.getUsername()}' is not authorized to scale the environment`,
+    );
+  }
+
+  const dynamicHosts = xdmp.getDynamicHosts().toArray();
+  const dynamicHostsToRemove = offlineOnly ? [] : dynamicHosts;
+  if (offlineOnly) {
+    dynamicHosts.forEach((hostId) => {
+      const hostStatus = fn.head(xdmp.hostStatus(hostId));
+      if (
+        hostStatus.error &&
+        hostStatus.error.toString().startsWith('XDMP-HOSTOFFLINE')
+      ) {
+        dynamicHostsToRemove.push(hostId);
+      }
+    });
+  }
+  const hostCount = dynamicHostsToRemove.length;
+  if (hostCount > 0) {
+    xdmp.removeDynamicHosts(dynamicHostsToRemove);
+    return `Removed ${hostCount} ${offlineOnly ? 'offline ' : ''}dynamic host(s)`;
+  }
+  return 'No dynamic hosts to remove.';
+}
+
 // Keep private.
 function __scaleOutAsAdmin(user, dynamicHost) {
   const admin = require('/MarkLogic/admin.xqy');
@@ -35,11 +63,7 @@ function __scaleOutAsAdmin(user, dynamicHost) {
   try {
     xdmp.setRequestTimeLimit(SCALE_OUT_TIMEOUT);
 
-    // Remove trace of any previous dynamic host.
-    const oldDynamicHosts = xdmp.getDynamicHosts().toArray();
-    if (oldDynamicHosts.length > 0) {
-      xdmp.removeDynamicHosts(oldDynamicHosts);
-    }
+    removeDynamicHosts(user, false);
 
     // Verify the local host has the required configuration.
     const groupId = xdmp.group();
@@ -105,4 +129,4 @@ function __scaleOutAsAdmin(user, dynamicHost) {
 // Only scaleOut should call this.
 const _scaleOutAsAdmin = import.meta.amp(__scaleOutAsAdmin);
 
-export { scaleOut };
+export { scaleOut, removeDynamicHosts };

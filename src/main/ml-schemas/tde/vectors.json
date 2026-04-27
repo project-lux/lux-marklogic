@@ -1,0 +1,34 @@
+{
+  "template": {
+    "context": "/vectors",
+    "collections": ["%%mlAppName%%"],
+    "rows": [
+      {
+        "schemaName": "lux",
+        "viewName": "vectors",
+        "columns": [
+          {
+            "name": "uri",
+            "scalarType": "string",
+            "val": "../json/id",
+            "nullable": false
+          },
+          {
+            "name": "dataType",
+            "scalarType": "string",
+            "val": "../json/type",
+            "nullable": false
+          },
+          {
+            "name": "main",
+            "scalarType": "vector",
+            "val": "vec:vector(main)",
+            "dimension": "768",
+            "invalidValues": "reject",
+            "nullable": false
+          }
+        ]
+      }
+    ]
+  }
+}

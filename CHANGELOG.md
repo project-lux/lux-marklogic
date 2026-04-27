@@ -2,6 +2,21 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v3.2.0 - 2026-04-27
+
+### Added
+
+- TDE to index `/vectors/main` ([#678](https://github.com/project-lux/lux-marklogic/issues/678)).
+
+### Changed
+
+### Removed
+  
+### Fixed
+- Remove Disconnected Hosts While Deploying Databases ([#674](https://github.com/project-lux/lux-marklogic/issues/674))
+
+### Security
+
 ## v3.1.0 - 2026-03-30
 
 ### Added

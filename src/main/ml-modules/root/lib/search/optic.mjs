@@ -794,7 +794,7 @@ function processTransitiveHopWithFieldTerm({
   // const rightGroups = {
   //   by: [_refIri],
   // };
-  const constraintPlan = termValue
+  const fieldPlan = termValue
     ? getFieldAtomicPlan({
         fragCol,
         iriCol,
@@ -816,13 +816,13 @@ function processTransitiveHopWithFieldTerm({
         rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
       });
-  // debug.push(`Transitive constraintPlan: ${getPlanSource(constraintPlan)}`);
-  // TODO: if there are zero results from the constraintPlan, should we do anything different?
+  // debug.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
+  // TODO: if there are zero results from the fieldPlan, should we do anything different?
   const sparql = `
 ${getPrefixesForSPARQL()}
 select ?${id}_s ?${id}_o where {
   VALUES ?${id}_o {
-    ${constraintPlan
+    ${fieldPlan
       .result()
       .toArray()
       .map((row) => `<${row[_refIri]}>`)

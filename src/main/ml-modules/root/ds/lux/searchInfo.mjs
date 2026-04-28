@@ -13,9 +13,18 @@ const response = handleRequest(function () {
     searchBy[searchScope] = Object.keys(searchTermsConfig[searchScope])
       .sort()
       .map((termName) => {
-        const termConfig = new SearchTermConfig(
-          searchTermsConfig[searchScope][termName]
+        console.log(
+          `Processing search term ${termName} in scope ${searchScope}`,
         );
+        return {
+          termName,
+          termConfig: new SearchTermConfig(
+            searchTermsConfig[searchScope][termName],
+          ),
+        };
+      })
+      .filter(({ termConfig }) => termConfig.exposedViaSearch())
+      .map(({ termName, termConfig }) => {
         return {
           name: termName,
           targetScope: termConfig.getTargetScopeName() || searchScope,
@@ -50,7 +59,7 @@ const response = handleRequest(function () {
       return {
         name,
         type: SearchCriteriaProcessor.getSortTypeFromSortBinding(
-          SORT_BINDINGS[name]
+          SORT_BINDINGS[name],
         ),
       };
     });

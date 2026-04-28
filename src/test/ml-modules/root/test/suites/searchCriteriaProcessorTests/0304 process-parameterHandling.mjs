@@ -114,7 +114,6 @@ const scenarios = [
       ...createProcessInput({
         scopeName: 'work',
         searchPatternOptions: new SearchPatternOptions({
-          synonymsEnabled: false,
           stemming: false,
         }),
       }),

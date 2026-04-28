@@ -12,9 +12,11 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 - Refactored the [search criteria processor](/src/main/ml-modules/root/lib/SearchCriteriaProcessor.mjs). Requires MarkLogic 12 or later. ([#662](https://github.com/project-lux/lux-marklogic/issues/662))
 - Consolidated the `/src/main/ml-config/dynamic-host/` MarkLogic Gradle configuration directory into [/src/main/ml-config/base/](/src/main/ml-config/base/) since MarkLogic 12 is required (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+- Changed the `filterResults` parameter of the [Search endpoint](/docs/lux-backend-api-usage.md#search) and [Related List endpoint](/docs/lux-backend-api-usage.md#related-list) from implemented to reserved for future use (part of Optic migration).
 
 ### Removed
 
+- Removed the `facetsSoon` and `synonymsEnabled` parameters of the [Search endpoint](/docs/lux-backend-api-usage.md#search) (part of Optic migration).
 - Removed the `mayChangeScope` parameter of the [Search endpoint](/docs/lux-backend-api-usage.md#search) (part of [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 - Removed the Similar search terms, pattern, and library, which were not exposed in the advanced search configuration (part of [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 - Removed the disableDeprecatedSSLProtocols and showDeprecatedSslProtocols Gradle build tasks as they only apply to MarkLogic 11 and earlier (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).

@@ -9,7 +9,6 @@ import {
   SEARCH_OPTIONS_INVERSE_MAP,
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
-  SYNONYMS_ENABLED,
   TRACE_NAME_SEARCH as traceName,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
@@ -37,7 +36,6 @@ const DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH = false;
 const DEFAULT_FILTER_RESULTS_NO_CONTEXT = true;
 const DEFAULT_FACETS_SOON = false;
 const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
-const DEFAULT_SYNONYMS_ENABLED = SYNONYMS_ENABLED;
 const DEFAULT_VALUES_ONLY = false;
 
 const SCOPE_LABELS = {
@@ -72,8 +70,6 @@ function search({
   mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
   sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
-  facetsSoon = DEFAULT_FACETS_SOON,
-  synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
   valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
   return _search(
@@ -87,8 +83,6 @@ function search({
       mayExceedMaximumPageLength,
       sortDelimitedStr,
       filterResults,
-      facetsSoon,
-      synonymsEnabled,
       valuesOnly,
     },
     false,
@@ -107,8 +101,6 @@ function _search(
     mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
     sortDelimitedStr = EMPTY_STRING,
     filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
-    facetsSoon = DEFAULT_FACETS_SOON,
-    synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
     valuesOnly = DEFAULT_VALUES_ONLY,
   },
   changedScope = false,
@@ -140,8 +132,6 @@ function _search(
           mayExceedMaximumPageLength,
           sortDelimitedStr,
           filterResults,
-          facetsSoon,
-          synonymsEnabled,
         })}`,
       );
     }
@@ -159,7 +149,6 @@ function _search(
     }
 
     // Parse gets us all the way through query generation.
-    const facetsAreLikely = facetsSoon;
     searchCriteriaProcessor = processSearchCriteria({
       searchCriteria,
       searchScope: resolvedSearchScope,
@@ -168,8 +157,6 @@ function _search(
       pageWith,
       sortCriteria,
       filterResults,
-      synonymsEnabled,
-      facetsAreLikely,
       stopWatch,
       valuesOnly,
     });
@@ -190,8 +177,6 @@ function _search(
         page: resultPage,
         pageLength,
         sortDelimitedStr,
-        facetsSoon,
-        synonymsEnabled,
       }),
       type: AS_TYPE_ORDERED_COLLECTION_PAGE,
       partOf: [
@@ -224,8 +209,6 @@ function _search(
           page: resultPage - 1,
           pageLength,
           sortDelimitedStr,
-          facetsSoon,
-          synonymsEnabled,
         }),
         type: AS_TYPE_ORDERED_COLLECTION_PAGE,
       };
@@ -238,8 +221,6 @@ function _search(
           page: resultPage + 1,
           pageLength,
           sortDelimitedStr,
-          facetsSoon,
-          synonymsEnabled,
         }),
         type: AS_TYPE_ORDERED_COLLECTION_PAGE,
       };
@@ -273,7 +254,6 @@ function _search(
         pageLength,
         pageWith,
         filterResults,
-        facetsSoon,
         requestContext,
         returned: results.length,
         scope: resolvedSearchScope,
@@ -329,16 +309,10 @@ function processSearchCriteria({
   pageWith = null,
   sortCriteria = new SortCriteria(EMPTY_STRING),
   filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
-  synonymsEnabled = DEFAULT_SYNONYMS_ENABLED,
-  facetsAreLikely = DEFAULT_FACETS_ARE_LIKELY,
   stopWatch = new StopWatch(true),
   valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
-  const searchCriteriaProcessor = new SearchCriteriaProcessor(
-    filterResults,
-    facetsAreLikely,
-    synonymsEnabled,
-  );
+  const searchCriteriaProcessor = new SearchCriteriaProcessor(filterResults);
   searchCriteriaProcessor.process(
     searchCriteria,
     searchScope,
@@ -536,15 +510,6 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
   }
 }
 
-// Bring back if synonym support is restored.
-//
-// // Returns a stringified array of search options.
-// function getSearchOptions(synonymsEnabled) {
-//   return synonymsEnabled === true
-//     ? DEFAULT_SEARCH_OPTIONS_SYNONYMS
-//     : DEFAULT_SEARCH_OPTIONS_KEYWORD;
-// }
-
 // Returns an array of search options starting from an options or pattern name.
 //
 // At present, an options name must be provided or derived to get a non-null response.  Further,
@@ -606,71 +571,6 @@ function _mergeSearchOptions(defaultOptionsArr, overrideOptionsArr) {
   }
   return defaultOptionsArr;
 }
-
-// Bring back if synonym support is restored.
-//
-// /**
-//  * Returns a word query, as a string.
-//  *
-//  * @param {Object} criterion - The associated search criterion.  Only use is to add the synonyms such that
-//  *        they may be included in the search response body.
-//  * @param {String} wordQueryType - The type of word query.  Needs to be a value that can be plugged into
-//  *        the name of a native CTS word query function (cts.*WordQuery), such as 'jsonProperty' and 'field'.
-//  * @param {Array} namesArr - Property, field, etc. names.  Must align with the specified word query type.
-//  * @param {String} term - The word or phrase to search for.
-//  * @param {Boolean} synonymsEnabled - Submit true to also accept synonyms of the specified term.
-//  * @returns {String} A CTS query, as a string.  May be a cts.orQuery when synonymsEnabled is true.
-//  */
-// function _wordQueryWithSynonyms(
-//   criterion,
-//   wordQueryType,
-//   namesArr,
-//   term,
-//   synonymsEnabled
-// ) {
-//   let query = null;
-//   let synonyms = null;
-//   if (synonymsEnabled) {
-//     // Be sure to lowercase the term
-//     const lookupResult = lookup(
-//       THESAURUS_URIS,
-//       term.toLowerCase ? term.toLowerCase() : term,
-//       'objects'
-//     );
-//     if (!fn.empty(lookupResult)) {
-//       const results = JSON.parse(lookupResult).synonyms;
-//       if (results) {
-//         synonyms = [];
-//         results.forEach((item) => {
-//           if (term != item.term) {
-//             synonyms.push(item.term);
-//           }
-//         });
-//         if (synonyms.length > 0) {
-//           query = `cts.orQuery([
-//             cts.${wordQueryType}WordQuery(${utils.arrayToString(
-//             namesArr
-//           )}, "${term}", ${utils.arrayToString(getSearchOptions(false))}),
-//             cts.${wordQueryType}WordQuery(
-//               ${utils.arrayToString(namesArr)},
-//               ${utils.arrayToString(synonyms)},
-//               ${utils.arrayToString(getSearchOptions(true))},
-//               ${SYNONYM_WEIGHT}
-//             ),
-//           ])`;
-//         }
-//       }
-//     }
-//     criterion.synonyms = synonyms;
-//   }
-//   if (!query) {
-//     query = `cts.${wordQueryType}WordQuery(${utils.arrayToString(
-//       namesArr
-//     )}, "${term}", ${utils.arrayToString(getSearchOptions(false))})`;
-//   }
-
-//   return query;
-// }
 
 const WILDCARD_CHARS = '*?';
 const WILDCARD_CHAR_REGEX = new RegExp(`[${WILDCARD_CHARS}]`);

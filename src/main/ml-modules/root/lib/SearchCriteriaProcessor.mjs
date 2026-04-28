@@ -57,9 +57,9 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Constructor(s)
-  constructor(filterResults, facetsAreLikely, synonymsEnabled) {
+  constructor(filterResults) {
     // Capture all constructor parameters as request options, enabling search patterns to utilize.
-    this.#requestOptions = { filterResults, facetsAreLikely, synonymsEnabled };
+    this.#requestOptions = { filterResults };
 
     // Once per instance, which technically presumes this shouldn't change when reused.
     this.#searchTermsConfig = getSearchTermsConfig();

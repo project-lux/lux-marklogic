@@ -542,8 +542,6 @@ function buildSearchUri({
   page = null,
   pageLength = null,
   sortDelimitedStr = null,
-  facetsSoon = null,
-  synonymsEnabled,
 }) {
   const prefixAndQParam = `${SEARCH_PREFIX}/${scope}?q=${encodeURIComponent(
     JSON.stringify(searchCriteria),
@@ -556,20 +554,7 @@ function buildSearchUri({
   const sortDelimitedStrParam = sortDelimitedStr
     ? `&sort=${encodeURIComponent(sortDelimitedStr)}`
     : '';
-  const facetsSoonParam = facetsSoon
-    ? `&facetsSoon=${encodeURIComponent(facetsSoon)}`
-    : '';
-  const synonymsEnabledParam = synonymsEnabled
-    ? `&synonymsEnabled=${encodeURIComponent(synonymsEnabled)}`
-    : '';
-  return (
-    prefixAndQParam +
-    pageParam +
-    pageLengthParam +
-    sortDelimitedStrParam +
-    facetsSoonParam +
-    synonymsEnabledParam
-  );
+  return prefixAndQParam + pageParam + pageLengthParam + sortDelimitedStrParam;
 }
 
 function buildSearchEstimateUri(searchCriteria, scope) {

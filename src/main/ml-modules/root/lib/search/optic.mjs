@@ -1,11 +1,3 @@
-/* mlxprs:settings
-{
-  "host": "localhost",
-  "port": 8003,
-  "contentDb": "lux-content"
-}
-*/
-
 // This script may be used to convert search criteria into an Optic query,
 // formatted as a plan, JSON object or source string.
 'use strict';
@@ -23,12 +15,9 @@ import {
   ANN_K_MAX,
   ANN_MAX_DISTANCE_DEFAULT,
 } from '/lib/appConstants.mjs';
+const sem = require('/MarkLogic/semantics.xqy');
 
-const crm = op.prefixer('http://www.cidoc-crm.org/cidoc-crm/');
-const la = op.prefixer('https://linked.art/ns/terms/');
-const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
-const skos = op.prefixer('http://www.w3.org/2004/02/skos/core#');
-
+// TODO: remove global debug array from MJS context.
 const debug = [];
 
 // Optic comparison operators
@@ -55,46 +44,34 @@ const defaultPlanOptions = {
   preferFragJoins: false,
 };
 
-// TODO: switch to sem.curieExpand.  The regex method was temporary.
-const prefixers = { crm, la, lux, skos };
-function ProcessPredicates(predicates) {
-  return predicates.map((predicate) => {
-    const match = predicate.match(/^(\w+)\("(.+)"\)$/);
-    return prefixers[match[1]](match[2]);
-  });
+const prefixMappings = {
+  crm: 'http://www.cidoc-crm.org/cidoc-crm/',
+  la: 'https://linked.art/ns/terms/',
+  lux: 'https://lux.collections.yale.edu/ns/',
+  skos: 'http://www.w3.org/2004/02/skos/core#',
+};
+
+function getPrefixesForSPARQL() {
+  return Object.entries(prefixMappings)
+    .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
+    .join('\n');
 }
 
-// TODO: yet another temp function
-function getPredicatesForSPARQL(predicates) {
-  const reformatted = predicates.map((predicate) => {
-    const match = predicate.match(/^(\w+)\("(.+)"\)$/);
-    // TODO: restore + after functional parity w/ hopWithField
-    // TODO: optimization idea = omit + when single criterion as group by nullifies need.
-    return `${match[1]}:${match[2]}+`;
-  });
-  return `(${reformatted.join(' | ')})`;
+function expandPredicates(predicates) {
+  return predicates.map((predicate) =>
+    sem.curieExpand(predicate, prefixMappings),
+  );
 }
 
-// function ProcessPredicates(predicates) {
-//   // FIXME: This currently uses eval for backwards compatibility.
-//   //   Change to `sem.curieExpand(curie, [mapping])` for performance and security!
-//   const header = `const op = require("/MarkLogic/optic");
-// const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
-// const la = op.prefixer("https://linked.art/ns/terms/");
-// const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
-// const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");
-// `;
-
-//   debug.push("processing predicates");
-//   debug.push(predicates);
-
-//   const result = predicates.map(predicate => {
-//     return fn.head(xdmp.eval(header + predicate));
-//   });
-
-//   debug.push(result);
-//   return result;
-// }
+function formatPredicatesForSPARQL(predicates, transitive = true) {
+  const individuals = transitive
+    ? predicates.map((predicate) => {
+        // TODO: optimization idea = omit + when single criterion as group by nullifies need.
+        return predicate.concat('+');
+      })
+    : predicates;
+  return `(${individuals.join(' | ')})`;
+}
 
 function getPlanSource(plan) {
   return op
@@ -139,12 +116,10 @@ function GetOpticPlan(
   const lexicons = {
     [uriCol]: cts.uriReference(),
     [iriCol]: cts.iriReference(),
-  };
-  if (topLevel) {
-    lexicons.dataType = cts.fieldReference('anyDataTypeName');
+    dataType: cts.fieldReference('anyDataTypeName'),
     // TODO: if wanted, must configure as field range indexes
     // primaryName: cts.fieldReference(scope + 'PrimaryName')
-  }
+  };
 
   // Conjunction joins: from the 3×3 matrix (AND/OR/NOT encountering child AND/OR/NOT).
   // Type is determined eagerly because the matrix has non-trivial mappings.
@@ -508,7 +483,7 @@ function GetOpticPlan(
 
         const _triFragCol = id + '_triFrag';
         const _refFrag = id + '_frag';
-        const predicates = ProcessPredicates(termConfig.predicates);
+        const predicates = expandPredicates(termConfig.predicates);
         const tri = op.fromTriples([
           op.pattern(
             op.col(id + '_s'),
@@ -844,10 +819,7 @@ function processTransitiveHopWithFieldTerm({
   // debug.push(`Transitive constraintPlan: ${getPlanSource(constraintPlan)}`);
   // TODO: if there are zero results from the constraintPlan, should we do anything different?
   const sparql = `
-PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
-PREFIX la: <https://linked.art/ns/terms/>
-PREFIX lux: <https://lux.collections.yale.edu/ns/>
-PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+${getPrefixesForSPARQL()}
 select ?${id}_s ?${id}_o where {
   VALUES ?${id}_o {
     ${constraintPlan
@@ -856,7 +828,7 @@ select ?${id}_s ?${id}_o where {
       .map((row) => `<${row[_refIri]}>`)
       .join('\n    ')}
   }
-  ?${id}_s ${getPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
+  ?${id}_s ${formatPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
 }`;
   // debug.push(`Transitive SPARQL: ${sparql}`);
   return {
@@ -884,7 +856,7 @@ function processHopWithFieldTerm({
   const hopPlan = op.fromTriples([
     op.pattern(
       op.col(id + '_s'),
-      ProcessPredicates(termConfig.predicates),
+      expandPredicates(termConfig.predicates),
       op.col(id + '_o'),
       op.fragmentIdCol(_hopFragCol),
     ),

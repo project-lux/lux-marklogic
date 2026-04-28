@@ -798,7 +798,9 @@ function GetOpticPlan(
     distanceCols
   }
 */
-// Approach: embeds field plan's results into SPARQL.
+// Approach: embeds field plan's results into SPARQL.  Proven over 3x faster in 12.0.1 than
+// hopPlan.joinInner(fieldPlan) when the embedded approach included the transitive operator (+)
+// and the join approach did not.
 //
 // TODO: is there a limit on the number of IRIs we can embed and if so, can the likes of op.param
 // or op.fromLiterals get around that?  Perhaps test with words that match 100K+ docs.
@@ -839,7 +841,7 @@ function processTransitiveHopWithFieldTerm({
         rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
       });
-  debug.push(`Transitive constraintPlan: ${getPlanSource(constraintPlan)}`);
+  // debug.push(`Transitive constraintPlan: ${getPlanSource(constraintPlan)}`);
   // TODO: if there are zero results from the constraintPlan, should we do anything different?
   const sparql = `
 PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
@@ -856,7 +858,7 @@ select ?${id}_s ?${id}_o where {
   }
   ?${id}_s ${getPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
 }`;
-  debug.push(`Transitive SPARQL: ${sparql}`);
+  // debug.push(`Transitive SPARQL: ${sparql}`);
   return {
     patternJoins: [
       {

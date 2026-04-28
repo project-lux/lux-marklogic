@@ -15,7 +15,6 @@ In this document:
 - [Regenerate Related Lists Configuration](#regenerate-related-lists-configuration)
 - [Regenerate Advanced Search Configuration](#regenerate-advanced-search-configuration)
 - [Deploy Database Configuration Changes](#deploy-database-configuration-changes)
-- [Deploy Thesauri](#deploy-thesauri)
 - [Remove a Tenant or Project](#remove-a-tenant-or-project)
 - [LUX MarkLogic Application Servers](#lux-marklogic-application-servers)
 - [Trace Events](#trace-events)
@@ -313,17 +312,11 @@ Most Gradle tasks communicate with MarkLogic Server.  As such, the commands runn
 
 18. If you wish to determine whether the deployment kicked off a database indexing job, log into the admin console and check the database's status page.  As noted above, the [LUX backend search endpoint](/docs/lux-backend-api-usage.md#search) may return an error until all indexes it depends on become available.
 
-19. **This step may be skipped.  Synonym support is disabled in LUX and the only content in the ml-data directory is the sample thesaurus.**
+19. Need to load the rest/most of the data?  Check out [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md).
 
-    Load the content of the [/src/main/ml-data](/src/main/ml-data) directory, which includes deploying the thesauri. Should you encounter an issue, please see [Deploy Thesauri](#deploy-thesauri).
+20. For environments with unit tests enabled (not Blue or Green), swap out the host and possibly port in http://localhost:8010/test/default.xqy, log in as [%%mlAppName%%-unit-tester](/src/test/ml-config/security/users/unit-test-user.json) using the value of the encrypted property named `unitTesterPassword`, and run the tests. Tests do not presently work when initiated by the `mlUnitTest` Gradle task.
 
-    `./gradlew mlLoadData -PenvironmentName=[name]`
-
-20. Need to load the rest/most of the data?  Check out [/docs/lux-backend-import-data.md](/docs/lux-backend-import-data.md).
-
-21. For environments with unit tests enabled (not Blue or Green), swap out the host and possibly port in http://localhost:8010/test/default.xqy, log in as [%%mlAppName%%-unit-tester](/src/test/ml-config/security/users/unit-test-user.json) using the value of the encrypted property named `unitTesterPassword`, and run the tests. Tests do not presently work when initiated by the `mlUnitTest` Gradle task.
-
-22. Perform a smoke test.  One way is to run through the endpoints from within Postman.
+21. Perform a smoke test.  One way is to run through the endpoints from within Postman.
 
     * [LUX Postman Workspace](/docs/lux-postman-workspace.md)
     * [LUX Backend API Usage Documentation](/docs/lux-backend-api-usage.md)
@@ -402,12 +395,6 @@ To only deploy the index configuration for all databases:
 The `mlUpdateIndexes` task will take about 2 minutes.
 
 Both of the above tasks are wired into the [Custom Token Replacement](#custom-token-replacement) feature.
-
-# Deploy Thesauri
-
-To load the thesauri and anything else in the [/src/main/ml-data](/src/main/ml-data) directory into the tenant's content database::
-
-`./gradlew mlLoadData -PenvironmentName=[name]`
 
 # Remove a Tenant or Project
 

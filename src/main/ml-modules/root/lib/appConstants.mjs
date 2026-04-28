@@ -157,10 +157,6 @@ prefix skos: <http://www.w3.org/2004/02/skos/core#>
 prefix sci: <http://www.ics.forth.gr/isl/CRMsci/>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>`;
 
-const SYNONYM_WEIGHT = -0.5; // Could make this configurable via property or endpoint param.
-const SYNONYMS_ENABLED = '%%synonymsEnabled%%'.trim() === 'true';
-const THESAURUS_URIS = ['/thesauri/sample-thesaurus.xml'];
-
 const TRACE_NAME_ERROR = 'LuxError';
 const TRACE_NAME_FACETS = 'LuxFacets';
 const TRACE_NAME_RELATED_LIST = 'LuxRelatedList';
@@ -220,9 +216,6 @@ export {
   SEARCH_PREFIX,
   SEMANTIC_SORT_TIMEOUT,
   SPARQL_PREFIXES,
-  SYNONYM_WEIGHT,
-  SYNONYMS_ENABLED,
-  THESAURUS_URIS,
   TOKEN_RUNTIME_PARAM,
   TRACE_NAME_ERROR,
   TRACE_NAME_FACETS,

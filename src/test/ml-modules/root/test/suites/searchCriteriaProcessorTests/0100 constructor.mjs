@@ -12,95 +12,47 @@ const scenarios = [
     name: 'Constructor with minimal parameters - false values',
     input: {
       filterResults: false,
-      facetsAreLikely: false,
-      synonymsEnabled: false,
     },
     expected: {
       error: false,
       filterResults: false,
-      facetsAreLikely: false,
-      synonymsEnabled: false,
     },
   },
   {
     name: 'Constructor with minimal parameters - true values',
     input: {
       filterResults: true,
-      facetsAreLikely: true,
-      synonymsEnabled: true,
     },
     expected: {
       error: false,
       filterResults: true,
-      facetsAreLikely: true,
-      synonymsEnabled: true,
     },
   },
   {
     name: 'Constructor with undefined parameters',
     input: {
       filterResults: undefined,
-      facetsAreLikely: undefined,
-      synonymsEnabled: undefined,
     },
     expected: {
       error: false,
       filterResults: undefined,
-      facetsAreLikely: undefined,
-      synonymsEnabled: undefined,
     },
   },
   {
     name: 'Constructor with null parameters',
     input: {
       filterResults: null,
-      facetsAreLikely: null,
-      synonymsEnabled: null,
     },
     expected: {
       error: false,
       filterResults: null,
-      facetsAreLikely: null,
-      synonymsEnabled: null,
-    },
-  },
-  {
-    name: 'Constructor with mixed parameter types',
-    input: {
-      filterResults: true,
-      facetsAreLikely: false,
-      synonymsEnabled: null,
-    },
-    expected: {
-      error: false,
-      filterResults: true,
-      facetsAreLikely: false,
-      synonymsEnabled: null,
-    },
-  },
-  {
-    name: 'Constructor with all boolean options explicitly false',
-    input: {
-      filterResults: false,
-      facetsAreLikely: false,
-      synonymsEnabled: false,
-    },
-    expected: {
-      error: false,
-      filterResults: false,
-      facetsAreLikely: false,
-      synonymsEnabled: false,
     },
   },
 ];
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(
-      scenario.input.filterResults,
-      scenario.input.facetsAreLikely,
-      scenario.input.synonymsEnabled,
-    );
+    const processor = new SearchCriteriaProcessor(scenario.input.filterResults);
 
     // Validate the constructor properly sets the request options
     const requestOptions = processor.getRequestOptions();
@@ -108,8 +60,6 @@ for (const scenario of scenarios) {
     // Return an object with the properties we want to test
     return {
       filterResults: requestOptions.filterResults,
-      facetsAreLikely: requestOptions.facetsAreLikely,
-      synonymsEnabled: requestOptions.synonymsEnabled,
       hasSearchTermsConfig: processor.getSearchTermsConfig() != null,
       // Test initial state of properties set by process()
       scopeName: processor.getSearchScope(),
@@ -136,20 +86,6 @@ for (const scenario of scenarios) {
         scenario.expected.filterResults,
         actual.filterResults,
         `Constructor should set filterResults to ${scenario.expected.filterResults}`,
-      ),
-    );
-    assertions.push(
-      testHelperProxy.assertEqual(
-        scenario.expected.facetsAreLikely,
-        actual.facetsAreLikely,
-        `Constructor should set facetsAreLikely to ${scenario.expected.facetsAreLikely}`,
-      ),
-    );
-    assertions.push(
-      testHelperProxy.assertEqual(
-        scenario.expected.synonymsEnabled,
-        actual.synonymsEnabled,
-        `Constructor should set synonymsEnabled to ${scenario.expected.synonymsEnabled}`,
       ),
     );
 

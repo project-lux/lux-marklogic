@@ -702,13 +702,6 @@
 									"type": "text"
 								},
 								{
-									"key": "facetsSoon",
-									"value": "true",
-									"description": "Set to true if a seperate call for facets using same criteria will be made soon.",
-									"type": "text",
-									"disabled": true
-								},
-								{
 									"key": "page",
 									"value": "1",
 									"type": "text"
@@ -734,12 +727,6 @@
 									"key": "filterResults",
 									"value": "false",
 									"type": "text"
-								},
-								{
-									"key": "synonymsEnabled",
-									"value": "true",
-									"type": "text",
-									"disabled": true
 								}
 							]
 						},
@@ -1758,16 +1745,6 @@
 								{
 									"key": "filterResults",
 									"value": "true"
-								},
-								{
-									"key": "facetsSoon",
-									"value": "false",
-									"disabled": true
-								},
-								{
-									"key": "synonymsEnabled",
-									"value": "false",
-									"disabled": true
 								}
 							]
 						}

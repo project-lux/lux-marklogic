@@ -80,14 +80,14 @@ function getPlanSource(plan) {
     .replace(/"/g, "'");
 }
 
-function GetOpticPlan(
+function getOpticPlan(
   planCriteria,
   planScope = 'item',
   groups = null,
   parentId = null,
   options = defaultPlanOptions,
 ) {
-  debug.push('Called GetOpticPlan');
+  debug.push('Called getOpticPlan');
   debug.push(
     xdmp.toJSON({
       planCriteria: planCriteria,
@@ -205,7 +205,7 @@ function GetOpticPlan(
 
           conjunctionJoins.push({
             type: 'joinFullOuter',
-            right: GetOpticPlan(criterion, scope, null, id, options).select([
+            right: getOpticPlan(criterion, scope, null, id, options).select([
               _joinCol,
               'dataType',
             ]),
@@ -218,7 +218,7 @@ function GetOpticPlan(
           // We are in a NOT and encounter an AND - not exists join
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: GetOpticPlan(criterion, scope, null, id, options).select(
+            right: getOpticPlan(criterion, scope, null, id, options).select(
               options.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
             ),
             on: options.preferFragJoins
@@ -237,7 +237,7 @@ function GetOpticPlan(
           // We are in an AND and encounter an OR - inner join
           conjunctionJoins.push({
             type: 'joinInner',
-            right: GetOpticPlan(criterion, scope, null, id, options).select(
+            right: getOpticPlan(criterion, scope, null, id, options).select(
               options.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
             ),
             on: options.preferFragJoins
@@ -256,7 +256,7 @@ function GetOpticPlan(
           // We are in a NOT and encounter an OR - not exists join
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: GetOpticPlan(criterion, scope, null, id, options).select(
+            right: getOpticPlan(criterion, scope, null, id, options).select(
               options.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
             ),
             on: options.preferFragJoins
@@ -276,7 +276,7 @@ function GetOpticPlan(
           // This is equivalent and likely more performant (needs testing)
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: GetOpticPlan(
+            right: getOpticPlan(
               { OR: criterion.NOT },
               scope,
               null,
@@ -302,7 +302,7 @@ function GetOpticPlan(
 
           conjunctionJoins.push({
             type: 'joinFullOuter',
-            right: GetOpticPlan(criterion, scope, null, id, options).select([
+            right: getOpticPlan(criterion, scope, null, id, options).select([
               _joinCol,
               'dataType',
             ]),
@@ -316,7 +316,7 @@ function GetOpticPlan(
           // This is equivalent and likely more performant (needs testing)
           conjunctionJoins.push({
             type: 'joinInner',
-            right: GetOpticPlan(
+            right: getOpticPlan(
               { OR: criterion.NOT },
               scope,
               null,
@@ -498,7 +498,7 @@ function GetOpticPlan(
         };
 
         const right = tri.joinInner(
-          GetOpticPlan(
+          getOpticPlan(
             criterion[termName],
             termConfig.targetScope,
             rightGroups,
@@ -921,7 +921,7 @@ function getFieldNestedPlan({
   rightGroups,
   options,
 }) {
-  return GetOpticPlan(
+  return getOpticPlan(
     criterion[termName],
     termConfig.targetScope,
     rightGroups,
@@ -981,7 +981,7 @@ function execute(searchCriteria, searchScope, includeResults = true) {
       agg: [op.sample('dataType', op.col('dataType'))],
     };
 
-    const opticPlan = GetOpticPlan(searchCriteria, searchScope, finalGroups);
+    const opticPlan = getOpticPlan(searchCriteria, searchScope, finalGroups);
 
     const planAsJson = opticPlan.export();
 

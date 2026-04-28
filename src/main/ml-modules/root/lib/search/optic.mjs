@@ -410,9 +410,10 @@ function getOpticPlan(
         break;
       }
       case 'indexedRange': {
-        // TODO: I think this would be better with fromView, as it would give more flexibility in selecting measures
         debug.push('processing indexedRange');
 
+        // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
+        // including the values of all objects in the array.
         if (logicType === 'and') {
           const constraint = comparators[criterion._comp];
           // This requires that each term config only has one index reference. This is true today, but is it guaranteed?

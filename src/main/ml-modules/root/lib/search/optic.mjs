@@ -355,7 +355,6 @@ function getOpticPlan(
 
     // TODO: Get additional options
 
-    // TODO: Add support for views and other index types
     switch (termConfig.patternName) {
       case 'text': {
         debug.push('processing text');
@@ -434,11 +433,12 @@ function getOpticPlan(
         break;
       }
       case 'propertyValue': {
-        // CTS version has special handling for recordType, but this is the only kind in the config
-        // For now, I'm only implementing this for recordType
         debug.push('processing propertyValue');
 
-        // TODO: the property value pattern is not restricted to dataType.
+        // This pattern should use the search term's `propertyNames` array as opposed to being limited
+        // to the dataType property; however, as of Apr 2026, `recordType` is the only remaining search
+        // term configured to this pattern and support for additional properties would require making
+        // additional columns available in the lexicon plan (e.g., extraLexicons specified herein).
         if (logicType === 'and') {
           constraints.push(op.eq(op.col('dataType'), termValue));
         } else {

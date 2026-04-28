@@ -269,30 +269,6 @@ const searchTermsConfig = {};
     };
   });
 
-  // Add one ID search term per type per scope that has the associated property.
-  Object.keys(unitConfig).forEach((scopeName) => {
-    getSearchScopeTypes(scopeName).forEach((type) => {
-      // Require data backing this search term be in the dataset.
-      const termName = `${utils.lowercaseFirstCharacter(type)}Id`;
-      if (
-        cts.estimate(cts.jsonPropertyScopeQuery(termName, cts.trueQuery())) > 0
-      ) {
-        if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
-          overrodeTermMgs.push(`${scopeName}.${termName}`);
-        }
-        unitConfig[scopeName][termName] = {
-          patternName: PATTERN_NAME_PROPERTY_VALUE,
-          propertyNames: [termName],
-          scalarType: 'string',
-          forceExactMatch: true,
-          generated: true,
-        };
-      } else if (isUnrestrictedUnit) {
-        skippedTypeTermMsgs.push(`${scopeName}.${termName}`);
-      }
-    });
-  });
-
   // Add labels and help text.
   Object.keys(searchTermText).forEach((scopeName) => {
     Object.keys(searchTermText[scopeName]).forEach((termName) => {

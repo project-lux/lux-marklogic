@@ -444,7 +444,7 @@ function getOpticPlan(
         } else {
           // OR and NOT
           ctsConstraints.push(
-            cts.fieldValueQuery(scope + 'DataTypeName', termValue),
+            cts.fieldValueQuery('anyDataTypeName', termValue),
           );
         }
         break;

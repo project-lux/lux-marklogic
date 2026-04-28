@@ -13,6 +13,13 @@ const SearchTermConfig = class {
       : defaultValue;
   }
 
+  exposedViaSearch() {
+    return (
+      this.hasPatternName() &&
+      patternConfig.exposedViaSearch(this.getPatternName())
+    );
+  }
+
   acceptsGroupAsChild() {
     return (
       this.hasPatternName() && patternConfig.acceptsGroup(this.getPatternName())

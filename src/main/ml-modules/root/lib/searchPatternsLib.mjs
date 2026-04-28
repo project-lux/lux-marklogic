@@ -44,6 +44,7 @@ const OPTION_NAME_RETURN_VALUES = 'returnValues';
 const TYPE_GROUP = 4;
 const TYPE_TERM = 2;
 const TYPE_ATOMIC = 1;
+const TYPE_NONE = 0;
 
 function getPatternConfig(patternName) {
   if (SEARCH_PATTERN_CONFIG[patternName]) {
@@ -52,6 +53,10 @@ function getPatternConfig(patternName) {
   throw new InternalServerError(
     `Unknown search pattern '${patternName}' configured to a term.`,
   );
+}
+
+function exposedViaSearch(patternName) {
+  return getPatternConfig(patternName).allowedChildren !== TYPE_NONE;
 }
 
 function acceptsGroup(patternName) {
@@ -149,6 +154,22 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_ANN_TOP_K] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: true,
+  function: (
+    searchTerm,
+    resolvedSearchOptions,
+    searchPatternOptions,
+    requestOptions,
+  ) => {
+    // Not implemented in CTS.
+  },
+};
+
+SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
+  allowedChildren: TYPE_NONE,
+  isConvertIdChildToIri: false,
+  allowedOptionsName: null,
+  defaultOptionsName: null,
+  returnsCtsQuery: false,
   function: (
     searchTerm,
     resolvedSearchOptions,
@@ -771,6 +792,7 @@ export {
   acceptsGroup,
   acceptsTerm,
   acceptsAtomicValue,
+  exposedViaSearch,
   getAllowedSearchOptionsByOptionsName,
   getAllowedSearchOptionsNameByPatternName,
   getDefaultSearchOptionsByOptionsName,

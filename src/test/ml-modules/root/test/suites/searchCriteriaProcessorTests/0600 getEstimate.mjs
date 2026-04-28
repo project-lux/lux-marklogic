@@ -236,8 +236,9 @@ const scenarios = [
 // Test getEstimate scenarios
 const failures = [];
 
+const adjustedTenantName = ML_APP_NAME === 'luxCTS' ? 'lux' : ML_APP_NAME;
 const invokeFunOptions = {
-  database: xdmp.database(`${ML_APP_NAME}-content`),
+  database: xdmp.database(`${adjustedTenantName}-content`),
 };
 for (const scenario of scenarios) {
   const zeroArityFun = () => {

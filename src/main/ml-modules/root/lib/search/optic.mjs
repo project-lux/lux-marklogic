@@ -488,30 +488,6 @@ function GetOpticPlan(
             criterion,
             options,
           });
-        } else if (termConfig.transitive2) {
-          termPlanArrays = processAlternativeTransitiveHopWithFieldTerm({
-            hopPlanFirst: true,
-            fragCol,
-            iriCol,
-            id,
-            termConfig,
-            termValue,
-            termName,
-            criterion,
-            options,
-          });
-        } else if (termConfig.transitive3) {
-          termPlanArrays = processAlternativeTransitiveHopWithFieldTerm({
-            hopPlanFirst: false,
-            fragCol,
-            iriCol,
-            id,
-            termConfig,
-            termValue,
-            termName,
-            criterion,
-            options,
-          });
         } else {
           termPlanArrays = processHopWithFieldTerm({
             fragCol,
@@ -885,73 +861,6 @@ select ?${id}_s ?${id}_o where {
     patternJoins: [
       {
         right: op.fromSPARQL(sparql, null, { dedup: 'on' }),
-        on: [op.on(op.col(iriCol), op.col(id + '_s'))],
-        extraCols: [],
-      },
-    ],
-  };
-}
-
-// Transitive 2: Join the hop and field plans (order controlled by hopPlanFirst).
-function processAlternativeTransitiveHopWithFieldTerm({
-  hopPlanFirst,
-  fragCol,
-  iriCol,
-  id,
-  termConfig,
-  termValue,
-  termName,
-  criterion,
-  options,
-}) {
-  // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
-  const _refIri = id + '_iri';
-  // const rightGroups = {
-  //   by: [_refIri],
-  // };
-
-  const sparql = `
-PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
-PREFIX la: <https://linked.art/ns/terms/>
-PREFIX lux: <https://lux.collections.yale.edu/ns/>
-PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-select ?${id}_s ?${id}_o where {
-  ?${id}_s ${getPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
-}`;
-
-  const hopPlan = op.fromSPARQL(sparql, null, { dedup: 'on' });
-
-  const fieldPlan = termValue
-    ? getFieldAtomicPlan({
-        fragCol,
-        iriCol,
-        id,
-        termConfig,
-        termValue,
-        termName,
-        criterion,
-        options,
-      })
-    : getFieldNestedPlan({
-        fragCol,
-        iriCol,
-        id,
-        termConfig,
-        termValue,
-        termName,
-        criterion,
-        rightGroups: null, // Grouping by here prevents grouping by at the end.
-        options,
-      });
-
-  const right = hopPlanFirst
-    ? hopPlan.joinInner(fieldPlan, op.on(op.col(id + '_o'), op.col(_refIri)))
-    : fieldPlan.joinInner(hopPlan, op.on(op.col(id + '_o'), op.col(_refIri)));
-
-  return {
-    patternJoins: [
-      {
-        right: right,
         on: [op.on(op.col(iriCol), op.col(id + '_s'))],
         extraCols: [],
       },

@@ -1,18 +1,17 @@
 'use strict';
 
 import op from '/MarkLogic/optic.mjs';
-import { getSearchScopeTypes } from '/lib/searchScope.mjs';
+import { getSearchScopeTypes } from '../searchScope.mjs';
 import {
   getSearchTermNames,
   getSearchTermConfig,
-} from '/config/searchTermsConfig.mjs';
-import { processSearchCriteria } from '/lib/searchLib.mjs';
-import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
+} from '../../config/searchTermsConfig.mjs';
+import { processSearchCriteria } from '../searchLib.mjs';
 import {
   ANN_K_DEFAULT,
   ANN_K_MAX,
   ANN_MAX_DISTANCE_DEFAULT,
-} from '/lib/appConstants.mjs';
+} from '../appConstants.mjs';
 const sem = require('/MarkLogic/semantics.xqy');
 
 // TODO: remove global debug array from MJS context.
@@ -132,8 +131,10 @@ function getOpticPlan(
 
   // Some constraints are more efficient when combined, so we track them here to assemble later
   let constraints = [
-    // If using scope-specific indexes, we don't need this constraint explicitly filtered.
-    //op.in(op.col('dataType'), getSearchScopeTypes(scope))
+    // It's possible to conditionally omit the dataType constraint but we'd have to define those
+    // conditions to ensure records from other search scopes do not leak in, and might as well
+    // keep this until proven to take from performance.
+    op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
   ];
 
   // CTS constraints may need to be AND, OR, or NOT(OR) depending on the context, so build them separately;
@@ -156,7 +157,7 @@ function getOpticPlan(
   let logicType;
 
   // Look for `AND:[]`, `OR:[]`, or `NOT:[]` in the root.
-  // Note: This code may add addtitional elements to the array, hence the manual iteration and deep copy.
+  // Note: This code may add additional elements to the array, hence the manual iteration and deep copy.
   if (planCriteria.AND) {
     criteria = xdmp.toJSON(planCriteria.AND).toObject();
     logicType = 'and';
@@ -691,6 +692,10 @@ function getOpticPlan(
           const wrapped = op
             .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
+            .where(
+              // Apply scope constraint to wrapped plan (same as applied to base plan)
+              op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
+            )
             .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
 
           plan = plan.joinFullOuter(wrapped, null);

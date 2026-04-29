@@ -1,5 +1,3 @@
-// This script may be used to convert search criteria into an Optic query,
-// formatted as a plan, JSON object or source string.
 'use strict';
 
 import op from '/MarkLogic/optic.mjs';
@@ -101,6 +99,7 @@ function getOpticPlan(
   const uriCol = topLevel ? 'uri' : parentId + '_uri'; // If this isn't the root criteria, it needs to be joined back
   const fragCol = topLevel ? 'frag' : parentId + '_frag'; // Joining on frag can result in different plans (more D-Node pushdown)
   const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
+  const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
 
   // It's possible to implement an "all" option as a default, although this may not have been done for performance reasons possibly?  Defaulting to 'item' for now.
   const scope = planCriteria._scope ?? planScope;
@@ -116,7 +115,7 @@ function getOpticPlan(
   const lexicons = {
     [uriCol]: cts.uriReference(),
     [iriCol]: cts.iriReference(),
-    dataType: cts.fieldReference('anyDataTypeName'),
+    [dataTypeCol]: cts.fieldReference('anyDataTypeName'),
     // TODO: if wanted, must configure as field range indexes
     // primaryName: cts.fieldReference(scope + 'PrimaryName')
   };
@@ -207,7 +206,7 @@ function getOpticPlan(
             type: 'joinFullOuter',
             right: getOpticPlan(criterion, scope, null, id, options).select([
               _joinCol,
-              'dataType',
+              op.as('dataType', op.col(id + '_dataType')),
             ]),
             on: null,
             condition: null,
@@ -304,7 +303,7 @@ function getOpticPlan(
             type: 'joinFullOuter',
             right: getOpticPlan(criterion, scope, null, id, options).select([
               _joinCol,
-              'dataType',
+              op.as('dataType', op.col(id + '_dataType')),
             ]),
             on: null,
             condition: null,
@@ -441,7 +440,7 @@ function getOpticPlan(
         // term configured to this pattern and support for additional properties would require making
         // additional columns available in the lexicon plan (e.g., extraLexicons specified herein).
         if (logicType === 'and') {
-          constraints.push(op.eq(op.col('dataType'), termValue));
+          constraints.push(op.eq(op.col(dataTypeCol), termValue));
         } else {
           // OR and NOT
           ctsConstraints.push(
@@ -692,7 +691,7 @@ function getOpticPlan(
           const wrapped = op
             .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
-            .select([uriCol, fragCol, 'dataType', ...pj.extraCols]);
+            .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
 
           plan = plan.joinFullOuter(wrapped, null);
         }

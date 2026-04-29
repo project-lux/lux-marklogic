@@ -136,17 +136,16 @@ function getOpticPlan({
     throw new InvalidSearchRequestError('search criteria must be defined.');
   }
 
-  const scope = planCriteria._scope ?? planScope;
+  let scope = topLevel ? (planCriteria._scope ?? planScope) : planScope;
 
   const isMultiScope = scope === 'multi';
   if (isMultiScope) {
     validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope);
   }
 
-  // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs
-  // Is there a reason the term isn't a value?
-  // Get a list of names now so we can efficiently find them in the criteria.
-  const searchTermNames = getSearchTermNames(scope);
+  // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs.
+  // For multi-scope, each top-level OR criterion resolves terms against its own scope.
+  let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
 
   // Queries always return URIs and dataType so we start from these lexicons.  This may be optimized differently for different queries later.
   // I will note where additional indexes were added in comments so they can be moved into the DB config later.
@@ -220,6 +219,10 @@ function getOpticPlan({
   // Loop through search criteria, adding operators
   for (let idx = 0; idx < criteria.length; idx++) {
     const criterion = criteria[idx];
+    if (isMultiScope) {
+      scope = criterion._scope;
+      searchTermNames = getSearchTermNames(scope);
+    }
 
     DEBUG.push(`Processing Criterion ${idx}`);
     DEBUG.push(xdmp.toJSON(criterion));

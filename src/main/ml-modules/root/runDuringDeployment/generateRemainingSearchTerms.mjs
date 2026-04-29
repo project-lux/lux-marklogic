@@ -5,7 +5,7 @@ import {
   PATTERN_NAME_HOP_INVERSE,
   PATTERN_NAME_INDEXED_RANGE,
   PATTERN_NAME_INDEXED_VALUE,
-  PATTERN_NAME_PROPERTY_VALUE,
+  PATTERN_NAME_IRI,
 } from '../lib/searchPatternsLib.mjs';
 import { getSearchScopeTypes } from '../lib/searchScope.mjs';
 import { searchTermText } from '../config/userFacingConfig.mjs';
@@ -249,8 +249,8 @@ const searchTermsConfig = {};
       unitConfig[scopeName] = {};
     }
     unitConfig[scopeName][termName] = {
-      patternName: PATTERN_NAME_PROPERTY_VALUE,
-      propertyNames: ['dataType'],
+      patternName: PATTERN_NAME_INDEXED_VALUE,
+      indexReferences: ['anyDataTypeName'],
       scalarType: 'string',
       forceExactMatch: true,
       generated: true,
@@ -264,7 +264,7 @@ const searchTermsConfig = {};
       overrodeTermMgs.push(`${scopeName}.${termName}`);
     }
     unitConfig[scopeName][termName] = {
-      patternName: 'iri',
+      patternName: PATTERN_NAME_IRI,
       generated: true,
     };
   });

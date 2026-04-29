@@ -1,7 +1,8 @@
 'use strict';
 
 import op from '/MarkLogic/optic.mjs';
-import { getSearchScopeTypes } from '../searchScope.mjs';
+import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
+import { isDefined } from '../../utils/utils.mjs';
 import {
   getSearchTermNames,
   getSearchTermConfig,
@@ -12,13 +13,14 @@ import {
   ANN_K_MAX,
   ANN_MAX_DISTANCE_DEFAULT,
 } from '../appConstants.mjs';
+import { InvalidSearchRequestError } from '../errorClasses.mjs';
 const sem = require('/MarkLogic/semantics.xqy');
 
 // TODO: remove global debug array from MJS context.
-const debug = [];
+const DEBUG = [];
 
 // Optic comparison operators
-const comparators = {
+const COMPARATORS = {
   '=': op.eq,
   '!=': op.ne,
   '<': op.lt,
@@ -28,7 +30,7 @@ const comparators = {
 };
 
 // TODO: Add support for overriding these
-const defaultCtsOptions = [
+const DEFAULT_CTS_OPTIONS = [
   'case-insensitive',
   'diacritic-insensitive',
   'punctuation-insensitive',
@@ -37,11 +39,11 @@ const defaultCtsOptions = [
   'wildcarded',
 ];
 
-const defaultPlanOptions = {
+const DEFAULT_PLAN_OPTIONS = {
   preferFragJoins: false,
 };
 
-const prefixMappings = {
+const PREFIX_MAPPINGS = {
   crm: 'http://www.cidoc-crm.org/cidoc-crm/',
   la: 'https://linked.art/ns/terms/',
   lux: 'https://lux.collections.yale.edu/ns/',
@@ -49,14 +51,14 @@ const prefixMappings = {
 };
 
 function getPrefixesForSPARQL() {
-  return Object.entries(prefixMappings)
+  return Object.entries(PREFIX_MAPPINGS)
     .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
     .join('\n');
 }
 
 function expandPredicates(predicates) {
   return predicates.map((predicate) =>
-    sem.curieExpand(predicate, prefixMappings),
+    sem.curieExpand(predicate, PREFIX_MAPPINGS),
   );
 }
 
@@ -77,20 +79,50 @@ function getPlanSource(plan) {
     .replace(/"/g, "'");
 }
 
-function getOpticPlan(
+function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
+  if (!topLevel || !allowMultiScope) {
+    throw new InvalidSearchRequestError(
+      "search scope of 'multi' not supported by this operation or level.",
+    );
+  }
+
+  if (!planCriteria?.OR || !Array.isArray(planCriteria.OR)) {
+    throw new InvalidSearchRequestError(
+      "a search with scope 'multi' must contain an 'OR' array.",
+    );
+  }
+
+  // TODO: Make sure an empty OR array is caught by the generic check of not enough criteria.
+  planCriteria.OR.forEach((branch, idx) => {
+    const branchScope = branch?._scope;
+    if (
+      !branchScope ||
+      !isSearchScopeName(branchScope) ||
+      branchScope === 'multi'
+    ) {
+      throw new InvalidSearchRequestError(
+        `Invalid criteria: OR branch ${idx} in '_scope: multi' must declare a valid non-multi _scope.`,
+      );
+    }
+  });
+}
+
+function getOpticPlan({
   planCriteria,
   planScope = 'item',
   groups = null,
   parentId = null,
-  options = defaultPlanOptions,
-) {
-  debug.push('Called getOpticPlan');
-  debug.push(
+  options = DEFAULT_PLAN_OPTIONS,
+  allowMultiScope = false,
+}) {
+  DEBUG.push('Called getOpticPlan');
+  DEBUG.push(
     xdmp.toJSON({
-      planCriteria: planCriteria,
-      planScope: planScope,
-      parentId: parentId,
-      options: options,
+      planCriteria,
+      planScope,
+      parentId,
+      options,
+      allowMultiScope,
     }),
   );
 
@@ -100,8 +132,16 @@ function getOpticPlan(
   const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
   const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
 
-  // It's possible to implement an "all" option as a default, although this may not have been done for performance reasons possibly?  Defaulting to 'item' for now.
+  if (!isDefined(planCriteria)) {
+    throw new InvalidSearchRequestError('search criteria must be defined.');
+  }
+
   const scope = planCriteria._scope ?? planScope;
+
+  const isMultiScope = scope === 'multi';
+  if (isMultiScope) {
+    validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope);
+  }
 
   // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs
   // Is there a reason the term isn't a value?
@@ -130,12 +170,14 @@ function getOpticPlan(
   let patternJoins = [];
 
   // Some constraints are more efficient when combined, so we track them here to assemble later
-  let constraints = [
-    // It's possible to conditionally omit the dataType constraint but we'd have to define those
-    // conditions to ensure records from other search scopes do not leak in, and might as well
-    // keep this until proven to take from performance.
-    op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
-  ];
+  let constraints = isMultiScope
+    ? []
+    : [
+        // It's possible to conditionally omit the dataType constraint but we'd have to define those
+        // conditions to ensure records from other search scopes do not leak in, and might as well
+        // keep this until proven to take from performance.
+        op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
+      ];
 
   // CTS constraints may need to be AND, OR, or NOT(OR) depending on the context, so build them separately;
   let ctsConstraints = [];
@@ -173,14 +215,14 @@ function getOpticPlan(
     logicType = 'and';
   }
 
-  debug.push(`Logic Type: ${logicType}`);
+  DEBUG.push(`Logic Type: ${logicType}`);
 
   // Loop through search criteria, adding operators
   for (let idx = 0; idx < criteria.length; idx++) {
     const criterion = criteria[idx];
 
-    debug.push(`Processing Criterion ${idx}`);
-    debug.push(xdmp.toJSON(criterion));
+    DEBUG.push(`Processing Criterion ${idx}`);
+    DEBUG.push(xdmp.toJSON(criterion));
 
     // Used when creating a new column that needs to be joined or filtered.
     // Logical names might make sense for debugging, but just use UUIDs for now.
@@ -205,10 +247,12 @@ function getOpticPlan(
 
           conjunctionJoins.push({
             type: 'joinFullOuter',
-            right: getOpticPlan(criterion, scope, null, id, options).select([
-              _joinCol,
-              op.as('dataType', op.col(id + '_dataType')),
-            ]),
+            right: getOpticPlan({
+              planCriteria: criterion,
+              planScope: scope,
+              parentId: id,
+              options,
+            }).select([_joinCol, op.as('dataType', op.col(id + '_dataType'))]),
             on: null,
             condition: null,
           });
@@ -218,9 +262,12 @@ function getOpticPlan(
           // We are in a NOT and encounter an AND - not exists join
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: getOpticPlan(criterion, scope, null, id, options).select(
-              options.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
-            ),
+            right: getOpticPlan({
+              planCriteria: criterion,
+              planScope: scope,
+              parentId: id,
+              options,
+            }).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
             on: options.preferFragJoins
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
@@ -237,9 +284,12 @@ function getOpticPlan(
           // We are in an AND and encounter an OR - inner join
           conjunctionJoins.push({
             type: 'joinInner',
-            right: getOpticPlan(criterion, scope, null, id, options).select(
-              options.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
-            ),
+            right: getOpticPlan({
+              planCriteria: criterion,
+              planScope: scope,
+              parentId: id,
+              options,
+            }).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
             on: options.preferFragJoins
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
@@ -256,9 +306,12 @@ function getOpticPlan(
           // We are in a NOT and encounter an OR - not exists join
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: getOpticPlan(criterion, scope, null, id, options).select(
-              options.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
-            ),
+            right: getOpticPlan({
+              planCriteria: criterion,
+              planScope: scope,
+              parentId: id,
+              options,
+            }).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
             on: options.preferFragJoins
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
@@ -276,13 +329,12 @@ function getOpticPlan(
           // This is equivalent and likely more performant (needs testing)
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: getOpticPlan(
-              { OR: criterion.NOT },
-              scope,
-              null,
-              id,
+            right: getOpticPlan({
+              planCriteria: { OR: criterion.NOT },
+              planScope: scope,
+              parentId: id,
               options,
-            ).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
+            }).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
             on: options.preferFragJoins
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
@@ -302,10 +354,12 @@ function getOpticPlan(
 
           conjunctionJoins.push({
             type: 'joinFullOuter',
-            right: getOpticPlan(criterion, scope, null, id, options).select([
-              _joinCol,
-              op.as('dataType', op.col(id + '_dataType')),
-            ]),
+            right: getOpticPlan({
+              planCriteria: criterion,
+              planScope: scope,
+              parentId: id,
+              options,
+            }).select([_joinCol, op.as('dataType', op.col(id + '_dataType'))]),
             on: null,
             condition: null,
           });
@@ -316,13 +370,12 @@ function getOpticPlan(
           // This is equivalent and likely more performant (needs testing)
           conjunctionJoins.push({
             type: 'joinInner',
-            right: getOpticPlan(
-              { OR: criterion.NOT },
-              scope,
-              null,
-              id,
+            right: getOpticPlan({
+              planCriteria: { OR: criterion.NOT },
+              planScope: scope,
+              parentId: id,
               options,
-            ).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
+            }).select(options.preferFragJoins ? [id + '_frag'] : [id + '_uri']),
             on: options.preferFragJoins
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
@@ -339,8 +392,8 @@ function getOpticPlan(
     );
     const termConfig = getSearchTermConfig(scope, termName);
 
-    debug.push('Found Term Config');
-    debug.push(xdmp.toJSON(termConfig));
+    DEBUG.push('Found Term Config');
+    DEBUG.push(xdmp.toJSON(termConfig));
 
     // Cast value to the correct type if scalar
     const caster = termConfig.scalarType ? xs[termConfig.scalarType] : null;
@@ -350,14 +403,14 @@ function getOpticPlan(
         ? criterion[termName]
         : null;
 
-    debug.push(termValue);
-    debug.push(typeof criterion[termName]);
+    DEBUG.push(termValue);
+    DEBUG.push(typeof criterion[termName]);
 
     // TODO: Get additional options
 
     switch (termConfig.patternName) {
       case 'text': {
-        debug.push('processing text');
+        DEBUG.push('processing text');
 
         const newCriteria = {
           OR: [
@@ -381,13 +434,13 @@ function getOpticPlan(
           cts.fieldValueQuery(
             termConfig.indexReferences,
             termValue,
-            defaultCtsOptions,
+            DEFAULT_CTS_OPTIONS,
           ),
         );
         break;
       }
       case 'indexedWord': {
-        debug.push(`processing ${termConfig.patternName}`);
+        DEBUG.push(`processing ${termConfig.patternName}`);
 
         // CTS constraint for same reason as indexedValue pattern.
         if (criterion._complete) {
@@ -395,7 +448,7 @@ function getOpticPlan(
             cts.fieldValueQuery(
               termConfig.indexReferences,
               termValue,
-              defaultCtsOptions,
+              DEFAULT_CTS_OPTIONS,
             ),
           );
         } else {
@@ -403,19 +456,19 @@ function getOpticPlan(
             cts.fieldWordQuery(
               termConfig.indexReferences,
               termValue,
-              defaultCtsOptions,
+              DEFAULT_CTS_OPTIONS,
             ),
           );
         }
         break;
       }
       case 'indexedRange': {
-        debug.push('processing indexedRange');
+        DEBUG.push('processing indexedRange');
 
         // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
         // including the values of all objects in the array.
         if (logicType === 'and') {
-          const constraint = comparators[criterion._comp];
+          const constraint = COMPARATORS[criterion._comp];
           // This requires that each term config only has one index reference. This is true today, but is it guaranteed?
           lexicons[id + '_field'] = cts.fieldReference(
             termConfig.indexReferences[0],
@@ -434,7 +487,7 @@ function getOpticPlan(
         break;
       }
       case 'propertyValue': {
-        debug.push('processing propertyValue');
+        DEBUG.push('processing propertyValue');
 
         // This pattern should use the search term's `propertyNames` array as opposed to being limited
         // to the dataType property; however, as of Apr 2026, `recordType` is the only remaining search
@@ -451,7 +504,7 @@ function getOpticPlan(
         break;
       }
       case 'hopWithField': {
-        debug.push('processing hopWithField');
+        DEBUG.push('processing hopWithField');
         let termPlanArrays;
         if (termConfig.transitive) {
           termPlanArrays = processTransitiveHopWithFieldTerm({
@@ -480,7 +533,7 @@ function getOpticPlan(
         break;
       }
       case 'hopInverse': {
-        debug.push('processing hopInverse');
+        DEBUG.push('processing hopInverse');
 
         const _triFragCol = id + '_triFrag';
         const _refFrag = id + '_frag';
@@ -499,21 +552,21 @@ function getOpticPlan(
         };
 
         const right = tri.joinInner(
-          getOpticPlan(
-            criterion[termName],
-            termConfig.targetScope,
-            rightGroups,
-            id,
+          getOpticPlan({
+            planCriteria: criterion[termName],
+            planScope: termConfig.targetScope,
+            groups: rightGroups,
+            parentId: id,
             options,
-          ),
+          }),
           [
             // Hop Inverse: the triple is on the referenced document, not the source document.
             op.on(op.fragmentIdCol(_triFragCol), op.fragmentIdCol(_refFrag)),
           ],
         );
 
-        // debug.push('Generated right plan:');
-        // debug.push(getPlanSource(right));
+        // DEBUG.push('Generated right plan:');
+        // DEBUG.push(getPlanSource(right));
 
         patternJoins.push({
           right: right,
@@ -534,7 +587,7 @@ function getOpticPlan(
         break;
       }
       case 'annTopK': {
-        debug.push('processing annTopK');
+        DEBUG.push('processing annTopK');
 
         const vecFrag = id + '_vecFrag';
         const distCol = id + '_distance';
@@ -545,7 +598,7 @@ function getOpticPlan(
         const requestedK =
           criterion._annK ?? termConfig.annKMaxDefault ?? ANN_K_DEFAULT;
         const k = Math.min(requestedK, ANN_K_MAX);
-        debug.push(
+        DEBUG.push(
           `annTopK k resolved to ${k} (requested ${requestedK}, max ${ANN_K_MAX})`,
         );
 
@@ -600,8 +653,8 @@ function getOpticPlan(
           ]);
 
         // annPlan includes the entire vector.
-        debug.push('Generated annTopK plan:');
-        debug.push(
+        DEBUG.push('Generated annTopK plan:');
+        DEBUG.push(
           `k=${k}, vectorColumn='${vectorColumn}', maxDistance=${maxDistance}, seedURI='${termValue}'`,
         );
 
@@ -622,22 +675,22 @@ function getOpticPlan(
 
   // Optic uses functional programming patterns, so we will assign plan temporarily and replace it with each modification unless/until we need a more complex pattern.
   let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
-  // debug.push('Initial lexicon plan:');
-  // debug.push(getPlanSource(plan));
+  // DEBUG.push('Initial lexicon plan:');
+  // DEBUG.push(getPlanSource(plan));
 
   if (constraints.length) {
-    debug.push('Applying Constraints');
+    DEBUG.push('Applying Constraints');
     for (const constraint of constraints) {
-      debug.push({
+      DEBUG.push({
         constraint,
       });
       plan = plan.where(constraint);
     }
-    // debug.push(getPlanSource(plan));
+    // DEBUG.push(getPlanSource(plan));
   }
 
   if (ctsConstraints.length) {
-    debug.push('Applying CTS Constraints');
+    DEBUG.push('Applying CTS Constraints');
     const ctsWrapper =
       logicType === 'and'
         ? cts.andQuery
@@ -646,13 +699,13 @@ function getOpticPlan(
           : (x) => cts.notQuery(cts.orQuery(x));
 
     plan = plan.where(ctsWrapper(ctsConstraints));
-    // debug.push(getPlanSource(plan));
+    // DEBUG.push(getPlanSource(plan));
   }
 
   if (conjunctionJoins.length) {
-    debug.push('Applying Conjunction Joins');
+    DEBUG.push('Applying Conjunction Joins');
     for (const join of conjunctionJoins) {
-      // debug.push({
+      // DEBUG.push({
       //   type: join.type,
       //   left: getPlanSource(plan),
       //   right: getPlanSource(join.right),
@@ -662,11 +715,11 @@ function getOpticPlan(
       // Join functions are a method on the plan, so we have to reference them by name instead of storing the join itself in the array
       plan = plan[join.type](join.right, join.on, join.condition);
     }
-    // debug.push(getPlanSource(plan));
+    // DEBUG.push(getPlanSource(plan));
   }
 
   if (patternJoins.length) {
-    debug.push('Applying Pattern Joins');
+    DEBUG.push('Applying Pattern Joins');
 
     if (logicType === 'or') {
       const hasNonJoinConstraints =
@@ -680,7 +733,7 @@ function getOpticPlan(
         if (!hasNonJoinConstraints && i === 0) {
           // No other constraints exist: inner join constrains the base plan
           // instead of outer joining to an unconstrained lexicon scan.
-          debug.push(
+          DEBUG.push(
             'OR first join (inner): no non-join constraints, constraining base plan',
           );
           plan = plan.joinInner(pj.right, pj.on);
@@ -688,7 +741,7 @@ function getOpticPlan(
           // Duplicate lexicon → inner join with right → align columns → full outer join.
           // Select uriCol (not fragCol) so the natural join key matches conjunction
           // joins and the final groupBy(['uri']) sees every matched document.
-          debug.push('OR join (full outer via lexicon copy)');
+          DEBUG.push('OR join (full outer via lexicon copy)');
           const wrapped = op
             .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
@@ -716,11 +769,11 @@ function getOpticPlan(
       }
     }
 
-    // debug.push(getPlanSource(plan));
+    // DEBUG.push(getPlanSource(plan));
   }
 
   if (groups) {
-    debug.push(`Grouping by ${groups.by ? groups.by.join(', ') : 'none'}...`);
+    DEBUG.push(`Grouping by ${groups.by ? groups.by.join(', ') : 'none'}...`);
     const agg = distanceCols.length
       ? [
           ...groups.agg,
@@ -728,7 +781,7 @@ function getOpticPlan(
         ]
       : groups.agg;
     plan = plan.groupBy(groups.by, agg);
-    // debug.push(getPlanSource(plan));
+    // DEBUG.push(getPlanSource(plan));
   }
 
   // Rename output columns: uri → id, dataType → type.
@@ -744,7 +797,7 @@ function getOpticPlan(
     // Consolidate distance columns using Optic instead of post-processing
     const distanceColCnt = distanceCols.length;
     if (distanceColCnt > 0) {
-      debug.push('Consolidating distance columns');
+      DEBUG.push('Consolidating distance columns');
 
       plan = plan
         .select([
@@ -762,8 +815,8 @@ function getOpticPlan(
       plan = plan.select(outputCols);
     }
 
-    debug.push('***********************************FINAL PLAN:');
-    debug.push(getPlanSource(plan));
+    DEBUG.push('***********************************FINAL PLAN:');
+    DEBUG.push(getPlanSource(plan));
   }
 
   return plan;
@@ -821,7 +874,7 @@ function processTransitiveHopWithFieldTerm({
         rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
       });
-  // debug.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
+  // DEBUG.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
   // TODO: if there are zero results from the fieldPlan, should we do anything different?
   const sparql = `
 ${getPrefixesForSPARQL()}
@@ -835,7 +888,7 @@ select ?${id}_s ?${id}_o where {
   }
   ?${id}_s ${formatPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
 }`;
-  // debug.push(`Transitive SPARQL: ${sparql}`);
+  // DEBUG.push(`Transitive SPARQL: ${sparql}`);
   return {
     patternJoins: [
       {
@@ -894,8 +947,8 @@ function processHopWithFieldTerm({
         options,
       });
 
-  // debug.push('Generated right plan:');
-  // debug.push(getPlanSource(right));
+  // DEBUG.push('Generated right plan:');
+  // DEBUG.push(getPlanSource(right));
 
   return {
     patternJoins: [
@@ -926,13 +979,13 @@ function getFieldNestedPlan({
   rightGroups,
   options,
 }) {
-  return getOpticPlan(
-    criterion[termName],
-    termConfig.targetScope,
-    rightGroups,
-    id,
+  return getOpticPlan({
+    planCriteria: criterion[termName],
+    planScope: termConfig.targetScope,
+    groups: rightGroups,
+    parentId: id,
     options,
-  );
+  });
 }
 
 function getFieldAtomicPlan({
@@ -962,7 +1015,7 @@ function getFieldAtomicPlan({
           cts.fieldWordQuery(
             termConfig.indexReferences,
             termValue,
-            defaultCtsOptions,
+            DEFAULT_CTS_OPTIONS,
           ),
         );
 }
@@ -978,7 +1031,12 @@ function getFieldAtomicPlan({
 // TODO: verify multi-scope searches are supported.
 // TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
 // TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
-function execute(searchCriteria, searchScope, includeResults = true) {
+function execute({
+  searchCriteria,
+  searchScope,
+  allowMultiScope,
+  includeResults = true,
+}) {
   try {
     // We need to group by uri because lexicons can hit multiple times in a doc
     const finalGroups = {
@@ -986,7 +1044,12 @@ function execute(searchCriteria, searchScope, includeResults = true) {
       agg: [op.sample('dataType', op.col('dataType'))],
     };
 
-    const opticPlan = getOpticPlan(searchCriteria, searchScope, finalGroups);
+    const opticPlan = getOpticPlan({
+      planCriteria: searchCriteria,
+      planScope: searchScope,
+      allowMultiScope,
+      groups: finalGroups,
+    });
 
     const planAsJson = opticPlan.export();
 
@@ -994,10 +1057,10 @@ function execute(searchCriteria, searchScope, includeResults = true) {
       results: includeResults ? opticPlan.result().toArray() : null,
       planAsJson,
       planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
-      debug,
+      debug: DEBUG,
     };
   } catch (ex) {
-    console.dir(debug);
+    console.dir(DEBUG);
     throw ex;
   }
 }

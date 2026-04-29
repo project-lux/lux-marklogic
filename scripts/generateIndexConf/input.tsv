@@ -3,7 +3,7 @@ any	Sort	Name	string	anySortName		Non	N		/json/identified_by[./classified_as/equ
 any	Sort	NameEn	string	anySortNameEn		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content	
 any	Sort	NameFr	string	anySortNameFr		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content	
 any	Sort	NameZh	string	anySortNameZh		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content	
-any	DataType	Name	string	anyDataTypeName	Search	Non	Y		/json/type	
+any	DataType	Name	keyword	anyDataTypeName	Search	Non	Y		/json/type	
 										
 reference		Name	keyword	referenceName	Search	Non	Y	Auto complete endpoint may attempt to use.	/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content	
 reference	Primary	Name	keyword	referencePrimaryName		Non	Y		/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	

@@ -85,7 +85,18 @@
           "path": "/json/type",
           "weight": 1
         }
-      ]
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
     },
     {
       "field-name": "referenceName",

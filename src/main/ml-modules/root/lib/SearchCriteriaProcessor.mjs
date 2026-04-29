@@ -199,11 +199,12 @@ const SearchCriteriaProcessor = class {
       return this.#searchResults;
     }
     this.#searchState = SEARCH_STATE_REQUESTED;
-    this.#searchResults = execute(
-      this.#resolvedSearchCriteria,
-      this.#scopeName,
-      true,
-    );
+    this.#searchResults = execute({
+      searchCriteria: this.#resolvedSearchCriteria,
+      searchScope: this.#scopeName,
+      allowMultiScope: this.#allowMultiScope,
+      includeResults: true,
+    });
     this.#searchState = SEARCH_STATE_COMPLETED;
     return this.#searchResults;
   }

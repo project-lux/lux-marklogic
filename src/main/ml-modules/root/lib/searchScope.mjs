@@ -176,17 +176,6 @@ function doesSearchScopeHaveType(scopeName, type) {
   return searchScopeObj && searchScopeObj.types.includes(type);
 }
 
-function getCorrectlyCasedType(givenType) {
-  let resolvedType = givenType;
-  const lowerType = givenType.toLowerCase();
-  getSearchScopeTypes().forEach((type) => {
-    if (lowerType == type.toLowerCase()) {
-      resolvedType = type;
-    }
-  });
-  return resolvedType;
-}
-
 function isUserInterfaceSearchScopeName(searchScopeName) {
   return (
     getSearchScope(searchScopeName) &&
@@ -209,7 +198,6 @@ function getOrderedUserInterfaceSearchScopeNames() {
 
 export {
   doesSearchScopeHaveType,
-  getCorrectlyCasedType,
   getOrderedUserInterfaceSearchScopeNames,
   getSearchScopeFields,
   getSearchScopeNames,

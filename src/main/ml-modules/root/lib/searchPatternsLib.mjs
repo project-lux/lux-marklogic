@@ -15,7 +15,7 @@ import {
   InvalidSearchRequestError,
 } from './errorClasses.mjs';
 import {
-  getCorrectlyCasedType,
+  // getCorrectlyCasedType,
   getSearchScopeFields,
   getSearchScopePredicates,
   getSearchScopeTypes,
@@ -33,7 +33,7 @@ const PATTERN_NAME_INDEXED_RANGE = 'indexedRange';
 const PATTERN_NAME_INDEXED_VALUE = 'indexedValue';
 const PATTERN_NAME_INDEXED_WORD = 'indexedWord';
 const PATTERN_NAME_IRI = 'iri';
-const PATTERN_NAME_PROPERTY_VALUE = 'propertyValue';
+// const PATTERN_NAME_PROPERTY_VALUE = 'propertyValue'; // subsumed by indexedValue
 const PATTERN_NAME_RELATED_LIST = 'relatedList'; // for related list configs
 const PATTERN_NAME_TEXT = 'text'; // for keyword search
 
@@ -519,46 +519,46 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
   },
 };
 
-SEARCH_PATTERN_CONFIG[PATTERN_NAME_PROPERTY_VALUE] = {
-  allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
-  allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
-  defaultOptionsName: null,
-  returnsCtsQuery: true,
-  function: (
-    searchTerm,
-    resolvedSearchOptions,
-    searchPatternOptions,
-    requestOptions,
-  ) => {
-    let termValue = searchTerm.getValue();
-    if (searchTerm.getName() == 'recordType') {
-      // If the term value is search scope name, use that scope's types.
-      if (isSearchScopeName(termValue)) {
-        termValue = getSearchScopeTypes(termValue);
-      } else {
-        // Get the correct case such that we can use the exact search option.
-        termValue = getCorrectlyCasedType(termValue);
-      }
-    }
+// SEARCH_PATTERN_CONFIG[PATTERN_NAME_PROPERTY_VALUE] = {
+//   allowedChildren: TYPE_ATOMIC,
+//   isConvertIdChildToIri: false,
+//   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
+//   defaultOptionsName: null,
+//   returnsCtsQuery: true,
+//   function: (
+//     searchTerm,
+//     resolvedSearchOptions,
+//     searchPatternOptions,
+//     requestOptions,
+//   ) => {
+//     let termValue = searchTerm.getValue();
+//     if (searchTerm.getName() == 'recordType') {
+//       // If the term value is search scope name, use that scope's types.
+//       if (isSearchScopeName(termValue)) {
+//         termValue = getSearchScopeTypes(termValue);
+//       } else {
+//         // Get the correct case such that we can use the exact search option.
+//         termValue = getCorrectlyCasedType(termValue);
+//       }
+//     }
 
-    const termConfig = searchTerm.getSearchTermConfig();
-    if (termConfig.isForceExactMatch()) {
-      resolvedSearchOptions = DEFAULT_SEARCH_OPTIONS_EXACT;
-    }
+//     const termConfig = searchTerm.getSearchTermConfig();
+//     if (termConfig.isForceExactMatch()) {
+//       resolvedSearchOptions = DEFAULT_SEARCH_OPTIONS_EXACT;
+//     }
 
-    const codeStr = `cts.jsonPropertyValueQuery(
-      ${utils.arrayToString(termConfig.getPropertyNames())},
-      ${utils.arrayToString(
-        utils.toArray(termValue, termConfig.getScalarType()),
-        termConfig.getScalarType(),
-      )},
-      ${utils.arrayToString(resolvedSearchOptions)},
-      ${searchTerm.getWeight()}
-    )`;
-    return _formattedPatternResponse(codeStr);
-  },
-};
+//     const codeStr = `cts.jsonPropertyValueQuery(
+//       ${utils.arrayToString(termConfig.getPropertyNames())},
+//       ${utils.arrayToString(
+//         utils.toArray(termValue, termConfig.getScalarType()),
+//         termConfig.getScalarType(),
+//       )},
+//       ${utils.arrayToString(resolvedSearchOptions)},
+//       ${searchTerm.getWeight()}
+//     )`;
+//     return _formattedPatternResponse(codeStr);
+//   },
+// };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
   allowedChildren: TYPE_ATOMIC,
@@ -783,7 +783,7 @@ export {
   PATTERN_NAME_INDEXED_VALUE,
   PATTERN_NAME_INDEXED_WORD,
   PATTERN_NAME_IRI,
-  PATTERN_NAME_PROPERTY_VALUE,
+  // PATTERN_NAME_PROPERTY_VALUE,
   PATTERN_NAME_RELATED_LIST,
   PATTERN_NAME_TEXT,
   TYPE_GROUP,

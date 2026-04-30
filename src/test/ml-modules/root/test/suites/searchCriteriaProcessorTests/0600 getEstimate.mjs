@@ -11,6 +11,90 @@ let assertions = [];
 
 const scenarios = [
   {
+    name: 'agent started anytime in 2012 (=) --CTS TO RETURN 8',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '=',
+      },
+    },
+    expected: {
+      error: false,
+      value: 15,
+    },
+  },
+  {
+    name: 'agent *not* started anytime in 2012 (!=)',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '!=',
+      },
+    },
+    expected: {
+      error: false,
+      value: 23368,
+    },
+  },
+  {
+    name: 'agent started in or after 2012 (>=) --CTS TO RETURN 107',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '>=',
+      },
+    },
+    expected: {
+      error: false,
+      value: 114,
+    },
+  },
+  {
+    name: 'agent started after 2012 (>)',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '>',
+      },
+    },
+    expected: {
+      error: false,
+      value: 99,
+    },
+  },
+  {
+    name: 'agent started before 2012 (<)',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '<',
+      },
+    },
+    expected: {
+      error: false,
+      value: 23269,
+    },
+  },
+  {
+    name: 'agent started in or before 2012 (<=) --CTS TO RETURN 23277',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '<=',
+      },
+    },
+    expected: {
+      error: false,
+      value: 23284,
+    },
+  },
+  {
     name: 'agent name search',
     input: {
       searchCriteria: { _scope: 'agent', name: 'Pablo' },
@@ -231,6 +315,32 @@ const scenarios = [
       value: 2135,
     },
   },
+  {
+    name: 'Valid multi-scope search',
+    input: {
+      allowMultiScope: true,
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [
+          { _scope: 'agent', name: 'wick' },
+          { _scope: 'work', name: 'wick' },
+          { _scope: 'item', name: 'wick' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 8,
+    },
+  },
+  /*
+  Empty OR
+  OR with one item
+  OR with multi
+  AND
+  No groups, just a single criterion
+  Not allowed
+  */
 ];
 
 // Test getEstimate scenarios
@@ -247,7 +357,7 @@ for (const scenario of scenarios) {
     processor.process(
       scenario.input.searchCriteria,
       null, // scopeName from criteria
-      false, // allowMultiScope
+      scenario.input.allowMultiScope ?? false,
       new SearchPatternOptions(),
       true, // includeTypeConstraint
       1, // page

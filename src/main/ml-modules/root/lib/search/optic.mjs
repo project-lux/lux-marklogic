@@ -460,6 +460,8 @@ function getOpticPlan({
       case 'dateRange': {
         DEBUG.push('processing dateRange');
 
+        let returnLexicons = true;
+
         // Identify indexes and configure lexicons.
         if (
           !utils.isArray(termConfig.indexReferences) ||
@@ -471,12 +473,6 @@ function getOpticPlan({
         }
         const startColName = id + '_start';
         const endColName = id + '_end';
-        lexicons[startColName] = cts.fieldReference(
-          termConfig.indexReferences[0],
-        );
-        lexicons[endColName] = cts.fieldReference(
-          termConfig.indexReferences[1],
-        );
 
         // Accept two dates, requiring at least one.
         const delim = ';';
@@ -521,22 +517,34 @@ function getOpticPlan({
           constraints.push(op.ge(op.col(startColName), startDateLong));
           constraints.push(op.le(op.col(endColName), endDateLong));
         } else if (['!='].includes(operator)) {
-          //TODO
-          // const start = op.fromLexicons({
-          //   startValue: cts.fieldReference(startIndexName),
-          //   StartURI: cts.uriReference()
-          // }, null).
-          //   where(op.ge(op.col("startValue"), startDateLong))
-          // const end = op.fromLexicons({
-          //   endValue: cts.fieldReference(endIndexName),
-          //   EndURI: cts.uriReference()
-          // }, null).
-          //   where(op.le(op.col("endValue"), endDateLong))
-          // op.fromLexicons({ uri: cts.uriReference() }, null).except(
-          //   start.joinInner(end, op.on(start.col("StartURI"), end.col("EndURI")))).result()
+          returnLexicons = false;
+          ctsConstraints.push(
+            cts.orQuery([
+              cts.fieldRangeQuery(
+                termConfig.indexReferences[0],
+                '<',
+                startDateLong,
+              ),
+              cts.fieldRangeQuery(
+                termConfig.indexReferences[1],
+                '>',
+                endDateLong,
+              ),
+            ]),
+          );
         } else {
           throw new InternalServerError(
             `The date range pattern has not accounted for the '${operator}' operator.`,
+          );
+        }
+
+        if (returnLexicons) {
+          // TODO: allow pattern functions to add to the lexicons object.
+          lexicons[startColName] = cts.fieldReference(
+            termConfig.indexReferences[0],
+          );
+          lexicons[endColName] = cts.fieldReference(
+            termConfig.indexReferences[1],
           );
         }
 

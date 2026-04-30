@@ -2,7 +2,8 @@
 
 import op from '/MarkLogic/optic.mjs';
 import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
-import { isDefined } from '../../utils/utils.mjs';
+import * as utils from '../../utils/utils.mjs';
+import { convertPartialDateTimeToSeconds } from '../../utils/dateUtils.mjs';
 import {
   getSearchTermNames,
   getSearchTermConfig,
@@ -15,7 +16,10 @@ import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
 } from '../appConstants.mjs';
-import { InvalidSearchRequestError } from '../errorClasses.mjs';
+import {
+  InternalServerError,
+  InvalidSearchRequestError,
+} from '../errorClasses.mjs';
 const sem = require('/MarkLogic/semantics.xqy');
 
 // TODO: remove global debug array from MJS context.
@@ -78,7 +82,7 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
     );
   }
 
-  if (!planCriteria?.OR || !Array.isArray(planCriteria.OR)) {
+  if (!planCriteria?.OR || !utils.isArray(planCriteria.OR)) {
     throw new InvalidSearchRequestError(
       "a search with scope 'multi' must contain an 'OR' array.",
     );
@@ -173,7 +177,7 @@ function getOpticPlan({
   const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
   const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
 
-  if (!isDefined(planCriteria)) {
+  if (!utils.isDefined(planCriteria)) {
     throw new InvalidSearchRequestError('search criteria must be defined.');
   }
 
@@ -432,8 +436,11 @@ function getOpticPlan({
     DEBUG.push('Found Term Config');
     DEBUG.push(xdmp.toJSON(termConfig));
 
-    // Cast value to the correct type if scalar
-    const caster = termConfig.scalarType ? xs[termConfig.scalarType] : null;
+    // Cast value to the correct type if scalar and not dateTime
+    const caster =
+      termConfig.scalarType && termConfig.scalarType !== 'dateTime'
+        ? xs[termConfig.scalarType]
+        : null;
     const termValue = caster
       ? caster(criterion[termName])
       : typeof criterion[termName] === 'string'
@@ -450,6 +457,91 @@ function getOpticPlan({
     console.log(`Search options for term '${termName}':`, termSearchOptions);
 
     switch (termConfig.patternName) {
+      case 'dateRange': {
+        DEBUG.push('processing dateRange');
+
+        // Identify indexes and configure lexicons.
+        if (
+          !utils.isArray(termConfig.indexReferences) ||
+          termConfig.indexReferences.length !== 2
+        ) {
+          throw new InternalServerError(
+            `The '${termName}' search term within the '${scopeName}' scope is not correctly configured: two indexes are required.`,
+          );
+        }
+        const startColName = id + '_start';
+        const endColName = id + '_end';
+        lexicons[startColName] = cts.fieldReference(
+          termConfig.indexReferences[0],
+        );
+        lexicons[endColName] = cts.fieldReference(
+          termConfig.indexReferences[1],
+        );
+
+        // Accept two dates, requiring at least one.
+        const delim = ';';
+        let dates = termValue;
+        if (dates.indexOf(delim) === -1) {
+          dates += delim;
+        }
+        dates = dates.split(';');
+        let startDateStr = dates[0].length > 0 ? dates[0] : null;
+        let endDateStr = dates[1].length > 0 ? dates[1] : null;
+        if (!startDateStr && !endDateStr) {
+          throw new InvalidSearchRequestError(
+            `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
+          );
+        }
+
+        if (startDateStr && !endDateStr) {
+          endDateStr = startDateStr;
+        } else if (!startDateStr && endDateStr) {
+          startDateStr = endDateStr;
+        }
+
+        // Convert to seconds, allowing the operator to help determine how to treat partial dates.
+        const operator = criterion._comp;
+        const startDateLong = convertPartialDateTimeToSeconds(
+          startDateStr,
+          true,
+        );
+        const endDateLong = convertPartialDateTimeToSeconds(endDateStr, false);
+
+        // TODO: document logic w/ example
+        const isBefore = ['<', '>='].includes(operator);
+        if (['>', '>=', '<', '<='].includes(operator)) {
+          isBefore
+            ? constraints.push(
+                COMPARATORS[operator](op.col(startColName), startDateLong),
+              )
+            : constraints.push(
+                COMPARATORS[operator](op.col(endColName), endDateLong),
+              );
+        } else if (['='].includes(operator)) {
+          constraints.push(op.ge(op.col(startColName), startDateLong));
+          constraints.push(op.le(op.col(endColName), endDateLong));
+        } else if (['!='].includes(operator)) {
+          //TODO
+          // const start = op.fromLexicons({
+          //   startValue: cts.fieldReference(startIndexName),
+          //   StartURI: cts.uriReference()
+          // }, null).
+          //   where(op.ge(op.col("startValue"), startDateLong))
+          // const end = op.fromLexicons({
+          //   endValue: cts.fieldReference(endIndexName),
+          //   EndURI: cts.uriReference()
+          // }, null).
+          //   where(op.le(op.col("endValue"), endDateLong))
+          // op.fromLexicons({ uri: cts.uriReference() }, null).except(
+          //   start.joinInner(end, op.on(start.col("StartURI"), end.col("EndURI")))).result()
+        } else {
+          throw new InternalServerError(
+            `The date range pattern has not accounted for the '${operator}' operator.`,
+          );
+        }
+
+        break;
+      }
       case 'text': {
         DEBUG.push('processing text');
 

@@ -99,6 +99,55 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
   });
 }
 
+function getCriteriaAndLogicType(planCriteria) {
+  // Canonicalize singleton conjunction arrays so join selection is based on
+  // effective boolean structure instead of wrapper syntax.
+  if (planCriteria.AND) {
+    const andCriteria = xdmp.toJSON(planCriteria.AND).toObject();
+    return andCriteria.length === 1
+      ? {
+          criteria: [andCriteria[0]],
+          logicType: 'and',
+        }
+      : {
+          criteria: andCriteria,
+          logicType: 'and',
+        };
+  }
+
+  if (planCriteria.OR) {
+    const orCriteria = xdmp.toJSON(planCriteria.OR).toObject();
+    return orCriteria.length === 1
+      ? {
+          criteria: [orCriteria[0]],
+          logicType: 'and',
+        }
+      : {
+          criteria: orCriteria,
+          logicType: 'or',
+        };
+  }
+
+  if (planCriteria.NOT) {
+    const notCriteria = xdmp.toJSON(planCriteria.NOT).toObject();
+    return notCriteria.length === 1
+      ? {
+          criteria: [notCriteria[0]],
+          logicType: 'not',
+        }
+      : {
+          criteria: notCriteria,
+          logicType: 'not',
+        };
+  }
+
+  return {
+    // Single criteria are equivalent to AND
+    criteria: [xdmp.toJSON(planCriteria).toObject()],
+    logicType: 'and',
+  };
+}
+
 function getOpticPlan({
   planCriteria,
   planScope = 'item',
@@ -186,25 +235,9 @@ function getOpticPlan({
     distanceCols = distanceCols.concat(termPlanArrays?.distanceCols ?? []);
   };
 
-  let criteria;
-  let logicType;
-
-  // Look for `AND:[]`, `OR:[]`, or `NOT:[]` in the root.
-  // Note: This code may add additional elements to the array, hence the manual iteration and deep copy.
-  if (planCriteria.AND) {
-    criteria = xdmp.toJSON(planCriteria.AND).toObject();
-    logicType = 'and';
-  } else if (planCriteria.OR) {
-    criteria = xdmp.toJSON(planCriteria.OR).toObject();
-    logicType = 'or';
-  } else if (planCriteria.NOT) {
-    criteria = xdmp.toJSON(planCriteria.NOT).toObject();
-    logicType = 'not';
-  } else {
-    // Single criteria are equivalent to AND
-    criteria = [xdmp.toJSON(planCriteria).toObject()];
-    logicType = 'and';
-  }
+  const criteriaAndLogicType = getCriteriaAndLogicType(planCriteria);
+  const criteria = criteriaAndLogicType.criteria;
+  const logicType = criteriaAndLogicType.logicType;
 
   DEBUG.push(`Logic Type: ${logicType}`);
 

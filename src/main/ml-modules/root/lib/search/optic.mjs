@@ -104,51 +104,29 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
 }
 
 function getCriteriaAndLogicType(planCriteria) {
-  // Canonicalize singleton conjunction arrays so join selection is based on
-  // effective boolean structure instead of wrapper syntax.
+  // Create a mutuable array of criteria and determine the logic type (AND, OR, NOT)
+  // based on the keys of the planCriteria object.
+  let criteria;
+  let logicType;
   if (planCriteria.AND) {
-    const andCriteria = xdmp.toJSON(planCriteria.AND).toObject();
-    return andCriteria.length === 1
-      ? {
-          criteria: [andCriteria[0]],
-          logicType: 'and',
-        }
-      : {
-          criteria: andCriteria,
-          logicType: 'and',
-        };
-  }
-
-  if (planCriteria.OR) {
-    const orCriteria = xdmp.toJSON(planCriteria.OR).toObject();
-    return orCriteria.length === 1
-      ? {
-          criteria: [orCriteria[0]],
-          logicType: 'and',
-        }
-      : {
-          criteria: orCriteria,
-          logicType: 'or',
-        };
-  }
-
-  if (planCriteria.NOT) {
+    criteria = xdmp.toJSON(planCriteria.AND).toObject();
+    logicType = 'and';
+  } else if (planCriteria.OR) {
+    criteria = xdmp.toJSON(planCriteria.OR).toObject();
+    // An OR with one criterion should be treated as an AND to avoid incorrect full outer joins.
+    logicType = criteria.length === 1 ? 'and' : 'or';
+  } else if (planCriteria.NOT) {
     const notCriteria = xdmp.toJSON(planCriteria.NOT).toObject();
-    return notCriteria.length === 1
-      ? {
-          criteria: [notCriteria[0]],
-          logicType: 'not',
-        }
-      : {
-          criteria: notCriteria,
-          logicType: 'not',
-        };
-  }
-
-  return {
+    criteria = notCriteria.length === 1 ? [notCriteria[0]] : notCriteria;
+    logicType = 'not';
+  } else {
     // Single criteria are equivalent to AND
-    criteria: [xdmp.toJSON(planCriteria).toObject()],
-    logicType: 'and',
+    criteria = [xdmp.toJSON(planCriteria).toObject()];
+    logicType = 'and';
+  }
+  return {
+    criteria,
+    logicType,
   };
 }
 

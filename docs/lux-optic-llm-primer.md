@@ -303,7 +303,7 @@ On error, dumps `debug` to console before re-throwing.
 | `getSearchTermConfig` | `/config/searchTermsConfig.mjs` | Returns config object for a specific scope+term pair |
 | `ANN_K_DEFAULT` | `/lib/appConstants.mjs` | Default neighbor count for `annTopK` (Gradle-injected, fallback: 50) |
 | `ANN_K_MAX` | `/lib/appConstants.mjs` | Hard ceiling for `annTopK` k value (Gradle-injected, fallback: 1000) |
-| `ANN_MAX_DISTANCE_DEFAULT` | `/lib/appConstants.mjs` | Default cosine distance threshold (Gradle-injected, fallback: 0.14) |
+| `ANN_DISTANCE_DEFAULT` | `/lib/appConstants.mjs` | Default cosine distance threshold (Gradle-injected, fallback: 0.14) |
 | `processSearchCriteria` | `/lib/searchLib.mjs` | Imported but **not used** in current code |
 | `START_OF_GENERATED_QUERY` | `/lib/SearchCriteriaProcessor.mjs` | Imported but **not used** in current code |
 
@@ -337,7 +337,7 @@ Properties read from `getSearchTermConfig(scope, termName)`:
   predicates: string[],       // hopWithField: predicate expression strings for ProcessPredicates
   targetScope: string,        // hopWithField: scope of the hop target (e.g., "agent")
   vectorColumn: string,       // annTopK only; default 'main'
-  maxDistance: number,        // annTopK only; default ANN_MAX_DISTANCE_DEFAULT
+  maxDistance: number,        // annTopK only; default ANN_DISTANCE_DEFAULT
   defaultMaxAnnK: number,    // annTopK only; default ANN_K_DEFAULT (can be overridden per-request via _maxAnnK)
 }
 ```
@@ -533,7 +533,7 @@ The following details are implementation-specific and may change. An LLM should 
 
 | Detail | Where to verify | Current value/behavior |
 |---|---|---|
-| ANN constant values (`ANN_K_DEFAULT`, `ANN_K_MAX`, `ANN_MAX_DISTANCE_DEFAULT`) | `appConstants.mjs` and `gradle.properties` | Fallbacks: 50, 1000, 0.14 (Gradle may inject different values) |
+| ANN constant values (`ANN_K_DEFAULT`, `ANN_K_MAX`, `ANN_DISTANCE_DEFAULT`) | `appConstants.mjs` and `gradle.properties` | Fallbacks: 50, 1000, 0.14 (Gradle may inject different values) |
 | `k` resolution chain | `annTopK` case in `GetOpticPlan` | `Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K_MAX)` |
 | Seed-document exclusion heuristic | `annTopK` case, `isMultipleSimilarity` variable | Excludes for single similarity; keeps for multi-OR |
 | Distance consolidation | Distance handling in `GetOpticPlan` | Uses `op.least()` for multiple distances, `op.as()` for single distance at Optic level |

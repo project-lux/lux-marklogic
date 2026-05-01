@@ -24,15 +24,16 @@ const SCALE_OUT_TIMEOUT = parseInt('%%scaleOutTimeout%%'.trim());
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
 
-// annTopK vector search: ANN_K_DEFAULT is the fallback k when neither the search term instance
-// (_maxAnnK) nor the term config (defaultMaxAnnK) specifies one. ANN_K_MAX is a hard ceiling
-// that is never exceeded regardless of other configuration.
+// Default and maximum values for approximate nearest neighbor search (annTopK).
 const ANN_K_DEFAULT = parseInt('%%annKDefault%%'.trim()) || 50;
 const ANN_K_MAX = parseInt('%%annKMax%%'.trim()) || 1000;
 
-// Default cosine distance ceiling for annTopK. Individual term configs may lower this via termConfig.maxDistance.
-const ANN_MAX_DISTANCE_DEFAULT =
-  parseFloat('%%annMaxDistance%%'.trim()) || 0.14;
+// Default and maximum cosine distance for annTopK.
+const ANN_DISTANCE_DEFAULT =
+  parseFloat('%%annDistanceDefault%%'.trim()) || 0.14;
+const ANN_DISTANCE_MAX = parseFloat('%%annDistanceMax%%'.trim()) || 0.5;
+
+const DEFAULT_VECTOR_COLUMN = 'main';
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
@@ -168,9 +169,10 @@ const MESSAGE_ALREADY_HAS_A_PROFILE = 'already has a profile';
 export {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
+  ANN_DISTANCE_DEFAULT,
+  ANN_DISTANCE_MAX,
   ANN_K_DEFAULT,
   ANN_K_MAX,
-  ANN_MAX_DISTANCE_DEFAULT,
   AS_TYPE_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
@@ -185,6 +187,7 @@ export {
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
+  DEFAULT_VECTOR_COLUMN,
   ENDPOINT_ACCESS_UNIT_NAMES,
   FACETS_PREFIX,
   FEATURE_MY_COLLECTIONS_ENABLED,

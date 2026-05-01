@@ -1,5 +1,12 @@
 import * as utils from '../utils/utils.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
+import {
+  ANN_DISTANCE_DEFAULT,
+  ANN_DISTANCE_MAX,
+  ANN_K_DEFAULT,
+  ANN_K_MAX,
+  DEFAULT_VECTOR_COLUMN,
+} from './appConstants.mjs';
 
 // Offers traditional getters and settings, as well as the builder pattern's adds.
 const SearchTerm = class {
@@ -118,7 +125,18 @@ const SearchTerm = class {
     return this;
   }
   setProperty(name, value) {
-    this.props[name] = value;
+    switch (name) {
+      // A subset of props have maximums enforced by their setters.
+      case 'annK':
+        this.setAnnK(value);
+        break;
+      case 'vectorDistance':
+        this.setVectorDistance(value);
+        break;
+      default:
+        this.props[name] = value;
+        break;
+    }
   }
   getProperty(name) {
     return this.props[name];
@@ -137,6 +155,55 @@ const SearchTerm = class {
   }
   getSearchOptions() {
     return this.props.options;
+  }
+
+  addAnnK(annK) {
+    this.setAnnK(annK);
+    return this;
+  }
+  setAnnK(annK) {
+    const requestedK = annK ?? this.searchTermConfig?.getAnnK();
+    this.props.annK = Math.min(requestedK ?? ANN_K_DEFAULT, ANN_K_MAX);
+  }
+  getAnnK() {
+    if (this.props.annK == null) {
+      this.setAnnK();
+    }
+    return this.props.annK;
+  }
+
+  addVectorDistance(distance) {
+    this.setVectorDistance(distance);
+    return this;
+  }
+  setVectorDistance(distance) {
+    const requestedDistance =
+      distance ?? this.searchTermConfig?.getMaxDistance();
+    this.props.vectorDistance = Math.min(
+      requestedDistance ?? ANN_DISTANCE_DEFAULT,
+      ANN_DISTANCE_MAX,
+    );
+  }
+  getVectorDistance() {
+    if (this.props.vectorDistance == null) {
+      this.setVectorDistance();
+    }
+    return this.props.vectorDistance;
+  }
+
+  addVectorColumn(vectorColumn) {
+    this.setVectorColumn(vectorColumn);
+    return this;
+  }
+  setVectorColumn(vectorColumn) {
+    this.setProperty('vectorColumn', vectorColumn);
+  }
+  getVectorColumn() {
+    return (
+      this.props.vectorColumn ??
+      this.searchTermConfig?.getVectorColumn?.() ??
+      DEFAULT_VECTOR_COLUMN
+    );
   }
 
   setUsable(usable) {
@@ -177,6 +244,9 @@ const SearchTerm = class {
   }
   getValue() {
     return this.value;
+  }
+  hasValue() {
+    return utils.isDefined(this.value);
   }
 
   addValueType(type) {

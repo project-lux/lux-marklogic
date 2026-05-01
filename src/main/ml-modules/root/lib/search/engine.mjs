@@ -11,9 +11,6 @@ import {
 } from '../../config/searchTermsConfig.mjs';
 import { processSearchCriteria } from '../searchLib.mjs';
 import {
-  ANN_K_DEFAULT,
-  ANN_K_MAX,
-  ANN_MAX_DISTANCE_DEFAULT,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
 } from '../appConstants.mjs';
@@ -139,6 +136,7 @@ function getCriteriaAndLogicType(planCriteria) {
   };
 }
 
+// TODO: somewhere herein we should validate the term has any properties required by the pattern.
 function buildLeafTermContext({ criterion, termName, scope }) {
   const termConfig = new SearchTermConfig(getSearchTermConfig(scope, termName));
 
@@ -170,6 +168,9 @@ function buildLeafTermContext({ criterion, termName, scope }) {
   const termSearchOptions = termConfig.isForceExactMatch()
     ? DEFAULT_SEARCH_OPTIONS_EXACT
     : DEFAULT_SEARCH_OPTIONS_KEYWORD;
+
+  searchTerm.setValue(termValue);
+  searchTerm.setSearchOptions(termSearchOptions);
 
   return {
     searchTerm,
@@ -458,15 +459,12 @@ function getOpticPlan({
     const termName = Object.keys(criterion).find(
       (k) => k[0] !== '_' && searchTermNames.includes(k),
     );
-    const leafTermContext = buildLeafTermContext({
-      criterion,
-      termName,
-      scope,
-    });
-    const searchTerm = leafTermContext.searchTerm;
-    const termConfig = leafTermContext.termConfig;
-    const termValue = leafTermContext.termValue;
-    const termSearchOptions = leafTermContext.termSearchOptions;
+    const { searchTerm, termConfig, termValue, termSearchOptions } =
+      buildLeafTermContext({
+        criterion,
+        termName,
+        scope,
+      });
 
     DEBUG.push('Found Term Config');
     DEBUG.push(xdmp.toJSON(termConfig.searchTermConfigObj));
@@ -660,11 +658,7 @@ function getOpticPlan({
             iriCol,
             id,
             searchTerm,
-            termName,
-            termValue,
-            termSearchOptions,
-            termConfig,
-            criterion,
+            childCriteria: criterion[termName],
             options: planOptions,
           });
         } else {
@@ -673,11 +667,7 @@ function getOpticPlan({
             iriCol,
             id,
             searchTerm,
-            termName,
-            termValue,
-            termSearchOptions,
-            termConfig,
-            criterion,
+            childCriteria: criterion[termName],
             options: planOptions,
           });
         }
@@ -743,19 +733,9 @@ function getOpticPlan({
 
         const vecFrag = id + '_vecFrag';
         const distCol = id + '_distance';
-        const vectorColumn = termConfig.getVectorColumn() ?? 'main';
-        const maxDistance =
-          termConfig.getMaxDistance() ?? ANN_MAX_DISTANCE_DEFAULT;
-
-        // k resolution: per-request option > term config default > build property default, capped by build property max.
-        const requestedK =
-          searchTerm.getProperty('annK') ??
-          termConfig.getAnnKMaxDefault() ??
-          ANN_K_DEFAULT;
-        const k = Math.min(requestedK, ANN_K_MAX);
-        DEBUG.push(
-          `annTopK k resolved to ${k} (requested ${requestedK}, max ${ANN_K_MAX})`,
-        );
+        const vectorColumn = searchTerm.getVectorColumn();
+        const maxDistance = searchTerm.getVectorDistance();
+        const k = searchTerm.getAnnK();
 
         // Require the seed document have the specified vector.
         if (!fn.docAvailable(termValue)) {
@@ -998,45 +978,32 @@ function processTransitiveHopWithFieldTerm({
   iriCol,
   id,
   searchTerm,
-  termName,
-  termValue,
-  termSearchOptions,
-  termConfig,
-  criterion,
+  childCriteria,
   options,
 }) {
+  const termConfig = searchTerm.getSearchTermConfig();
+
   // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
   const _refIri = id + '_iri';
-  // const rightGroups = {
-  //   by: [_refIri],
-  // };
-  const fieldPlan = termValue
+  const fieldPlan = searchTerm.hasValue()
     ? getFieldAtomicPlan({
         fragCol,
         iriCol,
         id,
-        termName,
-        termValue,
-        termSearchOptions,
-        termConfig,
         searchTerm,
-        criterion,
         options,
       })
     : getFieldNestedPlan({
         fragCol,
         iriCol,
         id,
-        termName,
-        termValue,
-        termSearchOptions,
-        termConfig,
         searchTerm,
-        criterion,
+        childCriteria,
         rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
       });
   // DEBUG.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
+
   // TODO: if there are zero results from the fieldPlan, should we do anything different?
   const sparql = `
 ${getPrefixesForSPARQL()}
@@ -1050,7 +1017,7 @@ select ?${id}_s ?${id}_o where {
   }
   ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates())} ?${id}_o
 }`;
-  // DEBUG.push(`Transitive SPARQL: ${sparql}`);
+
   return {
     patternJoins: [
       {
@@ -1067,13 +1034,11 @@ function processHopWithFieldTerm({
   iriCol,
   id,
   searchTerm,
-  termName,
-  termValue,
-  termSearchOptions,
-  termConfig,
-  criterion,
+  childCriteria,
   options,
 }) {
+  const termValue = searchTerm.getValue();
+  const termConfig = searchTerm.getSearchTermConfig();
   const _hopFragCol = id + '_hopFrag';
   const hopPlan = op.fromTriples([
     op.pattern(
@@ -1093,22 +1058,15 @@ function processHopWithFieldTerm({
         fragCol,
         iriCol,
         id,
-        termConfig,
         searchTerm,
-        termValue,
-        termName,
-        criterion,
         options,
       })
     : getFieldNestedPlan({
         fragCol,
         iriCol,
         id,
-        termConfig,
         searchTerm,
-        termValue,
-        termName,
-        criterion,
+        childCriteria,
         rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
       });
@@ -1138,17 +1096,14 @@ function getFieldNestedPlan({
   fragCol,
   iriCol,
   id,
-  termName,
-  termValue,
-  termSearchOptions,
-  termConfig,
   searchTerm,
-  criterion,
+  childCriteria,
   rightGroups,
   options,
 }) {
+  const termConfig = searchTerm.getSearchTermConfig();
   return getOpticPlan({
-    planCriteria: criterion[termName],
+    planCriteria: childCriteria,
     planScope: termConfig.getTargetScopeName(),
     planOptions: options,
     groups: rightGroups,
@@ -1156,18 +1111,10 @@ function getFieldNestedPlan({
   });
 }
 
-function getFieldAtomicPlan({
-  fragCol,
-  iriCol,
-  id,
-  termName,
-  termValue,
-  termSearchOptions,
-  termConfig,
-  searchTerm,
-  criterion,
-  options,
-}) {
+function getFieldAtomicPlan({ fragCol, iriCol, id, searchTerm, options }) {
+  const termValue = searchTerm.getValue();
+  const termSearchOptions = searchTerm.getSearchOptions();
+  const termConfig = searchTerm.getSearchTermConfig();
   const _refIri = id + '_iri';
   return searchTerm.isCompleteMatch()
     ? op

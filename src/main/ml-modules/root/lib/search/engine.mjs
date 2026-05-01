@@ -20,6 +20,7 @@ import {
 } from '../errorClasses.mjs';
 import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
+import { PatternOptions } from '../search/patterns.mjs';
 //#endregion
 
 //#region Constants
@@ -38,10 +39,7 @@ const COMPARATORS = {
   '>=': op.ge,
 };
 
-const DEFAULT_PLAN_OPTIONS = {
-  // Intended to quickly compare performance (uris on e-nodes to fragments on d-nodes)
-  preferFragJoins: false,
-};
+const PREFER_FRAG_JOINS = false;
 
 const PREFIX_MAPPINGS = {
   crm: 'http://www.cidoc-crm.org/cidoc-crm/',
@@ -137,14 +135,27 @@ function getCriteriaAndLogicType(planCriteria) {
 }
 
 // TODO: somewhere herein we should validate the term has any properties required by the pattern.
-function buildLeafTermContext({ criterion, termName, scope }) {
-  const termConfig = new SearchTermConfig(getSearchTermConfig(scope, termName));
+function buildLeafTermContext({
+  criterion,
+  id,
+  name,
+  scope,
+  iriCol,
+  uriCol,
+  fragCol,
+  dataTypeCol,
+}) {
+  const termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
+  DEBUG.push('Found Term Config');
+  DEBUG.push(xdmp.toJSON(termConfig.rawConfig));
 
   const searchTerm = new SearchTerm()
-    .addName(termName)
+    .addId(id)
+    .addName(name)
     .addScopeName(scope)
     .addSearchTermConfig(termConfig)
-    .addValue(criterion[termName]);
+    .addColumns({ iriCol, uriCol, fragCol, dataTypeCol })
+    .addChildCriteria(criterion[name]);
 
   // Runtime search term properties are represented with leading underscores on criteria.
   Object.keys(criterion)
@@ -157,44 +168,45 @@ function buildLeafTermContext({ criterion, termName, scope }) {
   const scalarType = termConfig.getScalarType();
   const caster =
     scalarType && scalarType !== 'dateTime' ? xs[scalarType] : null;
-  const rawTermValue = searchTerm.getValue();
-  const termValue = caster
+  const rawTermValue = searchTerm.getChildCriteria();
+  const value = caster
     ? caster(rawTermValue)
     : typeof rawTermValue === 'string'
       ? rawTermValue
       : null;
+  searchTerm.setValue(value);
+  DEBUG.push(value);
+  DEBUG.push(typeof value);
 
   // TODO: resolve search options: pattern --> term config --> term instance.
-  const termSearchOptions = termConfig.isForceExactMatch()
+  const searchOptions = termConfig.isForceExactMatch()
     ? DEFAULT_SEARCH_OPTIONS_EXACT
     : DEFAULT_SEARCH_OPTIONS_KEYWORD;
+  searchTerm.setSearchOptions(searchOptions);
 
-  searchTerm.setValue(termValue);
-  searchTerm.setSearchOptions(termSearchOptions);
-
-  return {
-    searchTerm,
-    termConfig,
-    termValue,
-    termSearchOptions,
-  };
+  return searchTerm;
 }
 //#endregion
 
 function getOpticPlan({
   planCriteria,
   planScope = 'item',
-  planOptions = DEFAULT_PLAN_OPTIONS,
+  patternOptions,
   groups = null,
   parentId = null,
   allowMultiScope = false,
 }) {
   DEBUG.push('Called getOpticPlan');
+
+  if (!utils.isDefined(patternOptions)) {
+    patternOptions = new PatternOptions(PREFER_FRAG_JOINS);
+  }
+
   DEBUG.push(
     xdmp.toJSON({
       planCriteria,
       planScope,
-      planOptions,
+      patternOptions,
       parentId,
       allowMultiScope,
     }),
@@ -276,7 +288,7 @@ function getOpticPlan({
 
   // Loop through search criteria, adding operators
   for (let idx = 0; idx < criteria.length; idx++) {
-    const criterion = criteria[idx];
+    let criterion = criteria[idx];
     DEBUG.push(`Processing Criterion ${idx}`);
     DEBUG.push(xdmp.toJSON(criterion));
 
@@ -301,7 +313,7 @@ function getOpticPlan({
           // Full outer joins need the same columns from both sides
           // This will result in a natural join
 
-          const _joinCol = planOptions.preferFragJoins
+          const _joinCol = patternOptions.getPreferFragJoins()
             ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
             : op.as(uriCol, op.col(id + '_uri'));
 
@@ -310,7 +322,7 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: criterion,
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select([_joinCol, op.as('dataType', op.col(id + '_dataType'))]),
             on: null,
@@ -325,12 +337,14 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: criterion,
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select(
-              planOptions.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
+              patternOptions.getPreferFragJoins()
+                ? [id + '_frag']
+                : [id + '_uri'],
             ),
-            on: planOptions.preferFragJoins
+            on: patternOptions.getPreferFragJoins()
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
             condition: null,
@@ -349,12 +363,14 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: criterion,
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select(
-              planOptions.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
+              patternOptions.getPreferFragJoins()
+                ? [id + '_frag']
+                : [id + '_uri'],
             ),
-            on: planOptions.preferFragJoins
+            on: patternOptions.getPreferFragJoins()
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
             condition: null,
@@ -373,12 +389,14 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: criterion,
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select(
-              planOptions.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
+              patternOptions.getPreferFragJoins()
+                ? [id + '_frag']
+                : [id + '_uri'],
             ),
-            on: planOptions.preferFragJoins
+            on: patternOptions.getPreferFragJoins()
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
             condition: null,
@@ -398,12 +416,14 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: { OR: criterion.NOT },
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select(
-              planOptions.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
+              patternOptions.getPreferFragJoins()
+                ? [id + '_frag']
+                : [id + '_uri'],
             ),
-            on: planOptions.preferFragJoins
+            on: patternOptions.getPreferFragJoins()
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
             condition: null,
@@ -416,7 +436,7 @@ function getOpticPlan({
           // Full outer joins need the same columns from both sides
           // This will result in a natural join
 
-          const _joinCol = planOptions.preferFragJoins
+          const _joinCol = patternOptions.getPreferFragJoins()
             ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
             : op.as(uriCol, op.col(id + '_uri'));
 
@@ -425,7 +445,7 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: criterion,
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select([_joinCol, op.as('dataType', op.col(id + '_dataType'))]),
             on: null,
@@ -441,12 +461,14 @@ function getOpticPlan({
             right: getOpticPlan({
               planCriteria: { OR: criterion.NOT },
               planScope: scope,
-              planOptions,
+              patternOptions,
               parentId: id,
             }).select(
-              planOptions.preferFragJoins ? [id + '_frag'] : [id + '_uri'],
+              patternOptions.getPreferFragJoins()
+                ? [id + '_frag']
+                : [id + '_uri'],
             ),
-            on: planOptions.preferFragJoins
+            on: patternOptions.getPreferFragJoins()
               ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
               : op.on(op.col(uriCol), op.col(id + '_uri')),
             condition: null,
@@ -456,22 +478,25 @@ function getOpticPlan({
       continue;
     }
 
-    const termName = Object.keys(criterion).find(
+    const name = Object.keys(criterion).find(
       (k) => k[0] !== '_' && searchTermNames.includes(k),
     );
-    const { searchTerm, termConfig, termValue, termSearchOptions } =
-      buildLeafTermContext({
-        criterion,
-        termName,
-        scope,
-      });
+    const searchTerm = buildLeafTermContext({
+      criterion,
+      id,
+      name,
+      scope,
+      iriCol,
+      uriCol,
+      fragCol,
+      dataTypeCol,
+    });
 
-    DEBUG.push('Found Term Config');
-    DEBUG.push(xdmp.toJSON(termConfig.searchTermConfigObj));
-
-    DEBUG.push(termValue);
-    DEBUG.push(typeof searchTerm.getValue());
-    console.log(`Search options for term '${termName}':`, termSearchOptions);
+    // Delete post-refactor
+    criterion = null; // Use searchTerm
+    const termValue = searchTerm.getValue();
+    const termConfig = searchTerm.getSearchTermConfig();
+    const termSearchOptions = searchTerm.getSearchOptions();
 
     switch (termConfig.getPatternName()) {
       case 'dateRange': {
@@ -485,7 +510,7 @@ function getOpticPlan({
           termConfig.getIndexReferences().length !== 2
         ) {
           throw new InternalServerError(
-            `The '${termName}' search term within the '${searchTerm.getScopeName()}' scope is not correctly configured: two indexes are required.`,
+            `The '${name}' search term within the '${searchTerm.getScopeName()}' scope is not correctly configured: two indexes are required.`,
           );
         }
         const startColName = id + '_start';
@@ -502,7 +527,7 @@ function getOpticPlan({
         let endDateStr = dates[1].length > 0 ? dates[1] : null;
         if (!startDateStr && !endDateStr) {
           throw new InvalidSearchRequestError(
-            `the '${termName} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
+            `the '${name} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
           );
         }
 
@@ -573,10 +598,10 @@ function getOpticPlan({
         const newCriteria = {
           OR: [
             {
-              textNoHop: criterion[termName],
+              textNoHop: searchTerm.getChildCriteria(),
             },
             {
-              referencedBy: criterion[termName],
+              referencedBy: searchTerm.getChildCriteria(),
             },
           ],
         };
@@ -658,8 +683,8 @@ function getOpticPlan({
             iriCol,
             id,
             searchTerm,
-            childCriteria: criterion[termName],
-            options: planOptions,
+            childCriteria: searchTerm.getChildCriteria(),
+            options: patternOptions,
           });
         } else {
           termPlanArrays = processHopWithFieldTerm({
@@ -667,8 +692,8 @@ function getOpticPlan({
             iriCol,
             id,
             searchTerm,
-            childCriteria: criterion[termName],
-            options: planOptions,
+            childCriteria: searchTerm.getChildCriteria(),
+            options: patternOptions,
           });
         }
         addToPlanArrays(termPlanArrays);
@@ -695,9 +720,9 @@ function getOpticPlan({
 
         const right = tri.joinInner(
           getOpticPlan({
-            planCriteria: criterion[termName],
+            planCriteria: searchTerm.getChildCriteria(),
             planScope: termConfig.getTargetScopeName(),
-            planOptions,
+            patternOptions,
             groups: rightGroups,
             parentId: id,
           }),
@@ -740,7 +765,7 @@ function getOpticPlan({
         // Require the seed document have the specified vector.
         if (!fn.docAvailable(termValue)) {
           throw new Error(
-            `Document specified by search term ${termName} is not available: ${termValue}`,
+            `Document specified by search term ${name} is not available: ${termValue}`,
           );
         }
         const vectorData = cts
@@ -749,7 +774,7 @@ function getOpticPlan({
           .toArray();
         if (!vectorData || vectorData.length === 0) {
           throw new Error(
-            `Document specified by search term ${termName} is missing vector data for column '${vectorColumn}': ${termValue}`,
+            `Document specified by search term ${name} is missing vector data for column '${vectorColumn}': ${termValue}`,
           );
         }
         const queryVector = vec.vector(vectorData);
@@ -1105,7 +1130,7 @@ function getFieldNestedPlan({
   return getOpticPlan({
     planCriteria: childCriteria,
     planScope: termConfig.getTargetScopeName(),
-    planOptions: options,
+    patternOptions: options,
     groups: rightGroups,
     parentId: id,
   });

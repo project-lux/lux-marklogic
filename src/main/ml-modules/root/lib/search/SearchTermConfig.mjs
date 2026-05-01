@@ -2,15 +2,13 @@ import * as utils from '../../utils/utils.mjs';
 import * as patternConfig from './patterns.mjs';
 
 const SearchTermConfig = class {
-  constructor(searchTermConfigObj) {
+  constructor(rawConfig) {
     // Ideally, this should be a deep copy yet that proved confusing the first go around.
-    this.searchTermConfigObj = searchTermConfigObj;
+    this.rawConfig = rawConfig;
   }
 
   _getProperty(propName, defaultValue = null) {
-    return this.searchTermConfigObj
-      ? this.searchTermConfigObj[propName]
-      : defaultValue;
+    return this.rawConfig ? this.rawConfig[propName] : defaultValue;
   }
 
   exposedViaSearch() {

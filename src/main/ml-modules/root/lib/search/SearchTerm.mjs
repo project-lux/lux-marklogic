@@ -12,6 +12,7 @@ import {
 const SearchTerm = class {
   constructor() {
     this.usable = true;
+    this.id = null;
     this.name = null;
     this.scopeName = null;
     this.searchTermConfig = null;
@@ -21,6 +22,8 @@ const SearchTerm = class {
     this.parentSearchTerm = null;
     this.childInfo = {};
     this.modifiedCriteria = null;
+    this.childCriteria = null;
+    this.columns = {};
   }
 
   // Likely set via setProperty
@@ -40,6 +43,17 @@ const SearchTerm = class {
   }
   getMustReturnCtsQuery() {
     return this.mustReturnCtsQuery;
+  }
+
+  addId(id) {
+    this.setId(id);
+    return this;
+  }
+  setId(id) {
+    this.id = id;
+  }
+  getId() {
+    return this.id;
   }
 
   addName(name) {
@@ -136,6 +150,77 @@ const SearchTerm = class {
   }
   getPropertyNames() {
     return Object.keys(this.getProperties());
+  }
+
+  // A SearchTerm can reference multiple Optic columns. Keep these in a dedicated
+  // map so callers can use either generic or dedicated column accessors.
+  addColumn(name, value) {
+    this.setColumn(name, value);
+    return this;
+  }
+  setColumn(name, value) {
+    this.columns[name] = value;
+  }
+  getColumn(name) {
+    return this.columns[name];
+  }
+  getColumns() {
+    return this.columns;
+  }
+  getColumnNames() {
+    return Object.keys(this.getColumns());
+  }
+
+  addUriColumn(uriColumn) {
+    this.setUriColumn(uriColumn);
+    return this;
+  }
+  setUriColumn(uriColumn) {
+    this.setColumn('uri', uriColumn);
+  }
+  getUriColumn() {
+    return this.getColumn('uri');
+  }
+
+  addIriColumn(iriColumn) {
+    this.setIriColumn(iriColumn);
+    return this;
+  }
+  setIriColumn(iriColumn) {
+    this.setColumn('iri', iriColumn);
+  }
+  getIriColumn() {
+    return this.getColumn('iri');
+  }
+
+  addFragmentColumn(fragmentColumn) {
+    this.setFragmentColumn(fragmentColumn);
+    return this;
+  }
+  setFragmentColumn(fragmentColumn) {
+    this.setColumn('fragment', fragmentColumn);
+  }
+  getFragmentColumn() {
+    return this.getColumn('fragment');
+  }
+
+  addDataTypeColumn(dataTypeColumn) {
+    this.setDataTypeColumn(dataTypeColumn);
+    return this;
+  }
+  setDataTypeColumn(dataTypeColumn) {
+    this.setColumn('dataType', dataTypeColumn);
+  }
+  getDataTypeColumn() {
+    return this.getColumn('dataType');
+  }
+
+  addColumns({ iriCol, uriCol, fragCol, dataTypeCol } = {}) {
+    if (utils.isDefined(iriCol)) this.setIriColumn(iriCol);
+    if (utils.isDefined(uriCol)) this.setUriColumn(uriCol);
+    if (utils.isDefined(fragCol)) this.setFragmentColumn(fragCol);
+    if (utils.isDefined(dataTypeCol)) this.setDataTypeColumn(dataTypeCol);
+    return this;
   }
 
   // Each search term instance may come with its own search options.  Such search options
@@ -279,6 +364,20 @@ const SearchTerm = class {
   }
   hasModifiedCriteria() {
     return this.getModifiedCriteria() != null;
+  }
+
+  addChildCriteria(criteria) {
+    this.setChildCriteria(criteria);
+    return this;
+  }
+  setChildCriteria(criteria) {
+    this.childCriteria = criteria;
+  }
+  getChildCriteria() {
+    return this.childCriteria;
+  }
+  hasChildCriteria() {
+    return this.childCriteria != null;
   }
 };
 

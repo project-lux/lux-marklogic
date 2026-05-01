@@ -62,10 +62,6 @@ const SearchTermConfig = class {
     return utils.isNonEmptyArray(this.getIndexReferences());
   }
 
-  getIndexReferences() {
-    return this._getProperty('indexReferences');
-  }
-
   getLabel() {
     return this._getProperty('label');
   }
@@ -90,6 +86,22 @@ const SearchTermConfig = class {
 
   getPredicates() {
     return this._getProperty('predicates');
+  }
+
+  isTransitive() {
+    return this._getProperty('transitive', false);
+  }
+
+  getVectorColumn() {
+    return this._getProperty('vectorColumn');
+  }
+
+  getMaxDistance() {
+    return this._getProperty('maxDistance');
+  }
+
+  getAnnKMaxDefault() {
+    return this._getProperty('annKMaxDefault');
   }
 
   getPropertyNames() {

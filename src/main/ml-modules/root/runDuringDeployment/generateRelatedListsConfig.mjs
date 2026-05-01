@@ -7,7 +7,7 @@ import {
 import {
   PATTERN_NAME_HOP_WITH_FIELD,
   PATTERN_NAME_RELATED_LIST,
-} from '../lib/searchPatternsLib.mjs';
+} from '../lib/search/patterns.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
   TENANT_OWNER,

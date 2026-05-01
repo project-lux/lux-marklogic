@@ -44,7 +44,7 @@ const searchScope = null;
 
   searchCriteria = null,
   searchScope = null,
-  searchPatternOptions = null,
+  patternOptions = null,
   includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT (true),
   page = DEFAULT_PAGE (1),
   pageLength = DEFAULT_PAGE_LENGTH (20),

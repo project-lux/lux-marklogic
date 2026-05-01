@@ -1,5 +1,6 @@
 'use strict';
 
+//#region Imports
 import op from '/MarkLogic/optic.mjs';
 import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
@@ -20,6 +21,9 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
+//#endregion
+
+//#region Constants
 const sem = require('/MarkLogic/semantics.xqy');
 
 // TODO: remove global debug array from MJS context.
@@ -36,6 +40,7 @@ const COMPARATORS = {
 };
 
 const DEFAULT_PLAN_OPTIONS = {
+  // Intended to quickly compare performance (uris on e-nodes to fragments on d-nodes)
   preferFragJoins: false,
 };
 
@@ -45,7 +50,9 @@ const PREFIX_MAPPINGS = {
   lux: 'https://lux.collections.yale.edu/ns/',
   skos: 'http://www.w3.org/2004/02/skos/core#',
 };
+//#endregion
 
+//#region Helper functions
 function getPrefixesForSPARQL() {
   return Object.entries(PREFIX_MAPPINGS)
     .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
@@ -129,6 +136,7 @@ function getCriteriaAndLogicType(planCriteria) {
     logicType,
   };
 }
+//#endregion
 
 function getOpticPlan({
   planCriteria,
@@ -931,6 +939,7 @@ function getOpticPlan({
   return plan;
 }
 
+//#region Patterns
 /*
   Return: 
   {
@@ -1134,7 +1143,9 @@ function getFieldAtomicPlan({
           ),
         );
 }
+//#endregion
 
+//#region Entry point
 // returns {
 //   results: Array<object> | null,
 //   planAsJson: object,
@@ -1179,5 +1190,6 @@ function execute({
     throw ex;
   }
 }
+//#endregion
 
 export { execute };

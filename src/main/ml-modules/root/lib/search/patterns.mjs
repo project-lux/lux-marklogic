@@ -1,5 +1,5 @@
-import * as utils from '../utils/utils.mjs';
-import { convertPartialDateTimeToSeconds } from '../utils/dateUtils.mjs';
+import * as utils from '../../utils/utils.mjs';
+import { convertPartialDateTimeToSeconds } from '../../utils/dateUtils.mjs';
 import {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
@@ -9,20 +9,19 @@ import {
   IRI_DOES_NOT_EXIST,
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
-} from './appConstants.mjs';
+} from '../appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
-} from './errorClasses.mjs';
+} from '../errorClasses.mjs';
 import {
-  // getCorrectlyCasedType,
+  getSearchScopes,
   getSearchScopeFields,
   getSearchScopePredicates,
   getSearchScopeTypes,
   isSearchScopeName,
-} from './searchScope.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
-import { getSearchScopes } from './searchScope.mjs';
+} from '../searchScope.mjs';
+import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 
 const PATTERN_NAME_ANN_TOP_K = 'annTopK';
 const PATTERN_NAME_DATE_RANGE = 'dateRange';
@@ -157,7 +156,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_ANN_TOP_K] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     // Not implemented in CTS.
@@ -173,7 +172,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     // Not implemented in CTS.
@@ -189,7 +188,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     const termName = searchTerm.getName();
@@ -292,7 +291,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DOCUMENT_ID] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     return _formattedPatternResponse(
@@ -312,7 +311,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     /*
@@ -321,7 +320,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
      * The values query has a couple differences, specifically not wrapping a top-level term's
      * cts.triples call within cts.documentQuery.
      */
-    const requestIsForValues = searchPatternOptions.get(
+    const requestIsForValues = patternOptions.get(
       OPTION_NAME_RETURN_VALUES,
       false,
     );
@@ -345,7 +344,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
     const wrapEnd = wrapInDocumentQuery ? ')' : '';
     const searchTermConfig = searchTerm.getSearchTermConfig();
 
-    const eagerEvaluation = searchPatternOptions.get(
+    const eagerEvaluation = patternOptions.get(
       OPTION_NAME_EAGER_EVALUATION,
       true,
     );
@@ -361,7 +360,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
 
     if (returnValues) {
       // A request may specify the maximum number of values to return.
-      const maximumNumberOfValues = searchPatternOptions.get(
+      const maximumNumberOfValues = patternOptions.get(
         OPTION_NAME_MAXIMUM_VALUES,
         -1,
       );
@@ -389,7 +388,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     const termValue = searchTerm.getValue();
@@ -431,7 +430,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_RANGE] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     const op = searchTerm.getComparisonOperator();
@@ -460,7 +459,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_VALUE] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     const termConfig = searchTerm.getSearchTermConfig();
@@ -486,7 +485,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_WORD] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     const termConfig = searchTerm.getSearchTermConfig();
@@ -512,7 +511,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     return _formattedPatternResponse(`sem.iri('${searchTerm.getValue()}')`);
@@ -528,7 +527,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
 //   function: (
 //     searchTerm,
 //     resolvedSearchOptions,
-//     searchPatternOptions,
+//     patternOptions,
 //     requestOptions,
 //   ) => {
 //     let termValue = searchTerm.getValue();
@@ -569,7 +568,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
   function: (
     searchTerm,
     resolvedSearchOptions,
-    searchPatternOptions,
+    patternOptions,
     requestOptions,
   ) => {
     // Convert to an array, if not already one.
@@ -771,6 +770,25 @@ function _getCtsQueryFunctionName(indexType, isCompleteMatch) {
   return `cts.${indexType}${isCompleteMatch === true ? 'Value' : 'Word'}Query`;
 }
 
+//#region Search pattern options (just name-value pairs)
+const PatternOptions = class {
+  constructor() {
+    this.options = {};
+  }
+
+  set(name, value) {
+    this.options[name] = value;
+  }
+
+  get(name, defaultValue = null) {
+    if (this.options.hasOwnProperty(name)) {
+      return this.options[name];
+    }
+    return defaultValue;
+  }
+};
+//#endregion
+
 export {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_MAXIMUM_VALUES,
@@ -801,4 +819,5 @@ export {
   isConvertIdChildToIri,
   onlyAcceptsAtomicValue,
   returnsCtsQuery,
+  PatternOptions,
 };

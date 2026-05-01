@@ -1,5 +1,6 @@
 //#region Imports
 import { execute } from './search/optic.mjs';
+import { PatternOptions } from './search/patterns.mjs';
 import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
@@ -18,7 +19,6 @@ import {
   walkParsedQuery,
 } from './search/stringGrammar.mjs';
 import { isSearchScopeName } from './searchScope.mjs';
-import { SearchPatternOptions } from './SearchPatternOptions.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
 //#endregion
 
@@ -48,7 +48,7 @@ const SearchCriteriaProcessor = class {
   #requestOptions;
   #resolvedSearchCriteria = null;
   #scopeName;
-  #searchPatternOptions;
+  #patternOptions;
   #searchResults;
   #searchTermsConfig;
   #sortCriteria;
@@ -75,7 +75,7 @@ const SearchCriteriaProcessor = class {
    * @param {Object|string} searchCriteria - Search criteria in the LUX string grammar or JSON grammar
    * @param {string} scopeName - Search scope name (e.g., 'agent', 'work', 'multi', 'concept')
    * @param {boolean} allowMultiScope - Whether multi-scope searches are permitted
-   * @param {SearchPatternOptions} searchPatternOptions - Configuration for search pattern behavior
+   * @param {PatternOptions} patternOptions - Configuration for search pattern behavior
    * @param {boolean} includeTypeConstraint - Whether to add dataType constraint to query
    * @param {number} page - Page number for pagination (1-based)
    * @param {number} pageLength - Number of results per page
@@ -89,7 +89,7 @@ const SearchCriteriaProcessor = class {
     searchCriteria,
     scopeName,
     allowMultiScope,
-    searchPatternOptions,
+    patternOptions,
     includeTypeConstraint,
     page,
     pageLength,
@@ -100,7 +100,7 @@ const SearchCriteriaProcessor = class {
     this.#initProcessState({
       scopeName,
       allowMultiScope,
-      searchPatternOptions,
+      patternOptions,
       includeTypeConstraint,
       page,
       pageLength,
@@ -223,8 +223,8 @@ const SearchCriteriaProcessor = class {
     return this.#values;
   }
 
-  getSearchPatternOptions() {
-    return this.#searchPatternOptions;
+  getPatternOptions() {
+    return this.#patternOptions;
   }
 
   getSearchTermsConfig() {
@@ -366,7 +366,7 @@ const SearchCriteriaProcessor = class {
   #initProcessState({
     scopeName,
     allowMultiScope,
-    searchPatternOptions,
+    patternOptions,
     includeTypeConstraint,
     page,
     pageLength,
@@ -385,9 +385,9 @@ const SearchCriteriaProcessor = class {
         : new SortCriteria(sortCriteria || '');
     this.#valuesOnly = valuesOnly;
 
-    this.#searchPatternOptions = searchPatternOptions
-      ? searchPatternOptions
-      : new SearchPatternOptions();
+    this.#patternOptions = patternOptions
+      ? patternOptions
+      : new PatternOptions();
 
     this.#includeTypeConstraint = includeTypeConstraint;
 

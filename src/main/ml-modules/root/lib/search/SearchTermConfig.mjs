@@ -125,10 +125,6 @@ const SearchTermConfig = class {
   isForceExactMatch() {
     return this._getProperty('forceExactMatch', false);
   }
-
-  stringify() {
-    return JSON.stringify(this.searchTermConfigObj);
-  }
 };
 
 export { SearchTermConfig };

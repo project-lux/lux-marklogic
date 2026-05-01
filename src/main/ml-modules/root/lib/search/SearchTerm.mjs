@@ -10,27 +10,17 @@ import {
 
 // Offers traditional getters and settings, as well as the builder pattern's adds.
 const SearchTerm = class {
-  constructor(obj = null) {
-    /*
-     * Adding a property herein?  Also represent in this class' stringify method for reconstitution purposes.
-     */
-    const reconstitute = obj != null;
-
-    this.usable = reconstitute ? obj.usable : true;
-    this.name = reconstitute ? obj.name : null;
-    this.scopeName = reconstitute ? obj.scopeName : null;
-    this.searchTermConfig =
-      reconstitute && obj.searchTermConfig
-        ? new SearchTermConfig(obj.searchTermConfig.searchTermConfigObj)
-        : null;
-    this.value = reconstitute ? obj.value : null;
-    this.props = reconstitute ? obj.props : {};
-    this.mustReturnCtsQuery = reconstitute ? obj.props : false;
-    this.parentSearchTerm = reconstitute
-      ? new SearchTerm(obj.parentSearchTerm)
-      : null;
-    this.childInfo = reconstitute ? obj.childInfo : {};
-    this.modifiedCriteria = reconstitute ? obj.modifiedCriteria : null;
+  constructor() {
+    this.usable = true;
+    this.name = null;
+    this.scopeName = null;
+    this.searchTermConfig = null;
+    this.value = null;
+    this.props = {};
+    this.mustReturnCtsQuery = false;
+    this.parentSearchTerm = null;
+    this.childInfo = {};
+    this.modifiedCriteria = null;
   }
 
   // Likely set via setProperty
@@ -289,21 +279,6 @@ const SearchTerm = class {
   }
   hasModifiedCriteria() {
     return this.getModifiedCriteria() != null;
-  }
-
-  stringify() {
-    return JSON.stringify({
-      usable: this.usable,
-      name: this.name,
-      scopeName: this.scopeName,
-      searchTermConfig: this.searchTermConfig,
-      value: this.value,
-      props: this.props,
-      mustReturnCtsQuery: this.mustReturnCtsQuery,
-      parentSearchTerm: this.parentSearchTerm,
-      childInfo: this.childInfo,
-      modifiedCriteria: this.modifiedCriteria,
-    });
   }
 };
 

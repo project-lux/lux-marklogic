@@ -6,7 +6,7 @@ import {
   PATTERN_NAME_INDEXED_RANGE,
   PATTERN_NAME_INDEXED_VALUE,
   PATTERN_NAME_IRI,
-} from '../lib/searchPatternsLib.mjs';
+} from '../lib/search/patterns.mjs';
 import { getSearchScopeTypes } from '../lib/searchScope.mjs';
 import { searchTermText } from '../config/userFacingConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';

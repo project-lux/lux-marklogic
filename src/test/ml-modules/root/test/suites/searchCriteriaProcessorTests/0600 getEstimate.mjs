@@ -1,7 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
-import { SearchPatternOptions } from '/lib/SearchPatternOptions.mjs';
+import { PatternOptions } from '/lib/search/patterns.mjs';
 import { ML_APP_NAME } from '/lib/appConstants.mjs';
 
 const LIB = '0600 getEstimateTests.mjs';
@@ -358,7 +358,7 @@ for (const scenario of scenarios) {
       scenario.input.searchCriteria,
       null, // scopeName from criteria
       scenario.input.allowMultiScope ?? false,
-      new SearchPatternOptions(),
+      new PatternOptions(),
       true, // includeTypeConstraint
       1, // page
       20, // pageLength

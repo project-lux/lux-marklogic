@@ -6,7 +6,7 @@ import {
   getAllowedSearchOptionsNameByPatternName,
   getDefaultSearchOptionsByOptionsName,
   getDefaultSearchOptionsNameByPatternName,
-} from '../lib/searchPatternsLib.mjs';
+} from '../lib/search/patterns.mjs';
 import * as utils from '../utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
 import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';

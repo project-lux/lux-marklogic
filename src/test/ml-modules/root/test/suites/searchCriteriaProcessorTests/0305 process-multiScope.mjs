@@ -6,7 +6,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
-import { SearchPatternOptions } from '/lib/SearchPatternOptions.mjs';
+import { PatternOptions } from '/lib/search/patterns.mjs';
 
 const LIB = '0305-process-multiScope.mjs';
 console.log(`${LIB}: starting.`);
@@ -18,7 +18,7 @@ function createProcessInput(overrides = {}) {
   return {
     scopeName: 'multi',
     allowMultiScope: true,
-    searchPatternOptions: new SearchPatternOptions(),
+    patternOptions: new PatternOptions(),
     includeTypeConstraint: true,
     page: 1,
     pageLength: 20,
@@ -203,7 +203,7 @@ for (const scenario of scenarios) {
       input.searchCriteria,
       input.scopeName,
       input.allowMultiScope,
-      input.searchPatternOptions,
+      input.patternOptions,
       input.includeTypeConstraint,
       input.page,
       input.pageLength,

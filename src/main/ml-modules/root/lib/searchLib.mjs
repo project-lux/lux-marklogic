@@ -14,7 +14,7 @@ import {
 import * as utils from '../utils/utils.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
-import { getDefaultSearchOptionsNameByPatternName } from './searchPatternsLib.mjs';
+import { getDefaultSearchOptionsNameByPatternName } from './search/patterns.mjs';
 import {
   InvalidSearchRequestError,
   isInvalidSearchRequestError,
@@ -302,7 +302,7 @@ function processSearchCriteria({
   searchCriteria = null,
   searchScope = null,
   allowMultiScope = DEFAULT_ALLOW_MULTI_SCOPE,
-  searchPatternOptions = null,
+  patternOptions = null,
   includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
@@ -317,7 +317,7 @@ function processSearchCriteria({
     searchCriteria,
     searchScope,
     allowMultiScope,
-    searchPatternOptions,
+    patternOptions,
     includeTypeConstraint,
     page,
     pageLength,

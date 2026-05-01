@@ -14,12 +14,13 @@ import {
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
 import { processSearchCriteria } from './searchLib.mjs';
-import { SearchPatternOptions } from './SearchPatternOptions.mjs';
 import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_MAXIMUM_VALUES,
   OPTION_NAME_RETURN_VALUES,
-} from './searchPatternsLib.mjs';
+  PATTERN_NAME_RELATED_LIST,
+  PatternOptions,
+} from './search/patterns.mjs';
 import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
 import { getRelationName } from '../config/relationNames.mjs';
 import {
@@ -27,7 +28,6 @@ import {
   getSearchTermConfig,
 } from '../config/searchTermsConfig.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
-import { PATTERN_NAME_RELATED_LIST } from './searchPatternsLib.mjs';
 
 // Testing of a highly reference concept revealed page lengths between 25 and 15,000 returned within one second
 // of each and that secondary page requests take just as long as primary page requests.  Thus, this maximum is
@@ -124,21 +124,18 @@ function getRelatedList({
 
     // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to return calls to cts.triples.
     const includeTypeConstraint = false;
-    const searchPatternOptions = new SearchPatternOptions();
-    searchPatternOptions.set(OPTION_NAME_RETURN_VALUES, true);
+    const patternOptions = new PatternOptions();
+    patternOptions.set(OPTION_NAME_RETURN_VALUES, true);
 
     // Set the maximum number of values to process per relation. Do not let requester exceed the maximum imposed by the backend.
     relationshipsPerRelation = Math.min(
       relationshipsPerRelation,
       RELATED_LIST_PER_RELATION_MAX,
     );
-    searchPatternOptions.set(
-      OPTION_NAME_MAXIMUM_VALUES,
-      relationshipsPerRelation,
-    );
+    patternOptions.set(OPTION_NAME_MAXIMUM_VALUES, relationshipsPerRelation);
 
     // When we only need a handful of triples, switch to lazy evaluation.
-    searchPatternOptions.set(
+    patternOptions.set(
       OPTION_NAME_EAGER_EVALUATION,
       relationshipsPerRelation < 20 ? false : true,
     );
@@ -164,7 +161,7 @@ function getRelatedList({
         ),
         searchScope: relatedListConfig.targetScope,
         allowMultiScope: false,
-        searchPatternOptions,
+        patternOptions,
         includeTypeConstraint,
         valuesOnly,
         page: 1,

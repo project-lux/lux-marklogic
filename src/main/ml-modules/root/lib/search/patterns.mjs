@@ -37,6 +37,7 @@ const PATTERN_NAME_RELATED_LIST = 'relatedList'; // for related list configs
 const PATTERN_NAME_TEXT = 'text'; // for keyword search
 
 const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
+const OPTION_NAME_PREFER_FRAG_JOINS = 'preferFragJoins';
 const OPTION_NAME_MAXIMUM_VALUES = 'maximumValues';
 const OPTION_NAME_RETURN_VALUES = 'returnValues';
 
@@ -51,6 +52,46 @@ function getPatternConfig(patternName) {
   }
   throw new InternalServerError(
     `Unknown search pattern '${patternName}' configured to a term.`,
+  );
+}
+
+// Apply a search pattern to a search term.
+function applyPattern({
+  searchCriteriaProcessor,
+  searchTerm,
+  searchPatternOptions,
+  requestOptions,
+}) {
+  // TODO: Still relevant?
+  // // If not yet dealing with an atomic value, request the resolved CTS query for this term's value.
+  // if (!searchTerm.hasValueType()) {
+  //   throw new InternalServerError(
+  //     `Unable to determine a search term's value type.`,
+  //   );
+  // } else if (searchTerm.getValueType() !== TYPE_ATOMIC) {
+  //   searchTerm.setValue(
+  //     searchCriteriaProcessor.generateQueryFromCriteria(
+  //       searchTerm.getScopeName(),
+  //       searchTerm.getValue(),
+  //       searchTerm,
+  //       false, // Given we're not in a group, we need not require the child to return a CTS query.
+  //     ),
+  //   );
+  // }
+
+  const termConfig = searchTerm.getSearchTermConfig();
+  const patternName = termConfig.getPatternName();
+  const resolvedSearchOptions = resolveSearchOptions(
+    termConfig.getOptionsReference(),
+    patternName,
+    requestOptions,
+    searchTerm.getSearchOptions(),
+  );
+  return getPatternConfig(patternName).function(
+    searchTerm,
+    resolvedSearchOptions,
+    searchPatternOptions,
+    requestOptions,
   );
 }
 
@@ -153,7 +194,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_ANN_TOP_K] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -169,7 +210,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: false,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -185,7 +226,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -288,7 +329,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DOCUMENT_ID] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -308,7 +349,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
   // This pattern conditionally returns a CTS query, but not believed when this setting is relied upon by nested terms;
   // should this become an issue, perhaps we need to make this a function that determines what it returns by context.
   returnsCtsQuery: false,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -384,41 +425,183 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
-  returnsCtsQuery: true,
-  function: (
-    searchTerm,
-    resolvedSearchOptions,
-    patternOptions,
-    requestOptions,
-  ) => {
-    const termValue = searchTerm.getValue();
-    const termConfig = searchTerm.getSearchTermConfig();
-    const termWeight = searchTerm.getWeight();
-    const termValueIsQuery = searchTerm.getValueType() !== TYPE_ATOMIC;
-    const parent = searchTerm.getParentSearchTerm();
-    const parentScope = parent ? parent.getScopeName() : null;
+  //   handler: (
+  //     searchTerm,
+  //     resolvedSearchOptions,
+  //     patternOptions,
+  //     requestOptions,
+  //   ) => {
+  //     if (termConfig.isTransitive()) {
+  //       return processTransitiveHopWithFieldTerm(
+  //         searchTerm,
+  //         resolvedSearchOptions,
+  //         patternOptions,
+  //         requestOptions,
+  //       );
+  //     } else {
+  //       return processHopWithFieldTerm(
+  //         searchTerm,
+  //         resolvedSearchOptions,
+  //         patternOptions,
+  //         requestOptions,
+  //       );
+  //     }
+  //   },
+  //   processTransitiveHopWithFieldTerm: (
+  //     searchTerm,
+  //     resolvedSearchOptions,
+  //     patternOptions,
+  //     requestOptions,
+  //   ) => {
+  //     const termConfig = searchTerm.getSearchTermConfig();
 
-    const valuesQueryStr = termValueIsQuery
-      ? termValue
-      : `${_getCtsQueryFunctionName(
-          'field',
-          searchTerm.isCompleteMatch(),
-        )}(${utils.arrayToString(
-          termConfig.getIndexReferences(),
-        )}, "${termValue}", ${utils.arrayToString(
-          resolvedSearchOptions,
-        )}, ${termWeight})`;
+  //     // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
+  //     const _refIri = id + '_iri';
+  //     const fieldPlan = searchTerm.hasValue()
+  //       ? getFieldAtomicPlan({
+  //           fragCol,
+  //           iriCol,
+  //           id,
+  //           searchTerm,
+  //           options,
+  //         })
+  //       : getFieldNestedPlan({
+  //           fragCol,
+  //           iriCol,
+  //           id,
+  //           searchTerm,
+  //           childCriteria,
+  //           options,
+  //         });
+  //     // DEBUG.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
 
-    const tripleRangeQuery = _getTripleRangeQuery(
-      termConfig.getPredicates(),
-      valuesQueryStr,
-      termWeight,
-    );
-    const codeStr = parentScope
-      ? _getParentDataType(parentScope, tripleRangeQuery)
-      : tripleRangeQuery;
-    return _formattedPatternResponse(codeStr);
-  },
+  //     // TODO: if there are zero results from the fieldPlan, should we do anything different?
+  //     const sparql = `
+  // ${getPrefixesForSPARQL()}
+  // select ?${id}_s ?${id}_o where {
+  //   VALUES ?${id}_o {
+  //     ${fieldPlan
+  //       .result()
+  //       .toArray()
+  //       .map((row) => `<${row[_refIri]}>`)
+  //       .join('\n    ')}
+  //   }
+  //   ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates())} ?${id}_o
+  // }`;
+
+  //     return {
+  //       patternJoins: [
+  //         {
+  //           right: op.fromSPARQL(sparql, null, { dedup: 'on' }),
+  //           on: [op.on(op.col(iriCol), op.col(id + '_s'))],
+  //           extraCols: [],
+  //         },
+  //       ],
+  //     };
+  //   },
+  //   processHopWithFieldTerm: (
+  //     searchTerm,
+  //     resolvedSearchOptions,
+  //     patternOptions,
+  //     requestOptions,
+  //   ) => {
+  //     const termValue = searchTerm.getValue();
+  //     const termConfig = searchTerm.getSearchTermConfig();
+  //     const _hopFragCol = id + '_hopFrag';
+  //     const hopPlan = op.fromTriples([
+  //       op.pattern(
+  //         op.col(id + '_s'),
+  //         expandPredicates(termConfig.getPredicates()),
+  //         op.col(id + '_o'),
+  //         op.fragmentIdCol(_hopFragCol),
+  //       ),
+  //     ]);
+
+  //     const _refIri = id + '_iri';
+  //     const fieldPlan = termValue
+  //       ? getFieldAtomicPlan({
+  //           fragCol,
+  //           iriCol,
+  //           id,
+  //           searchTerm,
+  //           options,
+  //         })
+  //       : getFieldNestedPlan({
+  //           fragCol,
+  //           iriCol,
+  //           id,
+  //           searchTerm,
+  //           childCriteria,
+  //           options,
+  //         });
+
+  //     // DEBUG.push('Generated right plan:');
+  //     // DEBUG.push(getPlanSource(right));
+
+  //     return {
+  //       patternJoins: [
+  //         {
+  //           right: hopPlan.joinInner(
+  //             fieldPlan,
+  //             op.on(op.col(id + '_o'), op.col(_refIri)),
+  //           ),
+  //           // op.fromTriples doesn't return URIs so we are using fragment regardless of config
+  //           on: [
+  //             op.on(op.col(iriCol), op.col(id + '_s')),
+  //             op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_hopFragCol)),
+  //           ],
+  //           extraCols: [],
+  //         },
+  //       ],
+  //     };
+  //   },
+  //   getFieldNestedPlan: (
+  //     searchTerm,
+  //     resolvedSearchOptions,
+  //     patternOptions,
+  //     requestOptions,
+  //   ) => {
+  //     const termConfig = searchTerm.getSearchTermConfig();
+  //     return getOpticPlan({
+  //       planCriteria: childCriteria,
+  //       planScope: termConfig.getTargetScopeName(),
+  //       patternOptions: options,
+  //       groups: null, // Grouping by here prevents grouping by at the end.
+  //       parentId: id,
+  //     });
+  //   },
+  //   getFieldAtomicPlan: (
+  //     searchTerm,
+  //     resolvedSearchOptions,
+  //     patternOptions,
+  //     requestOptions,
+  //   ) => {
+  //     const termValue = searchTerm.getValue();
+  //     const termSearchOptions = searchTerm.getSearchOptions();
+  //     const termConfig = searchTerm.getSearchTermConfig();
+  //     const _refIri = id + '_iri';
+  //     return searchTerm.isCompleteMatch()
+  //       ? op
+  //           .fromLexicons({
+  //             [_refIri]: cts.iriReference(),
+  //             // TODO: determine if support for a single index is an issue.
+  //             [id + '_field']: cts.fieldReference(
+  //               termConfig.getIndexReferences()[0],
+  //             ),
+  //           })
+  //           .where(op.eq(op.col(id + '_field'), termValue))
+  //       : op
+  //           .fromLexicons({
+  //             [_refIri]: cts.iriReference(),
+  //           })
+  //           .where(
+  //             cts.fieldWordQuery(
+  //               termConfig.getIndexReferences(),
+  //               termValue,
+  //               termSearchOptions,
+  //             ),
+  //           );
+  //   },
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_RANGE] = {
@@ -427,7 +610,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_RANGE] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -456,7 +639,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_VALUE] = {
   allowedOptionsName: SEARCH_OPTIONS_NAME_EXACT,
   defaultOptionsName: SEARCH_OPTIONS_NAME_EXACT,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -482,7 +665,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_WORD] = {
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -508,7 +691,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
   allowedOptionsName: null,
   defaultOptionsName: null,
   returnsCtsQuery: false,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -524,7 +707,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
 //   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
 //   defaultOptionsName: null,
 //   returnsCtsQuery: true,
-//   function: (
+//   handler: (
 //     searchTerm,
 //     resolvedSearchOptions,
 //     patternOptions,
@@ -565,7 +748,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   returnsCtsQuery: true,
-  function: (
+  handler: (
     searchTerm,
     resolvedSearchOptions,
     patternOptions,
@@ -770,10 +953,12 @@ function _getCtsQueryFunctionName(indexType, isCompleteMatch) {
   return `cts.${indexType}${isCompleteMatch === true ? 'Value' : 'Word'}Query`;
 }
 
-//#region Search pattern options (just name-value pairs)
+//#region Search pattern options
+// TODO: add dedicated getters and setters for remaining, relavant options.
 const PatternOptions = class {
-  constructor() {
+  constructor(prefFragJoins = false) {
     this.options = {};
+    this.prefFragJoins = prefFragJoins;
   }
 
   set(name, value) {
@@ -785,6 +970,13 @@ const PatternOptions = class {
       return this.options[name];
     }
     return defaultValue;
+  }
+
+  setPreferFragJoins(b) {
+    this.prefFragJoins = b;
+  }
+  getPreferFragJoins(defaultValue = false) {
+    return this.prefFragJoins || defaultValue;
   }
 };
 //#endregion

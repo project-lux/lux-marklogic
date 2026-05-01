@@ -21,6 +21,8 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
+import { SearchTerm } from '../SearchTerm.mjs';
+import { SearchTermConfig } from '../SearchTermConfig.mjs';
 //#endregion
 
 //#region Constants
@@ -134,6 +136,46 @@ function getCriteriaAndLogicType(planCriteria) {
   return {
     criteria,
     logicType,
+  };
+}
+
+function buildLeafTermContext({ criterion, termName, scope }) {
+  const termConfig = new SearchTermConfig(getSearchTermConfig(scope, termName));
+
+  const searchTerm = new SearchTerm()
+    .addName(termName)
+    .addScopeName(scope)
+    .addSearchTermConfig(termConfig)
+    .addValue(criterion[termName]);
+
+  // Runtime search term properties are represented with leading underscores on criteria.
+  Object.keys(criterion)
+    .filter((k) => k.startsWith('_'))
+    .forEach((k) => {
+      searchTerm.addProperty(k.substring(1), criterion[k]);
+    });
+
+  // Cast value to the correct type if scalar and not dateTime.
+  const scalarType = termConfig.getScalarType();
+  const caster =
+    scalarType && scalarType !== 'dateTime' ? xs[scalarType] : null;
+  const rawTermValue = searchTerm.getValue();
+  const termValue = caster
+    ? caster(rawTermValue)
+    : typeof rawTermValue === 'string'
+      ? rawTermValue
+      : null;
+
+  // TODO: resolve search options: pattern --> term config --> term instance.
+  const termSearchOptions = termConfig.isForceExactMatch()
+    ? DEFAULT_SEARCH_OPTIONS_EXACT
+    : DEFAULT_SEARCH_OPTIONS_KEYWORD;
+
+  return {
+    searchTerm,
+    termConfig,
+    termValue,
+    termSearchOptions,
   };
 }
 //#endregion
@@ -413,36 +455,27 @@ function getOpticPlan({
       continue;
     }
 
-    // I don't think multiple search terms can exist in the same object, but I guess it might be possible.  Need to double check.
     const termName = Object.keys(criterion).find(
       (k) => k[0] !== '_' && searchTermNames.includes(k),
     );
-    const termConfig = getSearchTermConfig(scope, termName);
+    const leafTermContext = buildLeafTermContext({
+      criterion,
+      termName,
+      scope,
+    });
+    const searchTerm = leafTermContext.searchTerm;
+    const termConfig = leafTermContext.termConfig;
+    const termValue = leafTermContext.termValue;
+    const termSearchOptions = leafTermContext.termSearchOptions;
 
     DEBUG.push('Found Term Config');
-    DEBUG.push(xdmp.toJSON(termConfig));
-
-    // Cast value to the correct type if scalar and not dateTime
-    const caster =
-      termConfig.scalarType && termConfig.scalarType !== 'dateTime'
-        ? xs[termConfig.scalarType]
-        : null;
-    const termValue = caster
-      ? caster(criterion[termName])
-      : typeof criterion[termName] === 'string'
-        ? criterion[termName]
-        : null;
+    DEBUG.push(xdmp.toJSON(termConfig.searchTermConfigObj));
 
     DEBUG.push(termValue);
-    DEBUG.push(typeof criterion[termName]);
-
-    // TODO: resolve search options: pattern --> term config --> term instance.
-    const termSearchOptions = termConfig.forceExactMatch
-      ? DEFAULT_SEARCH_OPTIONS_EXACT
-      : DEFAULT_SEARCH_OPTIONS_KEYWORD;
+    DEBUG.push(typeof searchTerm.getValue());
     console.log(`Search options for term '${termName}':`, termSearchOptions);
 
-    switch (termConfig.patternName) {
+    switch (termConfig.getPatternName()) {
       case 'dateRange': {
         DEBUG.push('processing dateRange');
 
@@ -450,11 +483,11 @@ function getOpticPlan({
 
         // Identify indexes and configure lexicons.
         if (
-          !utils.isArray(termConfig.indexReferences) ||
-          termConfig.indexReferences.length !== 2
+          !utils.isArray(termConfig.getIndexReferences()) ||
+          termConfig.getIndexReferences().length !== 2
         ) {
           throw new InternalServerError(
-            `The '${termName}' search term within the '${scopeName}' scope is not correctly configured: two indexes are required.`,
+            `The '${termName}' search term within the '${searchTerm.getScopeName()}' scope is not correctly configured: two indexes are required.`,
           );
         }
         const startColName = id + '_start';
@@ -482,7 +515,7 @@ function getOpticPlan({
         }
 
         // Convert to seconds, allowing the operator to help determine how to treat partial dates.
-        const operator = criterion._comp;
+        const operator = searchTerm.getComparisonOperator();
         const startDateLong = convertPartialDateTimeToSeconds(
           startDateStr,
           true,
@@ -507,12 +540,12 @@ function getOpticPlan({
           ctsConstraints.push(
             cts.orQuery([
               cts.fieldRangeQuery(
-                termConfig.indexReferences[0],
+                termConfig.getIndexReferences()[0],
                 '<',
                 startDateLong,
               ),
               cts.fieldRangeQuery(
-                termConfig.indexReferences[1],
+                termConfig.getIndexReferences()[1],
                 '>',
                 endDateLong,
               ),
@@ -527,10 +560,10 @@ function getOpticPlan({
         if (returnLexicons) {
           // TODO: allow pattern functions to add to the lexicons object.
           lexicons[startColName] = cts.fieldReference(
-            termConfig.indexReferences[0],
+            termConfig.getIndexReferences()[0],
           );
           lexicons[endColName] = cts.fieldReference(
-            termConfig.indexReferences[1],
+            termConfig.getIndexReferences()[1],
           );
         }
 
@@ -564,7 +597,7 @@ function getOpticPlan({
         // case of a dataType, as was done for recordType search terms.
         ctsConstraints.push(
           cts.fieldValueQuery(
-            termConfig.indexReferences,
+            termConfig.getIndexReferences(),
             termValue,
             termSearchOptions,
           ),
@@ -572,13 +605,13 @@ function getOpticPlan({
         break;
       }
       case 'indexedWord': {
-        DEBUG.push(`processing ${termConfig.patternName}`);
+        DEBUG.push(`processing ${termConfig.getPatternName()}`);
 
         // CTS constraint for same reason as indexedValue pattern.
-        if (criterion._complete) {
+        if (searchTerm.isCompleteMatch()) {
           ctsConstraints.push(
             cts.fieldValueQuery(
-              termConfig.indexReferences,
+              termConfig.getIndexReferences(),
               termValue,
               termSearchOptions,
             ),
@@ -586,7 +619,7 @@ function getOpticPlan({
         } else {
           ctsConstraints.push(
             cts.fieldWordQuery(
-              termConfig.indexReferences,
+              termConfig.getIndexReferences(),
               termValue,
               termSearchOptions,
             ),
@@ -600,18 +633,18 @@ function getOpticPlan({
         // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
         // including the values of all objects in the array.
         if (logicType === 'and') {
-          const constraint = COMPARATORS[criterion._comp];
+          const constraint = COMPARATORS[searchTerm.getComparisonOperator()];
           // This requires that each term config only has one index reference. This is true today, but is it guaranteed?
           lexicons[id + '_field'] = cts.fieldReference(
-            termConfig.indexReferences[0],
+            termConfig.getIndexReferences()[0],
           );
           constraints.push(constraint(op.col(id + '_field'), termValue));
         } else {
           // OR and NOT
           ctsConstraints.push(
             cts.fieldRangeQuery(
-              termConfig.indexReferences,
-              criterion._comp,
+              termConfig.getIndexReferences(),
+              searchTerm.getComparisonOperator(),
               termValue,
             ),
           );
@@ -621,29 +654,31 @@ function getOpticPlan({
       case 'hopWithField': {
         DEBUG.push('processing hopWithField');
         let termPlanArrays;
-        if (termConfig.transitive) {
+        if (termConfig.isTransitive()) {
           termPlanArrays = processTransitiveHopWithFieldTerm({
             fragCol,
             iriCol,
             id,
+            searchTerm,
             termName,
             termValue,
             termSearchOptions,
             termConfig,
             criterion,
-            planOptions,
+            options: planOptions,
           });
         } else {
           termPlanArrays = processHopWithFieldTerm({
             fragCol,
             iriCol,
             id,
+            searchTerm,
             termName,
             termValue,
             termSearchOptions,
             termConfig,
             criterion,
-            planOptions,
+            options: planOptions,
           });
         }
         addToPlanArrays(termPlanArrays);
@@ -654,7 +689,7 @@ function getOpticPlan({
 
         const _triFragCol = id + '_triFrag';
         const _refFrag = id + '_frag';
-        const predicates = expandPredicates(termConfig.predicates);
+        const predicates = expandPredicates(termConfig.getPredicates());
         const tri = op.fromTriples([
           op.pattern(
             op.col(id + '_s'),
@@ -671,7 +706,7 @@ function getOpticPlan({
         const right = tri.joinInner(
           getOpticPlan({
             planCriteria: criterion[termName],
-            planScope: termConfig.targetScope,
+            planScope: termConfig.getTargetScopeName(),
             planOptions,
             groups: rightGroups,
             parentId: id,
@@ -708,12 +743,15 @@ function getOpticPlan({
 
         const vecFrag = id + '_vecFrag';
         const distCol = id + '_distance';
-        const vectorColumn = termConfig.vectorColumn ?? 'main';
-        const maxDistance = termConfig.maxDistance ?? ANN_MAX_DISTANCE_DEFAULT;
+        const vectorColumn = termConfig.getVectorColumn() ?? 'main';
+        const maxDistance =
+          termConfig.getMaxDistance() ?? ANN_MAX_DISTANCE_DEFAULT;
 
         // k resolution: per-request option > term config default > build property default, capped by build property max.
         const requestedK =
-          criterion._annK ?? termConfig.annKMaxDefault ?? ANN_K_DEFAULT;
+          searchTerm.getProperty('annK') ??
+          termConfig.getAnnKMaxDefault() ??
+          ANN_K_DEFAULT;
         const k = Math.min(requestedK, ANN_K_MAX);
         DEBUG.push(
           `annTopK k resolved to ${k} (requested ${requestedK}, max ${ANN_K_MAX})`,
@@ -785,7 +823,7 @@ function getOpticPlan({
       }
       default:
         throw new Error(
-          `Unimplemented pattern name: ${termConfig.patternName}.`,
+          `Unimplemented pattern name: ${termConfig.getPatternName()}.`,
         );
     }
   }
@@ -959,6 +997,7 @@ function processTransitiveHopWithFieldTerm({
   fragCol,
   iriCol,
   id,
+  searchTerm,
   termName,
   termValue,
   termSearchOptions,
@@ -980,6 +1019,7 @@ function processTransitiveHopWithFieldTerm({
         termValue,
         termSearchOptions,
         termConfig,
+        searchTerm,
         criterion,
         options,
       })
@@ -991,6 +1031,7 @@ function processTransitiveHopWithFieldTerm({
         termValue,
         termSearchOptions,
         termConfig,
+        searchTerm,
         criterion,
         rightGroups: null, // Grouping by here prevents grouping by at the end.
         options,
@@ -1007,7 +1048,7 @@ select ?${id}_s ?${id}_o where {
       .map((row) => `<${row[_refIri]}>`)
       .join('\n    ')}
   }
-  ?${id}_s ${formatPredicatesForSPARQL(termConfig.predicates)} ?${id}_o
+  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates())} ?${id}_o
 }`;
   // DEBUG.push(`Transitive SPARQL: ${sparql}`);
   return {
@@ -1025,6 +1066,7 @@ function processHopWithFieldTerm({
   fragCol,
   iriCol,
   id,
+  searchTerm,
   termName,
   termValue,
   termSearchOptions,
@@ -1036,7 +1078,7 @@ function processHopWithFieldTerm({
   const hopPlan = op.fromTriples([
     op.pattern(
       op.col(id + '_s'),
-      expandPredicates(termConfig.predicates),
+      expandPredicates(termConfig.getPredicates()),
       op.col(id + '_o'),
       op.fragmentIdCol(_hopFragCol),
     ),
@@ -1052,6 +1094,7 @@ function processHopWithFieldTerm({
         iriCol,
         id,
         termConfig,
+        searchTerm,
         termValue,
         termName,
         criterion,
@@ -1062,6 +1105,7 @@ function processHopWithFieldTerm({
         iriCol,
         id,
         termConfig,
+        searchTerm,
         termValue,
         termName,
         criterion,
@@ -1098,16 +1142,17 @@ function getFieldNestedPlan({
   termValue,
   termSearchOptions,
   termConfig,
+  searchTerm,
   criterion,
   rightGroups,
   options,
 }) {
   return getOpticPlan({
     planCriteria: criterion[termName],
-    planScope: termConfig.targetScope,
+    planScope: termConfig.getTargetScopeName(),
+    planOptions: options,
     groups: rightGroups,
     parentId: id,
-    options,
   });
 }
 
@@ -1119,16 +1164,19 @@ function getFieldAtomicPlan({
   termValue,
   termSearchOptions,
   termConfig,
+  searchTerm,
   criterion,
   options,
 }) {
   const _refIri = id + '_iri';
-  return criterion._complete
+  return searchTerm.isCompleteMatch()
     ? op
         .fromLexicons({
           [_refIri]: cts.iriReference(),
           // TODO: determine if support for a single index is an issue.
-          [id + '_field']: cts.fieldReference(termConfig.indexReferences[0]),
+          [id + '_field']: cts.fieldReference(
+            termConfig.getIndexReferences()[0],
+          ),
         })
         .where(op.eq(op.col(id + '_field'), termValue))
     : op
@@ -1137,7 +1185,7 @@ function getFieldAtomicPlan({
         })
         .where(
           cts.fieldWordQuery(
-            termConfig.indexReferences,
+            termConfig.getIndexReferences(),
             termValue,
             termSearchOptions,
           ),

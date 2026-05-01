@@ -100,7 +100,7 @@ const SearchTermConfig = class {
     return this._getProperty('maxDistance');
   }
 
-  getAnnKMaxDefault() {
+  getAnnK() {
     return this._getProperty('annKMaxDefault');
   }
 

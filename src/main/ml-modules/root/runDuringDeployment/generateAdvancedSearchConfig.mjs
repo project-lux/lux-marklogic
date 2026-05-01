@@ -9,7 +9,7 @@ import {
 } from '../lib/search/patterns.mjs';
 import * as utils from '../utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
-import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
+import { SearchTermConfig } from '../lib/search/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 import {
   TENANT_OWNER,

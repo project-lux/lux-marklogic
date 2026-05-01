@@ -18,8 +18,8 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
-import { SearchTerm } from '../SearchTerm.mjs';
-import { SearchTermConfig } from '../SearchTermConfig.mjs';
+import { SearchTerm } from '../search/SearchTerm.mjs';
+import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 //#endregion
 
 //#region Constants

@@ -1,4 +1,4 @@
-import * as utils from '../utils/utils.mjs';
+import * as utils from '../../utils/utils.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
 import {
   ANN_DISTANCE_DEFAULT,
@@ -6,7 +6,7 @@ import {
   ANN_K_DEFAULT,
   ANN_K_MAX,
   DEFAULT_VECTOR_COLUMN,
-} from './appConstants.mjs';
+} from '../appConstants.mjs';
 
 // Offers traditional getters and settings, as well as the builder pattern's adds.
 const SearchTerm = class {

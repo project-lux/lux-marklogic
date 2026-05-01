@@ -4,7 +4,7 @@
 **Audience:** LLMs assisting developers reading, modifying, or extending this file.
 **Single export:** `execute(searchCriteria, searchScope, includeResults)` — accepts the same JSON search criteria grammar used throughout LUX.
 
-`optic.mjs` is the replacement search implementation for LUX. It expresses searches as relational-style Optic plans (lexicon scans, joins, filters) rather than CTS query strings. `searchPatternsLib.mjs` and `SearchTerm.mjs` are **not** runtime dependencies — referenced here only where their semantics explain what an Optic pattern does. The CTS-based implementation is being dismantled.
+`optic.mjs` is the replacement search implementation for LUX. It expresses searches as relational-style Optic plans (lexicon scans, joins, filters) rather than CTS query strings. `searchPatternsLib.mjs` and `search/SearchTerm.mjs` are **not** runtime dependencies — referenced here only where their semantics explain what an Optic pattern does. The CTS-based implementation is being dismantled.
 
 
 ---

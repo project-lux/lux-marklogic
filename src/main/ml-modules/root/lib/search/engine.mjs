@@ -32,7 +32,7 @@ import { IndexedWordPattern } from '../search/patterns/IndexedWord.mjs';
 //#endregion
 
 //#region Constants
-// Registered pattern implementations.
+// Registered patterns.
 const PATTERNS = {
   annTopK: AnnTopKPattern,
   dateRange: DateRangePattern,
@@ -68,7 +68,6 @@ function performSearch({
   includeResults = true,
 }) {
   try {
-    // We need to group by uri because lexicons can hit multiple times in a doc
     const finalGroups = {
       by: ['uri'],
       agg: [op.sample('dataType', op.col('dataType'))],
@@ -110,9 +109,9 @@ function processCriteria({
   }
 
   const topLevel = !parentId;
-  const uriCol = topLevel ? 'uri' : parentId + '_uri'; // If this isn't the root criteria, it needs to be joined back
-  const fragCol = topLevel ? 'frag' : parentId + '_frag'; // Joining on frag can result in different plans (more D-Node pushdown)
-  const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
+  const uriCol = topLevel ? 'uri' : parentId + '_uri';
+  const fragCol = topLevel ? 'frag' : parentId + '_frag';
+  const iriCol = topLevel ? 'iri' : parentId + '_iri';
   const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
 
   if (!utils.isDefined(planCriteria)) {
@@ -126,8 +125,6 @@ function processCriteria({
     validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope);
   }
 
-  // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs.
-  // For multi-scope, each top-level OR criterion resolves terms against its own scope.
   let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
 
   const { criteria, logicType } = getCriteriaAndLogicType(planCriteria);

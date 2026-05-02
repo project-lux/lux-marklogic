@@ -718,11 +718,12 @@ function finalizeRootPlan(plan, distanceCols, groups) {
 //#endregion
 
 export {
-  assembleOpticPlan,
-  buildConjunctionJoin,
-  createPlanAccumulator,
-  finalizeRootPlan,
-  mergeTermPlanContributions,
+  // Export for unit testing:
+  // assembleOpticPlan,
+  // buildConjunctionJoin,
+  // createPlanAccumulator,
+  // finalizeRootPlan,
+  // mergeTermPlanContributions,
   performSearch,
   processCriteria,
 };

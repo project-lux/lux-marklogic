@@ -17,8 +17,8 @@ class DocumentIdOrIri extends SearchPatternBase {
           constraints: [op.eq(op.col(uriCol), termValue)],
         }
       : {
-          // Copilot convinced me that always using constraints would be wrong when !AND.
-          // Worth testing if we'd like to always go against the URI column.
+          // ctsContraints proven to be required for OR, at least given engine's
+          // implementation at the time.
           ctsConstraints: [cts.documentQuery(termValue)],
         };
   }

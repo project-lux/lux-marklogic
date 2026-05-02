@@ -1,4 +1,5 @@
 //#region Imports
+import op from '/MarkLogic/optic.mjs';
 import * as engine from './search/engine.mjs';
 import { PatternOptions } from './search/patterns.mjs';
 import {
@@ -39,6 +40,16 @@ const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
 const la = op.prefixer("https://linked.art/ns/terms/");
 const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
 const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");`;
+
+// Optic comparison operators
+const COMPARATORS = {
+  '=': op.eq,
+  '!=': op.ne,
+  '<': op.lt,
+  '>': op.gt,
+  '<=': op.le,
+  '>=': op.ge,
+};
 
 const SEARCH_STATE_NOT_REQUESTED = 'not requested';
 const SEARCH_STATE_REQUESTED = 'requested';
@@ -481,4 +492,4 @@ const SearchCriteriaProcessor = class {
   //#endregion
 };
 
-export { START_OF_GENERATED_QUERY, SearchCriteriaProcessor };
+export { COMPARATORS, START_OF_GENERATED_QUERY, SearchCriteriaProcessor };

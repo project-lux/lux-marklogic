@@ -7,12 +7,6 @@ class SearchPatternInterface {
     );
   }
 
-  static getPatternName() {
-    throw new NotImplementedError(
-      `${this.constructor.name}.getPatternName must be implemented.`,
-    );
-  }
-
   // Names of required runtime properties (without leading underscore),
   // e.g. ['comp', 'annK', 'vectorDistance'].
   getRequiredRuntimeSearchTermProperties() {

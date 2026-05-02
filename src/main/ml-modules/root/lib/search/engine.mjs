@@ -22,30 +22,25 @@ import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
 import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
-import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
+import { DateRangePattern } from '../search/patterns/DateRange.mjs';
+import {
+  COMPARATORS,
+  SearchCriteriaProcessor,
+} from '../SearchCriteriaProcessor.mjs';
 //#endregion
 
 //#region Constants
-// TODO: remove global debug array from MJS context.
-const DEBUG = [];
-
-// Optic comparison operators
-const COMPARATORS = {
-  '=': op.eq,
-  '!=': op.ne,
-  '<': op.lt,
-  '>': op.gt,
-  '<=': op.le,
-  '>=': op.ge,
+// Registered pattern implementations.
+const PATTERNS = {
+  hopWithField: HopWithFieldPattern,
+  dateRange: DateRangePattern,
+  // More patterns will be added here as they are ported
 };
 
 const PREFER_FRAG_JOINS = false;
 
-// Registered pattern implementations.
-const PATTERNS = {
-  hopWithField: HopWithFieldPattern,
-  // More patterns will be added here as they are ported
-};
+// TODO: remove global debug array from MJS context.
+const DEBUG = [];
 //#endregion
 
 //#region Helper functions
@@ -301,13 +296,18 @@ function processCriteria({
   // Propagated to execute() so they can be preserved through groupBy.
   let distanceCols = [];
 
-  const addToPlanArrays = (termPlanArrays) => {
-    constraints = constraints.concat(termPlanArrays?.constraints ?? []);
+  const mergeTermPlanContributions = (termPlanContributions) => {
+    Object.assign(lexicons, termPlanContributions?.lexicons ?? {});
+    constraints = constraints.concat(termPlanContributions?.constraints ?? []);
     ctsConstraints = ctsConstraints.concat(
-      termPlanArrays?.ctsConstraints ?? [],
+      termPlanContributions?.ctsConstraints ?? [],
     );
-    patternJoins = patternJoins.concat(termPlanArrays?.patternJoins ?? []);
-    distanceCols = distanceCols.concat(termPlanArrays?.distanceCols ?? []);
+    patternJoins = patternJoins.concat(
+      termPlanContributions?.patternJoins ?? [],
+    );
+    distanceCols = distanceCols.concat(
+      termPlanContributions?.distanceCols ?? [],
+    );
   };
 
   const criteriaAndLogicType = getCriteriaAndLogicType(planCriteria);
@@ -542,9 +542,9 @@ function processCriteria({
     const patternName = termConfig.getPatternName();
     const pattern = PATTERNS[patternName];
 
+    // TODO: port remaining patterns then change the else to an error.
     if (pattern) {
-      // Ported patterns use the pattern class registry
-      addToPlanArrays(
+      mergeTermPlanContributions(
         pattern.apply(
           searchCriteriaProcessor,
           searchTerm,
@@ -553,102 +553,7 @@ function processCriteria({
         ),
       );
     } else {
-      // Legacy patterns still using switch-based dispatch
       switch (patternName) {
-        case 'dateRange': {
-          let returnLexicons = true;
-
-          // Identify indexes and configure lexicons.
-          if (
-            !utils.isArray(termConfig.getIndexReferences()) ||
-            termConfig.getIndexReferences().length !== 2
-          ) {
-            throw new InternalServerError(
-              `The '${name}' search term within the '${searchTerm.getScopeName()}' scope is not correctly configured: two indexes are required.`,
-            );
-          }
-          const startColName = id + '_start';
-          const endColName = id + '_end';
-
-          // Accept two dates, requiring at least one.
-          const delim = ';';
-          let dates = termValue;
-          if (dates.indexOf(delim) === -1) {
-            dates += delim;
-          }
-          dates = dates.split(';');
-          let startDateStr = dates[0].length > 0 ? dates[0] : null;
-          let endDateStr = dates[1].length > 0 ? dates[1] : null;
-          if (!startDateStr && !endDateStr) {
-            throw new InvalidSearchRequestError(
-              `the '${name} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
-            );
-          }
-
-          if (startDateStr && !endDateStr) {
-            endDateStr = startDateStr;
-          } else if (!startDateStr && endDateStr) {
-            startDateStr = endDateStr;
-          }
-
-          // Convert to seconds, allowing the operator to help determine how to treat partial dates.
-          const operator = searchTerm.getComparisonOperator();
-          const startDateLong = convertPartialDateTimeToSeconds(
-            startDateStr,
-            true,
-          );
-          const endDateLong = convertPartialDateTimeToSeconds(
-            endDateStr,
-            false,
-          );
-
-          // TODO: document logic w/ example
-          const isBefore = ['<', '>='].includes(operator);
-          if (['>', '>=', '<', '<='].includes(operator)) {
-            isBefore
-              ? constraints.push(
-                  COMPARATORS[operator](op.col(startColName), startDateLong),
-                )
-              : constraints.push(
-                  COMPARATORS[operator](op.col(endColName), endDateLong),
-                );
-          } else if (['='].includes(operator)) {
-            constraints.push(op.ge(op.col(startColName), startDateLong));
-            constraints.push(op.le(op.col(endColName), endDateLong));
-          } else if (['!='].includes(operator)) {
-            returnLexicons = false;
-            ctsConstraints.push(
-              cts.orQuery([
-                cts.fieldRangeQuery(
-                  termConfig.getIndexReferences()[0],
-                  '<',
-                  startDateLong,
-                ),
-                cts.fieldRangeQuery(
-                  termConfig.getIndexReferences()[1],
-                  '>',
-                  endDateLong,
-                ),
-              ]),
-            );
-          } else {
-            throw new InternalServerError(
-              `The date range pattern has not accounted for the '${operator}' operator.`,
-            );
-          }
-
-          if (returnLexicons) {
-            // TODO: allow pattern functions to add to the lexicons object.
-            lexicons[startColName] = cts.fieldReference(
-              termConfig.getIndexReferences()[0],
-            );
-            lexicons[endColName] = cts.fieldReference(
-              termConfig.getIndexReferences()[1],
-            );
-          }
-
-          break;
-        }
         case 'text': {
           const newCriteria = {
             OR: [

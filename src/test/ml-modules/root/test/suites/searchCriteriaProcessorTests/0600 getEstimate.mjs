@@ -375,6 +375,20 @@ const scenarios = [
     },
   },
   {
+    name: 'similar event',
+    input: {
+      searchCriteria: {
+        _scope: 'event',
+        similar:
+          'https://lux.collections.yale.edu/data/activity/0102514a-03d8-4467-a84d-6b901cfae7c8',
+      },
+    },
+    expected: {
+      error: false,
+      value: 1,
+    },
+  },
+  {
     name: 'Valid multi-scope search',
     input: {
       allowMultiScope: true,

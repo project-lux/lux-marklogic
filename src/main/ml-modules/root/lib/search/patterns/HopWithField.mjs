@@ -207,10 +207,6 @@ select ?${id}_s ?${id}_o where {
   }
   //#endregion
 
-  static getPatternName() {
-    return 'hopWithField';
-  }
-
   // Runtime property names expected on SearchTerm props (without leading underscore).
   // This pattern currently has no required runtime properties.
   getRequiredRuntimeSearchTermProperties() {

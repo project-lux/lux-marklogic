@@ -6,11 +6,6 @@ const CHILD_TYPE_ATOMIC = 1;
 const CHILD_TYPE_NONE = 0;
 
 class SearchPatternBase extends SearchPatternInterface {
-  // Convenience method that serves up the pattern name from an instance.
-  getPatternName() {
-    return this.constructor.getPatternName();
-  }
-
   //#region Methods extensions need not implement.
   isExposedViaSearch() {
     return this.getAllowedChildren() !== CHILD_TYPE_NONE;

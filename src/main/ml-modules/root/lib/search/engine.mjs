@@ -24,10 +24,10 @@ import { PatternOptions } from '../search/patterns.mjs';
 import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
 import { KeywordPattern } from '../search/patterns/Keyword.mjs';
-import {
-  COMPARATORS,
-  SearchCriteriaProcessor,
-} from '../SearchCriteriaProcessor.mjs';
+import { IndexedValuePattern } from '../search/patterns/IndexedValue.mjs';
+import { IndexedWordPattern } from '../search/patterns/IndexedWord.mjs';
+import { IndexedRangePattern } from '../search/patterns/IndexedRange.mjs';
+import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 //#endregion
 
 //#region Constants
@@ -36,6 +36,9 @@ const PATTERNS = {
   hopWithField: HopWithFieldPattern,
   dateRange: DateRangePattern,
   keyword: KeywordPattern,
+  indexedValue: IndexedValuePattern,
+  indexedWord: IndexedWordPattern,
+  indexedRange: IndexedRangePattern,
   // More patterns will be added here as they are ported
 };
 
@@ -559,73 +562,13 @@ function processCriteria({
         pattern.apply(
           searchCriteriaProcessor,
           searchTerm,
+          logicType,
           patternOptions,
           requestOptions,
         ),
       );
     } else {
       switch (patternName) {
-        case 'indexedValue': {
-          // CTS constraint rather than op.eq on a range lexicon: simple column value
-          // comparisons do not support wildcarding, stemming, or sensitivity options
-          // (case, whitespace, diacritics, and punctuation).
-          //
-          // This pattern also subsumed the propertyValue pattern.  Should there be a
-          // need to use the universal index, re-instate the propertyValue pattern and
-          // use cts.jsonPropertyValueQuery therein.  Dropped support of correcting the
-          // case of a dataType, as was done for recordType search terms.
-          ctsConstraints.push(
-            cts.fieldValueQuery(
-              termConfig.getIndexReferences(),
-              termValue,
-              termSearchOptions,
-            ),
-          );
-          break;
-        }
-        case 'indexedWord': {
-          // CTS constraint for same reason as indexedValue pattern.
-          if (searchTerm.isCompleteMatch()) {
-            ctsConstraints.push(
-              cts.fieldValueQuery(
-                termConfig.getIndexReferences(),
-                termValue,
-                termSearchOptions,
-              ),
-            );
-          } else {
-            ctsConstraints.push(
-              cts.fieldWordQuery(
-                termConfig.getIndexReferences(),
-                termValue,
-                termSearchOptions,
-              ),
-            );
-          }
-          break;
-        }
-        case 'indexedRange': {
-          // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
-          // including the values of all objects in the array.
-          if (logicType === 'and') {
-            const constraint = COMPARATORS[searchTerm.getComparisonOperator()];
-            // This requires that each term config only has one index reference. This is true today, but is it guaranteed?
-            lexicons[id + '_field'] = cts.fieldReference(
-              termConfig.getIndexReferences()[0],
-            );
-            constraints.push(constraint(op.col(id + '_field'), termValue));
-          } else {
-            // OR and NOT
-            ctsConstraints.push(
-              cts.fieldRangeQuery(
-                termConfig.getIndexReferences(),
-                searchTerm.getComparisonOperator(),
-                termValue,
-              ),
-            );
-          }
-          break;
-        }
         case 'hopInverse': {
           const _triFragCol = id + '_triFrag';
           const _refFrag = id + '_frag';

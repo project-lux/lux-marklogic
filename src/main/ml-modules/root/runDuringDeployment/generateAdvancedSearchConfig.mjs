@@ -1,7 +1,7 @@
 import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_RELATED_LIST,
-  PATTERN_NAME_TEXT,
+  PATTERN_NAME_KEYWORD,
   getAllowedSearchOptionsByOptionsName,
   getAllowedSearchOptionsNameByPatternName,
   getDefaultSearchOptionsByOptionsName,
@@ -66,7 +66,7 @@ function createEntry(scopeName, termName, termConfig, report) {
     entry.relation = 'text';
   } else if (termName == 'id') {
     entry.relation = 'text';
-  } else if (PATTERN_NAME_TEXT == patternName) {
+  } else if (PATTERN_NAME_KEYWORD == patternName) {
     entry.relation = 'text';
   } else if (scalarTypeIsBoolean) {
     entry.relation = 'boolean';

@@ -22,6 +22,7 @@ import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
 import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
+import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
 import { KeywordPattern } from '../search/patterns/Keyword.mjs';
 import { IndexedValuePattern } from '../search/patterns/IndexedValue.mjs';
@@ -34,6 +35,7 @@ import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 // Registered pattern implementations.
 const PATTERNS = {
   hopWithField: HopWithFieldPattern,
+  hopInverse: HopInversePattern,
   dateRange: DateRangePattern,
   keyword: KeywordPattern,
   indexedValue: IndexedValuePattern,
@@ -569,51 +571,6 @@ function processCriteria({
       );
     } else {
       switch (patternName) {
-        case 'hopInverse': {
-          const _triFragCol = id + '_triFrag';
-          const _refFrag = id + '_frag';
-          const predicates = SearchCriteriaProcessor.expandPredicates(
-            termConfig.getPredicates(),
-          );
-          const tri = op.fromTriples([
-            op.pattern(
-              op.col(id + '_s'),
-              predicates,
-              op.col(id + '_o'),
-              op.fragmentIdCol(_triFragCol),
-            ),
-          ]);
-
-          const rightGroups = {
-            by: [_refFrag],
-          };
-
-          const right = tri.joinInner(
-            processCriteria({
-              searchCriteriaProcessor,
-              planCriteria: searchTerm.getChildCriteria(),
-              planScope: termConfig.getTargetScopeName(),
-              patternOptions,
-              groups: rightGroups,
-              parentId: id,
-            }),
-            [
-              // Hop Inverse: the triple is on the referenced document, not the source document.
-              op.on(op.fragmentIdCol(_triFragCol), op.fragmentIdCol(_refFrag)),
-            ],
-          );
-
-          // DEBUG.push('Generated right plan:');
-          // DEBUG.push(getPlanSource(right));
-
-          patternJoins.push({
-            right: right,
-            // Can't join on frag because the triple isn't on the source document
-            on: op.on(op.col(iriCol), op.col(id + '_o')),
-            extraCols: [],
-          });
-          break;
-        }
         // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
         case 'documentId':
         case 'iri': {

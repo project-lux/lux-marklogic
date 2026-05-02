@@ -11,6 +11,52 @@ let assertions = [];
 
 const scenarios = [
   {
+    name: 'agent by ID',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        id: 'https://lux.collections.yale.edu/data/group/f49ccc7b-5d4e-4121-8210-b57bc89aad5a',
+      },
+    },
+    expected: {
+      error: false,
+      value: 1,
+    },
+  },
+  {
+    name: 'agent by IRI',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        iri: 'https://lux.collections.yale.edu/data/group/f49ccc7b-5d4e-4121-8210-b57bc89aad5a',
+      },
+    },
+    expected: {
+      error: false,
+      value: 1,
+    },
+  },
+  {
+    name: 'either agent by ID or IRI',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        OR: [
+          {
+            id: 'https://lux.collections.yale.edu/data/person/13a15edf-65d1-4d93-910d-ef006d5fab47',
+          },
+          {
+            iri: 'https://lux.collections.yale.edu/data/group/f49ccc7b-5d4e-4121-8210-b57bc89aad5a',
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 2,
+    },
+  },
+  {
     name: 'agent started anytime in 2012 (=) --CTS TO RETURN 8',
     input: {
       searchCriteria: {

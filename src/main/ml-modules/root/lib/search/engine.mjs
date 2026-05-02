@@ -23,6 +23,7 @@ import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
 import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
+import { DocumentIdOrIriPattern } from '../search/patterns/DocumentIdOrIri.mjs';
 import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
 import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
 import { KeywordPattern } from '../search/patterns/Keyword.mjs';
@@ -35,8 +36,10 @@ import { IndexedWordPattern } from '../search/patterns/IndexedWord.mjs';
 // Registered pattern implementations.
 const PATTERNS = {
   dateRange: DateRangePattern,
+  documentId: DocumentIdOrIriPattern,
   hopInverse: HopInversePattern,
   hopWithField: HopWithFieldPattern,
+  iri: DocumentIdOrIriPattern,
   indexedRange: IndexedRangePattern,
   indexedValue: IndexedValuePattern,
   indexedWord: IndexedWordPattern,
@@ -599,16 +602,6 @@ function processCriteria({
       );
     } else {
       switch (patternName) {
-        // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
-        case 'documentId':
-        case 'iri': {
-          if (logicType === 'and') {
-            constraints.push(op.eq(op.col(uriCol), termValue));
-          } else {
-            ctsConstraints.push(cts.documentQuery(termValue));
-          }
-          break;
-        }
         case 'annTopK': {
           const vecFrag = id + '_vecFrag';
           const distCol = id + '_distance';

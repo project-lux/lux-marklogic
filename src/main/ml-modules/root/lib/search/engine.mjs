@@ -132,8 +132,6 @@ function processCriteria({
 
   const { criteria, logicType } = getCriteriaAndLogicType(planCriteria);
 
-  // TODO: if wanted, must configure as field range indexes
-  // primaryName: cts.fieldReference(scope + 'PrimaryName')
   const acc = createPlanAccumulator({
     scope,
     uriCol,

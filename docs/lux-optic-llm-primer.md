@@ -184,7 +184,7 @@ joins.push({
 | `documentId` / `iri` | `constraints[]` (`op.eq(uriCol, v)`) | `ctsConstraints[]` (`cts.documentQuery`) | Treated identically. |
 | `hopWithField` | `joins[]` `joinInner` | `joins[]` `joinFullOuter` / `notExistsJoin` | Always joins — triples require own row source. See details below. |
 | `annTopK` | `joins[]` `joinInner` | `joins[]` `joinFullOuter` / `notExistsJoin` | Always joins for all logicTypes. See details below. |
-| `text` | — macro — | — macro — | Rewrites to `{ OR: [{ textNoHop: v }, { referencedBy: v }] }`, pushes to `criteria[]`. Known issue: not yet functionally equivalent to CTS implementation. |
+| `text` | — macro — | — macro — | Rewrites to `{ OR: [{ keywordNoHop: v }, { referencedBy: v }] }`, pushes to `criteria[]`. Known issue: not yet functionally equivalent to CTS implementation. |
 
 ## `hopWithField` details
 
@@ -401,14 +401,14 @@ Tracing through the code with scope `'item'`:
 
 3. **Criterion 0:** `{ text: "lobster" }`.
    - Term name: `"text"`, pattern: `"text"`.
-   - **Rewrites** by pushing `{ OR: [{ textNoHop: "lobster" }, { referencedBy: "lobster" }] }` onto `criteria[]`.
+   - **Rewrites** by pushing `{ OR: [{ keywordNoHop: "lobster" }, { referencedBy: "lobster" }] }` onto `criteria[]`.
 
-4. **Criterion 1** (pushed): `{ OR: [{ textNoHop: "lobster" }, { referencedBy: "lobster" }] }`.
+4. **Criterion 1** (pushed): `{ OR: [{ keywordNoHop: "lobster" }, { referencedBy: "lobster" }] }`.
    - This is a child OR inside parent AND → triggers `joinInner` path (3×3 matrix: AND×OR = `joinInner`).
    - Recursively calls `processCriteria({ OR: [...] }, 'item', null, <uuid>, options)`.
 
 5. **Recursive call** with `logicType = 'or'`:
-   - **Criterion 0:** `{ textNoHop: "lobster" }` — an `indexedWord` pattern.
+   - **Criterion 0:** `{ keywordNoHop: "lobster" }` — an `indexedWord` pattern.
      - OR context → `ctsConstraints.push(cts.fieldWordQuery(...))`.
    - **Criterion 1:** `{ referencedBy: "lobster" }` — a `hopWithField` pattern.
      - OR context → builds triple scan + reference lexicon, wraps in duplicate-lexicon full outer join.

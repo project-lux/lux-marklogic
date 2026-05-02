@@ -23,6 +23,7 @@ import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
 import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
+import { KeywordPattern } from '../search/patterns/Keyword.mjs';
 import {
   COMPARATORS,
   SearchCriteriaProcessor,
@@ -34,6 +35,7 @@ import {
 const PATTERNS = {
   hopWithField: HopWithFieldPattern,
   dateRange: DateRangePattern,
+  keyword: KeywordPattern,
   // More patterns will be added here as they are ported
 };
 
@@ -297,17 +299,26 @@ function processCriteria({
   let distanceCols = [];
 
   const mergeTermPlanContributions = (termPlanContributions) => {
+    if (!termPlanContributions) {
+      return;
+    }
+
     Object.assign(lexicons, termPlanContributions?.lexicons ?? {});
-    constraints = constraints.concat(termPlanContributions?.constraints ?? []);
-    ctsConstraints = ctsConstraints.concat(
-      termPlanContributions?.ctsConstraints ?? [],
-    );
-    patternJoins = patternJoins.concat(
-      termPlanContributions?.patternJoins ?? [],
-    );
-    distanceCols = distanceCols.concat(
-      termPlanContributions?.distanceCols ?? [],
-    );
+    if (termPlanContributions.criteria?.length) {
+      criteria.push(...termPlanContributions.criteria);
+    }
+    if (termPlanContributions.constraints?.length) {
+      constraints.push(...termPlanContributions.constraints);
+    }
+    if (termPlanContributions.ctsConstraints?.length) {
+      ctsConstraints.push(...termPlanContributions.ctsConstraints);
+    }
+    if (termPlanContributions.patternJoins?.length) {
+      patternJoins.push(...termPlanContributions.patternJoins);
+    }
+    if (termPlanContributions.distanceCols?.length) {
+      distanceCols.push(...termPlanContributions.distanceCols);
+    }
   };
 
   const criteriaAndLogicType = getCriteriaAndLogicType(planCriteria);
@@ -554,21 +565,6 @@ function processCriteria({
       );
     } else {
       switch (patternName) {
-        case 'text': {
-          const newCriteria = {
-            OR: [
-              {
-                textNoHop: searchTerm.getChildCriteria(),
-              },
-              {
-                referencedBy: searchTerm.getChildCriteria(),
-              },
-            ],
-          };
-
-          criteria.push(newCriteria);
-          break;
-        }
         case 'indexedValue': {
           // CTS constraint rather than op.eq on a range lexicon: simple column value
           // comparisons do not support wildcarding, stemming, or sensitivity options

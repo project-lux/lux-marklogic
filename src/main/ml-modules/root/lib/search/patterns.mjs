@@ -34,7 +34,7 @@ const PATTERN_NAME_INDEXED_WORD = 'indexedWord';
 const PATTERN_NAME_IRI = 'iri';
 // const PATTERN_NAME_PROPERTY_VALUE = 'propertyValue'; // subsumed by indexedValue
 const PATTERN_NAME_RELATED_LIST = 'relatedList'; // for related list configs
-const PATTERN_NAME_TEXT = 'text'; // for keyword search
+const PATTERN_NAME_KEYWORD = 'keyword';
 
 const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
 const OPTION_NAME_PREFER_FRAG_JOINS = 'preferFragJoins';
@@ -736,7 +736,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
 //   },
 // };
 
-SEARCH_PATTERN_CONFIG[PATTERN_NAME_TEXT] = {
+SEARCH_PATTERN_CONFIG[PATTERN_NAME_KEYWORD] = {
   allowedChildren: TYPE_ATOMIC,
   isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
@@ -989,7 +989,7 @@ export {
   PATTERN_NAME_IRI,
   // PATTERN_NAME_PROPERTY_VALUE,
   PATTERN_NAME_RELATED_LIST,
-  PATTERN_NAME_TEXT,
+  PATTERN_NAME_KEYWORD,
   TYPE_GROUP,
   TYPE_TERM,
   TYPE_ATOMIC,

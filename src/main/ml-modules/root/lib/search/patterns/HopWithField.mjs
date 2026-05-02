@@ -9,7 +9,13 @@ import {
 
 class HopWithField extends SearchPatternBase {
   //#region Pattern implementation methods.
-  apply(searchCriteriaProcessor, searchTerm, patternOptions, requestOptions) {
+  apply(
+    searchCriteriaProcessor,
+    searchTerm,
+    logicType,
+    patternOptions,
+    requestOptions,
+  ) {
     if (searchTerm.getSearchTermConfig().isTransitive()) {
       return this.#processTransitiveHopWithFieldTerm(
         searchCriteriaProcessor,

@@ -166,7 +166,6 @@ select ?${id}_s ?${id}_o where {
     console.log(`GET FIELD NESTED PLAN`);
     const termConfig = searchTerm.getSearchTermConfig();
     return searchCriteriaProcessor.processCriteria({
-      searchCriteriaProcessor,
       planCriteria: searchTerm.getChildCriteria(),
       planScope: termConfig.getTargetScopeName(),
       patternOptions: null, // Do not pass on this term's pattern options.

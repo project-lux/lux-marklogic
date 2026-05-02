@@ -243,6 +243,7 @@ const SearchCriteriaProcessor = class {
     requestOptions = null,
   }) {
     return engine.processCriteria({
+      searchCriteriaProcessor: this,
       planCriteria,
       planScope,
       patternOptions,

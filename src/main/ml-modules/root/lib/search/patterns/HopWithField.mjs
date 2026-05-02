@@ -67,7 +67,6 @@ class HopWithField extends SearchPatternBase {
           patternOptions,
           requestOptions,
         );
-    // DEBUG.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
 
     // TODO: if there are zero results from the fieldPlan, should we do anything different?
     const sparql = `
@@ -132,9 +131,6 @@ select ?${id}_s ?${id}_o where {
           patternOptions,
           requestOptions,
         );
-
-    // DEBUG.push('Generated right plan:');
-    // DEBUG.push(getPlanSource(right));
 
     return {
       patternJoins: [

@@ -267,9 +267,6 @@ function _search(
         query: searchCriteriaProcessor
           ? searchCriteriaProcessor.getQueryStr()
           : null,
-        debug: searchCriteriaProcessor
-          ? searchCriteriaProcessor.getDebugMessages()
-          : null,
       };
       xdmp.trace(traceName, searchInfo);
 

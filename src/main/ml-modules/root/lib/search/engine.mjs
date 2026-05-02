@@ -22,6 +22,7 @@ import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
 import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
+import { AnnTopKPattern } from '../search/patterns/AnnTopK.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
 import { DocumentIdOrIriPattern } from '../search/patterns/DocumentIdOrIri.mjs';
 import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
@@ -35,6 +36,7 @@ import { IndexedWordPattern } from '../search/patterns/IndexedWord.mjs';
 //#region Constants
 // Registered pattern implementations.
 const PATTERNS = {
+  annTopK: AnnTopKPattern,
   dateRange: DateRangePattern,
   documentId: DocumentIdOrIriPattern,
   hopInverse: HopInversePattern,
@@ -576,11 +578,9 @@ function processCriteria({
       dataTypeCol,
     });
 
-    // Delete post-refactor
+    // TODO: Delete post-refactor
     criterion = null; // Use searchTerm
-    const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
-    const termSearchOptions = searchTerm.getSearchOptions();
 
     DEBUG.push(
       `Processing the '${termConfig.getPatternName()}' pattern for search term '${name}' with value:`,
@@ -589,96 +589,15 @@ function processCriteria({
     const patternName = termConfig.getPatternName();
     const pattern = PATTERNS[patternName];
 
-    // TODO: port remaining patterns then change the else to an error.
-    if (pattern) {
-      mergeTermPlanContributions(
-        pattern.apply(
-          searchCriteriaProcessor,
-          searchTerm,
-          logicType,
-          patternOptions,
-          requestOptions,
-        ),
-      );
-    } else {
-      switch (patternName) {
-        case 'annTopK': {
-          const vecFrag = id + '_vecFrag';
-          const distCol = id + '_distance';
-          const vectorColumn = searchTerm.getVectorColumn();
-          const maxDistance = searchTerm.getVectorDistance();
-          const k = searchTerm.getAnnK();
-
-          // Require the seed document have the specified vector.
-          if (!fn.docAvailable(termValue)) {
-            throw new InvalidSearchRequestError(
-              `Document specified by search term ${name} is not available: ${termValue}`,
-            );
-          }
-          const vectorData = cts
-            .doc(termValue)
-            .xpath(`vectors/${vectorColumn}`)
-            .toArray();
-          if (!vectorData || vectorData.length === 0) {
-            throw new InvalidSearchRequestError(
-              `Document specified by search term ${name} is missing vector data for column '${vectorColumn}': ${termValue}`,
-            );
-          }
-          const queryVector = vec.vector(vectorData);
-
-          // Create annTopK plan with URI column renamed to avoid conflicts with main lexicons
-          // TODO: Replace hardcoded schema and view names.
-          let annPlan = op.fromView(
-            'lux',
-            'vectors',
-            id,
-            op.fragmentIdCol(vecFrag),
-          );
-
-          // Determine if we should exclude seed document - only exclude for single similarity queries
-          const isMultipleSimilarity =
-            (planCriteria.OR && planCriteria.OR.length > 1) ||
-            (criteria.length > 1 && logicType === 'or');
-
-          // Only exclude seed document for single similarity queries
-          if (!isMultipleSimilarity) {
-            annPlan = annPlan.where(op.ne(op.col('uri'), termValue));
-          }
-
-          // annTopK should naturally filter out documents without valid vector data
-          annPlan = annPlan
-            .annTopK(k, op.col(vectorColumn), queryVector, op.col(distCol), {
-              distance: 'cosine',
-              'max-distance': maxDistance,
-            })
-
-            // Rename uri to avoid conflict, select only needed columns
-            .select([
-              op.as(id + '_vectorUri', op.col('uri')),
-              op.fragmentIdCol(vecFrag),
-              distCol,
-            ]);
-
-          // annPlan includes the entire vector.
-          DEBUG.push('Generated annTopK plan:');
-          DEBUG.push(
-            `k=${k}, vectorColumn='${vectorColumn}', maxDistance=${maxDistance}, seedURI='${termValue}'`,
-          );
-
-          patternJoins.push({
-            right: annPlan,
-            on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag)),
-            extraCols: [distCol],
-          });
-
-          break;
-        }
-        default:
-          throw new NotImplementedError(
-            `Unimplemented pattern name: ${patternName}.`,
-          );
-      }
-    }
+    mergeTermPlanContributions(
+      pattern.apply(
+        searchCriteriaProcessor,
+        searchTerm,
+        logicType,
+        patternOptions,
+        requestOptions,
+      ),
+    );
   }
 
   // Optic uses functional programming patterns, so we will assign plan temporarily and replace it with each modification unless/until we need a more complex pattern.

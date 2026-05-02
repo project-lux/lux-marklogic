@@ -95,6 +95,19 @@ const scenarios = [
     },
   },
   {
+    name: 'date search term without comparator',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'is missing required runtime property',
+    },
+  },
+  {
     name: 'agent name search',
     input: {
       searchCriteria: { _scope: 'agent', name: 'Pablo' },
@@ -389,7 +402,10 @@ for (const scenario of scenarios) {
         actual: estimate,
       });
     }
-  } else if (scenarioResults.assertions.length > 0) {
+  } else if (
+    scenario.expected.error !== true &&
+    scenarioResults.assertions.length > 0
+  ) {
     // Error was expected but something went wrong
     failures.push({
       name: scenario.name,

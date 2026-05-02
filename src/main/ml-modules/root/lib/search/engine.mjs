@@ -21,27 +21,26 @@ import {
 import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
-import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
-import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
+import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
+import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
+import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
 import { KeywordPattern } from '../search/patterns/Keyword.mjs';
+import { IndexedRangePattern } from '../search/patterns/IndexedRange.mjs';
 import { IndexedValuePattern } from '../search/patterns/IndexedValue.mjs';
 import { IndexedWordPattern } from '../search/patterns/IndexedWord.mjs';
-import { IndexedRangePattern } from '../search/patterns/IndexedRange.mjs';
-import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 //#endregion
 
 //#region Constants
 // Registered pattern implementations.
 const PATTERNS = {
-  hopWithField: HopWithFieldPattern,
-  hopInverse: HopInversePattern,
   dateRange: DateRangePattern,
-  keyword: KeywordPattern,
+  hopInverse: HopInversePattern,
+  hopWithField: HopWithFieldPattern,
+  indexedRange: IndexedRangePattern,
   indexedValue: IndexedValuePattern,
   indexedWord: IndexedWordPattern,
-  indexedRange: IndexedRangePattern,
-  // More patterns will be added here as they are ported
+  keyword: KeywordPattern,
 };
 
 const PREFER_FRAG_JOINS = false;
@@ -113,7 +112,34 @@ function getCriteriaAndLogicType(planCriteria) {
   };
 }
 
-// TODO: somewhere herein we should validate the term has any properties required by the pattern.
+function applyPatternRequirements(searchTerm, termConfig) {
+  const patternName = termConfig.getPatternName();
+  const pattern = PATTERNS[patternName];
+
+  // Validate that the pattern is registered; throw NotImplementedError if not.
+  if (!pattern) {
+    throw new NotImplementedError(
+      `Unimplemented pattern name: ${patternName}.`,
+    );
+  }
+
+  // Validate that the search term satisfies all runtime properties required by the pattern.
+  const requiredProps = pattern.getRequiredRuntimeSearchTermProperties();
+  const missingProps = requiredProps.filter((propName) => {
+    const propValue = searchTerm.getProperty(propName);
+    return !utils.isNonEmptyString(propValue, true);
+  });
+
+  if (missingProps.length) {
+    const formattedMissing = missingProps
+      .map((propName) => `_${propName}`)
+      .join(', ');
+    throw new InvalidSearchRequestError(
+      `Search term '${searchTerm.getName()}' with pattern '${patternName}' is missing required runtime property(ies): ${formattedMissing}`,
+    );
+  }
+}
+
 function buildLeafTermContext({
   criterion,
   id,
@@ -142,6 +168,8 @@ function buildLeafTermContext({
     .forEach((k) => {
       searchTerm.addProperty(k.substring(1), criterion[k]);
     });
+
+  applyPatternRequirements(searchTerm, termConfig);
 
   // Cast value to the correct type if scalar and not dateTime.
   const scalarType = termConfig.getScalarType();

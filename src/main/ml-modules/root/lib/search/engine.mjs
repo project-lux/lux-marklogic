@@ -209,7 +209,6 @@ function buildLeafTermContext({
 // }
 //
 // TODO: implement 'values' mode for related lists (i.e., array of IRIs).
-// TODO: verify multi-scope searches are supported.
 // TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
 // TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
 function performSearch({
@@ -578,19 +577,8 @@ function processCriteria({
       dataTypeCol,
     });
 
-    // TODO: Delete post-refactor
-    criterion = null; // Use searchTerm
-    const termConfig = searchTerm.getSearchTermConfig();
-
-    DEBUG.push(
-      `Processing the '${termConfig.getPatternName()}' pattern for search term '${name}' with value:`,
-    );
-
-    const patternName = termConfig.getPatternName();
-    const pattern = PATTERNS[patternName];
-
     mergeTermPlanContributions(
-      pattern.apply(
+      PATTERNS[searchTerm.getSearchTermConfig().getPatternName()].apply(
         searchCriteriaProcessor,
         searchTerm,
         logicType,

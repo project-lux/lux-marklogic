@@ -4,7 +4,6 @@
 import op from '/MarkLogic/optic.mjs';
 import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
-import { convertPartialDateTimeToSeconds } from '../../utils/dateUtils.mjs';
 import {
   getSearchTermNames,
   getSearchTermConfig,
@@ -14,7 +13,6 @@ import {
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
 } from '../appConstants.mjs';
 import {
-  InternalServerError,
   InvalidSearchRequestError,
   NotImplementedError,
 } from '../errorClasses.mjs';

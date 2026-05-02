@@ -40,6 +40,12 @@ const COMPARATORS = {
 };
 
 const PREFER_FRAG_JOINS = false;
+
+// Registered pattern implementations.
+const PATTERNS = {
+  hopWithField: HopWithFieldPattern,
+  // More patterns will be added here as they are ported
+};
 //#endregion
 
 //#region Helper functions
@@ -533,134 +539,140 @@ function processCriteria({
       `Processing the '${termConfig.getPatternName()}' pattern for search term '${name}' with value:`,
     );
 
-    switch (termConfig.getPatternName()) {
-      case 'dateRange': {
-        let returnLexicons = true;
+    const patternName = termConfig.getPatternName();
+    const pattern = PATTERNS[patternName];
 
-        // Identify indexes and configure lexicons.
-        if (
-          !utils.isArray(termConfig.getIndexReferences()) ||
-          termConfig.getIndexReferences().length !== 2
-        ) {
-          throw new InternalServerError(
-            `The '${name}' search term within the '${searchTerm.getScopeName()}' scope is not correctly configured: two indexes are required.`,
+    if (pattern) {
+      // Ported patterns use the pattern class registry
+      addToPlanArrays(
+        pattern.apply(
+          searchCriteriaProcessor,
+          searchTerm,
+          patternOptions,
+          requestOptions,
+        ),
+      );
+    } else {
+      // Legacy patterns still using switch-based dispatch
+      switch (patternName) {
+        case 'dateRange': {
+          let returnLexicons = true;
+
+          // Identify indexes and configure lexicons.
+          if (
+            !utils.isArray(termConfig.getIndexReferences()) ||
+            termConfig.getIndexReferences().length !== 2
+          ) {
+            throw new InternalServerError(
+              `The '${name}' search term within the '${searchTerm.getScopeName()}' scope is not correctly configured: two indexes are required.`,
+            );
+          }
+          const startColName = id + '_start';
+          const endColName = id + '_end';
+
+          // Accept two dates, requiring at least one.
+          const delim = ';';
+          let dates = termValue;
+          if (dates.indexOf(delim) === -1) {
+            dates += delim;
+          }
+          dates = dates.split(';');
+          let startDateStr = dates[0].length > 0 ? dates[0] : null;
+          let endDateStr = dates[1].length > 0 ? dates[1] : null;
+          if (!startDateStr && !endDateStr) {
+            throw new InvalidSearchRequestError(
+              `the '${name} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
+            );
+          }
+
+          if (startDateStr && !endDateStr) {
+            endDateStr = startDateStr;
+          } else if (!startDateStr && endDateStr) {
+            startDateStr = endDateStr;
+          }
+
+          // Convert to seconds, allowing the operator to help determine how to treat partial dates.
+          const operator = searchTerm.getComparisonOperator();
+          const startDateLong = convertPartialDateTimeToSeconds(
+            startDateStr,
+            true,
           );
-        }
-        const startColName = id + '_start';
-        const endColName = id + '_end';
-
-        // Accept two dates, requiring at least one.
-        const delim = ';';
-        let dates = termValue;
-        if (dates.indexOf(delim) === -1) {
-          dates += delim;
-        }
-        dates = dates.split(';');
-        let startDateStr = dates[0].length > 0 ? dates[0] : null;
-        let endDateStr = dates[1].length > 0 ? dates[1] : null;
-        if (!startDateStr && !endDateStr) {
-          throw new InvalidSearchRequestError(
-            `the '${name} search term requires at least one date, such as '1800;1810', '1800', '1800;', or ';1810' (end of date range only).`,
+          const endDateLong = convertPartialDateTimeToSeconds(
+            endDateStr,
+            false,
           );
+
+          // TODO: document logic w/ example
+          const isBefore = ['<', '>='].includes(operator);
+          if (['>', '>=', '<', '<='].includes(operator)) {
+            isBefore
+              ? constraints.push(
+                  COMPARATORS[operator](op.col(startColName), startDateLong),
+                )
+              : constraints.push(
+                  COMPARATORS[operator](op.col(endColName), endDateLong),
+                );
+          } else if (['='].includes(operator)) {
+            constraints.push(op.ge(op.col(startColName), startDateLong));
+            constraints.push(op.le(op.col(endColName), endDateLong));
+          } else if (['!='].includes(operator)) {
+            returnLexicons = false;
+            ctsConstraints.push(
+              cts.orQuery([
+                cts.fieldRangeQuery(
+                  termConfig.getIndexReferences()[0],
+                  '<',
+                  startDateLong,
+                ),
+                cts.fieldRangeQuery(
+                  termConfig.getIndexReferences()[1],
+                  '>',
+                  endDateLong,
+                ),
+              ]),
+            );
+          } else {
+            throw new InternalServerError(
+              `The date range pattern has not accounted for the '${operator}' operator.`,
+            );
+          }
+
+          if (returnLexicons) {
+            // TODO: allow pattern functions to add to the lexicons object.
+            lexicons[startColName] = cts.fieldReference(
+              termConfig.getIndexReferences()[0],
+            );
+            lexicons[endColName] = cts.fieldReference(
+              termConfig.getIndexReferences()[1],
+            );
+          }
+
+          break;
         }
+        case 'text': {
+          const newCriteria = {
+            OR: [
+              {
+                textNoHop: searchTerm.getChildCriteria(),
+              },
+              {
+                referencedBy: searchTerm.getChildCriteria(),
+              },
+            ],
+          };
 
-        if (startDateStr && !endDateStr) {
-          endDateStr = startDateStr;
-        } else if (!startDateStr && endDateStr) {
-          startDateStr = endDateStr;
+          criteria.push(newCriteria);
+          break;
         }
-
-        // Convert to seconds, allowing the operator to help determine how to treat partial dates.
-        const operator = searchTerm.getComparisonOperator();
-        const startDateLong = convertPartialDateTimeToSeconds(
-          startDateStr,
-          true,
-        );
-        const endDateLong = convertPartialDateTimeToSeconds(endDateStr, false);
-
-        // TODO: document logic w/ example
-        const isBefore = ['<', '>='].includes(operator);
-        if (['>', '>=', '<', '<='].includes(operator)) {
-          isBefore
-            ? constraints.push(
-                COMPARATORS[operator](op.col(startColName), startDateLong),
-              )
-            : constraints.push(
-                COMPARATORS[operator](op.col(endColName), endDateLong),
-              );
-        } else if (['='].includes(operator)) {
-          constraints.push(op.ge(op.col(startColName), startDateLong));
-          constraints.push(op.le(op.col(endColName), endDateLong));
-        } else if (['!='].includes(operator)) {
-          returnLexicons = false;
-          ctsConstraints.push(
-            cts.orQuery([
-              cts.fieldRangeQuery(
-                termConfig.getIndexReferences()[0],
-                '<',
-                startDateLong,
-              ),
-              cts.fieldRangeQuery(
-                termConfig.getIndexReferences()[1],
-                '>',
-                endDateLong,
-              ),
-            ]),
-          );
-        } else {
-          throw new InternalServerError(
-            `The date range pattern has not accounted for the '${operator}' operator.`,
-          );
-        }
-
-        if (returnLexicons) {
-          // TODO: allow pattern functions to add to the lexicons object.
-          lexicons[startColName] = cts.fieldReference(
-            termConfig.getIndexReferences()[0],
-          );
-          lexicons[endColName] = cts.fieldReference(
-            termConfig.getIndexReferences()[1],
-          );
-        }
-
-        break;
-      }
-      case 'text': {
-        const newCriteria = {
-          OR: [
-            {
-              textNoHop: searchTerm.getChildCriteria(),
-            },
-            {
-              referencedBy: searchTerm.getChildCriteria(),
-            },
-          ],
-        };
-
-        criteria.push(newCriteria);
-        break;
-      }
-      case 'indexedValue': {
-        // CTS constraint rather than op.eq on a range lexicon: simple column value
-        // comparisons do not support wildcarding, stemming, or sensitivity options
-        // (case, whitespace, diacritics, and punctuation).
-        //
-        // This pattern also subsumed the propertyValue pattern.  Should there be a
-        // need to use the universal index, re-instate the propertyValue pattern and
-        // use cts.jsonPropertyValueQuery therein.  Dropped support of correcting the
-        // case of a dataType, as was done for recordType search terms.
-        ctsConstraints.push(
-          cts.fieldValueQuery(
-            termConfig.getIndexReferences(),
-            termValue,
-            termSearchOptions,
-          ),
-        );
-        break;
-      }
-      case 'indexedWord': {
-        // CTS constraint for same reason as indexedValue pattern.
-        if (searchTerm.isCompleteMatch()) {
+        case 'indexedValue': {
+          // CTS constraint rather than op.eq on a range lexicon: simple column value
+          // comparisons do not support wildcarding, stemming, or sensitivity options
+          // (case, whitespace, diacritics, and punctuation).
+          //
+          // This pattern also subsumed the propertyValue pattern.  Should there be a
+          // need to use the universal index, re-instate the propertyValue pattern and
+          // use cts.jsonPropertyValueQuery therein.  Dropped support of correcting the
+          // case of a dataType, as was done for recordType search terms.
           ctsConstraints.push(
             cts.fieldValueQuery(
               termConfig.getIndexReferences(),
@@ -668,180 +680,182 @@ function processCriteria({
               termSearchOptions,
             ),
           );
-        } else {
-          ctsConstraints.push(
-            cts.fieldWordQuery(
-              termConfig.getIndexReferences(),
-              termValue,
-              termSearchOptions,
+          break;
+        }
+        case 'indexedWord': {
+          // CTS constraint for same reason as indexedValue pattern.
+          if (searchTerm.isCompleteMatch()) {
+            ctsConstraints.push(
+              cts.fieldValueQuery(
+                termConfig.getIndexReferences(),
+                termValue,
+                termSearchOptions,
+              ),
+            );
+          } else {
+            ctsConstraints.push(
+              cts.fieldWordQuery(
+                termConfig.getIndexReferences(),
+                termValue,
+                termSearchOptions,
+              ),
+            );
+          }
+          break;
+        }
+        case 'indexedRange': {
+          // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
+          // including the values of all objects in the array.
+          if (logicType === 'and') {
+            const constraint = COMPARATORS[searchTerm.getComparisonOperator()];
+            // This requires that each term config only has one index reference. This is true today, but is it guaranteed?
+            lexicons[id + '_field'] = cts.fieldReference(
+              termConfig.getIndexReferences()[0],
+            );
+            constraints.push(constraint(op.col(id + '_field'), termValue));
+          } else {
+            // OR and NOT
+            ctsConstraints.push(
+              cts.fieldRangeQuery(
+                termConfig.getIndexReferences(),
+                searchTerm.getComparisonOperator(),
+                termValue,
+              ),
+            );
+          }
+          break;
+        }
+        case 'hopInverse': {
+          const _triFragCol = id + '_triFrag';
+          const _refFrag = id + '_frag';
+          const predicates = SearchCriteriaProcessor.expandPredicates(
+            termConfig.getPredicates(),
+          );
+          const tri = op.fromTriples([
+            op.pattern(
+              op.col(id + '_s'),
+              predicates,
+              op.col(id + '_o'),
+              op.fragmentIdCol(_triFragCol),
             ),
-          );
-        }
-        break;
-      }
-      case 'indexedRange': {
-        // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
-        // including the values of all objects in the array.
-        if (logicType === 'and') {
-          const constraint = COMPARATORS[searchTerm.getComparisonOperator()];
-          // This requires that each term config only has one index reference. This is true today, but is it guaranteed?
-          lexicons[id + '_field'] = cts.fieldReference(
-            termConfig.getIndexReferences()[0],
-          );
-          constraints.push(constraint(op.col(id + '_field'), termValue));
-        } else {
-          // OR and NOT
-          ctsConstraints.push(
-            cts.fieldRangeQuery(
-              termConfig.getIndexReferences(),
-              searchTerm.getComparisonOperator(),
-              termValue,
-            ),
-          );
-        }
-        break;
-      }
-      case 'hopWithField': {
-        addToPlanArrays(
-          HopWithFieldPattern.apply(
-            searchCriteriaProcessor,
-            searchTerm,
-            patternOptions,
-            requestOptions,
-          ),
-        );
-        break;
-      }
-      case 'hopInverse': {
-        const _triFragCol = id + '_triFrag';
-        const _refFrag = id + '_frag';
-        const predicates = SearchCriteriaProcessor.expandPredicates(
-          termConfig.getPredicates(),
-        );
-        const tri = op.fromTriples([
-          op.pattern(
-            op.col(id + '_s'),
-            predicates,
-            op.col(id + '_o'),
-            op.fragmentIdCol(_triFragCol),
-          ),
-        ]);
-
-        const rightGroups = {
-          by: [_refFrag],
-        };
-
-        const right = tri.joinInner(
-          processCriteria({
-            searchCriteriaProcessor,
-            planCriteria: searchTerm.getChildCriteria(),
-            planScope: termConfig.getTargetScopeName(),
-            patternOptions,
-            groups: rightGroups,
-            parentId: id,
-          }),
-          [
-            // Hop Inverse: the triple is on the referenced document, not the source document.
-            op.on(op.fragmentIdCol(_triFragCol), op.fragmentIdCol(_refFrag)),
-          ],
-        );
-
-        // DEBUG.push('Generated right plan:');
-        // DEBUG.push(getPlanSource(right));
-
-        patternJoins.push({
-          right: right,
-          // Can't join on frag because the triple isn't on the source document
-          on: op.on(op.col(iriCol), op.col(id + '_o')),
-          extraCols: [],
-        });
-        break;
-      }
-      // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
-      case 'documentId':
-      case 'iri': {
-        if (logicType === 'and') {
-          constraints.push(op.eq(op.col(uriCol), termValue));
-        } else {
-          ctsConstraints.push(cts.documentQuery(termValue));
-        }
-        break;
-      }
-      case 'annTopK': {
-        const vecFrag = id + '_vecFrag';
-        const distCol = id + '_distance';
-        const vectorColumn = searchTerm.getVectorColumn();
-        const maxDistance = searchTerm.getVectorDistance();
-        const k = searchTerm.getAnnK();
-
-        // Require the seed document have the specified vector.
-        if (!fn.docAvailable(termValue)) {
-          throw new InvalidSearchRequestError(
-            `Document specified by search term ${name} is not available: ${termValue}`,
-          );
-        }
-        const vectorData = cts
-          .doc(termValue)
-          .xpath(`vectors/${vectorColumn}`)
-          .toArray();
-        if (!vectorData || vectorData.length === 0) {
-          throw new InvalidSearchRequestError(
-            `Document specified by search term ${name} is missing vector data for column '${vectorColumn}': ${termValue}`,
-          );
-        }
-        const queryVector = vec.vector(vectorData);
-
-        // Create annTopK plan with URI column renamed to avoid conflicts with main lexicons
-        // TODO: Replace hardcoded schema and view names.
-        let annPlan = op.fromView(
-          'lux',
-          'vectors',
-          id,
-          op.fragmentIdCol(vecFrag),
-        );
-
-        // Determine if we should exclude seed document - only exclude for single similarity queries
-        const isMultipleSimilarity =
-          (planCriteria.OR && planCriteria.OR.length > 1) ||
-          (criteria.length > 1 && logicType === 'or');
-
-        // Only exclude seed document for single similarity queries
-        if (!isMultipleSimilarity) {
-          annPlan = annPlan.where(op.ne(op.col('uri'), termValue));
-        }
-
-        // annTopK should naturally filter out documents without valid vector data
-        annPlan = annPlan
-          .annTopK(k, op.col(vectorColumn), queryVector, op.col(distCol), {
-            distance: 'cosine',
-            'max-distance': maxDistance,
-          })
-
-          // Rename uri to avoid conflict, select only needed columns
-          .select([
-            op.as(id + '_vectorUri', op.col('uri')),
-            op.fragmentIdCol(vecFrag),
-            distCol,
           ]);
 
-        // annPlan includes the entire vector.
-        DEBUG.push('Generated annTopK plan:');
-        DEBUG.push(
-          `k=${k}, vectorColumn='${vectorColumn}', maxDistance=${maxDistance}, seedURI='${termValue}'`,
-        );
+          const rightGroups = {
+            by: [_refFrag],
+          };
 
-        patternJoins.push({
-          right: annPlan,
-          on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag)),
-          extraCols: [distCol],
-        });
+          const right = tri.joinInner(
+            processCriteria({
+              searchCriteriaProcessor,
+              planCriteria: searchTerm.getChildCriteria(),
+              planScope: termConfig.getTargetScopeName(),
+              patternOptions,
+              groups: rightGroups,
+              parentId: id,
+            }),
+            [
+              // Hop Inverse: the triple is on the referenced document, not the source document.
+              op.on(op.fragmentIdCol(_triFragCol), op.fragmentIdCol(_refFrag)),
+            ],
+          );
 
-        break;
+          // DEBUG.push('Generated right plan:');
+          // DEBUG.push(getPlanSource(right));
+
+          patternJoins.push({
+            right: right,
+            // Can't join on frag because the triple isn't on the source document
+            on: op.on(op.col(iriCol), op.col(id + '_o')),
+            extraCols: [],
+          });
+          break;
+        }
+        // IRIs and URIs are both strings at this point. Using uriCol as it can be processed on the d-nodes.
+        case 'documentId':
+        case 'iri': {
+          if (logicType === 'and') {
+            constraints.push(op.eq(op.col(uriCol), termValue));
+          } else {
+            ctsConstraints.push(cts.documentQuery(termValue));
+          }
+          break;
+        }
+        case 'annTopK': {
+          const vecFrag = id + '_vecFrag';
+          const distCol = id + '_distance';
+          const vectorColumn = searchTerm.getVectorColumn();
+          const maxDistance = searchTerm.getVectorDistance();
+          const k = searchTerm.getAnnK();
+
+          // Require the seed document have the specified vector.
+          if (!fn.docAvailable(termValue)) {
+            throw new InvalidSearchRequestError(
+              `Document specified by search term ${name} is not available: ${termValue}`,
+            );
+          }
+          const vectorData = cts
+            .doc(termValue)
+            .xpath(`vectors/${vectorColumn}`)
+            .toArray();
+          if (!vectorData || vectorData.length === 0) {
+            throw new InvalidSearchRequestError(
+              `Document specified by search term ${name} is missing vector data for column '${vectorColumn}': ${termValue}`,
+            );
+          }
+          const queryVector = vec.vector(vectorData);
+
+          // Create annTopK plan with URI column renamed to avoid conflicts with main lexicons
+          // TODO: Replace hardcoded schema and view names.
+          let annPlan = op.fromView(
+            'lux',
+            'vectors',
+            id,
+            op.fragmentIdCol(vecFrag),
+          );
+
+          // Determine if we should exclude seed document - only exclude for single similarity queries
+          const isMultipleSimilarity =
+            (planCriteria.OR && planCriteria.OR.length > 1) ||
+            (criteria.length > 1 && logicType === 'or');
+
+          // Only exclude seed document for single similarity queries
+          if (!isMultipleSimilarity) {
+            annPlan = annPlan.where(op.ne(op.col('uri'), termValue));
+          }
+
+          // annTopK should naturally filter out documents without valid vector data
+          annPlan = annPlan
+            .annTopK(k, op.col(vectorColumn), queryVector, op.col(distCol), {
+              distance: 'cosine',
+              'max-distance': maxDistance,
+            })
+
+            // Rename uri to avoid conflict, select only needed columns
+            .select([
+              op.as(id + '_vectorUri', op.col('uri')),
+              op.fragmentIdCol(vecFrag),
+              distCol,
+            ]);
+
+          // annPlan includes the entire vector.
+          DEBUG.push('Generated annTopK plan:');
+          DEBUG.push(
+            `k=${k}, vectorColumn='${vectorColumn}', maxDistance=${maxDistance}, seedURI='${termValue}'`,
+          );
+
+          patternJoins.push({
+            right: annPlan,
+            on: op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(vecFrag)),
+            extraCols: [distCol],
+          });
+
+          break;
+        }
+        default:
+          throw new NotImplementedError(
+            `Unimplemented pattern name: ${patternName}.`,
+          );
       }
-      default:
-        throw new NotImplementedError(
-          `Unimplemented pattern name: ${termConfig.getPatternName()}.`,
-        );
     }
   }
 

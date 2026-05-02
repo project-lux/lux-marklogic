@@ -198,13 +198,6 @@ const SearchCriteriaProcessor = class {
     };
   }
 
-  getDebugMessages() {
-    if (this.getSearchState() === 'completed') {
-      return this.#searchResults.debug;
-    }
-    return [`Search not completed - current state: ${this.getSearchState()}`];
-  }
-
   getEstimate() {
     return this.getSearchResults().results.length;
   }
@@ -213,7 +206,6 @@ const SearchCriteriaProcessor = class {
   //   results: Array<object> | null,
   //   planAsJson: object,
   //   planAsSource: string,
-  //   debug: Array<string>,
   // }
   getSearchResults() {
     if (this.#searchResults) {

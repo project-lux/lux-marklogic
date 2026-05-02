@@ -47,9 +47,6 @@ const PATTERNS = {
 };
 
 const PREFER_FRAG_JOINS = false;
-
-// TODO: remove global debug array from MJS context.
-const DEBUG = [];
 //#endregion
 
 //#region Entry points
@@ -57,7 +54,6 @@ const DEBUG = [];
 //   results: Array<object> | null,
 //   planAsJson: object,
 //   planAsSource: string,
-//   debug: Array<string>,
 // }
 //
 // TODO: implement 'values' mode for related lists (i.e., array of IRIs).
@@ -92,11 +88,9 @@ function performSearch({
     return {
       results: includeResults ? opticPlan.result().toArray() : null,
       planAsJson,
-      planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
-      debug: DEBUG,
+      planAsSource: getPlanSource(opticPlan),
     };
   } catch (ex) {
-    console.dir(DEBUG);
     throw ex;
   }
 }
@@ -111,22 +105,9 @@ function processCriteria({
   allowMultiScope = false,
   requestOptions = null,
 }) {
-  DEBUG.push('Called processCriteria');
-
   if (!utils.isDefined(patternOptions)) {
     patternOptions = new PatternOptions(PREFER_FRAG_JOINS);
   }
-
-  DEBUG.push(
-    xdmp.toJSON({
-      planCriteria,
-      planScope,
-      patternOptions,
-      parentId,
-      allowMultiScope,
-      requestOptions,
-    }),
-  );
 
   const topLevel = !parentId;
   const uriCol = topLevel ? 'uri' : parentId + '_uri'; // If this isn't the root criteria, it needs to be joined back
@@ -150,7 +131,6 @@ function processCriteria({
   let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
 
   const { criteria, logicType } = getCriteriaAndLogicType(planCriteria);
-  DEBUG.push(`Logic Type: ${logicType}`);
 
   // TODO: if wanted, must configure as field range indexes
   // primaryName: cts.fieldReference(scope + 'PrimaryName')
@@ -166,8 +146,6 @@ function processCriteria({
   // Loop through search criteria, building the accumulator
   for (let idx = 0; idx < criteria.length; idx++) {
     const criterion = criteria[idx];
-    DEBUG.push(`Processing Criterion ${idx}`);
-    DEBUG.push(xdmp.toJSON(criterion));
 
     if (isMultiScope) {
       scope = criterion._scope;
@@ -346,8 +324,6 @@ function buildLeafTermContext({
   dataTypeCol,
 }) {
   const termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
-  DEBUG.push('Found Term Config');
-  DEBUG.push(xdmp.toJSON(termConfig.rawConfig));
 
   const searchTerm = new SearchTerm()
     .addId(id)
@@ -377,8 +353,6 @@ function buildLeafTermContext({
       ? rawTermValue
       : null;
   searchTerm.setValue(value);
-  DEBUG.push(value);
-  DEBUG.push(typeof value);
 
   // TODO: resolve search options: pattern --> term config --> term instance.
   const searchOptions = termConfig.isForceExactMatch()
@@ -590,15 +564,12 @@ function assembleOpticPlan(
   let plan = op.fromLexicons(acc.lexicons, null, op.fragmentIdCol(fragCol));
 
   if (acc.constraints.length) {
-    DEBUG.push('Applying Constraints');
     for (const constraint of acc.constraints) {
-      DEBUG.push({ constraint });
       plan = plan.where(constraint);
     }
   }
 
   if (acc.ctsConstraints.length) {
-    DEBUG.push('Applying CTS Constraints');
     const ctsWrapper =
       logicType === 'and'
         ? cts.andQuery
@@ -609,7 +580,6 @@ function assembleOpticPlan(
   }
 
   if (acc.conjunctionJoins.length) {
-    DEBUG.push('Applying Conjunction Joins');
     for (const join of acc.conjunctionJoins) {
       // Join functions are a method on the plan, so we reference them by name
       plan = plan[join.type](join.right, join.on, join.condition);
@@ -617,7 +587,6 @@ function assembleOpticPlan(
   }
 
   if (acc.patternJoins.length) {
-    DEBUG.push('Applying Pattern Joins');
     const hasNonJoinConstraints =
       acc.constraints.length > 0 ||
       acc.ctsConstraints.length > 0 ||
@@ -629,15 +598,11 @@ function assembleOpticPlan(
         if (!hasNonJoinConstraints && i === 0) {
           // No other constraints exist: inner join constrains the base plan
           // instead of outer joining to an unconstrained lexicon scan.
-          DEBUG.push(
-            'OR first join (inner): no non-join constraints, constraining base plan',
-          );
           plan = plan.joinInner(pj.right, pj.on);
         } else {
           // Duplicate lexicon → inner join with right → align columns → full outer join.
           // Select uriCol (not fragCol) so the natural join key matches conjunction
           // joins and the final groupBy(['uri']) sees every matched document.
-          DEBUG.push('OR join (full outer via lexicon copy)');
           const wrapped = op
             .fromLexicons(acc.lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
@@ -675,7 +640,6 @@ function assembleOpticPlan(
 // the root-level column renames and distance consolidation.
 function finalizeRootPlan(plan, distanceCols, groups) {
   if (groups) {
-    DEBUG.push(`Grouping by ${groups.by ? groups.by.join(', ') : 'none'}...`);
     const agg = distanceCols.length
       ? [
           ...groups.agg,
@@ -692,7 +656,6 @@ function finalizeRootPlan(plan, distanceCols, groups) {
 
   const distanceColCnt = distanceCols.length;
   if (distanceColCnt > 0) {
-    DEBUG.push('Consolidating distance columns');
     plan = plan
       .select([
         ...outputCols,
@@ -707,9 +670,6 @@ function finalizeRootPlan(plan, distanceCols, groups) {
   } else if (groups) {
     plan = plan.select(outputCols);
   }
-
-  DEBUG.push('***********************************FINAL PLAN:');
-  DEBUG.push(getPlanSource(plan));
 
   return plan;
 }

@@ -54,6 +54,198 @@ const PREFER_FRAG_JOINS = false;
 const DEBUG = [];
 //#endregion
 
+//#region Entry points
+// returns {
+//   results: Array<object> | null,
+//   planAsJson: object,
+//   planAsSource: string,
+//   debug: Array<string>,
+// }
+//
+// TODO: implement 'values' mode for related lists (i.e., array of IRIs).
+// TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
+// TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
+function performSearch({
+  searchCriteriaProcessor,
+  searchCriteria,
+  searchScope,
+  requestOptions,
+  allowMultiScope,
+  includeResults = true,
+}) {
+  try {
+    // We need to group by uri because lexicons can hit multiple times in a doc
+    const finalGroups = {
+      by: ['uri'],
+      agg: [op.sample('dataType', op.col('dataType'))],
+    };
+
+    const opticPlan = processCriteria({
+      searchCriteriaProcessor,
+      planCriteria: searchCriteria,
+      planScope: searchScope,
+      allowMultiScope,
+      groups: finalGroups,
+      requestOptions,
+    });
+
+    const planAsJson = opticPlan.export();
+
+    return {
+      results: includeResults ? opticPlan.result().toArray() : null,
+      planAsJson,
+      planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
+      debug: DEBUG,
+    };
+  } catch (ex) {
+    console.dir(DEBUG);
+    throw ex;
+  }
+}
+
+function processCriteria({
+  searchCriteriaProcessor,
+  planCriteria,
+  planScope = 'item',
+  patternOptions,
+  groups = null,
+  parentId = null,
+  allowMultiScope = false,
+  requestOptions = null,
+}) {
+  DEBUG.push('Called processCriteria');
+
+  if (!utils.isDefined(patternOptions)) {
+    patternOptions = new PatternOptions(PREFER_FRAG_JOINS);
+  }
+
+  DEBUG.push(
+    xdmp.toJSON({
+      planCriteria,
+      planScope,
+      patternOptions,
+      parentId,
+      allowMultiScope,
+      requestOptions,
+    }),
+  );
+
+  const topLevel = !parentId;
+  const uriCol = topLevel ? 'uri' : parentId + '_uri'; // If this isn't the root criteria, it needs to be joined back
+  const fragCol = topLevel ? 'frag' : parentId + '_frag'; // Joining on frag can result in different plans (more D-Node pushdown)
+  const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
+  const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
+
+  if (!utils.isDefined(planCriteria)) {
+    throw new InvalidSearchRequestError('search criteria must be defined.');
+  }
+
+  let scope = topLevel ? (planCriteria._scope ?? planScope) : planScope;
+
+  const isMultiScope = scope === 'multi';
+  if (isMultiScope) {
+    validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope);
+  }
+
+  // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs.
+  // For multi-scope, each top-level OR criterion resolves terms against its own scope.
+  let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
+
+  const { criteria, logicType } = getCriteriaAndLogicType(planCriteria);
+  DEBUG.push(`Logic Type: ${logicType}`);
+
+  // TODO: if wanted, must configure as field range indexes
+  // primaryName: cts.fieldReference(scope + 'PrimaryName')
+  const acc = createPlanAccumulator({
+    scope,
+    uriCol,
+    iriCol,
+    fragCol,
+    dataTypeCol,
+    isMultiScope,
+  });
+
+  // Loop through search criteria, building the accumulator
+  for (let idx = 0; idx < criteria.length; idx++) {
+    const criterion = criteria[idx];
+    DEBUG.push(`Processing Criterion ${idx}`);
+    DEBUG.push(xdmp.toJSON(criterion));
+
+    if (isMultiScope) {
+      scope = criterion._scope;
+      searchTermNames = getSearchTermNames(scope);
+    }
+
+    // Used when creating a new column that needs to be joined or filtered.
+    const id = sem.uuidString().replace(/-/g, '_');
+
+    // If the criterion is a nested conjunction, resolve it to a join or inline expansion
+    if (criterion.AND || criterion.OR || criterion.NOT) {
+      const result = buildConjunctionJoin(
+        criterion,
+        logicType,
+        scope,
+        patternOptions,
+        {
+          id,
+          uriCol,
+          fragCol,
+          searchCriteriaProcessor,
+        },
+      );
+      if (result.inlineCriteria) {
+        criteria.push(...result.inlineCriteria);
+      } else {
+        acc.conjunctionJoins.push(result.join);
+      }
+      continue;
+    }
+
+    const name = Object.keys(criterion).find(
+      (k) => k[0] !== '_' && searchTermNames.includes(k),
+    );
+    const searchTerm = buildLeafTermContext({
+      criterion,
+      id,
+      name,
+      scope,
+      iriCol,
+      uriCol,
+      fragCol,
+      dataTypeCol,
+    });
+
+    mergeTermPlanContributions(
+      acc,
+      criteria,
+      PATTERNS[searchTerm.getSearchTermConfig().getPatternName()].apply(
+        searchCriteriaProcessor,
+        searchTerm,
+        logicType,
+        patternOptions,
+        requestOptions,
+      ),
+    );
+  }
+
+  let plan = assembleOpticPlan(acc, {
+    fragCol,
+    uriCol,
+    dataTypeCol,
+    scope,
+    logicType,
+  });
+
+  // Only at root level — recursive calls use parentId-prefixed column names
+  // and the parent join still needs the original columns.
+  if (topLevel) {
+    plan = finalizeRootPlan(plan, acc.distanceCols, groups);
+  }
+
+  return plan;
+}
+//#endregion
+
 //#region Helper functions
 function getPlanSource(plan) {
   return op
@@ -520,198 +712,6 @@ function finalizeRootPlan(plan, distanceCols, groups) {
 
   DEBUG.push('***********************************FINAL PLAN:');
   DEBUG.push(getPlanSource(plan));
-
-  return plan;
-}
-//#endregion
-
-//#region Entry points
-// returns {
-//   results: Array<object> | null,
-//   planAsJson: object,
-//   planAsSource: string,
-//   debug: Array<string>,
-// }
-//
-// TODO: implement 'values' mode for related lists (i.e., array of IRIs).
-// TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
-// TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
-function performSearch({
-  searchCriteriaProcessor,
-  searchCriteria,
-  searchScope,
-  requestOptions,
-  allowMultiScope,
-  includeResults = true,
-}) {
-  try {
-    // We need to group by uri because lexicons can hit multiple times in a doc
-    const finalGroups = {
-      by: ['uri'],
-      agg: [op.sample('dataType', op.col('dataType'))],
-    };
-
-    const opticPlan = processCriteria({
-      searchCriteriaProcessor,
-      planCriteria: searchCriteria,
-      planScope: searchScope,
-      allowMultiScope,
-      groups: finalGroups,
-      requestOptions,
-    });
-
-    const planAsJson = opticPlan.export();
-
-    return {
-      results: includeResults ? opticPlan.result().toArray() : null,
-      planAsJson,
-      planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
-      debug: DEBUG,
-    };
-  } catch (ex) {
-    console.dir(DEBUG);
-    throw ex;
-  }
-}
-
-function processCriteria({
-  searchCriteriaProcessor,
-  planCriteria,
-  planScope = 'item',
-  patternOptions,
-  groups = null,
-  parentId = null,
-  allowMultiScope = false,
-  requestOptions = null,
-}) {
-  DEBUG.push('Called processCriteria');
-
-  if (!utils.isDefined(patternOptions)) {
-    patternOptions = new PatternOptions(PREFER_FRAG_JOINS);
-  }
-
-  DEBUG.push(
-    xdmp.toJSON({
-      planCriteria,
-      planScope,
-      patternOptions,
-      parentId,
-      allowMultiScope,
-      requestOptions,
-    }),
-  );
-
-  const topLevel = !parentId;
-  const uriCol = topLevel ? 'uri' : parentId + '_uri'; // If this isn't the root criteria, it needs to be joined back
-  const fragCol = topLevel ? 'frag' : parentId + '_frag'; // Joining on frag can result in different plans (more D-Node pushdown)
-  const iriCol = topLevel ? 'iri' : parentId + '_iri'; // IRI is used for semantic hops
-  const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
-
-  if (!utils.isDefined(planCriteria)) {
-    throw new InvalidSearchRequestError('search criteria must be defined.');
-  }
-
-  let scope = topLevel ? (planCriteria._scope ?? planScope) : planScope;
-
-  const isMultiScope = scope === 'multi';
-  if (isMultiScope) {
-    validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope);
-  }
-
-  // Search terms are keys that don't start with '_' and exist in searchTermsConfig.mjs.
-  // For multi-scope, each top-level OR criterion resolves terms against its own scope.
-  let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
-
-  const { criteria, logicType } = getCriteriaAndLogicType(planCriteria);
-  DEBUG.push(`Logic Type: ${logicType}`);
-
-  // TODO: if wanted, must configure as field range indexes
-  // primaryName: cts.fieldReference(scope + 'PrimaryName')
-  const acc = createPlanAccumulator({
-    scope,
-    uriCol,
-    iriCol,
-    fragCol,
-    dataTypeCol,
-    isMultiScope,
-  });
-
-  // Loop through search criteria, building the accumulator
-  for (let idx = 0; idx < criteria.length; idx++) {
-    const criterion = criteria[idx];
-    DEBUG.push(`Processing Criterion ${idx}`);
-    DEBUG.push(xdmp.toJSON(criterion));
-
-    if (isMultiScope) {
-      scope = criterion._scope;
-      searchTermNames = getSearchTermNames(scope);
-    }
-
-    // Used when creating a new column that needs to be joined or filtered.
-    const id = sem.uuidString().replace(/-/g, '_');
-
-    // If the criterion is a nested conjunction, resolve it to a join or inline expansion
-    if (criterion.AND || criterion.OR || criterion.NOT) {
-      const result = buildConjunctionJoin(
-        criterion,
-        logicType,
-        scope,
-        patternOptions,
-        {
-          id,
-          uriCol,
-          fragCol,
-          searchCriteriaProcessor,
-        },
-      );
-      if (result.inlineCriteria) {
-        criteria.push(...result.inlineCriteria);
-      } else {
-        acc.conjunctionJoins.push(result.join);
-      }
-      continue;
-    }
-
-    const name = Object.keys(criterion).find(
-      (k) => k[0] !== '_' && searchTermNames.includes(k),
-    );
-    const searchTerm = buildLeafTermContext({
-      criterion,
-      id,
-      name,
-      scope,
-      iriCol,
-      uriCol,
-      fragCol,
-      dataTypeCol,
-    });
-
-    mergeTermPlanContributions(
-      acc,
-      criteria,
-      PATTERNS[searchTerm.getSearchTermConfig().getPatternName()].apply(
-        searchCriteriaProcessor,
-        searchTerm,
-        logicType,
-        patternOptions,
-        requestOptions,
-      ),
-    );
-  }
-
-  let plan = assembleOpticPlan(acc, {
-    fragCol,
-    uriCol,
-    dataTypeCol,
-    scope,
-    logicType,
-  });
-
-  // Only at root level — recursive calls use parentId-prefixed column names
-  // and the parent join still needs the original columns.
-  if (topLevel) {
-    plan = finalizeRootPlan(plan, acc.distanceCols, groups);
-  }
 
   return plan;
 }

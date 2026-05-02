@@ -149,7 +149,7 @@ function _search(
     }
 
     // Parse gets us all the way through query generation.
-    searchCriteriaProcessor = processSearchCriteria({
+    searchCriteriaProcessor = prepare({
       searchCriteria,
       searchScope: resolvedSearchScope,
       page,
@@ -298,7 +298,7 @@ function _search(
  * generated CTS query may be retrieved.  An InternalServerError or InvalidSearchRequestError may be bubbled up from
  * SearchCriteriaProcessor.
  */
-function processSearchCriteria({
+function prepare({
   searchCriteria = null,
   searchScope = null,
   allowMultiScope = DEFAULT_ALLOW_MULTI_SCOPE,
@@ -313,7 +313,7 @@ function processSearchCriteria({
   valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
   const searchCriteriaProcessor = new SearchCriteriaProcessor(filterResults);
-  searchCriteriaProcessor.process(
+  searchCriteriaProcessor.prepare(
     searchCriteria,
     searchScope,
     allowMultiScope,
@@ -330,7 +330,7 @@ function processSearchCriteria({
 }
 
 function calculateEstimate(searchCriteria, scope) {
-  const searchCriteriaProcessor = processSearchCriteria({
+  const searchCriteriaProcessor = prepare({
     searchCriteria,
     searchScope: scope,
     filterResults: false,
@@ -444,7 +444,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               : 0;
         } else {
           // Given pagination parameters, 0 or 1 is expected.
-          const { results } = processSearchCriteria({
+          const { results } = prepare({
             searchCriteria: criteria,
             page: 1,
             pageLength: 1,
@@ -635,7 +635,7 @@ export {
   getSearchEstimate,
   resolveSearchOptions,
   resolveSearchOptionsName,
-  processSearchCriteria,
+  prepare,
   sanitizeAndValidateWildcardedStrings,
   search,
 };

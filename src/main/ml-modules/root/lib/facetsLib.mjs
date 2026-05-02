@@ -7,7 +7,7 @@ import {
   LUX_CONTEXT,
   TRACE_NAME_FACETS as traceName,
 } from './appConstants.mjs';
-import { processSearchCriteria } from './searchLib.mjs';
+import { prepare } from './searchLib.mjs';
 import { convertSecondsToDateStr } from '../utils/dateUtils.mjs';
 import * as utils from '../utils/utils.mjs';
 import {
@@ -46,7 +46,7 @@ function getFacet({
 
   try {
     const searchCriteriaProcessor = searchCriteria
-      ? processSearchCriteria({
+      ? prepare({
           searchCriteria,
           searchScope,
           allowMultiScope: false,

@@ -13,7 +13,7 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
-import { processSearchCriteria } from './searchLib.mjs';
+import { prepare } from './searchLib.mjs';
 import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_MAXIMUM_VALUES,
@@ -153,7 +153,7 @@ function getRelatedList({
     for (let i = 0; i < searchConfigs.length; i++) {
       const searchConfig = searchConfigs[i];
       const valuesOnly = searchConfig.mode == 'values';
-      const searchCriteriaProcessor = processSearchCriteria({
+      const searchCriteriaProcessor = prepare({
         searchCriteria: utils.replaceMatchingPropertyValues(
           searchConfig.criteria,
           TOKEN_RUNTIME_PARAM,

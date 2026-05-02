@@ -1,5 +1,5 @@
 /**
- * Test suite for SearchCriteriaProcessor.process() - Scope Resolution
+ * Test suite for SearchCriteriaprocessor.prepare() - Scope Resolution
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
@@ -91,7 +91,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
     const input = scenario.input;
 
-    processor.process(
+    processor.prepare(
       input.searchCriteria,
       input.scopeName,
       input.allowMultiScope,

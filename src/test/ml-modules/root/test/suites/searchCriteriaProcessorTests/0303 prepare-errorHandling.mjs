@@ -1,5 +1,5 @@
 /**
- * Test suite for SearchCriteriaProcessor.process() - Error Handling
+ * Test suite for SearchCriteriaprocessor.prepare() - Error Handling
  * Tests all error conditions with direct error message validation
  */
 
@@ -131,7 +131,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
     const input = scenario.input;
 
-    processor.process(
+    processor.prepare(
       input.searchCriteria,
       input.scopeName,
       input.allowMultiScope,

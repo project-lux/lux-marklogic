@@ -96,7 +96,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
 
     if (scenario.input.setupProcessor) {
-      processor.process(
+      processor.prepare(
         scenario.input.searchCriteria,
         null, // scopeName from criteria
         false, // allowMultiScope

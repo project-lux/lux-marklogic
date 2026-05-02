@@ -234,4 +234,6 @@ select ?${id}_s ?${id}_o where {
   }
 }
 
-export { HopWithField };
+const HopWithFieldPattern = Object.freeze(new HopWithField());
+
+export { HopWithFieldPattern };

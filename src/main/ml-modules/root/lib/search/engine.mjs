@@ -476,9 +476,25 @@ function assembleOpticPlan(
   return plan;
 }
 
-// Applies root-level output transformations: column renames (uri→id, dataType→type)
+// Applies root-level output transformations: groupBy, column renames (uri→id, dataType→type),
 // and distance column consolidation.
+//
+// NOTE: groups processing is co-located here because both are root-only concerns today.
+// If recursive calls ever need to specify groups, groups processing would need to move
+// back into processCriteria (or a separate function) so it can execute independently of
+// the root-level column renames and distance consolidation.
 function finalizeRootPlan(plan, distanceCols, groups) {
+  if (groups) {
+    DEBUG.push(`Grouping by ${groups.by ? groups.by.join(', ') : 'none'}...`);
+    const agg = distanceCols.length
+      ? [
+          ...groups.agg,
+          ...distanceCols.map((col) => op.sample(col, op.col(col))),
+        ]
+      : groups.agg;
+    plan = plan.groupBy(groups.by, agg);
+  }
+
   const outputCols = [
     op.as('id', op.col('uri')),
     op.as('type', op.col('dataType')),
@@ -690,17 +706,6 @@ function processCriteria({
     scope,
     logicType,
   });
-
-  if (groups) {
-    DEBUG.push(`Grouping by ${groups.by ? groups.by.join(', ') : 'none'}...`);
-    const agg = acc.distanceCols.length
-      ? [
-          ...groups.agg,
-          ...acc.distanceCols.map((col) => op.sample(col, op.col(col))),
-        ]
-      : groups.agg;
-    plan = plan.groupBy(groups.by, agg);
-  }
 
   // Only at root level — recursive calls use parentId-prefixed column names
   // and the parent join still needs the original columns.

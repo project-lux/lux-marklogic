@@ -1,11 +1,11 @@
 // This script may be used to convert search criteria into a CTS query,
 // formatted as a string or object.  The script is also capable of returning
 // the entire call to cts.search.  One may provide additional values into
-// the call to processSearchCriteria.  Lastly, by modifying the bottom of the
+// the call to prepare.  Lastly, by modifying the bottom of the
 // script, one may return anything available to the instance of
 // SearchCriteriaProcessor.  Enjoy!
 'use strict';
-import { processSearchCriteria } from '/lib/searchLib.mjs';
+import { prepare } from '/lib/searchLib.mjs';
 import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
 
 // formatAsObject: when true, get the CTS query as a JavaScript object; else,
@@ -37,10 +37,10 @@ const searchCriteria = {
 const searchScope = null;
 
 /*
-  Additional values may be provided to processSearchCriteria.  Below is a 
+  Additional values may be provided to prepare.  Below is a 
   potentially data list of properties and default values.  Note that this
   function accepts more than the search endpoint.  See the current impl.
-  of processSearchCriteria for updated properties and defaults.
+  of prepare for updated properties and defaults.
 
   searchCriteria = null,
   searchScope = null,
@@ -54,7 +54,7 @@ const searchScope = null;
   stopWatch = new StopWatch(true),
   valuesOnly = DEFAULT_VALUES_ONLY (false),
  */
-const searchCriteriaProcessor = processSearchCriteria({
+const searchCriteriaProcessor = prepare({
   searchCriteria,
   searchScope,
   filterResults,

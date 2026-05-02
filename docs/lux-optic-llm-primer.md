@@ -48,7 +48,7 @@ execute(searchCriteria, searchScope, includeResults)
   |
   |-- Creates finalGroups: groupBy(['uri'], sample('dataType'))
   |
-  +-- GetOpticPlan(searchCriteria, searchScope, finalGroups)
+  +-- processCriteria(searchCriteria, searchScope, finalGroups)
        |     returns plan directly
        |
        |-- Determines logicType: 'and' | 'or' | 'not'
@@ -136,7 +136,7 @@ When a criterion is itself an `AND`/`OR`/`NOT` group, the code merges the child'
 
 # Column Naming Strategy
 
-Every `GetOpticPlan` call receives a `parentId` (UUID or `null` for root), producing namespaced columns that prevent collisions across sub-plans.
+Every `processCriteria` call receives a `parentId` (UUID or `null` for root), producing namespaced columns that prevent collisions across sub-plans.
 
 | Column | Root (`parentId=null`) | Recursive (`parentId=<uuid>`) |
 |---|---|---|
@@ -192,7 +192,7 @@ Always joins — triple navigation requires its own row source (`op.fromTriples`
 
 **Simple hop** (string `termValue`): triple scan → reference lexicon filtered by value → inner-join on object=iri → join result to parent plan. Supports `_complete` flag: if set, uses exact-match (`op.eq`) on a range lexicon; otherwise, uses `cts.fieldWordQuery`.
 
-**Complex hop** (object `termValue` / nested criteria): triple scan → recursive `GetOpticPlan` on nested criteria → inner-join on object=iri → join result to parent plan. Recursive call receives `rightGroups = { by: [id+'_iri'] }` to deduplicate by IRI before joining (prevents row inflation).
+**Complex hop** (object `termValue` / nested criteria): triple scan → recursive `processCriteria` on nested criteria → inner-join on object=iri → join result to parent plan. Recursive call receives `rightGroups = { by: [id+'_iri'] }` to deduplicate by IRI before joining (prevents row inflation).
 
 **OR case — "duplicate lexicon then outer join":** Because `op.fromTriples` has no URI column, the triple result cannot be directly outer-joined to the base plan. The code creates a **second copy** of the base `op.fromLexicons`, inner-joins it to the triple result on `fragmentIdCol`, then `joinFullOuter`s that combined plan back to the base plan with column alignment (`select` to `[uriCol or fragCol, "dataType"]`).
 
@@ -242,7 +242,7 @@ function execute(searchCriteria, searchScope, includeResults = true)
 1. Creates `finalGroups` that deduplicate to one row per URI:
    `{ by: ['uri'], agg: [op.sample('dataType', op.col('dataType'))] }`.
 
-2. Calls `GetOpticPlan(searchCriteria, searchScope, finalGroups)`, destructuring `{ plan: opticPlan, distanceCols }`.
+2. Calls `processCriteria(searchCriteria, searchScope, finalGroups)`, destructuring `{ plan: opticPlan, distanceCols }`.
 
 3. Exports the plan to JSON (`planAsJson`), optionally executes `.result()`.
 
@@ -304,7 +304,7 @@ On error, dumps `debug` to console before re-throwing.
 | `ANN_K_DEFAULT` | `/lib/appConstants.mjs` | Default neighbor count for `annTopK` (Gradle-injected, fallback: 50) |
 | `ANN_K_MAX` | `/lib/appConstants.mjs` | Hard ceiling for `annTopK` k value (Gradle-injected, fallback: 1000) |
 | `ANN_DISTANCE_DEFAULT` | `/lib/appConstants.mjs` | Default cosine distance threshold (Gradle-injected, fallback: 0.14) |
-| `processSearchCriteria` | `/lib/searchLib.mjs` | Imported but **not used** in current code |
+| `processCriteria` | `/lib/searchLib.mjs` | Imported but **not used** in current code |
 | `START_OF_GENERATED_QUERY` | `/lib/SearchCriteriaProcessor.mjs` | Imported but **not used** in current code |
 
 > **Note:** `getSearchTermNames` and `getSearchTermConfig` are **build-time generated**. The source file exports stub (`dummy`) functions; real implementations are injected by the `generateRemainingSearchTerms` Gradle task at deployment.
@@ -397,7 +397,7 @@ Tracing through the code with scope `'item'`:
 
 1. **`execute()`** creates `finalGroups = { by: ['uri'], agg: [sample('dataType')] }`.
 
-2. **`GetOpticPlan()`** is called with `finalGroups`. `logicType = 'and'`, `criteria = [{ text: "lobster" }]`.
+2. **`processCriteria()`** is called with `finalGroups`. `logicType = 'and'`, `criteria = [{ text: "lobster" }]`.
 
 3. **Criterion 0:** `{ text: "lobster" }`.
    - Term name: `"text"`, pattern: `"text"`.
@@ -405,7 +405,7 @@ Tracing through the code with scope `'item'`:
 
 4. **Criterion 1** (pushed): `{ OR: [{ textNoHop: "lobster" }, { referencedBy: "lobster" }] }`.
    - This is a child OR inside parent AND → triggers `joinInner` path (3×3 matrix: AND×OR = `joinInner`).
-   - Recursively calls `GetOpticPlan({ OR: [...] }, 'item', null, <uuid>, options)`.
+   - Recursively calls `processCriteria({ OR: [...] }, 'item', null, <uuid>, options)`.
 
 5. **Recursive call** with `logicType = 'or'`:
    - **Criterion 0:** `{ textNoHop: "lobster" }` — an `indexedWord` pattern.
@@ -430,9 +430,9 @@ Tracing through the code with scope `'item'`:
 |---|---|
 | **Scope** | A record type group (e.g. `item`, `agent`, `work`, `concept`, `event`, `place`, `set`). Each scope defines its own fields, predicates, and RDF types. |
 | **Search Term** | A named criterion within a scope (e.g. `name`, `text`, `producedBy`, `classification`). Configured in `searchTermsConfig.mjs`. |
-| **Pattern** | The implementation strategy for a search term (e.g. `indexedWord`, `hopWithField`). Determines how the term translates to Optic constructs. The `patternName` field in the term config dispatches to the `switch/case` in `GetOpticPlan`. |
+| **Pattern** | The implementation strategy for a search term (e.g. `indexedWord`, `hopWithField`). Determines how the term translates to Optic constructs. The `patternName` field in the term config dispatches to the `switch/case` in `processCriteria`. |
 | **Criterion** | A single element in the search criteria JSON. Either a conjunction (`AND`/`OR`/`NOT` wrapping an array) or a leaf (a search term + value). |
-| **logicType** | The boolean context of the current `GetOpticPlan` call: `'and'`, `'or'`, or `'not'`. Determines which constraint bucket a pattern should target. |
+| **logicType** | The boolean context of the current `processCriteria` call: `'and'`, `'or'`, or `'not'`. Determines which constraint bucket a pattern should target. |
 | **D-Node pushdown** | A MarkLogic optimization where computation is sent to the data node that stores the fragment, avoiding network transfer. Enabled by joining on fragment IDs instead of URIs. |
 | **Fragment** | MarkLogic's internal unit of document storage. Fragment IDs are internal, not exposed as URIs. |
 | **Lexicon** | A range index that Optic can scan to produce rows. Created from `cts.uriReference()`, `cts.iriReference()`, `cts.fieldReference()`, etc. |
@@ -481,7 +481,7 @@ Tracing through the code with scope `'item'`:
 
 ### 2. Understand the scope of change
 
-- [ ] Read the relevant `case` block(s) in `GetOpticPlan`.
+- [ ] Read the relevant `case` block(s) in `processCriteria`.
 - [ ] Identify which bucket(s) the pattern uses: `constraints[]`, `ctsConstraints[]`, or `joins[]`.
 - [ ] Check all three logicType branches (`'and'`, `'or'`, `'not'`).
 - [ ] If the pattern uses joins, check the column naming and join alignment.
@@ -505,7 +505,7 @@ Tracing through the code with scope `'item'`:
 - [ ] If adding a `joinFullOuter`, both sides must `select` to the same column set.
 - [ ] Forward metadata through `groupBy` via `op.sample()` if needed, then consolidate in final `select()`.
 - [ ] Validate inputs at system boundaries (as `annTopK` validates seed document existence).
-- [ ] If recursing `GetOpticPlan`, use the returned plan directly — the function returns the plan, not an object wrapper.
+- [ ] If recursing `processCriteria`, use the returned plan directly — the function returns the plan, not an object wrapper.
 
 ### 5. How to verify
 
@@ -534,11 +534,11 @@ The following details are implementation-specific and may change. An LLM should 
 | Detail | Where to verify | Current value/behavior |
 |---|---|---|
 | ANN constant values (`ANN_K_DEFAULT`, `ANN_K_MAX`, `ANN_DISTANCE_DEFAULT`) | `appConstants.mjs` and `gradle.properties` | Fallbacks: 50, 1000, 0.14 (Gradle may inject different values) |
-| `k` resolution chain | `annTopK` case in `GetOpticPlan` | `Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K_MAX)` |
+| `k` resolution chain | `annTopK` case in `processCriteria` | `Math.min(criterion._maxAnnK ?? termConfig.defaultMaxAnnK ?? ANN_K_DEFAULT, ANN_K_MAX)` |
 | Seed-document exclusion heuristic | `annTopK` case, `isMultipleSimilarity` variable | Excludes for single similarity; keeps for multi-OR |
-| Distance consolidation | Distance handling in `GetOpticPlan` | Uses `op.least()` for multiple distances, `op.as()` for single distance at Optic level |
+| Distance consolidation | Distance handling in `processCriteria` | Uses `op.least()` for multiple distances, `op.as()` for single distance at Optic level |
 | `execute()` return shape | `execute()` return statement | `{ results, planAsJson, planAsSource, debug }` |
-| `GetOpticPlan` return shape | `GetOpticPlan` return statement | Returns plan directly |
+| `processCriteria` return shape | `processCriteria` return statement | Returns plan directly |
 | `annTopK` OR join pattern | `annTopK` case, `logicType === 'or'` branch | Same "duplicate lexicon then outer join" pattern as `hopWithField` OR — fresh `fromLexicons` → `joinInner` to annPlan → `joinFullOuter` back to base |
 | Search term config stubs | `searchTermsConfig.mjs` | Functions are Gradle-generated at build time; source shows `dummy` exports |
-| Unused imports | Top of `optic.mjs` | `processSearchCriteria`, `START_OF_GENERATED_QUERY` |
+| Unused imports | Top of `optic.mjs` | `processCriteria`, `START_OF_GENERATED_QUERY` |

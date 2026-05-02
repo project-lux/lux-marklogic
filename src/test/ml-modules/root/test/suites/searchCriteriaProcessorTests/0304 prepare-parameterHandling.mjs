@@ -1,5 +1,5 @@
 /**
- * Test suite for SearchCriteriaProcessor.process() - Parameter Handling
+ * Test suite for SearchCriteriaprocessor.prepare() - Parameter Handling
  * Tests pagination, options, and parameter propagation
  */
 
@@ -153,7 +153,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
     const input = scenario.input;
 
-    processor.process(
+    processor.prepare(
       input.searchCriteria,
       input.scopeName,
       input.allowMultiScope,

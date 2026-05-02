@@ -52,7 +52,7 @@ for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const processor = new SearchCriteriaProcessor(true, true, true);
 
-    processor.process(
+    processor.prepare(
       scenario.input.searchCriteria,
       null, // scopeName from criteria
       false, // allowMultiScope

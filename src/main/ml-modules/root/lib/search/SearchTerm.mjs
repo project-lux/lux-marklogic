@@ -19,11 +19,11 @@ const SearchTerm = class {
     this.value = null;
     this.props = {};
     this.mustReturnCtsQuery = false;
-    this.parentSearchTerm = null;
     this.childInfo = {};
     this.modifiedCriteria = null;
     this.childCriteria = null;
     this.columns = {};
+    this.parentColumns = {};
   }
 
   // Likely set via setProperty
@@ -68,21 +68,6 @@ const SearchTerm = class {
   }
   hasName() {
     return utils.isNonEmptyString(this.name);
-  }
-
-  addParentSearchTerm(parentSearchTerm) {
-    this.setParentSearchTerm(parentSearchTerm);
-    return this;
-  }
-  setParentSearchTerm(parentSearchTerm) {
-    //this.parentSearchTerm = SearchTerm.createDeepCopy(parentSearchTerm);
-    this.parentSearchTerm = parentSearchTerm;
-  }
-  getParentSearchTerm() {
-    return this.parentSearchTerm;
-  }
-  hasParentSearchTerm() {
-    return this.getParentSearchTerm() != null;
   }
 
   addChildInfo(childInfo) {
@@ -152,8 +137,7 @@ const SearchTerm = class {
     return Object.keys(this.getProperties());
   }
 
-  // A SearchTerm can reference multiple Optic columns. Keep these in a dedicated
-  // map so callers can use either generic or dedicated column accessors.
+  //#region Current search term's Optic columns.
   addColumn(name, value) {
     this.setColumn(name, value);
     return this;
@@ -171,57 +155,87 @@ const SearchTerm = class {
     return Object.keys(this.getColumns());
   }
 
-  addUriColumn(uriColumn) {
-    this.setUriColumn(uriColumn);
-    return this;
-  }
-  setUriColumn(uriColumn) {
-    this.setColumn('uri', uriColumn);
+  getIriColumn() {
+    return this.id + '_iri';
   }
   getUriColumn() {
-    return this.getColumn('uri');
-  }
-
-  addIriColumn(iriColumn) {
-    this.setIriColumn(iriColumn);
-    return this;
-  }
-  setIriColumn(iriColumn) {
-    this.setColumn('iri', iriColumn);
-  }
-  getIriColumn() {
-    return this.getColumn('iri');
-  }
-
-  addFragmentColumn(fragmentColumn) {
-    this.setFragmentColumn(fragmentColumn);
-    return this;
-  }
-  setFragmentColumn(fragmentColumn) {
-    this.setColumn('fragment', fragmentColumn);
+    return this.id + '_uri';
   }
   getFragmentColumn() {
-    return this.getColumn('fragment');
+    return this.id + '_frag';
   }
+  //#endregion
 
-  addDataTypeColumn(dataTypeColumn) {
-    this.setDataTypeColumn(dataTypeColumn);
+  //#region Parent search term's Optic columns.
+  addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol } = {}) {
+    if (utils.isDefined(iriCol)) this.setParentIriColumn(iriCol);
+    if (utils.isDefined(uriCol)) this.setParentUriColumn(uriCol);
+    if (utils.isDefined(fragCol)) this.setParentFragmentColumn(fragCol);
+    if (utils.isDefined(dataTypeCol)) this.setParentDataTypeColumn(dataTypeCol);
     return this;
   }
-  setDataTypeColumn(dataTypeColumn) {
-    this.setColumn('dataType', dataTypeColumn);
-  }
-  getDataTypeColumn() {
-    return this.getColumn('dataType');
-  }
 
-  addColumns({ iriCol, uriCol, fragCol, dataTypeCol } = {}) {
-    if (utils.isDefined(iriCol)) this.setIriColumn(iriCol);
-    if (utils.isDefined(uriCol)) this.setUriColumn(uriCol);
-    if (utils.isDefined(fragCol)) this.setFragmentColumn(fragCol);
-    if (utils.isDefined(dataTypeCol)) this.setDataTypeColumn(dataTypeCol);
+  addParentColumn(name, value) {
+    this.setParentColumn(name, value);
     return this;
   }
+  setParentColumn(name, value) {
+    this.parentColumns[name] = value;
+  }
+  getParentColumn(name) {
+    return this.parentColumns[name];
+  }
+  getParentColumns() {
+    return this.parentColumns;
+  }
+  getParentColumnNames() {
+    return Object.keys(this.getParentColumns());
+  }
+
+  addParentUriColumn(uriColumn) {
+    this.setParentUriColumn(uriColumn);
+    return this;
+  }
+  setParentUriColumn(uriColumn) {
+    this.setParentColumn('uri', uriColumn);
+  }
+  getParentUriColumn() {
+    return this.getParentColumn('uri');
+  }
+
+  addParentIriColumn(iriColumn) {
+    this.setParentIriColumn(iriColumn);
+    return this;
+  }
+  setParentIriColumn(iriColumn) {
+    this.setParentColumn('iri', iriColumn);
+  }
+  getParentIriColumn() {
+    return this.getParentColumn('iri');
+  }
+
+  addParentFragmentColumn(fragmentColumn) {
+    this.setParentFragmentColumn(fragmentColumn);
+    return this;
+  }
+  setParentFragmentColumn(fragmentColumn) {
+    this.setParentColumn('fragment', fragmentColumn);
+  }
+  getParentFragmentColumn() {
+    return this.getParentColumn('fragment');
+  }
+
+  addParentDataTypeColumn(dataTypeColumn) {
+    this.setParentDataTypeColumn(dataTypeColumn);
+    return this;
+  }
+  setParentDataTypeColumn(dataTypeColumn) {
+    this.setParentColumn('dataType', dataTypeColumn);
+  }
+  getParentDataTypeColumn() {
+    return this.getParentColumn('dataType');
+  }
+  //#endregion
 
   // Each search term instance may come with its own search options.  Such search options
   // are finalized when applying the search term's pattern.

@@ -9,7 +9,6 @@ import {
   getSearchTermNames,
   getSearchTermConfig,
 } from '../../config/searchTermsConfig.mjs';
-import { processSearchCriteria } from '../searchLib.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
@@ -17,15 +16,16 @@ import {
 import {
   InternalServerError,
   InvalidSearchRequestError,
+  NotImplementedError,
 } from '../errorClasses.mjs';
 import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
+import { HopWithField } from '../search/patterns/HopWithField.mjs';
+import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 //#endregion
 
 //#region Constants
-const sem = require('/MarkLogic/semantics.xqy');
-
 // TODO: remove global debug array from MJS context.
 const DEBUG = [];
 
@@ -40,38 +40,9 @@ const COMPARATORS = {
 };
 
 const PREFER_FRAG_JOINS = false;
-
-const PREFIX_MAPPINGS = {
-  crm: 'http://www.cidoc-crm.org/cidoc-crm/',
-  la: 'https://linked.art/ns/terms/',
-  lux: 'https://lux.collections.yale.edu/ns/',
-  skos: 'http://www.w3.org/2004/02/skos/core#',
-};
 //#endregion
 
 //#region Helper functions
-function getPrefixesForSPARQL() {
-  return Object.entries(PREFIX_MAPPINGS)
-    .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
-    .join('\n');
-}
-
-function expandPredicates(predicates) {
-  return predicates.map((predicate) =>
-    sem.curieExpand(predicate, PREFIX_MAPPINGS),
-  );
-}
-
-function formatPredicatesForSPARQL(predicates, transitive = true) {
-  const individuals = transitive
-    ? predicates.map((predicate) => {
-        // TODO: optimization idea = omit + when single criterion as group by nullifies need.
-        return predicate.concat('+');
-      })
-    : predicates;
-  return `(${individuals.join(' | ')})`;
-}
-
 function getPlanSource(plan) {
   return op
     .toSource(plan.export ? plan.export() : plan)
@@ -154,7 +125,7 @@ function buildLeafTermContext({
     .addName(name)
     .addScopeName(scope)
     .addSearchTermConfig(termConfig)
-    .addColumns({ iriCol, uriCol, fragCol, dataTypeCol })
+    .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
     .addChildCriteria(criterion[name]);
 
   // Runtime search term properties are represented with leading underscores on criteria.
@@ -188,15 +159,67 @@ function buildLeafTermContext({
 }
 //#endregion
 
-function getOpticPlan({
+//#region Entry points
+// returns {
+//   results: Array<object> | null,
+//   planAsJson: object,
+//   planAsSource: string,
+//   debug: Array<string>,
+// }
+//
+// TODO: implement 'values' mode for related lists (i.e., array of IRIs).
+// TODO: verify multi-scope searches are supported.
+// TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
+// TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
+function performSearch({
+  searchCriteriaProcessor,
+  searchCriteria,
+  searchScope,
+  requestOptions,
+  allowMultiScope,
+  includeResults = true,
+}) {
+  try {
+    // We need to group by uri because lexicons can hit multiple times in a doc
+    const finalGroups = {
+      by: ['uri'],
+      agg: [op.sample('dataType', op.col('dataType'))],
+    };
+
+    const opticPlan = processCriteria({
+      searchCriteriaProcessor,
+      planCriteria: searchCriteria,
+      planScope: searchScope,
+      allowMultiScope,
+      groups: finalGroups,
+      requestOptions,
+    });
+
+    const planAsJson = opticPlan.export();
+
+    return {
+      results: includeResults ? opticPlan.result().toArray() : null,
+      planAsJson,
+      planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
+      debug: DEBUG,
+    };
+  } catch (ex) {
+    console.dir(DEBUG);
+    throw ex;
+  }
+}
+
+function processCriteria({
+  searchCriteriaProcessor,
   planCriteria,
   planScope = 'item',
   patternOptions,
   groups = null,
   parentId = null,
   allowMultiScope = false,
+  requestOptions = null,
 }) {
-  DEBUG.push('Called getOpticPlan');
+  DEBUG.push('Called processCriteria');
 
   if (!utils.isDefined(patternOptions)) {
     patternOptions = new PatternOptions(PREFER_FRAG_JOINS);
@@ -209,6 +232,7 @@ function getOpticPlan({
       patternOptions,
       parentId,
       allowMultiScope,
+      requestOptions,
     }),
   );
 
@@ -319,7 +343,8 @@ function getOpticPlan({
 
           conjunctionJoins.push({
             type: 'joinFullOuter',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: criterion,
               planScope: scope,
               patternOptions,
@@ -334,7 +359,8 @@ function getOpticPlan({
           // We are in a NOT and encounter an AND - not exists join
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: criterion,
               planScope: scope,
               patternOptions,
@@ -360,7 +386,8 @@ function getOpticPlan({
           // We are in an AND and encounter an OR - inner join
           conjunctionJoins.push({
             type: 'joinInner',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: criterion,
               planScope: scope,
               patternOptions,
@@ -386,7 +413,8 @@ function getOpticPlan({
           // We are in a NOT and encounter an OR - not exists join
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: criterion,
               planScope: scope,
               patternOptions,
@@ -413,7 +441,8 @@ function getOpticPlan({
           // This is equivalent and likely more performant (needs testing)
           conjunctionJoins.push({
             type: 'notExistsJoin',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: { OR: criterion.NOT },
               planScope: scope,
               patternOptions,
@@ -442,7 +471,8 @@ function getOpticPlan({
 
           conjunctionJoins.push({
             type: 'joinFullOuter',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: criterion,
               planScope: scope,
               patternOptions,
@@ -458,7 +488,8 @@ function getOpticPlan({
           // This is equivalent and likely more performant (needs testing)
           conjunctionJoins.push({
             type: 'joinInner',
-            right: getOpticPlan({
+            right: processCriteria({
+              searchCriteriaProcessor,
               planCriteria: { OR: criterion.NOT },
               planScope: scope,
               patternOptions,
@@ -498,10 +529,12 @@ function getOpticPlan({
     const termConfig = searchTerm.getSearchTermConfig();
     const termSearchOptions = searchTerm.getSearchOptions();
 
+    DEBUG.push(
+      `Processing the '${termConfig.getPatternName()}' pattern for search term '${name}' with value:`,
+    );
+
     switch (termConfig.getPatternName()) {
       case 'dateRange': {
-        DEBUG.push('processing dateRange');
-
         let returnLexicons = true;
 
         // Identify indexes and configure lexicons.
@@ -593,8 +626,6 @@ function getOpticPlan({
         break;
       }
       case 'text': {
-        DEBUG.push('processing text');
-
         const newCriteria = {
           OR: [
             {
@@ -628,8 +659,6 @@ function getOpticPlan({
         break;
       }
       case 'indexedWord': {
-        DEBUG.push(`processing ${termConfig.getPatternName()}`);
-
         // CTS constraint for same reason as indexedValue pattern.
         if (searchTerm.isCompleteMatch()) {
           ctsConstraints.push(
@@ -651,8 +680,6 @@ function getOpticPlan({
         break;
       }
       case 'indexedRange': {
-        DEBUG.push('processing indexedRange');
-
         // NOTE: If we switch to fromView, we can restrict criteria to a single object's values versus
         // including the values of all objects in the array.
         if (logicType === 'and') {
@@ -675,36 +702,24 @@ function getOpticPlan({
         break;
       }
       case 'hopWithField': {
-        DEBUG.push('processing hopWithField');
-        let termPlanArrays;
-        if (termConfig.isTransitive()) {
-          termPlanArrays = processTransitiveHopWithFieldTerm({
-            fragCol,
-            iriCol,
-            id,
+        // TODO: change to singleton
+        const pattern = new HopWithField();
+        addToPlanArrays(
+          pattern.apply(
+            searchCriteriaProcessor,
             searchTerm,
-            childCriteria: searchTerm.getChildCriteria(),
-            options: patternOptions,
-          });
-        } else {
-          termPlanArrays = processHopWithFieldTerm({
-            fragCol,
-            iriCol,
-            id,
-            searchTerm,
-            childCriteria: searchTerm.getChildCriteria(),
-            options: patternOptions,
-          });
-        }
-        addToPlanArrays(termPlanArrays);
+            patternOptions,
+            requestOptions,
+          ),
+        );
         break;
       }
       case 'hopInverse': {
-        DEBUG.push('processing hopInverse');
-
         const _triFragCol = id + '_triFrag';
         const _refFrag = id + '_frag';
-        const predicates = expandPredicates(termConfig.getPredicates());
+        const predicates = SearchCriteriaProcessor.expandPredicates(
+          termConfig.getPredicates(),
+        );
         const tri = op.fromTriples([
           op.pattern(
             op.col(id + '_s'),
@@ -719,7 +734,8 @@ function getOpticPlan({
         };
 
         const right = tri.joinInner(
-          getOpticPlan({
+          processCriteria({
+            searchCriteriaProcessor,
             planCriteria: searchTerm.getChildCriteria(),
             planScope: termConfig.getTargetScopeName(),
             patternOptions,
@@ -754,8 +770,6 @@ function getOpticPlan({
         break;
       }
       case 'annTopK': {
-        DEBUG.push('processing annTopK');
-
         const vecFrag = id + '_vecFrag';
         const distCol = id + '_distance';
         const vectorColumn = searchTerm.getVectorColumn();
@@ -764,7 +778,7 @@ function getOpticPlan({
 
         // Require the seed document have the specified vector.
         if (!fn.docAvailable(termValue)) {
-          throw new Error(
+          throw new InvalidSearchRequestError(
             `Document specified by search term ${name} is not available: ${termValue}`,
           );
         }
@@ -773,7 +787,7 @@ function getOpticPlan({
           .xpath(`vectors/${vectorColumn}`)
           .toArray();
         if (!vectorData || vectorData.length === 0) {
-          throw new Error(
+          throw new InvalidSearchRequestError(
             `Document specified by search term ${name} is missing vector data for column '${vectorColumn}': ${termValue}`,
           );
         }
@@ -827,7 +841,7 @@ function getOpticPlan({
         break;
       }
       default:
-        throw new Error(
+        throw new NotImplementedError(
           `Unimplemented pattern name: ${termConfig.getPatternName()}.`,
         );
     }
@@ -981,235 +995,6 @@ function getOpticPlan({
 
   return plan;
 }
-
-//#region Patterns
-/*
-  Return: 
-  {
-    constraints,
-    ctsConstraints,
-    patternJoins,
-    distanceCols
-  }
-*/
-// Approach: embeds field plan's results into SPARQL.  Proven over 3x faster in 12.0.1 than
-// hopPlan.joinInner(fieldPlan) when the embedded approach included the transitive operator (+)
-// and the join approach did not.
-//
-// TODO: is there a limit on the number of IRIs we can embed and if so, can the likes of op.param
-// or op.fromLiterals get around that?  Perhaps test with words that match 100K+ docs.
-function processTransitiveHopWithFieldTerm({
-  fragCol,
-  iriCol,
-  id,
-  searchTerm,
-  childCriteria,
-  options,
-}) {
-  const termConfig = searchTerm.getSearchTermConfig();
-
-  // Get the IRIs from the inner query and apply as a constraint to the SPARQL query.
-  const _refIri = id + '_iri';
-  const fieldPlan = searchTerm.hasValue()
-    ? getFieldAtomicPlan({
-        fragCol,
-        iriCol,
-        id,
-        searchTerm,
-        options,
-      })
-    : getFieldNestedPlan({
-        fragCol,
-        iriCol,
-        id,
-        searchTerm,
-        childCriteria,
-        rightGroups: null, // Grouping by here prevents grouping by at the end.
-        options,
-      });
-  // DEBUG.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
-
-  // TODO: if there are zero results from the fieldPlan, should we do anything different?
-  const sparql = `
-${getPrefixesForSPARQL()}
-select ?${id}_s ?${id}_o where {
-  VALUES ?${id}_o {
-    ${fieldPlan
-      .result()
-      .toArray()
-      .map((row) => `<${row[_refIri]}>`)
-      .join('\n    ')}
-  }
-  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates())} ?${id}_o
-}`;
-
-  return {
-    patternJoins: [
-      {
-        right: op.fromSPARQL(sparql, null, { dedup: 'on' }),
-        on: [op.on(op.col(iriCol), op.col(id + '_s'))],
-        extraCols: [],
-      },
-    ],
-  };
-}
-
-function processHopWithFieldTerm({
-  fragCol,
-  iriCol,
-  id,
-  searchTerm,
-  childCriteria,
-  options,
-}) {
-  const termValue = searchTerm.getValue();
-  const termConfig = searchTerm.getSearchTermConfig();
-  const _hopFragCol = id + '_hopFrag';
-  const hopPlan = op.fromTriples([
-    op.pattern(
-      op.col(id + '_s'),
-      expandPredicates(termConfig.getPredicates()),
-      op.col(id + '_o'),
-      op.fragmentIdCol(_hopFragCol),
-    ),
-  ]);
-
-  const _refIri = id + '_iri';
-  // const rightGroups = {
-  //   by: [_refIri],
-  // };
-  const fieldPlan = termValue
-    ? getFieldAtomicPlan({
-        fragCol,
-        iriCol,
-        id,
-        searchTerm,
-        options,
-      })
-    : getFieldNestedPlan({
-        fragCol,
-        iriCol,
-        id,
-        searchTerm,
-        childCriteria,
-        rightGroups: null, // Grouping by here prevents grouping by at the end.
-        options,
-      });
-
-  // DEBUG.push('Generated right plan:');
-  // DEBUG.push(getPlanSource(right));
-
-  return {
-    patternJoins: [
-      {
-        right: hopPlan.joinInner(
-          fieldPlan,
-          op.on(op.col(id + '_o'), op.col(_refIri)),
-        ),
-        // op.fromTriples doesn't return URIs so we are using fragment regardless of config
-        on: [
-          op.on(op.col(iriCol), op.col(id + '_s')),
-          op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(_hopFragCol)),
-        ],
-        extraCols: [],
-      },
-    ],
-  };
-}
-
-function getFieldNestedPlan({
-  fragCol,
-  iriCol,
-  id,
-  searchTerm,
-  childCriteria,
-  rightGroups,
-  options,
-}) {
-  const termConfig = searchTerm.getSearchTermConfig();
-  return getOpticPlan({
-    planCriteria: childCriteria,
-    planScope: termConfig.getTargetScopeName(),
-    patternOptions: options,
-    groups: rightGroups,
-    parentId: id,
-  });
-}
-
-function getFieldAtomicPlan({ fragCol, iriCol, id, searchTerm, options }) {
-  const termValue = searchTerm.getValue();
-  const termSearchOptions = searchTerm.getSearchOptions();
-  const termConfig = searchTerm.getSearchTermConfig();
-  const _refIri = id + '_iri';
-  return searchTerm.isCompleteMatch()
-    ? op
-        .fromLexicons({
-          [_refIri]: cts.iriReference(),
-          // TODO: determine if support for a single index is an issue.
-          [id + '_field']: cts.fieldReference(
-            termConfig.getIndexReferences()[0],
-          ),
-        })
-        .where(op.eq(op.col(id + '_field'), termValue))
-    : op
-        .fromLexicons({
-          [_refIri]: cts.iriReference(),
-        })
-        .where(
-          cts.fieldWordQuery(
-            termConfig.getIndexReferences(),
-            termValue,
-            termSearchOptions,
-          ),
-        );
-}
 //#endregion
 
-//#region Entry point
-// returns {
-//   results: Array<object> | null,
-//   planAsJson: object,
-//   planAsSource: string,
-//   debug: Array<string>,
-// }
-//
-// TODO: implement 'values' mode for related lists (i.e., array of IRIs).
-// TODO: verify multi-scope searches are supported.
-// TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
-// TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
-function execute({
-  searchCriteria,
-  searchScope,
-  allowMultiScope,
-  includeResults = true,
-}) {
-  try {
-    // We need to group by uri because lexicons can hit multiple times in a doc
-    const finalGroups = {
-      by: ['uri'],
-      agg: [op.sample('dataType', op.col('dataType'))],
-    };
-
-    const opticPlan = getOpticPlan({
-      planCriteria: searchCriteria,
-      planScope: searchScope,
-      allowMultiScope,
-      groups: finalGroups,
-    });
-
-    const planAsJson = opticPlan.export();
-
-    return {
-      results: includeResults ? opticPlan.result().toArray() : null,
-      planAsJson,
-      planAsSource: 'TODO: temporarily disabled', //getPlanSource(planAsJson),
-      debug: DEBUG,
-    };
-  } catch (ex) {
-    console.dir(DEBUG);
-    throw ex;
-  }
-}
-//#endregion
-
-export { execute };
+export { performSearch, processCriteria };

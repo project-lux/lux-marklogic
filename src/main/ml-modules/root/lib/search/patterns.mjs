@@ -355,68 +355,62 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
     patternOptions,
     requestOptions,
   ) => {
-    /*
-     * When request is for values, we need to create a values query and a CTS query.  We always
-     * need to make a CTS query, which should be the same regardless of creating a values query.
-     * The values query has a couple differences, specifically not wrapping a top-level term's
-     * cts.triples call within cts.documentQuery.
-     */
-    const requestIsForValues = patternOptions.get(
-      OPTION_NAME_RETURN_VALUES,
-      false,
-    );
-    // While the overall request may be for values, we need to return a query when this term instance
-    // is a child of another.
-    const isChildTerm = searchTerm.hasParentSearchTerm();
-    // Final determination
-    const returnValues = requestIsForValues && !isChildTerm;
-
-    // Tread carefully.
-    const wrapInDocumentQuery =
-      !isChildTerm || // if not a child term, we need to ensure this is a cts query to be fed into cts.search.
-      searchTerm.getMustReturnCtsQuery() || // Could be directly in a group, such as cts.andQuery.
-      ![PATTERN_NAME_HOP_INVERSE, PATTERN_NAME_HOP_WITH_FIELD].includes(
-        searchTerm.getParentSearchTerm().getSearchTermConfig().getPatternName(),
-      ); // Parent HOP_WITH_FIELD and HOP_INVERSE terms don't need a document query
-    // because they use cts.tripleRangeQuery and cts.triples, respectively.
-    // Other patterns expect a cts query.
-
-    const wrapStart = wrapInDocumentQuery ? 'cts.documentQuery(' : '';
-    const wrapEnd = wrapInDocumentQuery ? ')' : '';
-    const searchTermConfig = searchTerm.getSearchTermConfig();
-
-    const eagerEvaluation = patternOptions.get(
-      OPTION_NAME_EAGER_EVALUATION,
-      true,
-    );
-
-    const ctsQueryStr = `${wrapStart}${_getAtLeastOneCtsTriple(
-      searchTerm.getValue(),
-      searchTermConfig.getPredicates(),
-      searchTerm.getChildWillReturnCtsQuery(),
-      false,
-      eagerEvaluation,
-    )}${wrapEnd}`;
-    let values = null;
-
-    if (returnValues) {
-      // A request may specify the maximum number of values to return.
-      const maximumNumberOfValues = patternOptions.get(
-        OPTION_NAME_MAXIMUM_VALUES,
-        -1,
-      );
-      const codeStr = `${_getAtLeastOneCtsTriple(
-        searchTerm.getValue(),
-        searchTermConfig.getPredicates(),
-        searchTerm.getChildWillReturnCtsQuery(),
-        true,
-        eagerEvaluation,
-        maximumNumberOfValues,
-      )}`;
-      values = SearchCriteriaProcessor.evalQueryString(codeStr);
-    }
-
-    return _formattedPatternResponse(ctsQueryStr, values);
+    //   /*
+    //    * When request is for values, we need to create a values query and a CTS query.  We always
+    //    * need to make a CTS query, which should be the same regardless of creating a values query.
+    //    * The values query has a couple differences, specifically not wrapping a top-level term's
+    //    * cts.triples call within cts.documentQuery.
+    //    */
+    //   const requestIsForValues = patternOptions.get(
+    //     OPTION_NAME_RETURN_VALUES,
+    //     false,
+    //   );
+    //   // While the overall request may be for values, we need to return a query when this term instance
+    //   // is a child of another.
+    //   const isChildTerm = searchTerm.hasParentSearchTerm();
+    //   // Final determination
+    //   const returnValues = requestIsForValues && !isChildTerm;
+    //   // Tread carefully.
+    //   const wrapInDocumentQuery =
+    //     !isChildTerm || // if not a child term, we need to ensure this is a cts query to be fed into cts.search.
+    //     searchTerm.getMustReturnCtsQuery() || // Could be directly in a group, such as cts.andQuery.
+    //     ![PATTERN_NAME_HOP_INVERSE, PATTERN_NAME_HOP_WITH_FIELD].includes(
+    //       searchTerm.getParentSearchTerm().getSearchTermConfig().getPatternName(),
+    //     ); // Parent HOP_WITH_FIELD and HOP_INVERSE terms don't need a document query
+    //   // because they use cts.tripleRangeQuery and cts.triples, respectively.
+    //   // Other patterns expect a cts query.
+    //   const wrapStart = wrapInDocumentQuery ? 'cts.documentQuery(' : '';
+    //   const wrapEnd = wrapInDocumentQuery ? ')' : '';
+    //   const searchTermConfig = searchTerm.getSearchTermConfig();
+    //   const eagerEvaluation = patternOptions.get(
+    //     OPTION_NAME_EAGER_EVALUATION,
+    //     true,
+    //   );
+    //   const ctsQueryStr = `${wrapStart}${_getAtLeastOneCtsTriple(
+    //     searchTerm.getValue(),
+    //     searchTermConfig.getPredicates(),
+    //     searchTerm.getChildWillReturnCtsQuery(),
+    //     false,
+    //     eagerEvaluation,
+    //   )}${wrapEnd}`;
+    //   let values = null;
+    //   if (returnValues) {
+    //     // A request may specify the maximum number of values to return.
+    //     const maximumNumberOfValues = patternOptions.get(
+    //       OPTION_NAME_MAXIMUM_VALUES,
+    //       -1,
+    //     );
+    //     const codeStr = `${_getAtLeastOneCtsTriple(
+    //       searchTerm.getValue(),
+    //       searchTermConfig.getPredicates(),
+    //       searchTerm.getChildWillReturnCtsQuery(),
+    //       true,
+    //       eagerEvaluation,
+    //       maximumNumberOfValues,
+    //     )}`;
+    //     values = SearchCriteriaProcessor.evalQueryString(codeStr);
+    //   }
+    //   return _formattedPatternResponse(ctsQueryStr, values);
   },
 };
 
@@ -562,7 +556,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   //     requestOptions,
   //   ) => {
   //     const termConfig = searchTerm.getSearchTermConfig();
-  //     return getOpticPlan({
+  //     return processCriteria({
   //       planCriteria: childCriteria,
   //       planScope: termConfig.getTargetScopeName(),
   //       patternOptions: options,

@@ -1,5 +1,5 @@
 //#region Imports
-import { execute } from './search/engine.mjs';
+import * as engine from './search/engine.mjs';
 import { PatternOptions } from './search/patterns.mjs';
 import {
   SORT_TYPE_MULTI_SCOPE,
@@ -23,6 +23,16 @@ import { SortCriteria } from './SortCriteria.mjs';
 //#endregion
 
 //#region Constants
+const sem = require('/MarkLogic/semantics.xqy');
+
+const PREFIX_MAPPINGS = {
+  crm: 'http://www.cidoc-crm.org/cidoc-crm/',
+  la: 'https://linked.art/ns/terms/',
+  lux: 'https://lux.collections.yale.edu/ns/',
+  skos: 'http://www.w3.org/2004/02/skos/core#',
+};
+
+// TODO: delete once able to.
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
 const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
@@ -85,7 +95,7 @@ const SearchCriteriaProcessor = class {
    * @throws {InvalidSearchRequestError} When criteria invalid, scope invalid, or insufficient criteria
    * @throws {InternalServerError} When configuration issues detected
    */
-  process(
+  prepare(
     searchCriteria,
     scopeName,
     allowMultiScope,
@@ -199,14 +209,37 @@ const SearchCriteriaProcessor = class {
       return this.#searchResults;
     }
     this.#searchState = SEARCH_STATE_REQUESTED;
-    this.#searchResults = execute({
+    this.#searchResults = engine.performSearch({
+      searchCriteriaProcessor: this,
       searchCriteria: this.#resolvedSearchCriteria,
       searchScope: this.#scopeName,
+      requestOptions: this.#requestOptions,
       allowMultiScope: this.#allowMultiScope,
       includeResults: true,
     });
     this.#searchState = SEARCH_STATE_COMPLETED;
     return this.#searchResults;
+  }
+
+  // Wrapper function enabling search patterns to process nested criteria.
+  processCriteria({
+    planCriteria,
+    planScope = 'item',
+    patternOptions,
+    groups = null,
+    parentId = null,
+    allowMultiScope = false,
+    requestOptions = null,
+  }) {
+    return engine.processCriteria({
+      planCriteria,
+      planScope,
+      patternOptions,
+      groups,
+      parentId,
+      allowMultiScope,
+      requestOptions,
+    });
   }
 
   // Certain search patterns implement an option compelling them to return values versus a CTS query.
@@ -249,6 +282,28 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Public static methods
+  static getPrefixesForSPARQL() {
+    return Object.entries(PREFIX_MAPPINGS)
+      .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
+      .join('\n');
+  }
+
+  static expandPredicates(predicates) {
+    return predicates.map((predicate) =>
+      sem.curieExpand(predicate, PREFIX_MAPPINGS),
+    );
+  }
+
+  static formatPredicatesForSPARQL(predicates, transitive = true) {
+    const individuals = transitive
+      ? predicates.map((predicate) => {
+          // TODO: optimization idea = omit + when single criterion as group by nullifies need.
+          return predicate.concat('+');
+        })
+      : predicates;
+    return `(${individuals.join(' | ')})`;
+  }
+
   static getSortType(isMultiScope, isSemantic) {
     let sortType = SORT_TYPE_NON_SEMANTIC;
     if (isMultiScope) sortType = SORT_TYPE_MULTI_SCOPE;

@@ -1,5 +1,5 @@
 /**
- * Test suite for SearchCriteriaProcessor.process() - Query Generation
+ * Test suite for SearchCriteriaprocessor.prepare() - Query Generation
  * Tests actual query content, grammar parsing, and search patterns
  */
 
@@ -163,7 +163,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
     const input = scenario.input;
 
-    processor.process(
+    processor.prepare(
       input.searchCriteria,
       input.scopeName,
       input.allowMultiScope,

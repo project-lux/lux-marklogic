@@ -1,5 +1,5 @@
 /**
- * Test suite for SearchCriteriaProcessor.process() - Multi-Scope Functionality
+ * Test suite for SearchCriteriaprocessor.prepare() - Multi-Scope Functionality
  * Tests multi-scope search processing and cross-scope queries
  */
 
@@ -199,7 +199,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
     const input = scenario.input;
 
-    processor.process(
+    processor.prepare(
       input.searchCriteria,
       input.scopeName,
       input.allowMultiScope,

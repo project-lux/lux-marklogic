@@ -117,11 +117,11 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['placePrimaryName'],
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['agentAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['agentAnyText'],
       scalarType: 'string',
@@ -226,11 +226,11 @@ const SEARCH_TERMS_CONFIG = {
       vectorColumn: 'main',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['conceptAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['conceptAnyText'],
       scalarType: 'string',
@@ -264,11 +264,11 @@ const SEARCH_TERMS_CONFIG = {
       scalarType: 'string',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['eventAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['eventAnyText'],
       scalarType: 'string',
@@ -381,11 +381,11 @@ const SEARCH_TERMS_CONFIG = {
       vectorColumn: 'main',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['itemAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['itemAnyText'],
       scalarType: 'string',
@@ -447,11 +447,11 @@ const SEARCH_TERMS_CONFIG = {
       vectorColumn: 'main',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['placeAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['placeAnyText'],
       scalarType: 'string',
@@ -484,11 +484,11 @@ const SEARCH_TERMS_CONFIG = {
       scalarType: 'string',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['referenceAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['referenceAnyText'],
       scalarType: 'string',
@@ -636,11 +636,11 @@ const SEARCH_TERMS_CONFIG = {
       vectorColumn: 'main',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['setAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['setAnyText'],
       scalarType: 'string',
@@ -781,11 +781,11 @@ const SEARCH_TERMS_CONFIG = {
       vectorColumn: 'main',
     },
     text: {
-      patternName: 'text',
+      patternName: 'keyword',
       indexReferences: ['workAnyText'],
       scalarType: 'string',
     },
-    textNoHop: {
+    keywordNoHop: {
       patternName: 'indexedWord',
       indexReferences: ['workAnyText'],
       scalarType: 'string',

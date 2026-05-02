@@ -21,7 +21,7 @@ import {
 import { SearchTerm } from '../search/SearchTerm.mjs';
 import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
 import { PatternOptions } from '../search/patterns.mjs';
-import { HopWithField } from '../search/patterns/HopWithField.mjs';
+import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
 import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 //#endregion
 
@@ -702,10 +702,8 @@ function processCriteria({
         break;
       }
       case 'hopWithField': {
-        // TODO: change to singleton
-        const pattern = new HopWithField();
         addToPlanArrays(
-          pattern.apply(
+          HopWithFieldPattern.apply(
             searchCriteriaProcessor,
             searchTerm,
             patternOptions,

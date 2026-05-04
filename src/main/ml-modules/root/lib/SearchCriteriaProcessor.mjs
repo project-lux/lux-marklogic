@@ -199,7 +199,7 @@ const SearchCriteriaProcessor = class {
   }
 
   getEstimate() {
-    return this.getSearchResults().results.length;
+    return this.getSearchResults().total;
   }
 
   // returns {
@@ -219,6 +219,9 @@ const SearchCriteriaProcessor = class {
       requestOptions: this.#requestOptions,
       allowMultiScope: this.#allowMultiScope,
       includeResults: true,
+      page: this.#page,
+      pageLength: this.#pageLength,
+      pageWith: this.#pageWith,
     });
     this.#searchState = SEARCH_STATE_COMPLETED;
     return this.#searchResults;

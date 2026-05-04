@@ -34,6 +34,21 @@ const SearchTerm = class {
     return utils.isNonEmptyString(this.props.comp);
   }
 
+  addTimespanMode(timespanMode) {
+    this.setTimespanMode(timespanMode);
+    return this;
+  }
+  setTimespanMode(timespanMode) {
+    const normalizedMode =
+      typeof timespanMode === 'string' ? timespanMode.trim().toLowerCase() : '';
+    this.props.timespanMode = ['begin', 'end', 'full'].includes(normalizedMode)
+      ? normalizedMode
+      : 'full';
+  }
+  getTimespanMode() {
+    return this.props.timespanMode;
+  }
+
   addMustReturnCtsQuery(mustReturnCtsQuery) {
     this.setMustReturnCtsQuery(mustReturnCtsQuery);
     return this;
@@ -121,6 +136,9 @@ const SearchTerm = class {
         break;
       case 'vectorDistance':
         this.setVectorDistance(value);
+        break;
+      case 'timespanMode':
+        this.setTimespanMode(value);
         break;
       default:
         this.props[name] = value;

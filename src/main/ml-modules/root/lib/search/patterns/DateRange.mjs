@@ -20,9 +20,6 @@ class DateRange extends SearchPatternBase {
     const name = searchTerm.getName();
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
-    const startColName = id + '_start';
-    const endColName = id + '_end';
-
     // Identify indexes and configure lexicons.
     if (
       !isArray(termConfig.getIndexReferences()) ||
@@ -33,13 +30,36 @@ class DateRange extends SearchPatternBase {
       );
     }
 
+    // Determine which indexes to use based on timespanMode
+    let startIndexName;
+    let endIndexName;
+    let startColName = id + '_start';
+    let endColName = id + '_end';
+    const timespanMode = searchTerm.getTimespanMode();
+    if (timespanMode === 'begin') {
+      startIndexName = termConfig.getIndexReferences()[0];
+      endIndexName = termConfig.getIndexReferences()[0];
+      endColName = startColName;
+    } else if (timespanMode === 'end') {
+      startIndexName = termConfig.getIndexReferences()[1];
+      endIndexName = termConfig.getIndexReferences()[1];
+      startColName = endColName;
+    } else {
+      // 'full' or default
+      startIndexName = termConfig.getIndexReferences()[0];
+      endIndexName = termConfig.getIndexReferences()[1];
+    }
+
     // Set up the Optic query's constraints and lexicons.  Make lexicons conditional if
     // if omission thereof improves performance.
     const constraints = [];
     const ctsConstraints = [];
+    const needSecondIndex = startColName !== endColName;
     const lexicons = {
-      [startColName]: cts.fieldReference(termConfig.getIndexReferences()[0]),
-      [endColName]: cts.fieldReference(termConfig.getIndexReferences()[1]),
+      [startColName]: cts.fieldReference(startIndexName),
+      ...(needSecondIndex
+        ? { [endColName]: cts.fieldReference(endIndexName) }
+        : {}),
     };
 
     // Accept two dates, requiring at least one.
@@ -84,16 +104,8 @@ class DateRange extends SearchPatternBase {
     } else if (['!='].includes(operator)) {
       ctsConstraints.push(
         cts.orQuery([
-          cts.fieldRangeQuery(
-            termConfig.getIndexReferences()[0],
-            '<',
-            startDateLong,
-          ),
-          cts.fieldRangeQuery(
-            termConfig.getIndexReferences()[1],
-            '>',
-            endDateLong,
-          ),
+          cts.fieldRangeQuery(startIndexName, '<', startDateLong),
+          cts.fieldRangeQuery(endIndexName, '>', endDateLong),
         ]),
       );
     } else {

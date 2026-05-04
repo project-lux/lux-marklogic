@@ -71,6 +71,51 @@ const scenarios = [
     },
   },
   {
+    name: 'agent started anytime in 2012 (=) with timespanMode=begin',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '=',
+        _timespanMode: 'begin',
+      },
+    },
+    expected: {
+      error: false,
+      value: 15,
+    },
+  },
+  {
+    name: 'agent started anytime in 2012 (=) with timespanMode=end',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '=',
+        _timespanMode: 'end',
+      },
+    },
+    expected: {
+      error: false,
+      value: 15,
+    },
+  },
+  {
+    name: 'agent started anytime in 2012 (=) with timespanMode=full',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        startDate: '2012',
+        _comp: '=',
+        _timespanMode: 'full',
+      },
+    },
+    expected: {
+      error: false,
+      value: 15,
+    },
+  },
+  {
     name: 'agent *not* started anytime in 2012 (!=)',
     input: {
       searchCriteria: {

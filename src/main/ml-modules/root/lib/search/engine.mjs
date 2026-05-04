@@ -52,6 +52,7 @@ const PREFER_FRAG_JOINS = false;
 //#region Entry points
 // returns {
 //   results: Array<object> | null,
+//   total: number,
 //   planAsJson: object,
 //   planAsSource: string,
 // }
@@ -66,6 +67,9 @@ function performSearch({
   requestOptions,
   allowMultiScope,
   includeResults = true,
+  page,
+  pageLength,
+  pageWith,
 }) {
   try {
     const finalGroups = {
@@ -84,8 +88,25 @@ function performSearch({
 
     const planAsJson = opticPlan.export();
 
+    // Get total count before pagination
+    const total = opticPlan.result().toArray().length;
+
+    // Apply pagination if needed
+    let paginatedPlan = opticPlan;
+    if (utils.isNonEmptyString(pageWith)) {
+      // TODO: implement pageWith functionality for document-based pagination
+    } else {
+      const finalPage = page ?? 1;
+      const finalPageLength = pageLength ?? 20;
+      if (finalPage > 0 && finalPageLength > 0) {
+        const offset = (finalPage - 1) * finalPageLength;
+        paginatedPlan = opticPlan.offset(offset).limit(finalPageLength);
+      }
+    }
+
     return {
-      results: includeResults ? opticPlan.result().toArray() : null,
+      results: includeResults ? paginatedPlan.result().toArray() : null,
+      total,
       planAsJson,
       planAsSource: getPlanSource(opticPlan),
     };

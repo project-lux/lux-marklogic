@@ -2,6 +2,19 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v3.3.0 - Unreleased
+
+### Added
+- 'contains' search term for Places ([#530](https://github.com/project-lux/lux-marklogic/issues/530))
+
+### Changed
+
+### Removed
+  
+### Fixed
+
+### Security
+
 ## v3.2.0 - 2026-04-27
 
 ### Added

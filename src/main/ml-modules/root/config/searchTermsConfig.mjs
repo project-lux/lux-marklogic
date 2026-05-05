@@ -357,6 +357,7 @@ const SEARCH_TERMS_CONFIG = {
       predicates: ['crm("P89_falls_within")'],
       targetScope: 'place',
       indexReferences: ['placePrimaryName'],
+      hopInverseName: 'contains',
     },
     relatedToAgent: {
       patternName: 'relatedList',

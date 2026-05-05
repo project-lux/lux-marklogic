@@ -284,11 +284,9 @@ function getCriteriaAndLogicType(planCriteria) {
     logicType = 'and';
   } else if (planCriteria.OR) {
     criteria = xdmp.toJSON(planCriteria.OR).toObject();
-    // An OR with one criterion should be treated as an AND to avoid incorrect full outer joins.
-    logicType = criteria.length === 1 ? 'and' : 'or';
+    logicType = 'or';
   } else if (planCriteria.NOT) {
-    const notCriteria = xdmp.toJSON(planCriteria.NOT).toObject();
-    criteria = notCriteria.length === 1 ? [notCriteria[0]] : notCriteria;
+    criteria = xdmp.toJSON(planCriteria.NOT).toObject();
     logicType = 'not';
   } else {
     // Single criteria are equivalent to AND
@@ -604,7 +602,7 @@ function assembleOpticPlan(
 
   if (acc.patternJoins.length) {
     const hasNonJoinConstraints =
-      acc.constraints.length > 0 ||
+      acc.constraints.length > 1 || // more than the dataType constraint.
       acc.ctsConstraints.length > 0 ||
       acc.conjunctionJoins.length > 0;
 

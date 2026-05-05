@@ -71,6 +71,7 @@ function performSearch({
   pageLength,
   pageWith,
 }) {
+  let planAsSource;
   try {
     const finalGroups = {
       by: ['uri'],
@@ -87,6 +88,7 @@ function performSearch({
     });
 
     const planAsJson = opticPlan.export();
+    planAsSource = getPlanSource(planAsJson);
 
     // Get total count before pagination
     const total = opticPlan.result().toArray().length;
@@ -108,9 +110,14 @@ function performSearch({
       results: includeResults ? paginatedPlan.result().toArray() : null,
       total,
       planAsJson,
-      planAsSource: getPlanSource(opticPlan),
+      planAsSource,
     };
   } catch (ex) {
+    console.warn({
+      'Error during search execution': ex.message,
+      stack: ex.stack,
+      plan: planAsSource,
+    });
     throw ex;
   }
 }

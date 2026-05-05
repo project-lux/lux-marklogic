@@ -194,6 +194,12 @@ function processCriteria({
       );
       if (result.inlineCriteria) {
         criteria.push(...result.inlineCriteria);
+      } else if (result.andOrSubPlan) {
+        // Deferred: AND-encounters-OR sub-plans are combined off the outer
+        // fragment in assembleOpticPlan to avoid SPARQL fusion when 2+ are
+        // chained against the same outer (which silently zeroes results or
+        // blows memory). See docs/optic-lessons.md.
+        acc.andOrSubPlans.push(result.andOrSubPlan);
       } else {
         acc.conjunctionJoins.push(result.join);
       }
@@ -405,6 +411,9 @@ function createPlanAccumulator({
       : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
     ctsConstraints: [],
     conjunctionJoins: [],
+    // AND-encounters-OR sub-plans deferred until assembleOpticPlan, where
+    // 2+ are combined off the outer fragment before being joined back in.
+    andOrSubPlans: [],
     patternJoins: [],
     distanceCols: [],
   };
@@ -504,16 +513,24 @@ function buildConjunctionJoin(
 
   if (criterion.OR) {
     switch (logicType) {
-      case 'and':
-        // We are in an AND and encounter an OR - inner join
+      case 'and': {
+        // AND encounters OR. Defer: assembleOpticPlan combines all such
+        // sub-plans off the outer fragment first, then joins the combined
+        // result to the outer ONCE. Chaining 2+ of these as joinInner
+        // against the same outer fragment causes SPARQL fusion that
+        // silently zeroes results or blows memory.
+        // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
+        // groupBy on that same column dedupes and adds a materialization
+        // barrier so the merger sees a single, fully-typed binding.
+        const cols = singleColSelect();
         return {
-          join: {
-            type: 'joinInner',
-            right: subPlan(criterion).select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
+          andOrSubPlan: {
+            plan: subPlan(criterion).select(cols).groupBy(cols, []),
+            joinCol: cols[0],
+            preferFrag: patternOptions.getPreferFragJoins(),
           },
         };
+      }
 
       case 'or':
         // OR can be inlined because we're already in an OR here
@@ -605,6 +622,33 @@ function assembleOpticPlan(
       // Join functions are a method on the plan, so we reference them by name
       plan = plan[join.type](join.right, join.on, join.condition);
     }
+  }
+
+  // Fold AND-encounters-OR sub-plans. With 2+ such sub-plans, chaining each
+  // as joinInner against the outer fragment triggers SPARQL fusion that
+  // breaks the result. Instead, combine the sub-plans to each other first
+  // (off the outer) on their per-branch-unique join columns, then join the
+  // combined plan to the outer once.
+  if (acc.andOrSubPlans.length) {
+    const first = acc.andOrSubPlans[0];
+    const mkOn = (leftName, rightName, preferFrag) =>
+      preferFrag
+        ? op.on(op.fragmentIdCol(leftName), op.fragmentIdCol(rightName))
+        : op.on(op.col(leftName), op.col(rightName));
+
+    let combined = first.plan;
+    for (let i = 1; i < acc.andOrSubPlans.length; i++) {
+      const sp = acc.andOrSubPlans[i];
+      combined = combined.joinInner(
+        sp.plan,
+        mkOn(first.joinCol, sp.joinCol, first.preferFrag),
+      );
+    }
+    const outerLeft = first.preferFrag ? fragCol : uriCol;
+    plan = plan.joinInner(
+      combined,
+      mkOn(outerLeft, first.joinCol, first.preferFrag),
+    );
   }
 
   if (acc.patternJoins.length) {

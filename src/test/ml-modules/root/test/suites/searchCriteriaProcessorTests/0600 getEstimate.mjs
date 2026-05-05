@@ -451,6 +451,35 @@ const scenarios = [
       value: 8,
     },
   },
+  {
+    name: 'regression test to ensure every record with the matching data type is not returned',
+    input: {
+      searchCriteria: {
+        _scope: 'work',
+        OR: [
+          {
+            createdBy: {
+              id: 'https://lux.collections.yale.edu/data/person/66f1e1aa-d806-4352-9fb7-cf13300e5571',
+            },
+          },
+          {
+            publishedBy: {
+              id: 'https://lux.collections.yale.edu/data/person/66f1e1aa-d806-4352-9fb7-cf13300e5571',
+            },
+          },
+          {
+            creationInfluencedBy: {
+              id: 'https://lux.collections.yale.edu/data/person/66f1e1aa-d806-4352-9fb7-cf13300e5571',
+            },
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 0,
+    },
+  },
   /*
   Empty OR
   OR with one item

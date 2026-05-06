@@ -480,6 +480,71 @@ const scenarios = [
       value: 0,
     },
   },
+  {
+    name: 'three keywords and memberOf',
+    input: {
+      searchCriteria: {
+        AND: [
+          {
+            text: 'woman',
+            _lang: 'en',
+          },
+          {
+            text: 'greek',
+            _lang: 'en',
+          },
+          {
+            text: 'art',
+            _lang: 'en',
+          },
+          {
+            memberOf: {
+              id: 'https://lux.collections.yale.edu/data/set/5e9b7f70-82d9-4f3e-8f72-ef5bf6b17d9e',
+            },
+          },
+        ],
+        _scope: 'item',
+      },
+    },
+    expected: {
+      error: false,
+      value: 59,
+    },
+  },
+  {
+    name: "verify more than one AND'd OR does not return zero results (andOrSubPlans)",
+    input: {
+      searchCriteria: {
+        _scope: 'concept',
+        AND: [
+          {
+            OR: [
+              {
+                id: 'https://lux.collections.yale.edu/data/concept/006ff674-ca40-4ba8-8d1c-7850748e606b',
+              },
+              {
+                id: 'https://lux.collections.yale.edu/data/concept/0081710b-8154-4297-b786-fb141ade4ee6',
+              },
+            ],
+          },
+          {
+            OR: [
+              {
+                text: 'stick',
+              },
+              {
+                text: 'wood',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 2,
+    },
+  },
   /*
   Empty OR
   OR with one item

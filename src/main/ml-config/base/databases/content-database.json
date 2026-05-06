@@ -38,5 +38,23 @@
       "journal-archive-lag-limit": 15
     }
   ],
+  "geospatial-path-index": [
+    {
+      "path-expression": "/indexedProperties/defined_by_point",
+      "coordinate-system": "wgs84",
+      "point-format": "point",
+      "range-value-positions": true,
+      "invalid-values": "reject"
+    }
+  ],
+  "geospatial-region-path-index": [
+    {
+      "path-expression": "/json[type=\"Place\"]/defined_by",
+      "coordinate-system": "wgs84",
+      "units": "miles",
+      "geohash-precision": 2,
+      "invalid-values": "ignore"
+    }
+  ]
   @@contentDatabaseConfGenerated@@
 }

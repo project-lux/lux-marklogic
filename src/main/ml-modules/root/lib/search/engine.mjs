@@ -23,6 +23,7 @@ import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 import { AnnTopKPattern } from '../search/patterns/AnnTopK.mjs';
 import { DateRangePattern } from '../search/patterns/DateRange.mjs';
 import { DocumentIdOrIriPattern } from '../search/patterns/DocumentIdOrIri.mjs';
+import { GeospatialPattern } from '../search/patterns/Geospatial.mjs';
 import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
 import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
 import { KeywordPattern } from '../search/patterns/Keyword.mjs';
@@ -37,6 +38,7 @@ const PATTERNS = {
   annTopK: AnnTopKPattern,
   dateRange: DateRangePattern,
   documentId: DocumentIdOrIriPattern,
+  geospatial: GeospatialPattern,
   hopInverse: HopInversePattern,
   hopWithField: HopWithFieldPattern,
   iri: DocumentIdOrIriPattern,

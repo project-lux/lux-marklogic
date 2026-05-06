@@ -26,6 +26,31 @@ const SearchTerm = class {
     this.parentColumns = {};
   }
 
+  addId(id) {
+    this.setId(id);
+    return this;
+  }
+  setId(id) {
+    this.id = id;
+  }
+  getId() {
+    return this.id;
+  }
+
+  addName(name) {
+    this.setName(name);
+    return this;
+  }
+  setName(name) {
+    this.name = name;
+  }
+  getName() {
+    return this.name;
+  }
+  hasName() {
+    return utils.isNonEmptyString(this.name);
+  }
+
   // Likely set via setProperty
   getComparisonOperator() {
     return this.props.comp;
@@ -58,31 +83,6 @@ const SearchTerm = class {
   }
   getMustReturnCtsQuery() {
     return this.mustReturnCtsQuery;
-  }
-
-  addId(id) {
-    this.setId(id);
-    return this;
-  }
-  setId(id) {
-    this.id = id;
-  }
-  getId() {
-    return this.id;
-  }
-
-  addName(name) {
-    this.setName(name);
-    return this;
-  }
-  setName(name) {
-    this.name = name;
-  }
-  getName() {
-    return this.name;
-  }
-  hasName() {
-    return utils.isNonEmptyString(this.name);
   }
 
   addChildInfo(childInfo) {

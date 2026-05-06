@@ -10,7 +10,7 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 4,
     fields: ['agentAnyText'],
-    predicates: ['lux("agentAny")'],
+    predicates: ['lux:agentAny'],
     types: ['Person', 'Group'],
   },
   concept: {
@@ -18,7 +18,7 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 6,
     fields: ['conceptAnyText'],
-    predicates: ['lux("conceptAny")'],
+    predicates: ['lux:conceptAny'],
     types: ['Currency', 'Language', 'Material', 'MeasurementUnit', 'Type'],
   },
   event: {
@@ -26,7 +26,7 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 7,
     fields: ['eventAnyText'],
-    predicates: ['lux("eventAny")'],
+    predicates: ['lux:eventAny'],
     types: ['Activity', 'Period'],
   },
   // "item" and "object" are synonyms; but backend uses "item"
@@ -35,7 +35,7 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 1,
     fields: ['itemAnyText'],
-    predicates: ['lux("itemAny")'],
+    predicates: ['lux:itemAny'],
     types: ['DigitalObject', 'HumanMadeObject'],
   },
   // Reserved word for searching across multiple scopes; see API usage documentation.
@@ -51,14 +51,14 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 5,
     fields: ['placeAnyText'],
-    predicates: ['lux("placeAny")'],
+    predicates: ['lux:placeAny'],
     types: ['Place'],
   },
   reference: {
     includeInStats: true,
     isUserInterfaceSearchScope: false,
     fields: ['referenceAnyText'],
-    predicates: ['lux("referenceAny")'],
+    predicates: ['lux:referenceAny'],
     types: [
       'Group',
       'Person',
@@ -75,7 +75,7 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 3,
     fields: ['setAnyText'],
-    predicates: ['lux("setAny")'],
+    predicates: ['lux:setAny'],
     types: ['Set'],
   },
   work: {
@@ -83,7 +83,7 @@ const SEARCH_SCOPES = {
     isUserInterfaceSearchScope: true,
     userInterfaceOrder: 2,
     fields: ['workAnyText'],
-    predicates: ['lux("workAny")'],
+    predicates: ['lux:workAny'],
     types: ['LinguisticObject', 'VisualItem'],
   },
 };
@@ -138,14 +138,11 @@ function getSearchScopeFields(searchScopeName = null, defaultToAll = true) {
  *
  * @param {String} searchScopeName - The search scope the current request is in.  When not null,
  *    the scope determines the field(s) returned.
- * @returns {Array} Array of predicates.  When searchScopeName is null, ['lux("any")'] is returned.
+ * @returns {Array} Array of predicates.  When searchScopeName is null, ['lux:any'] is returned.
  */
 function getSearchScopePredicates(searchScopeName = null) {
   const searchScopeObj = getSearchScope(searchScopeName);
-  if (searchScopeObj) {
-    return searchScopeObj.predicates;
-  }
-  return ['lux("any")'];
+  return searchScopeObj ? searchScopeObj.predicates : ['lux:any'];
 }
 
 /**

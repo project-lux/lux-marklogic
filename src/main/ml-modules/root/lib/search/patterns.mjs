@@ -15,7 +15,6 @@ import {
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
 import {
-  getSearchScopes,
   getSearchScopeFields,
   getSearchScopePredicates,
   getSearchScopeTypes,
@@ -829,13 +828,6 @@ function _getWordQueries(
   const andQueryStop = termValues.length > 1 ? '])' : '';
 
   return `${andQueryStart}${wordQueries.join(', ')}${andQueryStop}`;
-}
-
-function _getParentDataType(parentScope, subQuery) {
-  return `cts.andQuery([cts.jsonPropertyValueQuery('dataType', ${utils.arrayToString(
-    getSearchScopes()[parentScope].types,
-    'string',
-  )}, ['exact']),${subQuery}])`;
 }
 
 function _getTripleRangeQuery(predicates, valuesQueryStr, weight = 1.0) {

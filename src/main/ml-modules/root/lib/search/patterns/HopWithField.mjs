@@ -47,9 +47,6 @@ class HopWithField extends SearchPatternBase {
   ) {
     const hopIriCol = searchTerm.getParentIriColumn();
     const fieldIriCol = searchTerm.getIriColumn();
-    console.log(
-      `processTransitiveHopWithFieldTerm: hopIriCol=${hopIriCol}, fieldIriCol=${fieldIriCol}`,
-    );
     const termConfig = searchTerm.getSearchTermConfig();
     const id = searchTerm.getId();
 
@@ -104,9 +101,6 @@ select ?${id}_s ?${id}_o where {
     const termConfig = searchTerm.getSearchTermConfig();
     const hopIriCol = searchTerm.getParentIriColumn();
     const fieldIriCol = searchTerm.getIriColumn();
-    console.log(
-      `processHopWithFieldTerm: hopIriCol=${hopIriCol}, fieldIriCol=${fieldIriCol}`,
-    );
     const hopFragCol = searchTerm.getParentFragmentColumn();
     const hopTripleFragCol = id + '_hopFrag';
     const hopPlan = op.fromTriples([
@@ -159,7 +153,6 @@ select ?${id}_s ?${id}_o where {
     patternOptions,
     requestOptions,
   ) {
-    console.log(`GET FIELD NESTED PLAN`);
     const termConfig = searchTerm.getSearchTermConfig();
     return searchCriteriaProcessor.processCriteria({
       planCriteria: searchTerm.getChildCriteria(),
@@ -176,16 +169,12 @@ select ?${id}_s ?${id}_o where {
     patternOptions,
     requestOptions,
   ) {
-    console.log(`GET FIELD ATOMIC PLAN`);
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
     const termSearchOptions = searchTerm.getSearchOptions();
     const termConfig = searchTerm.getSearchTermConfig();
     const fieldIriCol = searchTerm.getIriColumn();
     const fieldCol = id + '_field';
-    console.log(
-      `getFieldAtomicPlan: parentIriCol=${searchTerm.getParentIriColumn()}, fieldIriCol=${fieldIriCol}`,
-    );
     return searchTerm.isCompleteMatch()
       ? op
           .fromLexicons({

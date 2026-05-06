@@ -121,17 +121,6 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['agentAnyText'],
       scalarType: 'string',
     },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['agentAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:agentAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
-    },
     userId: {
       patternName: 'indexedValue',
       indexReferences: ['agentUserId'],
@@ -230,17 +219,6 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['conceptAnyText'],
       scalarType: 'string',
     },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['conceptAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:conceptAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
-    },
   },
   event: {
     carriedOutBy: {
@@ -267,17 +245,6 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'keyword',
       indexReferences: ['eventAnyText'],
       scalarType: 'string',
-    },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['eventAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:eventAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
     },
     similar: {
       patternName: 'annTopK',
@@ -385,17 +352,6 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['itemAnyText'],
       scalarType: 'string',
     },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['itemAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:itemAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
-    },
   },
   place: {
     classification: {
@@ -451,17 +407,6 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['placeAnyText'],
       scalarType: 'string',
     },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['placeAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:placeAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
-    },
   },
   reference: {
     classification: {
@@ -487,17 +432,6 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'keyword',
       indexReferences: ['referenceAnyText'],
       scalarType: 'string',
-    },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['referenceAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:referenceAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
     },
   },
   set: {
@@ -640,17 +574,6 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['setAnyText'],
       scalarType: 'string',
     },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['setAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:setAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
-    },
   },
   work: {
     aboutAgent: {
@@ -784,17 +707,6 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'keyword',
       indexReferences: ['workAnyText'],
       scalarType: 'string',
-    },
-    keywordNoHop: {
-      patternName: 'indexedWord',
-      indexReferences: ['workAnyText'],
-      scalarType: 'string',
-    },
-    referencedBy: {
-      patternName: 'hopWithField',
-      predicates: ['lux:workAny'],
-      targetScope: 'reference',
-      indexReferences: ['referenceName'],
     },
   },
 };

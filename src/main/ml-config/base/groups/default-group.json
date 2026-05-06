@@ -7,7 +7,7 @@
   "file-log-level": "%%fileLogLevel%%",
   "keep-log-files": %%keepLogFiles%%,
   "events-activated": true,
-  "event": ["LuxFacets", "LuxNamedProfiles", "LuxSearch", "LuxRelatedList", "v8 delay timeout"],
+  "event": ["LuxError", "LuxFacets", "LuxNamedProfiles", "LuxSearch", "LuxRelatedList", "v8 delay timeout"],
   "metering-enabled": true,
   "performance-metering-enabled": true,
   "meters-database": "Meters",

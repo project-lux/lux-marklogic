@@ -5,79 +5,87 @@
 // Helps non-search endpoints decide whether to log they failed.
 const INVALID_SEARCH_REQUEST_LABEL = 'Invalid search request';
 
-class AccessDeniedError extends Error {
-  constructor(message) {
+class LuxBaseError extends Error {
+  constructor(message, statusCode) {
     super(message);
+    this.statusCode = statusCode;
+    this.name = this.constructor.name;
   }
 }
 
-class BadRequestError extends Error {
+class AccessDeniedError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 403);
   }
 }
 
-class DataMergeError extends Error {
+class BadRequestError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 400);
   }
 }
 
-class InternalConfigurationError extends Error {
+class DataMergeError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 500);
   }
 }
 
-class InternalServerError extends Error {
+class InternalConfigurationError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 500);
   }
 }
 
-class InvalidHostError extends Error {
+class InternalServerError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 500);
   }
 }
 
-class InvalidSearchRequestError extends Error {
+class InvalidHostError extends LuxBaseError {
   constructor(message) {
-    super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`);
+    super(message, 400);
   }
 }
 
-class LoopDetectedError extends Error {
+class InvalidSearchRequestError extends LuxBaseError {
   constructor(message) {
-    super(message);
-  }
-}
-class NotAcceptingWriteRequestsError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-class NotFoundError extends Error {
-  constructor(message) {
-    super(message);
+    super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`, 400);
   }
 }
 
-class NotImplementedError extends Error {
+class LoopDetectedError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 508);
+  }
+}
+class NotAcceptingWriteRequestsError extends LuxBaseError {
+  constructor(message) {
+    super(message, 409);
+  }
+}
+class NotFoundError extends LuxBaseError {
+  constructor(message) {
+    super(message, 404);
   }
 }
 
-class ScaleEnvironmentError extends Error {
+class NotImplementedError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 501);
   }
 }
 
-class ServerConfigurationChangedError extends Error {
+class ScaleEnvironmentError extends LuxBaseError {
   constructor(message) {
-    super(message);
+    super(message, 500);
+  }
+}
+
+class ServerConfigurationChangedError extends LuxBaseError {
+  constructor(message) {
+    super(message, 503);
   }
 }
 
@@ -87,6 +95,7 @@ function isInvalidSearchRequestError(e) {
 }
 
 export {
+  LuxBaseError,
   AccessDeniedError,
   BadRequestError,
   DataMergeError,

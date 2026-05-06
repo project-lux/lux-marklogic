@@ -151,6 +151,7 @@ const SYNONYM_WEIGHT = -0.5; // Could make this configurable via property or end
 const SYNONYMS_ENABLED = '%%synonymsEnabled%%'.trim() === 'true';
 const THESAURUS_URIS = ['/thesauri/sample-thesaurus.xml'];
 
+const TRACE_NAME_ERROR = 'LuxError';
 const TRACE_NAME_FACETS = 'LuxFacets';
 const TRACE_NAME_RELATED_LIST = 'LuxRelatedList';
 const TRACE_NAME_PROFILES = 'LuxNamedProfiles';
@@ -210,6 +211,7 @@ export {
   SYNONYMS_ENABLED,
   THESAURUS_URIS,
   TOKEN_RUNTIME_PARAM,
+  TRACE_NAME_ERROR,
   TRACE_NAME_FACETS,
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,

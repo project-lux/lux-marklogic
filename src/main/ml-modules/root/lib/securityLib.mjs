@@ -13,6 +13,7 @@ import {
   PRIVILEGES_PREFIX,
   ROLE_NAME_MAY_RUN_UNIT_TESTS,
   UNIT_TEST_ENDPOINT,
+  TRACE_NAME_ERROR,
 } from './appConstants.mjs';
 import {
   getNodeFromObject,
@@ -271,20 +272,49 @@ function getExclusiveDocumentPermissions(user) {
  * @returns Whatever the given function returns.
  */
 function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
-  const endpointConfig = getCurrentEndpointConfig(
-    FEATURE_MY_COLLECTIONS_ENABLED,
-  );
-  if (FEATURE_MY_COLLECTIONS_ENABLED) {
-    // Require the current endpoint's configuration; an error is throw upon
-    // retrieving the configuration when the configuration is invalid.
-    return _handleRequestV2(f, unitName, endpointConfig, forceInvoke);
-  } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
-    throw new BadRequestError('The My Collections feature is disabled.');
+  try {
+    const endpointConfig = getCurrentEndpointConfig(
+      FEATURE_MY_COLLECTIONS_ENABLED,
+    );
+    if (FEATURE_MY_COLLECTIONS_ENABLED) {
+      // Require the current endpoint's configuration; an error is throw upon
+      // retrieving the configuration when the configuration is invalid.
+      return _handleRequestV2(f, unitName, endpointConfig, forceInvoke);
+    } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
+      throw new BadRequestError('The My Collections feature is disabled.');
+    }
+    // Feature is disabled, just do what we used to do.
+    return f();
+  } catch (e) {
+    if (xdmp.traceEnabled(TRACE_NAME_ERROR)) {
+      xdmp.trace(
+        TRACE_NAME_ERROR,
+        JSON.stringify({
+          statusCode: e.statusCode || 500,
+          status: e.name,
+          message: e.message,
+          cause: e.cause, // as of 2026-05, cause is usually not present, but it could be helpful when available
+        }),
+      );
+    }
+    // if there is a status code, this is an error we defined
+    if (e.statusCode && typeof e.statusCode === 'number') {
+      xdmp.setResponseCode(e.statusCode, e.message);
+      return {
+        errorResponse: {
+          statusCode: e.statusCode,
+          status: e.name,
+          messageCode: e.name,
+          message: e.message,
+        },
+      };
+    }
+    // if there is no status code, this is an unexpected error, let MarkLogic handle it the default way
+    else {
+      throw e;
+    }
   }
-  // Feature is disabled, just do what we used to do.
-  return f();
 }
-
 // Handle a version 2 request initiated by a unit test. We otherwise do not want to accept the
 // endpoint configuration as a parameter.
 function handleRequestV2ForUnitTesting(

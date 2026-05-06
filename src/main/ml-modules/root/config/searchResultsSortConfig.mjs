@@ -11,7 +11,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   agentClassificationConceptName: {
-    predicate: lux('agentClassifiedAs'),
+    predicate: 'lux:agentClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -21,12 +21,12 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   agentEndPlaceName: {
-    predicate: lux('placeOfEnding'),
+    predicate: 'lux:placeOfEnding',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   agentGenderConceptName: {
-    predicate: lux('agentGender'),
+    predicate: 'lux:agentGender',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -36,12 +36,12 @@ const SORT_BINDINGS = {
     defaultOrder: 'desc',
   },
   agentOccupationConceptName: {
-    predicate: lux('agentOccupation'),
+    predicate: 'lux:agentOccupation',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   agentNationalityConceptName: {
-    predicate: lux('agentNationality'),
+    predicate: 'lux:agentNationality',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -56,7 +56,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   agentStartPlaceName: {
-    predicate: lux('placeOfBeginning'),
+    predicate: 'lux:placeOfBeginning',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -84,7 +84,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   conceptClassificationConceptName: {
-    predicate: lux('conceptClassifiedAs'),
+    predicate: 'lux:conceptClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -94,12 +94,12 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   eventCarriedOutByAgentName: {
-    predicate: lux('eventCarriedOutBy'),
+    predicate: 'lux:eventCarriedOutBy',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   eventClassificationConceptName: {
-    predicate: lux('eventClassifiedAs'),
+    predicate: 'lux:eventClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -109,7 +109,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   eventTookPlaceAtPlaceName: {
-    predicate: lux('eventTookPlaceAt'),
+    predicate: 'lux:eventTookPlaceAt',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -129,7 +129,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   itemClassificationConceptName: {
-    predicate: lux('itemClassifiedAs'),
+    predicate: 'lux:itemClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -149,12 +149,12 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   itemEncounterAgentName: {
-    predicate: lux('agentOfEncounter'),
+    predicate: 'lux:agentOfEncounter',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemEncounterPlaceName: {
-    predicate: lux('placeOfEncounter'),
+    predicate: 'lux:placeOfEncounter',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -169,22 +169,22 @@ const SORT_BINDINGS = {
     defaultOrder: 'desc',
   },
   itemMaterialConceptName: {
-    predicate: crm('P45_consists_of'),
+    predicate: 'crm:P45_consists_of',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemProductionAgentName: {
-    predicate: lux('agentOfProduction'),
+    predicate: 'lux:agentOfProduction',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemProductionInfluencedByAgentName: {
-    predicate: lux('agentInfluencedProduction'),
+    predicate: 'lux:agentInfluencedProduction',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   itemProductionPlaceName: {
-    predicate: lux('placeOfProduction'),
+    predicate: 'lux:placeOfProduction',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -199,7 +199,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   itemTechniqueConceptName: {
-    predicate: lux('techniqueOfProduction'),
+    predicate: 'lux:techniqueOfProduction',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -209,7 +209,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   placeClassificationConceptName: {
-    predicate: lux('placeClassifiedAs'),
+    predicate: 'lux:placeClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -224,7 +224,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   setCreationAgentName: {
-    predicate: lux('agentOfCreation'),
+    predicate: 'lux:agentOfCreation',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -234,12 +234,12 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   setCurationAgentName: {
-    predicate: lux('agentOfCuration'),
+    predicate: 'lux:agentOfCuration',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   setClassificationConceptName: {
-    predicate: lux('setClassifiedAs'),
+    predicate: 'lux:setClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -264,17 +264,17 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   setPublicationAgentName: {
-    predicate: lux('agentOfPublication'),
+    predicate: 'lux:agentOfPublication',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   setPublicationPlaceName: {
-    predicate: lux('placeOfPublication'),
+    predicate: 'lux:placeOfPublication',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   workCreationAgentName: {
-    predicate: lux('agentOfCreation'),
+    predicate: 'lux:agentOfCreation',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -284,7 +284,7 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   workClassificationConceptName: {
-    predicate: lux('workClassifiedAs'),
+    predicate: 'lux:workClassifiedAs',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
@@ -299,12 +299,12 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   workPublicationAgentName: {
-    predicate: lux('agentOfPublication'),
+    predicate: 'lux:agentOfPublication',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },
   workPublicationPlaceName: {
-    predicate: lux('placeOfPublication'),
+    predicate: 'lux:placeOfPublication',
     indexReference: 'anySortName',
     defaultOrder: 'asc',
   },

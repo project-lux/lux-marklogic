@@ -19,7 +19,7 @@ import {
 } from '/lib/searchScope';
 import { getSearchTermsConfig } from '/config/searchTermsConfig';
 import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
-import { START_OF_GENERATED_QUERY as prefixes } from '/lib/SearchCriteriaProcessor';
+import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor';
 import * as utils from '/utils/utils';
 import { getVersionInfo } from '/lib/environmentLib.mjs';
 
@@ -55,10 +55,6 @@ if (includeCurrentUser && !usernames.includes(xdmp.getCurrentUser())) {
 
 const searchTermsConfig = getSearchTermsConfig();
 
-const resolvePredicate = (predicate) => {
-  return xdmp.eval(`${prefixes}${predicate}`);
-};
-
 // Create a scopeName-termName object of terms with predicates.
 const termsWithPredicates = {};
 const allDoubleQuotesRegExp = new RegExp('"', 'g');
@@ -68,13 +64,6 @@ Object.keys(searchTermsConfig).forEach((scopeName) => {
     const termConfig = searchTermsConfig[scopeName][termName];
     if (utils.isNonEmptyArray(termConfig.predicates)) {
       termsWithPredicates[scopeName][termName] = termConfig;
-      termsWithPredicates[scopeName][termName].resolvedPredicates = [];
-      termConfig.predicates.forEach((predicate) => {
-        predicate = predicate.replace(allDoubleQuotesRegExp, "'"); // for readability
-        termsWithPredicates[scopeName][termName].resolvedPredicates.push(
-          resolvePredicate(predicate)
-        );
-      });
     }
   });
 });
@@ -87,7 +76,10 @@ const checkPredicate = (findings, scopeName, termName, predicate) => {
     }
   } else {
     const estimate = cts.estimate(
-      cts.jsonPropertyValueQuery('predicate', predicate)
+      cts.jsonPropertyValueQuery(
+        'predicate',
+        SearchCriteriaProcessor.expandPredicate(predicate),
+      ),
     );
     if ((justZeros && estimate == 0) || !justZeros) {
       if (identifyTerms && termName != null) {
@@ -109,7 +101,7 @@ const checkPredicates = () => {
   Object.keys(termsWithPredicates).forEach((scopeName) => {
     Object.keys(termsWithPredicates[scopeName]).forEach((termName) => {
       const termConfig = termsWithPredicates[scopeName][termName];
-      termConfig.resolvedPredicates.forEach((predicate) => {
+      termConfig.predicates.forEach((predicate) => {
         checkPredicate(findings, scopeName, termName, predicate);
       });
     });
@@ -118,7 +110,7 @@ const checkPredicates = () => {
   // Add in predicates used by keyword search.
   getSearchScopeNames().forEach((scopeName) => {
     getSearchScopePredicates(scopeName).forEach((predicate) => {
-      checkPredicate(findings, scopeName, null, resolvePredicate(predicate));
+      checkPredicate(findings, scopeName, null, predicate);
     });
   });
 

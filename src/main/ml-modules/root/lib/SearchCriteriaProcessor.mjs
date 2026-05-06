@@ -295,9 +295,13 @@ const SearchCriteriaProcessor = class {
       .join('\n');
   }
 
+  static expandPredicate(predicate) {
+    return sem.curieExpand(predicate, PREFIX_MAPPINGS);
+  }
+
   static expandPredicates(predicates) {
     return predicates.map((predicate) =>
-      sem.curieExpand(predicate, PREFIX_MAPPINGS),
+      SearchCriteriaProcessor.expandPredicate(predicate),
     );
   }
 

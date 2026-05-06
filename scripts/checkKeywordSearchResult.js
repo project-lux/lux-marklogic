@@ -26,27 +26,20 @@
 
 import { FULL_TEXT_SEARCH_RELATED_FIELD_NAME } from '/lib/appConstants.mjs';
 import { getSearchScope } from '/lib/searchScope.mjs';
+import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
 
 // START: script configuration.
 const subjectUri =
-  'https://lux.collections.yale.edu/data/person/098de228-41f2-404e-83e2-e48b2bd632f8';
-const keywords = ['franklin', 'boston', 'naval academy'].sort();
-const scopeName = 'agent';
+  'https://lux.collections.yale.edu/data/object/8aea22a1-9493-4922-8ecc-b34cd48eb2c6';
+const keywords = ['woman', 'greek'].sort();
+const scopeName = 'item';
 const maxObjectsToCheck = 100;
 // END: script configuration.
 
 const scope = getSearchScope(scopeName);
 // Limited to single predicate support; yet, all search scopes only have one predicate
 // (and all are in the LUX namespace).
-const predicate = xdmp
-  .eval(
-    `
-  const op = require('/MarkLogic/optic');
-  const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
-  ${scope.predicates[0]}.toString();
-`
-  )
-  .toArray()[0];
+const predicate = SearchCriteriaProcessor.expandPredicates(scope.predicates)[0];
 const subjectFieldName = scope.fields[0]; // easy to support multiple, but all scopes only use one.
 const objectFieldName = FULL_TEXT_SEARCH_RELATED_FIELD_NAME;
 

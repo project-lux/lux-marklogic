@@ -5,6 +5,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { getSearchScopePredicates } from '/lib/searchScope.mjs';
+import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0300-getSearchScopePredicates.mjs';
 console.log(`${LIB}: starting.`);
@@ -19,7 +20,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      isValidArrayOrNull: true,
+      value: ['lux:agentAny'],
     },
   },
   {
@@ -29,7 +30,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      isValidArrayOrNull: true,
+      value: ['lux:workAny'],
     },
   },
   {
@@ -39,7 +40,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      isValidArrayOrNull: true,
+      value: ['lux:conceptAny'],
     },
   },
   {
@@ -49,7 +50,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      isValidArrayOrNull: true,
+      value: [],
     },
   },
   {
@@ -59,7 +60,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: ['lux("any")'],
+      value: ['lux:any'],
     },
   },
   {
@@ -69,7 +70,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: ['lux("any")'],
+      value: ['lux:any'],
     },
   },
   {
@@ -79,7 +80,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: ['lux("any")'],
+      value: ['lux:any'],
     },
   },
   {
@@ -89,7 +90,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: ['lux("any")'],
+      value: ['lux:any'],
     },
   },
 ];
@@ -111,34 +112,9 @@ for (const scenario of scenarios) {
         testHelperProxy.assertEqual(
           scenario.expected.value,
           scenarioResults.actualValue,
-          `Scenario '${scenario.name}' did not return the expected value.`,
+          `Scenario '${scenario.name}' did not return the expected value: ${JSON.stringify(scenario.expected.value)}; actual: ${JSON.stringify(scenarioResults.actualValue)}`,
         ),
       );
-    }
-
-    if (scenario.expected.isValidArrayOrNull !== undefined) {
-      const actualValue = scenarioResults.actualValue;
-      const isValidArrayOrNull =
-        Array.isArray(actualValue) || actualValue === null;
-
-      assertions.push(
-        testHelperProxy.assertTrue(
-          isValidArrayOrNull,
-          `Scenario '${scenario.name}' should return array or null.`,
-        ),
-      );
-
-      if (Array.isArray(actualValue)) {
-        const hasValidPredicates = actualValue.every(
-          (p) => typeof p === 'string' && p.length > 0,
-        );
-        assertions.push(
-          testHelperProxy.assertTrue(
-            hasValidPredicates,
-            `Scenario '${scenario.name}' predicates should be non-empty strings.`,
-          ),
-        );
-      }
     }
   }
 }

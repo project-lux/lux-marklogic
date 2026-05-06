@@ -25,6 +25,7 @@ import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 const PATTERN_NAME_ANN_TOP_K = 'annTopK';
 const PATTERN_NAME_DATE_RANGE = 'dateRange';
 const PATTERN_NAME_DOCUMENT_ID = 'documentId';
+const PATTERN_NAME_GEOSPATIAL = 'geospatial';
 const PATTERN_NAME_HOP_INVERSE = 'hopInverse';
 const PATTERN_NAME_HOP_WITH_FIELD = 'hopWithField';
 const PATTERN_NAME_INDEXED_RANGE = 'indexedRange';
@@ -336,6 +337,21 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_DOCUMENT_ID] = {
   ) => {
     return _formattedPatternResponse(
       `cts.documentQuery(['${searchTerm.getValue()}'])`,
+    );
+  },
+};
+
+SEARCH_PATTERN_CONFIG[PATTERN_NAME_GEOSPATIAL] = {
+  allowedChildren: TYPE_ATOMIC,
+  isConvertIdChildToIri: false,
+  allowedOptionsName: null,
+  defaultOptionsName: null,
+  returnsCtsQuery: true,
+  // Pattern logic lives in patterns/Geospatial.mjs; engine.mjs invokes it via
+  // PATTERNS[name].apply(). This handler is unused but retained for shape parity.
+  handler: () => {
+    throw new InternalServerError(
+      `The 'geospatial' pattern is implemented via patterns/Geospatial.mjs and should not be invoked through SEARCH_PATTERN_CONFIG.handler.`,
     );
   },
 };
@@ -973,6 +989,7 @@ export {
   OPTION_NAME_RETURN_VALUES,
   PATTERN_NAME_DATE_RANGE,
   PATTERN_NAME_DOCUMENT_ID,
+  PATTERN_NAME_GEOSPATIAL,
   PATTERN_NAME_HOP_INVERSE,
   PATTERN_NAME_HOP_WITH_FIELD,
   PATTERN_NAME_INDEXED_RANGE,

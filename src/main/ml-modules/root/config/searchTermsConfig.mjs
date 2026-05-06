@@ -374,6 +374,16 @@ const SEARCH_TERMS_CONFIG = {
       targetScope: 'place',
       indexReferences: ['placePrimaryName'],
     },
+    pointIn: {
+      patternName: 'geospatial',
+      region: false,
+      indexReferences: ['/indexedProperties/defined_by_point'],
+    },
+    regionRelates: {
+      patternName: 'geospatial',
+      region: true,
+      indexReferences: ['/json[type="Place"]/defined_by'],
+    },
     relatedToAgent: {
       patternName: 'relatedList',
       targetScope: 'agent',

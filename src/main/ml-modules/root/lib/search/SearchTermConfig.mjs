@@ -86,6 +86,10 @@ const SearchTermConfig = class {
     return this._getProperty('predicates');
   }
 
+  isGeospatialRegion() {
+    return this._getProperty('region', false);
+  }
+
   isTransitive() {
     return this._getProperty('transitive', false);
   }

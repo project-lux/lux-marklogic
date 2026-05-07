@@ -163,10 +163,12 @@ function _search(
     resolvedSearchScope = searchCriteriaProcessor.getSearchScope();
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
 
-    // Perform the search
-    ({ resultPage, results } = searchCriteriaProcessor.getSearchResults());
+    // Execute the search
+    const searchExecutionResponse = searchCriteriaProcessor.execute();
+    results = searchExecutionResponse.getSearchResults();
+    resultPage = searchExecutionResponse.getResultPage();
+    estimate = searchExecutionResponse.getTotal();
     stopWatch.lap('search');
-    estimate = searchCriteriaProcessor.getEstimate();
 
     // Prepare response
     const response = {
@@ -441,13 +443,15 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               : 0;
         } else {
           // Given pagination parameters, 0 or 1 is expected.
-          const { results } = prepare({
+          const results = prepare({
             searchCriteria: criteria,
             page: 1,
             pageLength: 1,
             filterResults: true,
             stopWatch,
-          }).getSearchResults();
+          })
+            .execute()
+            .getSearchResults();
           hasOneOrMoreResult = results.length;
         }
 

@@ -68,7 +68,6 @@ function performSearch({
   searchScope,
   requestOptions,
   allowMultiScope,
-  includeResults = true,
   page,
   pageLength,
   pageWith,
@@ -109,7 +108,7 @@ function performSearch({
     }
 
     return {
-      results: includeResults ? paginatedPlan.result().toArray() : null,
+      searchResults: paginatedPlan.result().toArray(),
       total,
       planAsJson,
       planAsSource,

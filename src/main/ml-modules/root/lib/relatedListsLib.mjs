@@ -172,7 +172,7 @@ function getRelatedList({
         urisByRelation[searchConfig.relationKey] =
           searchCriteriaProcessor.getValues();
       } else {
-        const { results } = searchCriteriaProcessor.getSearchResults();
+        const results = searchCriteriaProcessor.execute().getSearchResults();
         urisByRelation[searchConfig.relationKey] = results.map(
           (result) => result.id,
         );

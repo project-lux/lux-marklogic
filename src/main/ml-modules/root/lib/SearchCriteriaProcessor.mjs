@@ -21,6 +21,11 @@ import {
 } from './search/stringGrammar.mjs';
 import { isSearchScopeName } from './searchScope.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
+import {
+  SearchExecutionResult,
+  PLAN_FORMAT_JSON,
+  PLAN_FORMAT_SOURCE,
+} from './search/SearchExecutionResult.mjs';
 //#endregion
 
 //#region Constants
@@ -58,23 +63,26 @@ const SEARCH_STATE_COMPLETED = 'completed';
 
 const SearchCriteriaProcessor = class {
   //#region Private fields
-  #searchState = SEARCH_STATE_NOT_REQUESTED;
   #allowMultiScope;
-  #criteriaCnt = 0;
-  #ignoredTerms = [];
   #includeTypeConstraint;
   #page;
   #pageLength;
   #pageWith;
   #requestOptions;
-  #resolvedSearchCriteria = null;
   #scopeName;
   #patternOptions;
-  #searchResults;
   #searchTermsConfig;
+  #resolvedSearchCriteria = null;
   #sortCriteria;
-  #values = [];
   #valuesOnly = false;
+
+  // Set during search and thus should be reset ahead of running execute() from
+  // within #prepareForExecution().
+  #searchState = SEARCH_STATE_NOT_REQUESTED;
+  #searchExecutionResult;
+  #criteriaCnt = 0;
+  #ignoredTerms = [];
+  #values = [];
   //#endregion
 
   //#region Constructor(s)
@@ -183,14 +191,14 @@ const SearchCriteriaProcessor = class {
 
   getQueryStr() {
     if (this.getSearchState() === 'completed') {
-      return this.#searchResults.planAsSource;
+      return this.#searchExecutionResult.getPlan(PLAN_FORMAT_SOURCE);
     }
     return `Search not completed - current state: ${this.getSearchState()}`;
   }
 
   getQueryJson() {
     if (this.getSearchState() === 'completed') {
-      return this.#searchResults.planAsJson;
+      return this.#searchExecutionResult.getPlan(PLAN_FORMAT_JSON);
     }
     return {
       message: 'Search not completed',
@@ -199,32 +207,39 @@ const SearchCriteriaProcessor = class {
   }
 
   getEstimate() {
-    return this.getSearchResults().total;
+    const searchExecutionResult =
+      this.getSearchState() === 'completed'
+        ? this.#searchExecutionResult
+        : this.execute();
+    return searchExecutionResult.getTotal();
   }
 
-  // returns {
-  //   results: Array<object> | null,
-  //   planAsJson: object,
-  //   planAsSource: string,
-  // }
-  getSearchResults() {
-    if (this.#searchResults) {
-      return this.#searchResults;
-    }
-    this.#searchState = SEARCH_STATE_REQUESTED;
-    this.#searchResults = engine.performSearch({
+  // Returns a Results wrapping optional results, total, resultPage, and plan.
+  execute(facetsConfig = null) {
+    this.#prepareForExecution();
+
+    const engineResult = engine.performSearch({
       searchCriteriaProcessor: this,
       searchCriteria: this.#resolvedSearchCriteria,
       searchScope: this.#scopeName,
       requestOptions: this.#requestOptions,
       allowMultiScope: this.#allowMultiScope,
-      includeResults: true,
       page: this.#page,
       pageLength: this.#pageLength,
       pageWith: this.#pageWith,
     });
+
+    // Facets are accepted by API now; implementation to follow in engine phase.
+    const searchExecutionResult = new SearchExecutionResult({
+      searchResults: engineResult.searchResults,
+      total: engineResult.total,
+      resultPage: this.#page ?? 1, // account for pageWith
+      planAsJson: engineResult.planAsJson,
+      planAsSource: engineResult.planAsSource,
+    });
+    this.#searchExecutionResult = searchExecutionResult;
     this.#searchState = SEARCH_STATE_COMPLETED;
-    return this.#searchResults;
+    return searchExecutionResult;
   }
 
   // Wrapper function enabling search patterns to process nested criteria.
@@ -456,13 +471,6 @@ const SearchCriteriaProcessor = class {
       : new PatternOptions();
 
     this.#includeTypeConstraint = includeTypeConstraint;
-
-    // reset per-invocation fields
-    this.#searchState = SEARCH_STATE_NOT_REQUESTED;
-    this.#criteriaCnt = 0;
-    this.#ignoredTerms = [];
-    this.#searchResults = null;
-    this.#values = [];
   }
 
   /**
@@ -488,6 +496,14 @@ const SearchCriteriaProcessor = class {
       );
     }
     throw new InvalidSearchRequestError(`search scope not specified.`);
+  }
+
+  #prepareForExecution() {
+    this.#searchState = SEARCH_STATE_REQUESTED;
+    this.#searchExecutionResult = null;
+    this.#criteriaCnt = 0;
+    this.#ignoredTerms = [];
+    this.#values = [];
   }
   //#endregion
 };

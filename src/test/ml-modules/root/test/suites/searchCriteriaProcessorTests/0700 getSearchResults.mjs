@@ -65,18 +65,19 @@ for (const scenario of scenarios) {
       false, // valuesOnly
     );
 
-    return processor.getSearchResults();
+    return processor.execute();
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);
 
   if (scenarioResults.applyErrorNotExpectedAssertions) {
-    const searchResults = scenarioResults.actualValue;
+    const searchExecutionResult = scenarioResults.actualValue;
 
     if (scenario.expected.hasResultsArray) {
       assertions.push(
         testHelperProxy.assertTrue(
-          searchResults && Array.isArray(searchResults.results),
+          searchExecutionResult &&
+            Array.isArray(searchExecutionResult.getSearchResults()),
           `Scenario '${scenario.name}' should return object with results array.`,
         ),
       );
@@ -85,7 +86,8 @@ for (const scenario of scenarios) {
     if (scenario.expected.hasResultPageNumber) {
       assertions.push(
         testHelperProxy.assertTrue(
-          searchResults && typeof searchResults.resultPage === 'number',
+          searchExecutionResult &&
+            typeof searchExecutionResult.getResultPage() === 'number',
           `Scenario '${scenario.name}' should return object with resultPage number.`,
         ),
       );
@@ -95,7 +97,7 @@ for (const scenario of scenarios) {
       assertions.push(
         testHelperProxy.assertEqual(
           scenario.expected.expectedPage,
-          searchResults.resultPage,
+          searchExecutionResult.getResultPage(),
           `Scenario '${scenario.name}' should return expected page number.`,
         ),
       );
@@ -105,7 +107,7 @@ for (const scenario of scenarios) {
       assertions.push(
         testHelperProxy.assertEqual(
           scenario.expected.defaultPage,
-          searchResults.resultPage,
+          searchExecutionResult.getResultPage(),
           `Scenario '${scenario.name}' should return default page number.`,
         ),
       );

@@ -52,18 +52,18 @@ for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const processor = new SearchCriteriaProcessor(true, true, true);
 
-    processor.prepare(
-      scenario.input.searchCriteria,
-      null, // scopeName from criteria
-      false, // allowMultiScope
-      new PatternOptions(),
-      true, // includeTypeConstraint
-      scenario.input.page || 1,
-      scenario.input.pageLength || 20,
-      scenario.input.pageWith || null,
-      null, // sortCriteria
-      false, // valuesOnly
-    );
+    processor.prepare({
+      searchCriteria: scenario.input.searchCriteria,
+      scopeName: null, // scopeName from criteria
+      allowMultiScope: false,
+      patternOptions: new PatternOptions(),
+      includeTypeConstraint: true,
+      page: scenario.input.page || 1,
+      pageLength: scenario.input.pageLength || 20,
+      pageWith: scenario.input.pageWith || null,
+      sortCriteria: null,
+      valuesOnly: false,
+    });
 
     return processor.execute();
   };

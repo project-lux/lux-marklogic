@@ -163,18 +163,7 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
     const input = scenario.input;
 
-    processor.prepare(
-      input.searchCriteria,
-      input.scopeName,
-      input.allowMultiScope,
-      input.patternOptions,
-      input.includeTypeConstraint,
-      input.page,
-      input.pageLength,
-      input.pageWith,
-      input.sortCriteria,
-      input.valuesOnly,
-    );
+    processor.prepare({ ...input });
 
     return {
       ctsQueryStr: processor.getQueryStr(),

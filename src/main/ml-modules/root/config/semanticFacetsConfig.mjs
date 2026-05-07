@@ -6,17 +6,13 @@ const la = op.prefixer('https://linked.art/ns/terms/');
 const lux = op.prefixer('https://lux.collections.yale.edu/ns/');
 const skos = op.prefixer('http://www.w3.org/2004/02/skos/core#');
 
-// A subset of criteria defined herein are defined as CTS queries.  The preferred means is
-// with the JSON search grammar; however, we would have to research how we could do this
-// without imposing a material performance penalty.  Until then, the same optimization made
-// elsewhere in the code base may have to be made here too.
 const SEMANTIC_FACETS_CONFIG = {
   responsibleCollections: {
-    potentialFacetValuesCtsQuery: cts.andQuery([
+    OBSOLETE_potentialFacetValuesCtsQuery: cts.andQuery([
       cts.jsonPropertyValueQuery('dataType', 'Set', ['exact']),
       cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection, ['exact'], 1),
     ]),
-    getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
+    OBSOLETE_getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
       return cts.andQuery([
         cts.fieldValueQuery(['itemMemberOfId'], facetValueId, ['exact'], 1),
         baseSearchCtsQuery,
@@ -38,7 +34,7 @@ const SEMANTIC_FACETS_CONFIG = {
     },
   },
   responsibleUnits: {
-    potentialFacetValuesCtsQuery: cts.andQuery([
+    OBSOLETE_potentialFacetValuesCtsQuery: cts.andQuery([
       cts.jsonPropertyValueQuery('dataType', ['Group'], ['exact']),
       cts.orQuery([
         cts.andQuery([
@@ -62,20 +58,20 @@ const SEMANTIC_FACETS_CONFIG = {
                         ['conceptIdentifier'],
                         [IDENTIFIERS.collection],
                         ['exact'],
-                        1
-                      )
+                        1,
+                      ),
                     ),
                     0,
-                    sem.iri('/does/not/exist')
+                    sem.iri('/does/not/exist'),
                   ),
                   '=',
                   [],
-                  1
-                )
+                  1,
+                ),
               )
               .toArray()
               .map((x) => sem.tripleObject(x))
-              .concat(sem.iri('/does/not/exist'))
+              .concat(sem.iri('/does/not/exist')),
           ),
           cts.notQuery(
             cts.andQuery([
@@ -91,17 +87,17 @@ const SEMANTIC_FACETS_CONFIG = {
                       ['conceptIdentifier'],
                       [IDENTIFIERS.department],
                       ['exact'],
-                      1
-                    )
+                      1,
+                    ),
                   ),
                   0,
-                  sem.iri('/does/not/exist')
+                  sem.iri('/does/not/exist'),
                 ),
                 '=',
                 [],
-                1
+                1,
               ),
-            ])
+            ]),
           ),
         ]),
         cts.andQuery([
@@ -126,15 +122,15 @@ const SEMANTIC_FACETS_CONFIG = {
                           ['conceptIdentifier'],
                           [IDENTIFIERS.department],
                           ['exact'],
-                          1
-                        )
+                          1,
+                        ),
                       ),
                       0,
-                      sem.iri('/does/not/exist')
+                      sem.iri('/does/not/exist'),
                     ),
                     '=',
                     [],
-                    1
+                    1,
                   ),
                   cts.documentQuery(
                     cts
@@ -156,37 +152,37 @@ const SEMANTIC_FACETS_CONFIG = {
                                 ['conceptIdentifier'],
                                 [IDENTIFIERS.collection],
                                 ['exact'],
-                                1
-                              )
+                                1,
+                              ),
                             ),
                             0,
-                            sem.iri('/does/not/exist')
+                            sem.iri('/does/not/exist'),
                           ),
                           '=',
                           [],
-                          1
-                        )
+                          1,
+                        ),
                       )
                       .toArray()
                       .map((x) => sem.tripleObject(x))
-                      .concat(sem.iri('/does/not/exist'))
+                      .concat(sem.iri('/does/not/exist')),
                   ),
-                ])
+                ]),
               )
               .toArray()
               .map((x) => sem.tripleObject(x))
-              .concat(sem.iri('/does/not/exist'))
+              .concat(sem.iri('/does/not/exist')),
           ),
         ]),
       ]),
     ]),
-    getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
+    OBSOLETE_getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
       return cts.andQuery([
         cts.andQuery([
           cts.jsonPropertyValueQuery(
             'dataType',
             ['DigitalObject', 'HumanMadeObject', 'Set'],
-            ['exact']
+            ['exact'],
           ),
           cts.tripleRangeQuery(
             [],
@@ -209,25 +205,25 @@ const SEMANTIC_FACETS_CONFIG = {
                           ['agentMemberOfId'],
                           [facetValueId],
                           ['exact'],
-                          1
+                          1,
                         ),
                         cts.documentQuery([facetValueId]),
-                      ])
+                      ]),
                     ),
                     0,
-                    sem.iri('/does/not/exist')
+                    sem.iri('/does/not/exist'),
                   ),
                   '=',
                   [],
-                  1
-                )
+                  1,
+                ),
               ),
               0,
-              sem.iri('/does/not/exist')
+              sem.iri('/does/not/exist'),
             ),
             '=',
             [],
-            1
+            1,
           ),
         ]),
         baseSearchCtsQuery,

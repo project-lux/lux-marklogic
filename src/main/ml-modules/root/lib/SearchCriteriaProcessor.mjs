@@ -22,7 +22,6 @@ import {
 import { isSearchScopeName } from './searchScope.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
 import {
-  SearchExecutionResult,
   PLAN_FORMAT_JSON,
   PLAN_FORMAT_SOURCE,
 } from './search/SearchExecutionResult.mjs';
@@ -215,10 +214,10 @@ const SearchCriteriaProcessor = class {
   }
 
   // Returns a Results wrapping optional results, total, resultPage, and plan.
-  execute(facetsConfig = null) {
+  execute(facetRequests = null) {
     this.#prepareForExecution();
 
-    const engineResult = engine.performSearch({
+    this.#searchExecutionResult = engine.performSearch({
       searchCriteriaProcessor: this,
       searchCriteria: this.#resolvedSearchCriteria,
       searchScope: this.#scopeName,
@@ -227,19 +226,11 @@ const SearchCriteriaProcessor = class {
       page: this.#page,
       pageLength: this.#pageLength,
       pageWith: this.#pageWith,
+      facetRequests,
     });
 
-    // Facets are accepted by API now; implementation to follow in engine phase.
-    const searchExecutionResult = new SearchExecutionResult({
-      searchResults: engineResult.searchResults,
-      total: engineResult.total,
-      resultPage: this.#page ?? 1, // account for pageWith
-      planAsJson: engineResult.planAsJson,
-      planAsSource: engineResult.planAsSource,
-    });
-    this.#searchExecutionResult = searchExecutionResult;
     this.#searchState = SEARCH_STATE_COMPLETED;
-    return searchExecutionResult;
+    return this.#searchExecutionResult;
   }
 
   // Wrapper function enabling search patterns to process nested criteria.

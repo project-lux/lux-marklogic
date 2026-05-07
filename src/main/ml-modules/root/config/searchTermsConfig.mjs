@@ -382,7 +382,7 @@ const SEARCH_TERMS_CONFIG = {
     regionRelates: {
       patternName: 'geospatial',
       region: true,
-      indexReferences: ['/json[type="Place"]/defined_by'],
+      indexReferences: ['/indexedProperties/defined_by_polygon'],
     },
     relatedToAgent: {
       patternName: 'relatedList',

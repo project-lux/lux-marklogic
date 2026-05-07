@@ -570,7 +570,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 5,
+      value: 4,
     },
   },
   {
@@ -584,7 +584,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 3,
+      value: 1,
     },
   },
   {

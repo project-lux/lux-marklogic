@@ -49,12 +49,12 @@
   ],
   "geospatial-region-path-index": [
     {
-      "path-expression": "/json[type=\"Place\"]/defined_by",
+      "path-expression": "/indexedProperties/defined_by_polygon",
       "coordinate-system": "wgs84",
       "units": "miles",
       "geohash-precision": 2,
       "invalid-values": "ignore"
     }
-  ]
+  ],
   @@contentDatabaseConfGenerated@@
 }

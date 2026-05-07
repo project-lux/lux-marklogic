@@ -16,20 +16,21 @@ import {
   InvalidSearchRequestError,
   NotImplementedError,
 } from '../errorClasses.mjs';
-import { SearchTerm } from '../search/SearchTerm.mjs';
-import { SearchTermConfig } from '../search/SearchTermConfig.mjs';
-import { PatternOptions } from '../search/patterns.mjs';
 import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
-import { AnnTopKPattern } from '../search/patterns/AnnTopK.mjs';
-import { DateRangePattern } from '../search/patterns/DateRange.mjs';
-import { DocumentIdOrIriPattern } from '../search/patterns/DocumentIdOrIri.mjs';
-import { GeospatialPattern } from '../search/patterns/Geospatial.mjs';
-import { HopInversePattern } from '../search/patterns/HopInverse.mjs';
-import { HopWithFieldPattern } from '../search/patterns/HopWithField.mjs';
-import { KeywordPattern } from '../search/patterns/Keyword.mjs';
-import { IndexedRangePattern } from '../search/patterns/IndexedRange.mjs';
-import { IndexedValuePattern } from '../search/patterns/IndexedValue.mjs';
-import { IndexedWordPattern } from '../search/patterns/IndexedWord.mjs';
+import { SearchExecutionResult } from './SearchExecutionResult.mjs';
+import { SearchTerm } from './SearchTerm.mjs';
+import { SearchTermConfig } from './SearchTermConfig.mjs';
+import { PatternOptions } from './patterns.mjs';
+import { AnnTopKPattern } from './patterns/AnnTopK.mjs';
+import { DateRangePattern } from './patterns/DateRange.mjs';
+import { DocumentIdOrIriPattern } from './patterns/DocumentIdOrIri.mjs';
+import { GeospatialPattern } from './patterns/Geospatial.mjs';
+import { HopInversePattern } from './patterns/HopInverse.mjs';
+import { HopWithFieldPattern } from './patterns/HopWithField.mjs';
+import { KeywordPattern } from './patterns/Keyword.mjs';
+import { IndexedRangePattern } from './patterns/IndexedRange.mjs';
+import { IndexedValuePattern } from './patterns/IndexedValue.mjs';
+import { IndexedWordPattern } from './patterns/IndexedWord.mjs';
 //#endregion
 
 //#region Constants
@@ -52,12 +53,7 @@ const PREFER_FRAG_JOINS = false;
 //#endregion
 
 //#region Entry points
-// returns {
-//   results: Array<object> | null,
-//   total: number,
-//   planAsJson: object,
-//   planAsSource: string,
-// }
+// Returns an instance of SearchExecutionResult
 //
 // TODO: implement 'values' mode for related lists (i.e., array of IRIs).
 // TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
@@ -71,6 +67,7 @@ function performSearch({
   page,
   pageLength,
   pageWith,
+  facetRequests,
 }) {
   let planAsSource;
   try {
@@ -95,24 +92,22 @@ function performSearch({
     const total = opticPlan.result().toArray().length;
 
     // Apply pagination if needed
+    // TODO: implement pageWith.
     let paginatedPlan = opticPlan;
-    if (utils.isNonEmptyString(pageWith)) {
-      // TODO: implement pageWith functionality for document-based pagination
-    } else {
-      const finalPage = page ?? 1;
-      const finalPageLength = pageLength ?? 20;
-      if (finalPage > 0 && finalPageLength > 0) {
-        const offset = (finalPage - 1) * finalPageLength;
-        paginatedPlan = opticPlan.offset(offset).limit(finalPageLength);
-      }
+    const finalPage = Math.max(page, 1);
+    const finalPageLength = pageLength ?? 20;
+    if (finalPage > 0 && finalPageLength > 0) {
+      const offset = (finalPage - 1) * finalPageLength;
+      paginatedPlan = opticPlan.offset(offset).limit(finalPageLength);
     }
 
-    return {
+    return new SearchExecutionResult({
       searchResults: paginatedPlan.result().toArray(),
       total,
+      resultPage: finalPage,
       planAsJson,
       planAsSource,
-    };
+    });
   } catch (ex) {
     console.warn({
       'Error during search execution': ex.message,

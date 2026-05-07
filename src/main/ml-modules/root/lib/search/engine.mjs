@@ -4,10 +4,12 @@
 import op from '/MarkLogic/optic.mjs';
 import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
+import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import {
   getSearchTermNames,
   getSearchTermConfig,
 } from '../../config/searchTermsConfig.mjs';
+import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
@@ -16,6 +18,7 @@ import {
   InvalidSearchRequestError,
   NotImplementedError,
 } from '../errorClasses.mjs';
+import { FacetResponses } from './FacetResponses.mjs';
 import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
@@ -57,7 +60,6 @@ const PREFER_FRAG_JOINS = false;
 //
 // TODO: implement 'values' mode for related lists (i.e., array of IRIs).
 // TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
-// TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
 function performSearch({
   searchCriteriaProcessor,
   searchCriteria,
@@ -88,25 +90,28 @@ function performSearch({
     const planAsJson = opticPlan.export();
     planAsSource = getPlanSource(planAsJson);
 
-    // Get total count before pagination
-    const total = opticPlan.result().toArray().length;
+    const allRows = opticPlan.result().toArray();
+    const total = allRows.length;
 
     // Apply pagination if needed
-    // TODO: implement pageWith.
-    let paginatedPlan = opticPlan;
+    // TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
     const finalPage = Math.max(page, 1);
     const finalPageLength = pageLength ?? 20;
+    let paginatedSearchResults = allRows;
     if (finalPage > 0 && finalPageLength > 0) {
       const offset = (finalPage - 1) * finalPageLength;
-      paginatedPlan = opticPlan.offset(offset).limit(finalPageLength);
+      paginatedSearchResults = allRows.slice(offset, offset + finalPageLength);
     }
 
+    const facetResponses = calculateFacets(allRows, facetRequests);
+
     return new SearchExecutionResult({
-      searchResults: paginatedPlan.result().toArray(),
+      searchResults: paginatedSearchResults,
       total,
       resultPage: finalPage,
       planAsJson,
       planAsSource,
+      facetResponses,
     });
   } catch (ex) {
     console.warn({
@@ -248,6 +253,84 @@ function processCriteria({
 //#endregion
 
 //#region Helper functions
+function calculateFacets(allRows, facetRequests) {
+  if (!facetRequests?.getFacetRequests) {
+    return null;
+  }
+
+  const requests = facetRequests.getFacetRequests();
+  if (!utils.isNonEmptyArray(requests)) {
+    return new FacetResponses({});
+  }
+
+  const uriList = allRows.map((row) => row.id ?? row.uri).filter(Boolean);
+  if (!utils.isNonEmptyArray(uriList)) {
+    return new FacetResponses({});
+  }
+
+  const page = facetRequests.getPage() ?? 1;
+  const pageLength = facetRequests.getPageLength() ?? 20;
+  const start = (page - 1) * pageLength;
+  const end = page * pageLength;
+  const docQuery = cts.documentQuery(uriList);
+
+  const facets = {};
+  requests.forEach((request) => {
+    const facetName = request?.name;
+    if (!utils.isNonEmptyString(facetName) || !FACETS_CONFIG[facetName]) {
+      throw new InvalidSearchRequestError(
+        `Unsupported facet name: '${facetName}'.`,
+      );
+    }
+
+    const indexReference = FACETS_CONFIG[facetName].indexReference;
+    if (!utils.isNonEmptyString(indexReference)) {
+      throw new InvalidSearchRequestError(
+        `The '${facetName}' facet is not currently supported for this operation.`,
+      );
+    }
+
+    const isDateFacet = facetName.endsWith('Date');
+    const sort = request?.sort;
+    const rows = op
+      .fromSearch(docQuery)
+      .joinInner(
+        op.fromLexicons(
+          {
+            value: cts.fieldReference(indexReference),
+            uri: cts.uriReference(),
+          },
+          null,
+          op.fragmentIdCol('lexFragId'),
+        ),
+        op.on('fragmentId', 'lexFragId'),
+      )
+      .orderBy(op.col('value'))
+      .groupBy(op.col('value'), op.count('count', 'uri'))
+      .orderBy(
+        sort === 'desc'
+          ? op.desc('value')
+          : sort === 'asc'
+            ? op.asc('value')
+            : op.desc('count'),
+      )
+      .result()
+      .toArray();
+
+    facets[facetName] = {
+      totalItems: rows.length,
+      facetValues: rows.slice(start, end).map((row) => {
+        return {
+          value: isDateFacet ? convertSecondsToDateStr(row.value) : row.value,
+          count: row.count,
+        };
+      }),
+    };
+  });
+
+  return new FacetResponses(facets);
+}
+
 function getPlanSource(plan) {
   return op
     .toSource(plan.export ? plan.export() : plan)

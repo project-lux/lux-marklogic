@@ -96,18 +96,18 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor(true, true, true);
 
     if (scenario.input.setupProcessor) {
-      processor.prepare(
-        scenario.input.searchCriteria,
-        null, // scopeName from criteria
-        false, // allowMultiScope
-        new PatternOptions(),
-        true, // includeTypeConstraint
-        1, // page
-        20, // pageLength
-        null, // pageWith
-        null, // sortCriteria
-        scenario.input.valuesOnly || false,
-      );
+      processor.prepare({
+        searchCriteria: scenario.input.searchCriteria,
+        scopeName: null, // scopeName from criteria
+        allowMultiScope: false,
+        patternOptions: new PatternOptions(),
+        includeTypeConstraint: true,
+        page: 1,
+        pageLength: 20,
+        pageWith: null,
+        sortCriteria: null,
+        valuesOnly: scenario.input.valuesOnly || false,
+      });
     }
 
     return {

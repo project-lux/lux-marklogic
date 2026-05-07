@@ -113,7 +113,7 @@ const SearchCriteriaProcessor = class {
    * @throws {InvalidSearchRequestError} When criteria invalid, scope invalid, or insufficient criteria
    * @throws {InternalServerError} When configuration issues detected
    */
-  prepare(
+  prepare({
     searchCriteria,
     scopeName,
     allowMultiScope,
@@ -124,7 +124,7 @@ const SearchCriteriaProcessor = class {
     pageWith,
     sortCriteria,
     valuesOnly,
-  ) {
+  }) {
     this.#initProcessState({
       scopeName,
       allowMultiScope,
@@ -146,6 +146,8 @@ const SearchCriteriaProcessor = class {
 
     // Validate and finalize scope into this + requestOptions
     this.#resolveAndValidateScope();
+
+    return this; // supports chaining from prepare to execute
   }
 
   getSearchCriteria() {

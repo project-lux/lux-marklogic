@@ -312,7 +312,7 @@ function calculateFacets(allRows, facetRequests) {
           ? op.desc('value')
           : sort === 'asc'
             ? op.asc('value')
-            : op.desc('count'),
+            : op.desc('count'), // a.k.a. frequency-order
       )
       .result()
       .toArray();

@@ -312,7 +312,7 @@ function prepare({
   valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
   const searchCriteriaProcessor = new SearchCriteriaProcessor(filterResults);
-  searchCriteriaProcessor.prepare(
+  searchCriteriaProcessor.prepare({
     searchCriteria,
     searchScope,
     allowMultiScope,
@@ -323,7 +323,7 @@ function prepare({
     pageWith,
     sortCriteria,
     valuesOnly,
-  );
+  });
   stopWatch.lap('process');
   return searchCriteriaProcessor;
 }

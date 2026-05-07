@@ -314,7 +314,7 @@ function prepare({
   const searchCriteriaProcessor = new SearchCriteriaProcessor(filterResults);
   searchCriteriaProcessor.prepare({
     searchCriteria,
-    searchScope,
+    scopeName: searchScope,
     allowMultiScope,
     patternOptions,
     includeTypeConstraint,

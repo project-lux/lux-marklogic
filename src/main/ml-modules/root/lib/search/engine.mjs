@@ -283,10 +283,19 @@ function calculateFacets(allRows, facetRequests) {
     // isSemanticFacet throws exception if neither a semantic nor non-semantic facet.
     let constraintPlan;
     let joinOn;
+    let facetValueColName = 'value';
+    let primaryKeyColName = 'uri';
     if (isSemanticFacet(facetName)) {
-      throw new NotImplementedError(
-        'Semantic facets have not yet been implemented against the Optic API. Check back soon!',
-      );
+      // TODO: validate configuration to avoid vague errors.
+      const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
+      facetValueColName = semanticConfig.facetValueColName;
+      primaryKeyColName = semanticConfig.primaryKeyColName;
+      const sparql = `
+        ${SearchCriteriaProcessor.getPrefixesForSPARQL()}
+        ${semanticConfig.sparql}
+      `;
+      constraintPlan = op.fromSPARQL(sparql);
+      joinOn = op.on(op.col('iri'), op.col(primaryKeyColName));
     } else {
       const indexReference = FACETS_CONFIG[facetName].indexReference;
       if (!utils.isNonEmptyString(indexReference)) {
@@ -297,8 +306,8 @@ function calculateFacets(allRows, facetRequests) {
 
       constraintPlan = op.fromLexicons(
         {
-          value: cts.fieldReference(indexReference),
-          uri: cts.uriReference(),
+          [facetValueColName]: cts.fieldReference(indexReference),
+          [primaryKeyColName]: cts.uriReference(),
         },
         null,
         op.fragmentIdCol('lexFragId'),
@@ -311,13 +320,13 @@ function calculateFacets(allRows, facetRequests) {
     const rows = op
       .fromSearch(docQuery)
       .joinInner(constraintPlan, joinOn)
-      .orderBy(op.col('value'))
-      .groupBy(op.col('value'), op.count('count', 'uri'))
+      .orderBy(op.col(facetValueColName))
+      .groupBy(op.col(facetValueColName), op.count('count', primaryKeyColName))
       .orderBy(
         sort === 'desc'
-          ? op.desc('value')
+          ? op.desc(facetValueColName)
           : sort === 'asc'
-            ? op.asc('value')
+            ? op.asc(facetValueColName)
             : op.desc('count'), // a.k.a. frequency-order
       )
       .result()

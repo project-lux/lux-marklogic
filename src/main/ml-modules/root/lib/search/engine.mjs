@@ -5,6 +5,8 @@ import op from '/MarkLogic/optic.mjs';
 import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
+import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
+import { isSemanticFacet } from '../facetsLib.mjs';
 import {
   getSearchTermNames,
   getSearchTermConfig,
@@ -277,34 +279,38 @@ function calculateFacets(allRows, facetRequests) {
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
-    if (!utils.isNonEmptyString(facetName) || !FACETS_CONFIG[facetName]) {
-      throw new InvalidSearchRequestError(
-        `Unsupported facet name: '${facetName}'.`,
-      );
-    }
 
-    const indexReference = FACETS_CONFIG[facetName].indexReference;
-    if (!utils.isNonEmptyString(indexReference)) {
-      throw new InvalidSearchRequestError(
-        `The '${facetName}' facet is not currently supported for this operation.`,
+    // isSemanticFacet throws exception if neither a semantic nor non-semantic facet.
+    let constraintPlan;
+    let joinOn;
+    if (isSemanticFacet(facetName)) {
+      throw new NotImplementedError(
+        'Semantic facets have not yet been implemented against the Optic API. Check back soon!',
       );
+    } else {
+      const indexReference = FACETS_CONFIG[facetName].indexReference;
+      if (!utils.isNonEmptyString(indexReference)) {
+        throw new InvalidSearchRequestError(
+          `The '${facetName}' facet is not currently supported for this operation.`,
+        );
+      }
+
+      constraintPlan = op.fromLexicons(
+        {
+          value: cts.fieldReference(indexReference),
+          uri: cts.uriReference(),
+        },
+        null,
+        op.fragmentIdCol('lexFragId'),
+      );
+      joinOn = op.on('fragmentId', 'lexFragId');
     }
 
     const isDateFacet = facetName.endsWith('Date');
     const sort = request?.sort;
     const rows = op
       .fromSearch(docQuery)
-      .joinInner(
-        op.fromLexicons(
-          {
-            value: cts.fieldReference(indexReference),
-            uri: cts.uriReference(),
-          },
-          null,
-          op.fragmentIdCol('lexFragId'),
-        ),
-        op.on('fragmentId', 'lexFragId'),
-      )
+      .joinInner(constraintPlan, joinOn)
       .orderBy(op.col('value'))
       .groupBy(op.col('value'), op.count('count', 'uri'))
       .orderBy(

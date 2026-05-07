@@ -17,33 +17,7 @@ import {
   isInvalidSearchRequestError,
 } from './errorClasses.mjs';
 
-// TODO: replace or co-locate with new semantic facet configuration.
-function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
-  if (_isSemanticFacet(facetName)) {
-    return SEMANTIC_FACETS_CONFIG[facetName].getFacetSelectedCriteria(
-      searchCriteria,
-      facetValue,
-    );
-  } else {
-    return {
-      AND: [searchCriteria, _convertFacetToSearchTerm(facetName, facetValue)],
-    };
-  }
-}
-
-// TODO: only used by _getFacetSearchCriteria
-function _isSemanticFacet(facetName) {
-  if (FACETS_CONFIG[facetName]) {
-    return false;
-  } else if (SEMANTIC_FACETS_CONFIG[facetName]) {
-    return true;
-  } else {
-    throw new BadRequestError(
-      `Unable to calculate the '${facetName}' facet: not an available facet.`,
-    );
-  }
-}
-
+//#region Exported functions
 function getFacet({
   facetName,
   searchCriteria = null,
@@ -118,6 +92,20 @@ function getFacet({
   }
 }
 
+function isSemanticFacet(facetName) {
+  if (FACETS_CONFIG[facetName]) {
+    return false;
+  } else if (SEMANTIC_FACETS_CONFIG[facetName]) {
+    return true;
+  } else {
+    throw new BadRequestError(
+      `Unable to calculate the '${facetName}' facet: not an available facet.`,
+    );
+  }
+}
+//#endregion
+
+//#region Internal functions
 function _getFacetResponse(
   facetName,
   facetValues,
@@ -188,6 +176,19 @@ function _getFacetResponse(
   return response;
 }
 
+function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
+  if (isSemanticFacet(facetName)) {
+    return SEMANTIC_FACETS_CONFIG[facetName].getFacetSelectedCriteria(
+      searchCriteria,
+      facetValue,
+    );
+  } else {
+    return {
+      AND: [searchCriteria, _convertFacetToSearchTerm(facetName, facetValue)],
+    };
+  }
+}
+
 function _convertFacetToSearchTerm(facetName, facetValue) {
   const searchTermsConfig = getSearchTermsConfig();
 
@@ -228,5 +229,6 @@ function _convertFacetToSearchTerm(facetName, facetValue) {
   }
   return { [termName]: facetValue };
 }
+//#endregion
 
-export { getFacet };
+export { getFacet, isSemanticFacet };

@@ -229,6 +229,14 @@ const SEMANTIC_FACETS_CONFIG = {
         baseSearchCtsQuery,
       ]);
     },
+    sparql: `
+      SELECT ?item ?set ?curator ?unit
+      WHERE {?item la:member_of ?set .
+            ?set lux:agentOfCuration ?curator.
+            ?curator crm:P107i_is_current_or_former_member_of ?unit
+      }`,
+    facetValueColName: 'unit',
+    primaryKeyColName: 'item',
     getFacetSelectedCriteria: (baseSearchJsonCriteria, facetValueId) => {
       const criteria = {
         _scope: 'item',

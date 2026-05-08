@@ -274,27 +274,34 @@ function calculateFacets(allRows, facetRequests) {
   const pageLength = facetRequests.getPageLength() ?? 20;
   const start = (page - 1) * pageLength;
   const end = page * pageLength;
-  const docQuery = cts.documentQuery(uriList);
+  const allRowsPlan = op.fromSearch(cts.documentQuery(uriList));
 
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
 
-    // isSemanticFacet throws exception if neither a semantic nor non-semantic facet.
     let constraintPlan;
     let joinOn;
     let facetValueColName = 'value';
     let primaryKeyColName = 'uri';
+    // isSemanticFacet throws if neither semantic nor non-semantic facet
     if (isSemanticFacet(facetName)) {
       // TODO: validate configuration to avoid vague errors.
       const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
       facetValueColName = semanticConfig.facetValueColName;
       primaryKeyColName = semanticConfig.primaryKeyColName;
-      const sparql = `
+      allRowsPlan = allRowsPlan.joinInner(
+        op.fromLexicons(
+          { iri: cts.iriReference() },
+          null,
+          op.fragmentIdCol('iriFragId'),
+        ),
+        op.on('fragmentId', 'iriFragId'),
+      );
+      constraintPlan = op.fromSPARQL(`
         ${SearchCriteriaProcessor.getPrefixesForSPARQL()}
         ${semanticConfig.sparql}
-      `;
-      constraintPlan = op.fromSPARQL(sparql);
+      `);
       joinOn = op.on(op.col('iri'), op.col(primaryKeyColName));
     } else {
       const indexReference = FACETS_CONFIG[facetName].indexReference;
@@ -317,8 +324,7 @@ function calculateFacets(allRows, facetRequests) {
 
     const isDateFacet = facetName.endsWith('Date');
     const sort = request?.sort;
-    const rows = op
-      .fromSearch(docQuery)
+    const rows = allRowsPlan
       .joinInner(constraintPlan, joinOn)
       .orderBy(op.col(facetValueColName))
       .groupBy(op.col(facetValueColName), op.count('count', primaryKeyColName))

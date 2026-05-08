@@ -288,6 +288,20 @@ function getValidatedSemanticFacetConfig(facetName) {
   };
 }
 
+function buildEmptyFacetResponses(requests) {
+  const facets = {};
+
+  requests.forEach((request) => {
+    const facetName = request?.name;
+    facets[facetName] = {
+      totalItems: 0,
+      facetValues: [],
+    };
+  });
+
+  return new FacetResponses(facets);
+}
+
 function calculateFacets(allRows, facetRequests) {
   if (!facetRequests?.getFacetRequests) {
     return null;
@@ -300,7 +314,7 @@ function calculateFacets(allRows, facetRequests) {
 
   const uriList = allRows.map((row) => row.id ?? row.uri).filter(Boolean);
   if (!utils.isNonEmptyArray(uriList)) {
-    return new FacetResponses({});
+    return buildEmptyFacetResponses(requests);
   }
 
   const page = facetRequests.getPage() ?? 1;

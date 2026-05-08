@@ -10,6 +10,8 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Changed
 - handle errors and status codes in securityLib's `handleRequest`, this gives us control over HTTP status codes and messages while still using the default error handler. ([#665](https://github.com/project-lux/lux-marklogic/issues/665))
 - Prevent multiple hops to the same scope in related lists ([#646](https://github.com/project-lux/lux-marklogic/issues/646))
+- Reduce maxLevel for relatedToEvent search terms to 1 ([#646](https://github.com/project-lux/lux-marklogic/issues/646), [#629](https://github.com/project-lux/lux-marklogic/issues/629))
+- Add missing related list labels ([#646](https://github.com/project-lux/lux-marklogic/issues/646), [#627](https://github.com/project-lux/lux-marklogic/issues/627), [#206](https://github.com/project-lux/lux-marklogic/issues/206))
 
 ### Removed
   

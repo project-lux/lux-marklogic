@@ -34,9 +34,6 @@ function getFacet({
     const facetRequests = new FacetRequests(page, pageLength);
     facetRequests.addFacetRequest(facetName, sort);
 
-    console.log(
-      `Passing search scope of '${scopeName}' to SearchCriteriaProcessor for facet calculation.`,
-    );
     const searchCriteriaProcessor = new SearchCriteriaProcessor(false);
     const searchExecutionResult = searchCriteriaProcessor
       .prepare({

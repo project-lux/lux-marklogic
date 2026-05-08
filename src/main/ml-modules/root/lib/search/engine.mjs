@@ -312,7 +312,7 @@ function calculateFacets(allRows, facetRequests) {
     return new FacetResponses({});
   }
 
-  const uriList = allRows.map((row) => row.id ?? row.uri).filter(Boolean);
+  const uriList = allRows.map((row) => row.id);
   if (!utils.isNonEmptyArray(uriList)) {
     return buildEmptyFacetResponses(requests);
   }
@@ -358,6 +358,10 @@ function calculateFacets(allRows, facetRequests) {
           op.on('fragmentId', 'iriFragId'),
         );
       }
+
+      // Projection barrier helps avoid optimizer paths that can collapse
+      // certain semantic joins to zero rows.
+      facetSourcePlan = facetSourcePlan.select([sourceJoinColName]);
 
       constraintPlan = semanticConfig.plan;
 

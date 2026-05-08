@@ -257,17 +257,17 @@ function processCriteria({
 //#region Helper functions
 function getValidatedSemanticFacetConfig(facetName) {
   const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
-  const sourceJoinColumn = semanticConfig?.sourceJoinColumn;
-  const constraintJoinColumn = semanticConfig?.constraintJoinColumn;
+  const sourceJoinColName = semanticConfig?.sourceJoinColName;
+  const constraintJoinColName = semanticConfig?.constraintJoinColName;
 
-  if (!utils.isNonEmptyString(sourceJoinColumn)) {
+  if (!utils.isNonEmptyString(sourceJoinColName)) {
     throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing required 'sourceJoinColumn'.`,
+      `Semantic facet '${facetName}' is misconfigured: missing required 'sourceJoinColName'.`,
     );
   }
-  if (!utils.isNonEmptyString(constraintJoinColumn)) {
+  if (!utils.isNonEmptyString(constraintJoinColName)) {
     throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing required 'constraintJoinColumn'.`,
+      `Semantic facet '${facetName}' is misconfigured: missing required 'constraintJoinColName'.`,
     );
   }
 
@@ -283,8 +283,8 @@ function getValidatedSemanticFacetConfig(facetName) {
 
   return {
     ...semanticConfig,
-    sourceJoinColumn,
-    constraintJoinColumn,
+    sourceJoinColName,
+    constraintJoinColName,
   };
 }
 
@@ -331,10 +331,10 @@ function calculateFacets(allRows, facetRequests) {
     if (isSemanticFacet(facetName)) {
       const semanticConfig = semanticConfigsByFacetName[facetName];
       facetValueColName = semanticConfig.facetValueColName;
-      countColName = semanticConfig.constraintJoinColumn;
-      const sourceJoinColumn = semanticConfig.sourceJoinColumn;
+      countColName = semanticConfig.constraintJoinColName;
+      const sourceJoinColName = semanticConfig.sourceJoinColName;
 
-      if (sourceJoinColumn === 'iri') {
+      if (sourceJoinColName === 'iri') {
         facetSourcePlan = facetSourcePlan.joinInner(
           op.fromLexicons(
             { iri: cts.iriReference() },
@@ -347,7 +347,7 @@ function calculateFacets(allRows, facetRequests) {
 
       constraintPlan = semanticConfig.plan;
 
-      joinOn = op.on(sourceJoinColumn, countColName);
+      joinOn = op.on(sourceJoinColName, countColName);
     } else {
       const indexReference = FACETS_CONFIG[facetName].indexReference;
       if (!utils.isNonEmptyString(indexReference)) {

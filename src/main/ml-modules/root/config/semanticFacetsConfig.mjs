@@ -12,9 +12,9 @@ const SEMANTIC_FACETS_CONFIG = {
         ?set lux:setClassifiedAs <${IDENTIFIERS.collection}> .
       }
     `),
-    sourceJoinColumn: 'iri',
+    sourceJoinColName: 'iri',
     facetValueColName: 'set',
-    constraintJoinColumn: 'item',
+    constraintJoinColName: 'item',
     getFacetSelectedCriteria: (baseSearchJsonCriteria, facetValueId) => {
       const criteria = {
         _scope: 'item',
@@ -39,9 +39,9 @@ const SEMANTIC_FACETS_CONFIG = {
             ?curator crm:P107i_is_current_or_former_member_of ?unit
       }
     `),
-    sourceJoinColumn: 'iri',
+    sourceJoinColName: 'iri',
     facetValueColName: 'unit',
-    constraintJoinColumn: 'item',
+    constraintJoinColName: 'item',
     getFacetSelectedCriteria: (baseSearchJsonCriteria, facetValueId) => {
       const criteria = {
         _scope: 'item',

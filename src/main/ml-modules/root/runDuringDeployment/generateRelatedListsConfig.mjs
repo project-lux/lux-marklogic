@@ -86,6 +86,7 @@ function _getSearchConfigEntries(
   startingScope,
   endingScope,
   inBetweenScopes,
+  seenScopes,
   maxLevel,
   currentLevel,
   report,
@@ -95,7 +96,12 @@ function _getSearchConfigEntries(
     const termConfig = unitSearchTermsConfig[startingScope][termName];
     const targetScope = termConfig.targetScope;
     const matchesEndingScope = targetScope == endingScope;
-    if (matchesEndingScope || inBetweenScopes.includes(targetScope)) {
+    if (
+      // skip scopes we've already seen to avoid circular paths
+      !seenScopes.includes(targetScope) &&
+      // only check terms that either match the ending scope or have in-between scopes that include the target scope
+      (matchesEndingScope || inBetweenScopes.includes(targetScope))
+    ) {
       if (
         termConfig.patternName === PATTERN_NAME_RELATED_LIST ||
         _inverseIsDisqualifiedHopWithField(startingScope, termName) ||
@@ -130,6 +136,7 @@ function _getSearchConfigEntries(
       // Not allowing any in-between scopes if current level is at the max level as that could result in
       // obscure relationships that dilute the value of the items displayed on entity pages.
       currentLevel < maxLevel ? inBetweenScopes : [],
+      [...seenScopes, targetScope],
       maxLevel,
       currentLevel + 1,
       report,
@@ -239,6 +246,7 @@ const relatedListsConfig = {};
       termInfo.fromScope,
       termInfo.toScope,
       termInfo.inBetweenScopes,
+      [],
       termInfo.maxLevel,
       1,
       report,

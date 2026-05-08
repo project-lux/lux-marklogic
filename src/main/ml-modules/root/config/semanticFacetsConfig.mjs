@@ -1,5 +1,6 @@
 import { IDENTIFIERS } from '../lib/identifierConstants.mjs';
 import op from '/MarkLogic/optic';
+import { getPrefixesForSPARQL } from '../lib/search/prefixUtils.mjs';
 
 const crm = op.prefixer('http://www.cidoc-crm.org/cidoc-crm/');
 const la = op.prefixer('https://linked.art/ns/terms/');
@@ -229,14 +230,17 @@ const SEMANTIC_FACETS_CONFIG = {
         baseSearchCtsQuery,
       ]);
     },
-    sparql: `
+    plan: op.fromSPARQL(`
+      ${getPrefixesForSPARQL()}
       SELECT ?item ?set ?curator ?unit
       WHERE {?item la:member_of ?set .
             ?set lux:agentOfCuration ?curator.
             ?curator crm:P107i_is_current_or_former_member_of ?unit
-      }`,
+      }
+    `),
+    sourceJoinColumn: 'iri',
     facetValueColName: 'unit',
-    primaryKeyColName: 'item',
+    constraintJoinColumn: 'item',
     getFacetSelectedCriteria: (baseSearchJsonCriteria, facetValueId) => {
       const criteria = {
         _scope: 'item',

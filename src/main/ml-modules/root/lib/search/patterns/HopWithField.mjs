@@ -1,6 +1,10 @@
 import op from '/MarkLogic/optic.mjs';
 import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
-import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import {
+  expandPredicates,
+  formatPredicatesForSPARQL,
+  getPrefixesForSPARQL,
+} from '../prefixUtils.mjs';
 import {
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
@@ -67,7 +71,7 @@ class HopWithField extends SearchPatternBase {
 
     // TODO: if there are zero results from the fieldPlan, should we do anything different?
     const sparql = `
-${SearchCriteriaProcessor.getPrefixesForSPARQL()}
+${getPrefixesForSPARQL()}
 select ?${id}_s ?${id}_o where {
   VALUES ?${id}_o {
     ${fieldPlan
@@ -76,7 +80,7 @@ select ?${id}_s ?${id}_o where {
       .map((row) => `<${row[fieldIriCol]}>`)
       .join('\n    ')}
   }
-  ?${id}_s ${SearchCriteriaProcessor.formatPredicatesForSPARQL(termConfig.getPredicates())} ?${id}_o
+  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates())} ?${id}_o
 }`;
 
     return {
@@ -106,7 +110,7 @@ select ?${id}_s ?${id}_o where {
     const hopPlan = op.fromTriples([
       op.pattern(
         op.col(id + '_s'),
-        SearchCriteriaProcessor.expandPredicates(termConfig.getPredicates()),
+        expandPredicates(termConfig.getPredicates()),
         op.col(id + '_o'),
         op.fragmentIdCol(hopTripleFragCol),
       ),

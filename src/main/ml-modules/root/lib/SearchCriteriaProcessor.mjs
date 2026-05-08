@@ -28,15 +28,6 @@ import {
 //#endregion
 
 //#region Constants
-const sem = require('/MarkLogic/semantics.xqy');
-
-const PREFIX_MAPPINGS = {
-  crm: 'http://www.cidoc-crm.org/cidoc-crm/',
-  la: 'https://linked.art/ns/terms/',
-  lux: 'https://lux.collections.yale.edu/ns/',
-  skos: 'http://www.w3.org/2004/02/skos/core#',
-};
-
 // TODO: delete once able to.
 const START_OF_GENERATED_QUERY = `
 const op = require("/MarkLogic/optic");
@@ -297,32 +288,6 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Public static methods
-  static getPrefixesForSPARQL() {
-    return Object.entries(PREFIX_MAPPINGS)
-      .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
-      .join('\n');
-  }
-
-  static expandPredicate(predicate) {
-    return sem.curieExpand(predicate, PREFIX_MAPPINGS);
-  }
-
-  static expandPredicates(predicates) {
-    return predicates.map((predicate) =>
-      SearchCriteriaProcessor.expandPredicate(predicate),
-    );
-  }
-
-  static formatPredicatesForSPARQL(predicates, transitive = true) {
-    const individuals = transitive
-      ? predicates.map((predicate) => {
-          // TODO: optimization idea = omit + when single criterion as group by nullifies need.
-          return predicate.concat('+');
-        })
-      : predicates;
-    return `(${individuals.join(' | ')})`;
-  }
-
   static getSortType(isMultiScope, isSemantic) {
     let sortType = SORT_TYPE_NON_SEMANTIC;
     if (isMultiScope) sortType = SORT_TYPE_MULTI_SCOPE;

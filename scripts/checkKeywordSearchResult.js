@@ -26,7 +26,7 @@
 
 import { FULL_TEXT_SEARCH_RELATED_FIELD_NAME } from '/lib/appConstants.mjs';
 import { getSearchScope } from '/lib/searchScope.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { expandPredicates } from '/lib/search/prefixUtils.mjs';
 
 // START: script configuration.
 const subjectUri =
@@ -39,7 +39,7 @@ const maxObjectsToCheck = 100;
 const scope = getSearchScope(scopeName);
 // Limited to single predicate support; yet, all search scopes only have one predicate
 // (and all are in the LUX namespace).
-const predicate = SearchCriteriaProcessor.expandPredicates(scope.predicates)[0];
+const predicate = expandPredicates(scope.predicates)[0];
 const subjectFieldName = scope.fields[0]; // easy to support multiple, but all scopes only use one.
 const objectFieldName = FULL_TEXT_SEARCH_RELATED_FIELD_NAME;
 

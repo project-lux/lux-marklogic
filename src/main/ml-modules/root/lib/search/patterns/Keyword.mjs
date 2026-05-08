@@ -7,7 +7,7 @@ import {
   getSearchScopeFields,
   getSearchScopePredicates,
 } from '../../searchScope.mjs';
-import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import { expandPredicates } from '../prefixUtils.mjs';
 import * as utils from '../../../utils/utils.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
@@ -62,9 +62,7 @@ class Keyword extends SearchPatternBase {
 
     const tripleRangeQuery = cts.tripleRangeQuery(
       [],
-      SearchCriteriaProcessor.expandPredicates(
-        getSearchScopePredicates(termScopeName),
-      ),
+      expandPredicates(getSearchScopePredicates(termScopeName)),
       refIris,
       '=',
       [],

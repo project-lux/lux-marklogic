@@ -19,7 +19,7 @@ import {
 } from '/lib/searchScope';
 import { getSearchTermsConfig } from '/config/searchTermsConfig';
 import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor';
+import { expandPredicate } from '/lib/search/prefixUtils.mjs';
 import * as utils from '/utils/utils';
 import { getVersionInfo } from '/lib/environmentLib.mjs';
 
@@ -76,10 +76,7 @@ const checkPredicate = (findings, scopeName, termName, predicate) => {
     }
   } else {
     const estimate = cts.estimate(
-      cts.jsonPropertyValueQuery(
-        'predicate',
-        SearchCriteriaProcessor.expandPredicate(predicate),
-      ),
+      cts.jsonPropertyValueQuery('predicate', expandPredicate(predicate)),
     );
     if ((justZeros && estimate == 0) || !justZeros) {
       if (identifyTerms && termName != null) {

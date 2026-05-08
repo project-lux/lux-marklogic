@@ -1,5 +1,5 @@
 import op from '/MarkLogic/optic.mjs';
-import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import { expandPredicates } from '../prefixUtils.mjs';
 import {
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
@@ -19,9 +19,7 @@ class HopInverse extends SearchPatternBase {
     const parentIriCol = searchTerm.getParentIriColumn();
     const triFragCol = id + '_triFrag';
     const refFragCol = id + '_frag';
-    const predicates = SearchCriteriaProcessor.expandPredicates(
-      termConfig.getPredicates(),
-    );
+    const predicates = expandPredicates(termConfig.getPredicates());
 
     const tri = op.fromTriples([
       op.pattern(

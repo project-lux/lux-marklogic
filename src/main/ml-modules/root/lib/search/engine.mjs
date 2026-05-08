@@ -17,11 +17,11 @@ import {
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
 } from '../appConstants.mjs';
 import {
+  InternalServerError,
   InvalidSearchRequestError,
   NotImplementedError,
 } from '../errorClasses.mjs';
 import { FacetResponses } from './FacetResponses.mjs';
-import { SearchCriteriaProcessor } from '../SearchCriteriaProcessor.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
@@ -255,6 +255,39 @@ function processCriteria({
 //#endregion
 
 //#region Helper functions
+function getValidatedSemanticFacetConfig(facetName) {
+  const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
+  const sourceJoinColumn = semanticConfig?.sourceJoinColumn;
+  const constraintJoinColumn = semanticConfig?.constraintJoinColumn;
+
+  if (!utils.isNonEmptyString(sourceJoinColumn)) {
+    throw new InternalServerError(
+      `Semantic facet '${facetName}' is misconfigured: missing required 'sourceJoinColumn'.`,
+    );
+  }
+  if (!utils.isNonEmptyString(constraintJoinColumn)) {
+    throw new InternalServerError(
+      `Semantic facet '${facetName}' is misconfigured: missing required 'constraintJoinColumn'.`,
+    );
+  }
+
+  const planValue = semanticConfig?.plan;
+  const validPlanType =
+    typeof planValue?.result === 'function' &&
+    typeof planValue?.export === 'function';
+  if (!validPlanType) {
+    throw new InternalServerError(
+      `Semantic facet '${facetName}' is misconfigured: 'plan' is required and must be an Optic plan.`,
+    );
+  }
+
+  return {
+    ...semanticConfig,
+    sourceJoinColumn,
+    constraintJoinColumn,
+  };
+}
+
 function calculateFacets(allRows, facetRequests) {
   if (!facetRequests?.getFacetRequests) {
     return null;
@@ -276,33 +309,45 @@ function calculateFacets(allRows, facetRequests) {
   const end = page * pageLength;
   const allRowsPlan = op.fromSearch(cts.documentQuery(uriList));
 
+  const semanticConfigsByFacetName = {};
+  requests.forEach((request) => {
+    const facetName = request?.name;
+    if (isSemanticFacet(facetName)) {
+      semanticConfigsByFacetName[facetName] =
+        getValidatedSemanticFacetConfig(facetName);
+    }
+  });
+
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
+    let facetSourcePlan = allRowsPlan;
 
     let constraintPlan;
     let joinOn;
     let facetValueColName = 'value';
-    let primaryKeyColName = 'uri';
+    let countColName = 'uri';
     // isSemanticFacet throws if neither semantic nor non-semantic facet
     if (isSemanticFacet(facetName)) {
-      // TODO: validate configuration to avoid vague errors.
-      const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
+      const semanticConfig = semanticConfigsByFacetName[facetName];
       facetValueColName = semanticConfig.facetValueColName;
-      primaryKeyColName = semanticConfig.primaryKeyColName;
-      allRowsPlan = allRowsPlan.joinInner(
-        op.fromLexicons(
-          { iri: cts.iriReference() },
-          null,
-          op.fragmentIdCol('iriFragId'),
-        ),
-        op.on('fragmentId', 'iriFragId'),
-      );
-      constraintPlan = op.fromSPARQL(`
-        ${SearchCriteriaProcessor.getPrefixesForSPARQL()}
-        ${semanticConfig.sparql}
-      `);
-      joinOn = op.on(op.col('iri'), op.col(primaryKeyColName));
+      countColName = semanticConfig.constraintJoinColumn;
+      const sourceJoinColumn = semanticConfig.sourceJoinColumn;
+
+      if (sourceJoinColumn === 'iri') {
+        facetSourcePlan = facetSourcePlan.joinInner(
+          op.fromLexicons(
+            { iri: cts.iriReference() },
+            null,
+            op.fragmentIdCol('iriFragId'),
+          ),
+          op.on('fragmentId', 'iriFragId'),
+        );
+      }
+
+      constraintPlan = semanticConfig.plan;
+
+      joinOn = op.on(sourceJoinColumn, countColName);
     } else {
       const indexReference = FACETS_CONFIG[facetName].indexReference;
       if (!utils.isNonEmptyString(indexReference)) {
@@ -314,7 +359,7 @@ function calculateFacets(allRows, facetRequests) {
       constraintPlan = op.fromLexicons(
         {
           [facetValueColName]: cts.fieldReference(indexReference),
-          [primaryKeyColName]: cts.uriReference(),
+          [countColName]: cts.uriReference(),
         },
         null,
         op.fragmentIdCol('lexFragId'),
@@ -324,10 +369,10 @@ function calculateFacets(allRows, facetRequests) {
 
     const isDateFacet = facetName.endsWith('Date');
     const sort = request?.sort;
-    const rows = allRowsPlan
+    const rows = facetSourcePlan
       .joinInner(constraintPlan, joinOn)
       .orderBy(op.col(facetValueColName))
-      .groupBy(op.col(facetValueColName), op.count('count', primaryKeyColName))
+      .groupBy(op.col(facetValueColName), op.count('count', countColName))
       .orderBy(
         sort === 'desc'
           ? op.desc(facetValueColName)

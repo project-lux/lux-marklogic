@@ -1,3 +1,5 @@
+import { FacetResponses } from './FacetResponses.mjs';
+
 const PLAN_FORMAT_JSON = 'json';
 const PLAN_FORMAT_SOURCE = 'source';
 
@@ -46,6 +48,13 @@ const SearchExecutionResult = class {
 
   getFacets() {
     return this.#facetResponses;
+  }
+
+  // Convenience method to get a specific facet
+  getFacet(name) {
+    return (
+      this.#facetResponses?.getFacet(name) ?? FacetResponses.getEmptyFacet(name)
+    );
   }
 };
 

@@ -44,10 +44,8 @@ function getFacet({
       })
       .execute(facetRequests);
 
-    const facetResponses = searchExecutionResult.getFacets();
-    const { facetValues, totalItems } = facetResponses
-      ? facetResponses.getFacet(facetName)
-      : { facetValues: null, totalItems: null };
+    const { facetValues, totalItems } =
+      searchExecutionResult.getFacet(facetName);
 
     // Format as Activity Streams
     const facetValuesAS = _getFacetResponse(

@@ -10,7 +10,11 @@ const FacetResponses = class {
   }
 
   getFacet(name) {
-    return this.#facets[name] ?? null;
+    return this.#facets[name] ?? FacetResponses.getEmptyFacet(name);
+  }
+
+  static getEmptyFacet(name) {
+    return { facetValues: null, totalItems: null };
   }
 };
 

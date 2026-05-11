@@ -97,7 +97,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'relatedList',
       targetScope: 'event',
       inBetweenScopes: ['item', 'work', 'set'],
-      maxLevel: 3,
+      maxLevel: 1,
     },
     relatedToPlace: {
       patternName: 'relatedList',
@@ -198,7 +198,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'relatedList',
       targetScope: 'event',
       inBetweenScopes: ['item', 'work', 'set'],
-      maxLevel: 3,
+      maxLevel: 1,
     },
     relatedToPlace: {
       patternName: 'relatedList',
@@ -357,6 +357,7 @@ const SEARCH_TERMS_CONFIG = {
       predicates: ['crm("P89_falls_within")'],
       targetScope: 'place',
       indexReferences: ['placePrimaryName'],
+      hopInverseName: 'contains',
     },
     relatedToAgent: {
       patternName: 'relatedList',
@@ -374,7 +375,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'relatedList',
       targetScope: 'event',
       inBetweenScopes: ['item', 'work', 'set'],
-      maxLevel: 3,
+      maxLevel: 1,
     },
     relatedToPlace: {
       patternName: 'relatedList',

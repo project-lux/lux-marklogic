@@ -48,7 +48,7 @@ class AnnTopK extends SearchPatternBase {
     annPlan = annPlan
       .annTopK(k, op.col(vectorColumn), queryVector, op.col(distCol), {
         distance: 'cosine',
-        'max-distance': maxDistance,
+        maxDistance,
       })
       .select([
         op.as(id + '_vectorUri', op.col('uri')),

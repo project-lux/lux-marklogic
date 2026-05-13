@@ -134,7 +134,7 @@ const SearchTerm = class {
       case 'annK':
         this.setAnnK(value);
         break;
-      case 'vectorDistance':
+      case 'maxDistance':
         this.setVectorDistance(value);
         break;
       case 'timespanMode':

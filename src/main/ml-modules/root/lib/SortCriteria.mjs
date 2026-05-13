@@ -1,6 +1,5 @@
 import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
 import * as utils from '../utils/utils.mjs';
-import { NotImplementedError } from './errorClasses.mjs';
 
 const DEFAULT = 'default';
 
@@ -18,7 +17,7 @@ const SortCriteria = class {
     this.scoresRequired = DEFAULT; // can switch to a boolean value.
     this.multiScopeSortOption = null;
     this.semanticSortOption = null;
-    this.nonSemanticSortOptions = [];
+    this.nonSemanticSortDescriptors = [];
     this.warnings = [];
     this._parse();
   }
@@ -37,12 +36,12 @@ const SortCriteria = class {
     }
   }
 
-  getNonSemanticSortOptions() {
-    return this.nonSemanticSortOptions;
+  hasNonSemanticSortDescriptors() {
+    return this.nonSemanticSortDescriptors.length > 0;
   }
 
-  hasNonSemanticSortOptions() {
-    return this.nonSemanticSortOptions.length > 0;
+  getNonSemanticSortDescriptors() {
+    return this.nonSemanticSortDescriptors;
   }
 
   getMultiScopeSortOption() {
@@ -81,21 +80,14 @@ const SortCriteria = class {
           sortByName.toLowerCase() == 'random'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.nonSemanticSortOptions = ['score-random'];
+          // TODO: determine if random sort needs Optic support via nonSemanticSortDescriptors (less likely).
           return false;
         } else if (
           utils.isNonEmptyString(sortByName) &&
           sortByName.toLowerCase() == 'relevance'
         ) {
           this.conditionallySetScoresRequired(true);
-          this.nonSemanticSortOptions = [
-            cts.scoreOrder(
-              this._getOrder(
-                specifiedOrder,
-                'desc', // Matches when there is no sort parameter.
-              ),
-            ),
-          ];
+          // TODO: determine if relevance sort needs Optic support via nonSemanticSortDescriptors (likely).
           return false;
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
@@ -115,15 +107,10 @@ const SortCriteria = class {
               };
             } else {
               this.conditionallySetScoresRequired(false);
-              this.nonSemanticSortOptions.push(
-                cts.indexOrder(
-                  this._getIndexReference(
-                    sortBinding.indexType,
-                    sortBinding.indexReference,
-                  ),
-                  this._getOrder(specifiedOrder, sortBinding.defaultOrder),
-                ),
-              );
+              this.nonSemanticSortDescriptors.push({
+                indexReference: sortBinding.indexReference,
+                order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+              });
             }
           } else {
             this.warnings.push(
@@ -136,15 +123,6 @@ const SortCriteria = class {
       }
       return true;
     }, this);
-  }
-
-  _getIndexReference(indexType, indexReference) {
-    if (indexType === 'field') {
-      return cts.fieldReference(indexReference);
-    }
-    throw new NotImplementedError(
-      `_getIndexReference does not support an indexType value of '${indexType}'.`,
-    );
   }
 
   _getOrder(specifiedOrder, bindingOrder = null) {

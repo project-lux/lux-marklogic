@@ -198,6 +198,210 @@ const scenarios = [
       stackToInclude: 'is missing required runtime property',
     },
   },
+  // TSV-derived person-only DateRange coverage (scratch/peopleBornAndDiedExport.tsv).
+  {
+    name: 'person started anytime in 1700 (=) with timespanMode=full [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { recordType: 'Person' },
+          { startDate: '1700', _comp: '=', _timespanMode: 'full' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 64,
+    },
+  },
+  {
+    name: 'person started anytime in 1700 (=) with timespanMode=begin [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { recordType: 'Person' },
+          { startDate: '1700', _comp: '=', _timespanMode: 'begin' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 63,
+    },
+  },
+  {
+    name: 'person started anytime in 1700 (=) with timespanMode=end [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { recordType: 'Person' },
+          { startDate: '1700', _comp: '=', _timespanMode: 'end' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 64,
+    },
+  },
+  {
+    name: 'person *not* started anytime in 1700 (!=) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1700', _comp: '!=' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 18774,
+    },
+  },
+  {
+    name: 'person started in or after 1700 (>=) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1700', _comp: '>=' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 15449,
+    },
+  },
+  {
+    name: 'person started after 1700 (>) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1700', _comp: '>' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 15386,
+    },
+  },
+  {
+    name: 'person started before 1700 (<) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1700', _comp: '<' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 3389,
+    },
+  },
+  {
+    name: 'person started in or before 1700 (<=) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1700', _comp: '<=' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 3452,
+    },
+  },
+  // Two-date range '1790;1800': exercises the distinct startDateLong/endDateLong boundary-
+  // selection logic for single-sided operators (>= and < use startOf(1790); > and <= use
+  // endOf(1800)), which a single-year test cannot distinguish. [TSV-derived]
+  {
+    name: 'person born overlapping 1790-1800 (=) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1790;1800', _comp: '=' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 757,
+    },
+  },
+  {
+    name: 'person born overlapping 1790-1800 (!=) [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { recordType: 'Person' },
+          { startDate: '1790;1800', _comp: '!=' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 18081,
+    },
+  },
+  {
+    name: 'person born in or after 1790 (>=) from two-date range [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { recordType: 'Person' },
+          { startDate: '1790;1800', _comp: '>=' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 11598,
+    },
+  },
+  {
+    name: 'person born after end of 1800 (>) from two-date range [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1790;1800', _comp: '>' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 10841,
+    },
+  },
+  {
+    name: 'person born before start of 1790 (<) from two-date range [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ recordType: 'Person' }, { startDate: '1790;1800', _comp: '<' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 7240,
+    },
+  },
+  {
+    name: 'person born in or before end of 1800 (<=) from two-date range [TSV-derived]',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { recordType: 'Person' },
+          { startDate: '1790;1800', _comp: '<=' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 7997,
+    },
+  },
   {
     name: 'agent name search',
     input: {
@@ -424,6 +628,7 @@ const scenarios = [
     input: {
       searchCriteria: {
         _scope: 'event',
+        _maxDistance: 0.5,
         similar:
           'https://lux.collections.yale.edu/data/activity/0102514a-03d8-4467-a84d-6b901cfae7c8',
       },

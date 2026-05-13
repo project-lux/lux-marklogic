@@ -6,7 +6,7 @@ import {
   InvalidSearchRequestError,
 } from '../../errorClasses.mjs';
 import { COMPARATORS } from '../../SearchCriteriaProcessor.mjs';
-import { SearchPatternBase, CHILD_TYPE_NONE } from './SearchPatternBase.mjs';
+import { SearchPatternBase, CHILD_TYPE_ATOMIC } from './SearchPatternBase.mjs';
 
 class DateRange extends SearchPatternBase {
   apply(
@@ -50,18 +50,6 @@ class DateRange extends SearchPatternBase {
       endIndexName = termConfig.getIndexReferences()[1];
     }
 
-    // Set up the Optic query's constraints and lexicons.  Make lexicons conditional if
-    // if omission thereof improves performance.
-    const constraints = [];
-    const ctsConstraints = [];
-    const needSecondIndex = startColName !== endColName;
-    const lexicons = {
-      [startColName]: cts.fieldReference(startIndexName),
-      ...(needSecondIndex
-        ? { [endColName]: cts.fieldReference(endIndexName) }
-        : {}),
-    };
-
     // Accept two dates, requiring at least one.
     const delim = ';';
     let dates = termValue;
@@ -69,6 +57,11 @@ class DateRange extends SearchPatternBase {
       dates += delim;
     }
     dates = dates.split(';');
+    if (dates.length > 2) {
+      throw new InvalidSearchRequestError(
+        `the '${name}' search term only accepts one or two dates separated by a semicolon.`,
+      );
+    }
     let startDateStr = dates[0].length > 0 ? dates[0] : null;
     let endDateStr = dates[1].length > 0 ? dates[1] : null;
     if (!startDateStr && !endDateStr) {
@@ -83,29 +76,54 @@ class DateRange extends SearchPatternBase {
       startDateStr = endDateStr;
     }
 
-    // Convert to seconds, allowing the operator to help determine how to treat partial dates.
+    // Convert to seconds. startDateLong is the start boundary of the search range (aS);
+    // endDateLong is the end boundary (aE).
     const operator = searchTerm.getComparisonOperator();
     const startDateLong = convertPartialDateTimeToSeconds(startDateStr, true);
     const endDateLong = convertPartialDateTimeToSeconds(endDateStr, false);
 
-    // TODO: document logic w/ example
-    const isBefore = ['<', '>='].includes(operator);
+    // Set up the Optic query's constraints and lexicons.
+    // Operators > and >= test the document's start date (qS).
+    // Operators < and <= test the document's end date (qE).
+    // Operator = tests both (overlap). Operator != uses CTS.
+    const constraints = [];
+    const ctsConstraints = [];
+    const needStartCol = ['>', '>=', '=', '!='].includes(operator);
+    const needEndCol = ['<', '<=', '='].includes(operator);
+    const lexicons = {};
+    if (needStartCol) {
+      lexicons[startColName] = cts.fieldReference(startIndexName);
+    }
+    if (needEndCol) {
+      lexicons[endColName] = cts.fieldReference(endIndexName);
+    }
+
     if (['>', '>=', '<', '<='].includes(operator)) {
-      isBefore
-        ? constraints.push(
-            COMPARATORS[operator](op.col(startColName), startDateLong),
-          )
-        : constraints.push(
-            COMPARATORS[operator](op.col(endColName), endDateLong),
-          );
-    } else if (['='].includes(operator)) {
-      constraints.push(op.ge(op.col(startColName), startDateLong));
-      constraints.push(op.le(op.col(endColName), endDateLong));
-    } else if (['!='].includes(operator)) {
+      // > and >= test the document's start date (qS) against the search boundary.
+      // < and <= test the document's end date (qE) against the search boundary.
+      // Use the start of the search date for >= and <; the end of the search date for > and <=.
+      // Example: ">= 1800" requires qS >= 1800-01-01T00:00:00.
+      // Example: "< 1800" requires qE < 1800-01-01T00:00:00.
+      const colName = ['<', '<='].includes(operator)
+        ? endColName
+        : startColName;
+      const dateLong = ['>=', '<'].includes(operator)
+        ? startDateLong
+        : endDateLong;
+      constraints.push(COMPARATORS[operator](op.col(colName), dateLong));
+    } else if (operator === '=') {
+      // Overlap: a document qualifies if its timespan [qS, qE] overlaps the search range [aS, aE].
+      // Condition: qS <= aE AND qE >= aS
+      constraints.push(op.le(op.col(startColName), endDateLong));
+      constraints.push(op.ge(op.col(endColName), startDateLong));
+    } else if (operator === '!=') {
+      // Complement of overlap: a document qualifies if its timespan does NOT overlap [aS, aE].
+      // Condition: qS > aE OR qE < aS
+      // Note: startIndexName and endIndexName are already adjusted by timespanMode above.
       ctsConstraints.push(
         cts.orQuery([
-          cts.fieldRangeQuery(startIndexName, '<', startDateLong),
-          cts.fieldRangeQuery(endIndexName, '>', endDateLong),
+          cts.fieldRangeQuery(startIndexName, '>', endDateLong),
+          cts.fieldRangeQuery(endIndexName, '<', startDateLong),
         ]),
       );
     } else {

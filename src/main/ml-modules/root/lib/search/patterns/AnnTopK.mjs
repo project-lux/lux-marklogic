@@ -1,6 +1,7 @@
 import op from '/MarkLogic/optic.mjs';
 import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+import { getSearchScopeTypes } from '../../searchScope.mjs';
 
 class AnnTopK extends SearchPatternBase {
   apply(
@@ -15,6 +16,7 @@ class AnnTopK extends SearchPatternBase {
     const termValue = searchTerm.getValue();
     const vecFrag = id + '_vecFrag';
     const distCol = id + '_distance';
+    const dataTypeCol = op.viewCol(id, 'dataType');
     const vectorColumn = searchTerm.getVectorColumn();
     const maxDistance = searchTerm.getVectorDistance();
     const k = searchTerm.getAnnK();
@@ -38,7 +40,11 @@ class AnnTopK extends SearchPatternBase {
 
     // Create annTopK plan with URI column renamed to avoid conflicts with main lexicons.
     // TODO: Replace hardcoded schema and view names.
-    let annPlan = op.fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag));
+    let annPlan = op
+      .fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag))
+      .where(
+        op.in(dataTypeCol, getSearchScopeTypes(searchTerm.getScopeName())),
+      );
 
     // Exclude the seed document only for single similarity queries.
     if (logicType !== 'or') {

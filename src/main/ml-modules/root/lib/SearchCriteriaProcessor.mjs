@@ -214,11 +214,12 @@ const SearchCriteriaProcessor = class {
       searchCriteriaProcessor: this,
       searchCriteria: this.#resolvedSearchCriteria,
       searchScope: this.#scopeName,
-      requestOptions: this.#requestOptions,
       allowMultiScope: this.#allowMultiScope,
       page: this.#page,
       pageLength: this.#pageLength,
       pageWith: this.#pageWith,
+      sortCriteria: this.#sortCriteria,
+      requestOptions: this.#requestOptions,
       facetRequests,
     });
 

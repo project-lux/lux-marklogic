@@ -66,12 +66,13 @@ function performSearch({
   searchCriteriaProcessor,
   searchCriteria,
   searchScope,
-  requestOptions,
-  allowMultiScope,
-  page,
-  pageLength,
-  pageWith,
-  facetRequests,
+  allowMultiScope = false,
+  page = 1,
+  pageLength = 20,
+  pageWith = null,
+  sortCriteria = null,
+  requestOptions = null,
+  facetRequests = null,
 }) {
   let planAsSource;
   try {
@@ -80,19 +81,20 @@ function performSearch({
       agg: [op.sample('dataType', op.col('dataType'))],
     };
 
-    const opticPlan = processCriteria({
+    const { searchPlan, constraintPlan } = processCriteria({
       searchCriteriaProcessor,
       planCriteria: searchCriteria,
       planScope: searchScope,
       allowMultiScope,
       groups: finalGroups,
+      sortCriteria,
       requestOptions,
     });
 
-    const planAsJson = opticPlan.export();
+    const planAsJson = searchPlan.export();
     planAsSource = getPlanSource(planAsJson);
 
-    const allRows = opticPlan.result().toArray();
+    const allRows = searchPlan.result().toArray();
     const total = allRows.length;
 
     // Apply pagination if needed
@@ -105,7 +107,13 @@ function performSearch({
       paginatedSearchResults = allRows.slice(offset, offset + finalPageLength);
     }
 
-    const facetResponses = calculateFacets(allRows, facetRequests);
+    // Use the constraint plan (no sort) for facets to avoid sort-related overhead.
+    // When no sort is applied, constraintPlan and opticPlan are the same object.
+    const constraintRows =
+      constraintPlan !== searchPlan
+        ? constraintPlan.result().toArray()
+        : allRows;
+    const facetResponses = calculateFacets(constraintRows, facetRequests);
 
     return new SearchExecutionResult({
       searchResults: paginatedSearchResults,
@@ -133,6 +141,7 @@ function processCriteria({
   groups = null,
   parentId = null,
   allowMultiScope = false,
+  sortCriteria = null,
   requestOptions = null,
 }) {
   if (!utils.isDefined(patternOptions)) {
@@ -236,21 +245,51 @@ function processCriteria({
     );
   }
 
-  let plan = assembleOpticPlan(acc, {
-    fragCol,
-    uriCol,
-    dataTypeCol,
-    scope,
-    logicType,
-  });
+  const assemblyArgs = { fragCol, uriCol, dataTypeCol, scope, logicType };
 
-  // Only at root level — recursive calls use parentId-prefixed column names
-  // and the parent join still needs the original columns.
-  if (topLevel) {
-    plan = finalizeRootPlan(plan, acc.distanceCols, groups);
+  // Recursive calls return a raw (unfinalized) plan.
+  if (!topLevel) {
+    return assembleOpticPlan(acc, assemblyArgs);
   }
 
-  return plan;
+  // Top-level: build two plans from the same accumulator.
+  // constraintPlan: no sort — used by facets.
+  // plan: with sort lexicons and orderBy — used for search results.
+  const sortCols = [];
+  const sortLexicons = {};
+  if (sortCriteria && sortCriteria.hasNonSemanticSortDescriptors()) {
+    for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
+      const sortColName = `sort_${sortDescriptor.indexReference}`;
+      sortLexicons[sortColName] = cts.fieldReference(
+        sortDescriptor.indexReference,
+      );
+      sortCols.push(
+        sortDescriptor.order === 'descending'
+          ? op.desc(sortColName)
+          : op.asc(sortColName),
+      );
+    }
+  }
+
+  const constraintPlan = finalizeRootPlan(
+    assembleOpticPlan(acc, assemblyArgs),
+    groups,
+    [],
+  );
+
+  let searchPlan;
+  if (sortCols.length > 0) {
+    const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
+    searchPlan = finalizeRootPlan(
+      assembleOpticPlan(sortAcc, assemblyArgs),
+      groups,
+      sortCols,
+    );
+  } else {
+    searchPlan = constraintPlan;
+  }
+
+  return { searchPlan, constraintPlan };
 }
 //#endregion
 
@@ -578,7 +617,6 @@ function createPlanAccumulator({
     // 2+ are combined off the outer fragment before being joined back in.
     andOrSubPlans: [],
     patternJoins: [],
-    distanceCols: [],
   };
 }
 
@@ -601,9 +639,6 @@ function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
   }
   if (contributions.patternJoins?.length) {
     acc.patternJoins.push(...contributions.patternJoins);
-  }
-  if (contributions.distanceCols?.length) {
-    acc.distanceCols.push(...contributions.distanceCols);
   }
 }
 
@@ -840,7 +875,6 @@ function assembleOpticPlan(
             .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
           plan = plan.joinFullOuter(wrapped, null);
         }
-        acc.distanceCols.push(...pj.extraCols);
       }
     } else if (logicType === 'not') {
       for (const pj of acc.patternJoins) {
@@ -851,7 +885,6 @@ function assembleOpticPlan(
       // AND
       for (const pj of acc.patternJoins) {
         plan = plan.joinInner(pj.right, pj.on);
-        acc.distanceCols.push(...pj.extraCols);
       }
     }
   }
@@ -860,43 +893,27 @@ function assembleOpticPlan(
 }
 
 // Applies root-level output transformations: groupBy, column renames (uri→id, dataType→type),
-// and distance column consolidation.
+// and optional orderBy.
 //
-// NOTE: groups processing is co-located here because both are root-only concerns today.
-// If recursive calls ever need to specify groups, groups processing would need to move
-// back into processCriteria (or a separate function) so it can execute independently of
-// the root-level column renames and distance consolidation.
-function finalizeRootPlan(plan, distanceCols, groups) {
+// Distance column support was removed as it was not based on finalized requirements.
+// To re-add: (1) track pj.extraCols from patternJoins into a distanceCols array during
+// assembleOpticPlan, (2) include each in groupBy aggregation via op.sample, and
+// (3) consolidate into a single 'distance' output column in the select (use op.fn.min
+// for multiple distance sources, filter with op.isDefined).
+function finalizeRootPlan(plan, groups, sortCols) {
   if (groups) {
-    const agg = distanceCols.length
-      ? [
-          ...groups.agg,
-          ...distanceCols.map((col) => op.sample(col, op.col(col))),
-        ]
-      : groups.agg;
-    plan = plan.groupBy(groups.by, agg);
+    plan = plan.groupBy(groups.by, groups.agg);
   }
 
-  const outputCols = [
-    op.as('id', op.col('uri')),
-    op.as('type', op.col('dataType')),
-  ];
+  if (sortCols.length > 0) {
+    plan = plan.orderBy(sortCols);
+  }
 
-  const distanceColCnt = distanceCols.length;
-  if (distanceColCnt > 0) {
-    plan = plan
-      .select([
-        ...outputCols,
-        op.as(
-          'distance',
-          distanceColCnt === 1
-            ? op.col(distanceCols[0])
-            : op.fn.min(distanceCols.map((col) => op.col(col))),
-        ),
-      ])
-      .where(op.isDefined(op.col('distance')));
-  } else if (groups) {
-    plan = plan.select(outputCols);
+  if (groups) {
+    plan = plan.select([
+      op.as('id', op.col('uri')),
+      op.as('type', op.col('dataType')),
+    ]);
   }
 
   return plan;

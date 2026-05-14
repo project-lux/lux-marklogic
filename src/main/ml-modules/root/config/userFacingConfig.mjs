@@ -549,6 +549,10 @@ const searchTermText = {
       helpText:
         'Search for Places that are categorized with the specified Concept or Type terms.',
     },
+    contains: {
+      label: 'contain',
+      helpText: 'Search for Places that contain the specified Places.',
+    },
     createdHere: {
       label: 'are the location of creation of',
       helpText: 'Search for Places where Works were Created.',

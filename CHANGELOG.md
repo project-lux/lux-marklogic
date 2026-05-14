@@ -2,7 +2,26 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v3.2.0 - Unreleased
+## v3.3.0 - 2026-05-11
+
+### Added
+- 'contains' search term for Places ([#530](https://github.com/project-lux/lux-marklogic/issues/530))
+
+- TDE to index `/vectors/main` ([#678](https://github.com/project-lux/lux-marklogic/issues/678)).
+
+### Changed
+- handle errors and status codes in securityLib's `handleRequest`, this gives us control over HTTP status codes and messages while still using the default error handler. ([#665](https://github.com/project-lux/lux-marklogic/issues/665))
+- Prevent multiple hops to the same scope in related lists ([#646](https://github.com/project-lux/lux-marklogic/issues/646))
+- Reduce maxLevel for relatedToEvent search terms to 1 ([#646](https://github.com/project-lux/lux-marklogic/issues/646), [#629](https://github.com/project-lux/lux-marklogic/issues/629))
+- Add missing related list labels ([#646](https://github.com/project-lux/lux-marklogic/issues/646), [#627](https://github.com/project-lux/lux-marklogic/issues/627), [#206](https://github.com/project-lux/lux-marklogic/issues/206))
+
+### Removed
+  
+### Fixed
+
+### Security
+
+## v3.2.0 - 2026-04-27
 
 ### Added
 
@@ -22,6 +41,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 - Removed the disableDeprecatedSSLProtocols and showDeprecatedSslProtocols Gradle build tasks as they only apply to MarkLogic 11 and earlier (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
 
 ### Fixed
+- Remove Disconnected Hosts While Deploying Databases ([#674](https://github.com/project-lux/lux-marklogic/issues/674))
 
 ### Security
 

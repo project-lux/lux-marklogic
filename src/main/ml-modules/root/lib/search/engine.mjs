@@ -967,7 +967,7 @@ export {
   // assembleOpticPlan,
   // buildConjunctionJoin,
   // createPlanAccumulator,
-  // finalizeRootPlan,
+  finalizeRootPlan,
   // mergeTermPlanContributions,
   performSearch,
   processCriteria,

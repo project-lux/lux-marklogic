@@ -254,8 +254,15 @@ function processCriteria({
 
   // Top-level: build two plans from the same accumulator.
   // constraintPlan: no sort — used by facets.
+  const constraintPlan = finalizeRootPlan(
+    assembleOpticPlan(acc, assemblyArgs),
+    groups,
+  );
+
   // plan: with sort lexicons and orderBy — used for search results.
-  const sortCols = [];
+  let searchPlan;
+  const sortAggregates = [];
+  const sortOrderBy = [];
   const sortLexicons = {};
   if (sortCriteria && sortCriteria.hasNonSemanticSortDescriptors()) {
     for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
@@ -263,27 +270,19 @@ function processCriteria({
       sortLexicons[sortColName] = cts.fieldReference(
         sortDescriptor.indexReference,
       );
-      sortCols.push(
+      sortAggregates.push(sortColName);
+      sortOrderBy.push(
         sortDescriptor.order === 'descending'
           ? op.desc(sortColName)
           : op.asc(sortColName),
       );
     }
-  }
-
-  const constraintPlan = finalizeRootPlan(
-    assembleOpticPlan(acc, assemblyArgs),
-    groups,
-    [],
-  );
-
-  let searchPlan;
-  if (sortCols.length > 0) {
     const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
     searchPlan = finalizeRootPlan(
       assembleOpticPlan(sortAcc, assemblyArgs),
       groups,
-      sortCols,
+      sortAggregates,
+      sortOrderBy,
     );
   } else if (sortCriteria && sortCriteria.hasSemanticSortOption()) {
     searchPlan = applySemanticSort(
@@ -942,13 +941,13 @@ function assembleOpticPlan(
 // assembleOpticPlan, (2) include each in groupBy aggregation via op.sample, and
 // (3) consolidate into a single 'distance' output column in the select (use op.fn.min
 // for multiple distance sources, filter with op.isDefined).
-function finalizeRootPlan(plan, groups, sortCols) {
+function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
   if (groups) {
-    plan = plan.groupBy(groups.by, groups.agg);
+    plan = plan.groupBy(groups.by, groups.agg.concat(sortAggregates));
   }
 
-  if (sortCols.length > 0) {
-    plan = plan.orderBy(sortCols);
+  if (sortOrderBy.length > 0) {
+    plan = plan.orderBy(sortOrderBy);
   }
 
   if (groups) {

@@ -54,6 +54,9 @@ const PATTERNS = {
   keyword: KeywordPattern,
 };
 
+// Grouping selection for semanticSort
+const oneSortValuePerResult = true;
+
 const PREFER_FRAG_JOINS = false;
 //#endregion
 
@@ -285,10 +288,11 @@ function processCriteria({
       sortOrderBy,
     );
   } else if (sortCriteria && sortCriteria.hasSemanticSortOption()) {
-    searchPlan = applySemanticSort(
-      constraintPlan,
-      sortCriteria.getSemanticSortOption(),
-    );
+    searchPlan = finalizeRootPlan(
+      applySemanticSort(
+        assembleOpticPlan(acc, assemblyArgs),
+        sortCriteria.getSemanticSortOption(),
+      ),null,[],[])
   } else {
     searchPlan = constraintPlan;
   }
@@ -332,19 +336,20 @@ function getValidatedSemanticFacetConfig(facetName) {
 }
 
 function applySemanticSort(searchPlan, sortCriteria) {
-  const oneSortValuePerResult = true;
   let ctsPlan = searchPlan;
   const indexReference = sortCriteria.indexReference;
   const predicate = sortCriteria.predicate;
+  xdmp.log('PREDICATE: ' + predicate);
   const order = sortCriteria.order;
-  const triplePlan = op.fromTriples(
-    op.pattern(
-      op.col('subjectIri'),
-      predicate,
-      op.col('objectIri'),
-      op.fragmentIdCol('fragmentId'),
-    ),
-  );
+  const triplePlan = 
+    op.fromTriples(
+      op.pattern(
+        op.col('subjectIri'),
+        predicate,
+        op.col('objectIri'),
+        op.fragmentIdCol('fragmentId'),
+      ),
+    );
   let semanticSortPlan = ctsPlan.joinInner(triplePlan);
   semanticSortPlan = semanticSortPlan.joinLeftOuter(
     op.fromLexicons({
@@ -353,18 +358,20 @@ function applySemanticSort(searchPlan, sortCriteria) {
     }),
     op.on('objectIri', 'fieldDocIri'),
   );
+  /*
   if (oneSortValuePerResult === true) {
     semanticSortPlan = semanticSortPlan
       .groupBy(
         ['objectIri'],
         [
-          order === 'ascending'
+          order  === 'ascending'
             ? op.min('sortByMe', op.col('sortByMe'))
             : op.max('sortByMe', op.col('sortByMe')),
         ],
       )
       .orderBy([op.as('sortByMe', op.col('sortByMe'))]);
   }
+*/
   return semanticSortPlan;
 }
 
@@ -951,10 +958,11 @@ function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
   }
 
   if (groups) {
-    plan = plan.select([
-      op.as('id', op.col('uri')),
-      op.as('type', op.col('dataType')),
-    ]);
+    plan = plan.select(
+      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
+        sortAggregates,
+      ),
+    );
   }
 
   return plan;

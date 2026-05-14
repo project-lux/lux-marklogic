@@ -1,6 +1,6 @@
 {
   "template": {
-    "context": "/",
+    "context": "/vectors",
     "collections": ["%%mlAppName%%"],
     "rows": [
       {
@@ -10,19 +10,19 @@
           {
             "name": "uri",
             "scalarType": "string",
-            "val": "json/id",
+            "val": "../json/id",
             "nullable": false
           },
           {
             "name": "dataType",
             "scalarType": "string",
-            "val": "json/type",
+            "val": "../json/type",
             "nullable": false
           },
           {
             "name": "main",
             "scalarType": "vector",
-            "val": "vec:vector(vectors/main)",
+            "val": "vec:vector(main)",
             "dimension": "768",
             "invalidValues": "reject",
             "nullable": false

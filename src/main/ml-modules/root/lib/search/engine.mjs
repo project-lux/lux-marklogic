@@ -285,6 +285,11 @@ function processCriteria({
       groups,
       sortCols,
     );
+  } else if (sortCriteria && sortCriteria.hasSemanticSortOption()) {
+    searchPlan = applySemanticSort(
+      constraintPlan,
+      sortCriteria.getSemanticSortOption(),
+    );
   } else {
     searchPlan = constraintPlan;
   }
@@ -325,6 +330,43 @@ function getValidatedSemanticFacetConfig(facetName) {
     sourceJoinColName,
     constraintJoinColName,
   };
+}
+
+function applySemanticSort(searchPlan, sortCriteria) {
+  const oneSortValuePerResult = true;
+  let ctsPlan = searchPlan;
+  const indexReference = sortCriteria.indexReference;
+  const predicate = sortCriteria.predicate;
+  const order = sortCriteria.order;
+  const triplePlan = op.fromTriples(
+    op.pattern(
+      op.col('subjectIri'),
+      predicate,
+      op.col('objectIri'),
+      op.fragmentIdCol('fragmentId'),
+    ),
+  );
+  let semanticSortPlan = ctsPlan.joinInner(triplePlan);
+  semanticSortPlan = semanticSortPlan.joinLeftOuter(
+    op.fromLexicons({
+      sortByMe: cts.fieldReference(indexReference),
+      fieldDocIri: cts.iriReference(),
+    }),
+    op.on('objectIri', 'fieldDocIri'),
+  );
+  if (oneSortValuePerResult === true) {
+    semanticSortPlan = semanticSortPlan
+      .groupBy(
+        ['objectIri'],
+        [
+          order === 'ascending'
+            ? op.min('sortByMe', op.col('sortByMe'))
+            : op.max('sortByMe', op.col('sortByMe')),
+        ],
+      )
+      .orderBy([op.as('sortByMe', op.col('sortByMe'))]);
+  }
+  return semanticSortPlan;
 }
 
 function buildEmptyFacetResponses(requests) {

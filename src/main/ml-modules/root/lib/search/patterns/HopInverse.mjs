@@ -9,7 +9,10 @@ import {
   CHILD_TYPE_TERM,
   SearchPatternBase,
 } from './SearchPatternBase.mjs';
-import { OPTION_NAME_RETURN_VALUES } from '../patterns.mjs';
+import {
+  OPTION_NAME_EXCLUDE_SELF_IRI,
+  OPTION_NAME_RETURN_VALUES,
+} from '../patterns.mjs';
 
 class HopInverse extends SearchPatternBase {
   apply(
@@ -113,13 +116,20 @@ class HopInverse extends SearchPatternBase {
     }
 
     const oCol = `${id}_o`;
+    const excludeSelfIri = patternOptions.get(
+      OPTION_NAME_EXCLUDE_SELF_IRI,
+      null,
+    );
+    const selfFilter = excludeSelfIri
+      ? `\n  FILTER(?${oCol} != <${excludeSelfIri}>)`
+      : '';
     const sparql = `
 ${getPrefixesForSPARQL()}
 select ?${oCol} where {
   VALUES ?${id}_s {
     ${innerResults.map((row) => `<${row[iriCol]}>`).join('\n    ')}
   }
-  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates(), false)} ?${oCol}
+  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates(), false)} ?${oCol}${selfFilter}
 }`;
 
     const sparqlResults = op

@@ -37,6 +37,7 @@ const PATTERN_NAME_RELATED_LIST = 'relatedList'; // for related list configs
 const PATTERN_NAME_KEYWORD = 'keyword';
 
 const OPTION_NAME_EAGER_EVALUATION = 'eagerEvaluation';
+const OPTION_NAME_EXCLUDE_SELF_IRI = 'excludeSelfIri';
 const OPTION_NAME_PREFER_FRAG_JOINS = 'preferFragJoins';
 const OPTION_NAME_MAXIMUM_VALUES = 'maximumValues';
 const OPTION_NAME_RETURN_VALUES = 'returnValues';
@@ -985,6 +986,7 @@ const PatternOptions = class {
 
 export {
   OPTION_NAME_EAGER_EVALUATION,
+  OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_MAXIMUM_VALUES,
   OPTION_NAME_PREFER_FRAG_JOINS,
   OPTION_NAME_RETURN_VALUES,

@@ -975,9 +975,6 @@ function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
     );
   }
 
-  // TODO: remove
-  console.log('Finalized Optic plan:', getPlanSource(plan));
-
   return plan;
 }
 //#endregion

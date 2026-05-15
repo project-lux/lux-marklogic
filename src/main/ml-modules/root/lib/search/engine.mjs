@@ -54,12 +54,9 @@ const PATTERNS = {
   keyword: KeywordPattern,
 };
 
-<<<<<<< HEAD
 // Grouping selection for semanticSort
 const oneSortValuePerResult = true;
 
-=======
->>>>>>> 5749e07aed4fe91af2c00069a91fab5f457a3458
 const PREFER_FRAG_JOINS = false;
 //#endregion
 
@@ -290,15 +287,16 @@ function processCriteria({
       sortAggregates,
       sortOrderBy,
     );
-<<<<<<< HEAD
   } else if (sortCriteria && sortCriteria.hasSemanticSortOption()) {
     searchPlan = finalizeRootPlan(
       applySemanticSort(
         assembleOpticPlan(acc, assemblyArgs),
         sortCriteria.getSemanticSortOption(),
-      ),null,[],[])
-=======
->>>>>>> 5749e07aed4fe91af2c00069a91fab5f457a3458
+      ),
+      null,
+      [],
+      [],
+    );
   } else {
     searchPlan = constraintPlan;
   }
@@ -341,22 +339,20 @@ function getValidatedSemanticFacetConfig(facetName) {
   };
 }
 
-<<<<<<< HEAD
 function applySemanticSort(searchPlan, sortCriteria) {
   let ctsPlan = searchPlan;
   const indexReference = sortCriteria.indexReference;
   const predicate = sortCriteria.predicate;
   xdmp.log('PREDICATE: ' + predicate);
   const order = sortCriteria.order;
-  const triplePlan = 
-    op.fromTriples(
-      op.pattern(
-        op.col('subjectIri'),
-        predicate,
-        op.col('objectIri'),
-        op.fragmentIdCol('fragmentId'),
-      ),
-    );
+  const triplePlan = op.fromTriples(
+    op.pattern(
+      op.col('subjectIri'),
+      predicate,
+      op.col('objectIri'),
+      op.fragmentIdCol('fragmentId'),
+    ),
+  );
   let semanticSortPlan = ctsPlan.joinInner(triplePlan);
   semanticSortPlan = semanticSortPlan.joinLeftOuter(
     op.fromLexicons({
@@ -382,8 +378,6 @@ function applySemanticSort(searchPlan, sortCriteria) {
   return semanticSortPlan;
 }
 
-=======
->>>>>>> 5749e07aed4fe91af2c00069a91fab5f457a3458
 function buildEmptyFacetResponses(requests) {
   const facets = {};
 
@@ -967,18 +961,11 @@ function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
   }
 
   if (groups) {
-<<<<<<< HEAD
     plan = plan.select(
       [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
         sortAggregates,
       ),
     );
-=======
-    plan = plan.select([
-      op.as('id', op.col('uri')),
-      op.as('type', op.col('dataType')),
-    ]);
->>>>>>> 5749e07aed4fe91af2c00069a91fab5f457a3458
   }
 
   return plan;
@@ -990,11 +977,7 @@ export {
   // assembleOpticPlan,
   // buildConjunctionJoin,
   // createPlanAccumulator,
-<<<<<<< HEAD
   finalizeRootPlan,
-=======
-  // finalizeRootPlan,
->>>>>>> 5749e07aed4fe91af2c00069a91fab5f457a3458
   // mergeTermPlanContributions,
   performSearch,
   processCriteria,

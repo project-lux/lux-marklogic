@@ -377,12 +377,9 @@ const SearchCriteriaProcessor = class {
     );
   }
 
-  static hasLiteralIriCriteria(termValue) {
-    const name =
-      SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue);
-    return (
-      (name === 'id' || name === 'iri') && typeof termValue[name] === 'string'
-    );
+  static getChildId(termValue) {
+    const value = termValue?.id ?? termValue?.iri ?? null;
+    return typeof value === 'string' ? value : null;
   }
 
   static requireSearchCriteriaObject(searchCriteria) {

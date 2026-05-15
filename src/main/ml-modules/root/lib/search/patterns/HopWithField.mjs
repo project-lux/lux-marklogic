@@ -109,17 +109,17 @@ select ?${id}_s ?${id}_o where {
     const hopFragCol = searchTerm.getParentFragmentColumn();
     const hopTripleFragCol = id + '_hopFrag';
 
-    // Literal IRI optimization: when criteria is { iri: value } or { id: value },
-    // use the IRI directly in the triple pattern instead of a full lexicon scan.
-    const criteria = searchTerm.getCriteria();
-    if (!termValue && SearchCriteriaProcessor.hasLiteralIriCriteria(criteria)) {
-      const iriKey =
-        SearchCriteriaProcessor.getFirstNonOptionPropertyName(criteria);
+    // When criteria is a direct IRI ({ iri: value } or { id: value }),
+    // use it in the triple pattern instead of a full lexicon scan.
+    const childId = SearchCriteriaProcessor.getChildId(
+      searchTerm.getCriteria(),
+    );
+    if (!termValue && childId) {
       const hopPlan = op.fromTriples([
         op.pattern(
           op.col(id + '_s'),
           expandPredicates(termConfig.getPredicates()),
-          sem.iri(criteria[iriKey]),
+          sem.iri(childId),
           op.fragmentIdCol(hopTripleFragCol),
         ),
       ]);

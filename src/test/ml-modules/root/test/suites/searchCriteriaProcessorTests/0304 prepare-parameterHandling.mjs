@@ -24,7 +24,6 @@ function createProcessInput(overrides = {}) {
     pageLength: 20,
     pageWith: null,
     sortCriteria: null,
-    valuesOnly: false,
     ...overrides,
   };
 }
@@ -41,7 +40,6 @@ const scenarios = [
       page: 1,
       pageLength: 20,
       pageWith: null,
-      valuesOnly: false,
     },
   },
   {
@@ -65,17 +63,6 @@ const scenarios = [
     expected: {
       error: false,
       pageWith: '/documents/agent/123.json',
-    },
-  },
-  {
-    name: 'valuesOnly flag is preserved when true',
-    input: {
-      searchCriteria: { _scope: 'agent', name: 'Pablo' },
-      ...createProcessInput({ valuesOnly: true }),
-    },
-    expected: {
-      error: false,
-      valuesOnly: true,
     },
   },
   {
@@ -160,7 +147,6 @@ for (const scenario of scenarios) {
       page: processor.getPage(),
       pageLength: processor.getPageLength(),
       pageWith: processor.getPageWith(),
-      valuesOnly: processor.isValuesOnly(),
       ctsQueryStr: processor.getQueryStr(),
     };
   };
@@ -196,16 +182,6 @@ for (const scenario of scenarios) {
           scenario.expected.pageWith,
           actual.pageWith,
           `Scenario '${scenario.name}' - pageWith should be ${scenario.expected.pageWith}`,
-        ),
-      );
-    }
-
-    if (scenario.expected.valuesOnly !== undefined) {
-      assertions.push(
-        testHelperProxy.assertEqual(
-          scenario.expected.valuesOnly,
-          actual.valuesOnly,
-          `Scenario '${scenario.name}' - valuesOnly should be ${scenario.expected.valuesOnly}`,
         ),
       );
     }

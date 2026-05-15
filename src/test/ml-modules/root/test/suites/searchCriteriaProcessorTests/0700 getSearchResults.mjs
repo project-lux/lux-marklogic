@@ -62,7 +62,6 @@ for (const scenario of scenarios) {
       pageLength: scenario.input.pageLength || 20,
       pageWith: scenario.input.pageWith || null,
       sortCriteria: null,
-      valuesOnly: false,
     });
 
     return processor.execute();

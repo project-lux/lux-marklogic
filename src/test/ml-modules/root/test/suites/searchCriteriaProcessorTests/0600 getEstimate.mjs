@@ -837,7 +837,6 @@ for (const scenario of scenarios) {
       pageLength: 20,
       pageWith: null,
       sortCriteria: null,
-      valuesOnly: false,
     });
 
     return processor.getEstimate();

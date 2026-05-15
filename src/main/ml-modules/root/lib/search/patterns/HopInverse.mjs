@@ -30,7 +30,7 @@ class HopInverse extends SearchPatternBase {
     const refFragCol = id + '_frag';
     const predicates = expandPredicates(termConfig.getPredicates());
 
-    // This is the "valuesOnly" implementation for related lists.
+    // This is the values-only implementation for related lists.
     const requestIsForValues = patternOptions.get(
       OPTION_NAME_RETURN_VALUES,
       false,
@@ -127,7 +127,6 @@ class HopInverse extends SearchPatternBase {
       .toArray();
 
     if (innerTriples.length === 0) {
-      searchCriteriaProcessor.appendValues([]);
       return null;
     }
 

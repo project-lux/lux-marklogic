@@ -154,7 +154,6 @@ function getRelatedList({
     // Old school loop to give this boomer confidence the order is honored.
     for (let i = 0; i < searchConfigs.length; i++) {
       const searchConfig = searchConfigs[i];
-      const valuesOnly = searchConfig.mode == 'values';
       const searchCriteriaProcessor = prepare({
         searchCriteria: utils.replaceMatchingPropertyValues(
           searchConfig.criteria,
@@ -165,24 +164,16 @@ function getRelatedList({
         allowMultiScope: false,
         patternOptions,
         includeTypeConstraint,
-        valuesOnly,
         page: 1,
         pageLength: relationshipsPerRelation, // Applies when not in values mode.
         filterResults,
       });
-      // In the Optic implementation, the valuesOnly optimization happens inside
+      // In the Optic implementation, the values-only optimization happens inside
       // HopInverse's pattern during executeForValues(). It runs processCriteria
       // (triggering the two-phase SPARQL approach) then returns the populated
       // values without building or executing the full Optic plan.
-      if (valuesOnly) {
-        urisByRelation[searchConfig.relationKey] =
-          searchCriteriaProcessor.executeForValues();
-      } else {
-        const results = searchCriteriaProcessor.execute().getSearchResults();
-        urisByRelation[searchConfig.relationKey] = results.map(
-          (result) => result.id,
-        );
-      }
+      urisByRelation[searchConfig.relationKey] =
+        searchCriteriaProcessor.executeForValues();
       // No need to log that we hit the max in the Search Will Match context; it sets this threshold very low.
       if (
         relationshipsPerRelation > 10 &&

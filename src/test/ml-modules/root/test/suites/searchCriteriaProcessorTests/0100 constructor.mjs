@@ -67,7 +67,6 @@ for (const scenario of scenarios) {
       criteriaCnt: processor.getCriteriaCount(),
       ignoredTerms: processor.getIgnoredTerms(),
       ctsQueryStr: processor.getQueryStr(),
-      valuesOnly: processor.isValuesOnly(),
       values: processor.getValues(),
     };
   };
@@ -129,13 +128,6 @@ for (const scenario of scenarios) {
       testHelperProxy.assertTrue(
         actual.ctsQueryStr != null,
         'getQueryStr() should return a value before process() is called',
-      ),
-    );
-    assertions.push(
-      testHelperProxy.assertEqual(
-        false,
-        actual.valuesOnly,
-        'isValuesOnly() should return false before process() is called',
       ),
     );
     assertions.push(

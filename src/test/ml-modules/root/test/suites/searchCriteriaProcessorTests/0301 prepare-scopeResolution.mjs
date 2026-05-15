@@ -23,7 +23,6 @@ function createProcessInput(overrides = {}) {
     pageLength: 20,
     pageWith: null,
     sortCriteria: null,
-    valuesOnly: false,
     ...overrides,
   };
 }

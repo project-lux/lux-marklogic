@@ -55,30 +55,6 @@ const scenarios = [
     },
   },
   {
-    name: 'getValues with valuesOnly false',
-    input: {
-      searchCriteria: { _scope: 'agent', name: 'Pablo' },
-      setupProcessor: true,
-      valuesOnly: false,
-    },
-    expected: {
-      error: false,
-      hasValues: false, // Should be empty array
-    },
-  },
-  {
-    name: 'getValues with valuesOnly true',
-    input: {
-      searchCriteria: { _scope: 'agent', name: 'Pablo' },
-      setupProcessor: true,
-      valuesOnly: true,
-    },
-    expected: {
-      error: false,
-      hasValues: false, // Still empty for this scenario
-    },
-  },
-  {
     name: 'Methods before process is called',
     input: {
       searchCriteria: null,
@@ -106,7 +82,6 @@ for (const scenario of scenarios) {
         pageLength: 20,
         pageWith: null,
         sortCriteria: null,
-        valuesOnly: scenario.input.valuesOnly || false,
       });
     }
 

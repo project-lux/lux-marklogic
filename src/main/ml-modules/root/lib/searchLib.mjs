@@ -36,7 +36,6 @@ const DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH = false;
 const DEFAULT_FILTER_RESULTS_NO_CONTEXT = true;
 const DEFAULT_FACETS_SOON = false;
 const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
-const DEFAULT_VALUES_ONLY = false;
 
 const SCOPE_LABELS = {
   item: 'Objects',
@@ -70,7 +69,6 @@ function search({
   mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
   sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
-  valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
   return _search(
     {
@@ -83,7 +81,6 @@ function search({
       mayExceedMaximumPageLength,
       sortDelimitedStr,
       filterResults,
-      valuesOnly,
     },
     false,
   );
@@ -101,7 +98,6 @@ function _search(
     mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
     sortDelimitedStr = EMPTY_STRING,
     filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
-    valuesOnly = DEFAULT_VALUES_ONLY,
   },
   changedScope = false,
 ) {
@@ -151,7 +147,6 @@ function _search(
       sortDelimitedStr,
       filterResults,
       stopWatch,
-      valuesOnly,
     });
     resolvedSearchScope = searchCriteriaProcessor.getSearchScope();
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
@@ -302,7 +297,6 @@ function prepare({
   sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
   stopWatch = new StopWatch(true),
-  valuesOnly = DEFAULT_VALUES_ONLY,
 }) {
   const searchCriteriaProcessor = new SearchCriteriaProcessor(filterResults);
   searchCriteriaProcessor.prepare({
@@ -315,7 +309,6 @@ function prepare({
     pageLength,
     pageWith,
     sortDelimitedStr,
-    valuesOnly,
   });
   stopWatch.lap('process');
   return searchCriteriaProcessor;

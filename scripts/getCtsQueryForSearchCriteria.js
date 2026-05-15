@@ -52,7 +52,6 @@ const searchScope = null;
   synonymsEnabled = DEFAULT_SYNONYMS_ENABLED (false),
   facetsAreLikely = DEFAULT_FACETS_ARE_LIKELY (false),
   stopWatch = new StopWatch(true),
-  valuesOnly = DEFAULT_VALUES_ONLY (false),
  */
 const searchCriteriaProcessor = prepare({
   searchCriteria,

@@ -159,17 +159,11 @@ function _convertToRuntimeFormat(
   let currentSpot = criteria;
   let relationKey = '';
   let relationScope = searchConfigEntry.targetScope;
-  let mode = null;
 
   let isLast = searchConfigEntry == null;
   while (!isLast) {
     const scopeName = searchConfigEntry.scopeName;
     const termName = searchConfigEntry.termName;
-
-    // First term dictates whether the runtime should perform a search or request values.
-    if (mode === null) {
-      mode = _isHopWithField(scopeName, termName) ? 'search' : 'values';
-    }
 
     isLast = searchConfigEntry.subEntry == null;
     if (isLast) {
@@ -203,7 +197,6 @@ function _convertToRuntimeFormat(
     return {
       relationKey,
       relationScope,
-      mode,
       criteria,
     };
   }

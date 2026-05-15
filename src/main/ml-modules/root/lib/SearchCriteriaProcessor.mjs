@@ -65,7 +65,6 @@ const SearchCriteriaProcessor = class {
   #resolvedSearchCriteria = null;
   #sortDelimitedStr;
   #sortCriteria;
-  #valuesOnly = false;
 
   // Set during search and thus should be reset ahead of running execute() from
   // within #prepareForExecution().
@@ -101,7 +100,6 @@ const SearchCriteriaProcessor = class {
    * @param {number} pageLength - Number of results per page
    * @param {string|null} pageWith - Optional document ID to find page containing this document
    * @param {string} sortDelimitedStr - Parseable sort string; input to construct instance of SortCriteria
-   * @param {boolean} valuesOnly - Whether patterns should return values instead of queries
    * @throws {InvalidSearchRequestError} When criteria invalid, scope invalid, or insufficient criteria
    * @throws {InternalServerError} When configuration issues detected
    */
@@ -115,7 +113,6 @@ const SearchCriteriaProcessor = class {
     pageLength,
     pageWith,
     sortDelimitedStr,
-    valuesOnly,
   }) {
     this.#initProcessState({
       scopeName,
@@ -126,7 +123,6 @@ const SearchCriteriaProcessor = class {
       pageLength,
       pageWith,
       sortDelimitedStr,
-      valuesOnly,
     });
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
@@ -239,7 +235,7 @@ const SearchCriteriaProcessor = class {
   // appendValues) without executing the expensive Optic plan. Used by related
   // list values-only searches where HopInverse populates values directly.
   executeForValues() {
-    this.#prepareForExecution();
+    this.#prepareForExecution(); // does not accummulate values across multiple calls
 
     engine.processCriteria({
       searchCriteriaProcessor: this,
@@ -274,12 +270,6 @@ const SearchCriteriaProcessor = class {
       allowMultiScope,
       requestOptions,
     });
-  }
-
-  // Certain search patterns implement an option compelling them to return values versus a CTS query.
-  // This was introduced in support of related lists.
-  isValuesOnly() {
-    return this.#valuesOnly;
   }
 
   appendValues(arr) {
@@ -437,7 +427,6 @@ const SearchCriteriaProcessor = class {
     pageLength,
     pageWith,
     sortDelimitedStr,
-    valuesOnly,
   }) {
     this.#scopeName = scopeName;
     this.#allowMultiScope = allowMultiScope;
@@ -445,7 +434,6 @@ const SearchCriteriaProcessor = class {
     this.#pageLength = pageLength;
     this.#pageWith = pageWith;
     this.#sortDelimitedStr = sortDelimitedStr;
-    this.#valuesOnly = valuesOnly;
 
     this.#patternOptions = patternOptions
       ? patternOptions

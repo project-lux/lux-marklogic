@@ -1,10 +1,15 @@
 import op from '/MarkLogic/optic.mjs';
-import { expandPredicates } from '../prefixUtils.mjs';
+import {
+  expandPredicates,
+  formatPredicatesForSPARQL,
+  getPrefixesForSPARQL,
+} from '../prefixUtils.mjs';
 import {
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
   SearchPatternBase,
 } from './SearchPatternBase.mjs';
+import { OPTION_NAME_RETURN_VALUES } from '../patterns.mjs';
 
 class HopInverse extends SearchPatternBase {
   apply(
@@ -20,6 +25,20 @@ class HopInverse extends SearchPatternBase {
     const triFragCol = id + '_triFrag';
     const refFragCol = id + '_frag';
     const predicates = expandPredicates(termConfig.getPredicates());
+
+    // This is the "valuesOnly" implementation for related lists.
+    const requestIsForValues = patternOptions.get(
+      OPTION_NAME_RETURN_VALUES,
+      false,
+    );
+    if (requestIsForValues && searchTerm.isTopLevel()) {
+      return this.#processValuesOnly(
+        searchCriteriaProcessor,
+        searchTerm,
+        patternOptions,
+        requestOptions,
+      );
+    }
 
     const tri = op.fromTriples([
       op.pattern(
@@ -57,6 +76,58 @@ class HopInverse extends SearchPatternBase {
         },
       ],
     };
+  }
+
+  // Two-phase valuesOnly implementation: executes inner plan to get intermediate
+  // IRIs, then uses SPARQL VALUES to navigate the outer hop. Modeled after
+  // HopWithField's #processTransitiveHopWithFieldTerm.
+  #processValuesOnly(
+    searchCriteriaProcessor,
+    searchTerm,
+    patternOptions,
+    requestOptions,
+  ) {
+    const id = searchTerm.getId();
+    const termConfig = searchTerm.getSearchTermConfig();
+    const parentIriCol = searchTerm.getParentIriColumn();
+    const iriCol = id + '_iri';
+
+    const innerPlan = searchCriteriaProcessor.processCriteria({
+      planCriteria: searchTerm.getChildCriteria(),
+      planScope: termConfig.getTargetScopeName(),
+      patternOptions,
+      groups: null,
+      parentId: id,
+      requestOptions,
+    });
+
+    const innerResults = innerPlan
+      .select([iriCol])
+      .groupBy([iriCol], [])
+      .result()
+      .toArray();
+
+    if (innerResults.length === 0) {
+      searchCriteriaProcessor.appendValues([]);
+      return null;
+    }
+
+    const oCol = `${id}_o`;
+    const sparql = `
+${getPrefixesForSPARQL()}
+select ?${oCol} where {
+  VALUES ?${id}_s {
+    ${innerResults.map((row) => `<${row[iriCol]}>`).join('\n    ')}
+  }
+  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates(), false)} ?${oCol}
+}`;
+
+    const sparqlResults = op
+      .fromSPARQL(sparql, null, { dedup: 'on' })
+      .result()
+      .toArray();
+    searchCriteriaProcessor.appendValues(sparqlResults.map((row) => row[oCol]));
+    return null;
   }
 
   getRequiredRuntimeSearchTermProperties() {

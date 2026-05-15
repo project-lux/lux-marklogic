@@ -18,12 +18,12 @@ const SearchTerm = class {
     this.searchTermConfig = null;
     this.value = null;
     this.props = {};
-    this.mustReturnCtsQuery = false;
     this.childInfo = {};
     this.modifiedCriteria = null;
     this.childCriteria = null;
     this.columns = {};
     this.parentColumns = {};
+    this.topLevel = true;
   }
 
   addId(id) {
@@ -72,17 +72,6 @@ const SearchTerm = class {
   }
   getTimespanMode() {
     return this.props.timespanMode;
-  }
-
-  addMustReturnCtsQuery(mustReturnCtsQuery) {
-    this.setMustReturnCtsQuery(mustReturnCtsQuery);
-    return this;
-  }
-  setMustReturnCtsQuery(mustReturnCtsQuery) {
-    this.mustReturnCtsQuery = mustReturnCtsQuery;
-  }
-  getMustReturnCtsQuery() {
-    return this.mustReturnCtsQuery;
   }
 
   addChildInfo(childInfo) {
@@ -156,23 +145,6 @@ const SearchTerm = class {
   }
 
   //#region Current search term's Optic columns.
-  addColumn(name, value) {
-    this.setColumn(name, value);
-    return this;
-  }
-  setColumn(name, value) {
-    this.columns[name] = value;
-  }
-  getColumn(name) {
-    return this.columns[name];
-  }
-  getColumns() {
-    return this.columns;
-  }
-  getColumnNames() {
-    return Object.keys(this.getColumns());
-  }
-
   getIriColumn() {
     return this.id + '_iri';
   }
@@ -410,6 +382,17 @@ const SearchTerm = class {
   }
   hasChildCriteria() {
     return this.childCriteria != null;
+  }
+
+  addTopLevel(topLevel) {
+    this.setTopLevel(topLevel);
+    return this;
+  }
+  setTopLevel(topLevel) {
+    this.topLevel = topLevel;
+  }
+  isTopLevel() {
+    return this.topLevel === true;
   }
 };
 

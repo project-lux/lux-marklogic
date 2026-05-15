@@ -107,6 +107,38 @@ select ?${id}_s ?${id}_o where {
     const fieldIriCol = searchTerm.getIriColumn();
     const hopFragCol = searchTerm.getParentFragmentColumn();
     const hopTripleFragCol = id + '_hopFrag';
+
+    // Literal IRI optimization: when child criteria is { iri: value } or { id: value },
+    // use the IRI directly in the triple pattern instead of a full lexicon scan.
+    if (!termValue) {
+      const literalIri = this.#extractLiteralIri(searchTerm.getChildCriteria());
+      if (literalIri) {
+        const hopPlan = op.fromTriples([
+          op.pattern(
+            op.col(id + '_s'),
+            expandPredicates(termConfig.getPredicates()),
+            sem.iri(literalIri),
+            op.fragmentIdCol(hopTripleFragCol),
+          ),
+        ]);
+        return {
+          patternJoins: [
+            {
+              right: hopPlan,
+              on: [
+                op.on(op.col(hopIriCol), op.col(id + '_s')),
+                op.on(
+                  op.fragmentIdCol(hopFragCol),
+                  op.fragmentIdCol(hopTripleFragCol),
+                ),
+              ],
+              extraCols: [],
+            },
+          ],
+        };
+      }
+    }
+
     const hopPlan = op.fromTriples([
       op.pattern(
         op.col(id + '_s'),
@@ -198,6 +230,17 @@ select ?${id}_s ?${id}_o where {
               termSearchOptions,
             ),
           );
+  }
+  // Check if child criteria is a simple { iri: value } or { id: value } that
+  // resolves to a single known IRI. Returns the IRI string or null.
+  #extractLiteralIri(childCriteria) {
+    if (!childCriteria || typeof childCriteria !== 'object') return null;
+    const keys = Object.keys(childCriteria).filter((k) => k[0] !== '_');
+    if (keys.length !== 1) return null;
+    const key = keys[0];
+    if (key !== 'iri' && key !== 'id') return null;
+    const value = childCriteria[key];
+    return typeof value === 'string' ? value : null;
   }
   //#endregion
 

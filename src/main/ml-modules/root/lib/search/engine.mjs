@@ -25,7 +25,7 @@ import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
-import { PatternOptions } from './patterns.mjs';
+import { OPTION_NAME_PREFER_FRAG_JOINS, PatternOptions } from './patterns.mjs';
 import { AnnTopKPattern } from './patterns/AnnTopK.mjs';
 import { DateRangePattern } from './patterns/DateRange.mjs';
 import { DocumentIdOrIriPattern } from './patterns/DocumentIdOrIri.mjs';
@@ -74,6 +74,7 @@ function performSearch({
   pageLength = 20,
   pageWith = null,
   sortCriteria = null,
+  patternOptions = null,
   requestOptions = null,
   facetRequests = null,
 }) {
@@ -84,6 +85,11 @@ function performSearch({
       agg: [op.sample('dataType', op.col('dataType'))],
     };
 
+    if (!utils.isDefined(patternOptions)) {
+      patternOptions = new PatternOptions();
+    }
+    patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
+
     const { searchPlan, constraintPlan } = processCriteria({
       searchCriteriaProcessor,
       planCriteria: searchCriteria,
@@ -91,6 +97,7 @@ function performSearch({
       allowMultiScope,
       groups: finalGroups,
       sortCriteria,
+      patternOptions,
       requestOptions,
     });
 
@@ -147,25 +154,21 @@ function processCriteria({
   sortCriteria = null,
   requestOptions = null,
 }) {
-  if (!utils.isDefined(patternOptions)) {
-    patternOptions = new PatternOptions(PREFER_FRAG_JOINS);
-  }
-
-  const topLevel = !parentId;
-  const uriCol = topLevel ? 'uri' : parentId + '_uri';
-  const fragCol = topLevel ? 'frag' : parentId + '_frag';
-  const iriCol = topLevel ? 'iri' : parentId + '_iri';
-  const dataTypeCol = topLevel ? 'dataType' : parentId + '_dataType';
+  const isTopLevel = !parentId;
+  const uriCol = isTopLevel ? 'uri' : parentId + '_uri';
+  const fragCol = isTopLevel ? 'frag' : parentId + '_frag';
+  const iriCol = isTopLevel ? 'iri' : parentId + '_iri';
+  const dataTypeCol = isTopLevel ? 'dataType' : parentId + '_dataType';
 
   if (!utils.isDefined(planCriteria)) {
     throw new InvalidSearchRequestError('search criteria must be defined.');
   }
 
-  let scope = topLevel ? (planCriteria._scope ?? planScope) : planScope;
+  let scope = isTopLevel ? (planCriteria._scope ?? planScope) : planScope;
 
   const isMultiScope = scope === 'multi';
   if (isMultiScope) {
-    validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope);
+    validateMultiScopeCriteria(planCriteria, isTopLevel, allowMultiScope);
   }
 
   let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
@@ -229,6 +232,7 @@ function processCriteria({
       id,
       name,
       scope,
+      isTopLevel,
       iriCol,
       uriCol,
       fragCol,
@@ -251,7 +255,7 @@ function processCriteria({
   const assemblyArgs = { fragCol, uriCol, dataTypeCol, scope, logicType };
 
   // Recursive calls return a raw (unfinalized) plan.
-  if (!topLevel) {
+  if (!isTopLevel) {
     return assembleOpticPlan(acc, assemblyArgs);
   }
 
@@ -422,6 +426,7 @@ function calculateFacets(allRows, facetRequests) {
     }
   });
 
+  // Optimization idea: try [plan].facetBy, which is a convenience wrapper for groupToArrays.
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
@@ -598,6 +603,7 @@ function buildLeafTermContext({
   id,
   name,
   scope,
+  isTopLevel,
   iriCol,
   uriCol,
   fragCol,
@@ -610,6 +616,7 @@ function buildLeafTermContext({
     .addName(name)
     .addScopeName(scope)
     .addSearchTermConfig(termConfig)
+    .addTopLevel(isTopLevel)
     .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
     .addChildCriteria(criterion[name]);
 
@@ -967,6 +974,9 @@ function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
       ),
     );
   }
+
+  // TODO: remove
+  console.log('Finalized Optic plan:', getPlanSource(plan));
 
   return plan;
 }

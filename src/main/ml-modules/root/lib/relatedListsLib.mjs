@@ -168,9 +168,13 @@ function getRelatedList({
         pageLength: relationshipsPerRelation, // Applies when not in values mode.
         filterResults,
       });
+      // In the Optic implementation, the valuesOnly optimization happens inside
+      // HopInverse's pattern during executeForValues(). It runs processCriteria
+      // (triggering the two-phase SPARQL approach) then returns the populated
+      // values without building or executing the full Optic plan.
       if (valuesOnly) {
         urisByRelation[searchConfig.relationKey] =
-          searchCriteriaProcessor.getValues();
+          searchCriteriaProcessor.executeForValues();
       } else {
         const results = searchCriteriaProcessor.execute().getSearchResults();
         urisByRelation[searchConfig.relationKey] = results.map(

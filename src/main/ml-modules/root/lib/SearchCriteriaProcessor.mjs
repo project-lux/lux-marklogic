@@ -219,12 +219,32 @@ const SearchCriteriaProcessor = class {
       pageLength: this.#pageLength,
       pageWith: this.#pageWith,
       sortCriteria: this.#sortCriteria,
+      patternOptions: this.#patternOptions,
       requestOptions: this.#requestOptions,
       facetRequests,
     });
 
     this.#searchState = SEARCH_STATE_COMPLETED;
     return this.#searchExecutionResult;
+  }
+
+  // Runs criteria processing to trigger pattern-level value population (via
+  // appendValues) without executing the expensive Optic plan. Used by related
+  // list values-only searches where HopInverse populates values directly.
+  executeForValues() {
+    this.#prepareForExecution();
+
+    engine.processCriteria({
+      searchCriteriaProcessor: this,
+      planCriteria: this.#resolvedSearchCriteria,
+      planScope: this.#scopeName,
+      allowMultiScope: this.#allowMultiScope,
+      patternOptions: this.#patternOptions,
+      requestOptions: this.#requestOptions,
+    });
+
+    this.#searchState = SEARCH_STATE_COMPLETED;
+    return this.#values;
   }
 
   // Wrapper function enabling search patterns to process nested criteria.

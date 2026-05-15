@@ -14,7 +14,6 @@ const scenarios = [
       scopeName: 'agent',
       searchCriteria: { text: 'Pablo Picasso' },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -28,7 +27,6 @@ const scenarios = [
       scopeName: 'work',
       searchCriteria: { text: 'Mona Lisa' },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -44,7 +42,6 @@ const scenarios = [
         AND: [{ text: 'Pablo' }, { text: 'Picasso' }],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -60,7 +57,6 @@ const scenarios = [
         OR: [{ text: 'Pablo' }, { text: 'Vincent' }],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -76,7 +72,6 @@ const scenarios = [
         NOT: { name: 'Unknown' },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -92,7 +87,6 @@ const scenarios = [
         NOT: [{ name: 'Unknown' }, { name: 'Anonymous' }],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -114,7 +108,6 @@ const scenarios = [
         BOOST: [{ text: 'Mona Lisa' }, { text: 'painting' }],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -141,7 +134,6 @@ const scenarios = [
         ],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -164,7 +156,6 @@ const scenarios = [
         AND: [],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -180,7 +171,6 @@ const scenarios = [
         OR: [],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -196,7 +186,6 @@ const scenarios = [
         OR: [{ name: 'Pablo' }],
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -215,7 +204,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -233,7 +221,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -242,26 +229,11 @@ const scenarios = [
     },
   },
   {
-    name: 'mustReturnCtsQuery false',
-    input: {
-      scopeName: 'agent',
-      searchCriteria: { name: 'Pablo' },
-      parentSearchTerm: null,
-      mustReturnCtsQuery: false,
-      returnTrueForUnusableTerms: true,
-    },
-    expected: {
-      error: false,
-      ctsQueryContains: ['agentName', 'Pablo'],
-    },
-  },
-  {
     name: 'returnTrueForUnusableTerms false with stop word',
     input: {
       scopeName: 'agent',
       searchCriteria: { name: 'a' }, // stop word
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: false,
     },
     expected: {
@@ -275,7 +247,6 @@ const scenarios = [
       scopeName: 'agent',
       searchCriteria: { invalidTermName: 'test' },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -289,7 +260,6 @@ const scenarios = [
       scopeName: 'agent',
       searchCriteria: { _weight: 1.5, _valueType: 'string' }, // only options, no term name
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -308,7 +278,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -326,7 +295,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -344,7 +312,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -362,7 +329,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -380,7 +346,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -398,7 +363,6 @@ const scenarios = [
         },
       },
       parentSearchTerm: null,
-      mustReturnCtsQuery: true,
       returnTrueForUnusableTerms: true,
     },
     expected: {
@@ -416,7 +380,6 @@ for (const scenario of scenarios) {
       scenario.input.scopeName,
       scenario.input.searchCriteria,
       scenario.input.parentSearchTerm,
-      scenario.input.mustReturnCtsQuery,
       scenario.input.returnTrueForUnusableTerms,
     );
   };

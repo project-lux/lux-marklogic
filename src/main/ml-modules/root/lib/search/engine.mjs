@@ -291,17 +291,20 @@ function processCriteria({
     );
   } else if (sortCriteria?.hasSemanticSortOption()) {
     const semanticSortOption = sortCriteria.getSemanticSortOption();
+    const sortByColName = 'sortByMe';
+    const sortByCol = op.col(sortByColName);
     searchPlan = finalizeRootPlan(
       applySemanticSort(
         assembleOpticPlan(acc, assemblyArgs),
         semanticSortOption,
+        sortByColName,
       ),
       groups,
-      ['sortByMe'],
+      [sortByCol],
       [
         semanticSortOption.order === 'descending'
-          ? op.desc('sortByMe')
-          : op.asc('sortByMe'),
+          ? op.desc(sortByCol)
+          : op.asc(sortByCol),
       ],
     );
   } else {
@@ -344,6 +347,59 @@ function getValidatedSemanticFacetConfig(facetName) {
     sourceJoinColName,
     constraintJoinColName,
   };
+}
+
+// Applies a semantic sort to the raw assembled plan. Takes one hop from each search result
+// document via the sort binding's predicate to a related document and retrieves the related
+// document's field value for sorting. Collapses to one sort value per search result (min for
+// ascending, max for descending) so that finalizeRootPlan receives one row per uri.
+function applySemanticSort(plan, sortOption, sortByColName) {
+  const { predicate, indexReference, order } = sortOption;
+  const expandedPredicate = expandPredicate(predicate);
+
+  // Projection barrier: narrow to columns needed for the semantic join.
+  // Prevents the Optic optimizer from collapsing the semantic join to zero rows
+  // (same technique used by semantic facets).
+  plan = plan.select(['uri', 'iri', 'dataType']);
+
+  // Triple plan: source document's IRI --(predicate)--> related document's IRI.
+  const triplePlan = op.fromTriples([
+    op.pattern(op.col('sourceIri'), expandedPredicate, op.col('relatedIri')),
+  ]);
+
+  // Join triples to search results. Left outer preserves results with no matching
+  // triple (they sort last with null sort values).
+  plan = plan.joinLeftOuter(triplePlan, op.on('iri', 'sourceIri'));
+
+  // Get the sort field value from the related document via its IRI.
+  const relatedFieldPlan = op.fromLexicons(
+    {
+      relatedDocIri: cts.iriReference(),
+      [sortByColName]: cts.fieldReference(indexReference),
+    },
+    null,
+    op.fragmentIdCol('relatedFragId'),
+  );
+
+  plan = plan.joinLeftOuter(
+    relatedFieldPlan,
+    op.on('relatedIri', 'relatedDocIri'),
+  );
+
+  // Collapse to one row per search result, picking the best sort value.
+  // A search result with multiple triples (e.g., co-produced items) gets
+  // the max (descending) or min (ascending) sort value.
+  plan = plan.groupBy(
+    ['uri'],
+    [
+      op.sample('dataType', op.col('dataType')),
+      order === 'descending'
+        ? op.max(sortByColName, op.col(sortByColName))
+        : op.min(sortByColName, op.col(sortByColName)),
+    ],
+  );
+
+  return plan;
 }
 
 function buildEmptyFacetResponses(requests) {
@@ -910,59 +966,6 @@ function assembleOpticPlan(
       }
     }
   }
-
-  return plan;
-}
-
-// Applies a semantic sort to the raw assembled plan. Takes one hop from each search result
-// document via the sort binding's predicate to a related document and retrieves the related
-// document's field value for sorting. Collapses to one sort value per search result (min for
-// ascending, max for descending) so that finalizeRootPlan receives one row per uri.
-function applySemanticSort(plan, sortOption) {
-  const { predicate, indexReference, order } = sortOption;
-  const expandedPredicate = expandPredicate(predicate);
-
-  // Projection barrier: narrow to columns needed for the semantic join.
-  // Prevents the Optic optimizer from collapsing the semantic join to zero rows
-  // (same technique used by semantic facets).
-  plan = plan.select(['uri', 'iri', 'dataType']);
-
-  // Triple plan: source document's IRI --(predicate)--> related document's IRI.
-  const triplePlan = op.fromTriples([
-    op.pattern(op.col('sourceIri'), expandedPredicate, op.col('relatedIri')),
-  ]);
-
-  // Join triples to search results. Left outer preserves results with no matching
-  // triple (they sort last with null sortByMe values).
-  plan = plan.joinLeftOuter(triplePlan, op.on('iri', 'sourceIri'));
-
-  // Get the sort field value from the related document via its IRI.
-  const relatedFieldPlan = op.fromLexicons(
-    {
-      relatedDocIri: cts.iriReference(),
-      sortByMe: cts.fieldReference(indexReference),
-    },
-    null,
-    op.fragmentIdCol('relatedFragId'),
-  );
-
-  plan = plan.joinLeftOuter(
-    relatedFieldPlan,
-    op.on('relatedIri', 'relatedDocIri'),
-  );
-
-  // Collapse to one row per search result, picking the best sort value.
-  // A search result with multiple triples (e.g., co-produced items) gets
-  // the min (ascending) or max (descending) sort value.
-  plan = plan.groupBy(
-    ['uri'],
-    [
-      op.sample('dataType', op.col('dataType')),
-      order === 'ascending'
-        ? op.min('sortByMe', op.col('sortByMe'))
-        : op.max('sortByMe', op.col('sortByMe')),
-    ],
-  );
 
   return plan;
 }

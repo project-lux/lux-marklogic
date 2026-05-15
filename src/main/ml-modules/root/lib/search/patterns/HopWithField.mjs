@@ -1,5 +1,6 @@
 import op from '/MarkLogic/optic.mjs';
 import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
+import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
 import {
   expandPredicates,
   formatPredicatesForSPARQL,
@@ -108,35 +109,35 @@ select ?${id}_s ?${id}_o where {
     const hopFragCol = searchTerm.getParentFragmentColumn();
     const hopTripleFragCol = id + '_hopFrag';
 
-    // Literal IRI optimization: when child criteria is { iri: value } or { id: value },
+    // Literal IRI optimization: when criteria is { iri: value } or { id: value },
     // use the IRI directly in the triple pattern instead of a full lexicon scan.
-    if (!termValue) {
-      const literalIri = this.#extractLiteralIri(searchTerm.getCriteria());
-      if (literalIri) {
-        const hopPlan = op.fromTriples([
-          op.pattern(
-            op.col(id + '_s'),
-            expandPredicates(termConfig.getPredicates()),
-            sem.iri(literalIri),
-            op.fragmentIdCol(hopTripleFragCol),
-          ),
-        ]);
-        return {
-          patternJoins: [
-            {
-              right: hopPlan,
-              on: [
-                op.on(op.col(hopIriCol), op.col(id + '_s')),
-                op.on(
-                  op.fragmentIdCol(hopFragCol),
-                  op.fragmentIdCol(hopTripleFragCol),
-                ),
-              ],
-              extraCols: [],
-            },
-          ],
-        };
-      }
+    const criteria = searchTerm.getCriteria();
+    if (!termValue && SearchCriteriaProcessor.hasLiteralIriCriteria(criteria)) {
+      const iriKey =
+        SearchCriteriaProcessor.getFirstNonOptionPropertyName(criteria);
+      const hopPlan = op.fromTriples([
+        op.pattern(
+          op.col(id + '_s'),
+          expandPredicates(termConfig.getPredicates()),
+          sem.iri(criteria[iriKey]),
+          op.fragmentIdCol(hopTripleFragCol),
+        ),
+      ]);
+      return {
+        patternJoins: [
+          {
+            right: hopPlan,
+            on: [
+              op.on(op.col(hopIriCol), op.col(id + '_s')),
+              op.on(
+                op.fragmentIdCol(hopFragCol),
+                op.fragmentIdCol(hopTripleFragCol),
+              ),
+            ],
+            extraCols: [],
+          },
+        ],
+      };
     }
 
     const hopPlan = op.fromTriples([
@@ -231,17 +232,7 @@ select ?${id}_s ?${id}_o where {
             ),
           );
   }
-  // Check if child criteria is a simple { iri: value } or { id: value } that
-  // resolves to a single known IRI. Returns the IRI string or null.
-  #extractLiteralIri(criteria) {
-    if (!criteria || typeof criteria !== 'object') return null;
-    const keys = Object.keys(criteria).filter((k) => k[0] !== '_');
-    if (keys.length !== 1) return null;
-    const key = keys[0];
-    if (key !== 'iri' && key !== 'id') return null;
-    const value = criteria[key];
-    return typeof value === 'string' ? value : null;
-  }
+
   //#endregion
 
   // Runtime property names expected on SearchTerm props (without leading underscore).

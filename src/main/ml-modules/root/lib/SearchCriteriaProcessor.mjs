@@ -377,6 +377,14 @@ const SearchCriteriaProcessor = class {
     );
   }
 
+  static hasLiteralIriCriteria(termValue) {
+    const name =
+      SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue);
+    return (
+      (name === 'id' || name === 'iri') && typeof termValue[name] === 'string'
+    );
+  }
+
   static requireSearchCriteriaObject(searchCriteria) {
     if (utils.isObject(searchCriteria)) return true;
     throw new InvalidSearchRequestError(

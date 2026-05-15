@@ -20,7 +20,7 @@ const SearchTerm = class {
     this.props = {};
     this.childInfo = {};
     this.modifiedCriteria = null;
-    this.childCriteria = null;
+    this.criteria = null;
     this.columns = {};
     this.parentColumns = {};
     this.topLevel = true;
@@ -370,18 +370,18 @@ const SearchTerm = class {
     return this.getModifiedCriteria() != null;
   }
 
-  addChildCriteria(criteria) {
-    this.setChildCriteria(criteria);
+  addCriteria(criteria) {
+    this.setCriteria(criteria);
     return this;
   }
-  setChildCriteria(criteria) {
-    this.childCriteria = criteria;
+  setCriteria(criteria) {
+    this.criteria = criteria;
   }
-  getChildCriteria() {
-    return this.childCriteria;
+  getCriteria() {
+    return this.criteria;
   }
-  hasChildCriteria() {
-    return this.childCriteria != null;
+  hasCriteria() {
+    return this.criteria != null;
   }
 
   addTopLevel(topLevel) {

@@ -618,7 +618,7 @@ function buildLeafTermContext({
     .addSearchTermConfig(termConfig)
     .addTopLevel(isTopLevel)
     .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
-    .addChildCriteria(criterion[name]);
+    .addCriteria(criterion[name]);
 
   // Runtime search term properties are represented with leading underscores on criteria.
   Object.keys(criterion)
@@ -633,7 +633,7 @@ function buildLeafTermContext({
   const scalarType = termConfig.getScalarType();
   const caster =
     scalarType && scalarType !== 'dateTime' ? xs[scalarType] : null;
-  const rawTermValue = searchTerm.getChildCriteria();
+  const rawTermValue = searchTerm.getCriteria();
   const value = caster
     ? caster(rawTermValue)
     : typeof rawTermValue === 'string'

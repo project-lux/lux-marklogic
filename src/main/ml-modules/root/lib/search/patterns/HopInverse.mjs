@@ -51,7 +51,7 @@ class HopInverse extends SearchPatternBase {
 
     const right = tri.joinInner(
       searchCriteriaProcessor.processCriteria({
-        planCriteria: searchTerm.getChildCriteria(),
+        planCriteria: searchTerm.getCriteria(),
         planScope: termConfig.getTargetScopeName(),
         patternOptions,
         groups: {
@@ -93,7 +93,7 @@ class HopInverse extends SearchPatternBase {
     const iriCol = id + '_iri';
 
     const innerPlan = searchCriteriaProcessor.processCriteria({
-      planCriteria: searchTerm.getChildCriteria(),
+      planCriteria: searchTerm.getCriteria(),
       planScope: termConfig.getTargetScopeName(),
       patternOptions,
       groups: null,

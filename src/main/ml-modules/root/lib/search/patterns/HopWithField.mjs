@@ -55,7 +55,7 @@ class HopWithField extends SearchPatternBase {
     const id = searchTerm.getId();
 
     // Get the subject IRIs from the inner query and apply as an object IRI constraint in the SPARQL query.
-    const fieldPlan = searchTerm.hasValue() // inverse of searchTerm.hasChildCriteria()
+    const fieldPlan = searchTerm.hasValue() // inverse of searchTerm.hasCriteria()
       ? this.#getFieldAtomicPlan(
           searchCriteriaProcessor,
           searchTerm,
@@ -111,7 +111,7 @@ select ?${id}_s ?${id}_o where {
     // Literal IRI optimization: when child criteria is { iri: value } or { id: value },
     // use the IRI directly in the triple pattern instead of a full lexicon scan.
     if (!termValue) {
-      const literalIri = this.#extractLiteralIri(searchTerm.getChildCriteria());
+      const literalIri = this.#extractLiteralIri(searchTerm.getCriteria());
       if (literalIri) {
         const hopPlan = op.fromTriples([
           op.pattern(
@@ -191,7 +191,7 @@ select ?${id}_s ?${id}_o where {
   ) {
     const termConfig = searchTerm.getSearchTermConfig();
     return searchCriteriaProcessor.processCriteria({
-      planCriteria: searchTerm.getChildCriteria(),
+      planCriteria: searchTerm.getCriteria(),
       planScope: termConfig.getTargetScopeName(),
       patternOptions: null, // Do not pass on this term's pattern options.
       groups: null, // groupBy here prevents grouping by at the end.
@@ -233,13 +233,13 @@ select ?${id}_s ?${id}_o where {
   }
   // Check if child criteria is a simple { iri: value } or { id: value } that
   // resolves to a single known IRI. Returns the IRI string or null.
-  #extractLiteralIri(childCriteria) {
-    if (!childCriteria || typeof childCriteria !== 'object') return null;
-    const keys = Object.keys(childCriteria).filter((k) => k[0] !== '_');
+  #extractLiteralIri(criteria) {
+    if (!criteria || typeof criteria !== 'object') return null;
+    const keys = Object.keys(criteria).filter((k) => k[0] !== '_');
     if (keys.length !== 1) return null;
     const key = keys[0];
     if (key !== 'iri' && key !== 'id') return null;
-    const value = childCriteria[key];
+    const value = criteria[key];
     return typeof value === 'string' ? value : null;
   }
   //#endregion

@@ -479,7 +479,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   //           iriCol,
   //           id,
   //           searchTerm,
-  //           childCriteria,
+  //           criteria,
   //           options,
   //         });
   //     // DEBUG.push(`Transitive fieldPlan: ${getPlanSource(fieldPlan)}`);
@@ -540,7 +540,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   //           iriCol,
   //           id,
   //           searchTerm,
-  //           childCriteria,
+  //           criteria,
   //           options,
   //         });
 
@@ -572,7 +572,7 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   //   ) => {
   //     const termConfig = searchTerm.getSearchTermConfig();
   //     return processCriteria({
-  //       planCriteria: childCriteria,
+  //       planCriteria: criteria,
   //       planScope: termConfig.getTargetScopeName(),
   //       patternOptions: options,
   //       groups: null, // Grouping by here prevents grouping by at the end.

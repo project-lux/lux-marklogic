@@ -1,9 +1,5 @@
 import op from '/MarkLogic/optic.mjs';
-import {
-  expandPredicates,
-  formatPredicatesForSPARQL,
-  getPrefixesForSPARQL,
-} from '../prefixUtils.mjs';
+import { expandPredicates } from '../prefixUtils.mjs';
 import {
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
@@ -15,6 +11,7 @@ import {
   OPTION_NAME_RETURN_VALUES,
 } from '../patterns.mjs';
 import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchTermConfig } from '../SearchTermConfig.mjs';
 import { getSearchTermConfig } from '../../../config/searchTermsConfig.mjs';
 
@@ -43,7 +40,6 @@ class HopInverse extends SearchPatternBase {
         searchCriteriaProcessor,
         searchTerm,
         patternOptions,
-        requestOptions,
       );
     }
 
@@ -85,93 +81,23 @@ class HopInverse extends SearchPatternBase {
     };
   }
 
-  // ValuesOnly dispatcher: uses cts.triples fast path when inner criteria is a
-  // known IRI (the common related-list case), otherwise falls back to the
-  // plan-based approach for complex inner criteria.
-  #processValuesOnly(
-    searchCriteriaProcessor,
-    searchTerm,
-    patternOptions,
-    requestOptions,
-  ) {
+  // Uses cts.triples directly for both hops, eliminating all Optic plan
+  // construction and SPARQL compilation overhead.
+  #processValuesOnly(searchCriteriaProcessor, searchTerm, patternOptions) {
     const termConfig = searchTerm.getSearchTermConfig();
     const criteria = searchTerm.getCriteria();
 
-    // Fast path: when the inner term's criteria is a direct IRI, bypass
-    // Optic plan construction and use cts.triples for both hops.
     const childTermName =
       SearchCriteriaProcessor.getFirstNonOptionPropertyName(criteria);
     const childId = childTermName
       ? SearchCriteriaProcessor.getChildId(criteria[childTermName])
       : null;
-    if (childId) {
-      return this.#processValuesViaTriples(
-        searchCriteriaProcessor,
-        termConfig,
-        patternOptions,
-        childTermName,
-        childId,
+    if (!childId) {
+      throw new InternalServerError(
+        `HopInverse values-only mode requires criteria with a direct child ID (e.g., { iri: "..." }). Got: ${JSON.stringify(criteria)}`,
       );
     }
 
-    // Fallback for complex inner criteria: full plan construction.
-    const id = searchTerm.getId();
-    const iriCol = id + '_iri';
-
-    const innerPlan = searchCriteriaProcessor.processCriteria({
-      planCriteria: criteria,
-      planScope: termConfig.getTargetScopeName(),
-      patternOptions,
-      groups: null,
-      parentId: id,
-      requestOptions,
-    });
-
-    const innerResults = innerPlan
-      .select([iriCol])
-      .groupBy([iriCol], [])
-      .result()
-      .toArray();
-
-    if (innerResults.length === 0) {
-      searchCriteriaProcessor.appendValues([]);
-      return null;
-    }
-
-    const oCol = `${id}_o`;
-    const excludeSelfIri = patternOptions.get(
-      OPTION_NAME_EXCLUDE_SELF_IRI,
-      null,
-    );
-    const selfFilter = excludeSelfIri
-      ? `\n  FILTER(?${oCol} != <${excludeSelfIri}>)`
-      : '';
-    const sparql = `
-${getPrefixesForSPARQL()}
-select ?${oCol} where {
-  VALUES ?${id}_s {
-    ${innerResults.map((row) => `<${row[iriCol]}>`).join('\n    ')}
-  }
-  ?${id}_s ${formatPredicatesForSPARQL(termConfig.getPredicates(), false)} ?${oCol}${selfFilter}
-}`;
-
-    const sparqlResults = op
-      .fromSPARQL(sparql, null, { dedup: 'on' })
-      .result()
-      .toArray();
-    searchCriteriaProcessor.appendValues(sparqlResults.map((row) => row[oCol]));
-    return null;
-  }
-
-  // Fast path: uses cts.triples directly for both hops, eliminating all Optic
-  // plan construction and SPARQL compilation overhead.
-  #processValuesViaTriples(
-    searchCriteriaProcessor,
-    termConfig,
-    patternOptions,
-    childTermName,
-    childId,
-  ) {
     const childTermConfig = new SearchTermConfig(
       getSearchTermConfig(termConfig.getTargetScopeName(), childTermName),
     );

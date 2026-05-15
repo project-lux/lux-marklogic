@@ -15,6 +15,7 @@ import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
+  SEMANTIC_SORT_TIMEOUT,
 } from '../appConstants.mjs';
 import {
   InternalServerError,
@@ -60,9 +61,6 @@ const PREFER_FRAG_JOINS = false;
 
 //#region Entry points
 // Returns an instance of SearchExecutionResult
-//
-// TODO: implement 'values' mode for related lists (i.e., array of IRIs).
-// TODO: verify semantic sort is supported and SEMANTIC_SORT_TIMEOUT is imposed.
 function performSearch({
   searchCriteriaProcessor,
   searchCriteria,
@@ -290,6 +288,8 @@ function processCriteria({
       sortOrderBy,
     );
   } else if (sortCriteria?.hasSemanticSortOption()) {
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+
     const semanticSortOption = sortCriteria.getSemanticSortOption();
     const sortByColName = 'sortByMe';
     const sortByCol = op.col(sortByColName);

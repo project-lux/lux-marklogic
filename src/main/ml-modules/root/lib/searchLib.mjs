@@ -112,7 +112,6 @@ function _search(
   let resolvedSearchScope = searchScope;
   let resolvedSearchCriteria = null;
   let searchAgain = false;
-  let warnings = [];
   let estimate = 0;
   let results = [];
   let resultPage = 1;
@@ -142,12 +141,6 @@ function _search(
       pageLength = Math.min(pageLength, MAXIMUM_PAGE_LENGTH);
     }
 
-    // Parse sort and move any warnings to the search requests warnings.
-    const sortCriteria = new SortCriteria(sortDelimitedStr);
-    if (sortCriteria.hasWarnings()) {
-      warnings = warnings.concat(sortCriteria.getWarnings());
-    }
-
     // Parse gets us all the way through query generation.
     searchCriteriaProcessor = prepare({
       searchCriteria,
@@ -155,7 +148,7 @@ function _search(
       page,
       pageLength,
       pageWith,
-      sortCriteria,
+      sortDelimitedStr,
       filterResults,
       stopWatch,
       valuesOnly,
@@ -306,7 +299,7 @@ function prepare({
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
   pageWith = null,
-  sortCriteria = new SortCriteria(EMPTY_STRING),
+  sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
   stopWatch = new StopWatch(true),
   valuesOnly = DEFAULT_VALUES_ONLY,
@@ -321,7 +314,7 @@ function prepare({
     page,
     pageLength,
     pageWith,
-    sortCriteria,
+    sortDelimitedStr,
     valuesOnly,
   });
   stopWatch.lap('process');

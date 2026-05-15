@@ -63,6 +63,7 @@ const SearchCriteriaProcessor = class {
   #patternOptions;
   #searchTermsConfig;
   #resolvedSearchCriteria = null;
+  #sortDelimitedStr;
   #sortCriteria;
   #valuesOnly = false;
 
@@ -99,7 +100,7 @@ const SearchCriteriaProcessor = class {
    * @param {number} page - Page number for pagination (1-based)
    * @param {number} pageLength - Number of results per page
    * @param {string|null} pageWith - Optional document ID to find page containing this document
-   * @param {SortCriteria|Object|string} sortCriteria - Sort configuration or parseable sort string
+   * @param {string} sortDelimitedStr - Parseable sort string; input to construct instance of SortCriteria
    * @param {boolean} valuesOnly - Whether patterns should return values instead of queries
    * @throws {InvalidSearchRequestError} When criteria invalid, scope invalid, or insufficient criteria
    * @throws {InternalServerError} When configuration issues detected
@@ -113,7 +114,7 @@ const SearchCriteriaProcessor = class {
     page,
     pageLength,
     pageWith,
-    sortCriteria,
+    sortDelimitedStr,
     valuesOnly,
   }) {
     this.#initProcessState({
@@ -124,7 +125,7 @@ const SearchCriteriaProcessor = class {
       page,
       pageLength,
       pageWith,
-      sortCriteria,
+      sortDelimitedStr,
       valuesOnly,
     });
 
@@ -137,6 +138,12 @@ const SearchCriteriaProcessor = class {
 
     // Validate and finalize scope into this + requestOptions
     this.#resolveAndValidateScope();
+
+    // Parse sort criteria now that we have the resolved search scope.
+    this.#sortCriteria = new SortCriteria(
+      this.#scopeName,
+      this.#sortDelimitedStr,
+    );
 
     return this; // supports chaining from prepare to execute
   }
@@ -327,13 +334,6 @@ const SearchCriteriaProcessor = class {
     );
   }
 
-  static getSortTypeFromSortCriteria(sortCriteria) {
-    return SearchCriteriaProcessor.getSortType(
-      sortCriteria.hasMultiScopeSortOption(),
-      sortCriteria.hasSemanticSortOption(),
-    );
-  }
-
   static evalQueryString(queryStr) {
     // TODO: will the Optic version still need this? Would prefer to avoid eval or add protection.
     return fn.head(
@@ -436,7 +436,7 @@ const SearchCriteriaProcessor = class {
     page,
     pageLength,
     pageWith,
-    sortCriteria,
+    sortDelimitedStr,
     valuesOnly,
   }) {
     this.#scopeName = scopeName;
@@ -444,10 +444,7 @@ const SearchCriteriaProcessor = class {
     this.#page = page;
     this.#pageLength = pageLength;
     this.#pageWith = pageWith;
-    this.#sortCriteria =
-      sortCriteria instanceof SortCriteria
-        ? sortCriteria
-        : new SortCriteria(sortCriteria || '');
+    this.#sortDelimitedStr = sortDelimitedStr;
     this.#valuesOnly = valuesOnly;
 
     this.#patternOptions = patternOptions

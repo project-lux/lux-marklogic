@@ -970,7 +970,7 @@ function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
   if (groups) {
     plan = plan.select(
       [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
-        sortAggregates,
+        sortAggregates, // TODO: remove sort columns
       ),
     );
   }

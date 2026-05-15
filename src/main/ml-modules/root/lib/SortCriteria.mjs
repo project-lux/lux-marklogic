@@ -12,7 +12,8 @@ const SortCriteria = class {
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
   // When name is 'random', we are to use a random score for each search result.
   // When name is 'relevance', we are to sort by score (highest to lowest, depending on direction).
-  constructor(sortCriteriaStr) {
+  constructor(scopeName, sortCriteriaStr) {
+    this.scopeName = scopeName;
     this.sortCriteriaStr = sortCriteriaStr;
     this.scoresRequired = DEFAULT; // can switch to a boolean value.
     this.multiScopeSortOption = null;
@@ -91,7 +92,8 @@ const SortCriteria = class {
           return false;
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
-          if (sortBinding) {
+          if (sortBinding && sortByName.startsWith(this.scopeName)) {
+            // TODO: remove subSorts once we have the combined indexes.
             if (sortBinding.subSorts) {
               this.multiScopeSortOption = {
                 order: this._getOrder(specifiedOrder, 'asc'),
@@ -112,6 +114,10 @@ const SortCriteria = class {
                 order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
               });
             }
+          } else if (sortBinding) {
+            this.warnings.push(
+              `Unable to sort by '${sortByName}' as it is not a valid sort binding for the '${this.scopeName}' search scope.`,
+            );
           } else {
             this.warnings.push(
               `Unable to sort by '${

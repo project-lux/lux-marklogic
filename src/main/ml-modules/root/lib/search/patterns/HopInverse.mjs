@@ -43,6 +43,13 @@ class HopInverse extends SearchPatternBase {
       );
     }
 
+    // TODO: Potential optimization.  When the child criteria is a literal IRI (same
+    // condition #processValuesOnly checks), both hops could be resolved via
+    // cts.triples and injected as op.fromLiterals, avoiding the inner
+    // processCriteria call.  This path only compiles one plan, but it could
+    // still matter for latency-sensitive queries.  Consider prototyping if
+    // profiling shows the inner plan construction is a bottleneck.
+
     const tri = op.fromTriples([
       op.pattern(
         op.col(id + '_s'),

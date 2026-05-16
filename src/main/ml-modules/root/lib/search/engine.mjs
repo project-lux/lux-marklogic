@@ -72,59 +72,72 @@ function performSearch({
   sortCriteria = null,
   patternOptions = null,
   requestOptions = null,
+  includeSearchResults = true,
   facetRequests = null,
 }) {
   let planAsSource;
   try {
-    const finalGroups = {
-      by: ['uri'],
-      agg: [op.sample('dataType', op.col('dataType'))],
-    };
+    let searchResults = [];
+    let total = -1;
+    let resultPage = -1;
+    let planAsJson = null;
+    let facetResponses = null;
 
-    if (!utils.isDefined(patternOptions)) {
-      patternOptions = new PatternOptions();
+    // Require the caller want search results or at least one facet before
+    // doing any work.
+    if (includeSearchResults || facetRequests?.length > 0) {
+      const finalGroups = {
+        by: ['uri'],
+        agg: [op.sample('dataType', op.col('dataType'))],
+      };
+
+      if (!utils.isDefined(patternOptions)) {
+        patternOptions = new PatternOptions();
+      }
+      patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
+
+      const { sortedResultsPlan, unsortedResultsPlan } = processCriteria({
+        searchCriteriaProcessor,
+        planCriteria: searchCriteria,
+        planScope: searchScope,
+        allowMultiScope,
+        groups: finalGroups,
+        sortCriteria,
+        patternOptions,
+        requestOptions,
+      });
+
+      const useThisPlan = includeSearchResults
+        ? sortedResultsPlan
+        : unsortedResultsPlan;
+
+      planAsJson = useThisPlan.export();
+      planAsSource = getPlanSource(planAsJson);
+
+      const allRows = useThisPlan.result().toArray();
+
+      if (includeSearchResults) {
+        total = allRows.length;
+
+        // Apply pagination if needed
+        // TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
+        resultPage = Math.max(page, 1);
+        const resolvedPageLength = pageLength ?? 20;
+        searchResults = allRows;
+        if (resultPage > 0 && resolvedPageLength > 0) {
+          const offset = (resultPage - 1) * resolvedPageLength;
+          searchResults = allRows.slice(offset, offset + resolvedPageLength);
+        }
+      }
+
+      // calculateFacets returns null when facets are not requested.
+      facetResponses = calculateFacets(allRows, facetRequests);
     }
-    patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
-
-    const { searchPlan, constraintPlan } = processCriteria({
-      searchCriteriaProcessor,
-      planCriteria: searchCriteria,
-      planScope: searchScope,
-      allowMultiScope,
-      groups: finalGroups,
-      sortCriteria,
-      patternOptions,
-      requestOptions,
-    });
-
-    const planAsJson = searchPlan.export();
-    planAsSource = getPlanSource(planAsJson);
-
-    const allRows = searchPlan.result().toArray();
-    const total = allRows.length;
-
-    // Apply pagination if needed
-    // TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
-    const finalPage = Math.max(page, 1);
-    const finalPageLength = pageLength ?? 20;
-    let paginatedSearchResults = allRows;
-    if (finalPage > 0 && finalPageLength > 0) {
-      const offset = (finalPage - 1) * finalPageLength;
-      paginatedSearchResults = allRows.slice(offset, offset + finalPageLength);
-    }
-
-    // Use the constraint plan (no sort) for facets to avoid sort-related overhead.
-    // When no sort is applied, constraintPlan and opticPlan are the same object.
-    const constraintRows =
-      constraintPlan !== searchPlan
-        ? constraintPlan.result().toArray()
-        : allRows;
-    const facetResponses = calculateFacets(constraintRows, facetRequests);
 
     return new SearchExecutionResult({
-      searchResults: paginatedSearchResults,
+      searchResults,
       total,
-      resultPage: finalPage,
+      resultPage,
       planAsJson,
       planAsSource,
       facetResponses,
@@ -257,13 +270,13 @@ function processCriteria({
 
   // Top-level: build two plans from the same accumulator.
   // constraintPlan: no sort — used by facets.
-  const constraintPlan = finalizeRootPlan(
+  const unsortedResultsPlan = finalizeRootPlan(
     assembleOpticPlan(acc, assemblyArgs),
     groups,
   );
 
   // plan: with sort lexicons and orderBy — used for search results.
-  let searchPlan;
+  let sortedResultsPlan;
   const sortAggregates = [];
   const sortOrderBy = [];
   const sortLexicons = {};
@@ -281,7 +294,7 @@ function processCriteria({
       );
     }
     const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
-    searchPlan = finalizeRootPlan(
+    sortedResultsPlan = finalizeRootPlan(
       assembleOpticPlan(sortAcc, assemblyArgs),
       groups,
       sortAggregates,
@@ -293,7 +306,7 @@ function processCriteria({
     const semanticSortOption = sortCriteria.getSemanticSortOption();
     const sortByColName = 'sortByMe';
     const sortByCol = op.col(sortByColName);
-    searchPlan = finalizeRootPlan(
+    sortedResultsPlan = finalizeRootPlan(
       applySemanticSort(
         assembleOpticPlan(acc, assemblyArgs),
         semanticSortOption,
@@ -308,10 +321,10 @@ function processCriteria({
       ],
     );
   } else {
-    searchPlan = constraintPlan;
+    sortedResultsPlan = unsortedResultsPlan;
   }
 
-  return { searchPlan, constraintPlan };
+  return { sortedResultsPlan, unsortedResultsPlan };
 }
 //#endregion
 
@@ -417,7 +430,7 @@ function buildEmptyFacetResponses(requests) {
 }
 
 function calculateFacets(allRows, facetRequests) {
-  if (!facetRequests?.getFacetRequests) {
+  if (facetRequests == null || facetRequests.length === 0) {
     return null;
   }
 

@@ -152,7 +152,7 @@ function _search(
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
 
     // Execute the search
-    const searchExecutionResponse = searchCriteriaProcessor.execute();
+    const searchExecutionResponse = searchCriteriaProcessor.execute(true);
     results = searchExecutionResponse.getSearchResults();
     resultPage = searchExecutionResponse.getResultPage();
     estimate = searchExecutionResponse.getTotal();
@@ -436,7 +436,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
             filterResults: true,
             stopWatch,
           })
-            .execute()
+            .execute(true)
             .getSearchResults();
           hasOneOrMoreResult = results.length;
         }

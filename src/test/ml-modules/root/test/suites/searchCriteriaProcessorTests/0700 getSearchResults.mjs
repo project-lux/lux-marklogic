@@ -50,7 +50,7 @@ const scenarios = [
 // Test getSearchResults scenarios
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(true, true, true);
+    const processor = new SearchCriteriaProcessor(true);
 
     processor.prepare({
       searchCriteria: scenario.input.searchCriteria,
@@ -64,7 +64,7 @@ for (const scenario of scenarios) {
       sortCriteria: null,
     });
 
-    return processor.execute();
+    return processor.execute(true);
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);

@@ -374,7 +374,7 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(true, true, true);
+    const processor = new SearchCriteriaProcessor(true);
 
     return processor.generateQueryFromCriteria(
       scenario.input.scopeName,

@@ -825,7 +825,7 @@ const invokeFunOptions = {
 };
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(true, true, true);
+    const processor = new SearchCriteriaProcessor(true);
 
     processor.prepare({
       searchCriteria: scenario.input.searchCriteria,

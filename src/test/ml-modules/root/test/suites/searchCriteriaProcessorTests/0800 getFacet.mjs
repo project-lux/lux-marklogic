@@ -121,11 +121,14 @@ const invokeFunOptions = {
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
+    const scopeName = scenario.input.searchCriteria?._scope || null;
+
     const facetRequests = new FacetRequests(
       scenario.input.page,
       scenario.input.pageLength,
     );
     facetRequests.addFacetRequest(
+      scopeName,
       scenario.input.facetName,
       scenario.input.sort,
     );
@@ -134,11 +137,11 @@ for (const scenario of scenarios) {
     const searchExecutionResult = processor
       .prepare({
         searchCriteria: scenario.input.searchCriteria,
-        scopeName: null,
+        scopeName,
         allowMultiScope: false,
         filterResults: false,
       })
-      .execute(facetRequests);
+      .execute(false, facetRequests);
 
     return searchExecutionResult.getFacet(scenario.input.facetName);
   };

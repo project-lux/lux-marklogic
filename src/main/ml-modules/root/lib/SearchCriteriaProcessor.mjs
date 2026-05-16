@@ -210,7 +210,7 @@ const SearchCriteriaProcessor = class {
   }
 
   // Returns a Results wrapping optional results, total, resultPage, and plan.
-  execute(facetRequests = null) {
+  execute(includeSearchResults = true, facetRequests = null) {
     this.#prepareForExecution();
 
     this.#searchExecutionResult = engine.performSearch({
@@ -224,6 +224,7 @@ const SearchCriteriaProcessor = class {
       sortCriteria: this.#sortCriteria,
       patternOptions: this.#patternOptions,
       requestOptions: this.#requestOptions,
+      includeSearchResults,
       facetRequests,
     });
 

@@ -32,7 +32,7 @@ function getFacet({
 
   try {
     const facetRequests = new FacetRequests(page, pageLength);
-    facetRequests.addFacetRequest(facetName, sort);
+    facetRequests.addFacetRequest(scopeName, facetName, sort);
 
     const searchCriteriaProcessor = new SearchCriteriaProcessor(false);
     const searchExecutionResult = searchCriteriaProcessor
@@ -42,7 +42,7 @@ function getFacet({
         allowMultiScope: false,
         filterResults: false,
       })
-      .execute(facetRequests);
+      .execute(false, facetRequests);
 
     const { facetValues, totalItems } =
       searchExecutionResult.getFacet(facetName);

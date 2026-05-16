@@ -152,7 +152,7 @@ function _search(
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
 
     // Execute the search
-    const searchExecutionResponse = searchCriteriaProcessor.execute(true);
+    const searchExecutionResponse = searchCriteriaProcessor.execute();
     results = searchExecutionResponse.getSearchResults();
     resultPage = searchExecutionResponse.getResultPage();
     estimate = searchExecutionResponse.getTotal();
@@ -288,26 +288,29 @@ function _search(
 function prepare({
   searchCriteria = null,
   searchScope = null,
+  includeSearchResults = true,
+  includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
   allowMultiScope = DEFAULT_ALLOW_MULTI_SCOPE,
   patternOptions = null,
-  includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
   page = DEFAULT_PAGE,
   pageLength = DEFAULT_PAGE_LENGTH,
   pageWith = null,
-  sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
+  sortDelimitedStr = EMPTY_STRING,
   stopWatch = new StopWatch(true),
 }) {
-  const searchCriteriaProcessor = new SearchCriteriaProcessor(filterResults);
+  const searchCriteriaProcessor = new SearchCriteriaProcessor();
   searchCriteriaProcessor.prepare({
     searchCriteria,
     scopeName: searchScope,
+    includeSearchResults,
+    includeTypeConstraint,
     allowMultiScope,
     patternOptions,
-    includeTypeConstraint,
     page,
     pageLength,
     pageWith,
+    filterResults,
     sortDelimitedStr,
   });
   stopWatch.lap('process');
@@ -436,7 +439,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
             filterResults: true,
             stopWatch,
           })
-            .execute(true)
+            .execute()
             .getSearchResults();
           hasOneOrMoreResult = results.length;
         }

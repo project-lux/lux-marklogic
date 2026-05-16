@@ -9,57 +9,24 @@ let assertions = [];
 
 const scenarios = [
   {
-    name: 'Constructor with minimal parameters - false values',
-    input: {
-      filterResults: false,
-    },
+    name: 'Constructor initializes with correct defaults',
+    input: {},
     expected: {
       error: false,
-      filterResults: false,
-    },
-  },
-  {
-    name: 'Constructor with minimal parameters - true values',
-    input: {
-      filterResults: true,
-    },
-    expected: {
-      error: false,
-      filterResults: true,
-    },
-  },
-  {
-    name: 'Constructor with undefined parameters',
-    input: {
-      filterResults: undefined,
-    },
-    expected: {
-      error: false,
-      filterResults: undefined,
-    },
-  },
-  {
-    name: 'Constructor with null parameters',
-    input: {
-      filterResults: null,
-    },
-    expected: {
-      error: false,
-      filterResults: null,
     },
   },
 ];
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(scenario.input.filterResults);
+    const processor = new SearchCriteriaProcessor();
 
-    // Validate the constructor properly sets the request options
+    // Validate the constructor properly initializes defaults
     const requestOptions = processor.getRequestOptions();
 
     // Return an object with the properties we want to test
     return {
-      filterResults: requestOptions.filterResults,
+      requestOptions,
       hasSearchTermsConfig: processor.getSearchTermsConfig() != null,
       // Test initial state of properties set by process()
       scopeName: processor.getSearchScope(),
@@ -79,12 +46,12 @@ for (const scenario of scenarios) {
   ) {
     const actual = scenarioResults.actualValue;
 
-    // Test request options are properly set
+    // Test request options are an empty object before prepare() is called
     assertions.push(
-      testHelperProxy.assertEqual(
-        scenario.expected.filterResults,
-        actual.filterResults,
-        `Constructor should set filterResults to ${scenario.expected.filterResults}`,
+      testHelperProxy.assertTrue(
+        typeof actual.requestOptions === 'object' &&
+          actual.requestOptions !== null,
+        'Constructor should initialize requestOptions as an object',
       ),
     );
 

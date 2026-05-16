@@ -18,7 +18,6 @@ import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_MAXIMUM_VALUES,
-  OPTION_NAME_RETURN_VALUES,
   PATTERN_NAME_RELATED_LIST,
   PatternOptions,
 } from './search/patterns.mjs';
@@ -126,7 +125,6 @@ function getRelatedList({
     // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to return calls to cts.triples.
     const includeTypeConstraint = false;
     const patternOptions = new PatternOptions();
-    patternOptions.set(OPTION_NAME_RETURN_VALUES, true);
     patternOptions.set(OPTION_NAME_EXCLUDE_SELF_IRI, uri);
 
     // Set the maximum number of values to process per relation. Do not let requester exceed the maximum imposed by the backend.

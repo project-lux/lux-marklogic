@@ -61,20 +61,19 @@ const PREFER_FRAG_JOINS = false;
 
 //#region Entry points
 // Returns an instance of SearchExecutionResult
-function performSearch({
-  searchCriteriaProcessor,
-  searchCriteria,
-  searchScope,
-  allowMultiScope = false,
-  page = 1,
-  pageLength = 20,
-  pageWith = null,
-  sortCriteria = null,
-  patternOptions = null,
-  requestOptions = null,
-  includeSearchResults = true,
-  facetRequests = null,
-}) {
+function performSearch(searchCriteriaProcessor) {
+  const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
+  const searchScope = searchCriteriaProcessor.getSearchScope();
+  const allowMultiScope = searchCriteriaProcessor.isAllowMultiScope();
+  const page = searchCriteriaProcessor.getPage();
+  const pageLength = searchCriteriaProcessor.getPageLength();
+  const includeSearchResults =
+    searchCriteriaProcessor.getIncludeSearchResults();
+  const facetRequests = searchCriteriaProcessor.getFacetRequests();
+  const sortCriteria = searchCriteriaProcessor.getSortCriteria();
+  let patternOptions = searchCriteriaProcessor.getPatternOptions();
+  const requestOptions = searchCriteriaProcessor.getRequestOptions();
+
   let planAsSource;
   try {
     let searchResults = [];
@@ -207,18 +206,16 @@ function processCriteria({
 
     // If the criterion is a nested conjunction, resolve it to a join or inline expansion
     if (criterion.AND || criterion.OR || criterion.NOT) {
-      const result = buildConjunctionJoin(
+      const result = buildConjunctionJoin({
         criterion,
         logicType,
         scope,
         patternOptions,
-        {
-          id,
-          uriCol,
-          fragCol,
-          searchCriteriaProcessor,
-        },
-      );
+        id,
+        uriCol,
+        fragCol,
+        searchCriteriaProcessor,
+      });
       if (result.inlineCriteria) {
         criteria.push(...result.inlineCriteria);
       } else if (result.andOrSubPlan) {
@@ -261,17 +258,17 @@ function processCriteria({
     );
   }
 
-  const assemblyArgs = { fragCol, uriCol, dataTypeCol, scope, logicType };
+  const assemblyContext = { fragCol, uriCol, dataTypeCol, scope, logicType };
 
   // Recursive calls return a raw (unfinalized) plan.
   if (!isTopLevel) {
-    return assembleOpticPlan(acc, assemblyArgs);
+    return assembleOpticPlan({ ...acc, ...assemblyContext });
   }
 
   // Top-level: build two plans from the same accumulator.
   // constraintPlan: no sort — used by facets.
   const unsortedResultsPlan = finalizeRootPlan(
-    assembleOpticPlan(acc, assemblyArgs),
+    assembleOpticPlan({ ...acc, ...assemblyContext }),
     groups,
   );
 
@@ -295,7 +292,7 @@ function processCriteria({
     }
     const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
     sortedResultsPlan = finalizeRootPlan(
-      assembleOpticPlan(sortAcc, assemblyArgs),
+      assembleOpticPlan({ ...sortAcc, ...assemblyContext }),
       groups,
       sortAggregates,
       sortOrderBy,
@@ -308,7 +305,7 @@ function processCriteria({
     const sortByCol = op.col(sortByColName);
     sortedResultsPlan = finalizeRootPlan(
       applySemanticSort(
-        assembleOpticPlan(acc, assemblyArgs),
+        assembleOpticPlan({ ...acc, ...assemblyContext }),
         semanticSortOption,
         sortByColName,
       ),
@@ -736,13 +733,16 @@ function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
 // Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor
 // or inline criteria to be appended to the processing queue.
 // Returns: { join: { type, right, on, condition } } or { inlineCriteria: Array }
-function buildConjunctionJoin(
+function buildConjunctionJoin({
   criterion,
   logicType,
   scope,
   patternOptions,
-  { id, uriCol, fragCol, searchCriteriaProcessor },
-) {
+  id,
+  uriCol,
+  fragCol,
+  searchCriteriaProcessor,
+}) {
   const makeJoinOn = () =>
     patternOptions.getPreferFragJoins()
       ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
@@ -884,30 +884,39 @@ function buildConjunctionJoin(
 }
 
 // Assembles the Optic plan by applying all accumulated constraints, CTS queries, and joins.
-function assembleOpticPlan(
-  acc,
-  { fragCol, uriCol, dataTypeCol, scope, logicType },
-) {
-  let plan = op.fromLexicons(acc.lexicons, null, op.fragmentIdCol(fragCol));
+function assembleOpticPlan({
+  lexicons,
+  constraints,
+  ctsConstraints,
+  conjunctionJoins,
+  andOrSubPlans,
+  patternJoins,
+  fragCol,
+  uriCol,
+  dataTypeCol,
+  scope,
+  logicType,
+}) {
+  let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
 
-  if (acc.constraints.length) {
-    for (const constraint of acc.constraints) {
+  if (constraints.length) {
+    for (const constraint of constraints) {
       plan = plan.where(constraint);
     }
   }
 
-  if (acc.ctsConstraints.length) {
+  if (ctsConstraints.length) {
     const ctsWrapper =
       logicType === 'and'
         ? cts.andQuery
         : logicType === 'or'
           ? cts.orQuery
           : (x) => cts.notQuery(cts.orQuery(x));
-    plan = plan.where(ctsWrapper(acc.ctsConstraints));
+    plan = plan.where(ctsWrapper(ctsConstraints));
   }
 
-  if (acc.conjunctionJoins.length) {
-    for (const join of acc.conjunctionJoins) {
+  if (conjunctionJoins.length) {
+    for (const join of conjunctionJoins) {
       // Join functions are a method on the plan, so we reference them by name
       plan = plan[join.type](join.right, join.on, join.condition);
     }
@@ -918,16 +927,16 @@ function assembleOpticPlan(
   // breaks the result. Instead, combine the sub-plans to each other first
   // (off the outer) on their per-branch-unique join columns, then join the
   // combined plan to the outer once.
-  if (acc.andOrSubPlans.length) {
-    const first = acc.andOrSubPlans[0];
+  if (andOrSubPlans.length) {
+    const first = andOrSubPlans[0];
     const mkOn = (leftName, rightName, preferFrag) =>
       preferFrag
         ? op.on(op.fragmentIdCol(leftName), op.fragmentIdCol(rightName))
         : op.on(op.col(leftName), op.col(rightName));
 
     let combined = first.plan;
-    for (let i = 1; i < acc.andOrSubPlans.length; i++) {
-      const sp = acc.andOrSubPlans[i];
+    for (let i = 1; i < andOrSubPlans.length; i++) {
+      const sp = andOrSubPlans[i];
       combined = combined.joinInner(
         sp.plan,
         mkOn(first.joinCol, sp.joinCol, first.preferFrag),
@@ -940,15 +949,15 @@ function assembleOpticPlan(
     );
   }
 
-  if (acc.patternJoins.length) {
+  if (patternJoins.length) {
     const hasNonJoinConstraints =
-      acc.constraints.length > 1 || // more than the dataType constraint.
-      acc.ctsConstraints.length > 0 ||
-      acc.conjunctionJoins.length > 0;
+      constraints.length > 1 || // more than the dataType constraint.
+      ctsConstraints.length > 0 ||
+      conjunctionJoins.length > 0;
 
     if (logicType === 'or') {
-      for (let i = 0; i < acc.patternJoins.length; i++) {
-        const pj = acc.patternJoins[i];
+      for (let i = 0; i < patternJoins.length; i++) {
+        const pj = patternJoins[i];
         if (!hasNonJoinConstraints && i === 0) {
           // No other constraints exist: inner join constrains the base plan
           // instead of outer joining to an unconstrained lexicon scan.
@@ -958,7 +967,7 @@ function assembleOpticPlan(
           // Select uriCol (not fragCol) so the natural join key matches conjunction
           // joins and the final groupBy(['uri']) sees every matched document.
           const wrapped = op
-            .fromLexicons(acc.lexicons, null, op.fragmentIdCol(fragCol))
+            .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
             .where(
               op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
@@ -968,13 +977,13 @@ function assembleOpticPlan(
         }
       }
     } else if (logicType === 'not') {
-      for (const pj of acc.patternJoins) {
+      for (const pj of patternJoins) {
         plan = plan.notExistsJoin(pj.right, pj.on);
         // Extra columns not registered — notExistsJoin discards right-side data
       }
     } else {
       // AND
-      for (const pj of acc.patternJoins) {
+      for (const pj of patternJoins) {
         plan = plan.joinInner(pj.right, pj.on);
       }
     }

@@ -34,15 +34,17 @@ function getFacet({
     const facetRequests = new FacetRequests(page, pageLength);
     facetRequests.addFacetRequest(scopeName, facetName, sort);
 
-    const searchCriteriaProcessor = new SearchCriteriaProcessor(false);
+    const searchCriteriaProcessor = new SearchCriteriaProcessor();
     const searchExecutionResult = searchCriteriaProcessor
       .prepare({
         searchCriteria,
         scopeName,
         allowMultiScope: false,
+        includeSearchResults: false,
+        facetRequests,
         filterResults: false,
       })
-      .execute(false, facetRequests);
+      .execute();
 
     const { facetValues, totalItems } =
       searchExecutionResult.getFacet(facetName);

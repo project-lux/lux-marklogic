@@ -50,7 +50,7 @@ const scenarios = [
 // Test getSearchResults scenarios
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(true);
+    const processor = new SearchCriteriaProcessor();
 
     processor.prepare({
       searchCriteria: scenario.input.searchCriteria,
@@ -58,13 +58,14 @@ for (const scenario of scenarios) {
       allowMultiScope: false,
       patternOptions: new PatternOptions(),
       includeTypeConstraint: true,
+      filterResults: true,
       page: scenario.input.page || 1,
       pageLength: scenario.input.pageLength || 20,
       pageWith: scenario.input.pageWith || null,
       sortCriteria: null,
     });
 
-    return processor.execute(true);
+    return processor.execute();
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);

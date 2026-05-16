@@ -133,15 +133,17 @@ for (const scenario of scenarios) {
       scenario.input.sort,
     );
 
-    const processor = new SearchCriteriaProcessor(false);
+    const processor = new SearchCriteriaProcessor();
     const searchExecutionResult = processor
       .prepare({
         searchCriteria: scenario.input.searchCriteria,
         scopeName,
         allowMultiScope: false,
         filterResults: false,
+        includeSearchResults: false,
+        facetRequests,
       })
-      .execute(false, facetRequests);
+      .execute();
 
     return searchExecutionResult.getFacet(scenario.input.facetName);
   };

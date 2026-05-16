@@ -69,7 +69,7 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(true);
+    const processor = new SearchCriteriaProcessor();
 
     if (scenario.input.setupProcessor) {
       processor.prepare({
@@ -78,6 +78,7 @@ for (const scenario of scenarios) {
         allowMultiScope: false,
         patternOptions: new PatternOptions(),
         includeTypeConstraint: true,
+        filterResults: true,
         page: 1,
         pageLength: 20,
         pageWith: null,

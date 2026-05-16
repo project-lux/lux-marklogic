@@ -1,7 +1,10 @@
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
 import * as engine from './search/engine.mjs';
-import { PatternOptions } from './search/patterns.mjs';
+import {
+  OPTION_NAME_RETURN_VALUES,
+  PatternOptions,
+} from './search/patterns.mjs';
 import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
@@ -55,6 +58,8 @@ const SearchCriteriaProcessor = class {
   //#region Private fields
   #allowMultiScope;
   #includeTypeConstraint;
+  #includeSearchResults;
+  #facetRequests;
   #page;
   #pageLength;
   #pageWith;
@@ -76,9 +81,8 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Constructor(s)
-  constructor(filterResults) {
-    // Capture all constructor parameters as request options, enabling search patterns to utilize.
-    this.#requestOptions = { filterResults };
+  constructor() {
+    this.#requestOptions = {};
 
     // Once per instance, which technically presumes this shouldn't change when reused.
     this.#searchTermsConfig = getSearchTermsConfig();
@@ -93,36 +97,45 @@ const SearchCriteriaProcessor = class {
    *
    * @param {Object|string} searchCriteria - Search criteria in the LUX string grammar or JSON grammar
    * @param {string} scopeName - Search scope name (e.g., 'agent', 'work', 'multi', 'concept')
+   * @param {boolean} includeSearchResults - Whether to include search results in execution
+   * @param {boolean} includeTypeConstraint - Whether to add dataType constraint to query
    * @param {boolean} allowMultiScope - Whether multi-scope searches are permitted
    * @param {PatternOptions} patternOptions - Configuration for search pattern behavior
-   * @param {boolean} includeTypeConstraint - Whether to add dataType constraint to query
    * @param {number} page - Page number for pagination (1-based)
    * @param {number} pageLength - Number of results per page
    * @param {string|null} pageWith - Optional document ID to find page containing this document
+   * @param {boolean} filterResults - Whether to filter search results
    * @param {string} sortDelimitedStr - Parseable sort string; input to construct instance of SortCriteria
+   * @param {Object|null} facetRequests - Facet requests to include in execution
    * @throws {InvalidSearchRequestError} When criteria invalid, scope invalid, or insufficient criteria
    * @throws {InternalServerError} When configuration issues detected
    */
   prepare({
     searchCriteria,
     scopeName,
+    includeSearchResults = true,
+    includeTypeConstraint,
     allowMultiScope,
     patternOptions,
-    includeTypeConstraint,
     page,
     pageLength,
     pageWith,
+    filterResults,
     sortDelimitedStr,
+    facetRequests = null,
   }) {
     this.#initProcessState({
       scopeName,
+      includeSearchResults,
+      includeTypeConstraint,
       allowMultiScope,
       patternOptions,
-      includeTypeConstraint,
       page,
       pageLength,
       pageWith,
+      filterResults,
       sortDelimitedStr,
+      facetRequests,
     });
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
@@ -210,23 +223,10 @@ const SearchCriteriaProcessor = class {
   }
 
   // Returns a Results wrapping optional results, total, resultPage, and plan.
-  execute(includeSearchResults = true, facetRequests = null) {
+  execute() {
     this.#prepareForExecution();
 
-    this.#searchExecutionResult = engine.performSearch({
-      searchCriteriaProcessor: this,
-      searchCriteria: this.#resolvedSearchCriteria,
-      searchScope: this.#scopeName,
-      allowMultiScope: this.#allowMultiScope,
-      page: this.#page,
-      pageLength: this.#pageLength,
-      pageWith: this.#pageWith,
-      sortCriteria: this.#sortCriteria,
-      patternOptions: this.#patternOptions,
-      requestOptions: this.#requestOptions,
-      includeSearchResults,
-      facetRequests,
-    });
+    this.#searchExecutionResult = engine.performSearch(this);
 
     this.#searchState = SEARCH_STATE_COMPLETED;
     return this.#searchExecutionResult;
@@ -237,6 +237,7 @@ const SearchCriteriaProcessor = class {
   // list values-only searches where HopInverse populates values directly.
   executeForValues() {
     this.#prepareForExecution(); // does not accummulate values across multiple calls
+    this.#patternOptions.set(OPTION_NAME_RETURN_VALUES, true);
 
     engine.processCriteria({
       searchCriteriaProcessor: this,
@@ -283,6 +284,22 @@ const SearchCriteriaProcessor = class {
 
   getPatternOptions() {
     return this.#patternOptions;
+  }
+
+  getSortCriteria() {
+    return this.#sortCriteria;
+  }
+
+  isAllowMultiScope() {
+    return this.#allowMultiScope;
+  }
+
+  getIncludeSearchResults() {
+    return this.#includeSearchResults;
+  }
+
+  getFacetRequests() {
+    return this.#facetRequests;
   }
 
   getSearchTermsConfig() {
@@ -421,26 +438,30 @@ const SearchCriteriaProcessor = class {
   //#region Private instance methods
   #initProcessState({
     scopeName,
+    includeSearchResults,
+    includeTypeConstraint,
     allowMultiScope,
     patternOptions,
-    includeTypeConstraint,
     page,
     pageLength,
     pageWith,
+    filterResults,
     sortDelimitedStr,
+    facetRequests,
   }) {
     this.#scopeName = scopeName;
+    this.#includeSearchResults = includeSearchResults;
+    this.#includeTypeConstraint = includeTypeConstraint;
     this.#allowMultiScope = allowMultiScope;
+    this.#patternOptions = patternOptions
+      ? patternOptions
+      : new PatternOptions();
     this.#page = page;
     this.#pageLength = pageLength;
     this.#pageWith = pageWith;
     this.#sortDelimitedStr = sortDelimitedStr;
-
-    this.#patternOptions = patternOptions
-      ? patternOptions
-      : new PatternOptions();
-
-    this.#includeTypeConstraint = includeTypeConstraint;
+    this.#facetRequests = facetRequests;
+    this.#requestOptions = { filterResults };
   }
 
   /**

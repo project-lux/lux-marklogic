@@ -195,7 +195,7 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor(true);
+    const processor = new SearchCriteriaProcessor();
     const input = scenario.input;
 
     processor.prepare({ ...input });

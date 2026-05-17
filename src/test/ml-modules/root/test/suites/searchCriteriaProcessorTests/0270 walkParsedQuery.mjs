@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0270 walkParsedQuery.mjs';
 console.log(`${LIB}: starting.`);
@@ -400,7 +400,7 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    return SearchCriteriaProcessor.walkParsedQuery(scenario.input.ctsQueryObj);
+    return SCP.walkParsedQuery(scenario.input.ctsQueryObj);
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);

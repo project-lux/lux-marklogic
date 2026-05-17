@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0220 translateStringGrammarToJSON.mjs';
 console.log(`${LIB}: starting.`);
@@ -176,7 +176,7 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const result = SearchCriteriaProcessor.translateStringGrammarToJSON(
+    const result = SCP.translateStringGrammarToJSON(
       scenario.input.scopeName,
       scenario.input.searchCriteria,
     );

@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import { PatternOptions } from '/lib/search/patterns.mjs';
 import { ML_APP_NAME } from '/lib/appConstants.mjs';
 
@@ -825,9 +825,9 @@ const invokeFunOptions = {
 };
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor();
+    const scp = new SCP();
 
-    processor.prepare({
+    scp.prepare({
       searchCriteria: scenario.input.searchCriteria,
       scopeName: null, // scopeName from criteria
       allowMultiScope: scenario.input.allowMultiScope ?? false,
@@ -840,7 +840,7 @@ for (const scenario of scenarios) {
       sortCriteria: null,
     });
 
-    return processor.getEstimate();
+    return scp.getEstimate();
   };
 
   const scenarioResults = executeScenario(

@@ -1,6 +1,6 @@
 import op from '/MarkLogic/optic.mjs';
 import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
-import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
 import {
   expandPredicates,
   formatPredicatesForSPARQL,
@@ -14,19 +14,15 @@ import {
 
 class HopWithField extends SearchPatternBase {
   //#region Pattern implementation methods.
-  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
+  apply(scp, searchTerm, logicType, patternOptions) {
     if (searchTerm.getSearchTermConfig().isTransitive()) {
       return this.#processTransitiveHopWithFieldTerm(
-        searchCriteriaProcessor,
+        scp,
         searchTerm,
         patternOptions,
       );
     } else {
-      return this.#processHopWithFieldTerm(
-        searchCriteriaProcessor,
-        searchTerm,
-        patternOptions,
-      );
+      return this.#processHopWithFieldTerm(scp, searchTerm, patternOptions);
     }
   }
 
@@ -36,11 +32,7 @@ class HopWithField extends SearchPatternBase {
   //
   // TODO: is there a limit on the number of IRIs we can embed and if so, can the likes of op.param
   // or op.fromLiterals get around that?  Perhaps test with words that match 100K+ docs.
-  #processTransitiveHopWithFieldTerm(
-    searchCriteriaProcessor,
-    searchTerm,
-    patternOptions,
-  ) {
+  #processTransitiveHopWithFieldTerm(scp, searchTerm, patternOptions) {
     const hopIriCol = searchTerm.getParentIriColumn();
     const fieldIriCol = searchTerm.getIriColumn();
     const termConfig = searchTerm.getSearchTermConfig();
@@ -48,16 +40,8 @@ class HopWithField extends SearchPatternBase {
 
     // Get the subject IRIs from the inner query and apply as an object IRI constraint in the SPARQL query.
     const fieldPlan = searchTerm.hasValue() // inverse of searchTerm.hasCriteria()
-      ? this.#getFieldAtomicPlan(
-          searchCriteriaProcessor,
-          searchTerm,
-          patternOptions,
-        )
-      : this.#getFieldNestedPlan(
-          searchCriteriaProcessor,
-          searchTerm,
-          patternOptions,
-        );
+      ? this.#getFieldAtomicPlan(scp, searchTerm, patternOptions)
+      : this.#getFieldNestedPlan(scp, searchTerm, patternOptions);
 
     // TODO: if there are zero results from the fieldPlan, should we do anything different?
     const sparql = `
@@ -84,11 +68,7 @@ select ?${id}_s ?${id}_o where {
     };
   }
 
-  #processHopWithFieldTerm(
-    searchCriteriaProcessor,
-    searchTerm,
-    patternOptions,
-  ) {
+  #processHopWithFieldTerm(scp, searchTerm, patternOptions) {
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
@@ -99,9 +79,7 @@ select ?${id}_s ?${id}_o where {
 
     // When criteria is a direct IRI ({ iri: value } or { id: value }),
     // use it in the triple pattern instead of a full lexicon scan.
-    const childId = SearchCriteriaProcessor.getChildId(
-      searchTerm.getCriteria(),
-    );
+    const childId = SCP.getChildId(searchTerm.getCriteria());
     if (!termValue && childId) {
       const hopPlan = op.fromTriples([
         op.pattern(
@@ -138,16 +116,8 @@ select ?${id}_s ?${id}_o where {
     ]);
 
     const fieldPlan = termValue
-      ? this.#getFieldAtomicPlan(
-          searchCriteriaProcessor,
-          searchTerm,
-          patternOptions,
-        )
-      : this.#getFieldNestedPlan(
-          searchCriteriaProcessor,
-          searchTerm,
-          patternOptions,
-        );
+      ? this.#getFieldAtomicPlan(scp, searchTerm, patternOptions)
+      : this.#getFieldNestedPlan(scp, searchTerm, patternOptions);
 
     return {
       patternJoins: [
@@ -170,9 +140,9 @@ select ?${id}_s ?${id}_o where {
     };
   }
 
-  #getFieldNestedPlan(searchCriteriaProcessor, searchTerm, patternOptions) {
+  #getFieldNestedPlan(scp, searchTerm, patternOptions) {
     const termConfig = searchTerm.getSearchTermConfig();
-    return searchCriteriaProcessor.processCriteria({
+    return scp.processCriteria({
       planCriteria: searchTerm.getCriteria(),
       planScope: termConfig.getTargetScopeName(),
       patternOptions: null, // Do not pass on this term's pattern options.
@@ -181,7 +151,7 @@ select ?${id}_s ?${id}_o where {
     });
   }
 
-  #getFieldAtomicPlan(searchCriteriaProcessor, searchTerm, patternOptions) {
+  #getFieldAtomicPlan(scp, searchTerm, patternOptions) {
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
     const termSearchOptions = searchTerm.getSearchOptions();

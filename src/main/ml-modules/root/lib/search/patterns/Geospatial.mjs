@@ -23,32 +23,22 @@ const COORD_OPTIONS = ['coordinate-system=wgs84'];
 const POINT_INDEX_OPTIONS = COORD_OPTIONS.concat(['type=point']);
 
 class Geospatial extends SearchPatternBase {
-  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
+  apply(scp, searchTerm, logicType, patternOptions) {
     if (searchTerm.getSearchTermConfig().isGeospatialRegion()) {
       return this.#processRegionTerm(
-        searchCriteriaProcessor,
+        scp,
         searchTerm,
         logicType,
         patternOptions,
       );
     }
-    return this.#processPointTerm(
-      searchCriteriaProcessor,
-      searchTerm,
-      logicType,
-      patternOptions,
-    );
+    return this.#processPointTerm(scp, searchTerm, logicType, patternOptions);
   }
 
   // Region-index branch: cts.geospatialRegionQuery supports the full set of
   // ten topological operators against polygons, points, boxes, and circles
   // stored in the region index.
-  #processRegionTerm(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-  ) {
+  #processRegionTerm(scp, searchTerm, logicType, patternOptions) {
     const operator = (
       searchTerm.getComparisonOperator() || DEFAULT_REGION_OPERATOR
     ).toLowerCase();
@@ -67,12 +57,7 @@ class Geospatial extends SearchPatternBase {
 
   // Point-index branch: cts.pathGeospatialQuery has no operator; it returns
   // documents whose indexed point lies inside any of the supplied regions.
-  #processPointTerm(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-  ) {
+  #processPointTerm(scp, searchTerm, logicType, patternOptions) {
     const region = this.#parseGeoInput(searchTerm);
     const path = this.#getIndexReference(searchTerm);
     return {

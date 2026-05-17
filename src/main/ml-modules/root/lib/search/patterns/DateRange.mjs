@@ -9,7 +9,7 @@ import { COMPARATORS } from '../../SearchCriteriaProcessor.mjs';
 import { SearchPatternBase, CHILD_TYPE_ATOMIC } from './SearchPatternBase.mjs';
 
 class DateRange extends SearchPatternBase {
-  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
+  apply(scp, searchTerm, logicType, patternOptions) {
     const id = searchTerm.getId();
     const name = searchTerm.getName();
     const termValue = searchTerm.getValue();

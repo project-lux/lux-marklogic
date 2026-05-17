@@ -4,7 +4,7 @@ import { COMPARATORS } from '../../SearchCriteriaProcessor.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
 class IndexedRange extends SearchPatternBase {
-  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
+  apply(scp, searchTerm, logicType, patternOptions) {
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();

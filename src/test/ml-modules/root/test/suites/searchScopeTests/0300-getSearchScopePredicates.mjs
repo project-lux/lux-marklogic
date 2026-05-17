@@ -5,7 +5,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { getSearchScopePredicates } from '/lib/searchScope.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0300-getSearchScopePredicates.mjs';
 console.log(`${LIB}: starting.`);

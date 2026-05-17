@@ -26,7 +26,7 @@ import {
   getInverseSearchTermInfo,
   getSearchTermConfig,
 } from '../config/searchTermsConfig.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
 
 // Testing of a highly reference concept revealed page lengths between 25 and 15,000 returned within one second
 // of each and that secondary page requests take just as long as primary page requests.  Thus, this maximum is
@@ -151,8 +151,8 @@ function getRelatedList({
     // Old school loop to give this boomer confidence the order is honored.
     for (let i = 0; i < searchConfigs.length; i++) {
       const searchConfig = searchConfigs[i];
-      const searchCriteriaProcessor = new SearchCriteriaProcessor();
-      searchCriteriaProcessor.prepare({
+      const scp = new SCP();
+      scp.prepare({
         searchCriteria: utils.replaceMatchingPropertyValues(
           searchConfig.criteria,
           TOKEN_RUNTIME_PARAM,
@@ -170,8 +170,7 @@ function getRelatedList({
       // HopInverse's pattern during executeForValues(). It runs processCriteria
       // (triggering the two-phase SPARQL approach) then returns the populated
       // values without building or executing the full Optic plan.
-      urisByRelation[searchConfig.relationKey] =
-        searchCriteriaProcessor.executeForValues();
+      urisByRelation[searchConfig.relationKey] = scp.executeForValues();
       // No need to log that we hit the max in the Search Will Match context; it sets this threshold very low.
       if (
         relationshipsPerRelation > 10 &&
@@ -185,8 +184,7 @@ function getRelatedList({
         );
       }
       relationToScope[searchConfig.relationKey] = searchConfig.relationScope;
-      relationToCriteria[searchConfig.relationKey] =
-        searchCriteriaProcessor.getSearchCriteria();
+      relationToCriteria[searchConfig.relationKey] = scp.getSearchCriteria();
 
       relationsChecked++;
 
@@ -479,9 +477,8 @@ function _convertToObjectsOrWorksSearch(
   };
 
   // Need to identify the top-level search term name.
-  if (SearchCriteriaProcessor.hasNonOptionPropertyName(fromCriteria)) {
-    const termName =
-      SearchCriteriaProcessor.getFirstNonOptionPropertyName(fromCriteria);
+  if (SCP.hasNonOptionPropertyName(fromCriteria)) {
+    const termName = SCP.getFirstNonOptionPropertyName(fromCriteria);
 
     // Need the inverse of the top-level search term.
     const inverseTermInfo = getInverseSearchTermInfo(fromScope, termName);
@@ -531,8 +528,7 @@ function getRelatedListSearchInfo(criteria) {
 
 function _getFirstSearchTermConfig(criteria) {
   const scopeName = criteria._scope;
-  const termName =
-    SearchCriteriaProcessor.getFirstNonOptionPropertyName(criteria);
+  const termName = SCP.getFirstNonOptionPropertyName(criteria);
   return {
     scopeName,
     termName,

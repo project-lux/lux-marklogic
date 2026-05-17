@@ -12,7 +12,7 @@ import * as utils from '../../../utils/utils.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
 class Keyword extends SearchPatternBase {
-  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
+  apply(scp, searchTerm, logicType, patternOptions) {
     const termValues = utils.toArray(searchTerm.getValue());
     const termWeight = searchTerm.getWeight() ?? 1.0;
     const termScopeName = searchTerm.getScopeName();

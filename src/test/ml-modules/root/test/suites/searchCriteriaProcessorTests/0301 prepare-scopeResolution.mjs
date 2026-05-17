@@ -1,10 +1,10 @@
 /**
- * Test suite for SearchCriteriaprocessor.prepare() - Scope Resolution
+ * Test suite for SCP.prepare() - Scope Resolution
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import { PatternOptions } from '/lib/search/patterns.mjs';
 
 const LIB = '0301-process-scopeResolution.mjs';
@@ -87,13 +87,13 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor();
+    const scp = new SCP();
     const input = scenario.input;
 
-    processor.prepare({ ...input });
+    scp.prepare({ ...input });
 
     return {
-      scopeName: processor.getSearchScope(),
+      scopeName: scp.getSearchScope(),
     };
   };
 

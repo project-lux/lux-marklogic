@@ -1,4 +1,4 @@
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
 import { FacetRequests } from './search/FacetRequests.mjs';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
@@ -34,8 +34,8 @@ function getFacet({
     const facetRequests = new FacetRequests(page, pageLength);
     facetRequests.addFacetRequest(scopeName, facetName, sort);
 
-    const searchCriteriaProcessor = new SearchCriteriaProcessor();
-    const searchExecutionResult = searchCriteriaProcessor
+    const scp = new SCP();
+    const searchExecutionResult = scp
       .prepare({
         searchCriteria,
         scopeName,
@@ -53,7 +53,7 @@ function getFacet({
     const facetValuesAS = _getFacetResponse(
       facetName,
       facetValues,
-      searchCriteriaProcessor,
+      scp,
       totalItems,
       page,
       pageLength,
@@ -106,13 +106,13 @@ function isSemanticFacet(facetName) {
 function _getFacetResponse(
   facetName,
   facetValues,
-  searchCriteriaProcessor,
+  scp,
   totalItems,
   page,
   pageLength,
 ) {
-  const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
-  const searchScope = searchCriteriaProcessor.getSearchScope();
+  const searchCriteria = scp.getSearchCriteria();
+  const searchScope = scp.getSearchScope();
   const orderedItems = facetValues.map((item) => {
     const { count, value } = item;
     const facetSearchCriteria = _getFacetSearchCriteria(

@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0250 getFirstNonOptionPropertyName.mjs';
 console.log(`${LIB}: starting.`);
@@ -217,9 +217,7 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    return SearchCriteriaProcessor.getFirstNonOptionPropertyName(
-      scenario.input.termValue,
-    );
+    return SCP.getFirstNonOptionPropertyName(scenario.input.termValue);
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);

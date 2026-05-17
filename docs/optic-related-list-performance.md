@@ -43,7 +43,7 @@ Every search is a **two-hop path**: an outer hop (always `hopInverse` pattern) w
 ### Execution flow
 
 1. `relatedListsLib.mjs` iterates each search config in a related list.
-2. For each, it calls `SearchCriteriaProcessor.prepare()` then `.execute()`.
+2. For each, it calls `SCP.prepare()` then `.execute()`.
 3. `execute()` calls `engine.performSearch()`, which calls `engine.processCriteria()`.
 4. `processCriteria()` dispatches to pattern classes (`HopInverse`, `HopWithField`, `DocumentIdOrIri`) based on the search term config.
 5. Patterns return contributions (joins, constraints) that are merged into an accumulator and assembled into a final Optic plan.
@@ -456,7 +456,7 @@ These are large. Unconstrained triple scans on these predicates are expensive. T
 
 When the child criteria is `{ iri: value }` or `{ id: value }` (a single known IRI), the `#processHopWithFieldTerm` method now short-circuits: instead of recursing into `processCriteria` to build a full `fromLexicons` plan for the target scope, it uses `sem.iri(value)` directly as the object in the `op.fromTriples` pattern.
 
-**Detection:** `SearchCriteriaProcessor.getChildId(termValue)` extracts the IRI string from `termValue.id` or `termValue.iri` when the value is a string; returns `null` otherwise. This static method is shared by both `HopWithField` and `HopInverse`.
+**Detection:** `SCP.getChildId(termValue)` extracts the IRI string from `termValue.id` or `termValue.iri` when the value is a string; returns `null` otherwise. This static method is shared by both `HopWithField` and `HopInverse`.
 
 **Applicability:** Both regular search and related lists. Any `hopWithField` term with a `{ iri: value }` leaf benefits. This is the universal pattern for all 298 related list searches.
 
@@ -475,9 +475,9 @@ When `OPTION_NAME_RETURN_VALUES` is true and the search term is top-level, `HopI
 
 **Phase 2 (outer hop):** `cts.triples(innerSubjects, outerPredicates, [])` — navigate from those subjects via the outer predicates to find related IRIs.
 
-Results are deduplicated via a `Set`, the self-IRI is excluded via `OPTION_NAME_EXCLUDE_SELF_IRI` (set by `relatedListsLib.mjs` to the requesting document's URI), and values are appended via `searchCriteriaProcessor.appendValues()`.
+Results are deduplicated via a `Set`, the self-IRI is excluded via `OPTION_NAME_EXCLUDE_SELF_IRI` (set by `relatedListsLib.mjs` to the requesting document's URI), and values are appended via `scp.appendValues()`.
 
-**Guard clause:** If the child criteria does not resolve to a direct IRI (via `SearchCriteriaProcessor.getChildId()`), an `InternalServerError` is thrown. All 298 current related list searches use `{ iri: value }` leaf criteria, so this is a configuration error.
+**Guard clause:** If the child criteria does not resolve to a direct IRI (via `SCP.getChildId()`), an `InternalServerError` is thrown. All 298 current related list searches use `{ iri: value }` leaf criteria, so this is a configuration error.
 
 **SearchCriteriaProcessor changes:**
 - `static getChildId(termValue)`: Extracts `termValue.id` or `termValue.iri` when the value is a string.
@@ -485,7 +485,7 @@ Results are deduplicated via a `Set`, the self-IRI is excluded via `OPTION_NAME_
 - `executeForValues()`: Runs `processCriteria()` to trigger pattern processing (populating values via `appendValues()`), then returns `this.#values` without executing the expensive Optic plan.
 
 **relatedListsLib.mjs changes:**
-- `valuesOnly` branch calls `searchCriteriaProcessor.executeForValues()` instead of `execute().getSearchResults()`.
+- `valuesOnly` branch calls `scp.executeForValues()` instead of `execute().getSearchResults()`.
 - Sets `OPTION_NAME_EXCLUDE_SELF_IRI` to the requesting document's URI on `patternOptions`.
 
 **Performance result:**

@@ -251,7 +251,7 @@ const SearchCriteriaProcessor = class {
     this.#patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, preferFragJoins);
 
     return engine.buildPlans({
-      searchCriteriaProcessor: this,
+      scp: this,
       planCriteria: this.#resolvedSearchCriteria,
       planScope: this.#scopeName,
       allowMultiScope: this.#allowMultiScope,
@@ -272,7 +272,7 @@ const SearchCriteriaProcessor = class {
     allowMultiScope = false,
   }) {
     return engine.processCriteria({
-      searchCriteriaProcessor: this,
+      scp: this,
       planCriteria,
       planScope,
       patternOptions,

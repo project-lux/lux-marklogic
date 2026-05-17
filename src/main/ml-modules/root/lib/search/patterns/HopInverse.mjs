@@ -10,13 +10,13 @@ import {
   OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_RETURN_VALUES,
 } from '../patterns.mjs';
-import { SearchCriteriaProcessor } from '../../SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
 import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchTermConfig } from '../SearchTermConfig.mjs';
 import { getSearchTermConfig } from '../../../config/searchTermsConfig.mjs';
 
 class HopInverse extends SearchPatternBase {
-  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
+  apply(scp, searchTerm, logicType, patternOptions) {
     const id = searchTerm.getId();
     const termConfig = searchTerm.getSearchTermConfig();
     const parentIriCol = searchTerm.getParentIriColumn();
@@ -30,11 +30,7 @@ class HopInverse extends SearchPatternBase {
       false,
     );
     if (requestIsForValues && searchTerm.isTopLevel()) {
-      return this.#processValuesOnly(
-        searchCriteriaProcessor,
-        searchTerm,
-        patternOptions,
-      );
+      return this.#processValuesOnly(scp, searchTerm, patternOptions);
     }
 
     // TODO: Potential optimization.  When the child criteria is a literal IRI (same
@@ -54,7 +50,7 @@ class HopInverse extends SearchPatternBase {
     ]);
 
     const right = tri.joinInner(
-      searchCriteriaProcessor.processCriteria({
+      scp.processCriteria({
         planCriteria: searchTerm.getCriteria(),
         planScope: termConfig.getTargetScopeName(),
         patternOptions,
@@ -83,14 +79,13 @@ class HopInverse extends SearchPatternBase {
 
   // Uses cts.triples directly for both hops, eliminating all Optic plan
   // construction and SPARQL compilation overhead.
-  #processValuesOnly(searchCriteriaProcessor, searchTerm, patternOptions) {
+  #processValuesOnly(scp, searchTerm, patternOptions) {
     const termConfig = searchTerm.getSearchTermConfig();
     const criteria = searchTerm.getCriteria();
 
-    const childTermName =
-      SearchCriteriaProcessor.getFirstNonOptionPropertyName(criteria);
+    const childTermName = SCP.getFirstNonOptionPropertyName(criteria);
     const childId = childTermName
-      ? SearchCriteriaProcessor.getChildId(criteria[childTermName])
+      ? SCP.getChildId(criteria[childTermName])
       : null;
     if (!childId) {
       throw new InternalServerError(
@@ -151,7 +146,7 @@ class HopInverse extends SearchPatternBase {
       }
     }
 
-    searchCriteriaProcessor.appendValues(values);
+    scp.appendValues(values);
     return null;
   }
 

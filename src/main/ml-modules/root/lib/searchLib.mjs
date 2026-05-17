@@ -12,7 +12,7 @@ import {
   TRACE_NAME_SEARCH as traceName,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
 import { getDefaultSearchOptionsNameByPatternName } from './search/patterns.mjs';
 import {
   InvalidSearchRequestError,
@@ -100,7 +100,7 @@ function _search(
   const stopWatch = new StopWatch(true);
   const requestId = utils.assignRequestId('search');
   let requestCompleted = false;
-  let searchCriteriaProcessor = null;
+  let scp = null;
   let resolvedSearchScope = searchScope;
   let resolvedSearchCriteria = null;
   let searchAgain = false;
@@ -134,8 +134,8 @@ function _search(
     }
 
     // Parse gets us all the way through query generation.
-    searchCriteriaProcessor = new SearchCriteriaProcessor();
-    searchCriteriaProcessor.prepare({
+    scp = new SCP();
+    scp.prepare({
       searchCriteria,
       scopeName: resolvedSearchScope,
       page,
@@ -145,11 +145,11 @@ function _search(
       filterResults,
     });
     stopWatch.lap('process');
-    resolvedSearchScope = searchCriteriaProcessor.getSearchScope();
-    resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
+    resolvedSearchScope = scp.getSearchScope();
+    resolvedSearchCriteria = scp.getSearchCriteria();
 
     // Execute the search
-    const searchExecutionResponse = searchCriteriaProcessor.execute();
+    const searchExecutionResponse = scp.execute();
     results = searchExecutionResponse.getSearchResults();
     resultPage = searchExecutionResponse.getResultPage();
     estimate = searchExecutionResponse.getTotal();
@@ -248,11 +248,11 @@ function _search(
         criteria: resolvedSearchCriteria
           ? resolvedSearchCriteria
           : searchCriteria,
-        ignoredTerms: searchCriteriaProcessor
-          ? searchCriteriaProcessor.getIgnoredTerms()
+        ignoredTerms: scp
+          ? scp.getIgnoredTerms()
           : null,
-        query: searchCriteriaProcessor
-          ? searchCriteriaProcessor.getQueryStr()
+        query: scp
+          ? scp.getQueryStr()
           : null,
       };
       xdmp.trace(traceName, searchInfo);
@@ -278,15 +278,15 @@ function _search(
 }
 
 function calculateEstimate(searchCriteria, scope) {
-  const searchCriteriaProcessor = new SearchCriteriaProcessor();
-  searchCriteriaProcessor.prepare({
+  const scp = new SCP();
+  scp.prepare({
     searchCriteria,
     scopeName: scope,
     filterResults: false,
   });
-  const searchScope = searchCriteriaProcessor.getSearchScope();
-  const totalItems = searchCriteriaProcessor.getEstimate();
-  const resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
+  const searchScope = scp.getSearchScope();
+  const totalItems = scp.getEstimate();
+  const resolvedSearchCriteria = scp.getSearchCriteria();
   const orderedCollection = {
     id: utils.buildSearchEstimateUri(resolvedSearchCriteria, searchScope),
     type: AS_TYPE_ORDERED_COLLECTION,
@@ -393,7 +393,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               : 0;
         } else {
           // Given pagination parameters, 0 or 1 is expected.
-          const results = new SearchCriteriaProcessor()
+          const results = new SCP()
             .prepare({
               searchCriteria: criteria,
               page: 1,

@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import { FacetRequests } from '/lib/search/FacetRequests.mjs';
 import { ML_APP_NAME } from '/lib/appConstants.mjs';
 
@@ -133,8 +133,8 @@ for (const scenario of scenarios) {
       scenario.input.sort,
     );
 
-    const processor = new SearchCriteriaProcessor();
-    const searchExecutionResult = processor
+    const scp = new SCP();
+    const searchExecutionResult = scp
       .prepare({
         searchCriteria: scenario.input.searchCriteria,
         scopeName,

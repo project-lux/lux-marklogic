@@ -74,6 +74,6 @@
 
 ## Literal IRI detection: centralize in SearchCriteriaProcessor
 - When child criteria is `{ iri: value }` or `{ id: value }`, patterns can short-circuit expensive plan construction.
-- `SearchCriteriaProcessor.getChildId(termValue)` extracts the IRI string from `termValue.id` or `termValue.iri`; returns `null` otherwise.
+- `SCP.getChildId(termValue)` extracts the IRI string from `termValue.id` or `termValue.iri`; returns `null` otherwise.
 - Used by both `HopWithField` (uses `sem.iri(childId)` directly in `op.fromTriples` pattern) and `HopInverse` (uses it in `cts.triples` calls).
 - Previously each pattern had its own extraction logic (`#extractLiteralIri`). Centralizing avoids drift.

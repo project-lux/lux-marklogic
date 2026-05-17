@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0400 generateQueryFromCriteria.mjs';
 console.log(`${LIB}: starting.`);
@@ -374,9 +374,9 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor();
+    const scp = new SCP();
 
-    return processor.generateQueryFromCriteria(
+    return scp.generateQueryFromCriteria(
       scenario.input.scopeName,
       scenario.input.searchCriteria,
       scenario.input.parentSearchTerm,

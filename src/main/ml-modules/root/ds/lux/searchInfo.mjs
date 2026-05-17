@@ -2,7 +2,7 @@ import { handleRequest } from '../../lib/securityLib.mjs';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
-import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '../../lib/SearchCriteriaProcessor.mjs';
 import { SearchTermConfig } from '../../lib/search/SearchTermConfig.mjs';
 
 const unitName = external.unitName;
@@ -58,9 +58,7 @@ const response = handleRequest(function () {
     .map((name) => {
       return {
         name,
-        type: SearchCriteriaProcessor.getSortTypeFromSortBinding(
-          SORT_BINDINGS[name],
-        ),
+        type: SCP.getSortTypeFromSortBinding(SORT_BINDINGS[name]),
       };
     });
 

@@ -9,7 +9,7 @@
  */
 'use strict';
 import op from '/MarkLogic/optic.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 //#region Developer configuration
 
@@ -44,7 +44,7 @@ const andExecute = false;
 
 //#endregion
 
-const { sortedResultsPlan, unsortedResultsPlan } = new SearchCriteriaProcessor()
+const { sortedResultsPlan, unsortedResultsPlan } = new SCP()
   .prepare({
     searchCriteria,
     scopeName,

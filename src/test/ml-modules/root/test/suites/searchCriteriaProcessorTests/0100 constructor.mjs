@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 const LIB = '0100 constructor.mjs';
 console.log(`${LIB}: starting.`);
@@ -19,22 +19,22 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor();
+    const scp = new SCP();
 
     // Validate the constructor properly initializes defaults
-    const filterResults = processor.getFilterResults();
+    const filterResults = scp.getFilterResults();
 
     // Return an object with the properties we want to test
     return {
       filterResults,
-      hasSearchTermsConfig: processor.getSearchTermsConfig() != null,
+      hasSearchTermsConfig: scp.getSearchTermsConfig() != null,
       // Test initial state of properties set by process()
-      scopeName: processor.getSearchScope(),
-      resolvedSearchCriteria: processor.getSearchCriteria(),
-      criteriaCnt: processor.getCriteriaCount(),
-      ignoredTerms: processor.getIgnoredTerms(),
-      ctsQueryStr: processor.getQueryStr(),
-      values: processor.getValues(),
+      scopeName: scp.getSearchScope(),
+      resolvedSearchCriteria: scp.getSearchCriteria(),
+      criteriaCnt: scp.getCriteriaCount(),
+      ignoredTerms: scp.getIgnoredTerms(),
+      ctsQueryStr: scp.getQueryStr(),
+      values: scp.getValues(),
     };
   };
 

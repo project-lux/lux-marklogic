@@ -59,17 +59,17 @@ const PATTERNS = {
 
 //#region Exported functions
 // Returns an instance of SearchExecutionResult
-function performSearch(searchCriteriaProcessor) {
-  const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
-  const searchScope = searchCriteriaProcessor.getSearchScope();
-  const allowMultiScope = searchCriteriaProcessor.isAllowMultiScope();
-  const page = searchCriteriaProcessor.getPage();
-  const pageLength = searchCriteriaProcessor.getPageLength();
+function performSearch(scp) {
+  const searchCriteria = scp.getSearchCriteria();
+  const searchScope = scp.getSearchScope();
+  const allowMultiScope = scp.isAllowMultiScope();
+  const page = scp.getPage();
+  const pageLength = scp.getPageLength();
   const includeSearchResults =
-    searchCriteriaProcessor.getIncludeSearchResults();
-  const facetRequests = searchCriteriaProcessor.getFacetRequests();
-  const sortCriteria = searchCriteriaProcessor.getSortCriteria();
-  let patternOptions = searchCriteriaProcessor.getPatternOptions();
+    scp.getIncludeSearchResults();
+  const facetRequests = scp.getFacetRequests();
+  const sortCriteria = scp.getSortCriteria();
+  let patternOptions = scp.getPatternOptions();
 
   let planAsSource;
   try {
@@ -83,7 +83,7 @@ function performSearch(searchCriteriaProcessor) {
     // doing any work.
     if (includeSearchResults || facetRequests?.length > 0) {
       const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({
-        searchCriteriaProcessor,
+        scp,
         planCriteria: searchCriteria,
         planScope: searchScope,
         allowMultiScope,
@@ -139,7 +139,7 @@ function performSearch(searchCriteriaProcessor) {
 
 // For recursive calls from pattern classes — returns a single assembled plan.
 function processCriteria({
-  searchCriteriaProcessor,
+  scp,
   planCriteria,
   planScope = 'item',
   patternOptions,
@@ -148,7 +148,7 @@ function processCriteria({
   allowMultiScope = false,
 }) {
   const { acc, assemblyContext } = buildCriteriaAccumulator({
-    searchCriteriaProcessor,
+    scp,
     planCriteria,
     planScope,
     patternOptions,
@@ -169,7 +169,7 @@ function getResultRowGrouping() {
 // Top-level entry point called from performSearch — returns sorted and
 // unsorted plans with finalization and optional sort applied.
 function buildPlans({
-  searchCriteriaProcessor,
+  scp,
   planCriteria,
   planScope = 'item',
   patternOptions,
@@ -178,7 +178,7 @@ function buildPlans({
   sortCriteria = null,
 }) {
   const { acc, assemblyContext } = buildCriteriaAccumulator({
-    searchCriteriaProcessor,
+    scp,
     planCriteria,
     planScope,
     patternOptions,
@@ -248,7 +248,7 @@ function buildPlans({
 // Builds the raw plan accumulator from search criteria.  Shared by both
 // top-level (buildPlans) and recursive (processCriteria) paths.
 function buildCriteriaAccumulator({
-  searchCriteriaProcessor,
+  scp,
   planCriteria,
   planScope = 'item',
   patternOptions,
@@ -307,7 +307,7 @@ function buildCriteriaAccumulator({
         id,
         uriCol,
         fragCol,
-        searchCriteriaProcessor,
+        scp,
       });
       if (result.inlineCriteria) {
         criteria.push(...result.inlineCriteria);
@@ -342,7 +342,7 @@ function buildCriteriaAccumulator({
       acc,
       criteria,
       PATTERNS[searchTerm.getSearchTermConfig().getPatternName()].apply(
-        searchCriteriaProcessor,
+        scp,
         searchTerm,
         logicType,
         patternOptions,
@@ -496,7 +496,7 @@ function buildConjunctionJoin({
   id,
   uriCol,
   fragCol,
-  searchCriteriaProcessor,
+  scp,
 }) {
   const makeJoinOn = () =>
     patternOptions.getPreferFragJoins()
@@ -513,7 +513,7 @@ function buildConjunctionJoin({
 
   const subPlan = (planCriteria) =>
     processCriteria({
-      searchCriteriaProcessor,
+      scp,
       planCriteria,
       planScope: scope,
       patternOptions,

@@ -1,6 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { SearchCriteriaProcessor } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import { PatternOptions } from '/lib/search/patterns.mjs';
 
 const LIB = '0500 instanceMethodsBasic.mjs';
@@ -13,7 +13,7 @@ const scenarios = [
     name: 'getSearchCriteria after successful process',
     input: {
       searchCriteria: { _scope: 'agent', text: 'Pablo Picasso' },
-      setupProcessor: true,
+      callPrepare: true,
     },
     expected: {
       error: false,
@@ -25,7 +25,7 @@ const scenarios = [
     name: 'getSearchScope after successful process',
     input: {
       searchCriteria: { _scope: 'work', text: 'Mona Lisa' },
-      setupProcessor: true,
+      callPrepare: true,
     },
     expected: {
       error: false,
@@ -36,7 +36,7 @@ const scenarios = [
     name: 'getQueryStr after successful process',
     input: {
       searchCriteria: { _scope: 'agent', name: 'Pablo' },
-      setupProcessor: true,
+      callPrepare: true,
     },
     expected: {
       error: false,
@@ -47,7 +47,7 @@ const scenarios = [
     name: 'getIgnoredTerms with stop words',
     input: {
       searchCriteria: { _scope: 'agent', text: 'a about actually almost' },
-      setupProcessor: true,
+      callPrepare: true,
     },
     expected: {
       error: true,
@@ -58,7 +58,7 @@ const scenarios = [
     name: 'Methods before process is called',
     input: {
       searchCriteria: null,
-      setupProcessor: false, // Don't call process
+      callPrepare: false,
     },
     expected: {
       error: false,
@@ -69,10 +69,10 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const processor = new SearchCriteriaProcessor();
+    const scp = new SCP();
 
-    if (scenario.input.setupProcessor) {
-      processor.prepare({
+    if (scenario.input.callPrepare) {
+      scp.prepare({
         searchCriteria: scenario.input.searchCriteria,
         scopeName: null, // scopeName from criteria
         allowMultiScope: false,
@@ -87,13 +87,13 @@ for (const scenario of scenarios) {
     }
 
     return {
-      searchCriteria: processor.getSearchCriteria(),
-      searchScope: processor.getSearchScope(),
-      ctsQueryStr: processor.getQueryStr(),
-      ignoredTerms: processor.getIgnoredTerms(),
-      values: processor.getValues(),
-      hasSearchScope: processor.hasSearchScope(),
-      filterResults: processor.getFilterResults(),
+      searchCriteria: scp.getSearchCriteria(),
+      searchScope: scp.getSearchScope(),
+      ctsQueryStr: scp.getQueryStr(),
+      ignoredTerms: scp.getIgnoredTerms(),
+      values: scp.getValues(),
+      hasSearchScope: scp.hasSearchScope(),
+      filterResults: scp.getFilterResults(),
     };
   };
 

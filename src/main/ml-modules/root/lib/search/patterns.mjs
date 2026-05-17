@@ -213,34 +213,6 @@ SEARCH_PATTERN_CONFIG[PATTERN_NAME_KEYWORD] = {
   returnsCtsQuery: true,
 };
 
-//#region Search pattern options
-// TODO: add dedicated getters and setters for remaining, relavant options.
-const PatternOptions = class {
-  constructor(prefFragJoins = false) {
-    this.options = {};
-    this.prefFragJoins = prefFragJoins;
-  }
-
-  set(name, value) {
-    this.options[name] = value;
-  }
-
-  get(name, defaultValue = null) {
-    if (this.options.hasOwnProperty(name)) {
-      return this.options[name];
-    }
-    return defaultValue;
-  }
-
-  setPreferFragJoins(b) {
-    this.prefFragJoins = b;
-  }
-  getPreferFragJoins(defaultValue = false) {
-    return this.prefFragJoins || defaultValue;
-  }
-};
-//#endregion
-
 export {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_EXCLUDE_SELF_IRI,
@@ -271,5 +243,4 @@ export {
   isConvertIdChildToIri,
   onlyAcceptsAtomicValue,
   returnsCtsQuery,
-  PatternOptions,
 };

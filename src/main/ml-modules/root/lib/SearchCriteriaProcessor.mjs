@@ -4,8 +4,8 @@ import * as engine from './search/engine.mjs';
 import {
   OPTION_NAME_PREFER_FRAG_JOINS,
   OPTION_NAME_RETURN_VALUES,
-  PatternOptions,
 } from './search/patterns.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,

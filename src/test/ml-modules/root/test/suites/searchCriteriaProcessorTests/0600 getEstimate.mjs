@@ -1,7 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
-import { PatternOptions } from '/lib/search/patterns.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 import { ML_APP_NAME } from '/lib/appConstants.mjs';
 
 const LIB = '0600 getEstimateTests.mjs';

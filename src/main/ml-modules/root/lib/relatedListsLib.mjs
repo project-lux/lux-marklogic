@@ -18,8 +18,8 @@ import {
   OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_MAXIMUM_VALUES,
   PATTERN_NAME_RELATED_LIST,
-  PatternOptions,
 } from './search/patterns.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
 import { getRelationName } from '../config/relationNames.mjs';
 import {

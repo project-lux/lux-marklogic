@@ -6,7 +6,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
-import { PatternOptions } from '/lib/search/patterns.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 
 const LIB = '0302-process-queryGeneration.mjs';
 console.log(`${LIB}: starting.`);

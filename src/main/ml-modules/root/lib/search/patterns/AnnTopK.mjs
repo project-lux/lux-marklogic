@@ -4,13 +4,7 @@ import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 import { getSearchScopeTypes } from '../../searchScope.mjs';
 
 class AnnTopK extends SearchPatternBase {
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     const id = searchTerm.getId();
     const name = searchTerm.getName();
     const termValue = searchTerm.getValue();

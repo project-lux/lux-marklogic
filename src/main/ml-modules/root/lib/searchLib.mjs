@@ -12,7 +12,6 @@ import {
   TRACE_NAME_SEARCH as traceName,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
-import { SortCriteria } from './SortCriteria.mjs';
 import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
 import { getDefaultSearchOptionsNameByPatternName } from './search/patterns.mjs';
 import {
@@ -27,13 +26,10 @@ import {
 const MAXIMUM_PAGE_LENGTH = 100;
 
 const EMPTY_STRING = '';
-const DEFAULT_ALLOW_MULTI_SCOPE = true;
-const DEFAULT_INCLUDE_TYPE_CONSTRAINT = true;
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
 const DEFAULT_REQUEST_CONTEXT = 'unspecified';
 const DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH = false;
-const DEFAULT_FILTER_RESULTS_NO_CONTEXT = true;
 const DEFAULT_FACETS_SOON = false;
 const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
 
@@ -138,16 +134,17 @@ function _search(
     }
 
     // Parse gets us all the way through query generation.
-    searchCriteriaProcessor = prepare({
+    searchCriteriaProcessor = new SearchCriteriaProcessor();
+    searchCriteriaProcessor.prepare({
       searchCriteria,
-      searchScope: resolvedSearchScope,
+      scopeName: resolvedSearchScope,
       page,
       pageLength,
       pageWith,
       sortDelimitedStr,
       filterResults,
-      stopWatch,
     });
+    stopWatch.lap('process');
     resolvedSearchScope = searchCriteriaProcessor.getSearchScope();
     resolvedSearchCriteria = searchCriteriaProcessor.getSearchCriteria();
 
@@ -280,47 +277,11 @@ function _search(
   }
 }
 
-/**
- * Processes the provided search criteria, returning an instance of SearchCriteriaProcessor from which a
- * generated CTS query may be retrieved.  An InternalServerError or InvalidSearchRequestError may be bubbled up from
- * SearchCriteriaProcessor.
- */
-function prepare({
-  searchCriteria = null,
-  searchScope = null,
-  includeSearchResults = true,
-  includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT,
-  allowMultiScope = DEFAULT_ALLOW_MULTI_SCOPE,
-  patternOptions = null,
-  page = DEFAULT_PAGE,
-  pageLength = DEFAULT_PAGE_LENGTH,
-  pageWith = null,
-  filterResults = DEFAULT_FILTER_RESULTS_NO_CONTEXT, // Context should provide default
-  sortDelimitedStr = EMPTY_STRING,
-  stopWatch = new StopWatch(true),
-}) {
+function calculateEstimate(searchCriteria, scope) {
   const searchCriteriaProcessor = new SearchCriteriaProcessor();
   searchCriteriaProcessor.prepare({
     searchCriteria,
-    scopeName: searchScope,
-    includeSearchResults,
-    includeTypeConstraint,
-    allowMultiScope,
-    patternOptions,
-    page,
-    pageLength,
-    pageWith,
-    filterResults,
-    sortDelimitedStr,
-  });
-  stopWatch.lap('process');
-  return searchCriteriaProcessor;
-}
-
-function calculateEstimate(searchCriteria, scope) {
-  const searchCriteriaProcessor = prepare({
-    searchCriteria,
-    searchScope: scope,
+    scopeName: scope,
     filterResults: false,
   });
   const searchScope = searchCriteriaProcessor.getSearchScope();
@@ -432,13 +393,13 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
               : 0;
         } else {
           // Given pagination parameters, 0 or 1 is expected.
-          const results = prepare({
-            searchCriteria: criteria,
-            page: 1,
-            pageLength: 1,
-            filterResults: true,
-            stopWatch,
-          })
+          const results = new SearchCriteriaProcessor()
+            .prepare({
+              searchCriteria: criteria,
+              page: 1,
+              pageLength: 1,
+              filterResults: true,
+            })
             .execute()
             .getSearchResults();
           hasOneOrMoreResult = results.length;
@@ -625,7 +586,6 @@ export {
   getSearchEstimate,
   resolveSearchOptions,
   resolveSearchOptionsName,
-  prepare,
   sanitizeAndValidateWildcardedStrings,
   search,
 };

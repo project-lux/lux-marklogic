@@ -2,6 +2,7 @@
 import op from '/MarkLogic/optic.mjs';
 import * as engine from './search/engine.mjs';
 import {
+  OPTION_NAME_PREFER_FRAG_JOINS,
   OPTION_NAME_RETURN_VALUES,
   PatternOptions,
 } from './search/patterns.mjs';
@@ -31,13 +32,7 @@ import {
 //#endregion
 
 //#region Constants
-// TODO: delete once able to.
-const START_OF_GENERATED_QUERY = `
-const op = require("/MarkLogic/optic");
-const crm = op.prefixer("http://www.cidoc-crm.org/cidoc-crm/");
-const la = op.prefixer("https://linked.art/ns/terms/");
-const lux = op.prefixer("https://lux.collections.yale.edu/ns/");
-const skos = op.prefixer("http://www.w3.org/2004/02/skos/core#");`;
+const PREFER_FRAG_JOINS = false;
 
 // Optic comparison operators
 const COMPARATORS = {
@@ -60,10 +55,10 @@ const SearchCriteriaProcessor = class {
   #includeTypeConstraint;
   #includeSearchResults;
   #facetRequests;
+  #filterResults;
   #page;
   #pageLength;
   #pageWith;
-  #requestOptions;
   #scopeName;
   #patternOptions;
   #searchTermsConfig;
@@ -82,8 +77,6 @@ const SearchCriteriaProcessor = class {
 
   //#region Constructor(s)
   constructor() {
-    this.#requestOptions = {};
-
     // Once per instance, which technically presumes this shouldn't change when reused.
     this.#searchTermsConfig = getSearchTermsConfig();
   }
@@ -91,9 +84,8 @@ const SearchCriteriaProcessor = class {
 
   //#region Public instance methods
   /**
-   * Processes and validates search criteria, building a fully resolved CTS query string.
-   * This is the main entry point that orchestrates the entire search criteria processing
-   * pipeline from raw input to executable query. Mutates instance state with results.
+   * Resolves, validates, and stores search criteria and scope on the instance,
+   * preparing it for getEstimate(), execute(), or executeForValues(). Mutates instance state.
    *
    * @param {Object|string} searchCriteria - Search criteria in the LUX string grammar or JSON grammar
    * @param {string} scopeName - Search scope name (e.g., 'agent', 'work', 'multi', 'concept')
@@ -112,16 +104,16 @@ const SearchCriteriaProcessor = class {
    */
   prepare({
     searchCriteria,
-    scopeName,
+    scopeName = null,
     includeSearchResults = true,
-    includeTypeConstraint,
-    allowMultiScope,
-    patternOptions,
-    page,
-    pageLength,
-    pageWith,
-    filterResults,
-    sortDelimitedStr,
+    includeTypeConstraint = true,
+    allowMultiScope = true,
+    patternOptions = null,
+    page = 1,
+    pageLength = 20,
+    pageWith = null,
+    filterResults = false, // TODO: doesn't do anything yet; does it need to?
+    sortDelimitedStr = '',
     facetRequests = null,
   }) {
     this.#initProcessState({
@@ -138,6 +130,8 @@ const SearchCriteriaProcessor = class {
       facetRequests,
     });
 
+    this.#patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
+
     // Resolve/validate criteria JSON; scopeName param should take precedence
     this.#resolvedSearchCriteria =
       SearchCriteriaProcessor.requireSearchCriteriaJson(
@@ -145,7 +139,7 @@ const SearchCriteriaProcessor = class {
         searchCriteria,
       );
 
-    // Validate and finalize scope into this + requestOptions
+    // Validate and finalize scope
     this.#resolveAndValidateScope();
 
     // Parse sort criteria now that we have the resolved search scope.
@@ -169,8 +163,8 @@ const SearchCriteriaProcessor = class {
     return this.#scopeName;
   }
 
-  getRequestOptions() {
-    return this.#requestOptions;
+  getFilterResults() {
+    return this.#filterResults;
   }
 
   addIgnoredTerm(term) {
@@ -222,7 +216,7 @@ const SearchCriteriaProcessor = class {
     return searchExecutionResult.getTotal();
   }
 
-  // Returns a Results wrapping optional results, total, resultPage, and plan.
+  // Returns an instance of SearchExecutionResult containing search results and/or facets.
   execute() {
     this.#prepareForExecution();
 
@@ -239,20 +233,36 @@ const SearchCriteriaProcessor = class {
     this.#prepareForExecution(); // does not accummulate values across multiple calls
     this.#patternOptions.set(OPTION_NAME_RETURN_VALUES, true);
 
-    engine.processCriteria({
-      searchCriteriaProcessor: this,
+    this.processCriteria({
       planCriteria: this.#resolvedSearchCriteria,
       planScope: this.#scopeName,
       allowMultiScope: this.#allowMultiScope,
       patternOptions: this.#patternOptions,
-      requestOptions: this.#requestOptions,
     });
 
     this.#searchState = SEARCH_STATE_COMPLETED;
     return this.#values;
   }
 
-  // Wrapper function enabling search patterns to process nested criteria.
+  // Builds sorted and unsorted Optic plans without executing them.
+  // Returns { sortedResultsPlan, unsortedResultsPlan }.
+  buildPlans(preferFragJoins = PREFER_FRAG_JOINS) {
+    // May override the default set by prepare().
+    this.#patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, preferFragJoins);
+
+    return engine.buildPlans({
+      searchCriteriaProcessor: this,
+      planCriteria: this.#resolvedSearchCriteria,
+      planScope: this.#scopeName,
+      allowMultiScope: this.#allowMultiScope,
+      groups: engine.getResultRowGrouping(),
+      sortCriteria: this.#sortCriteria,
+      patternOptions: this.#patternOptions,
+    });
+  }
+
+  // Delegates to engine.processCriteria. Used by executeForValues() and by
+  // search pattern classes to process nested criteria.
   processCriteria({
     planCriteria,
     planScope = 'item',
@@ -260,7 +270,6 @@ const SearchCriteriaProcessor = class {
     groups = null,
     parentId = null,
     allowMultiScope = false,
-    requestOptions = null,
   }) {
     return engine.processCriteria({
       searchCriteriaProcessor: this,
@@ -270,7 +279,6 @@ const SearchCriteriaProcessor = class {
       groups,
       parentId,
       allowMultiScope,
-      requestOptions,
     });
   }
 
@@ -339,15 +347,6 @@ const SearchCriteriaProcessor = class {
     }
     throw new InternalServerError(
       'sortBinding is required to determine sort type.',
-    );
-  }
-
-  static evalQueryString(queryStr) {
-    // TODO: will the Optic version still need this? Would prefer to avoid eval or add protection.
-    return fn.head(
-      xdmp.eval(
-        `${START_OF_GENERATED_QUERY}; const q = ${queryStr}; q; export default q`,
-      ),
     );
   }
 
@@ -461,13 +460,13 @@ const SearchCriteriaProcessor = class {
     this.#pageWith = pageWith;
     this.#sortDelimitedStr = sortDelimitedStr;
     this.#facetRequests = facetRequests;
-    this.#requestOptions = { filterResults };
+    this.#filterResults = filterResults;
   }
 
   /**
-   * Resolves the scope from criteria, validates it, and applies it to instance and requestOptions.
+   * Resolves the scope from criteria, validates it, and stores it on the instance.
    * Extracts scope from resolvedSearchCriteria._scope, normalizes it (trim + lowercase),
-   * validates it's a recognized scope name, then sets this.scopeName and requestOptions.scopeName.
+   * validates it's a recognized scope name, then sets this.scopeName.
    * Removes the _scope property from criteria after processing.
    *
    * @throws {InvalidSearchRequestError} When scope is invalid or not specified
@@ -479,7 +478,6 @@ const SearchCriteriaProcessor = class {
       if (isSearchScopeName(normalized)) {
         this.#scopeName = normalized;
         delete sc._scope;
-        this.#requestOptions.scopeName = normalized; // some patterns need this
         return;
       }
       throw new InvalidSearchRequestError(
@@ -499,4 +497,4 @@ const SearchCriteriaProcessor = class {
   //#endregion
 };
 
-export { COMPARATORS, START_OF_GENERATED_QUERY, SearchCriteriaProcessor };
+export { COMPARATORS, SearchCriteriaProcessor };

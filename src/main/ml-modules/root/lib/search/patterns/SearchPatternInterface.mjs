@@ -1,13 +1,7 @@
 import { NotImplementedError } from '../../errorClasses.mjs';
 
 class SearchPatternInterface {
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     throw new NotImplementedError(
       `${this.constructor.name}.apply must be implemented.`,
     );

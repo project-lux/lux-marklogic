@@ -105,7 +105,6 @@ const scenarios = [
       ctsQueryContains: ['agentAnyText', 'artist'],
       criteriaCntGte: 1,
       ignoredTermsLength: 0,
-      requestOptionsScopeName: 'agent',
     },
   },
   {
@@ -129,7 +128,6 @@ const scenarios = [
       ctsQueryContains: ['Pablo', 'Picasso'],
       criteriaCntGte: 2,
       ignoredTermsLength: 0,
-      requestOptionsScopeName: 'agent',
     },
   },
   {
@@ -152,7 +150,6 @@ const scenarios = [
       ctsQueryContains: ['painting'],
       criteriaCntGte: 1,
       ignoredTermsLength: 1,
-      requestOptionsScopeName: 'work',
     },
   },
   {
@@ -206,7 +203,6 @@ for (const scenario of scenarios) {
       criteriaCnt: processor.getCriteriaCount(),
       ignoredTerms: processor.getIgnoredTerms(),
       values: processor.getValues(),
-      requestOptionsScopeName: processor.getRequestOptions().scopeName,
     };
   };
 
@@ -271,16 +267,6 @@ for (const scenario of scenarios) {
           scenario.expected.ignoredTermsLength,
           actual.ignoredTerms.length,
           `Scenario '${scenario.name}' - ignoredTerms length should be ${scenario.expected.ignoredTermsLength}`,
-        ),
-      );
-    }
-
-    if (scenario.expected.requestOptionsScopeName !== undefined) {
-      assertions.push(
-        testHelperProxy.assertEqual(
-          scenario.expected.requestOptionsScopeName,
-          actual.requestOptionsScopeName,
-          `Scenario '${scenario.name}' - requestOptions.scopeName should be '${scenario.expected.requestOptionsScopeName}'`,
         ),
       );
     }

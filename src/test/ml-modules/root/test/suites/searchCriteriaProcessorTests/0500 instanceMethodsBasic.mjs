@@ -93,7 +93,7 @@ for (const scenario of scenarios) {
       ignoredTerms: processor.getIgnoredTerms(),
       values: processor.getValues(),
       hasSearchScope: processor.hasSearchScope(),
-      requestOptions: processor.getRequestOptions(),
+      filterResults: processor.getFilterResults(),
     };
   };
 
@@ -208,19 +208,11 @@ for (const scenario of scenarios) {
       );
     }
 
-    // Test requestOptions are always available
+    // Test filterResults is always a boolean
     assertions.push(
       testHelperProxy.assertTrue(
-        actual.requestOptions !== null &&
-          typeof actual.requestOptions === 'object',
-        `getRequestOptions should return valid object for scenario: ${scenario.name}`,
-      ),
-    );
-
-    assertions.push(
-      testHelperProxy.assertTrue(
-        actual.requestOptions.hasOwnProperty('filterResults'),
-        `getRequestOptions should include filterResults property for scenario: ${scenario.name}`,
+        typeof actual.filterResults === 'boolean',
+        `getFilterResults should return a boolean for scenario: ${scenario.name}`,
       ),
     );
   }

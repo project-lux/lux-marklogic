@@ -2,13 +2,7 @@ import op from '/MarkLogic/optic.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
 class DocumentIdOrIri extends SearchPatternBase {
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     const termValue = searchTerm.getValue();
     const uriCol = searchTerm.getParentUriColumn();
 

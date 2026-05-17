@@ -23,20 +23,13 @@ const COORD_OPTIONS = ['coordinate-system=wgs84'];
 const POINT_INDEX_OPTIONS = COORD_OPTIONS.concat(['type=point']);
 
 class Geospatial extends SearchPatternBase {
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     if (searchTerm.getSearchTermConfig().isGeospatialRegion()) {
       return this.#processRegionTerm(
         searchCriteriaProcessor,
         searchTerm,
         logicType,
         patternOptions,
-        requestOptions,
       );
     }
     return this.#processPointTerm(
@@ -44,7 +37,6 @@ class Geospatial extends SearchPatternBase {
       searchTerm,
       logicType,
       patternOptions,
-      requestOptions,
     );
   }
 
@@ -56,7 +48,6 @@ class Geospatial extends SearchPatternBase {
     searchTerm,
     logicType,
     patternOptions,
-    requestOptions,
   ) {
     const operator = (
       searchTerm.getComparisonOperator() || DEFAULT_REGION_OPERATOR
@@ -81,7 +72,6 @@ class Geospatial extends SearchPatternBase {
     searchTerm,
     logicType,
     patternOptions,
-    requestOptions,
   ) {
     const region = this.#parseGeoInput(searchTerm);
     const path = this.#getIndexReference(searchTerm);

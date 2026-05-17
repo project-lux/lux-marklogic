@@ -16,13 +16,7 @@ import { SearchTermConfig } from '../SearchTermConfig.mjs';
 import { getSearchTermConfig } from '../../../config/searchTermsConfig.mjs';
 
 class HopInverse extends SearchPatternBase {
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     const id = searchTerm.getId();
     const termConfig = searchTerm.getSearchTermConfig();
     const parentIriCol = searchTerm.getParentIriColumn();
@@ -68,7 +62,6 @@ class HopInverse extends SearchPatternBase {
           by: [refFragCol],
         },
         parentId: id,
-        requestOptions,
       }),
       [
         // Hop Inverse: the triple is on the referenced document, not the source document.

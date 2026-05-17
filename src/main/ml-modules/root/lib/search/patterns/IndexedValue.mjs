@@ -2,13 +2,7 @@ import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
 class IndexedValue extends SearchPatternBase {
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
     const termSearchOptions = searchTerm.getSearchOptions();

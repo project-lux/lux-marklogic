@@ -14,26 +14,18 @@ import {
 
 class HopWithField extends SearchPatternBase {
   //#region Pattern implementation methods.
-  apply(
-    searchCriteriaProcessor,
-    searchTerm,
-    logicType,
-    patternOptions,
-    requestOptions,
-  ) {
+  apply(searchCriteriaProcessor, searchTerm, logicType, patternOptions) {
     if (searchTerm.getSearchTermConfig().isTransitive()) {
       return this.#processTransitiveHopWithFieldTerm(
         searchCriteriaProcessor,
         searchTerm,
         patternOptions,
-        requestOptions,
       );
     } else {
       return this.#processHopWithFieldTerm(
         searchCriteriaProcessor,
         searchTerm,
         patternOptions,
-        requestOptions,
       );
     }
   }
@@ -48,7 +40,6 @@ class HopWithField extends SearchPatternBase {
     searchCriteriaProcessor,
     searchTerm,
     patternOptions,
-    requestOptions,
   ) {
     const hopIriCol = searchTerm.getParentIriColumn();
     const fieldIriCol = searchTerm.getIriColumn();
@@ -61,13 +52,11 @@ class HopWithField extends SearchPatternBase {
           searchCriteriaProcessor,
           searchTerm,
           patternOptions,
-          requestOptions,
         )
       : this.#getFieldNestedPlan(
           searchCriteriaProcessor,
           searchTerm,
           patternOptions,
-          requestOptions,
         );
 
     // TODO: if there are zero results from the fieldPlan, should we do anything different?
@@ -99,7 +88,6 @@ select ?${id}_s ?${id}_o where {
     searchCriteriaProcessor,
     searchTerm,
     patternOptions,
-    requestOptions,
   ) {
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
@@ -154,13 +142,11 @@ select ?${id}_s ?${id}_o where {
           searchCriteriaProcessor,
           searchTerm,
           patternOptions,
-          requestOptions,
         )
       : this.#getFieldNestedPlan(
           searchCriteriaProcessor,
           searchTerm,
           patternOptions,
-          requestOptions,
         );
 
     return {
@@ -184,12 +170,7 @@ select ?${id}_s ?${id}_o where {
     };
   }
 
-  #getFieldNestedPlan(
-    searchCriteriaProcessor,
-    searchTerm,
-    patternOptions,
-    requestOptions,
-  ) {
+  #getFieldNestedPlan(searchCriteriaProcessor, searchTerm, patternOptions) {
     const termConfig = searchTerm.getSearchTermConfig();
     return searchCriteriaProcessor.processCriteria({
       planCriteria: searchTerm.getCriteria(),
@@ -200,12 +181,7 @@ select ?${id}_s ?${id}_o where {
     });
   }
 
-  #getFieldAtomicPlan(
-    searchCriteriaProcessor,
-    searchTerm,
-    patternOptions,
-    requestOptions,
-  ) {
+  #getFieldAtomicPlan(searchCriteriaProcessor, searchTerm, patternOptions) {
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
     const termSearchOptions = searchTerm.getSearchOptions();

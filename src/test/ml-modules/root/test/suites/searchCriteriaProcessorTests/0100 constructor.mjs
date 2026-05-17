@@ -22,11 +22,11 @@ for (const scenario of scenarios) {
     const processor = new SearchCriteriaProcessor();
 
     // Validate the constructor properly initializes defaults
-    const requestOptions = processor.getRequestOptions();
+    const filterResults = processor.getFilterResults();
 
     // Return an object with the properties we want to test
     return {
-      requestOptions,
+      filterResults,
       hasSearchTermsConfig: processor.getSearchTermsConfig() != null,
       // Test initial state of properties set by process()
       scopeName: processor.getSearchScope(),
@@ -45,15 +45,6 @@ for (const scenario of scenarios) {
     scenarioResults.applyErrorNotExpectedAssertions
   ) {
     const actual = scenarioResults.actualValue;
-
-    // Test request options are an empty object before prepare() is called
-    assertions.push(
-      testHelperProxy.assertTrue(
-        typeof actual.requestOptions === 'object' &&
-          actual.requestOptions !== null,
-        'Constructor should initialize requestOptions as an object',
-      ),
-    );
 
     // Test that searchTermsConfig is initialized and accesses lux property correctly
     assertions.push(

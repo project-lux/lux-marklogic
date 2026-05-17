@@ -13,7 +13,6 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
-import { prepare } from './searchLib.mjs';
 import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_EXCLUDE_SELF_IRI,
@@ -152,13 +151,14 @@ function getRelatedList({
     // Old school loop to give this boomer confidence the order is honored.
     for (let i = 0; i < searchConfigs.length; i++) {
       const searchConfig = searchConfigs[i];
-      const searchCriteriaProcessor = prepare({
+      const searchCriteriaProcessor = new SearchCriteriaProcessor();
+      searchCriteriaProcessor.prepare({
         searchCriteria: utils.replaceMatchingPropertyValues(
           searchConfig.criteria,
           TOKEN_RUNTIME_PARAM,
           uri,
         ),
-        searchScope: relatedListConfig.targetScope,
+        scopeName: relatedListConfig.targetScope,
         allowMultiScope: false,
         patternOptions,
         includeTypeConstraint,

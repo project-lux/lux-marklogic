@@ -5,7 +5,7 @@
  */
 'use strict';
 import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
-import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
+import { expandPredicate } from '/lib/search/prefixUtils.mjs';
 import { getSearchScopeTypes } from '/lib/searchScope.mjs';
 import { getVersionInfo } from '/lib/environmentLib.mjs';
 
@@ -25,14 +25,14 @@ for (const searchScope of Object.keys(searchTermsConfig).sort()) {
     });
 
   [...new Set(allPredicates.sort())].forEach((predicate) => {
-    const predicateIri = eval(`${START_OF_GENERATED_QUERY}; ${predicate}`);
+    const predicateIri = expandPredicate(predicate);
     predicatesToTypes[predicate] = types.filter((type) => {
       return (
         cts.estimate(
           cts.andQuery([
             cts.jsonPropertyValueQuery('dataType', type, ['exact']),
             cts.jsonPropertyValueQuery('predicate', predicateIri, ['exact']),
-          ])
+          ]),
         ) > 0
       );
     });

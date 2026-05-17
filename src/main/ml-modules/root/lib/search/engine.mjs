@@ -55,11 +55,9 @@ const PATTERNS = {
   indexedWord: IndexedWordPattern,
   keyword: KeywordPattern,
 };
-
-const PREFER_FRAG_JOINS = false;
 //#endregion
 
-//#region Entry points
+//#region Exported functions
 // Returns an instance of SearchExecutionResult
 function performSearch(searchCriteriaProcessor) {
   const searchCriteria = searchCriteriaProcessor.getSearchCriteria();
@@ -72,7 +70,6 @@ function performSearch(searchCriteriaProcessor) {
   const facetRequests = searchCriteriaProcessor.getFacetRequests();
   const sortCriteria = searchCriteriaProcessor.getSortCriteria();
   let patternOptions = searchCriteriaProcessor.getPatternOptions();
-  const requestOptions = searchCriteriaProcessor.getRequestOptions();
 
   let planAsSource;
   try {
@@ -85,25 +82,14 @@ function performSearch(searchCriteriaProcessor) {
     // Require the caller want search results or at least one facet before
     // doing any work.
     if (includeSearchResults || facetRequests?.length > 0) {
-      const finalGroups = {
-        by: ['uri'],
-        agg: [op.sample('dataType', op.col('dataType'))],
-      };
-
-      if (!utils.isDefined(patternOptions)) {
-        patternOptions = new PatternOptions();
-      }
-      patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
-
-      const { sortedResultsPlan, unsortedResultsPlan } = processCriteria({
+      const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({
         searchCriteriaProcessor,
         planCriteria: searchCriteria,
         planScope: searchScope,
         allowMultiScope,
-        groups: finalGroups,
+        groups: getResultRowGrouping(),
         sortCriteria,
         patternOptions,
-        requestOptions,
       });
 
       const useThisPlan = includeSearchResults
@@ -151,6 +137,7 @@ function performSearch(searchCriteriaProcessor) {
   }
 }
 
+// For recursive calls from pattern classes — returns a single assembled plan.
 function processCriteria({
   searchCriteriaProcessor,
   planCriteria,
@@ -159,8 +146,114 @@ function processCriteria({
   groups = null,
   parentId = null,
   allowMultiScope = false,
+}) {
+  const { acc, assemblyContext } = buildCriteriaAccumulator({
+    searchCriteriaProcessor,
+    planCriteria,
+    planScope,
+    patternOptions,
+    parentId,
+    allowMultiScope,
+  });
+  return assemblePlan({ ...acc, ...assemblyContext });
+}
+
+// Needed outside the module in support of building the plans without executing them.
+function getResultRowGrouping() {
+  return {
+    by: ['uri'],
+    agg: [op.sample('dataType', op.col('dataType'))],
+  };
+}
+
+// Top-level entry point called from performSearch — returns sorted and
+// unsorted plans with finalization and optional sort applied.
+function buildPlans({
+  searchCriteriaProcessor,
+  planCriteria,
+  planScope = 'item',
+  patternOptions,
+  allowMultiScope = false,
+  groups,
   sortCriteria = null,
-  requestOptions = null,
+}) {
+  const { acc, assemblyContext } = buildCriteriaAccumulator({
+    searchCriteriaProcessor,
+    planCriteria,
+    planScope,
+    patternOptions,
+    allowMultiScope,
+  });
+
+  // Unsorted plan — used by facets.
+  const unsortedResultsPlan = collapseToResultRows(
+    assemblePlan({ ...acc, ...assemblyContext }),
+    groups,
+  );
+
+  // Sorted plan — used for search results.
+  let sortedResultsPlan;
+  const sortAggregates = [];
+  const sortOrderBy = [];
+  const sortLexicons = {};
+  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
+    for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
+      const sortColName = `sort_${sortDescriptor.indexReference}`;
+      sortLexicons[sortColName] = cts.fieldReference(
+        sortDescriptor.indexReference,
+      );
+      sortAggregates.push(sortColName);
+      sortOrderBy.push(
+        sortDescriptor.order === 'descending'
+          ? op.desc(sortColName)
+          : op.asc(sortColName),
+      );
+    }
+    const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
+    sortedResultsPlan = collapseToResultRows(
+      assemblePlan({ ...sortAcc, ...assemblyContext }),
+      groups,
+      sortAggregates,
+      sortOrderBy,
+    );
+  } else if (sortCriteria?.hasSemanticSortOption()) {
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+
+    const semanticSortOption = sortCriteria.getSemanticSortOption();
+    const sortByColName = 'sortByMe';
+    const sortByCol = op.col(sortByColName);
+    sortedResultsPlan = collapseToResultRows(
+      applySemanticSort(
+        assemblePlan({ ...acc, ...assemblyContext }),
+        semanticSortOption,
+        sortByColName,
+      ),
+      groups,
+      [sortByCol],
+      [
+        semanticSortOption.order === 'descending'
+          ? op.desc(sortByCol)
+          : op.asc(sortByCol),
+      ],
+    );
+  } else {
+    sortedResultsPlan = unsortedResultsPlan;
+  }
+
+  return { sortedResultsPlan, unsortedResultsPlan };
+}
+//#endregion
+
+//#region Core engine functions
+// Builds the raw plan accumulator from search criteria.  Shared by both
+// top-level (buildPlans) and recursive (processCriteria) paths.
+function buildCriteriaAccumulator({
+  searchCriteriaProcessor,
+  planCriteria,
+  planScope = 'item',
+  patternOptions,
+  parentId = null,
+  allowMultiScope = false,
 }) {
   const isTopLevel = !parentId;
   const uriCol = isTopLevel ? 'uri' : parentId + '_uri';
@@ -181,7 +274,7 @@ function processCriteria({
 
   let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
 
-  const { criteria, logicType } = getCriteriaAndLogicType(planCriteria);
+  const { criteria, logicType } = parseCriteriaAndLogicType(planCriteria);
 
   const acc = createPlanAccumulator({
     scope,
@@ -220,7 +313,7 @@ function processCriteria({
         criteria.push(...result.inlineCriteria);
       } else if (result.andOrSubPlan) {
         // Deferred: AND-encounters-OR sub-plans are combined off the outer
-        // fragment in assembleOpticPlan to avoid SPARQL fusion when 2+ are
+        // fragment in assemblePlan to avoid SPARQL fusion when 2+ are
         // chained against the same outer (which silently zeroes results or
         // blows memory). See docs/optic-lessons.md.
         acc.andOrSubPlans.push(result.andOrSubPlan);
@@ -233,7 +326,7 @@ function processCriteria({
     const name = Object.keys(criterion).find(
       (k) => k[0] !== '_' && searchTermNames.includes(k),
     );
-    const searchTerm = buildLeafTermContext({
+    const searchTerm = buildLeafSearchTerm({
       criterion,
       id,
       name,
@@ -253,179 +346,442 @@ function processCriteria({
         searchTerm,
         logicType,
         patternOptions,
-        requestOptions,
       ),
     );
   }
 
   const assemblyContext = { fragCol, uriCol, dataTypeCol, scope, logicType };
-
-  // Recursive calls return a raw (unfinalized) plan.
-  if (!isTopLevel) {
-    return assembleOpticPlan({ ...acc, ...assemblyContext });
-  }
-
-  // Top-level: build two plans from the same accumulator.
-  // constraintPlan: no sort — used by facets.
-  const unsortedResultsPlan = finalizeRootPlan(
-    assembleOpticPlan({ ...acc, ...assemblyContext }),
-    groups,
-  );
-
-  // plan: with sort lexicons and orderBy — used for search results.
-  let sortedResultsPlan;
-  const sortAggregates = [];
-  const sortOrderBy = [];
-  const sortLexicons = {};
-  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
-    for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
-      const sortColName = `sort_${sortDescriptor.indexReference}`;
-      sortLexicons[sortColName] = cts.fieldReference(
-        sortDescriptor.indexReference,
-      );
-      sortAggregates.push(sortColName);
-      sortOrderBy.push(
-        sortDescriptor.order === 'descending'
-          ? op.desc(sortColName)
-          : op.asc(sortColName),
-      );
-    }
-    const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
-    sortedResultsPlan = finalizeRootPlan(
-      assembleOpticPlan({ ...sortAcc, ...assemblyContext }),
-      groups,
-      sortAggregates,
-      sortOrderBy,
-    );
-  } else if (sortCriteria?.hasSemanticSortOption()) {
-    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
-
-    const semanticSortOption = sortCriteria.getSemanticSortOption();
-    const sortByColName = 'sortByMe';
-    const sortByCol = op.col(sortByColName);
-    sortedResultsPlan = finalizeRootPlan(
-      applySemanticSort(
-        assembleOpticPlan({ ...acc, ...assemblyContext }),
-        semanticSortOption,
-        sortByColName,
-      ),
-      groups,
-      [sortByCol],
-      [
-        semanticSortOption.order === 'descending'
-          ? op.desc(sortByCol)
-          : op.asc(sortByCol),
-      ],
-    );
-  } else {
-    sortedResultsPlan = unsortedResultsPlan;
-  }
-
-  return { sortedResultsPlan, unsortedResultsPlan };
+  return { acc, assemblyContext };
 }
-//#endregion
 
-//#region Helper functions
-function getValidatedSemanticFacetConfig(facetName) {
-  const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
-  const sourceJoinColName = semanticConfig?.sourceJoinColName;
-  const constraintJoinColName = semanticConfig?.constraintJoinColName;
-
-  if (!utils.isNonEmptyString(sourceJoinColName)) {
-    throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing required 'sourceJoinColName'.`,
-    );
+// Parses a planCriteria object into a mutable array of criteria and a logic type
+// ('and', 'or', or 'not'). A bare object (no AND/OR/NOT key) is treated as a
+// single-element AND array.
+function parseCriteriaAndLogicType(planCriteria) {
+  let criteria;
+  let logicType;
+  if (planCriteria.AND) {
+    criteria = xdmp.toJSON(planCriteria.AND).toObject();
+    logicType = 'and';
+  } else if (planCriteria.OR) {
+    criteria = xdmp.toJSON(planCriteria.OR).toObject();
+    logicType = 'or';
+  } else if (planCriteria.NOT) {
+    criteria = xdmp.toJSON(planCriteria.NOT).toObject();
+    logicType = 'not';
+  } else {
+    // Single criteria are equivalent to AND
+    criteria = [xdmp.toJSON(planCriteria).toObject()];
+    logicType = 'and';
   }
-  if (!utils.isNonEmptyString(constraintJoinColName)) {
-    throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing required 'constraintJoinColName'.`,
-    );
-  }
-
-  const planValue = semanticConfig?.plan;
-  const validPlanType =
-    typeof planValue?.result === 'function' &&
-    typeof planValue?.export === 'function';
-  if (!validPlanType) {
-    throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: 'plan' is required and must be an Optic plan.`,
-    );
-  }
-
   return {
-    ...semanticConfig,
-    sourceJoinColName,
-    constraintJoinColName,
+    criteria,
+    logicType,
   };
 }
 
-// Applies a semantic sort to the raw assembled plan. Takes one hop from each search result
-// document via the sort binding's predicate to a related document and retrieves the related
-// document's field value for sorting. Collapses to one sort value per search result (min for
-// ascending, max for descending) so that finalizeRootPlan receives one row per uri.
-function applySemanticSort(plan, sortOption, sortByColName) {
-  const { predicate, indexReference, order } = sortOption;
-  const expandedPredicate = expandPredicate(predicate);
-
-  // Projection barrier: narrow to columns needed for the semantic join.
-  // Prevents the Optic optimizer from collapsing the semantic join to zero rows
-  // (same technique used by semantic facets).
-  plan = plan.select(['uri', 'iri', 'dataType']);
-
-  // Triple plan: source document's IRI --(predicate)--> related document's IRI.
-  const triplePlan = op.fromTriples([
-    op.pattern(op.col('sourceIri'), expandedPredicate, op.col('relatedIri')),
-  ]);
-
-  // Join triples to search results. Left outer preserves results with no matching
-  // triple (they sort last with null sort values).
-  plan = plan.joinLeftOuter(triplePlan, op.on('iri', 'sourceIri'));
-
-  // Get the sort field value from the related document via its IRI.
-  const relatedFieldPlan = op.fromLexicons(
-    {
-      relatedDocIri: cts.iriReference(),
-      [sortByColName]: cts.fieldReference(indexReference),
+// Mutable accumulator for all pattern/conjunction contributions during criteria iteration.
+// Initialized with scope-level base lexicons and an optional dataType constraint.
+function createPlanAccumulator({
+  scope,
+  uriCol,
+  iriCol,
+  fragCol,
+  dataTypeCol,
+  isMultiScope,
+}) {
+  return {
+    lexicons: {
+      [uriCol]: cts.uriReference(),
+      [iriCol]: cts.iriReference(),
+      [dataTypeCol]: cts.fieldReference('anyDataTypeName'),
     },
-    null,
-    op.fragmentIdCol('relatedFragId'),
-  );
+    constraints: isMultiScope
+      ? []
+      : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
+    ctsConstraints: [],
+    conjunctionJoins: [],
+    // AND-encounters-OR sub-plans deferred until assemblePlan, where
+    // 2+ are combined off the outer fragment before being joined back in.
+    andOrSubPlans: [],
+    patternJoins: [],
+  };
+}
 
-  plan = plan.joinLeftOuter(
-    relatedFieldPlan,
-    op.on('relatedIri', 'relatedDocIri'),
-  );
+// Constructs a SearchTerm for a single leaf criterion (non-conjunction).
+// Resolves the term's config, applies pattern requirements, casts the value
+// to the configured scalar type, and selects search options.
+function buildLeafSearchTerm({
+  criterion,
+  id,
+  name,
+  scope,
+  isTopLevel,
+  iriCol,
+  uriCol,
+  fragCol,
+  dataTypeCol,
+}) {
+  const termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
 
-  // Collapse to one row per search result, picking the best sort value.
-  // A search result with multiple triples (e.g., co-produced items) gets
-  // the max (descending) or min (ascending) sort value.
-  plan = plan.groupBy(
-    ['uri'],
-    [
-      op.sample('dataType', op.col('dataType')),
-      order === 'descending'
-        ? op.max(sortByColName, op.col(sortByColName))
-        : op.min(sortByColName, op.col(sortByColName)),
-    ],
-  );
+  const searchTerm = new SearchTerm()
+    .addId(id)
+    .addName(name)
+    .addScopeName(scope)
+    .addSearchTermConfig(termConfig)
+    .addTopLevel(isTopLevel)
+    .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
+    .addCriteria(criterion[name]);
+
+  // Runtime search term properties are represented with leading underscores on criteria.
+  Object.keys(criterion)
+    .filter((k) => k.startsWith('_'))
+    .forEach((k) => {
+      searchTerm.addProperty(k.substring(1), criterion[k]);
+    });
+
+  applyPatternRequirements(searchTerm, termConfig);
+
+  // Cast value to the correct type if scalar and not dateTime.
+  const scalarType = termConfig.getScalarType();
+  const caster =
+    scalarType && scalarType !== 'dateTime' ? xs[scalarType] : null;
+  const rawTermValue = searchTerm.getCriteria();
+  const value = caster
+    ? caster(rawTermValue)
+    : typeof rawTermValue === 'string'
+      ? rawTermValue
+      : null;
+  searchTerm.setValue(value);
+
+  // TODO: resolve search options: pattern --> term config --> term instance.
+  const searchOptions = termConfig.isForceExactMatch()
+    ? DEFAULT_SEARCH_OPTIONS_EXACT
+    : DEFAULT_SEARCH_OPTIONS_KEYWORD;
+  searchTerm.setSearchOptions(searchOptions);
+
+  return searchTerm;
+}
+
+// Merges contributions from a pattern application into the accumulator.
+// criteriaQueue is the live criteria iteration array; pattern-returned criteria are pushed there
+// so they are processed in the same loop iteration pass.
+function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
+  if (!contributions) {
+    return;
+  }
+  Object.assign(acc.lexicons, contributions.lexicons ?? {});
+  if (contributions.criteria?.length) {
+    criteriaQueue.push(...contributions.criteria);
+  }
+  if (contributions.constraints?.length) {
+    acc.constraints.push(...contributions.constraints);
+  }
+  if (contributions.ctsConstraints?.length) {
+    acc.ctsConstraints.push(...contributions.ctsConstraints);
+  }
+  if (contributions.patternJoins?.length) {
+    acc.patternJoins.push(...contributions.patternJoins);
+  }
+}
+
+// Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor
+// or inline criteria to be appended to the processing queue.
+// Returns: { join: { type, right, on, condition } } or { inlineCriteria: Array }
+function buildConjunctionJoin({
+  criterion,
+  logicType,
+  scope,
+  patternOptions,
+  id,
+  uriCol,
+  fragCol,
+  searchCriteriaProcessor,
+}) {
+  const makeJoinOn = () =>
+    patternOptions.getPreferFragJoins()
+      ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
+      : op.on(op.col(uriCol), op.col(id + '_uri'));
+
+  const singleColSelect = () =>
+    patternOptions.getPreferFragJoins() ? [id + '_frag'] : [id + '_uri'];
+
+  const fullOuterJoinCol = () =>
+    patternOptions.getPreferFragJoins()
+      ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
+      : op.as(uriCol, op.col(id + '_uri'));
+
+  const subPlan = (planCriteria) =>
+    processCriteria({
+      searchCriteriaProcessor,
+      planCriteria,
+      planScope: scope,
+      patternOptions,
+      parentId: id,
+    });
+
+  if (criterion.AND) {
+    switch (logicType) {
+      case 'and':
+        // AND can be inlined because we're already in an AND here
+        return { inlineCriteria: criterion.AND };
+
+      case 'or': {
+        // We are in an OR and encounter an AND - full outer join
+        const _joinCol = fullOuterJoinCol();
+        return {
+          join: {
+            type: 'joinFullOuter',
+            right: subPlan(criterion).select([
+              _joinCol,
+              op.as('dataType', op.col(id + '_dataType')),
+            ]),
+            on: null,
+            condition: null,
+          },
+        };
+      }
+
+      case 'not':
+        // We are in a NOT and encounter an AND - not exists join
+        return {
+          join: {
+            type: 'notExistsJoin',
+            right: subPlan(criterion).select(singleColSelect()),
+            on: makeJoinOn(),
+            condition: null,
+          },
+        };
+    }
+  }
+
+  if (criterion.OR) {
+    switch (logicType) {
+      case 'and': {
+        // AND encounters OR. Defer: assemblePlan combines all such
+        // sub-plans off the outer fragment first, then joins the combined
+        // result to the outer ONCE. Chaining 2+ of these as joinInner
+        // against the same outer fragment causes SPARQL fusion that
+        // silently zeroes results or blows memory.
+        // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
+        // groupBy on that same column dedupes and adds a materialization
+        // barrier so the merger sees a single, fully-typed binding.
+        const cols = singleColSelect();
+        return {
+          andOrSubPlan: {
+            plan: subPlan(criterion).select(cols).groupBy(cols, []),
+            joinCol: cols[0],
+            preferFrag: patternOptions.getPreferFragJoins(),
+          },
+        };
+      }
+
+      case 'or':
+        // OR can be inlined because we're already in an OR here
+        return { inlineCriteria: criterion.OR };
+
+      case 'not':
+        // We are in a NOT and encounter an OR - not exists join
+        return {
+          join: {
+            type: 'notExistsJoin',
+            right: subPlan(criterion).select(singleColSelect()),
+            on: makeJoinOn(),
+            condition: null,
+          },
+        };
+    }
+  }
+
+  if (criterion.NOT) {
+    switch (logicType) {
+      case 'and':
+        // We are in an AND and encounter a NOT - not exists join and change to OR
+        // This is equivalent and likely more performant (needs testing)
+        return {
+          join: {
+            type: 'notExistsJoin',
+            right: subPlan({ OR: criterion.NOT }).select(singleColSelect()),
+            on: makeJoinOn(),
+            condition: null,
+          },
+        };
+
+      case 'or': {
+        // We are in an OR and encounter a NOT - full outer join
+        const _joinCol = fullOuterJoinCol();
+        return {
+          join: {
+            type: 'joinFullOuter',
+            right: subPlan(criterion).select([
+              _joinCol,
+              op.as('dataType', op.col(id + '_dataType')),
+            ]),
+            on: null,
+            condition: null,
+          },
+        };
+      }
+
+      case 'not':
+        // We are in a NOT and encounter a NOT - inner join and change to OR
+        // This is equivalent and likely more performant (needs testing)
+        return {
+          join: {
+            type: 'joinInner',
+            right: subPlan({ OR: criterion.NOT }).select(singleColSelect()),
+            on: makeJoinOn(),
+            condition: null,
+          },
+        };
+    }
+  }
+}
+
+// Assembles the Optic plan by applying all accumulated constraints, CTS queries, and joins.
+function assemblePlan({
+  lexicons,
+  constraints,
+  ctsConstraints,
+  conjunctionJoins,
+  andOrSubPlans,
+  patternJoins,
+  fragCol,
+  uriCol,
+  dataTypeCol,
+  scope,
+  logicType,
+}) {
+  let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
+
+  if (constraints.length) {
+    for (const constraint of constraints) {
+      plan = plan.where(constraint);
+    }
+  }
+
+  if (ctsConstraints.length) {
+    const ctsWrapper =
+      logicType === 'and'
+        ? cts.andQuery
+        : logicType === 'or'
+          ? cts.orQuery
+          : (x) => cts.notQuery(cts.orQuery(x));
+    plan = plan.where(ctsWrapper(ctsConstraints));
+  }
+
+  if (conjunctionJoins.length) {
+    for (const join of conjunctionJoins) {
+      // Join functions are a method on the plan, so we reference them by name
+      plan = plan[join.type](join.right, join.on, join.condition);
+    }
+  }
+
+  // Fold AND-encounters-OR sub-plans. With 2+ such sub-plans, chaining each
+  // as joinInner against the outer fragment triggers SPARQL fusion that
+  // breaks the result. Instead, combine the sub-plans to each other first
+  // (off the outer) on their per-branch-unique join columns, then join the
+  // combined plan to the outer once.
+  if (andOrSubPlans.length) {
+    const first = andOrSubPlans[0];
+    const mkOn = (leftName, rightName, preferFrag) =>
+      preferFrag
+        ? op.on(op.fragmentIdCol(leftName), op.fragmentIdCol(rightName))
+        : op.on(op.col(leftName), op.col(rightName));
+
+    let combined = first.plan;
+    for (let i = 1; i < andOrSubPlans.length; i++) {
+      const sp = andOrSubPlans[i];
+      combined = combined.joinInner(
+        sp.plan,
+        mkOn(first.joinCol, sp.joinCol, first.preferFrag),
+      );
+    }
+    const outerLeft = first.preferFrag ? fragCol : uriCol;
+    plan = plan.joinInner(
+      combined,
+      mkOn(outerLeft, first.joinCol, first.preferFrag),
+    );
+  }
+
+  if (patternJoins.length) {
+    const hasNonJoinConstraints =
+      constraints.length > 1 || // more than the dataType constraint.
+      ctsConstraints.length > 0 ||
+      conjunctionJoins.length > 0;
+
+    if (logicType === 'or') {
+      for (let i = 0; i < patternJoins.length; i++) {
+        const pj = patternJoins[i];
+        if (!hasNonJoinConstraints && i === 0) {
+          // No other constraints exist: inner join constrains the base plan
+          // instead of outer joining to an unconstrained lexicon scan.
+          plan = plan.joinInner(pj.right, pj.on);
+        } else {
+          // Duplicate lexicon → inner join with right → align columns → full outer join.
+          // Select uriCol (not fragCol) so the natural join key matches conjunction
+          // joins and the final groupBy(['uri']) sees every matched document.
+          const wrapped = op
+            .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
+            .joinInner(pj.right, pj.on)
+            .where(
+              op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
+            )
+            .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
+          plan = plan.joinFullOuter(wrapped, null);
+        }
+      }
+    } else if (logicType === 'not') {
+      for (const pj of patternJoins) {
+        plan = plan.notExistsJoin(pj.right, pj.on);
+        // Extra columns not registered — notExistsJoin discards right-side data
+      }
+    } else {
+      // AND
+      for (const pj of patternJoins) {
+        plan = plan.joinInner(pj.right, pj.on);
+      }
+    }
+  }
 
   return plan;
 }
 
-function buildEmptyFacetResponses(requests) {
-  const facets = {};
+// Applies root-level output transformations: groupBy, column renames (uri→id, dataType→type),
+// and optional orderBy.
+//
+// Distance column support was removed as it was not based on finalized requirements.
+// To re-add: (1) track pj.extraCols from patternJoins into a distanceCols array during
+// assemblePlan, (2) include each in groupBy aggregation via op.sample, and
+// (3) consolidate into a single 'distance' output column in the select (use op.fn.min
+// for multiple distance sources, filter with op.isDefined).
+function collapseToResultRows(
+  plan,
+  groups,
+  sortAggregates = [],
+  sortOrderBy = [],
+) {
+  if (groups) {
+    plan = plan.groupBy(groups.by, groups.agg.concat(sortAggregates));
+  }
 
-  requests.forEach((request) => {
-    const facetName = request?.name;
-    facets[facetName] = {
-      totalItems: 0,
-      facetValues: [],
-    };
-  });
+  if (sortOrderBy.length > 0) {
+    plan = plan.orderBy(sortOrderBy);
+  }
 
-  return new FacetResponses(facets);
+  if (groups) {
+    plan = plan.select(
+      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
+        sortAggregates, // TODO: remove sort columns
+      ),
+    );
+  }
+
+  return plan;
 }
+//#endregion
 
+//#region Facets
 function calculateFacets(allRows, facetRequests) {
   if (facetRequests == null || facetRequests.length === 0) {
     return null;
@@ -540,6 +896,110 @@ function calculateFacets(allRows, facetRequests) {
   return new FacetResponses(facets);
 }
 
+function getValidatedSemanticFacetConfig(facetName) {
+  const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
+  const sourceJoinColName = semanticConfig?.sourceJoinColName;
+  const constraintJoinColName = semanticConfig?.constraintJoinColName;
+
+  if (!utils.isNonEmptyString(sourceJoinColName)) {
+    throw new InternalServerError(
+      `Semantic facet '${facetName}' is misconfigured: missing required 'sourceJoinColName'.`,
+    );
+  }
+  if (!utils.isNonEmptyString(constraintJoinColName)) {
+    throw new InternalServerError(
+      `Semantic facet '${facetName}' is misconfigured: missing required 'constraintJoinColName'.`,
+    );
+  }
+
+  const planValue = semanticConfig?.plan;
+  const validPlanType =
+    typeof planValue?.result === 'function' &&
+    typeof planValue?.export === 'function';
+  if (!validPlanType) {
+    throw new InternalServerError(
+      `Semantic facet '${facetName}' is misconfigured: 'plan' is required and must be an Optic plan.`,
+    );
+  }
+
+  return {
+    ...semanticConfig,
+    sourceJoinColName,
+    constraintJoinColName,
+  };
+}
+
+function buildEmptyFacetResponses(requests) {
+  const facets = {};
+
+  requests.forEach((request) => {
+    const facetName = request?.name;
+    facets[facetName] = {
+      totalItems: 0,
+      facetValues: [],
+    };
+  });
+
+  return new FacetResponses(facets);
+}
+//#endregion
+
+//#region Sort
+// Applies a semantic sort to the raw assembled plan. Takes one hop from each search result
+// document via the sort binding's predicate to a related document and retrieves the related
+// document's field value for sorting. Collapses to one sort value per search result (min for
+// ascending, max for descending) so that collapseToResultRows receives one row per uri.
+function applySemanticSort(plan, sortOption, sortByColName) {
+  const { predicate, indexReference, order } = sortOption;
+  const expandedPredicate = expandPredicate(predicate);
+
+  // Projection barrier: narrow to columns needed for the semantic join.
+  // Prevents the Optic optimizer from collapsing the semantic join to zero rows
+  // (same technique used by semantic facets).
+  plan = plan.select(['uri', 'iri', 'dataType']);
+
+  // Triple plan: source document's IRI --(predicate)--> related document's IRI.
+  const triplePlan = op.fromTriples([
+    op.pattern(op.col('sourceIri'), expandedPredicate, op.col('relatedIri')),
+  ]);
+
+  // Join triples to search results. Left outer preserves results with no matching
+  // triple (they sort last with null sort values).
+  plan = plan.joinLeftOuter(triplePlan, op.on('iri', 'sourceIri'));
+
+  // Get the sort field value from the related document via its IRI.
+  const relatedFieldPlan = op.fromLexicons(
+    {
+      relatedDocIri: cts.iriReference(),
+      [sortByColName]: cts.fieldReference(indexReference),
+    },
+    null,
+    op.fragmentIdCol('relatedFragId'),
+  );
+
+  plan = plan.joinLeftOuter(
+    relatedFieldPlan,
+    op.on('relatedIri', 'relatedDocIri'),
+  );
+
+  // Collapse to one row per search result, picking the best sort value.
+  // A search result with multiple triples (e.g., co-produced items) gets
+  // the max (descending) or min (ascending) sort value.
+  plan = plan.groupBy(
+    ['uri'],
+    [
+      op.sample('dataType', op.col('dataType')),
+      order === 'descending'
+        ? op.max(sortByColName, op.col(sortByColName))
+        : op.min(sortByColName, op.col(sortByColName)),
+    ],
+  );
+
+  return plan;
+}
+//#endregion
+
+//#region Helper functions
 function getPlanSource(plan) {
   return op
     .toSource(plan.export ? plan.export() : plan)
@@ -575,31 +1035,6 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
   });
 }
 
-function getCriteriaAndLogicType(planCriteria) {
-  // Create a mutuable array of criteria and determine the logic type (AND, OR, NOT)
-  // based on the keys of the planCriteria object.
-  let criteria;
-  let logicType;
-  if (planCriteria.AND) {
-    criteria = xdmp.toJSON(planCriteria.AND).toObject();
-    logicType = 'and';
-  } else if (planCriteria.OR) {
-    criteria = xdmp.toJSON(planCriteria.OR).toObject();
-    logicType = 'or';
-  } else if (planCriteria.NOT) {
-    criteria = xdmp.toJSON(planCriteria.NOT).toObject();
-    logicType = 'not';
-  } else {
-    // Single criteria are equivalent to AND
-    criteria = [xdmp.toJSON(planCriteria).toObject()];
-    logicType = 'and';
-  }
-  return {
-    criteria,
-    logicType,
-  };
-}
-
 function applyPatternRequirements(searchTerm, termConfig) {
   const patternName = termConfig.getPatternName();
   const pattern = PATTERNS[patternName];
@@ -627,407 +1062,11 @@ function applyPatternRequirements(searchTerm, termConfig) {
     );
   }
 }
-
-function buildLeafTermContext({
-  criterion,
-  id,
-  name,
-  scope,
-  isTopLevel,
-  iriCol,
-  uriCol,
-  fragCol,
-  dataTypeCol,
-}) {
-  const termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
-
-  const searchTerm = new SearchTerm()
-    .addId(id)
-    .addName(name)
-    .addScopeName(scope)
-    .addSearchTermConfig(termConfig)
-    .addTopLevel(isTopLevel)
-    .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
-    .addCriteria(criterion[name]);
-
-  // Runtime search term properties are represented with leading underscores on criteria.
-  Object.keys(criterion)
-    .filter((k) => k.startsWith('_'))
-    .forEach((k) => {
-      searchTerm.addProperty(k.substring(1), criterion[k]);
-    });
-
-  applyPatternRequirements(searchTerm, termConfig);
-
-  // Cast value to the correct type if scalar and not dateTime.
-  const scalarType = termConfig.getScalarType();
-  const caster =
-    scalarType && scalarType !== 'dateTime' ? xs[scalarType] : null;
-  const rawTermValue = searchTerm.getCriteria();
-  const value = caster
-    ? caster(rawTermValue)
-    : typeof rawTermValue === 'string'
-      ? rawTermValue
-      : null;
-  searchTerm.setValue(value);
-
-  // TODO: resolve search options: pattern --> term config --> term instance.
-  const searchOptions = termConfig.isForceExactMatch()
-    ? DEFAULT_SEARCH_OPTIONS_EXACT
-    : DEFAULT_SEARCH_OPTIONS_KEYWORD;
-  searchTerm.setSearchOptions(searchOptions);
-
-  return searchTerm;
-}
-
-// Mutable accumulator for all pattern/conjunction contributions during criteria iteration.
-// Initialized with scope-level base lexicons and an optional dataType constraint.
-function createPlanAccumulator({
-  scope,
-  uriCol,
-  iriCol,
-  fragCol,
-  dataTypeCol,
-  isMultiScope,
-}) {
-  return {
-    lexicons: {
-      [uriCol]: cts.uriReference(),
-      [iriCol]: cts.iriReference(),
-      [dataTypeCol]: cts.fieldReference('anyDataTypeName'),
-    },
-    constraints: isMultiScope
-      ? []
-      : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
-    ctsConstraints: [],
-    conjunctionJoins: [],
-    // AND-encounters-OR sub-plans deferred until assembleOpticPlan, where
-    // 2+ are combined off the outer fragment before being joined back in.
-    andOrSubPlans: [],
-    patternJoins: [],
-  };
-}
-
-// Merges contributions from a pattern application into the accumulator.
-// criteriaQueue is the live criteria iteration array; pattern-returned criteria are pushed there
-// so they are processed in the same loop iteration pass.
-function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
-  if (!contributions) {
-    return;
-  }
-  Object.assign(acc.lexicons, contributions.lexicons ?? {});
-  if (contributions.criteria?.length) {
-    criteriaQueue.push(...contributions.criteria);
-  }
-  if (contributions.constraints?.length) {
-    acc.constraints.push(...contributions.constraints);
-  }
-  if (contributions.ctsConstraints?.length) {
-    acc.ctsConstraints.push(...contributions.ctsConstraints);
-  }
-  if (contributions.patternJoins?.length) {
-    acc.patternJoins.push(...contributions.patternJoins);
-  }
-}
-
-// Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor
-// or inline criteria to be appended to the processing queue.
-// Returns: { join: { type, right, on, condition } } or { inlineCriteria: Array }
-function buildConjunctionJoin({
-  criterion,
-  logicType,
-  scope,
-  patternOptions,
-  id,
-  uriCol,
-  fragCol,
-  searchCriteriaProcessor,
-}) {
-  const makeJoinOn = () =>
-    patternOptions.getPreferFragJoins()
-      ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
-      : op.on(op.col(uriCol), op.col(id + '_uri'));
-
-  const singleColSelect = () =>
-    patternOptions.getPreferFragJoins() ? [id + '_frag'] : [id + '_uri'];
-
-  const fullOuterJoinCol = () =>
-    patternOptions.getPreferFragJoins()
-      ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
-      : op.as(uriCol, op.col(id + '_uri'));
-
-  const subPlan = (planCriteria) =>
-    processCriteria({
-      searchCriteriaProcessor,
-      planCriteria,
-      planScope: scope,
-      patternOptions,
-      parentId: id,
-    });
-
-  if (criterion.AND) {
-    switch (logicType) {
-      case 'and':
-        // AND can be inlined because we're already in an AND here
-        return { inlineCriteria: criterion.AND };
-
-      case 'or': {
-        // We are in an OR and encounter an AND - full outer join
-        const _joinCol = fullOuterJoinCol();
-        return {
-          join: {
-            type: 'joinFullOuter',
-            right: subPlan(criterion).select([
-              _joinCol,
-              op.as('dataType', op.col(id + '_dataType')),
-            ]),
-            on: null,
-            condition: null,
-          },
-        };
-      }
-
-      case 'not':
-        // We are in a NOT and encounter an AND - not exists join
-        return {
-          join: {
-            type: 'notExistsJoin',
-            right: subPlan(criterion).select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        };
-    }
-  }
-
-  if (criterion.OR) {
-    switch (logicType) {
-      case 'and': {
-        // AND encounters OR. Defer: assembleOpticPlan combines all such
-        // sub-plans off the outer fragment first, then joins the combined
-        // result to the outer ONCE. Chaining 2+ of these as joinInner
-        // against the same outer fragment causes SPARQL fusion that
-        // silently zeroes results or blows memory.
-        // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
-        // groupBy on that same column dedupes and adds a materialization
-        // barrier so the merger sees a single, fully-typed binding.
-        const cols = singleColSelect();
-        return {
-          andOrSubPlan: {
-            plan: subPlan(criterion).select(cols).groupBy(cols, []),
-            joinCol: cols[0],
-            preferFrag: patternOptions.getPreferFragJoins(),
-          },
-        };
-      }
-
-      case 'or':
-        // OR can be inlined because we're already in an OR here
-        return { inlineCriteria: criterion.OR };
-
-      case 'not':
-        // We are in a NOT and encounter an OR - not exists join
-        return {
-          join: {
-            type: 'notExistsJoin',
-            right: subPlan(criterion).select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        };
-    }
-  }
-
-  if (criterion.NOT) {
-    switch (logicType) {
-      case 'and':
-        // We are in an AND and encounter a NOT - not exists join and change to OR
-        // This is equivalent and likely more performant (needs testing)
-        return {
-          join: {
-            type: 'notExistsJoin',
-            right: subPlan({ OR: criterion.NOT }).select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        };
-
-      case 'or': {
-        // We are in an OR and encounter a NOT - full outer join
-        const _joinCol = fullOuterJoinCol();
-        return {
-          join: {
-            type: 'joinFullOuter',
-            right: subPlan(criterion).select([
-              _joinCol,
-              op.as('dataType', op.col(id + '_dataType')),
-            ]),
-            on: null,
-            condition: null,
-          },
-        };
-      }
-
-      case 'not':
-        // We are in a NOT and encounter a NOT - inner join and change to OR
-        // This is equivalent and likely more performant (needs testing)
-        return {
-          join: {
-            type: 'joinInner',
-            right: subPlan({ OR: criterion.NOT }).select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        };
-    }
-  }
-}
-
-// Assembles the Optic plan by applying all accumulated constraints, CTS queries, and joins.
-function assembleOpticPlan({
-  lexicons,
-  constraints,
-  ctsConstraints,
-  conjunctionJoins,
-  andOrSubPlans,
-  patternJoins,
-  fragCol,
-  uriCol,
-  dataTypeCol,
-  scope,
-  logicType,
-}) {
-  let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
-
-  if (constraints.length) {
-    for (const constraint of constraints) {
-      plan = plan.where(constraint);
-    }
-  }
-
-  if (ctsConstraints.length) {
-    const ctsWrapper =
-      logicType === 'and'
-        ? cts.andQuery
-        : logicType === 'or'
-          ? cts.orQuery
-          : (x) => cts.notQuery(cts.orQuery(x));
-    plan = plan.where(ctsWrapper(ctsConstraints));
-  }
-
-  if (conjunctionJoins.length) {
-    for (const join of conjunctionJoins) {
-      // Join functions are a method on the plan, so we reference them by name
-      plan = plan[join.type](join.right, join.on, join.condition);
-    }
-  }
-
-  // Fold AND-encounters-OR sub-plans. With 2+ such sub-plans, chaining each
-  // as joinInner against the outer fragment triggers SPARQL fusion that
-  // breaks the result. Instead, combine the sub-plans to each other first
-  // (off the outer) on their per-branch-unique join columns, then join the
-  // combined plan to the outer once.
-  if (andOrSubPlans.length) {
-    const first = andOrSubPlans[0];
-    const mkOn = (leftName, rightName, preferFrag) =>
-      preferFrag
-        ? op.on(op.fragmentIdCol(leftName), op.fragmentIdCol(rightName))
-        : op.on(op.col(leftName), op.col(rightName));
-
-    let combined = first.plan;
-    for (let i = 1; i < andOrSubPlans.length; i++) {
-      const sp = andOrSubPlans[i];
-      combined = combined.joinInner(
-        sp.plan,
-        mkOn(first.joinCol, sp.joinCol, first.preferFrag),
-      );
-    }
-    const outerLeft = first.preferFrag ? fragCol : uriCol;
-    plan = plan.joinInner(
-      combined,
-      mkOn(outerLeft, first.joinCol, first.preferFrag),
-    );
-  }
-
-  if (patternJoins.length) {
-    const hasNonJoinConstraints =
-      constraints.length > 1 || // more than the dataType constraint.
-      ctsConstraints.length > 0 ||
-      conjunctionJoins.length > 0;
-
-    if (logicType === 'or') {
-      for (let i = 0; i < patternJoins.length; i++) {
-        const pj = patternJoins[i];
-        if (!hasNonJoinConstraints && i === 0) {
-          // No other constraints exist: inner join constrains the base plan
-          // instead of outer joining to an unconstrained lexicon scan.
-          plan = plan.joinInner(pj.right, pj.on);
-        } else {
-          // Duplicate lexicon → inner join with right → align columns → full outer join.
-          // Select uriCol (not fragCol) so the natural join key matches conjunction
-          // joins and the final groupBy(['uri']) sees every matched document.
-          const wrapped = op
-            .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
-            .joinInner(pj.right, pj.on)
-            .where(
-              op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
-            )
-            .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
-          plan = plan.joinFullOuter(wrapped, null);
-        }
-      }
-    } else if (logicType === 'not') {
-      for (const pj of patternJoins) {
-        plan = plan.notExistsJoin(pj.right, pj.on);
-        // Extra columns not registered — notExistsJoin discards right-side data
-      }
-    } else {
-      // AND
-      for (const pj of patternJoins) {
-        plan = plan.joinInner(pj.right, pj.on);
-      }
-    }
-  }
-
-  return plan;
-}
-
-// Applies root-level output transformations: groupBy, column renames (uri→id, dataType→type),
-// and optional orderBy.
-//
-// Distance column support was removed as it was not based on finalized requirements.
-// To re-add: (1) track pj.extraCols from patternJoins into a distanceCols array during
-// assembleOpticPlan, (2) include each in groupBy aggregation via op.sample, and
-// (3) consolidate into a single 'distance' output column in the select (use op.fn.min
-// for multiple distance sources, filter with op.isDefined).
-function finalizeRootPlan(plan, groups, sortAggregates = [], sortOrderBy = []) {
-  if (groups) {
-    plan = plan.groupBy(groups.by, groups.agg.concat(sortAggregates));
-  }
-
-  if (sortOrderBy.length > 0) {
-    plan = plan.orderBy(sortOrderBy);
-  }
-
-  if (groups) {
-    plan = plan.select(
-      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
-        sortAggregates, // TODO: remove sort columns
-      ),
-    );
-  }
-
-  return plan;
-}
 //#endregion
 
 export {
-  // Export for unit testing:
-  // assembleOpticPlan,
-  // buildConjunctionJoin,
-  // createPlanAccumulator,
-  finalizeRootPlan,
-  // mergeTermPlanContributions,
-  performSearch,
-  processCriteria,
+  buildPlans, // Used by getPlansFromSearchCriteria.js
+  getResultRowGrouping, // Used by SCP.buildPlans wrapper
+  performSearch, // Primary entry point
+  processCriteria, // Used by pattern classes for recursive criteria processing
 };

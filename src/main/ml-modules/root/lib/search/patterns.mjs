@@ -59,18 +59,6 @@ function acceptsAtomicValue(patternName) {
   );
 }
 
-function onlyAcceptsAtomicValue(patternName) {
-  return getPatternConfig(patternName).allowedChildren === TYPE_ATOMIC;
-}
-
-function isConvertIdChildToIri(patternName) {
-  return getPatternConfig(patternName).isConvertIdChildToIri === true;
-}
-
-function returnsCtsQuery(patternName) {
-  return getPatternConfig(patternName).returnsCtsQuery;
-}
-
 function getAllowedSearchOptionsNameByPatternName(patternName) {
   return getPatternConfig(patternName).allowedOptionsName;
 }
@@ -105,106 +93,81 @@ function getDefaultSearchOptionsByOptionsName(optionsName) {
  * Properties:
  *   "allowedChildren" — sum of TYPE_* constants indicating what child types the
  *       pattern accepts.
- *   "isConvertIdChildToIri" — true when ID child terms should use the IRI pattern.
  *   "allowedOptionsName" — search options name that terms may specify (null = none).
  *   "defaultOptionsName" — default search options name (null = none).
- *   "returnsCtsQuery" — whether the pattern's contribution is a CTS query.
  */
 const SEARCH_PATTERN_CONFIG = {};
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_ANN_TOP_K] = {
   allowedChildren: TYPE_GROUP + TYPE_TERM,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_RELATED_LIST] = {
   allowedChildren: TYPE_NONE,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: false,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_DATE_RANGE] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_DOCUMENT_ID] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_GEOSPATIAL] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_INVERSE] = {
   allowedChildren: TYPE_GROUP + TYPE_TERM,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: false,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_HOP_WITH_FIELD] = {
   allowedChildren: TYPE_GROUP + TYPE_TERM,
-  isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_RANGE] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_VALUE] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_EXACT,
   defaultOptionsName: SEARCH_OPTIONS_NAME_EXACT,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_INDEXED_WORD] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
-  returnsCtsQuery: true,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_IRI] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: null,
   defaultOptionsName: null,
-  returnsCtsQuery: false,
 };
 
 SEARCH_PATTERN_CONFIG[PATTERN_NAME_KEYWORD] = {
   allowedChildren: TYPE_ATOMIC,
-  isConvertIdChildToIri: false,
   allowedOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
   defaultOptionsName: SEARCH_OPTIONS_NAME_KEYWORD,
-  returnsCtsQuery: true,
 };
 
 export {
@@ -229,7 +192,4 @@ export {
   getDefaultSearchOptionsByOptionsName,
   getDefaultSearchOptionsNameByPatternName,
   getPatternConfig,
-  isConvertIdChildToIri,
-  onlyAcceptsAtomicValue,
-  returnsCtsQuery,
 };

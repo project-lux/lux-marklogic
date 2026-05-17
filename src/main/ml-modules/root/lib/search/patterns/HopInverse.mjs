@@ -9,7 +9,7 @@ import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_RETURN_VALUES,
-} from '../patterns.mjs';
+} from '../PatternOptions.mjs';
 import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
 import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchTermConfig } from '../SearchTermConfig.mjs';

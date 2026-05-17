@@ -26,8 +26,10 @@ import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
-import { OPTION_NAME_PREFER_FRAG_JOINS } from './patterns.mjs';
-import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+import {
+  OPTION_NAME_PREFER_FRAG_JOINS,
+  PatternOptions,
+} from '/lib/search/PatternOptions.mjs';
 import { AnnTopKPattern } from './patterns/AnnTopK.mjs';
 import { DateRangePattern } from './patterns/DateRange.mjs';
 import { DocumentIdOrIriPattern } from './patterns/DocumentIdOrIri.mjs';

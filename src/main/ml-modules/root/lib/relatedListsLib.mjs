@@ -13,13 +13,13 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
+import { PATTERN_NAME_RELATED_LIST } from './search/patterns.mjs';
 import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_MAXIMUM_VALUES,
-  PATTERN_NAME_RELATED_LIST,
-} from './search/patterns.mjs';
-import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+  PatternOptions,
+} from '/lib/search/PatternOptions.mjs';
 import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
 import { getRelationName } from '../config/relationNames.mjs';
 import {

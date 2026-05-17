@@ -11,7 +11,6 @@ import {
   SORT_TYPE_NON_SEMANTIC,
   SORT_TYPE_SEMANTIC,
 } from './SortCriteria.mjs';
-import { getSearchTermsConfig } from '../config/searchTermsConfig.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
@@ -61,7 +60,6 @@ const SearchCriteriaProcessor = class {
   #pageWith;
   #scopeName;
   #patternOptions;
-  #searchTermsConfig;
   #resolvedSearchCriteria = null;
   #sortDelimitedStr;
   #sortCriteria;
@@ -76,10 +74,7 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Constructor(s)
-  constructor() {
-    // Once per instance, which technically presumes this shouldn't change when reused.
-    this.#searchTermsConfig = getSearchTermsConfig();
-  }
+  constructor() {} // See prepare.
   //#endregion
 
   //#region Public instance methods
@@ -308,10 +303,6 @@ const SearchCriteriaProcessor = class {
 
   getFacetRequests() {
     return this.#facetRequests;
-  }
-
-  getSearchTermsConfig() {
-    return this.#searchTermsConfig;
   }
 
   setIsTypeConstraintEnabled(enabled) {

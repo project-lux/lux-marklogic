@@ -26,9 +26,8 @@ for (const scenario of scenarios) {
 
     // Return an object with the properties we want to test
     return {
+      // Test initial state of properties set by prepare()
       filterResults,
-      hasSearchTermsConfig: scp.getSearchTermsConfig() != null,
-      // Test initial state of properties set by process()
       scopeName: scp.getSearchScope(),
       resolvedSearchCriteria: scp.getSearchCriteria(),
       criteriaCnt: scp.getCriteriaCount(),
@@ -46,52 +45,44 @@ for (const scenario of scenarios) {
   ) {
     const actual = scenarioResults.actualValue;
 
-    // Test that searchTermsConfig is initialized and accesses lux property correctly
-    assertions.push(
-      testHelperProxy.assertTrue(
-        actual.hasSearchTermsConfig,
-        'Constructor should initialize searchTermsConfig.lux from getSearchTermsConfig()',
-      ),
-    );
-
-    // Test that process() properties are in their initial state
+    // Test that prepare() properties are in their initial state
     assertions.push(
       testHelperProxy.assertEqual(
         undefined,
         actual.scopeName,
-        'scopeName should be undefined before process() is called',
+        'scopeName should be undefined before prepare() is called',
       ),
     );
     assertions.push(
       testHelperProxy.assertEqual(
         null,
         actual.resolvedSearchCriteria,
-        'resolvedSearchCriteria should be null before process() is called',
+        'resolvedSearchCriteria should be null before prepare() is called',
       ),
     );
     assertions.push(
       testHelperProxy.assertEqual(
         0,
         actual.criteriaCnt,
-        'criteriaCnt should be 0 before process() is called',
+        'criteriaCnt should be 0 before prepare() is called',
       ),
     );
     assertions.push(
       testHelperProxy.assertTrue(
         Array.isArray(actual.ignoredTerms) && actual.ignoredTerms.length === 0,
-        'ignoredTerms should be empty array before process() is called',
+        'ignoredTerms should be empty array before prepare() is called',
       ),
     );
     assertions.push(
       testHelperProxy.assertTrue(
         actual.ctsQueryStr != null,
-        'getQueryStr() should return a value before process() is called',
+        'getQueryStr() should return a value before prepare() is called',
       ),
     );
     assertions.push(
       testHelperProxy.assertTrue(
         Array.isArray(actual.values) && actual.values.length === 0,
-        'values should be empty array before process() is called',
+        'values should be empty array before prepare() is called',
       ),
     );
   }

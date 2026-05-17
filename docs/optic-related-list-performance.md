@@ -284,7 +284,7 @@ op.on(op.fragmentIdCol('8350_frag'), op.fragmentIdCol('eb01_hopFrag'))  // fragm
 
 ### Problem 4 (Design): HopInverse lacks valuesOnly mode
 
-The CTS implementation had a "values only" mode where, instead of building a full search, `cts.triples` was called directly to return IRIs. The code is commented out in `patterns.mjs` (lines ~380-425) and `relatedListsLib.mjs` (line ~176).
+The CTS implementation had a "values only" mode where, instead of building a full search, `cts.triples` was called directly to return IRIs. This is now implemented in `HopInverse.mjs` (see Implementation Status below).
 
 In the Optic code:
 - `relatedListsLib.mjs` sets `OPTION_NAME_RETURN_VALUES = true` for related lists.

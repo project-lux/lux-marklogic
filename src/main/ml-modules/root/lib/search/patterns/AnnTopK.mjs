@@ -91,6 +91,7 @@ class AnnTopK extends SearchPatternBase {
   }
 }
 
-const AnnTopKPattern = Object.freeze(new AnnTopK());
+const PATTERN_NAME_ANN_TOP_K = 'annTopK';
+SearchPatternBase.register(PATTERN_NAME_ANN_TOP_K, new AnnTopK());
 
-export { AnnTopKPattern };
+export { PATTERN_NAME_ANN_TOP_K };

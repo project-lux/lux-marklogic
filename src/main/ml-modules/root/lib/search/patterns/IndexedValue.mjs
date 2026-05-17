@@ -47,6 +47,7 @@ class IndexedValue extends SearchPatternBase {
   }
 }
 
-const IndexedValuePattern = Object.freeze(new IndexedValue());
+const PATTERN_NAME_INDEXED_VALUE = 'indexedValue';
+SearchPatternBase.register(PATTERN_NAME_INDEXED_VALUE, new IndexedValue());
 
-export { IndexedValuePattern };
+export { PATTERN_NAME_INDEXED_VALUE };

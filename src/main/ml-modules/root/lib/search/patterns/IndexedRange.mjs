@@ -56,6 +56,7 @@ class IndexedRange extends SearchPatternBase {
   }
 }
 
-const IndexedRangePattern = Object.freeze(new IndexedRange());
+const PATTERN_NAME_INDEXED_RANGE = 'indexedRange';
+SearchPatternBase.register(PATTERN_NAME_INDEXED_RANGE, new IndexedRange());
 
-export { IndexedRangePattern };
+export { PATTERN_NAME_INDEXED_RANGE };

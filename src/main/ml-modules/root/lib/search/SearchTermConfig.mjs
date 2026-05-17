@@ -1,5 +1,5 @@
 import * as utils from '../../utils/utils.mjs';
-import * as patternConfig from './patterns.mjs';
+import { SearchPatternBase } from './patterns/SearchPatternBase.mjs';
 
 const SearchTermConfig = class {
   constructor(rawConfig) {
@@ -11,32 +11,26 @@ const SearchTermConfig = class {
     return this.rawConfig ? this.rawConfig[propName] : defaultValue;
   }
 
+  _getPattern() {
+    return SearchPatternBase.get(this.getPatternName());
+  }
+
   exposedViaSearch() {
-    return (
-      this.hasPatternName() &&
-      patternConfig.exposedViaSearch(this.getPatternName())
-    );
+    return this.hasPatternName() && this._getPattern().isExposedViaSearch();
   }
 
   acceptsGroupAsChild() {
-    return (
-      this.hasPatternName() && patternConfig.acceptsGroup(this.getPatternName())
-    );
+    return this.hasPatternName() && this._getPattern().acceptsGroup();
   }
   acceptsTermAsChild() {
-    return (
-      this.hasPatternName() && patternConfig.acceptsTerm(this.getPatternName())
-    );
+    return this.hasPatternName() && this._getPattern().acceptsTerm();
   }
   acceptsIdTermAsChild() {
     // Do not also require acceptsTermAsChild given how the search criteria processor accommodates ID child terms.
     return this.hasIdIndexReferences();
   }
   acceptsAtomicValue() {
-    return (
-      this.hasPatternName() &&
-      patternConfig.acceptsAtomicValue(this.getPatternName())
-    );
+    return this.hasPatternName() && this._getPattern().acceptsAtomicValue();
   }
 
   hasHelpText() {

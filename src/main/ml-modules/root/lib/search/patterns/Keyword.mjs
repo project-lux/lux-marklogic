@@ -98,6 +98,7 @@ function buildWordQueries(fields, values, isCompleteMatch, options, weight) {
   return queries.length === 1 ? queries[0] : cts.andQuery(queries);
 }
 
-const KeywordPattern = Object.freeze(new Keyword());
+const PATTERN_NAME_KEYWORD = 'keyword';
+SearchPatternBase.register(PATTERN_NAME_KEYWORD, new Keyword());
 
-export { KeywordPattern };
+export { PATTERN_NAME_KEYWORD };

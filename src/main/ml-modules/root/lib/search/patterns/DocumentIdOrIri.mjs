@@ -38,6 +38,10 @@ class DocumentIdOrIri extends SearchPatternBase {
   }
 }
 
-const DocumentIdOrIriPattern = Object.freeze(new DocumentIdOrIri());
+const PATTERN_NAME_DOCUMENT_ID = 'documentId';
+const PATTERN_NAME_IRI = 'iri';
+const instance = new DocumentIdOrIri();
+SearchPatternBase.register(PATTERN_NAME_DOCUMENT_ID, instance);
+SearchPatternBase.register(PATTERN_NAME_IRI, instance);
 
-export { DocumentIdOrIriPattern };
+export { PATTERN_NAME_DOCUMENT_ID, PATTERN_NAME_IRI };

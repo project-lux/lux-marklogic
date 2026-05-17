@@ -171,6 +171,7 @@ class HopInverse extends SearchPatternBase {
   }
 }
 
-const HopInversePattern = Object.freeze(new HopInverse());
+const PATTERN_NAME_HOP_INVERSE = 'hopInverse';
+SearchPatternBase.register(PATTERN_NAME_HOP_INVERSE, new HopInverse());
 
-export { HopInversePattern };
+export { PATTERN_NAME_HOP_INVERSE };

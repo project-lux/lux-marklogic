@@ -13,7 +13,6 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
-import { PATTERN_NAME_RELATED_LIST } from './search/patterns.mjs';
 import {
   OPTION_NAME_EAGER_EVALUATION,
   OPTION_NAME_EXCLUDE_SELF_IRI,
@@ -516,8 +515,7 @@ function _convertToObjectsOrWorksSearch(
 function getRelatedListSearchInfo(criteria) {
   const searchTermConfig = _getFirstSearchTermConfig(criteria);
   const isRelatedList =
-    searchTermConfig != null &&
-    searchTermConfig.patternName == PATTERN_NAME_RELATED_LIST;
+    searchTermConfig != null && searchTermConfig.patternName == 'relatedList';
   return {
     isRelatedList,
     scopeName: isRelatedList ? searchTermConfig.scopeName : null,

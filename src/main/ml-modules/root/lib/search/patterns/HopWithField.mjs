@@ -204,6 +204,7 @@ select ?${id}_s ?${id}_o where {
   }
 }
 
-const HopWithFieldPattern = Object.freeze(new HopWithField());
+const PATTERN_NAME_HOP_WITH_FIELD = 'hopWithField';
+SearchPatternBase.register(PATTERN_NAME_HOP_WITH_FIELD, new HopWithField());
 
-export { HopWithFieldPattern };
+export { PATTERN_NAME_HOP_WITH_FIELD };

@@ -30,34 +30,19 @@ import {
   OPTION_NAME_PREFER_FRAG_JOINS,
   PatternOptions,
 } from '/lib/search/PatternOptions.mjs';
-import { AnnTopKPattern } from './patterns/AnnTopK.mjs';
-import { DateRangePattern } from './patterns/DateRange.mjs';
-import { DocumentIdOrIriPattern } from './patterns/DocumentIdOrIri.mjs';
-import { GeospatialPattern } from './patterns/Geospatial.mjs';
-import { HopInversePattern } from './patterns/HopInverse.mjs';
-import { HopWithFieldPattern } from './patterns/HopWithField.mjs';
-import { KeywordPattern } from './patterns/Keyword.mjs';
-import { IndexedRangePattern } from './patterns/IndexedRange.mjs';
-import { IndexedValuePattern } from './patterns/IndexedValue.mjs';
-import { IndexedWordPattern } from './patterns/IndexedWord.mjs';
+// Side-effect imports: each pattern self-registers with SearchPatternBase.
+import './patterns/AnnTopK.mjs';
+import './patterns/DateRange.mjs';
+import './patterns/DocumentIdOrIri.mjs';
+import './patterns/Geospatial.mjs';
+import './patterns/HopInverse.mjs';
+import './patterns/HopWithField.mjs';
+import './patterns/Keyword.mjs';
+import './patterns/IndexedRange.mjs';
+import './patterns/IndexedValue.mjs';
+import './patterns/IndexedWord.mjs';
+import { SearchPatternBase } from './patterns/SearchPatternBase.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
-//#endregion
-
-//#region Constants
-// Registered patterns.
-const PATTERNS = {
-  annTopK: AnnTopKPattern,
-  dateRange: DateRangePattern,
-  documentId: DocumentIdOrIriPattern,
-  geospatial: GeospatialPattern,
-  hopInverse: HopInversePattern,
-  hopWithField: HopWithFieldPattern,
-  iri: DocumentIdOrIriPattern,
-  indexedRange: IndexedRangePattern,
-  indexedValue: IndexedValuePattern,
-  indexedWord: IndexedWordPattern,
-  keyword: KeywordPattern,
-};
 //#endregion
 
 //#region Exported functions
@@ -343,12 +328,9 @@ function buildCriteriaAccumulator({
     mergeTermPlanContributions(
       acc,
       criteria,
-      PATTERNS[searchTerm.getSearchTermConfig().getPatternName()].apply(
-        scp,
-        searchTerm,
-        logicType,
-        patternOptions,
-      ),
+      SearchPatternBase.get(
+        searchTerm.getSearchTermConfig().getPatternName(),
+      ).apply(scp, searchTerm, logicType, patternOptions),
     );
   }
 
@@ -1039,7 +1021,7 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
 
 function applyPatternRequirements(searchTerm, termConfig) {
   const patternName = termConfig.getPatternName();
-  const pattern = PATTERNS[patternName];
+  const pattern = SearchPatternBase.get(patternName);
 
   // Validate that the pattern is registered; throw NotImplementedError if not.
   if (!pattern) {

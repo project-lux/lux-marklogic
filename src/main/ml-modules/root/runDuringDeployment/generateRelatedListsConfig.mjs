@@ -4,10 +4,7 @@ import {
   SEARCH_TERMS_CONFIG,
   getInverseSearchTermInfo,
 } from '../config/searchTermsConfig.mjs';
-import {
-  PATTERN_NAME_HOP_WITH_FIELD,
-  PATTERN_NAME_RELATED_LIST,
-} from '../lib/search/patterns.mjs';
+import { PATTERN_NAME_HOP_WITH_FIELD } from '../lib/search/patterns/HopWithField.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
   TENANT_OWNER,
@@ -103,7 +100,7 @@ function _getSearchConfigEntries(
       (matchesEndingScope || inBetweenScopes.includes(targetScope))
     ) {
       if (
-        termConfig.patternName === PATTERN_NAME_RELATED_LIST ||
+        termConfig.patternName === 'relatedList' ||
         _inverseIsDisqualifiedHopWithField(startingScope, termName) ||
         (currentLevel === 1 && matchesEndingScope)
       ) {

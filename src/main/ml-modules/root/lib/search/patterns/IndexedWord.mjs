@@ -46,6 +46,7 @@ class IndexedWord extends SearchPatternBase {
   }
 }
 
-const IndexedWordPattern = Object.freeze(new IndexedWord());
+const PATTERN_NAME_INDEXED_WORD = 'indexedWord';
+SearchPatternBase.register(PATTERN_NAME_INDEXED_WORD, new IndexedWord());
 
-export { IndexedWordPattern };
+export { PATTERN_NAME_INDEXED_WORD };

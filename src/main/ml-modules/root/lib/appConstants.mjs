@@ -167,6 +167,24 @@ const TRACE_NAME_SEARCH = 'LuxSearch';
 // A portion of an error message used in a couple places.
 const MESSAGE_ALREADY_HAS_A_PROFILE = 'already has a profile';
 
+function getAllowedSearchOptionsByOptionsName(optionsName) {
+  if (optionsName == SEARCH_OPTIONS_NAME_EXACT) {
+    return ALLOWED_SEARCH_OPTIONS_EXACT;
+  } else if (optionsName == SEARCH_OPTIONS_NAME_KEYWORD) {
+    return ALLOWED_SEARCH_OPTIONS_KEYWORD;
+  }
+  return null;
+}
+
+function getDefaultSearchOptionsByOptionsName(optionsName) {
+  if (optionsName == SEARCH_OPTIONS_NAME_EXACT) {
+    return DEFAULT_SEARCH_OPTIONS_EXACT;
+  } else if (optionsName == SEARCH_OPTIONS_NAME_KEYWORD) {
+    return DEFAULT_SEARCH_OPTIONS_KEYWORD;
+  }
+  return null;
+}
+
 export {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
@@ -193,6 +211,8 @@ export {
   FACETS_PREFIX,
   FEATURE_MY_COLLECTIONS_ENABLED,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
+  getAllowedSearchOptionsByOptionsName,
+  getDefaultSearchOptionsByOptionsName,
   HIGH_STORAGE_WARNING_THRESHOLD,
   IRI_DOES_NOT_EXIST,
   IRI_PREFIX,

@@ -117,6 +117,7 @@ class Geospatial extends SearchPatternBase {
   }
 }
 
-const GeospatialPattern = Object.freeze(new Geospatial());
+const PATTERN_NAME_GEOSPATIAL = 'geospatial';
+SearchPatternBase.register(PATTERN_NAME_GEOSPATIAL, new Geospatial());
 
-export { GeospatialPattern };
+export { PATTERN_NAME_GEOSPATIAL };

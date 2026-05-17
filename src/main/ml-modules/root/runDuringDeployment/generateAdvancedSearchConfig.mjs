@@ -1,12 +1,11 @@
 import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
+import { PATTERN_NAME_KEYWORD } from '../lib/search/patterns/Keyword.mjs';
+import { SearchPatternBase } from '../lib/search/patterns/SearchPatternBase.mjs';
 import {
-  PATTERN_NAME_RELATED_LIST,
-  PATTERN_NAME_KEYWORD,
+  FEATURE_MY_COLLECTIONS_ENABLED,
   getAllowedSearchOptionsByOptionsName,
-  getAllowedSearchOptionsNameByPatternName,
   getDefaultSearchOptionsByOptionsName,
-  getDefaultSearchOptionsNameByPatternName,
-} from '../lib/search/patterns.mjs';
+} from '../lib/appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
 import { SearchTermConfig } from '../lib/search/SearchTermConfig.mjs';
@@ -16,7 +15,6 @@ import {
   getEndpointAccessUnitNames,
 } from '../lib/securityLib.mjs';
 import { STOP_WORDS } from '../data/stopWords.mjs';
-import { FEATURE_MY_COLLECTIONS_ENABLED } from '../lib/appConstants.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -82,11 +80,11 @@ function createEntry(scopeName, termName, termConfig, report) {
   let allowedOptionsName = null;
   let defaultOptionsName = null;
   if (patternName) {
-    allowedOptionsName = getAllowedSearchOptionsNameByPatternName(patternName);
+    const pattern = SearchPatternBase.get(patternName);
+    allowedOptionsName = pattern ? pattern.getAllowedSearchOptionsName() : null;
     if (allowedOptionsName) {
       entry.allowedOptionsName = allowedOptionsName;
-      defaultOptionsName =
-        getDefaultSearchOptionsNameByPatternName(patternName);
+      defaultOptionsName = pattern.getDefaultSearchOptionsName();
       if (defaultOptionsName) {
         entry.defaultOptionsName = defaultOptionsName;
       } else if (report) {
@@ -153,7 +151,7 @@ const advancedSearchConfigs = {};
             }
           } else if (termName.endsWith('Id')) {
             add = false;
-          } else if ([PATTERN_NAME_RELATED_LIST].includes(patternName)) {
+          } else if (patternName === 'relatedList') {
             add = false;
           } else if (
             termConfig.isMyCollectionTerm() &&

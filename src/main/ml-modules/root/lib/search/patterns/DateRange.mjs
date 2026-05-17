@@ -154,6 +154,7 @@ class DateRange extends SearchPatternBase {
   }
 }
 
-const DateRangePattern = Object.freeze(new DateRange());
+const PATTERN_NAME_DATE_RANGE = 'dateRange';
+SearchPatternBase.register(PATTERN_NAME_DATE_RANGE, new DateRange());
 
-export { DateRangePattern };
+export { PATTERN_NAME_DATE_RANGE };

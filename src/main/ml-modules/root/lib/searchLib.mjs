@@ -13,7 +13,7 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
-import { getDefaultSearchOptionsNameByPatternName } from './search/patterns.mjs';
+import { SearchPatternBase } from './search/patterns/SearchPatternBase.mjs';
 import {
   InvalidSearchRequestError,
   isInvalidSearchRequestError,
@@ -490,9 +490,11 @@ function resolveSearchOptions(
 }
 
 function resolveSearchOptionsName(optionsName = null, patternName = null) {
-  return optionsName
-    ? optionsName
-    : getDefaultSearchOptionsNameByPatternName(patternName);
+  if (optionsName) {
+    return optionsName;
+  }
+  const pattern = SearchPatternBase.get(patternName);
+  return pattern ? pattern.getDefaultSearchOptionsName() : null;
 }
 
 function _mergeSearchOptions(defaultOptionsArr, overrideOptionsArr) {

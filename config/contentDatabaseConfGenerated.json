@@ -2172,6 +2172,20 @@
         }
       ],
       "field-value-searches": true
+    },
+    {
+      "field-name": "itemAndSetArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
     }
   ],
   "range-field-index": [
@@ -3214,6 +3228,13 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "eventUsedSetId",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "itemAndSetArchiveSortId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"

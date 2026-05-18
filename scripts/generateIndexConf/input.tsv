@@ -219,4 +219,4 @@ event	Place	Name	keyword	eventPlaceName	Search	Semantic	N			lux:eventTookPlaceAt
 event	UsedItem	Name	keyword	eventUsedItemName	Search	Semantic	N			
 event	UsedSet	Id	uri	eventUsedSetId	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/used_specific_object/id	
 										
-								Multi-hop searches, likely to be too expensive to perform		
+itemAndSet	ArchiveSort	Id	string	itemAndSetArchiveSortId	Search	Non	N	"archiveSortId" facet	/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content , /json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	

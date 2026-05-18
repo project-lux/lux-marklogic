@@ -6,11 +6,7 @@ import {
   OPTION_NAME_RETURN_VALUES,
   PatternOptions,
 } from './search/PatternOptions.mjs';
-import {
-  SORT_TYPE_MULTI_SCOPE,
-  SORT_TYPE_NON_SEMANTIC,
-  SORT_TYPE_SEMANTIC,
-} from './SortCriteria.mjs';
+import { SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC } from './SortCriteria.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
@@ -124,8 +120,6 @@ const SearchCriteriaProcessor = class {
       sortDelimitedStr,
       facetRequests,
     });
-
-    this.#patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
     this.#resolvedSearchCriteria =
@@ -345,18 +339,20 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Public static methods
-  static getSortType(isMultiScope, isSemantic) {
-    let sortType = SORT_TYPE_NON_SEMANTIC;
-    if (isMultiScope) sortType = SORT_TYPE_MULTI_SCOPE;
-    else if (isSemantic) sortType = SORT_TYPE_SEMANTIC;
-    return sortType;
+  static initializePatternOptions(patternOptions = null) {
+    const opts = patternOptions ? patternOptions : new PatternOptions();
+    opts.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
+    return opts;
+  }
+
+  static getSortType(isSemantic) {
+    return isSemantic ? SORT_TYPE_SEMANTIC : SORT_TYPE_NON_SEMANTIC;
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
     if (utils.isObject(sortBinding)) {
-      const isMultiScope = sortBinding.subSorts != null;
       const isSemantic = sortBinding.predicate != null;
-      return SearchCriteriaProcessor.getSortType(isMultiScope, isSemantic);
+      return SearchCriteriaProcessor.getSortType(isSemantic);
     }
     throw new InternalServerError(
       'sortBinding is required to determine sort type.',
@@ -465,9 +461,8 @@ const SearchCriteriaProcessor = class {
     this.#includeSearchResults = includeSearchResults;
     this.#includeTypeConstraint = includeTypeConstraint;
     this.#allowMultiScope = allowMultiScope;
-    this.#patternOptions = patternOptions
-      ? patternOptions
-      : new PatternOptions();
+    this.#patternOptions =
+      SearchCriteriaProcessor.initializePatternOptions(patternOptions);
     this.#page = page;
     this.#pageLength = pageLength;
     this.#pageWith = pageWith;

@@ -61,7 +61,9 @@ const SORT_BINDINGS = {
     defaultOrder: 'asc',
   },
   archiveSortId: {
-    subSorts: ['itemArchiveSortId', 'setArchiveSortId'],
+    indexType: 'field',
+    indexReference: 'itemAndSetArchiveSortId',
+    defaultOrder: 'asc',
   },
   anySortName: {
     indexType: 'field',

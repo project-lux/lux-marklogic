@@ -145,7 +145,7 @@ select ?${id}_s ?${id}_o where {
     return scp.processCriteria({
       planCriteria: searchTerm.getCriteria(),
       planScope: termConfig.getTargetScopeName(),
-      patternOptions: null, // Do not pass on this term's pattern options.
+      patternOptions: SCP.initializePatternOptions(),
       groups: null, // groupBy here prevents grouping by at the end.
       parentId: searchTerm.getId(),
     });

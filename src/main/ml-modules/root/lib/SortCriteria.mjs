@@ -3,7 +3,6 @@ import * as utils from '../utils/utils.mjs';
 
 const DEFAULT = 'default';
 
-const SORT_TYPE_MULTI_SCOPE = 'multi';
 const SORT_TYPE_SEMANTIC = 'semantic';
 const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';
 
@@ -92,16 +91,13 @@ const SortCriteria = class {
           return false;
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
-          if (sortBinding && sortByName.startsWith(this.scopeName)) {
-            // TODO: remove subSorts once we have the combined indexes.
-            if (sortBinding.subSorts) {
-              this.multiScopeSortOption = {
-                order: this._getOrder(specifiedOrder, 'asc'),
-                subSortConfigs: sortBinding.subSorts.map(
-                  (sortName) => SORT_BINDINGS[sortName],
-                ),
-              };
-            } else if (sortBinding.predicate) {
+          // Protect from sorting by a different scope's binding.
+          if (
+            sortBinding &&
+            (this.scopeName === 'multi' || // for archiveSortId
+              sortByName.startsWith(this.scopeName))
+          ) {
+            if (sortBinding.predicate) {
               this.semanticSortOption = {
                 predicate: sortBinding.predicate,
                 indexReference: sortBinding.indexReference,
@@ -157,9 +153,4 @@ const SortCriteria = class {
   }
 };
 
-export {
-  SortCriteria,
-  SORT_TYPE_MULTI_SCOPE,
-  SORT_TYPE_NON_SEMANTIC,
-  SORT_TYPE_SEMANTIC,
-};
+export { SortCriteria, SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC };

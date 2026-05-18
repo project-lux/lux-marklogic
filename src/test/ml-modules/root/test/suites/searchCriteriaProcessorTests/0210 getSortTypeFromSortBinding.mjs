@@ -9,25 +9,6 @@ let assertions = [];
 
 const scenarios = [
   {
-    name: 'Multi-scope sort type - has subSorts',
-    input: {
-      sortBinding: {
-        subSorts: [
-          {
-            scopeName: 'agent',
-            indexReference: 'primaryName',
-            order: 'ascending',
-          },
-          { scopeName: 'work', indexReference: 'title', order: 'descending' },
-        ],
-      },
-    },
-    expected: {
-      error: false,
-      sortType: 'multi',
-    },
-  },
-  {
     name: 'Semantic sort type - has predicate',
     input: {
       sortBinding: {
@@ -42,7 +23,7 @@ const scenarios = [
     },
   },
   {
-    name: 'Non-semantic sort type - no subSorts or predicate',
+    name: 'Non-semantic sort type - no predicate',
     input: {
       sortBinding: {
         indexReference: 'primaryName',
@@ -52,39 +33,6 @@ const scenarios = [
     expected: {
       error: false,
       sortType: 'nonSemantic',
-    },
-  },
-  {
-    name: 'Multi-scope takes precedence over semantic',
-    input: {
-      sortBinding: {
-        subSorts: [
-          {
-            scopeName: 'agent',
-            indexReference: 'primaryName',
-            order: 'ascending',
-          },
-        ],
-        predicate: 'http://example.org/some-predicate',
-        indexReference: 'someIndex',
-        order: 'ascending',
-      },
-    },
-    expected: {
-      error: false,
-      sortType: 'multi',
-    },
-  },
-  {
-    name: 'Empty subSorts array still counts as multi-scope',
-    input: {
-      sortBinding: {
-        subSorts: [],
-      },
-    },
-    expected: {
-      error: false,
-      sortType: 'multi',
     },
   },
   {

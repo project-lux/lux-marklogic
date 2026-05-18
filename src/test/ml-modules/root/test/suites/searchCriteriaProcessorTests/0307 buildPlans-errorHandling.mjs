@@ -8,7 +8,7 @@ import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 
-const LIB = '0307-buildPlans-errorHandling.mjs';
+const LIB = '0307 buildPlans-errorHandling.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];

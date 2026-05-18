@@ -18,9 +18,13 @@ Endpoint handler
        │    └─ engine.performSearch(scp)
        │         └─ engine.buildPlans(...)
        │              └─ engine.buildCriteriaAccumulator(...)   ← iterates criteria
+       │                   └─ buildLeafSearchTerm(...)          ← validates value-type, wildcards, stop words
        │                   └─ SearchPatternBase.get(name).apply(scp, searchTerm, logicType, patternOptions)
        │              └─ engine.assemblePlan(...)               ← builds Optic plan from accumulator
        │              └─ engine.collapseToResultRows(...)       ← groupBy, sort, select
+       │         └─ plan.limit() if pageWith                   ← caps materialization
+       │         └─ plan.result().toArray()                    ← executes plan
+       │         └─ engine.paginateResults(...)                ← resolves page (normal or pageWith)
        ├─ executeForValues()     ← related lists: values only, no Optic plan
        └─ buildPlans(...)        ← developer tool: returns plans without executing
 ```
@@ -30,7 +34,7 @@ Endpoint handler
 | File | Purpose |
 |---|---|
 | `lib/SearchCriteriaProcessor.mjs` | Orchestrator. `prepare()` → `execute()` / `executeForValues()` / `buildPlans()`. Holds search state. |
-| `lib/search/engine.mjs` | Core engine. `performSearch`, `buildPlans`, `processCriteria`, `buildCriteriaAccumulator`, `assemblePlan`, `collapseToResultRows`. |
+| `lib/search/engine.mjs` | Core engine. `performSearch`, `buildPlans`, `processCriteria`, `buildCriteriaAccumulator`, `assemblePlan`, `collapseToResultRows`, `paginateResults`. Also owns term validation (value-type, wildcards, stop words). |
 | `lib/search/patterns/SearchPatternBase.mjs` | Base class for all patterns. Hosts the static pattern registry. |
 | `lib/search/patterns/SearchPatternInterface.mjs` | Abstract interface defining required methods for pattern classes. |
 | `lib/search/patterns/*.mjs` | Individual pattern implementations (10 classes). |
@@ -245,6 +249,47 @@ Applied at the top level after assembly:
 2. Optional `orderBy` — applies sort criteria.
 3. `select([as('id', col('uri')), as('type', col('dataType'))])` — renames columns for the API response.
 
+## Pagination (`paginateResults`)
+
+After plan execution materializes all result rows, `paginateResults` determines which page to return:
+
+- **Normal mode** (`pageWith` not set): Uses the `page` parameter directly. Slices `allRows` by `(page-1)*pageLength` offset.
+- **pageWith mode** (`pageWith` is a document ID): Finds the target document's position in the sorted result set and calculates which page contains it: `resultPage = Math.ceil((foundIndex + 1) / pageLength)`.
+
+**Safeguards:**
+- When `pageWith` is set, the plan is capped with `.limit(MAXIMUM_PAGE_WITH_LENGTH + 1)` (100,001) before execution to prevent materializing millions of rows.
+- If the result set exceeds the cap, an error is thrown (the target cannot be reliably located).
+- If the target document is not found in the results, an error is thrown.
+
+**Use case:** The middle tier uses `pageWith` to render a hierarchical widget — given a specific document ID within a sorted result set, it returns the page containing that document.
+
+## Term Validation in `buildLeafSearchTerm`
+
+After resolving a search term's config and pattern, the engine performs three categories of validation before the pattern's `apply()` method is called:
+
+### Value-type enforcement
+
+The pattern's `getAllowedChildren()` bitmask determines which structural types the term accepts. The engine checks:
+
+- If the value is an object with `AND`/`OR`/`NOT` → requires `acceptsGroupAsChild()`.
+- If the value is an object with non-`_` keys (nested term) → requires `acceptsTermAsChild()`.
+- If the value is atomic (string, number) → requires `acceptsAtomicValue()`.
+
+Violations throw `InvalidSearchRequestError` with descriptive messages (e.g., "the 'text' term contains a group but is not allowed to").
+
+### Wildcard sanitization
+
+For keyword-pattern terms with wildcard characters (`*`, `?`):
+1. Adjacent wildcards are consolidated (e.g., `**?*` → `*`).
+2. Each wildcard segment must have at least 3 non-wildcard characters adjacent to it.
+3. Violations throw `InvalidSearchRequestError`.
+
+This logic lives in `engine.mjs` (`sanitizeAndValidateWildcardedStrings`). `SCP` exposes a static pass-through for use by other modules (e.g., autocomplete).
+
+### Stop-word and punctuation-only detection
+
+Terms composed entirely of stop words (e.g., "a the and") or punctuation-only characters are marked unusable and added to the SCP's ignored terms list. If all criteria are unusable, an error is thrown. Detection is handled by `getUnusableTermWords()` in the engine.
+
 ---
 
 # Pattern Details
@@ -428,6 +473,8 @@ Facets are calculated after the main search executes. The implementation:
 - **Scalar type casting**: If `termConfig.scalarType` is set, the criterion value is cast via `xs[scalarType](value)`.
 
 - **Multi-scope search**: `_scope: 'multi'` enables searching across scopes. Requires an `OR` array where each branch declares a valid non-multi `_scope`.
+
+- **BOOST is not supported.** The `BOOST` operator existed in the CTS-era grammar but was removed during the Optic migration. The engine does not recognize it.
 
 ---
 

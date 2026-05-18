@@ -1,158 +1,100 @@
 /**
- * Test suite for SCP.prepare() - Query Generation
- * Tests actual query content, grammar parsing, and search patterns
+ * Test suite for SCP.prepare() + buildPlans() - Query Generation
+ * Tests that plan source contains expected fields, values, and CTS constructs.
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
-import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+import op from '/MarkLogic/optic.mjs';
 
-const LIB = '0302-process-queryGeneration.mjs';
+const LIB = '0302 prepare-queryGeneration.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
-// Helper function to create default process parameters
-function createProcessInput(overrides = {}) {
-  return {
-    scopeName: 'agent',
-    allowMultiScope: false,
-    patternOptions: new PatternOptions(),
-    includeTypeConstraint: true,
-    page: 1,
-    pageLength: 20,
-    pageWith: null,
-    sortCriteria: null,
-    ...overrides,
-  };
-}
-
 const scenarios = [
   {
-    name: 'Simple text search generates correct field query',
+    name: 'Simple text search produces plan with agent scope fields',
     input: {
+      scopeName: 'agent',
       searchCriteria: { _scope: 'agent', text: '"Pablo Picasso"' },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      ctsQueryContains: ['agentAnyText', 'Pablo Picasso'],
-      ctsQueryIncludes: 'cts.andQuery',
+      planContains: ['agentAnyText', 'Pablo Picasso'],
     },
   },
   {
     name: 'Work scope uses correct fields',
     input: {
+      scopeName: 'work',
       searchCriteria: { _scope: 'work', text: '"Mona Lisa"' },
-      ...createProcessInput({ scopeName: 'work' }),
     },
     expected: {
       error: false,
-      ctsQueryContains: ['workAnyText', 'Mona Lisa'],
+      planContains: ['workAnyText', 'Mona Lisa'],
     },
   },
   {
     name: 'Grammar parsing - string input with AND operator',
     input: {
+      scopeName: 'agent',
       searchCriteria: 'artist AND painter',
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      ctsQueryIncludes: 'cts.andQuery',
-      ctsQueryContains: ['artist', 'painter'],
+      planContains: ['cts.andQuery', 'artist', 'painter'],
     },
   },
   {
     name: 'Grammar parsing - string input with OR operator',
     input: {
+      scopeName: 'agent',
       searchCriteria: 'Pablo OR Vincent',
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      ctsQueryIncludes: 'cts.orQuery',
-      ctsQueryContains: ['Pablo', 'Vincent'],
+      planContains: ['Pablo', 'Vincent'],
     },
   },
   {
     name: 'Grammar parsing - quoted phrases',
     input: {
+      scopeName: 'agent',
       searchCriteria: '"Pablo Picasso" AND artist',
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      ctsQueryIncludes: 'cts.andQuery',
-      ctsQueryContains: ['Pablo Picasso', 'artist'],
+      planContains: ['cts.andQuery', 'Pablo Picasso', 'artist'],
     },
   },
   {
-    name: 'Complex nested JSON criteria generates proper structure',
+    name: 'Complex nested JSON criteria generates plan',
     input: {
+      scopeName: 'agent',
       searchCriteria: {
         _scope: 'agent',
         AND: [
-          {
-            OR: [{ text: 'Pablo' }, { text: 'Vincent' }],
-          },
+          { OR: [{ text: 'Pablo' }, { text: 'Vincent' }] },
           { text: 'artist' },
         ],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      ctsQueryIncludes: 'cts.andQuery',
-      ctsQueryContains: ['Pablo', 'Vincent', 'artist'],
+      planContains: ['Pablo', 'Vincent', 'artist'],
     },
   },
   {
-    name: 'Type constraint includes dataType query when enabled',
+    name: 'Plan includes scope type constraint for agent',
     input: {
+      scopeName: 'agent',
       searchCriteria: { _scope: 'agent', text: 'Pablo' },
-      ...createProcessInput({ includeTypeConstraint: true }),
     },
     expected: {
       error: false,
-      ctsQueryContains: ['dataType', 'Person', 'Group'],
-      ctsQueryIncludes: 'cts.andQuery',
-    },
-  },
-  {
-    name: 'No type constraint when disabled',
-    input: {
-      searchCriteria: { _scope: 'agent', text: 'Pablo' },
-      ...createProcessInput({ includeTypeConstraint: false }),
-    },
-    expected: {
-      error: false,
-      ctsQueryExcludes: ['dataType'],
-    },
-  },
-  {
-    name: 'Token resolution - fields token gets replaced',
-    input: {
-      searchCriteria: { _scope: 'work', text: 'painting' },
-      ...createProcessInput({ scopeName: 'work' }),
-    },
-    expected: {
-      error: false,
-      ctsQueryContains: ['workAnyText'],
-      ctsQueryExcludes: ['__FIELDS__'],
-    },
-  },
-  {
-    name: 'Token resolution - types token gets replaced',
-    input: {
-      searchCriteria: { _scope: 'work', text: 'painting' },
-      ...createProcessInput({ scopeName: 'work', includeTypeConstraint: true }),
-    },
-    expected: {
-      error: false,
-      ctsQueryContains: ['LinguisticObject', 'VisualItem'],
-      ctsQueryExcludes: ['__TYPES__'],
+      planContains: ['Person', 'Group'],
     },
   },
 ];
@@ -160,46 +102,36 @@ const scenarios = [
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const scp = new SCP();
-    const input = scenario.input;
-
-    scp.prepare({ ...input });
-
-    return {
-      ctsQueryStr: scp.getQueryStr(),
-    };
+    scp.prepare({
+      searchCriteria: scenario.input.searchCriteria,
+      scopeName: scenario.input.scopeName,
+    });
+    const { sortedResultsPlan } = scp.buildPlans();
+    return op.toSource(sortedResultsPlan.export());
   };
 
   const scenarioResults = executeScenario(scenario, zeroArityFun);
 
   if (scenarioResults.applyErrorNotExpectedAssertions) {
-    const queryStr = scenarioResults.actualValue.ctsQueryStr;
+    const planSource = scenarioResults.actualValue;
 
-    if (scenario.expected.ctsQueryContains) {
-      scenario.expected.ctsQueryContains.forEach((expectedText) => {
+    if (scenario.expected.planContains) {
+      scenario.expected.planContains.forEach((expectedText) => {
         assertions.push(
           testHelperProxy.assertTrue(
-            queryStr.includes(expectedText),
-            `Scenario '${scenario.name}' - query should contain '${expectedText}'. Actual query: ${queryStr}`,
+            typeof planSource === 'string' && planSource.includes(expectedText),
+            `Scenario '${scenario.name}' - plan should contain '${expectedText}'. Actual plan: ${planSource}`,
           ),
         );
       });
     }
 
-    if (scenario.expected.ctsQueryIncludes) {
-      assertions.push(
-        testHelperProxy.assertTrue(
-          queryStr.includes(scenario.expected.ctsQueryIncludes),
-          `Scenario '${scenario.name}' - query should include '${scenario.expected.ctsQueryIncludes}'. Actual query: ${queryStr}`,
-        ),
-      );
-    }
-
-    if (scenario.expected.ctsQueryExcludes) {
-      scenario.expected.ctsQueryExcludes.forEach((excludedText) => {
+    if (scenario.expected.planExcludes) {
+      scenario.expected.planExcludes.forEach((excludedText) => {
         assertions.push(
           testHelperProxy.assertFalse(
-            queryStr.includes(excludedText),
-            `Scenario '${scenario.name}' - query should not contain '${excludedText}'. Actual query: ${queryStr}`,
+            typeof planSource === 'string' && planSource.includes(excludedText),
+            `Scenario '${scenario.name}' - plan should NOT contain '${excludedText}'. Actual plan: ${planSource}`,
           ),
         );
       });

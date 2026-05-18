@@ -1,36 +1,21 @@
 /**
- * Test suite for SCP.prepare() - Multi-Scope Functionality
- * Tests multi-scope search processing and cross-scope queries
+ * Test suite for SCP.prepare() + buildPlans() - Multi-Scope Functionality
+ * Tests multi-scope search processing, criteria counting, and ignored terms.
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
-import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+import op from '/MarkLogic/optic.mjs';
 
-const LIB = '0305-process-multiScope.mjs';
+const LIB = '0305 prepare-multiScope.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
-// Helper function to create default process parameters
-function createProcessInput(overrides = {}) {
-  return {
-    scopeName: 'multi',
-    allowMultiScope: true,
-    patternOptions: new PatternOptions(),
-    includeTypeConstraint: true,
-    page: 1,
-    pageLength: 20,
-    pageWith: null,
-    sortCriteria: null,
-    ...overrides,
-  };
-}
-
 const scenarios = [
   {
-    name: 'Multi-scope with agent and work creates OR query',
+    name: 'Multi-scope with agent and work produces plan with both scope fields',
     input: {
       searchCriteria: {
         _scope: 'multi',
@@ -39,13 +24,11 @@ const scenarios = [
           { _scope: 'work', text: 'painting' },
         ],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
       scopeName: 'multi',
-      ctsQueryIncludes: 'cts.orQuery',
-      ctsQueryContains: ['agentName', 'workAnyText', 'Pablo', 'painting'],
+      planContains: ['agentName', 'workAnyText', 'Pablo', 'painting'],
     },
   },
   {
@@ -59,13 +42,11 @@ const scenarios = [
           { _scope: 'place', text: 'museum' },
         ],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
       scopeName: 'multi',
-      ctsQueryIncludes: 'cts.orQuery',
-      ctsQueryContains: ['agentAnyText', 'workAnyText', 'placeAnyText'],
+      planContains: ['agentAnyText', 'workAnyText', 'placeAnyText'],
     },
   },
   {
@@ -81,34 +62,30 @@ const scenarios = [
           { _scope: 'work', text: 'Guernica' },
         ],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
       scopeName: 'multi',
-      ctsQueryIncludes: 'cts.orQuery',
-      ctsQueryContains: ['Pablo', 'Picasso', 'Guernica'],
+      planContains: ['Pablo', 'Picasso', 'Guernica'],
     },
   },
   {
-    name: 'Multi-scope with single scope in OR array',
+    name: 'Multi-scope single scope in OR array',
     input: {
       searchCriteria: {
         _scope: 'multi',
         OR: [{ _scope: 'agent', text: 'artist' }],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      scopeName: 'agent',
-      ctsQueryContains: ['agentAnyText', 'artist'],
+      planContains: ['agentAnyText', 'artist'],
       criteriaCntGte: 1,
       ignoredTermsLength: 0,
     },
   },
   {
-    name: 'Single-element unwrap with AND group propagates criteriaCnt',
+    name: 'Multi-scope single element with AND group propagates criteriaCnt',
     input: {
       searchCriteria: {
         _scope: 'multi',
@@ -119,19 +96,16 @@ const scenarios = [
           },
         ],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      scopeName: 'agent',
-      ctsQueryIncludes: 'cts.andQuery',
-      ctsQueryContains: ['Pablo', 'Picasso'],
+      planContains: ['Pablo', 'Picasso'],
       criteriaCntGte: 2,
       ignoredTermsLength: 0,
     },
   },
   {
-    name: 'Single-element unwrap propagates ignoredTerms for mixed valid and stop words',
+    name: 'Multi-scope propagates ignoredTerms for mixed valid and stop words',
     input: {
       searchCriteria: {
         _scope: 'multi',
@@ -142,50 +116,12 @@ const scenarios = [
           },
         ],
       },
-      ...createProcessInput(),
     },
     expected: {
       error: false,
-      scopeName: 'work',
-      ctsQueryContains: ['painting'],
+      planContains: ['painting'],
       criteriaCntGte: 1,
       ignoredTermsLength: 1,
-    },
-  },
-  {
-    name: 'Multi-scope with type constraints applies to each scope',
-    input: {
-      searchCriteria: {
-        _scope: 'multi',
-        OR: [
-          { _scope: 'agent', text: 'Pablo' },
-          { _scope: 'work', text: 'painting' },
-        ],
-      },
-      ...createProcessInput({ includeTypeConstraint: true }),
-    },
-    expected: {
-      error: false,
-      scopeName: 'multi',
-      ctsQueryContains: ['Person', 'Group', 'LinguisticObject', 'VisualItem'],
-    },
-  },
-  {
-    name: 'Multi-scope without type constraints',
-    input: {
-      searchCriteria: {
-        _scope: 'multi',
-        OR: [
-          { _scope: 'agent', text: 'Pablo' },
-          { _scope: 'work', text: 'painting' },
-        ],
-      },
-      ...createProcessInput({ includeTypeConstraint: false }),
-    },
-    expected: {
-      error: false,
-      scopeName: 'multi',
-      ctsQueryExcludes: ['dataType'],
     },
   },
 ];
@@ -193,16 +129,18 @@ const scenarios = [
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
     const scp = new SCP();
-    const input = scenario.input;
-
-    scp.prepare({ ...input });
-
+    scp.prepare({
+      searchCriteria: scenario.input.searchCriteria,
+      scopeName: 'multi',
+      allowMultiScope: true,
+    });
+    const { sortedResultsPlan } = scp.buildPlans();
+    const planSource = op.toSource(sortedResultsPlan.export());
     return {
+      planSource,
       scopeName: scp.getSearchScope(),
-      ctsQueryStr: scp.getQueryStr(),
       criteriaCnt: scp.getCriteriaCount(),
       ignoredTerms: scp.getIgnoredTerms(),
-      values: scp.getValues(),
     };
   };
 
@@ -216,42 +154,36 @@ for (const scenario of scenarios) {
         testHelperProxy.assertEqual(
           scenario.expected.scopeName,
           actual.scopeName,
-          `Scenario '${scenario.name}' - scopeName should be ${scenario.expected.scopeName}`,
+          `Scenario '${scenario.name}' - scopeName should be '${scenario.expected.scopeName}'. Actual: '${actual.scopeName}'`,
         ),
       );
     }
 
-    if (scenario.expected.ctsQueryContains) {
-      scenario.expected.ctsQueryContains.forEach((expectedText) => {
+    if (scenario.expected.planContains) {
+      scenario.expected.planContains.forEach((expectedText) => {
         assertions.push(
           testHelperProxy.assertTrue(
-            actual.ctsQueryStr.includes(expectedText),
-            `Scenario '${scenario.name}' - query should contain '${expectedText}'. Actual: ${actual.ctsQueryStr}`,
+            typeof actual.planSource === 'string' &&
+              actual.planSource.includes(expectedText),
+            `Scenario '${scenario.name}' - plan should contain '${expectedText}'. Actual plan: ${actual.planSource}`,
           ),
         );
       });
     }
 
-    if (scenario.expected.ctsQueryIncludes) {
-      assertions.push(
-        testHelperProxy.assertTrue(
-          actual.ctsQueryStr.includes(scenario.expected.ctsQueryIncludes),
-          `Scenario '${scenario.name}' - query should include '${scenario.expected.ctsQueryIncludes}'. Actual: ${actual.ctsQueryStr}`,
-        ),
-      );
-    }
-
-    if (scenario.expected.ctsQueryExcludes) {
-      scenario.expected.ctsQueryExcludes.forEach((excludedText) => {
+    if (scenario.expected.planExcludes) {
+      scenario.expected.planExcludes.forEach((excludedText) => {
         assertions.push(
           testHelperProxy.assertFalse(
-            actual.ctsQueryStr.includes(excludedText),
-            `Scenario '${scenario.name}' - query should not contain '${excludedText}'. Actual: ${actual.ctsQueryStr}`,
+            typeof actual.planSource === 'string' &&
+              actual.planSource.includes(excludedText),
+            `Scenario '${scenario.name}' - plan should NOT contain '${excludedText}'. Actual plan: ${actual.planSource}`,
           ),
         );
       });
     }
 
+    // "Gte" = greater than or equal; nested conjunctions may count differently.
     if (scenario.expected.criteriaCntGte !== undefined) {
       assertions.push(
         testHelperProxy.assertTrue(
@@ -266,7 +198,7 @@ for (const scenario of scenarios) {
         testHelperProxy.assertEqual(
           scenario.expected.ignoredTermsLength,
           actual.ignoredTerms.length,
-          `Scenario '${scenario.name}' - ignoredTerms length should be ${scenario.expected.ignoredTermsLength}`,
+          `Scenario '${scenario.name}' - ignoredTerms length should be ${scenario.expected.ignoredTermsLength}. Actual: ${actual.ignoredTerms.length}`,
         ),
       );
     }

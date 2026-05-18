@@ -345,6 +345,10 @@ const SearchCriteriaProcessor = class {
     return opts;
   }
 
+  static sanitizeAndValidateWildcardedStrings(strOrArr) {
+    return engine.sanitizeAndValidateWildcardedStrings(strOrArr);
+  }
+
   static getSortType(isSemantic) {
     return isSemantic ? SORT_TYPE_SEMANTIC : SORT_TYPE_NON_SEMANTIC;
   }

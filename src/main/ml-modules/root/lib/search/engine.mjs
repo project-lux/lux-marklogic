@@ -15,6 +15,7 @@ import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
+  SEARCH_OPTIONS_NAME_KEYWORD,
   SEMANTIC_SORT_TIMEOUT,
 } from '../appConstants.mjs';
 import {
@@ -330,6 +331,18 @@ function buildCriteriaAccumulator({
       fragCol,
       dataTypeCol,
     });
+
+    // Validate and sanitize wildcard characters for keyword-type terms.
+    const rawCriteria = searchTerm.getCriteria();
+    if (
+      typeof rawCriteria === 'string' &&
+      SearchPatternBase.get(
+        searchTerm.getSearchTermConfig().getPatternName(),
+      ).getAllowedSearchOptionsName() === SEARCH_OPTIONS_NAME_KEYWORD &&
+      WILDCARD_CHAR_REGEX.test(rawCriteria)
+    ) {
+      searchTerm.setValue(sanitizeAndValidateWildcardedStrings(rawCriteria));
+    }
 
     // Skip stop words and punctuation-only terms.
     // Check the raw criteria (pre-cast JS string), not getValue() which may
@@ -1036,6 +1049,69 @@ function getUnusableTermWords(value) {
 }
 //#endregion
 
+//#region Wildcard validation
+const WILDCARD_CHARS = '*?';
+const WILDCARD_CHAR_REGEX = new RegExp(`[${WILDCARD_CHARS}]`);
+const QUALIFYING_CHARS = '\\s\\-';
+const QUALIFYING_CHARS_REGEX = new RegExp(`[${QUALIFYING_CHARS}]`);
+const MINIMUM_QUALIFYING_CHAR_COUNT = 3;
+const QUALIFYING_WILDCARD_REGEX = new RegExp(
+  `([${WILDCARD_CHARS}][^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},})|([^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},}[${WILDCARD_CHARS}])`,
+);
+const WILDCARDS_TO_CONSOLIDATE_REGEX = new RegExp('([?*]+[*])|([*][?*]+)');
+
+function hasInvalidWildcardCriteria(str) {
+  const pieces = str.split(QUALIFYING_CHARS_REGEX);
+  for (let i = 0; i < pieces.length; i++) {
+    if (
+      WILDCARD_CHAR_REGEX.test(pieces[i]) &&
+      !QUALIFYING_WILDCARD_REGEX.test(pieces[i])
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Whenever an asterisk touches another wildcard character, convert to a single asterisk.
+function consolidateApplicableWildcards(str) {
+  let matches;
+  while ((matches = str.match(WILDCARDS_TO_CONSOLIDATE_REGEX))) {
+    str = str.replace(matches[0], '*');
+  }
+  return str;
+}
+
+// After consolidating applicable wildcards, validate there is no invalid wildcard criteria.
+// strOrArr may be a string or array of strings; the given type will be returned.
+// Each string may be a word or phrase.
+// The value of strOrArr can be modified; caller to update their variable to this function's return,
+// providing caller wants the cleaned up value(s).
+function sanitizeAndValidateWildcardedStrings(strOrArr) {
+  if (strOrArr) {
+    const returnOneValue = !utils.isArray(strOrArr);
+    if (returnOneValue) {
+      strOrArr = [strOrArr];
+    }
+    for (let i = 0; i < strOrArr.length; i++) {
+      const origValue = strOrArr[i] + '';
+      strOrArr[i] = consolidateApplicableWildcards(origValue.trim());
+      if (hasInvalidWildcardCriteria(strOrArr[i])) {
+        let msg = `wildcarded strings must have at least three non-wildcard characters before or after the wildcard; '${origValue}' does not qualify`;
+        if (origValue != strOrArr[i]) {
+          msg += `, even after adjusting to '${strOrArr[i]}'`;
+        }
+        throw new InvalidSearchRequestError(msg);
+      }
+    }
+    if (returnOneValue) {
+      strOrArr = strOrArr[0];
+    }
+  }
+  return strOrArr;
+}
+//#endregion
+
 //#region Helper functions
 function getPlanSource(plan) {
   return op
@@ -1106,4 +1182,5 @@ export {
   getResultRowGrouping, // Used by SCP.buildPlans wrapper
   performSearch, // Primary entry point
   processCriteria, // Used by pattern classes for recursive criteria processing
+  sanitizeAndValidateWildcardedStrings, // Used by SCP static pass-through
 };

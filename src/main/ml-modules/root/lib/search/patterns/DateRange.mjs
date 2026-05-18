@@ -82,8 +82,8 @@ class DateRange extends SearchPatternBase {
     // Operator = tests both (overlap). Operator != uses CTS.
     const constraints = [];
     const ctsConstraints = [];
-    const needStartCol = ['>', '>=', '=', '!='].includes(operator);
-    const needEndCol = ['<', '<=', '='].includes(operator);
+    const needStartCol = ['>', '>=', '<', '<=', '=', '!='].includes(operator);
+    const needEndCol = ['='].includes(operator);
     const lexicons = {};
     if (needStartCol) {
       lexicons[startColName] = cts.fieldReference(startIndexName);
@@ -93,14 +93,11 @@ class DateRange extends SearchPatternBase {
     }
 
     if (['>', '>=', '<', '<='].includes(operator)) {
-      // > and >= test the document's start date (qS) against the search boundary.
-      // < and <= test the document's end date (qE) against the search boundary.
+      // All single-sided operators test the document's start date (qS).
       // Use the start of the search date for >= and <; the end of the search date for > and <=.
       // Example: ">= 1800" requires qS >= 1800-01-01T00:00:00.
-      // Example: "< 1800" requires qE < 1800-01-01T00:00:00.
-      const colName = ['<', '<='].includes(operator)
-        ? endColName
-        : startColName;
+      // Example: "< 1800" requires qS < 1800-01-01T00:00:00.
+      const colName = startColName;
       const dateLong = ['>=', '<'].includes(operator)
         ? startDateLong
         : endDateLong;

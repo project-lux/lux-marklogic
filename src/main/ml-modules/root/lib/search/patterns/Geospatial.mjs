@@ -22,6 +22,11 @@ const DEFAULT_REGION_OPERATOR = 'intersects';
 const COORD_OPTIONS = ['coordinate-system=wgs84'];
 const POINT_INDEX_OPTIONS = COORD_OPTIONS.concat(['type=point']);
 
+// Must match the geospatial-region-path-index configuration in content-database.json.
+const REGION_GEOHASH_PRECISION = 2;
+const REGION_UNITS = 'miles';
+const REGION_INVALID_VALUES = 'ignore';
+
 class Geospatial extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
     if (searchTerm.getSearchTermConfig().isGeospatialRegion()) {
@@ -49,7 +54,14 @@ class Geospatial extends SearchPatternBase {
     }
     const region = this.#parseGeoInput(searchTerm);
     const path = this.#getIndexReference(searchTerm);
-    const ref = cts.geospatialRegionPathReference(path, COORD_OPTIONS);
+    const ref = cts.geospatialRegionPathReference(
+      path,
+      COORD_OPTIONS,
+      null,
+      REGION_GEOHASH_PRECISION,
+      REGION_UNITS,
+      REGION_INVALID_VALUES,
+    );
     return {
       ctsConstraints: [cts.geospatialRegionQuery(ref, operator, region)],
     };

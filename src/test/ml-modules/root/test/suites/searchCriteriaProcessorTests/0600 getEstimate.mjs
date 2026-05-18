@@ -775,7 +775,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 4,
+      value: 5,
     },
   },
   {
@@ -789,7 +789,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 1,
+      value: 2,
     },
   },
   {

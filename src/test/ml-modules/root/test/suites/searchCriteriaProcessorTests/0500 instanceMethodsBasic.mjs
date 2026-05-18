@@ -48,6 +48,7 @@ const scenarios = [
     input: {
       searchCriteria: { _scope: 'agent', text: 'a about actually almost' },
       callPrepare: true,
+      callExecute: true,
     },
     expected: {
       error: true,
@@ -84,6 +85,11 @@ for (const scenario of scenarios) {
         pageWith: null,
         sortCriteria: null,
       });
+    }
+
+    // Trigger execution so engine-level validations (e.g. stop words) fire.
+    if (scenario.input.callExecute) {
+      scp.execute();
     }
 
     return {
@@ -208,13 +214,15 @@ for (const scenario of scenarios) {
       );
     }
 
-    // Test filterResults is always a boolean
-    assertions.push(
-      testHelperProxy.assertTrue(
-        typeof actual.filterResults === 'boolean',
-        `getFilterResults should return a boolean for scenario: ${scenario.name}`,
-      ),
-    );
+    // Test filterResults is always a boolean after prepare()
+    if (scenario.input.callPrepare) {
+      assertions.push(
+        testHelperProxy.assertTrue(
+          typeof actual.filterResults === 'boolean',
+          `getFilterResults should return a boolean for scenario: ${scenario.name}`,
+        ),
+      );
+    }
   }
 
   if (scenarioResults.assertions.length > 0) {

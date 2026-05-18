@@ -132,6 +132,10 @@ for (const scenario of scenarios) {
 
     scp.prepare({ ...input });
 
+    // Some validations (e.g. stop words, whitespace-only) fire during
+    // execute(), not prepare().  Call execute so those errors surface.
+    scp.execute();
+
     return {
       processed: true,
     };

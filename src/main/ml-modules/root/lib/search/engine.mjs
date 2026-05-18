@@ -43,6 +43,7 @@ import './patterns/IndexedValue.mjs';
 import './patterns/IndexedWord.mjs';
 import { SearchPatternBase } from './patterns/SearchPatternBase.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
+import { STOP_WORDS } from '../../data/stopWords.mjs';
 //#endregion
 
 //#region Exported functions
@@ -313,6 +314,11 @@ function buildCriteriaAccumulator({
     const name = Object.keys(criterion).find(
       (k) => k[0] !== '_' && searchTermNames.includes(k),
     );
+    if (!name) {
+      throw new InvalidSearchRequestError(
+        `search term does not specify a term name in criteria ${JSON.stringify(criterion)}.`,
+      );
+    }
     const searchTerm = buildLeafSearchTerm({
       criterion,
       id,
@@ -325,6 +331,17 @@ function buildCriteriaAccumulator({
       dataTypeCol,
     });
 
+    // Skip stop words and punctuation-only terms.
+    // Check the raw criteria (pre-cast JS string), not getValue() which may
+    // be an xs.string typed value that fails the typeof === 'string' guard.
+    const unusableWords = getUnusableTermWords(searchTerm.getCriteria());
+    if (unusableWords.length > 0) {
+      searchTerm.setUsable(false);
+      unusableWords.forEach((w) => scp.addIgnoredTerm(w));
+      continue;
+    }
+
+    scp.incrementCriteriaCount();
     mergeTermPlanContributions(
       acc,
       criteria,
@@ -332,6 +349,17 @@ function buildCriteriaAccumulator({
         searchTerm.getSearchTermConfig().getPatternName(),
       ).apply(scp, searchTerm, logicType, patternOptions),
     );
+  }
+
+  // Guard against searches composed entirely of stop words / punctuation.
+  if (isTopLevel && scp.getCriteriaCount() < 1) {
+    const ignored = scp.getIgnoredTerms();
+    if (ignored.length > 0) {
+      throw new InvalidSearchRequestError(
+        `the search criteria given only contains '${ignored.join("', '")}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
+      );
+    }
+    throw new InvalidSearchRequestError('more search criteria is required.');
   }
 
   const assemblyContext = { fragCol, uriCol, dataTypeCol, scope, logicType };
@@ -980,6 +1008,31 @@ function applySemanticSort(plan, sortOption, sortByColName) {
   );
 
   return plan;
+}
+//#endregion
+
+//#region Stop word / punctuation detection
+const PUNCTUATION_ONLY_REGEX = /^[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]*$/;
+
+function isUnusableWord(word) {
+  const cleaned = word.replace(/^"|"$/g, '');
+  return (
+    PUNCTUATION_ONLY_REGEX.test(cleaned) ||
+    STOP_WORDS.has(cleaned.toLowerCase())
+  );
+}
+
+// Returns the unusable words from a term value.  An empty array means the
+// value is usable; a non-empty array lists every stop-word / punctuation
+// token that should be reported as ignored.
+function getUnusableTermWords(value) {
+  if (typeof value !== 'string') return [];
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return [value];
+  if (PUNCTUATION_ONLY_REGEX.test(trimmed)) return [trimmed];
+  const words = utils.splitHonoringPhrases(trimmed);
+  const unusable = words.filter(isUnusableWord);
+  return unusable.length === words.length ? unusable : [];
 }
 //#endregion
 

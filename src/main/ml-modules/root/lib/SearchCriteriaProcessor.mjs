@@ -137,6 +137,28 @@ const SearchCriteriaProcessor = class {
     // Validate and finalize scope
     this.#resolveAndValidateScope();
 
+    // Reject multi-scope searches when the caller has not opted in.
+    if (this.#scopeName === 'multi' && !this.#allowMultiScope) {
+      throw new InvalidSearchRequestError(
+        "search scope of 'multi' not supported by this operation.",
+      );
+    }
+
+    // Validate multi-scope criteria structure early (before execute).
+    if (this.#scopeName === 'multi' && this.#allowMultiScope) {
+      const sc = this.#resolvedSearchCriteria;
+      if (!sc?.OR || !Array.isArray(sc.OR)) {
+        throw new InvalidSearchRequestError(
+          "a search with scope 'multi' must contain an 'OR' array.",
+        );
+      }
+      if (sc.OR.length === 0) {
+        throw new InvalidSearchRequestError(
+          'more search criteria is required.',
+        );
+      }
+    }
+
     // Parse sort criteria now that we have the resolved search scope.
     this.#sortCriteria = new SortCriteria(
       this.#scopeName,

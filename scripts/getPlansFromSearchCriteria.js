@@ -73,10 +73,8 @@ const selectedPlan = useSortedPlan ? sortedResultsPlan : unsortedResultsPlan;
 
 // Convert the Optic plan to readable source code with basic formatting:
 // - each chained method call on its own line
-// - double-quote to single-quote for consistency
 const planSource = op
   .toSource(selectedPlan.export())
-  .replace(/"/g, "'")
   .replace(/\)\s*\./g, ')\n  .');
 
 // Assemble the executable template.

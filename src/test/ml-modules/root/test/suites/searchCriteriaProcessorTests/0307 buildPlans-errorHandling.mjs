@@ -1,6 +1,6 @@
 /**
- * Test suite for SCP.prepare() - Error Handling
- * Tests all error conditions with direct error message validation
+ * Test suite for SCP.buildPlans() - Error Handling
+ * Tests error conditions that surface during plan building (after prepare succeeds).
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
@@ -8,7 +8,7 @@ import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 
-const LIB = '0303-process-errorHandling.mjs';
+const LIB = '0307-buildPlans-errorHandling.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
@@ -30,64 +30,80 @@ function createProcessInput(overrides = {}) {
 
 const scenarios = [
   {
-    name: 'Multi-scope search not allowed when allowMultiScope is false',
+    name: 'Search with only ignored terms (stop words)',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'a the and' },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'which is an ignored term',
+    },
+  },
+  {
+    name: 'Empty search criteria object',
+    input: {
+      searchCriteria: { _scope: 'agent' },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'search term does not specify a term name in criteria',
+    },
+  },
+  {
+    name: 'Search criteria with only whitespace text',
+    input: {
+      searchCriteria: { _scope: 'agent', text: '   ' },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'the search criteria given only contains',
+    },
+  },
+  {
+    name: 'Atomic-only pattern rejects group value',
     input: {
       searchCriteria: {
-        _scope: 'multi',
-        OR: [
-          { _scope: 'agent', name: 'Pablo' },
-          { _scope: 'work', text: 'painting' },
-        ],
+        _scope: 'agent',
+        text: { AND: [{ text: 'Pablo' }, { text: 'artist' }] },
       },
-      ...createProcessInput({ scopeName: 'multi', allowMultiScope: false }),
-    },
-    expected: {
-      error: true,
-      stackToInclude: "search scope of 'multi' not supported by this operation",
-    },
-  },
-  {
-    name: 'Multi-scope with empty OR array',
-    input: {
-      searchCriteria: { _scope: 'multi', OR: [] },
-      ...createProcessInput({ scopeName: 'multi', allowMultiScope: true }),
-    },
-    expected: {
-      error: true,
-      stackToInclude: 'more search criteria is required',
-    },
-  },
-  {
-    name: 'Multi-scope without OR array',
-    input: {
-      searchCriteria: { _scope: 'multi', text: 'test' },
-      ...createProcessInput({ scopeName: 'multi', allowMultiScope: true }),
-    },
-    expected: {
-      error: true,
-      stackToInclude: "a search with scope 'multi' must contain an 'OR' array",
-    },
-  },
-  {
-    name: 'Invalid JSON string format',
-    input: {
-      searchCriteria: '{"_scope": "agent", invalid json}',
       ...createProcessInput(),
     },
     expected: {
       error: true,
-      stackToInclude: 'unable to parse criteria',
+      stackToInclude: "the 'text' term contains a group but is not allowed to",
     },
   },
   {
-    name: 'Null search criteria',
+    name: 'Atomic-only pattern rejects nested term value',
     input: {
-      searchCriteria: null,
+      searchCriteria: {
+        _scope: 'agent',
+        text: { name: 'Pablo' },
+      },
       ...createProcessInput(),
     },
     expected: {
       error: true,
-      stackToInclude: 'Search criteria is required',
+      stackToInclude:
+        "the 'text' term contains another term but is not allowed to",
+    },
+  },
+  {
+    name: 'Group/term-only pattern rejects atomic value',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        classification: 'painting',
+      },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        "the search term 'classification' in scope 'agent' does not accept atomic values",
     },
   },
 ];
@@ -97,7 +113,7 @@ for (const scenario of scenarios) {
     const scp = new SCP();
     const input = scenario.input;
 
-    scp.prepare({ ...input });
+    scp.prepare({ ...input }).buildPlans();
 
     return {
       processed: true,

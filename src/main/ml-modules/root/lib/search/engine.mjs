@@ -467,6 +467,28 @@ function buildLeafSearchTerm({
 
   applyPatternRequirements(searchTerm, termConfig);
 
+  // Validate that the pattern accepts the value's structural type.
+  const rawValue = searchTerm.getCriteria();
+  if (utils.isObject(rawValue)) {
+    if (rawValue.AND || rawValue.OR || rawValue.NOT) {
+      if (!termConfig.acceptsGroupAsChild()) {
+        throw new InvalidSearchRequestError(
+          `the '${name}' term contains a group but is not allowed to.`,
+        );
+      }
+    } else if (Object.keys(rawValue).some((k) => !k.startsWith('_'))) {
+      if (!termConfig.acceptsTermAsChild()) {
+        throw new InvalidSearchRequestError(
+          `the '${name}' term contains another term but is not allowed to.`,
+        );
+      }
+    }
+  } else if (!termConfig.acceptsAtomicValue()) {
+    throw new InvalidSearchRequestError(
+      `the search term '${name}' in scope '${scope}' does not accept atomic values.`,
+    );
+  }
+
   // Cast value to the correct type if scalar and not dateTime.
   const scalarType = termConfig.getScalarType();
   const caster =

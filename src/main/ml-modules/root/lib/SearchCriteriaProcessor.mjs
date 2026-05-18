@@ -5,7 +5,7 @@ import {
   OPTION_NAME_PREFER_FRAG_JOINS,
   OPTION_NAME_RETURN_VALUES,
   PatternOptions,
-} from '/lib/search/PatternOptions.mjs';
+} from './search/PatternOptions.mjs';
 import {
   SORT_TYPE_MULTI_SCOPE,
   SORT_TYPE_NON_SEMANTIC,
@@ -101,7 +101,7 @@ const SearchCriteriaProcessor = class {
     searchCriteria,
     scopeName = null,
     includeSearchResults = true,
-    includeTypeConstraint = true,
+    includeTypeConstraint = true, // TODO: doesn't do anything yet; does it need to?
     allowMultiScope = true,
     patternOptions = null,
     page = 1,

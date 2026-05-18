@@ -29,7 +29,7 @@ import { SearchTermConfig } from './SearchTermConfig.mjs';
 import {
   OPTION_NAME_PREFER_FRAG_JOINS,
   PatternOptions,
-} from '/lib/search/PatternOptions.mjs';
+} from './PatternOptions.mjs';
 // Side-effect imports: each pattern self-registers with SearchPatternBase.
 import './patterns/AnnTopK.mjs';
 import './patterns/DateRange.mjs';

@@ -44,6 +44,21 @@ const andExecute = false;
 
 //#endregion
 
+// prepare() accepts these parameters; those marked [buildPlans] affect plan
+// generation, while those marked [execute-only] only matter for execute():
+//
+//   searchCriteria        [buildPlans]    - JSON or string grammar search input
+//   scopeName             [buildPlans]    - overrides _scope in criteria
+//   sortDelimitedStr      [buildPlans]    - sort spec influences sortedResultsPlan
+//   allowMultiScope       [buildPlans]    - must be true for scope 'multi'
+//   patternOptions        [buildPlans]    - Instance of PatternOptions
+//   includeTypeConstraint [execute-only]  - TBD whether this will be implemented in Optic.s
+//   includeSearchResults  [execute-only]  - controls whether execute() fetches result rows
+//   page                  [execute-only]  - pagination offset
+//   pageLength            [execute-only]  - pagination limit
+//   pageWith              [execute-only]  - find page containing a specific document
+//   filterResults         [execute-only]  - TBD whether this will be implemented in Optic.
+//   facetRequests         [execute-only]  - Instance of FacetRequests
 const { sortedResultsPlan, unsortedResultsPlan } = new SCP()
   .prepare({
     searchCriteria,

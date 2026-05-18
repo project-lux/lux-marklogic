@@ -18,7 +18,7 @@ import {
   OPTION_NAME_EXCLUDE_SELF_IRI,
   OPTION_NAME_MAXIMUM_VALUES,
   PatternOptions,
-} from '/lib/search/PatternOptions.mjs';
+} from './search/PatternOptions.mjs';
 import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
 import { getRelationName } from '../config/relationNames.mjs';
 import {
@@ -125,6 +125,8 @@ function getRelatedList({
     const patternOptions = new PatternOptions();
     patternOptions.set(OPTION_NAME_EXCLUDE_SELF_IRI, uri);
 
+    // TODO: Not yet implemented in Optic. Delete the option?
+    //
     // Set the maximum number of values to process per relation. Do not let requester exceed the maximum imposed by the backend.
     relationshipsPerRelation = Math.min(
       relationshipsPerRelation,

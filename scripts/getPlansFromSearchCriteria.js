@@ -1,11 +1,13 @@
 /*
- * Generates an executable Optic plan from search criteria without running the
- * search.  The output is a self-contained script that can be pasted into
- * MarkLogic Query Console and executed independently.
+ * Generates an executable Optic plan from search criteria without running
+ * SCP's execute() or executeForValues().  Instead, it stops at buildPlans()
+ * to obtain the compiled plan, converts it to readable source, and wraps it
+ * in a self-contained script for MarkLogic Query Console.
+ *
+ * When andExecute is true, this script also runs the plan directly (bypassing
+ * SCP's execute path) so you can inspect both the plan and its results.
  *
  * Configure the variables below, then run this script in Query Console.
- * The output is the Optic plan source for the selected plan (sorted or
- * unsorted), wrapped in the template that makes it immediately runnable.
  */
 'use strict';
 import op from '/MarkLogic/optic.mjs';

@@ -7,6 +7,9 @@
 ---
 
 - [Problem](#problem)
+- [Decision Gate: Is My Collections Support Required?](#decision-gate-is-my-collections-support-required)
+  - [If No: Trivial Implementation](#if-no-trivial-implementation)
+  - [If Yes: Full Design (remainder of this document)](#if-yes-full-design-remainder-of-this-document)
 - [LLM Prompts](#llm-prompts)
   - [First](#first)
   - [Second](#second)
@@ -48,6 +51,52 @@ MarkLogic imposes document permission checks on non-admin users for every candid
 2. The user already has read-access to every document the query should return.
 
 A five-keyword OR'd search executed in **1.8s as a non-admin** vs. **1.3s as an admin** (~28% improvement). Query ID: `q07-optic-pattern-d-non-con`.
+
+# Decision Gate: Is My Collections Support Required?
+
+The My Collections feature is not yet in production and may never be. The entire complexity of this design — collection exclusion constraints, OR-path hardening, bucket renames, CTS-in-constraints validation — exists **solely** to prevent leaking My Collections documents when amp'd to admin.
+
+**If My Collections does not need to be supported**, the problem collapses: every document in `prod` is readable by every reader-role user, making permission checks purely redundant. Amping to admin changes nothing about what's visible — it only skips the per-document permission evaluation overhead.
+
+## If No: Trivial Implementation
+
+The entire feature can be implemented in `handleRequest` at lines 286–287 (the `FEATURE_MY_COLLECTIONS_ENABLED === false` path):
+
+```javascript
+// Feature is disabled, just do what we used to do.
+if (endpointConfig.mayAmpAsAdmin() && unitName === TENANT_OWNER) {
+  return _executeAsAdmin(f);
+}
+return f();
+```
+
+Plus one new amp'd function:
+
+```javascript
+function __executeAsAdmin(f) {
+  return f();
+}
+const _executeAsAdmin = import.meta.amp(__executeAsAdmin);
+// Amp config grants the admin role to this function.
+```
+
+**Why `unitName === TENANT_OWNER`:** Unit service accounts have restricted document access (they only see a subset of `prod` via their permissions). Amping them would expose documents outside their unit's scope. Only the tenant owner's service account (and users hitting the tenant owner portal) already have read access to all `prod` documents.
+
+**What this requires:**
+- `ampAsAdmin` property + `mayAmpAsAdmin()` method in `endpointsConfig.mjs` (same as full design).
+- One new amp'd function (`__executeAsAdmin`) with an amp config file granting the `admin` role.
+- No changes to `engine.mjs`, `SearchCriteriaProcessor`, or the Optic plan pipeline.
+- No collection exclusion constraint.
+- No signaling mechanism.
+
+**What this does NOT handle:**
+- If My Collections is later enabled, this path is never reached (`FEATURE_MY_COLLECTIONS_ENABLED` routes to V2). The full design below would be required at that point.
+
+## If Yes: Full Design (remainder of this document)
+
+If My Collections must be supported — even as a future possibility that ships concurrently — continue reading. The remainder of this document addresses the collection exclusion constraint, OR-path security hardening, and all associated complexity.
+
+---
 
 # LLM Prompts
 

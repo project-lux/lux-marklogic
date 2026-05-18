@@ -119,16 +119,6 @@ const scenarios = [
     },
   },
   {
-    name: 'BOOST operator normalization preserves case',
-    input: {
-      queryString: 'Pablo BOOST Picasso',
-    },
-    expected: {
-      error: false,
-      result: 'Pablo BOOST Picasso',
-    },
-  },
-  {
     name: 'Lowercase and operator gets normalized',
     input: {
       queryString: 'Pablo and Picasso',
@@ -156,16 +146,6 @@ const scenarios = [
     expected: {
       error: false,
       result: 'Pablo NOT_IN sculpture',
-    },
-  },
-  {
-    name: 'Mixed case boost operator gets normalized',
-    input: {
-      queryString: 'Pablo boost Picasso',
-    },
-    expected: {
-      error: false,
-      result: 'Pablo BOOST Picasso',
     },
   },
   {
@@ -249,16 +229,6 @@ const scenarios = [
       error: false,
       result:
         '"Pablo"[unstemmed] AND "Vincent van Gogh" NOT_IN "sculpture art"',
-    },
-  },
-  {
-    name: 'Operators with extra spaces get normalized',
-    input: {
-      queryString: 'Pablo  and   Picasso  boost   Vincent',
-    },
-    expected: {
-      error: false,
-      result: 'Pablo  AND   Picasso  BOOST   Vincent',
     },
   },
 ];

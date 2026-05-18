@@ -1057,7 +1057,7 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 | Parameter | Example | Description |
 |-----------|---------|-------------|
 | `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
-| `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The `BOOST` property may be used to provide an array containing two search terms. The first term is used for matching results and the second term will boost the score of results that match the first term.  The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
+| `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a near complete list of available search scopes, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example).
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
 | `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100. An error will be thrown if this value is less than 1. |
@@ -1067,17 +1067,16 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 
 ### Successful Single Scope Request / Response Example
 
-Scenario: Search for the first three agents matching "ben" and boosted by "franklin". Sort the results by name. Allow the system to change the search scope should there be no results in the requested search scope.
+Scenario: Search for events similiar to a specified one.
 
 Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `q` | `{"BOOST":[{"text":"ben","_lang":"en"},{"text":"franklin","_lang":"en"}]}` |
-| `scope` | `item` |
+| `q` | `{"similar":"https://lux.collections.yale.edu/data/activity/0102514a-03d8-4467-a84d-6b901cfae7c8"}` |
+| `scope` | `event` |
 | `page` | `1` |
 | `pageLength` | `20` |
-| `sort` | `itemProductionDate:desc` |
 
 Response Status Code: 200
 
@@ -1089,41 +1088,37 @@ Response Body:
 
 ```
 {
-   "@context":"https://linked.art/ns/v1/search.json",
-   "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&page=1&pageLength=20&sort=itemProductionDate%3Adesc",
-   "type":"OrderedCollectionPage",
-   "partOf":[
-      {
-         "id":"https://lux.collections.yale.edu/api/search-estimate/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22",
-         "type":"OrderedCollection",
-         "label":{
-            "en":[
-               "Objects"
-            ]
-         },
-         "summary":{
-            "en":[
-               "Records representing physical and digital objects that match your search."
-            ]
-         },
-         "totalItems":16189
-      }
-   ],
-   "orderedItems":[
-      {
-         "id":"https://lux.collections.yale.edu/data/object/83c202de-a642-4fc9-9549-1c2ba5619ea7",
-         "type":"HumanMadeObject"
+  "@context":"https://linked.art/ns/v1/search.json",
+  "id":"https://lux.collections.yale.edu/api/search/event?q=%7B%22similar%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Factivity%2F0102514a-03d8-4467-a84d-6b901cfae7c8%22%7D&page=1&pageLength=20&sort=archiveSortId%3Aasc%2Crelevance%3Adesc",
+  "type":"OrderedCollectionPage",
+  "partOf":[
+    {
+      "id":"https://lux.collections.yale.edu/api/search-estimate/event?q=%7B%22similar%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Factivity%2F0102514a-03d8-4467-a84d-6b901cfae7c8%22%7D",
+      "type":"OrderedCollection",
+      "label":{
+        "en":[
+          "Events"
+        ]
       },
-      {
-         "id":"https://lux.collections.yale.edu/data/object/d947f539-559b-41c8-870f-b1f196cb85ec",
-         "type":"HumanMadeObject"
+      "summary":{
+        "en":[
+          "Records representing events that match your search."
+        ]
       },
-      ...more search results
-   ],
-   "next":{
-      "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&page=2&pageLength=20&sort=itemProductionDate%3Adesc",
-      "type":"OrderedCollectionPage"
-   }
+      "totalItems":20
+    }
+  ],
+  "orderedItems":[
+    {
+      "id":"https://lux.collections.yale.edu/data/activity/035a6059-5438-4802-b335-00c9bb987ba0",
+      "type":"Activity"
+    },
+    {
+      "id":"https://lux.collections.yale.edu/data/activity/0dbc29dc-59b4-4cf4-8ccc-a1ad7ee27021",
+      "type":"Activity"
+    },
+    ...more search results
+  ]
 }
 ```
 

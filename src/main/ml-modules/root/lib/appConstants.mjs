@@ -134,7 +134,7 @@ const SEARCH_GRAMMAR_OPERATORS = [
   'AND',
   'OR',
   'NOT_IN',
-  'BOOST',
+  // 'BOOST', // Dropped during CTS to Optic migration
   // 'NEAR', // Until we know what "near" means in the semantic world, let's not auto-capitalize 'near'.
   // 'EQ', // Not presently supporting comparison operators in the LUX String Search Grammar.
   // 'NE',

@@ -118,10 +118,6 @@ function walkParsedQuery(ctsQueryObj) {
       }
     } else if (propName === 'notQuery') {
       out.NOT = [walkParsedQuery(ctsQueryObj.notQuery.query)];
-    } else if (propName === 'boostQuery') {
-      out.BOOST = [];
-      out.BOOST.push(walkParsedQuery(ctsQueryObj.boostQuery.matchingQuery));
-      out.BOOST.push(walkParsedQuery(ctsQueryObj.boostQuery.boostingQuery));
     } else if (propName === 'wordQuery') {
       out.text = ctsQueryObj.wordQuery.text[0];
       if (out.text.includes(' ')) out.text = `"${out.text}"`;

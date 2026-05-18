@@ -177,33 +177,6 @@ const scenarios = [
     },
   },
   {
-    name: 'BoostQuery with matching and boosting queries',
-    input: {
-      ctsQueryObj: {
-        boostQuery: {
-          matchingQuery: {
-            wordQuery: {
-              text: ['Pablo'],
-              options: [],
-            },
-          },
-          boostingQuery: {
-            wordQuery: {
-              text: ['Picasso'],
-              options: [],
-            },
-          },
-        },
-      },
-    },
-    expected: {
-      error: false,
-      result: {
-        BOOST: [{ text: 'Pablo' }, { text: 'Picasso' }],
-      },
-    },
-  },
-  {
     name: 'Empty andQuery creates empty AND array',
     input: {
       ctsQueryObj: {
@@ -303,50 +276,6 @@ const scenarios = [
           },
           {
             NOT: [{ text: 'sculpture' }],
-          },
-        ],
-      },
-    },
-  },
-  {
-    name: 'Nested boostQuery within andQuery',
-    input: {
-      ctsQueryObj: {
-        andQuery: {
-          queries: [
-            {
-              wordQuery: {
-                text: ['artist'],
-                options: [],
-              },
-            },
-            {
-              boostQuery: {
-                matchingQuery: {
-                  wordQuery: {
-                    text: ['Pablo'],
-                    options: [],
-                  },
-                },
-                boostingQuery: {
-                  wordQuery: {
-                    text: ['famous'],
-                    options: [],
-                  },
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-    expected: {
-      error: false,
-      result: {
-        AND: [
-          { text: 'artist' },
-          {
-            BOOST: [{ text: 'Pablo' }, { text: 'famous' }],
           },
         ],
       },

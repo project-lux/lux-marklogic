@@ -47,6 +47,10 @@ import { expandPredicate } from './prefixUtils.mjs';
 import { STOP_WORDS } from '../../data/stopWords.mjs';
 //#endregion
 
+//#region Constants
+const MAXIMUM_PAGE_WITH_LENGTH = 100000;
+//#endregion
+
 //#region Exported functions
 // Returns an instance of SearchExecutionResult
 function performSearch(scp) {
@@ -81,31 +85,36 @@ function performSearch(scp) {
         patternOptions,
       });
 
-      const useThisPlan = includeSearchResults
+      let useThisPlan = includeSearchResults
         ? sortedResultsPlan
         : unsortedResultsPlan;
+
+      // pageWith's limit is imposed here; see paginateResults for the rest.
+      const pageWith = scp.getPageWith();
+      useThisPlan =
+        includeSearchResults && pageWith
+          ? useThisPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
+          : useThisPlan;
 
       planAsJson = useThisPlan.export();
       planAsSource = getPlanSource(planAsJson);
 
-      const allRows = useThisPlan.result().toArray();
+      const rows = useThisPlan.result().toArray();
 
       if (includeSearchResults) {
-        total = allRows.length;
-
-        // Apply pagination if needed
-        // TODO: implement pageWith functionality with MAXIMUM_PAGE_WITH_LENGTH = 100000;
-        resultPage = Math.max(page, 1);
-        const resolvedPageLength = pageLength ?? 20;
-        searchResults = allRows;
-        if (resultPage > 0 && resolvedPageLength > 0) {
-          const offset = (resultPage - 1) * resolvedPageLength;
-          searchResults = allRows.slice(offset, offset + resolvedPageLength);
-        }
+        total = rows.length;
+        const paginationResult = paginateResults({
+          rows,
+          pageWith,
+          page,
+          pageLength: pageLength ?? 20,
+        });
+        resultPage = paginationResult.resultPage;
+        searchResults = paginationResult.searchResults;
       }
 
       // calculateFacets returns null when facets are not requested.
-      facetResponses = calculateFacets(allRows, facetRequests);
+      facetResponses = calculateFacets(rows, facetRequests);
     }
 
     return new SearchExecutionResult({
@@ -829,7 +838,7 @@ function collapseToResultRows(
 //#endregion
 
 //#region Facets
-function calculateFacets(allRows, facetRequests) {
+function calculateFacets(rows, facetRequests) {
   if (facetRequests == null || facetRequests.length === 0) {
     return null;
   }
@@ -839,7 +848,7 @@ function calculateFacets(allRows, facetRequests) {
     return new FacetResponses({});
   }
 
-  const uriList = allRows.map((row) => row.id);
+  const uriList = rows.map((row) => row.id);
   if (!utils.isNonEmptyArray(uriList)) {
     return buildEmptyFacetResponses(requests);
   }
@@ -848,7 +857,7 @@ function calculateFacets(allRows, facetRequests) {
   const pageLength = facetRequests.getPageLength() ?? 20;
   const start = (page - 1) * pageLength;
   const end = page * pageLength;
-  const allRowsPlan = op.fromSearch(cts.documentQuery(uriList));
+  const docsPlan = op.fromSearch(cts.documentQuery(uriList));
 
   const semanticConfigsByFacetName = {};
   requests.forEach((request) => {
@@ -863,7 +872,7 @@ function calculateFacets(allRows, facetRequests) {
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
-    let facetSourcePlan = allRowsPlan;
+    let facetSourcePlan = docsPlan;
 
     let constraintPlan;
     let joinOn;
@@ -1046,6 +1055,36 @@ function applySemanticSort(plan, sortOption, sortByColName) {
 }
 //#endregion
 
+//#region Pagination
+// Resolves the result page and slices the appropriate page of rows.
+// When pageWith is specified, finds the page containing that document ID;
+// otherwise uses the given page number.
+function paginateResults({ rows, pageWith, page, pageLength }) {
+  let resultPage;
+
+  if (pageWith) {
+    if (rows.length > MAXIMUM_PAGE_WITH_LENGTH) {
+      throw new InvalidSearchRequestError(
+        `The requested document could not be found in the first ${MAXIMUM_PAGE_WITH_LENGTH} results.`,
+      );
+    }
+    const foundIndex = rows.findIndex((row) => row.id === pageWith);
+    if (foundIndex === -1) {
+      throw new InvalidSearchRequestError(
+        `The requested document could not be found in the search results.`,
+      );
+    }
+    resultPage = Math.ceil((foundIndex + 1) / pageLength);
+  } else {
+    resultPage = Math.max(page, 1);
+  }
+
+  const offset = (resultPage - 1) * pageLength;
+  const searchResults = rows.slice(offset, offset + pageLength);
+  return { resultPage, searchResults };
+}
+//#endregion
+
 //#region Stop word / punctuation detection
 const PUNCTUATION_ONLY_REGEX = /^[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]*$/;
 
@@ -1200,9 +1239,11 @@ function applyPatternRequirements(searchTerm, termConfig) {
 //#endregion
 
 export {
-  buildPlans, // Used by getPlansFromSearchCriteria.js
-  getResultRowGrouping, // Used by SCP.buildPlans wrapper
-  performSearch, // Primary entry point
-  processCriteria, // Used by pattern classes for recursive criteria processing
-  sanitizeAndValidateWildcardedStrings, // Used by SCP static pass-through
+  MAXIMUM_PAGE_WITH_LENGTH,
+  buildPlans,
+  getResultRowGrouping,
+  paginateResults,
+  performSearch,
+  processCriteria,
+  sanitizeAndValidateWildcardedStrings,
 };

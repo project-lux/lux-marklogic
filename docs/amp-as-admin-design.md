@@ -56,7 +56,7 @@ A five-keyword OR'd search executed in **1.8s as a non-admin** vs. **1.3s as an 
 
 The My Collections feature is not yet in production and may never be. The entire complexity of this design — collection exclusion constraints, OR-path hardening, bucket renames, CTS-in-constraints validation — exists **solely** to prevent leaking My Collections documents when amp'd to admin.
 
-**If My Collections does not need to be supported**, the problem collapses: every document in `prod` is readable by every reader-role user, making permission checks purely redundant. Amping to admin changes nothing about what's visible — it only skips the per-document permission evaluation overhead.
+**If My Collections does not need to be supported**, the problem collapses: every document is readable by the tenant owner's service account, making permission checks purely redundant. Amping that service account to admin changes nothing about what's visible — it only skips the per-document permission evaluation overhead.
 
 ## If No: Trivial Implementation
 

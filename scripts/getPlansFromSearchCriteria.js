@@ -72,9 +72,11 @@ const { sortedResultsPlan, unsortedResultsPlan } = new SCP()
 const selectedPlan = useSortedPlan ? sortedResultsPlan : unsortedResultsPlan;
 
 // Convert the Optic plan to readable source code with basic formatting:
+// - SPARQL strings converted to template literals for valid multi-line JS
 // - each chained method call on its own line
 const planSource = op
   .toSource(selectedPlan.export())
+  .replace(/op\.fromSPARQL\('([\s\S]*?)'/g, 'op.fromSPARQL(`$1`')
   .replace(/\)\s*\./g, ')\n  .');
 
 // Assemble the executable template.

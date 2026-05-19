@@ -684,7 +684,7 @@ const SEARCH_TERMS_CONFIG = {
     isPublicDomain: {
       patternName: 'indexedValue',
       indexReferences: ['workIsPublicDomainBoolean'],
-      scalarType: 'number',
+      scalarType: 'integer',
     },
     language: {
       patternName: 'hopWithField',

@@ -518,15 +518,20 @@ function buildLeafSearchTerm({
   }
 
   // Cast value to the correct type if scalar and not dateTime.
+  let value;
   const scalarType = termConfig.getScalarType();
-  const caster =
-    scalarType && scalarType !== 'dateTime' ? xs[scalarType] : null;
   const rawTermValue = searchTerm.getCriteria();
-  const value = caster
-    ? caster(rawTermValue)
-    : typeof rawTermValue === 'string'
-      ? rawTermValue
-      : null;
+  if (scalarType && scalarType !== 'dateTime') {
+    const caster = xs[scalarType];
+    if (typeof caster !== 'function') {
+      throw new InternalServerError(
+        `Search term '${searchTerm.getName()}' has invalid scalarType '${scalarType}': xs.${scalarType} is not a function.`,
+      );
+    }
+    value = caster(rawTermValue);
+  } else {
+    value = typeof rawTermValue === 'string' ? rawTermValue : null;
+  }
   searchTerm.setValue(value);
 
   // TODO: resolve search options: pattern --> term config --> term instance.

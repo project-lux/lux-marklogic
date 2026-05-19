@@ -133,7 +133,7 @@ const searchTermsConfig = {};
     } else if (isDimension) {
       scalarType = 'float';
     } else if (isZeroOrOne) {
-      scalarType = 'number';
+      scalarType = 'integer';
     }
 
     // Get ready to add

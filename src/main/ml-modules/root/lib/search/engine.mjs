@@ -456,7 +456,7 @@ function buildLeafSearchTerm({
   fragCol,
   dataTypeCol,
 }) {
-  const termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
+  let termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
 
   const searchTerm = new SearchTerm()
     .addId(id)
@@ -479,7 +479,26 @@ function buildLeafSearchTerm({
   // Validate that the pattern accepts the value's structural type.
   const rawValue = searchTerm.getCriteria();
   if (utils.isObject(rawValue)) {
-    if (rawValue.AND || rawValue.OR || rawValue.NOT) {
+    // When the child term is { id: value } or { iri: value } and the config specifies ID index
+    // references, rewrite the search term to a simple indexedValue query on that index.  Skip when
+    // the search term is transitive as valid results would be dropped.
+    const childId = getChildId(rawValue);
+    if (
+      childId &&
+      termConfig.hasIdIndexReferences() &&
+      !termConfig.isTransitive()
+    ) {
+      termConfig = new SearchTermConfig({
+        indexReferences: termConfig.getIdIndexReferences(),
+        patternName: 'indexedValue',
+        scalarType: 'string',
+        forceExactMatch: true,
+      });
+      searchTerm
+        .addName(name + 'Id')
+        .addSearchTermConfig(termConfig)
+        .setCriteria(childId);
+    } else if (rawValue.AND || rawValue.OR || rawValue.NOT) {
       if (!termConfig.acceptsGroupAsChild()) {
         throw new InvalidSearchRequestError(
           `the '${name}' term contains a group but is not allowed to.`,
@@ -1174,6 +1193,13 @@ function sanitizeAndValidateWildcardedStrings(strOrArr) {
 //#endregion
 
 //#region Helper functions
+// Extracts the IRI string from a child { id: value } or { iri: value } term.
+// Returns null when the value is not a direct ID/IRI reference.
+function getChildId(termValue) {
+  const value = termValue?.id ?? termValue?.iri ?? null;
+  return typeof value === 'string' ? value : null;
+}
+
 function getPlanSource(plan) {
   return op
     .toSource(plan.export ? plan.export() : plan)
@@ -1241,6 +1267,7 @@ function applyPatternRequirements(searchTerm, termConfig) {
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
   buildPlans,
+  getChildId,
   getResultRowGrouping,
   paginateResults,
   performSearch,

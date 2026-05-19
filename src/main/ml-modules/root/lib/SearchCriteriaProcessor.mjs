@@ -397,9 +397,9 @@ const SearchCriteriaProcessor = class {
     );
   }
 
+  // Pass-through method; canonical implementation in engine.getChildId.
   static getChildId(termValue) {
-    const value = termValue?.id ?? termValue?.iri ?? null;
-    return typeof value === 'string' ? value : null;
+    return engine.getChildId(termValue);
   }
 
   static requireSearchCriteriaObject(searchCriteria) {

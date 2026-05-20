@@ -73,7 +73,7 @@ class SearchPatternBase extends SearchPatternInterface {
   static register(name, instance) { REGISTRY[name] = Object.freeze(instance); }
   static get(name)                { return REGISTRY[name]; }
   static has(name)                { return name in REGISTRY; }
-  // ...base method implementations (isExposedViaSearch, acceptsGroup, etc.)
+  // ...base method implementations (acceptsGroup, acceptsTerm, etc.)
 }
 ```
 
@@ -91,12 +91,12 @@ Every pattern class extends `SearchPatternBase` and must implement:
 |---|---|
 | `apply(scp, searchTerm, logicType, patternOptions)` | Returns a contributions object with constraints, CTS queries, joins, and/or criteria rewrites. |
 | `getRequiredRuntimeSearchTermProperties()` | Array of property names (without `_` prefix) that must be present on the search term at runtime. |
-| `getAllowedChildren()` | Bitmask of allowed child types: `CHILD_TYPE_GROUP` (4), `CHILD_TYPE_TERM` (2), `CHILD_TYPE_ATOMIC` (1), `CHILD_TYPE_NONE` (0). |
+| `getAllowedChildren()` | Bitmask of allowed child types: `CHILD_TYPE_GROUP` (4), `CHILD_TYPE_TERM` (2), `CHILD_TYPE_ATOMIC` (1). |
 | `isConvertIdChildToIri()` | Whether `id` child terms should be converted to `iri` terms. |
 | `getAllowedSearchOptionsName()` | The search options name this pattern allows (`'keyword'`, `'exact'`, or `null`). |
 | `getDefaultSearchOptionsName()` | The default search options name for this pattern. |
 
-Base class derives convenience methods from `getAllowedChildren()`: `isExposedViaSearch()`, `acceptsGroup()`, `acceptsTerm()`, `acceptsAtomicValue()`, `onlyAcceptsAtomicValue()`.
+Base class derives convenience methods from `getAllowedChildren()`: `acceptsGroup()`, `acceptsTerm()`, `acceptsAtomicValue()`, `onlyAcceptsAtomicValue()`.
 
 ## Registered Patterns
 

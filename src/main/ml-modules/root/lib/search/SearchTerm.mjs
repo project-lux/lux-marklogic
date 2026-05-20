@@ -84,9 +84,6 @@ const SearchTerm = class {
   getChildValueType() {
     return this.childInfo ? this.childInfo.valueType : null;
   }
-  getChildWillReturnCtsQuery() {
-    return this.childInfo ? this.childInfo.willReturnCtsQuery : null;
-  }
 
   addScopeName(scopeName) {
     this.setScopeName(scopeName);

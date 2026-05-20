@@ -379,22 +379,11 @@ const SearchCriteriaProcessor = class {
   }
 
   static getFirstNonOptionPropertyName(termValue) {
-    let propName = null;
-    if (utils.isObject(termValue)) {
-      for (const p of Object.keys(termValue)) {
-        if (!p.startsWith('_')) {
-          propName = p;
-          break;
-        }
-      }
-    }
-    return propName;
+    return engine.getFirstNonOptionPropertyName(termValue);
   }
 
   static hasNonOptionPropertyName(termValue) {
-    return (
-      SearchCriteriaProcessor.getFirstNonOptionPropertyName(termValue) != null
-    );
+    return engine.hasNonOptionPropertyName(termValue);
   }
 
   // Pass-through method; canonical implementation in engine.getChildId.

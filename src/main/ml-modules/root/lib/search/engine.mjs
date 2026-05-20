@@ -31,7 +31,12 @@ import {
   OPTION_NAME_PREFER_FRAG_JOINS,
   PatternOptions,
 } from './PatternOptions.mjs';
-import { SearchPatternBase } from './patterns/loadPatterns.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  CHILD_TYPE_GROUP,
+  CHILD_TYPE_TERM,
+  SearchPatternBase,
+} from './patterns/loadPatterns.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
 import { STOP_WORDS } from '../../data/stopWords.mjs';
 //#endregion
@@ -453,6 +458,7 @@ function buildLeafSearchTerm({
     .addScopeName(scope)
     .addSearchTermConfig(termConfig)
     .addTopLevel(isTopLevel)
+    .addChildInfo(getChildInfo(scope, criterion[name]))
     .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
     .addCriteria(criterion[name]);
 
@@ -1187,6 +1193,13 @@ function sanitizeAndValidateWildcardedStrings(strOrArr) {
 //#endregion
 
 //#region Helper functions
+function getPlanSource(plan) {
+  return op
+    .toSource(plan.export ? plan.export() : plan)
+    .replace(/\n\s*/g, ' ')
+    .replace(/"/g, "'");
+}
+
 // Extracts the IRI string from a child { id: value } or { iri: value } term.
 // Returns null when the value is not a direct ID/IRI reference.
 function getChildId(termValue) {
@@ -1194,11 +1207,59 @@ function getChildId(termValue) {
   return typeof value === 'string' ? value : null;
 }
 
-function getPlanSource(plan) {
-  return op
-    .toSource(plan.export ? plan.export() : plan)
-    .replace(/\n\s*/g, ' ')
-    .replace(/"/g, "'");
+// Could add childId.
+function getChildInfo(scopeName, parentTermValue) {
+  console.log(
+    `getChildInfo: scopeName: ${scopeName}, parentTermValue: ${JSON.stringify(parentTermValue)}`,
+  );
+  // Override when not a group.
+  let valueType = CHILD_TYPE_GROUP;
+  let patternName = null;
+
+  const childIsGroup = hasGroup(parentTermValue);
+  if (!childIsGroup) {
+    const childTermName = getFirstNonOptionPropertyName(parentTermValue);
+    const childTermValue = parentTermValue[childTermName];
+    const searchTermConfig = new SearchTermConfig(
+      getSearchTermConfig(scopeName, childTermName),
+    );
+    patternName = searchTermConfig.getPatternName();
+    valueType =
+      utils.isArray(childTermValue) || utils.isObject(childTermValue)
+        ? CHILD_TYPE_TERM
+        : CHILD_TYPE_ATOMIC;
+    console.log(
+      `childTermName: ${childTermName}, patternName: ${patternName}, valueType: ${valueType}`,
+    );
+    console.log(`childTermValue: ${JSON.stringify(childTermValue)}`);
+    console.log(`searchTermConfig: ${JSON.stringify(searchTermConfig)}`);
+  }
+
+  return {
+    patternName,
+    valueType,
+  };
+}
+
+function hasGroup(termValue) {
+  return termValue && (termValue.AND || termValue.OR || termValue.NOT);
+}
+
+function getFirstNonOptionPropertyName(termValue) {
+  let propName = null;
+  if (utils.isObject(termValue)) {
+    for (const p of Object.keys(termValue)) {
+      if (!p.startsWith('_')) {
+        propName = p;
+        break;
+      }
+    }
+  }
+  return propName;
+}
+
+function hasNonOptionPropertyName(termValue) {
+  return getFirstNonOptionPropertyName(termValue) != null;
 }
 
 function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
@@ -1262,7 +1323,9 @@ export {
   MAXIMUM_PAGE_WITH_LENGTH,
   buildPlans,
   getChildId,
+  getFirstNonOptionPropertyName,
   getResultRowGrouping,
+  hasNonOptionPropertyName,
   paginateResults,
   performSearch,
   processCriteria,

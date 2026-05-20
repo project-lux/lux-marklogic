@@ -1,5 +1,4 @@
 import op from '/MarkLogic/optic.mjs';
-import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
 import { COMPARATORS } from '../../SearchCriteriaProcessor.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
@@ -48,11 +47,11 @@ class IndexedRange extends SearchPatternBase {
   }
 
   getAllowedSearchOptionsName() {
-    return SEARCH_OPTIONS_NAME_KEYWORD;
+    return null;
   }
 
   getDefaultSearchOptionsName() {
-    return SEARCH_OPTIONS_NAME_KEYWORD;
+    return null;
   }
 }
 

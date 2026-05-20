@@ -1,4 +1,4 @@
-import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
+import { SEARCH_OPTIONS_NAME_EXACT } from '../../appConstants.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
 class IndexedValue extends SearchPatternBase {
@@ -39,11 +39,11 @@ class IndexedValue extends SearchPatternBase {
   }
 
   getAllowedSearchOptionsName() {
-    return SEARCH_OPTIONS_NAME_KEYWORD;
+    return SEARCH_OPTIONS_NAME_EXACT;
   }
 
   getDefaultSearchOptionsName() {
-    return SEARCH_OPTIONS_NAME_KEYWORD;
+    return SEARCH_OPTIONS_NAME_EXACT;
   }
 }
 

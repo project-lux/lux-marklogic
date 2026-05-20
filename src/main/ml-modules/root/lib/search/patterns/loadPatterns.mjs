@@ -21,7 +21,6 @@ import './IndexedWord.mjs';
 export {
   CHILD_TYPE_ATOMIC,
   CHILD_TYPE_GROUP,
-  CHILD_TYPE_NONE,
   CHILD_TYPE_TERM,
   SearchPatternBase,
 } from './SearchPatternBase.mjs';

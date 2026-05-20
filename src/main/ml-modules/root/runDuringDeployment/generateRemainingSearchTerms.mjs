@@ -21,7 +21,6 @@ const uri = '/config/searchTermsConfig.mjs';
 console.log(`Adding remaining search terms within ${uri}`);
 
 // Arrays for consolidating logging.
-const skippedTypeTermMsgs = [];
 const matchedIdIndexConfigMsgs = [];
 const mergedTermMsgs = [];
 const droppedScopeMsgs = [];
@@ -285,10 +284,6 @@ const searchTermsConfig = {};
 });
 
 // Consolidated log entries
-utils.logValues(
-  `Did not define the following terms due to the dataset not containing the associated data.`,
-  skippedTypeTermMsgs,
-);
 utils.logValues(
   'ID index reference matches the facet configuration and could be omitted from the search criteria configuration',
   matchedIdIndexConfigMsgs,

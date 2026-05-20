@@ -137,7 +137,6 @@ const advancedSearchConfigs = {};
           const hasHelpText = termConfig.hasHelpText();
           if (
             [
-              'any', // Term may no longer exist.
               'classificationOfReference',
               'iri',
               'recordType',

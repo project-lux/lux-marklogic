@@ -3,7 +3,6 @@ import { SearchPatternInterface } from './SearchPatternInterface.mjs';
 const CHILD_TYPE_GROUP = 4;
 const CHILD_TYPE_TERM = 2;
 const CHILD_TYPE_ATOMIC = 1;
-const CHILD_TYPE_NONE = 0;
 
 // Pattern instance registry, populated by each pattern file's self-registration.
 const REGISTRY = {};
@@ -25,10 +24,6 @@ class SearchPatternBase extends SearchPatternInterface {
   }
 
   //#region Methods extensions need not implement.
-  isExposedViaSearch() {
-    return this.getAllowedChildren() !== CHILD_TYPE_NONE;
-  }
-
   acceptsGroup() {
     return (this.getAllowedChildren() & CHILD_TYPE_GROUP) === CHILD_TYPE_GROUP;
   }
@@ -52,7 +47,6 @@ class SearchPatternBase extends SearchPatternInterface {
 export {
   CHILD_TYPE_ATOMIC,
   CHILD_TYPE_GROUP,
-  CHILD_TYPE_NONE,
   CHILD_TYPE_TERM,
   SearchPatternBase,
 };

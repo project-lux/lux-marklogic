@@ -40,12 +40,6 @@ class SearchPatternInterface {
   }
 
   //#region Types of children allowed by the pattern; impl'd by base class.
-  isExposedViaSearch() {
-    throw new NotImplementedError(
-      `${this.constructor.name}.isExposedViaSearch must be implemented.`,
-    );
-  }
-
   acceptsGroup() {
     throw new NotImplementedError(
       `${this.constructor.name}.acceptsGroup must be implemented.`,

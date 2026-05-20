@@ -16,11 +16,7 @@ const SearchTermConfig = class {
   }
 
   exposedViaSearch() {
-    // Unlike the methods below, this is called on every search term — including
-    // ones configured to 'relatedList', which has no registered pattern class.
-    // Those terms pass hasPatternName() but _getPattern() returns undefined.
-    const pattern = this._getPattern();
-    return pattern != null && pattern.isExposedViaSearch();
+    return this.hasIdIndexReferences() || this.getPatternName() !== 'relatedList';
   }
 
   acceptsGroupAsChild() {

@@ -105,9 +105,6 @@ const searchTermsConfig = {};
 
   // Generate facet search terms.
   Object.keys(FACETS_CONFIG).forEach((facetName) => {
-    if (FACETS_CONFIG[facetName].subFacets) {
-      return; // do not generate search terms for facets that have sub-facets.
-    }
     let { scopeName, termName } = facetToScopeAndTermName(facetName);
     if (isDroppedSearchScope(droppedScopes, scopeName)) {
       return;

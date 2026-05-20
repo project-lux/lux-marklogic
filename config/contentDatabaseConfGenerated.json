@@ -1293,6 +1293,19 @@
       ]
     },
     {
+      "field-name": "setCreationOrPublicationDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
       "field-name": "workDataTypeName",
       "field-path": [
         {
@@ -1697,6 +1710,19 @@
         }
       ],
       "field-value-searches": true
+    },
+    {
+      "field-name": "workCreationOrPublicationDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
     },
     {
       "field-name": "placeHasDigitalImageBoolean",
@@ -2834,6 +2860,13 @@
       "scalar-type": "long"
     },
     {
+      "collation": "",
+      "field-name": "setCreationOrPublicationDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "workDataTypeName",
       "range-value-positions": false,
@@ -3007,6 +3040,13 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
+    },
+    {
+      "collation": "",
+      "field-name": "workCreationOrPublicationDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
     },
     {
       "collation": "",

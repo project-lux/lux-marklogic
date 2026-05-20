@@ -189,15 +189,6 @@ function _getFacetSearchCriteria(searchCriteria, facetName, facetValue) {
 function _convertFacetToSearchTerm(facetName, facetValue) {
   const searchTermsConfig = getSearchTermsConfig();
 
-  // if this facet has subFacets, convert each subFacet to a search term
-  if (FACETS_CONFIG[facetName].subFacets) {
-    return {
-      OR: FACETS_CONFIG[facetName].subFacets.map((subFacetName) =>
-        _convertFacetToSearchTerm(subFacetName, facetValue),
-      ),
-    };
-  }
-
   let { scopeName, termName } = facetToScopeAndTermName(facetName);
   //facets ending in Id usually convert to search terms without Id
   if (termName.endsWith('Id')) {

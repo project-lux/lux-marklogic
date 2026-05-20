@@ -97,12 +97,6 @@ if (includeAutoComplete) {
   });
 }
 
-Object.keys(FACETS_CONFIG).forEach((key) => {
-  if (isUndefined(FACETS_CONFIG[key].subFacets)) {
-    recordReference(FACETS_CONFIG[key].indexReference, true, 'facet');
-  }
-});
-
 Object.keys(SORT_BINDINGS).forEach((key) => {
   if (SORT_BINDINGS[key].indexReference) {
     recordReference(SORT_BINDINGS[key].indexReference, true, 'sort');

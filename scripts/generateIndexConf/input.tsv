@@ -128,6 +128,7 @@ set	LastModifiedByAgent	Id	uri	setLastModifiedByAgentId	RecordLink	Non	N		/json[
 set	LastModifiedStart	Date	datesAsString	setLastModifiedStartDateStr	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/begin_of_the_begin	
 set	LastModifiedStart	Date	datesAsLong	setLastModifiedStartDateLong	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_begin_of_the_begin	
 set	LastModifiedEnd	Date	datesAsLong	setLastModifiedEndDateLong	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_end_of_the_end	
+set	CreationOrPublication	Date	datesAsLong	setCreationOrPublicationDateLong	Search	Non	N	Combo of setCreationStartDateLong and setPublicationStartDateLong for the setCreationOrPublicationDate facet	/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin , /json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
 										
 work	DataType	Name	keyword	workDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType	
 work	HasDigitalImage	Boolean	numbers	workHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage	
@@ -167,7 +168,7 @@ work	CreationPlace	Name	keyword	workCreationPlaceName	Search	Semantic	N			lux:pl
 work	CreationAgent	Id	uri	workCreationAgentId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id ,  /json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id	
 work	CreationAgent	Name	keyword	workCreationAgentName	Search	Semantic	N			lux:agentOfCreation
 work	MemberOf	Name	keyword	workMemberOfName	Search	Semantic	N	This should probably be merged into workPartOfName like workPartOfId		la:member_of
-										
+work	CreationOrPublication	Date	datesAsLong	workCreationOrPublicationDateLong	Search	Non	N	Combo of workCreationStartDateLong and workPublicationStartDateLong for the workCreationOrPublicationDate facet	/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin , /json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
 										
 										
 										

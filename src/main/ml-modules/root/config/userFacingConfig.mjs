@@ -602,9 +602,19 @@ const searchTermText = {
       label: 'are the location of creation of',
       helpText: 'Search for Places where the specified Objects were created.',
     },
+    pointIn: {
+      label: 'are geographically located within',
+      helpText:
+        'Search for Places that are geographically located within the specified region.',
+    },
     publishedHere: {
       label: 'are the location of the publication of',
       helpText: 'Search for Places where the specified Works were published.',
+    },
+    regionRelates: {
+      label: 'are geographically related to',
+      helpText:
+        'Search for Places that are geographically related to the specified region.',
     },
     setPublishedHere: {
       label: 'are the location of publication of',

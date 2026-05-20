@@ -1293,7 +1293,20 @@
       ]
     },
     {
-      "field-name": "setCreationOrPublicationDateLong",
+      "field-name": "setCreationOrPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationOrPublicationStartDateLong",
       "field-path": [
         {
           "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -1301,6 +1314,19 @@
         },
         {
           "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationOrPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -1712,7 +1738,20 @@
       "field-value-searches": true
     },
     {
-      "field-name": "workCreationOrPublicationDateLong",
+      "field-name": "workCreationOrPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationOrPublicationStartDateLong",
       "field-path": [
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
@@ -1720,6 +1759,19 @@
         },
         {
           "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationOrPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end",
           "weight": 1
         }
       ]
@@ -2860,8 +2912,22 @@
       "scalar-type": "long"
     },
     {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "setCreationOrPublicationStartDateStr",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
       "collation": "",
-      "field-name": "setCreationOrPublicationDateLong",
+      "field-name": "setCreationOrPublicationStartDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "",
+      "field-name": "setCreationOrPublicationEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "long"
@@ -3042,8 +3108,22 @@
       "scalar-type": "string"
     },
     {
+      "collation": "http://marklogic.com/collation/codepoint",
+      "field-name": "workCreationOrPublicationStartDateStr",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "string"
+    },
+    {
       "collation": "",
-      "field-name": "workCreationOrPublicationDateLong",
+      "field-name": "workCreationOrPublicationStartDateLong",
+      "range-value-positions": false,
+      "invalid-values": "ignore",
+      "scalar-type": "long"
+    },
+    {
+      "collation": "",
+      "field-name": "workCreationOrPublicationEndDateLong",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "long"

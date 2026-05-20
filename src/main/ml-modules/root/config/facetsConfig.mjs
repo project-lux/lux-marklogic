@@ -147,7 +147,7 @@ const FACETS_CONFIG = {
     searchTermName: 'createdDate',
   },
   setCreationOrPublicationDate: {
-    indexReference: 'setCreationOrPublicationDateLong',
+    indexReference: 'setCreationOrPublicationStartDateLong',
   },
   setCreationPlaceId: {
     indexReference: 'setCreationPlaceId',
@@ -192,7 +192,7 @@ const FACETS_CONFIG = {
     searchTermName: 'createdDate',
   },
   workCreationOrPublicationDate: {
-    indexReference: 'workCreationOrPublicationDateLong',
+    indexReference: 'workCreationOrPublicationStartDateLong',
   },
   workCreationPlaceId: {
     indexReference: 'workCreationPlaceId',

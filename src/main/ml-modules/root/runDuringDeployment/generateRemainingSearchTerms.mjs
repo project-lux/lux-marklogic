@@ -195,11 +195,6 @@ const searchTermsConfig = {};
         scalarType,
         generated: true,
       };
-
-      if (isDate) {
-        unitConfig[scopeName][termName].isStartDate =
-          termName.indexOf('Start') > -1 ? true : false;
-      }
     }
   });
 

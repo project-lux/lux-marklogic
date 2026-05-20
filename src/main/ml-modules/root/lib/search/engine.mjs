@@ -31,18 +31,7 @@ import {
   OPTION_NAME_PREFER_FRAG_JOINS,
   PatternOptions,
 } from './PatternOptions.mjs';
-// Side-effect imports: each pattern self-registers with SearchPatternBase.
-import './patterns/AnnTopK.mjs';
-import './patterns/DateRange.mjs';
-import './patterns/DocumentIdOrIri.mjs';
-import './patterns/Geospatial.mjs';
-import './patterns/HopInverse.mjs';
-import './patterns/HopWithField.mjs';
-import './patterns/Keyword.mjs';
-import './patterns/IndexedRange.mjs';
-import './patterns/IndexedValue.mjs';
-import './patterns/IndexedWord.mjs';
-import { SearchPatternBase } from './patterns/SearchPatternBase.mjs';
+import { SearchPatternBase } from './patterns/loadPatterns.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
 import { STOP_WORDS } from '../../data/stopWords.mjs';
 //#endregion

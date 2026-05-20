@@ -4,7 +4,7 @@ import {
   SEARCH_TERMS_CONFIG,
   getInverseSearchTermInfo,
 } from '../config/searchTermsConfig.mjs';
-import { PATTERN_NAME_HOP_WITH_FIELD } from '../lib/search/patterns/HopWithField.mjs';
+import { PATTERN_NAME_HOP_WITH_FIELD } from '../lib/search/patterns/loadPatterns.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
   TENANT_OWNER,

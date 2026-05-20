@@ -1,6 +1,8 @@
 import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
-import { PATTERN_NAME_KEYWORD } from '../lib/search/patterns/Keyword.mjs';
-import { SearchPatternBase } from '../lib/search/patterns/SearchPatternBase.mjs';
+import {
+  PATTERN_NAME_KEYWORD,
+  SearchPatternBase,
+} from '../lib/search/patterns/loadPatterns.mjs';
 import {
   FEATURE_MY_COLLECTIONS_ENABLED,
   getAllowedSearchOptionsByOptionsName,
@@ -81,7 +83,12 @@ function createEntry(scopeName, termName, termConfig, report) {
   let defaultOptionsName = null;
   if (patternName) {
     const pattern = SearchPatternBase.get(patternName);
-    allowedOptionsName = pattern ? pattern.getAllowedSearchOptionsName() : null;
+    if (!pattern) {
+      throw new Error(
+        `The '${patternName}' search pattern for ${scopeName}.${termName} is not registered. Ensure the pattern file is imported.`,
+      );
+    }
+    allowedOptionsName = pattern.getAllowedSearchOptionsName();
     if (allowedOptionsName) {
       entry.allowedOptionsName = allowedOptionsName;
       defaultOptionsName = pattern.getDefaultSearchOptionsName();

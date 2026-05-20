@@ -13,7 +13,7 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
-import { SearchPatternBase } from './search/patterns/SearchPatternBase.mjs';
+import { SearchPatternBase } from './search/patterns/loadPatterns.mjs';
 import {
   isInvalidSearchRequestError,
 } from './errorClasses.mjs';

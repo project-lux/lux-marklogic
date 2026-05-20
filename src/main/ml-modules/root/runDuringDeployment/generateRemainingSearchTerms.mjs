@@ -1,10 +1,12 @@
 import { SEARCH_TERMS_CONFIG } from '../../config/searchTermsConfig.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { PATTERN_NAME_DATE_RANGE } from '../lib/search/patterns/DateRange.mjs';
-import { PATTERN_NAME_HOP_INVERSE } from '../lib/search/patterns/HopInverse.mjs';
-import { PATTERN_NAME_INDEXED_RANGE } from '../lib/search/patterns/IndexedRange.mjs';
-import { PATTERN_NAME_INDEXED_VALUE } from '../lib/search/patterns/IndexedValue.mjs';
-import { PATTERN_NAME_IRI } from '../lib/search/patterns/DocumentIdOrIri.mjs';
+import {
+  PATTERN_NAME_DATE_RANGE,
+  PATTERN_NAME_HOP_INVERSE,
+  PATTERN_NAME_INDEXED_RANGE,
+  PATTERN_NAME_INDEXED_VALUE,
+  PATTERN_NAME_IRI,
+} from '../lib/search/patterns/loadPatterns.mjs';
 import { searchTermText } from '../config/userFacingConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 import * as utils from '../utils/utils.mjs';

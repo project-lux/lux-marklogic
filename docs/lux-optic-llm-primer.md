@@ -35,6 +35,7 @@ Endpoint handler
 |---|---|
 | `lib/SearchCriteriaProcessor.mjs` | Orchestrator. `prepare()` → `execute()` / `executeForValues()` / `buildPlans()`. Holds search state. |
 | `lib/search/engine.mjs` | Core engine. `performSearch`, `buildPlans`, `processCriteria`, `buildCriteriaAccumulator`, `assemblePlan`, `collapseToResultRows`, `paginateResults`. Also owns term validation (value-type, wildcards, stop words). |
+| `lib/search/patterns/loadPatterns.mjs` | **Barrel module.** Imports all pattern files (triggering self-registration) and re-exports `SearchPatternBase` plus every `PATTERN_NAME_*` constant. All consumers should import from here, never from individual pattern files or `SearchPatternBase.mjs` directly. |
 | `lib/search/patterns/SearchPatternBase.mjs` | Base class for all patterns. Hosts the static pattern registry. |
 | `lib/search/patterns/SearchPatternInterface.mjs` | Abstract interface defining required methods for pattern classes. |
 | `lib/search/patterns/*.mjs` | Individual pattern implementations (10 classes). |
@@ -79,7 +80,8 @@ class SearchPatternBase extends SearchPatternInterface {
 **Why this design:**
 - `SearchPatternBase` is a leaf module (depends only on `SearchPatternInterface` → `errorClasses`). No circular dependency risk.
 - Each pattern defines its name once. The constant and the registration use the same value.
-- `engine.mjs` triggers registration via side-effect imports, then dispatches via `SearchPatternBase.get(patternName).apply(...)`.
+- `loadPatterns.mjs` is the barrel module that imports all pattern files (triggering registration) and re-exports `SearchPatternBase` and all `PATTERN_NAME_*` constants. **All consumers should import from `loadPatterns.mjs`**, never from individual pattern files or `SearchPatternBase.mjs` directly. This guarantees the registry is fully populated regardless of module cache state.
+- `engine.mjs` dispatches via `SearchPatternBase.get(patternName).apply(...)`.
 
 ## Pattern Interface Contract
 
@@ -565,7 +567,7 @@ Facets are calculated after the main search executes. The implementation:
 2. Implement all interface methods: `apply()`, `getRequiredRuntimeSearchTermProperties()`, `getAllowedChildren()`, `isConvertIdChildToIri()`, `getAllowedSearchOptionsName()`, `getDefaultSearchOptionsName()`.
 3. Self-register: `SearchPatternBase.register('yourPatternName', new YourPattern());`
 4. Export: `export { PATTERN_NAME_YOUR_PATTERN };`
-5. Add side-effect import in `engine.mjs`: `import './patterns/YourPattern.mjs';`
+5. Add the pattern to `lib/search/patterns/loadPatterns.mjs`: a side-effect import line and a re-export of the `PATTERN_NAME_*` constant. This is the **only** file that needs updating — consumers already import from `loadPatterns.mjs`.
 6. Consult the **Bucket Selection Rule** table for where to place contributions.
 
 ### 3. Preserve invariants

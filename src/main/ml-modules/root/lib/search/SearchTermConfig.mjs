@@ -16,7 +16,7 @@ const SearchTermConfig = class {
   }
 
   exposedViaSearch() {
-    return this.hasIdIndexReferences() || this.getPatternName() !== 'relatedList';
+    return this.getPatternName() !== 'relatedList';
   }
 
   acceptsGroupAsChild() {

@@ -139,6 +139,28 @@ select ?${id}_s ?${id}_o where {
     };
   }
 
+  // Known limitation: when the child pattern is 'hopInverse', the plan returned
+  // here is rooted in op.fromLexicons (via processCriteria), which only contains
+  // document-backed IRIs. HopInverse's outer triple _o column can legitimately
+  // yield non-document object IRIs, and those are silently dropped by the
+  // lexicon-rooted join before HopWithField ever sees them. Both the transitive
+  // and non-transitive paths are affected.
+  //
+  // Example: Iri1WithDoc -> Predicate1 -> Iri2WithoutDoc -> Predicate2 -> Iri3WithDoc.
+  // In this example, Iri2WithoutDoc is an object IRI found by the HopInverse pattern
+  // that doesn't reach HopWithField, precluding HopWithField's ability to return
+  // Iri1WithDoc as a search result.
+  //
+  // Potential resolution:
+  //      Relax HopInverse's isTopLevel guard so #processValuesOnly fires when
+  //      returnValues is true regardless of depth; HopWithField would set
+  //      returnValues(true), call processCriteria (triggering values-only),
+  //      then read IRI strings from scp.getValues() (clearing before/after to
+  //      prevent contamination). Reuses HopInverse's fast cts.triples path
+  //      with no plan construction or duplication; particularly natural for the
+  //      transitive path which already materializes IRIs. Requires a new
+  //      clearValues() on SCP (since #values is private) and is limited to
+  //      direct-IRI child criteria (#processValuesOnly throws otherwise).
   #getFieldNestedPlan(scp, searchTerm, patternOptions) {
     const termConfig = searchTerm.getSearchTermConfig();
     return scp.processCriteria({

@@ -13,12 +13,7 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
-import {
-  OPTION_NAME_EAGER_EVALUATION,
-  OPTION_NAME_EXCLUDE_SELF_IRI,
-  OPTION_NAME_MAXIMUM_VALUES,
-  PatternOptions,
-} from './search/PatternOptions.mjs';
+import { PatternOptions } from './search/PatternOptions.mjs';
 import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
 import { getRelationName } from '../config/relationNames.mjs';
 import {
@@ -124,7 +119,7 @@ function getRelatedList({
     // return calls to cts.triples.
     const includeTypeConstraint = false;
     const patternOptions = new PatternOptions();
-    patternOptions.set(OPTION_NAME_EXCLUDE_SELF_IRI, uri);
+    patternOptions.setExcludeSelfIri(uri);
 
     // TODO, PERF: The Optic impl does not impose this data cap. Performance test results may
     // inform whether we need to. If not, this option can be deleted.
@@ -135,11 +130,10 @@ function getRelatedList({
       relationshipsPerRelation,
       RELATED_LIST_PER_RELATION_MAX,
     );
-    patternOptions.set(OPTION_NAME_MAXIMUM_VALUES, relationshipsPerRelation);
+    patternOptions.setMaximumValues(relationshipsPerRelation);
 
     // When we only need a handful of triples, switch to lazy evaluation.
-    patternOptions.set(
-      OPTION_NAME_EAGER_EVALUATION,
+    patternOptions.setEagerEvaluation(
       relationshipsPerRelation < 20 ? false : true,
     );
 

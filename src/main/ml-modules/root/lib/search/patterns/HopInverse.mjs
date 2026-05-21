@@ -5,11 +5,6 @@ import {
   CHILD_TYPE_TERM,
   SearchPatternBase,
 } from './SearchPatternBase.mjs';
-import {
-  OPTION_NAME_EAGER_EVALUATION,
-  OPTION_NAME_EXCLUDE_SELF_IRI,
-  OPTION_NAME_RETURN_VALUES,
-} from '../PatternOptions.mjs';
 import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
 import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchTermConfig } from '../SearchTermConfig.mjs';
@@ -25,10 +20,7 @@ class HopInverse extends SearchPatternBase {
     const predicates = expandPredicates(termConfig.getPredicates());
 
     // This is the values-only implementation for related lists.
-    const requestIsForValues = patternOptions.get(
-      OPTION_NAME_RETURN_VALUES,
-      false,
-    );
+    const requestIsForValues = patternOptions.getReturnValues(false);
     if (requestIsForValues && searchTerm.isTopLevel()) {
       return this.#processValuesOnly(scp, searchTerm, patternOptions);
     }
@@ -96,10 +88,7 @@ class HopInverse extends SearchPatternBase {
     const childTermConfig = new SearchTermConfig(
       getSearchTermConfig(termConfig.getTargetScopeName(), childTermName),
     );
-    const eagerEvaluation = patternOptions.get(
-      OPTION_NAME_EAGER_EVALUATION,
-      true,
-    );
+    const eagerEvaluation = patternOptions.getEagerEvaluation(true);
     const tripleOptions = [eagerEvaluation ? 'eager' : 'lazy', 'concurrent'];
 
     // Phase 1: Inner hop — find subjects with a triple matching the child
@@ -132,10 +121,7 @@ class HopInverse extends SearchPatternBase {
       )
       .toArray();
 
-    const excludeSelfIri = patternOptions.get(
-      OPTION_NAME_EXCLUDE_SELF_IRI,
-      null,
-    );
+    const excludeSelfIri = patternOptions.getExcludeSelfIri(null);
     const seen = new Set();
     const values = [];
     for (const t of outerTriples) {

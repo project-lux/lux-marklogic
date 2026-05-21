@@ -341,7 +341,7 @@ Reverse triple navigation (object→subject). The outer hop in all related list 
 
 **Plan-based mode** (regular search): Builds `fromTriples` pattern with the inner plan's result as the subject constraint.
 
-**valuesOnly mode** (related lists): When `OPTION_NAME_RETURN_VALUES` is set and the child criteria resolves to a literal IRI, bypasses all Optic plan construction:
+**valuesOnly mode** (related lists): When `patternOptions.getReturnValues()` is true and the child criteria resolves to a literal IRI, bypasses all Optic plan construction:
 
 1. **Phase 1 (inner hop)**: `cts.triples([], childPredicates, sem.iri(childId))` — find subjects matching the child IRI.
 2. **Phase 2 (outer hop)**: `cts.triples(innerSubjects, outerPredicates, [])` — navigate from those subjects to find related IRIs.
@@ -386,10 +386,10 @@ Related lists find entities related to a given entity via triple navigation. Eac
 3. `executeForValues()` runs `processCriteria` (triggering `HopInverse.#processValuesOnly`), then returns the collected values without building or executing a full Optic plan.
 4. Results are aggregated by URI, sorted by relationship count, and paginated.
 
-**PatternOptions for related lists**:
-- `OPTION_NAME_EXCLUDE_SELF_IRI` — the requesting document's URI (excluded from results).
-- `OPTION_NAME_MAXIMUM_VALUES` — cap per relation.
-- `OPTION_NAME_EAGER_EVALUATION` — `true` for large caps, `false` for small.
+**PatternOptions for set by related lists**:
+- `excludeSelfIri` — the requesting document's URI (excluded from results).
+- `maximumValues` — cap per relation --not implemented within SCP. TBD if required. Would rather no cap.
+- `eagerEvaluation` — `true` for large caps, `false` for small.
 
 ---
 
@@ -453,10 +453,11 @@ Facets are calculated after the main search executes. The implementation:
 
 | Option | Purpose |
 |---|---|
-| `OPTION_NAME_PREFER_FRAG_JOINS` | Use fragment-based joins (D-Node pushdown) instead of URI-based. |
-| `OPTION_NAME_EXCLUDE_SELF_IRI` | Exclude this IRI from related list results. |
-| `OPTION_NAME_MAXIMUM_VALUES` | Cap on values per relation in related lists. |
-| `OPTION_NAME_EAGER_EVALUATION` | Controls eager vs. lazy `cts.triples` evaluation. |
+| `eagerEvaluation` | Controls eager vs. lazy `cts.triples` evaluation. |
+| `excludeSelfIri` | Exclude this IRI from related list results. |
+| `maximumValues` | Cap on values per relation in related lists. |
+| `preferFragJoins` | Use fragment-based joins (D-Node pushdown) instead of URI-based. |
+| `returnValues` | Used by the related lists via `scp.executeForValues` to get IRIs without the full overhead of `scp.execute`. |
 
 ---
 

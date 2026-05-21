@@ -284,7 +284,7 @@ op.on(op.fragmentIdCol('8350_frag'), op.fragmentIdCol('eb01_hopFrag'))  // fragm
 
 ### Problem 4 (Design): HopInverse lacks valuesOnly mode
 
-"Problem 4" has been solved and its implementation should be documented.
+"Problem 4" has been solved and its implementation should be documented.  In short, relatedListLib.mjs' `getRelatedList` fuction calls `scp.executeForValues`, which calls `patternOptions.setReturnValues(true)`, which the `HopInverse` search pattern then knows to just return the IRIs. `getRelatedList` calls `scp.executeForValues` once per triple search associated to the requested related list, and is responsible for accumulating the results from each.
 
 Obsolete:
 

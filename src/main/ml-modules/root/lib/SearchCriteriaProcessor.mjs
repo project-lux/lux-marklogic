@@ -1,11 +1,7 @@
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
 import * as engine from './search/engine.mjs';
-import {
-  OPTION_NAME_PREFER_FRAG_JOINS,
-  OPTION_NAME_RETURN_VALUES,
-  PatternOptions,
-} from './search/PatternOptions.mjs';
+import { PatternOptions } from './search/PatternOptions.mjs';
 import { SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC } from './SortCriteria.mjs';
 import {
   InternalServerError,
@@ -242,7 +238,7 @@ const SearchCriteriaProcessor = class {
   // list values-only searches where HopInverse populates values directly.
   executeForValues() {
     this.#prepareForExecution(); // does not accummulate values across multiple calls
-    this.#patternOptions.set(OPTION_NAME_RETURN_VALUES, true);
+    this.#patternOptions.setReturnValues(true);
 
     this.processCriteria({
       planCriteria: this.#resolvedSearchCriteria,
@@ -259,7 +255,7 @@ const SearchCriteriaProcessor = class {
   // Returns { sortedResultsPlan, unsortedResultsPlan }.
   buildPlans(preferFragJoins = PREFER_FRAG_JOINS) {
     // May override the default set by prepare().
-    this.#patternOptions.set(OPTION_NAME_PREFER_FRAG_JOINS, preferFragJoins);
+    this.#patternOptions.setPreferFragJoins(preferFragJoins);
 
     return engine.buildPlans({
       scp: this,
@@ -341,7 +337,7 @@ const SearchCriteriaProcessor = class {
   //#region Public static methods
   static initializePatternOptions(patternOptions = null) {
     const opts = patternOptions ? patternOptions : new PatternOptions();
-    opts.set(OPTION_NAME_PREFER_FRAG_JOINS, PREFER_FRAG_JOINS);
+    opts.setPreferFragJoins(PREFER_FRAG_JOINS);
     return opts;
   }
 

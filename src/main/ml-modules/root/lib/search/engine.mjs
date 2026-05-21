@@ -27,10 +27,7 @@ import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
-import {
-  OPTION_NAME_PREFER_FRAG_JOINS,
-  PatternOptions,
-} from './PatternOptions.mjs';
+import { PatternOptions } from './PatternOptions.mjs';
 import {
   CHILD_TYPE_ATOMIC,
   CHILD_TYPE_GROUP,

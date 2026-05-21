@@ -120,14 +120,17 @@ function getRelatedList({
       relatedListName,
     );
 
-    // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to return calls to cts.triples.
+    // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to
+    // return calls to cts.triples.
     const includeTypeConstraint = false;
     const patternOptions = new PatternOptions();
     patternOptions.set(OPTION_NAME_EXCLUDE_SELF_IRI, uri);
 
-    // TODO: Not yet implemented in Optic. Delete the option?
+    // TODO, PERF: The Optic impl does not impose this data cap. Performance test results may
+    // inform whether we need to. If not, this option can be deleted.
     //
-    // Set the maximum number of values to process per relation. Do not let requester exceed the maximum imposed by the backend.
+    // Set the maximum number of values to process per relation. Do not let requester exceed the
+    // maximum imposed by the backend.
     relationshipsPerRelation = Math.min(
       relationshipsPerRelation,
       RELATED_LIST_PER_RELATION_MAX,

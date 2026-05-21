@@ -97,13 +97,13 @@ const SearchCriteriaProcessor = class {
     searchCriteria,
     scopeName = null,
     includeSearchResults = true,
-    includeTypeConstraint = true, // TODO: doesn't do anything yet; does it need to?
+    includeTypeConstraint = true, // TODO, PERF: doesn't do anything yet; does it need to?
     allowMultiScope = true,
     patternOptions = null,
     page = 1,
     pageLength = 20,
     pageWith = null,
-    filterResults = false, // TODO: doesn't do anything yet; does it need to?
+    filterResults = false, // TODO, FUNC: doesn't do anything yet; does it need to?
     sortDelimitedStr = '',
     facetRequests = null,
   }) {

@@ -3,6 +3,10 @@ import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 import { getSearchScopeTypes } from '../../searchScope.mjs';
 
+// Match with src/main/ml-schemas/tde/vectors.json
+const SCHEMA_NAME = 'lux';
+const VIEW_NAME = 'vectors';
+
 class AnnTopK extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
     const id = searchTerm.getId();
@@ -33,9 +37,8 @@ class AnnTopK extends SearchPatternBase {
     const queryVector = vec.vector(vectorData);
 
     // Create annTopK plan with URI column renamed to avoid conflicts with main lexicons.
-    // TODO: Replace hardcoded schema and view names.
     let annPlan = op
-      .fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag))
+      .fromView(SCHEMA_NAME, VIEW_NAME, id, op.fragmentIdCol(vecFrag))
       .where(
         op.in(dataTypeCol, getSearchScopeTypes(searchTerm.getScopeName())),
       );

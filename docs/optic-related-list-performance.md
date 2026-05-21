@@ -284,22 +284,26 @@ op.on(op.fragmentIdCol('8350_frag'), op.fragmentIdCol('eb01_hopFrag'))  // fragm
 
 ### Problem 4 (Design): HopInverse lacks valuesOnly mode
 
-The CTS implementation had a "values only" mode where, instead of building a full search, `cts.triples` was called directly to return IRIs. This is now implemented in `HopInverse.mjs` (see Implementation Status below).
+"Problem 4" has been solved and its implementation should be documented.
 
-In the Optic code:
-- `relatedListsLib.mjs` sets `OPTION_NAME_RETURN_VALUES = true` for related lists.
-- `HopInverse.apply()` reads this flag into `requestIsForValues` but **never acts on it**.
-- There's a TODO: `"what would a valuesOnly implementation of this pattern look like?"`
+Obsolete:
 
-**What this could look like**: A two-phase approach similar to `HopWithField.#processTransitiveHopWithFieldTerm`:
-
-1. Execute the inner plan (the `hopWithField` half) to get intermediate IRIs.
-2. Use those IRIs as `VALUES` in a SPARQL query or as literals in `op.fromTriples` to get the outer hop's results.
-3. Return the result IRIs directly, bypassing the base `fromLexicons` and final `groupBy`/`select`.
-
-This would mirror the CTS approach exactly:
-- Phase 1: Constrained triple scan (inner criteria + inner predicate) → intermediate IRIs
-- Phase 2: Triple scan (outer predicate) constrained to intermediate IRIs → result IRIs
+> The CTS implementation had a "values only" mode where, instead of building a full search, `cts.triples` was called directly to return IRIs. This is now implemented in `HopInverse.mjs` (see Implementation Status below).
+> 
+> In the Optic code:
+> - `relatedListsLib.mjs` sets `OPTION_NAME_RETURN_VALUES = true` for related lists.
+> - `HopInverse.apply()` reads this flag into `requestIsForValues` but **never acts on it**.
+> - There's a TODO: `"what would a valuesOnly implementation of this pattern look like?"`
+> 
+> **What this could look like**: A two-phase approach similar to `HopWithField.#processTransitiveHopWithFieldTerm`:
+> 
+> 1. Execute the inner plan (the `hopWithField` half) to get intermediate IRIs.
+> 2. Use those IRIs as `VALUES` in a SPARQL query or as literals in `op.fromTriples` to get the outer hop's results.
+> 3. Return the result IRIs directly, bypassing the base `fromLexicons` and final `groupBy`/`select`.
+> 
+> This would mirror the CTS approach exactly:
+> - Phase 1: Constrained triple scan (inner criteria + inner predicate) → intermediate > IRIs
+> - Phase 2: Triple scan (outer predicate) constrained to intermediate IRIs → result IRIs
 
 ---
 
@@ -523,6 +527,5 @@ cts.triples(intermediateSubjects, [about_or_depicts_work], [], '=', ['eager', 'c
 
 ### Not Yet Implemented
 
-- **Non-valuesOnly literal IRI optimization in HopInverse:** When not in valuesOnly mode but the child criteria is a literal IRI, both hops could be resolved via `cts.triples` and injected as `op.fromLiterals`, avoiding the inner `processCriteria` call. This path only compiles one plan so the savings are smaller, but it could still matter for latency-sensitive queries. A TODO comment in `HopInverse.apply()` documents this.
-- **Problem 2 (Combined fromTriples) for non-valuesOnly:** Merging inner and outer triple patterns into a single `fromTriples` call in the plan-based path. The `cts.triples` approach in valuesOnly mode sidesteps this entirely.
-- **Problem 3 (Redundant fragment joins) for non-valuesOnly:** Fragment joins remain in the non-valuesOnly HopInverse path and in the inner HopWithField plan.
+- **Problem 1 (Combined fromTriples) for non-valuesOnly:** Merging inner and outer triple patterns into a single `fromTriples` call in the plan-based path. The `cts.triples` approach in valuesOnly mode sidesteps this entirely.
+- **Problem 2 (Redundant fragment joins) for non-valuesOnly:** Fragment joins remain in the non-valuesOnly HopInverse path and in the inner HopWithField plan.

@@ -43,7 +43,6 @@ class HopWithField extends SearchPatternBase {
       ? this.#getFieldAtomicPlan(scp, searchTerm, patternOptions)
       : this.#getFieldNestedPlan(scp, searchTerm, patternOptions);
 
-    // TODO: if there are zero results from the fieldPlan, should we do anything different?
     const sparql = `
 ${getPrefixesForSPARQL()}
 select ?${id}_s ?${id}_o where {
@@ -157,13 +156,14 @@ select ?${id}_s ?${id}_o where {
     const termSearchOptions = searchTerm.getSearchOptions();
     const termConfig = searchTerm.getSearchTermConfig();
     const fieldIriCol = searchTerm.getIriColumn();
+    const indexReferences = termConfig.getIndexReferences();
     const fieldCol = id + '_field';
-    return searchTerm.isCompleteMatch()
+    // When there is more than one index reference, use cts.fieldWordQuery
+    return searchTerm.isCompleteMatch() && indexReferences.length === 1
       ? op
           .fromLexicons({
             [fieldIriCol]: cts.iriReference(),
-            // TODO: determine if support for a single index is an issue.
-            [fieldCol]: cts.fieldReference(termConfig.getIndexReferences()[0]),
+            [fieldCol]: cts.fieldReference(indexReferences[0]),
           })
           .where(op.eq(op.col(fieldCol), termValue))
       : op
@@ -171,11 +171,7 @@ select ?${id}_s ?${id}_o where {
             [fieldIriCol]: cts.iriReference(),
           })
           .where(
-            cts.fieldWordQuery(
-              termConfig.getIndexReferences(),
-              termValue,
-              termSearchOptions,
-            ),
+            cts.fieldWordQuery(indexReferences, termValue, termSearchOptions),
           );
   }
 

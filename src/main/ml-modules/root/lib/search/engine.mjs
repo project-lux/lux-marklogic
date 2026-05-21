@@ -35,6 +35,7 @@ import {
   CHILD_TYPE_ATOMIC,
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
+  PATTERN_NAME_INDEXED_VALUE,
   SearchPatternBase,
 } from './patterns/loadPatterns.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
@@ -492,7 +493,7 @@ function buildLeafSearchTerm({
     ) {
       termConfig = new SearchTermConfig({
         indexReferences: termConfig.getIdIndexReferences(),
-        patternName: 'indexedValue',
+        patternName: PATTERN_NAME_INDEXED_VALUE,
         scalarType: 'string',
         forceExactMatch: true,
       });
@@ -536,7 +537,7 @@ function buildLeafSearchTerm({
   }
   searchTerm.setValue(value);
 
-  // TODO: resolve search options: pattern --> term config --> term instance.
+  // TODO, FUNC: resolve search options: pattern --> term config --> term instance.
   const searchOptions = termConfig.isForceExactMatch()
     ? DEFAULT_SEARCH_OPTIONS_EXACT
     : DEFAULT_SEARCH_OPTIONS_KEYWORD;
@@ -853,9 +854,9 @@ function collapseToResultRows(
 
   if (groups) {
     plan = plan.select(
-      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
-        sortAggregates, // TODO: remove sort columns
-      ),
+      // Tack on `.concat(sortAggregates)` to the end of the array to
+      //  includesort values in output (for testing).
+      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))],
     );
   }
 

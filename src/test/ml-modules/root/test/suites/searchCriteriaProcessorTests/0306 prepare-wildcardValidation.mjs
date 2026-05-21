@@ -72,7 +72,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      planContains: ['Pablo Picasso'],
+      planContains: ['Pablo', 'Picasso'],
     },
   },
   {

@@ -11,6 +11,19 @@ let assertions = [];
 
 const scenarios = [
   {
+    name: 'split unquoted keywords',
+    input: {
+      searchCriteria: {
+        text: 'dog head',
+        _scope: 'item',
+      },
+    },
+    expected: {
+      error: false,
+      value: 77,
+    },
+  },
+  {
     name: 'agent by ID',
     input: {
       searchCriteria: {

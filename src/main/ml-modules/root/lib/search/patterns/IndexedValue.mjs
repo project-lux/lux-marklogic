@@ -26,6 +26,10 @@ class IndexedValue extends SearchPatternBase {
     };
   }
 
+  mayTokenizeValue() {
+    return true;
+  }
+
   getRequiredRuntimeSearchTermProperties() {
     return [];
   }

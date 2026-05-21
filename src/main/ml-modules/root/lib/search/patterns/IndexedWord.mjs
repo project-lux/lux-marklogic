@@ -25,6 +25,10 @@ class IndexedWord extends SearchPatternBase {
     };
   }
 
+  mayTokenizeValue() {
+    return true;
+  }
+
   getRequiredRuntimeSearchTermProperties() {
     return [];
   }

@@ -136,6 +136,10 @@ class HopInverse extends SearchPatternBase {
     return null;
   }
 
+  mayTokenizeValue() {
+    return false;
+  }
+
   getRequiredRuntimeSearchTermProperties() {
     return [];
   }

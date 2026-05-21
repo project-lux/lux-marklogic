@@ -282,7 +282,10 @@ function buildCriteriaAccumulator({
     isMultiScope,
   });
 
-  // Loop through search criteria, building the accumulator
+  // Loop through search criteria, building the accumulator.
+  // criteria.length is evaluated each iteration — NOT cached — because
+  // tokenization, conjunction inlining, and pattern contributions all push
+  // new entries onto the array that must be processed in the same pass.
   for (let idx = 0; idx < criteria.length; idx++) {
     const criterion = criteria[idx];
 
@@ -328,7 +331,7 @@ function buildCriteriaAccumulator({
         `search term does not specify a term name in criteria ${JSON.stringify(criterion)}.`,
       );
     }
-    const searchTerm = buildLeafSearchTerm({
+    const searchTerm = buildLeafSearchTerm(scp, {
       criterion,
       id,
       name,
@@ -340,25 +343,20 @@ function buildCriteriaAccumulator({
       dataTypeCol,
     });
 
-    // Validate and sanitize wildcard characters for keyword-type terms.
-    const rawCriteria = searchTerm.getCriteria();
-    if (
-      typeof rawCriteria === 'string' &&
-      SearchPatternBase.get(
-        searchTerm.getSearchTermConfig().getPatternName(),
-      ).getAllowedSearchOptionsName() === SEARCH_OPTIONS_NAME_KEYWORD &&
-      WILDCARD_CHAR_REGEX.test(rawCriteria)
-    ) {
-      searchTerm.setValue(sanitizeAndValidateWildcardedStrings(rawCriteria));
+    if (!searchTerm.isUsable()) {
+      continue;
     }
 
-    // Skip stop words and punctuation-only terms.
-    // Check the raw criteria (pre-cast JS string), not getValue() which may
-    // be an xs.string typed value that fails the typeof === 'string' guard.
-    const unusableWords = getUnusableTermWords(searchTerm.getCriteria());
-    if (unusableWords.length > 0) {
-      searchTerm.setUsable(false);
-      unusableWords.forEach((w) => scp.addIgnoredTerm(w));
+    const patternInstance = SearchPatternBase.get(
+      searchTerm.getSearchTermConfig().getPatternName(),
+    );
+
+    // When allowed by the pattern, tokenize multi-word string values into an
+    // AND group so each word is searched independently.  The returned criterion
+    // is pushed onto the live criteria queue for the dynamic for-loop to pick up.
+    const tokenizedCriterion = tokenizeTermValue(patternInstance, searchTerm);
+    if (tokenizedCriterion) {
+      criteria.push(tokenizedCriterion);
       continue;
     }
 
@@ -366,9 +364,7 @@ function buildCriteriaAccumulator({
     mergeTermPlanContributions(
       acc,
       criteria,
-      SearchPatternBase.get(
-        searchTerm.getSearchTermConfig().getPatternName(),
-      ).apply(scp, searchTerm, logicType, patternOptions),
+      patternInstance.apply(scp, searchTerm, logicType, patternOptions),
     );
   }
 
@@ -443,18 +439,23 @@ function createPlanAccumulator({
 
 // Constructs a SearchTerm for a single leaf criterion (non-conjunction).
 // Resolves the term's config, applies pattern requirements, casts the value
-// to the configured scalar type, and selects search options.
-function buildLeafSearchTerm({
-  criterion,
-  id,
-  name,
-  scope,
-  isTopLevel,
-  iriCol,
-  uriCol,
-  fragCol,
-  dataTypeCol,
-}) {
+// to the configured scalar type, validates wildcards, detects stop words,
+// and selects search options.  Unusable terms are marked as such and their
+// words are added to scp's ignored terms list.
+function buildLeafSearchTerm(
+  scp,
+  {
+    criterion,
+    id,
+    name,
+    scope,
+    isTopLevel,
+    iriCol,
+    uriCol,
+    fragCol,
+    dataTypeCol,
+  },
+) {
   let termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
 
   const searchTerm = new SearchTerm()
@@ -539,6 +540,27 @@ function buildLeafSearchTerm({
     ? DEFAULT_SEARCH_OPTIONS_EXACT
     : DEFAULT_SEARCH_OPTIONS_KEYWORD;
   searchTerm.setSearchOptions(searchOptions);
+
+  // Validate and sanitize wildcard characters for keyword-type terms.
+  const rawCriteria = searchTerm.getCriteria();
+  if (
+    typeof rawCriteria === 'string' &&
+    SearchPatternBase.get(
+      termConfig.getPatternName(),
+    ).getAllowedSearchOptionsName() === SEARCH_OPTIONS_NAME_KEYWORD &&
+    WILDCARD_CHAR_REGEX.test(rawCriteria)
+  ) {
+    searchTerm.setValue(sanitizeAndValidateWildcardedStrings(rawCriteria));
+  }
+
+  // Skip stop words and punctuation-only terms.
+  // Check the raw criteria (pre-cast JS string), not getValue() which may
+  // be an xs.string typed value that fails the typeof === 'string' guard.
+  const unusableWords = getUnusableTermWords(searchTerm.getCriteria());
+  if (unusableWords.length > 0) {
+    searchTerm.setUsable(false);
+    unusableWords.forEach((w) => scp.addIgnoredTerm(w));
+  }
 
   return searchTerm;
 }
@@ -1293,6 +1315,43 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
       );
     }
   });
+}
+
+// Tokenizes a multi-word string value into an AND group criterion.
+// Returns the AND criterion object when tokenization applies, or null when
+// the value should not be tokenized (single word, quoted phrase, non-string,
+// complete match, already tokenized, or pattern disallows it).
+function tokenizeTermValue(patternInstance, searchTerm) {
+  const termValue = searchTerm.getCriteria();
+  if (
+    typeof termValue !== 'string' ||
+    searchTerm.isCompleteMatch() ||
+    searchTerm.isTokenized() ||
+    !patternInstance.mayTokenizeValue()
+  ) {
+    return null;
+  }
+  const trimmed = termValue.trim();
+  if (!trimmed.includes(' ') || trimmed.match(/^('|").+\1$/)) {
+    return null;
+  }
+  const tokens = utils.splitHonoringPhrases(trimmed);
+  if (tokens.length <= 1) {
+    return null;
+  }
+  const name = searchTerm.getName();
+  const props = searchTerm.getProperties();
+  const sharedProps = {
+    _tokenized: true,
+    ...Object.keys(props).reduce((acc, k) => {
+      acc[`_${k}`] = props[k];
+      return acc;
+    }, {}),
+  };
+  const tokenCriteria = tokens.map((token) => {
+    return { [name]: token, ...sharedProps };
+  });
+  return { AND: tokenCriteria, _scope: searchTerm.getScopeName() };
 }
 
 function applyPatternRequirements(searchTerm, termConfig) {

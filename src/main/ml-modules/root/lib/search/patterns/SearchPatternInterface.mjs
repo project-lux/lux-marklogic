@@ -7,6 +7,12 @@ class SearchPatternInterface {
     );
   }
 
+  mayTokenizeValue() {
+    throw new NotImplementedError(
+      `${this.constructor.name}.mayTokenizeValue must be implemented.`,
+    );
+  }
+
   // Names of required runtime properties (without leading underscore),
   // e.g. ['comp', 'annK', 'vectorDistance'].
   getRequiredRuntimeSearchTermProperties() {

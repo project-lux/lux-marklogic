@@ -17,6 +17,10 @@ class DocumentIdOrIri extends SearchPatternBase {
         };
   }
 
+  mayTokenizeValue() {
+    return false;
+  }
+
   getRequiredRuntimeSearchTermProperties() {
     return [];
   }

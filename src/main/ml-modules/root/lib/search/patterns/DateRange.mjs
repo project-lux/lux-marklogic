@@ -130,6 +130,10 @@ class DateRange extends SearchPatternBase {
     };
   }
 
+  mayTokenizeValue() {
+    return false;
+  }
+
   getRequiredRuntimeSearchTermProperties() {
     return ['comp']; // comparison operator is required
   }

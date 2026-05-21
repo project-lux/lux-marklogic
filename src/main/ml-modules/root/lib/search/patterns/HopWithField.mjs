@@ -201,6 +201,10 @@ select ?${id}_s ?${id}_o where {
 
   //#endregion
 
+  mayTokenizeValue() {
+    return false;
+  }
+
   // Runtime property names expected on SearchTerm props (without leading underscore).
   // This pattern currently has no required runtime properties.
   getRequiredRuntimeSearchTermProperties() {

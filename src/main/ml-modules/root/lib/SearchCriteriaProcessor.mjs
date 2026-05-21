@@ -349,14 +349,11 @@ const SearchCriteriaProcessor = class {
     return engine.sanitizeAndValidateWildcardedStrings(strOrArr);
   }
 
-  static getSortType(isSemantic) {
-    return isSemantic ? SORT_TYPE_SEMANTIC : SORT_TYPE_NON_SEMANTIC;
-  }
-
   static getSortTypeFromSortBinding(sortBinding) {
     if (utils.isObject(sortBinding)) {
-      const isSemantic = sortBinding.predicate != null;
-      return SearchCriteriaProcessor.getSortType(isSemantic);
+      return sortBinding.predicate != null
+        ? SORT_TYPE_SEMANTIC
+        : SORT_TYPE_NON_SEMANTIC;
     }
     throw new InternalServerError(
       'sortBinding is required to determine sort type.',

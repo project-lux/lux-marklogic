@@ -1,123 +1,117 @@
 import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
 import * as utils from '../utils/utils.mjs';
 
-const DEFAULT = 'default';
-
 const SORT_TYPE_SEMANTIC = 'semantic';
 const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';
 
 const SortCriteria = class {
+  #scopeName;
+  #sortCriteriaStr;
+  #semanticSortOption = null;
+  #nonSemanticSortDescriptors = [];
+  #relevanceSort = false;
+  #randomSort = false;
+  #warnings = [];
+
   // Accepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
-  // When name is 'random', we are to use a random score for each search result.
+  // When name is 'random', we are to use a random value for each search result.
   // When name is 'relevance', we are to sort by score (highest to lowest, depending on direction).
   constructor(scopeName, sortCriteriaStr) {
-    this.scopeName = scopeName;
-    this.sortCriteriaStr = sortCriteriaStr;
-    this.scoresRequired = DEFAULT; // can switch to a boolean value.
-    this.multiScopeSortOption = null;
-    this.semanticSortOption = null;
-    this.nonSemanticSortDescriptors = [];
-    this.warnings = [];
-    this._parse();
+    this.#scopeName = scopeName;
+    this.#sortCriteriaStr = sortCriteriaStr;
+    this.#parse();
   }
 
   getSortCriteriaStr() {
-    return this.sortCriteriaStr;
+    return this.#sortCriteriaStr;
   }
 
+  isRelevanceSort() {
+    return this.#relevanceSort;
+  }
+
+  isRandomSort() {
+    return this.#randomSort;
+  }
+
+  // Random and semantic sort take precedence and do not require relevancy scores from MarkLogic.
   areScoresRequired() {
-    return this.scoresRequired === DEFAULT || this.scoresRequired;
-  }
-
-  conditionallySetScoresRequired(bool) {
-    if (this.scoresRequired !== true) {
-      this.scoresRequired = bool;
-    }
+    return (
+      !this.isRandomSort() &&
+      !this.hasSemanticSortOption() &&
+      this.#relevanceSort
+    );
   }
 
   hasNonSemanticSortDescriptors() {
-    return this.nonSemanticSortDescriptors.length > 0;
+    return this.#nonSemanticSortDescriptors.length > 0;
   }
 
   getNonSemanticSortDescriptors() {
-    return this.nonSemanticSortDescriptors;
-  }
-
-  getMultiScopeSortOption() {
-    return this.multiScopeSortOption;
-  }
-
-  hasMultiScopeSortOption() {
-    return this.multiScopeSortOption !== null;
+    return this.#nonSemanticSortDescriptors;
   }
 
   getSemanticSortOption() {
-    return this.semanticSortOption;
+    return this.#semanticSortOption;
   }
 
   hasSemanticSortOption() {
-    return this.semanticSortOption !== null;
+    return this.#semanticSortOption !== null;
   }
 
   getWarnings() {
-    return this.warnings;
+    return this.#warnings;
   }
 
   hasWarnings() {
-    return this.warnings.length > 0;
+    return this.#warnings.length > 0;
   }
 
-  _parse() {
+  #parse() {
     let sortByName = '';
     let specifiedOrder = '';
-    const sortList = utils.split(this.sortCriteriaStr);
+    const sortList = utils.split(this.#sortCriteriaStr);
     sortList.every(function (item) {
       if (item != '') {
         [sortByName, specifiedOrder] = item.split(':');
-        if (
-          utils.isNonEmptyString(sortByName) &&
-          sortByName.toLowerCase() == 'random'
-        ) {
-          this.conditionallySetScoresRequired(true);
-          // TODO: determine if random sort needs Optic support via nonSemanticSortDescriptors (less likely).
+        if (sortByName?.toLowerCase() == 'random') {
+          this.#resetSortState();
+          this.#randomSort = true;
           return false;
-        } else if (
-          utils.isNonEmptyString(sortByName) &&
-          sortByName.toLowerCase() == 'relevance'
-        ) {
-          this.conditionallySetScoresRequired(true);
-          // TODO: determine if relevance sort needs Optic support via nonSemanticSortDescriptors (likely).
+        } else if (sortByName?.toLowerCase() == 'relevance') {
+          this.#resetSortState();
+          this.#relevanceSort = true;
           return false;
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
           // Protect from sorting by a different scope's binding.
           if (
             sortBinding &&
-            (this.scopeName === 'multi' || // for archiveSortId
-              sortByName.startsWith(this.scopeName))
+            (this.#scopeName === 'multi' || // for archiveSortId
+              sortByName.startsWith(this.#scopeName))
           ) {
             if (sortBinding.predicate) {
-              this.semanticSortOption = {
+              this.#resetSortState();
+              this.#semanticSortOption = {
                 predicate: sortBinding.predicate,
                 indexReference: sortBinding.indexReference,
-                order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+                order: this.#getOrder(specifiedOrder, sortBinding.defaultOrder),
               };
             } else {
-              this.conditionallySetScoresRequired(false);
-              this.nonSemanticSortDescriptors.push({
+              this.#nonSemanticSortDescriptors.push({
                 indexReference: sortBinding.indexReference,
-                order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+                order: this.#getOrder(specifiedOrder, sortBinding.defaultOrder),
               });
             }
           } else if (sortBinding) {
-            this.warnings.push(
-              `Unable to sort by '${sortByName}' as it is not a valid sort binding for the '${this.scopeName}' search scope.`,
+            this.#warnings.push(
+              `Unable to sort by '${sortByName}' as it is not a valid sort binding for the '${this.#scopeName}' search scope.`,
             );
           } else {
-            this.warnings.push(
+            this.#warnings.push(
               `Unable to sort by '${
-                sortByName === '' ? this.sortCriteriaStr : sortByName
+                sortByName === '' ? this.#sortCriteriaStr : sortByName
               }' as it is not a defined sort binding.`,
             );
           }
@@ -127,17 +121,17 @@ const SortCriteria = class {
     }, this);
   }
 
-  _getOrder(specifiedOrder, bindingOrder = null) {
+  #getOrder(specifiedOrder, bindingOrder = null) {
     let order = 'asc';
     let orderFinalized = false;
 
     [specifiedOrder, bindingOrder].forEach((candidateOrder) => {
       if (!orderFinalized && candidateOrder) {
-        if (this._isValidOrder(candidateOrder)) {
+        if (this.#isValidOrder(candidateOrder)) {
           order = candidateOrder;
           orderFinalized = true;
         } else {
-          this.warnings.push(
+          this.#warnings.push(
             `'${candidateOrder}' is not a supported sort order; a default will be applied.`,
           );
         }
@@ -148,8 +142,15 @@ const SortCriteria = class {
     return `${order}ending`;
   }
 
-  _isValidOrder(order) {
+  #isValidOrder(order) {
     return order === 'desc' || order === 'asc';
+  }
+
+  #resetSortState() {
+    this.#randomSort = false;
+    this.#relevanceSort = false;
+    this.#semanticSortOption = null;
+    this.#nonSemanticSortDescriptors = [];
   }
 };
 

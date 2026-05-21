@@ -188,7 +188,14 @@ function buildPlans({
   const sortAggregates = [];
   const sortOrderBy = [];
   const sortLexicons = {};
-  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
+  if (sortCriteria?.isRandomSort()) {
+    // Add a random column to the unsorted plan using .bind, then sort by it descending.
+    const randomColName = 'randomSortCol';
+    const planWithRandom = unsortedResultsPlan.bind(
+      op.as(randomColName, op.xdmp.random()),
+    );
+    sortedResultsPlan = planWithRandom.orderBy(op.desc(op.col(randomColName)));
+  } else if (sortCriteria?.hasNonSemanticSortDescriptors()) {
     for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
       const sortColName = `sort_${sortDescriptor.indexReference}`;
       sortLexicons[sortColName] = cts.fieldReference(

@@ -146,7 +146,9 @@ select ?${id}_s ?${id}_o where {
   // lexicon-rooted join before HopWithField ever sees them. Both the transitive
   // and non-transitive paths are affected.
   //
-  // Example: Iri1WithDoc -> Predicate1 -> Iri2WithoutDoc -> Predicate2 -> Iri3WithDoc.
+  // Example:
+  //    HopInverse:   Iri1WithDoc -> Predicate1 -> Iri2WithoutDoc
+  //    HopWithField: Iri3WithDoc -> Predicate2 -> Iri2WithoutDoc
   // In this example, Iri2WithoutDoc is an object IRI found by the HopInverse pattern
   // that doesn't reach HopWithField, precluding HopWithField's ability to return
   // Iri1WithDoc as a search result.

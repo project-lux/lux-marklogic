@@ -252,6 +252,7 @@ function buildPlans({
       groups,
       [scoreAgg],
       [op.desc(op.col(scoreColName))],
+      [scoreColName],
     );
   } else {
     sortedResultsPlan = unsortedResultsPlan;
@@ -814,7 +815,7 @@ function assemblePlan(
       // Only done at the top level; sub-plans use plan.where to avoid
       // 'fragmentId'/'score' column collisions when joined back in.
       const searchPlan = op.fromSearch(ctsQuery, null, null, {
-        scoreMethod: 'simple',
+        scoreMethod: 'logtfidf',
       });
       plan = plan.joinInner(
         searchPlan,
@@ -902,19 +903,35 @@ function assemblePlan(
   return plan;
 }
 
-// Applies root-level output transformations: groupBy, column renames (uri→id, dataType→type),
-// and optional orderBy.
-//
-// Distance column support was removed as it was not based on finalized requirements.
-// To re-add: (1) track pj.extraCols from patternJoins into a distanceCols array during
-// assemblePlan, (2) include each in groupBy aggregation via op.sample, and
-// (3) consolidate into a single 'distance' output column in the select (use op.fn.min
-// for multiple distance sources, filter with op.isDefined).
+/**
+ * Applies root-level output transformations: groupBy, column renames
+ * (uri→id, dataType→type), and optional orderBy.
+ *
+ * Distance column support was removed as it was not based on finalized requirements.
+ * To re-add: (1) track pj.extraCols from patternJoins into a distanceCols array during
+ * assemblePlan, (2) include each in groupBy aggregation via op.sample, and
+ * (3) consolidate into a single 'distance' output column in the select (use op.fn.min
+ * for multiple distance sources, filter with op.isDefined).
+ *
+ * @param {object} plan - The raw Optic plan to finalize.
+ * @param {object} groups - `{ by, agg }` descriptors for groupBy; null to skip grouping.
+ * @param {Array} sortAggregates - Aggregate expressions (e.g. `op.max`) or column name
+ *   strings appended to the groupBy aggregation list. May contain types that are NOT
+ *   valid in select() (such as `op.max`).
+ * @param {Array} sortOrderBy - Column ordering descriptors (e.g. `op.desc(col)`) passed
+ *   to orderBy.
+ * @param {Array} sortSelectCols - Column references included in the final select().
+ *   Defaults to `sortAggregates`, which works when the aggregates are plain column name
+ *   strings. Must be overridden when `sortAggregates` contains aggregate functions
+ *   (e.g. relevance sort passes `['score']` here while `sortAggregates` holds
+ *   `[op.max('score', op.col('score'))]`).
+ */
 function collapseToResultRows(
   plan,
   groups,
   sortAggregates = [],
   sortOrderBy = [],
+  sortSelectCols = sortAggregates,
 ) {
   if (groups) {
     plan = plan.groupBy(groups.by, groups.agg.concat(sortAggregates));
@@ -926,9 +943,11 @@ function collapseToResultRows(
 
   if (groups) {
     plan = plan.select(
-      // Tack on `.concat(sortAggregates)` to the end of the array to
-      //  includesort values in output (for testing).
-      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))],
+      // Tack on `.concat(sortSelectCols)` to the end of the array to
+      // include sort values in output (for testing).
+      [op.as('id', op.col('uri')), op.as('type', op.col('dataType'))].concat(
+        sortSelectCols, // TODO: remove once satisfied with sort.
+      ),
     );
   }
 

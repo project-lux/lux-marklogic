@@ -9,14 +9,12 @@ const SortCriteria = class {
   #sortCriteriaStr;
   #semanticSortOption = null;
   #nonSemanticSortDescriptors = [];
-  #relevanceSort = false;
+  #relevanceSort = true; // Default
   #randomSort = false;
   #warnings = [];
 
   // Accepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
-  // When name is 'random', we are to use a random value for each search result.
-  // When name is 'relevance', we are to sort by score (highest to lowest, depending on direction).
   constructor(scopeName, sortCriteriaStr) {
     this.#scopeName = scopeName;
     this.#sortCriteriaStr = sortCriteriaStr;
@@ -75,14 +73,16 @@ const SortCriteria = class {
     sortList.every(function (item) {
       if (item != '') {
         [sortByName, specifiedOrder] = item.split(':');
+        // As soon as we encounter 'random', clear any preceding criteria and go with it.
         if (sortByName?.toLowerCase() == 'random') {
-          this.#resetSortState();
+          this.#clearSortState();
           this.#randomSort = true;
           return false;
-        } else if (sortByName?.toLowerCase() == 'relevance') {
-          this.#resetSortState();
+        }
+        // When 'relevance' is present, allow it to be used with others.  That should
+        // exclude 'random' and semantic sort given their return statements.
+        else if (sortByName?.toLowerCase() == 'relevance') {
           this.#relevanceSort = true;
-          return false;
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
           // Protect from sorting by a different scope's binding.
@@ -91,14 +91,17 @@ const SortCriteria = class {
             (this.#scopeName === 'multi' || // for archiveSortId
               sortByName.startsWith(this.#scopeName))
           ) {
+            // As soon as we encounter a semantic sort binding, clear any preceding criteria and go with it.
             if (sortBinding.predicate) {
-              this.#resetSortState();
+              this.#clearSortState();
               this.#semanticSortOption = {
                 predicate: sortBinding.predicate,
                 indexReference: sortBinding.indexReference,
                 order: this.#getOrder(specifiedOrder, sortBinding.defaultOrder),
               };
+              return false;
             } else {
+              // Support multiple, inclusive of 'relevance' (above).
               this.#nonSemanticSortDescriptors.push({
                 indexReference: sortBinding.indexReference,
                 order: this.#getOrder(specifiedOrder, sortBinding.defaultOrder),
@@ -146,7 +149,7 @@ const SortCriteria = class {
     return order === 'desc' || order === 'asc';
   }
 
-  #resetSortState() {
+  #clearSortState() {
     this.#randomSort = false;
     this.#relevanceSort = false;
     this.#semanticSortOption = null;

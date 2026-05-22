@@ -147,7 +147,7 @@ function processCriteria({
     parentId,
     allowMultiScope,
   });
-  return assemblePlan({ ...acc, ...assemblyContext });
+  return assemblePlan(scp, { ...acc, ...assemblyContext });
 }
 
 // Needed outside the module in support of building the plans without executing them.
@@ -179,10 +179,12 @@ function buildPlans({
 
   // Unsorted plan — used by facets.
   const unsortedResultsPlan = collapseToResultRows(
-    assemblePlan({ ...acc, ...assemblyContext }),
+    assemblePlan(scp, { ...acc, ...assemblyContext }),
     groups,
   );
 
+  // TODO: Refactor sort out of this function?
+  //
   // Sorted plan — used for search results.
   let sortedResultsPlan;
   const sortAggregates = [];
@@ -210,7 +212,7 @@ function buildPlans({
     }
     const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
     sortedResultsPlan = collapseToResultRows(
-      assemblePlan({ ...sortAcc, ...assemblyContext }),
+      assemblePlan(scp, { ...sortAcc, ...assemblyContext }),
       groups,
       sortAggregates,
       sortOrderBy,
@@ -223,7 +225,7 @@ function buildPlans({
     const sortByCol = op.col(sortByColName);
     sortedResultsPlan = collapseToResultRows(
       applySemanticSort(
-        assemblePlan({ ...acc, ...assemblyContext }),
+        assemblePlan(scp, { ...acc, ...assemblyContext }),
         semanticSortOption,
         sortByColName,
       ),
@@ -234,6 +236,22 @@ function buildPlans({
           ? op.desc(sortByCol)
           : op.asc(sortByCol),
       ],
+    );
+  } else if (
+    sortCriteria?.areScoresRequired() &&
+    acc.ctsConstraints.length > 0
+  ) {
+    // Relevance sort — use the score column produced by op.fromSearch.
+    const scoreColName = 'score';
+    // TODO, FUNC: Using op.max to aggregate scores across fragments. Should
+    // we use op.sum (rewards matching across multiple fragments) or keep
+    // op.max (uses the best-matching fragment's score)?
+    const scoreAgg = op.max(scoreColName, op.col(scoreColName));
+    sortedResultsPlan = collapseToResultRows(
+      assemblePlan(scp, { ...acc, ...assemblyContext }),
+      groups,
+      [scoreAgg],
+      [op.desc(op.col(scoreColName))],
     );
   } else {
     sortedResultsPlan = unsortedResultsPlan;
@@ -381,7 +399,14 @@ function buildCriteriaAccumulator({
     throw new InvalidSearchRequestError('more search criteria is required.');
   }
 
-  const assemblyContext = { fragCol, uriCol, dataTypeCol, scope, logicType };
+  const assemblyContext = {
+    fragCol,
+    uriCol,
+    dataTypeCol,
+    scope,
+    logicType,
+    isTopLevel,
+  };
   return { acc, assemblyContext };
 }
 
@@ -748,19 +773,23 @@ function buildConjunctionJoin({
 }
 
 // Assembles the Optic plan by applying all accumulated constraints, CTS queries, and joins.
-function assemblePlan({
-  lexicons,
-  constraints,
-  ctsConstraints,
-  conjunctionJoins,
-  andOrSubPlans,
-  patternJoins,
-  fragCol,
-  uriCol,
-  dataTypeCol,
-  scope,
-  logicType,
-}) {
+function assemblePlan(
+  scp,
+  {
+    lexicons,
+    constraints,
+    ctsConstraints,
+    conjunctionJoins,
+    andOrSubPlans,
+    patternJoins,
+    fragCol,
+    uriCol,
+    dataTypeCol,
+    scope,
+    logicType,
+    isTopLevel,
+  },
+) {
   let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
 
   if (constraints.length) {
@@ -776,7 +805,24 @@ function assemblePlan({
         : logicType === 'or'
           ? cts.orQuery
           : (x) => cts.notQuery(cts.orQuery(x));
-    plan = plan.where(ctsWrapper(ctsConstraints));
+    const ctsQuery = ctsWrapper(ctsConstraints);
+    // TODO, FUNC: Scores are only requested for top-level plans. Consider
+    // whether sub-plan scores should contribute to the final relevance ranking.
+    const wantScore = isTopLevel && scp.getSortCriteria()?.areScoresRequired();
+    if (wantScore) {
+      // Use op.fromSearch to obtain the score column for relevance sorting.
+      // Only done at the top level; sub-plans use plan.where to avoid
+      // 'fragmentId'/'score' column collisions when joined back in.
+      const searchPlan = op.fromSearch(ctsQuery, null, null, {
+        scoreMethod: 'simple',
+      });
+      plan = plan.joinInner(
+        searchPlan,
+        op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol('fragmentId')),
+      );
+    } else {
+      plan = plan.where(ctsQuery);
+    }
   }
 
   if (conjunctionJoins.length) {

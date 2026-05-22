@@ -183,80 +183,14 @@ function buildPlans({
     groups,
   );
 
-  // TODO: Refactor sort out of this function?
-  //
-  // Sorted plan — used for search results.
-  let sortedResultsPlan;
-  const sortAggregates = [];
-  const sortOrderBy = [];
-  const sortLexicons = {};
-  if (sortCriteria?.isRandomSort()) {
-    // Add a random column to the unsorted plan using .bind, then sort by it descending.
-    const randomColName = 'randomSortCol';
-    const planWithRandom = unsortedResultsPlan.bind(
-      op.as(randomColName, op.xdmp.random()),
-    );
-    sortedResultsPlan = planWithRandom.orderBy(op.desc(op.col(randomColName)));
-  } else if (sortCriteria?.hasNonSemanticSortDescriptors()) {
-    for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
-      const sortColName = `sort_${sortDescriptor.indexReference}`;
-      sortLexicons[sortColName] = cts.fieldReference(
-        sortDescriptor.indexReference,
-      );
-      sortAggregates.push(sortColName);
-      sortOrderBy.push(
-        sortDescriptor.order === 'descending'
-          ? op.desc(sortColName)
-          : op.asc(sortColName),
-      );
-    }
-    const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
-    sortedResultsPlan = collapseToResultRows(
-      assemblePlan(scp, { ...sortAcc, ...assemblyContext }),
-      groups,
-      sortAggregates,
-      sortOrderBy,
-    );
-  } else if (sortCriteria?.hasSemanticSortOption()) {
-    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
-
-    const semanticSortOption = sortCriteria.getSemanticSortOption();
-    const sortByColName = 'sortByMe';
-    const sortByCol = op.col(sortByColName);
-    sortedResultsPlan = collapseToResultRows(
-      applySemanticSort(
-        assemblePlan(scp, { ...acc, ...assemblyContext }),
-        semanticSortOption,
-        sortByColName,
-      ),
-      groups,
-      [sortByCol],
-      [
-        semanticSortOption.order === 'descending'
-          ? op.desc(sortByCol)
-          : op.asc(sortByCol),
-      ],
-    );
-  } else if (
-    sortCriteria?.areScoresRequired() &&
-    acc.ctsConstraints.length > 0
-  ) {
-    // Relevance sort — use the score column produced by op.fromSearch.
-    const scoreColName = 'score';
-    // TODO, FUNC: Using op.max to aggregate scores across fragments. Should
-    // we use op.sum (rewards matching across multiple fragments) or keep
-    // op.max (uses the best-matching fragment's score)?
-    const scoreAgg = op.max(scoreColName, op.col(scoreColName));
-    sortedResultsPlan = collapseToResultRows(
-      assemblePlan(scp, { ...acc, ...assemblyContext }),
-      groups,
-      [scoreAgg],
-      [op.desc(op.col(scoreColName))],
-      [scoreColName],
-    );
-  } else {
-    sortedResultsPlan = unsortedResultsPlan;
-  }
+  const sortedResultsPlan = buildSortedResultsPlan({
+    unsortedResultsPlan,
+    sortCriteria,
+    acc,
+    assemblyContext,
+    scp,
+    groups,
+  });
 
   return { sortedResultsPlan, unsortedResultsPlan };
 }
@@ -1119,6 +1053,98 @@ function buildEmptyFacetResponses(requests) {
 //#endregion
 
 //#region Sort
+// Resolves which sort strategy to apply based on sort criteria precedence,
+// then builds and returns the sorted plan.
+//
+// Precedence (first match wins):
+//   1. Random — bind a random column to the unsorted plan and order by it.
+//   2. Non-semantic — add sort field lexicons, rebuild the plan, order by field values.
+//   3. Semantic — hop to related documents via predicate, order by related field value.
+//   4. Relevance — join op.fromSearch for scores (requires CTS constraints), order by score.
+//   5. Unsorted — return the unsorted plan as-is.
+function buildSortedResultsPlan({
+  unsortedResultsPlan,
+  sortCriteria,
+  acc,
+  assemblyContext,
+  scp,
+  groups,
+}) {
+  if (sortCriteria?.isRandomSort()) {
+    // Add a random column to the unsorted plan using .bind, then sort by it descending.
+    const randomColName = 'randomSortCol';
+    const planWithRandom = unsortedResultsPlan.bind(
+      op.as(randomColName, op.xdmp.random()),
+    );
+    return planWithRandom.orderBy(op.desc(op.col(randomColName)));
+  }
+
+  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
+    const sortAggregates = [];
+    const sortOrderBy = [];
+    const sortLexicons = {};
+    for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
+      const sortColName = `sort_${sortDescriptor.indexReference}`;
+      sortLexicons[sortColName] = cts.fieldReference(
+        sortDescriptor.indexReference,
+      );
+      sortAggregates.push(sortColName);
+      sortOrderBy.push(
+        sortDescriptor.order === 'descending'
+          ? op.desc(sortColName)
+          : op.asc(sortColName),
+      );
+    }
+    const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
+    return collapseToResultRows(
+      assemblePlan(scp, { ...sortAcc, ...assemblyContext }),
+      groups,
+      sortAggregates,
+      sortOrderBy,
+    );
+  }
+
+  if (sortCriteria?.hasSemanticSortOption()) {
+    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+
+    const semanticSortOption = sortCriteria.getSemanticSortOption();
+    const sortByColName = 'sortByMe';
+    const sortByCol = op.col(sortByColName);
+    return collapseToResultRows(
+      applySemanticSort(
+        assemblePlan(scp, { ...acc, ...assemblyContext }),
+        semanticSortOption,
+        sortByColName,
+      ),
+      groups,
+      [sortByCol],
+      [
+        semanticSortOption.order === 'descending'
+          ? op.desc(sortByCol)
+          : op.asc(sortByCol),
+      ],
+    );
+  }
+
+  if (sortCriteria?.areScoresRequired() && acc.ctsConstraints.length > 0) {
+    // Relevance sort — use the score column produced by op.fromSearch.
+    const scoreColName = 'score';
+    // TODO, FUNC: Using op.max to aggregate scores across fragments. Should
+    // we use op.sum (rewards matching across multiple fragments) or keep
+    // op.max (uses the best-matching fragment's score)?
+    const scoreAgg = op.max(scoreColName, op.col(scoreColName));
+    return collapseToResultRows(
+      assemblePlan(scp, { ...acc, ...assemblyContext }),
+      groups,
+      [scoreAgg],
+      [op.desc(op.col(scoreColName))],
+      [scoreColName],
+    );
+  }
+
+  return unsortedResultsPlan;
+}
+
 // Applies a semantic sort to the raw assembled plan. Takes one hop from each search result
 // document via the sort binding's predicate to a related document and retrieves the related
 // document's field value for sorting. Collapses to one sort value per search result (min for
@@ -1524,6 +1550,7 @@ function applyPatternRequirements(searchTerm, termConfig) {
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
   buildPlans,
+  buildSortedResultsPlan,
   getChildId,
   getFirstNonOptionPropertyName,
   getResultRowGrouping,

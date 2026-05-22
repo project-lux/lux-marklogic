@@ -8,7 +8,7 @@ import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import op from '/MarkLogic/optic.mjs';
 
-const LIB = '0305 prepare-multiScope.mjs';
+const LIB = '0402 buildPlans-multiScope.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];

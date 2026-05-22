@@ -11,7 +11,7 @@ import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import op from '/MarkLogic/optic.mjs';
 
-const LIB = '0306 prepare-wildcardValidation.mjs';
+const LIB = '0403 buildPlans-wildcardValidation.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];

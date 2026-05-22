@@ -9,6 +9,7 @@ import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mj
 import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchTermConfig } from '../SearchTermConfig.mjs';
 import { getSearchTermConfig } from '../../../config/searchTermsConfig.mjs';
+import { getSearchScopeTypes } from '../../searchScope.mjs';
 
 class HopInverse extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
@@ -91,43 +92,50 @@ class HopInverse extends SearchPatternBase {
     const eagerEvaluation = patternOptions.getEagerEvaluation(true);
     const tripleOptions = [eagerEvaluation ? 'eager' : 'lazy', 'concurrent'];
 
-    // Phase 1: Inner hop — find subjects with a triple matching the child
-    // predicates and the known IRI as object.
-    const innerTriples = cts
-      .triples(
-        [],
-        expandPredicates(childTermConfig.getPredicates()),
-        sem.iri(childId),
-        '=',
-        tripleOptions,
-      )
-      .toArray();
+    const childPredicates = expandPredicates(childTermConfig.getPredicates());
+    const outerPredicates = expandPredicates(termConfig.getPredicates());
+    const targetIRI = sem.iri(childId);
 
-    if (innerTriples.length === 0) {
-      return null;
-    }
+    // Fold both hops into one cts.triples() call by traversing one hop using
+    // cts.tripleRangeQuery + a dataType constraint, passed into cts.triples.
+    // Two separate cts.triples() calls each scoped by dataType alone are orders
+    // of magnitude slower.
+    const targetScopeTypes = getSearchScopeTypes(
+      termConfig.getTargetScopeName(),
+      false,
+    );
+    const childQuery = cts.tripleRangeQuery(
+      [],
+      childPredicates,
+      targetIRI,
+      '=',
+      [],
+      1.0,
+    );
+    const fragmentConstraint =
+      targetScopeTypes.length > 0
+        ? cts.andQuery([
+            cts.fieldValueQuery('anyDataTypeName', targetScopeTypes, ['exact']),
+            childQuery,
+          ])
+        : childQuery;
 
-    const innerSubjects = innerTriples.map((t) => sem.tripleSubject(t));
-
-    // Phase 2: Outer hop — navigate from inner subjects via the outer
-    // predicates to find related IRIs.
     const outerTriples = cts
-      .triples(
-        innerSubjects,
-        expandPredicates(termConfig.getPredicates()),
-        [],
-        '=',
-        tripleOptions,
-      )
+      .triples([], outerPredicates, [], '=', tripleOptions, fragmentConstraint)
       .toArray();
 
     const excludeSelfIri = patternOptions.getExcludeSelfIri(null);
-    const seen = new Set();
+    const enforceDataCap = false; // Toggle true to impose maximumValues cap.
+    const maxValues = enforceDataCap
+      ? patternOptions.getMaximumValues(null)
+      : null;
     const values = [];
     for (const t of outerTriples) {
+      if (maxValues && values.length >= maxValues) {
+        break;
+      }
       const obj = fn.string(sem.tripleObject(t));
-      if (obj !== excludeSelfIri && !seen.has(obj)) {
-        seen.add(obj);
+      if (obj !== excludeSelfIri) {
         values.push(obj);
       }
     }

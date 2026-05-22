@@ -125,7 +125,7 @@ class HopInverse extends SearchPatternBase {
       .toArray();
 
     const excludeSelfIri = patternOptions.getExcludeSelfIri(null);
-    const enforceDataCap = false; // Toggle true to impose maximumValues cap.
+    const enforceDataCap = false; // TODO, FUNC: this was introduced for CTS functional parity testing.
     const maxValues = enforceDataCap
       ? patternOptions.getMaximumValues(null)
       : null;

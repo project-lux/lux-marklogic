@@ -1400,9 +1400,6 @@ function getChildId(termValue) {
 
 // Could add childId.
 function getChildInfo(scopeName, parentTermValue) {
-  console.log(
-    `getChildInfo: scopeName: ${scopeName}, parentTermValue: ${JSON.stringify(parentTermValue)}`,
-  );
   // Override when not a group.
   let valueType = CHILD_TYPE_GROUP;
   let patternName = null;
@@ -1419,11 +1416,6 @@ function getChildInfo(scopeName, parentTermValue) {
       utils.isArray(childTermValue) || utils.isObject(childTermValue)
         ? CHILD_TYPE_TERM
         : CHILD_TYPE_ATOMIC;
-    console.log(
-      `childTermName: ${childTermName}, patternName: ${patternName}, valueType: ${valueType}`,
-    );
-    console.log(`childTermValue: ${JSON.stringify(childTermValue)}`);
-    console.log(`searchTermConfig: ${JSON.stringify(searchTermConfig)}`);
   }
 
   return {

@@ -15,6 +15,8 @@ import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
+  SEARCH_OPTIONS_INVERSE_MAP,
+  SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
   SEMANTIC_SORT_TIMEOUT,
 } from '../appConstants.mjs';
@@ -535,10 +537,15 @@ function buildLeafSearchTerm(
   }
   searchTerm.setValue(value);
 
-  // TODO, FUNC: resolve search options: pattern --> term config --> term instance.
-  const searchOptions = termConfig.isForceExactMatch()
-    ? DEFAULT_SEARCH_OPTIONS_EXACT
-    : DEFAULT_SEARCH_OPTIONS_KEYWORD;
+  // forceExactMatch overrides the configured options reference.
+  const searchOptions = resolveSearchOptions(
+    termConfig.isForceExactMatch()
+      ? SEARCH_OPTIONS_NAME_EXACT
+      : termConfig.getOptionsReference(),
+    termConfig.getPatternName(),
+    [],
+    searchTerm.getSearchOptions(),
+  );
   searchTerm.setSearchOptions(searchOptions);
 
   // Validate and sanitize wildcard characters for keyword-type terms.
@@ -1219,6 +1226,72 @@ function sanitizeAndValidateWildcardedStrings(strOrArr) {
 }
 //#endregion
 
+//#region Search options resolution
+// Returns an array of search options starting from an options or pattern name.
+//
+// At present, an options name must be provided or derived to get a non-null response.  Further,
+// only the keyword search options are overridable.  Please extend if not sufficient.
+function resolveSearchOptions(
+  optionsName = null,
+  patternName = null,
+  requestOverridesArr = [],
+  instanceOverridesArr = {},
+) {
+  optionsName = resolveSearchOptionsName(optionsName, patternName);
+  if (SEARCH_OPTIONS_NAME_EXACT == optionsName) {
+    return DEFAULT_SEARCH_OPTIONS_EXACT;
+  } else if (optionsName == SEARCH_OPTIONS_NAME_KEYWORD) {
+    // Instance options override request options which override the defaults.
+    return mergeSearchOptions(
+      mergeSearchOptions(DEFAULT_SEARCH_OPTIONS_KEYWORD, requestOverridesArr),
+      instanceOverridesArr,
+    );
+  }
+  if (optionsName) {
+    console.warn(
+      `The '${optionsName}' search options reference is unknown. Please check the search criteria configuration. Using null.`,
+    );
+  }
+  return null;
+}
+
+function resolveSearchOptionsName(optionsName = null, patternName = null) {
+  if (optionsName) {
+    return optionsName;
+  }
+  const pattern = SearchPatternBase.get(patternName);
+  return pattern ? pattern.getDefaultSearchOptionsName() : null;
+}
+
+function mergeSearchOptions(defaultOptionsArr, overrideOptionsArr) {
+  if (utils.isNonEmptyArray(overrideOptionsArr)) {
+    // If the exact option is specified, that's all we need to know.
+    if (overrideOptionsArr.includes('exact')) {
+      return DEFAULT_SEARCH_OPTIONS_EXACT;
+    }
+
+    // Else, let's go through each override, replacing the associated default.
+    let mergedOptionsArr = defaultOptionsArr;
+    overrideOptionsArr.forEach((searchOption) => {
+      if (SEARCH_OPTIONS_INVERSE_MAP.hasOwnProperty(searchOption)) {
+        // The default option need not be present for the override to be added.
+        mergedOptionsArr = utils.replaceValueInArray(
+          mergedOptionsArr,
+          SEARCH_OPTIONS_INVERSE_MAP[searchOption],
+          searchOption,
+        );
+      } else {
+        console.log(
+          `Ignoring an unrecognized search term option of '${searchOption}'.`,
+        );
+      }
+    });
+    return mergedOptionsArr;
+  }
+  return defaultOptionsArr;
+}
+//#endregion
+
 //#region Helper functions
 function getPlanSource(plan) {
   return op
@@ -1393,5 +1466,6 @@ export {
   paginateResults,
   performSearch,
   processCriteria,
+  resolveSearchOptions,
   sanitizeAndValidateWildcardedStrings,
 };

@@ -1458,7 +1458,6 @@ function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
     );
   }
 
-  // TODO: Make sure an empty OR array is caught by the generic check of not enough criteria.
   planCriteria.OR.forEach((branch, idx) => {
     const branchScope = branch?._scope;
     if (

@@ -670,6 +670,20 @@ const scenarios = [
     },
   },
   {
+    name: 'Multi-scope search with empty OR array',
+    input: {
+      allowMultiScope: true,
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [],
+      },
+    },
+    expected: {
+      error: true,
+      stackToInclude: 'more search criteria is required',
+    },
+  },
+  {
     name: 'regression test to ensure every record with the matching data type is not returned',
     input: {
       searchCriteria: {
@@ -819,14 +833,6 @@ const scenarios = [
       stackToInclude: 'Unsupported geospatial operator',
     },
   },
-  /*
-  Empty OR
-  OR with one item
-  OR with multi
-  AND
-  No groups, just a single criterion
-  Not allowed
-  */
 ];
 
 // Test getEstimate scenarios

@@ -55,7 +55,6 @@ function performSearch(scp) {
   const pageLength = scp.getPageLength();
   const includeSearchResults = scp.getIncludeSearchResults();
   const facetRequests = scp.getFacetRequests();
-  const sortCriteria = scp.getSortCriteria();
   let patternOptions = scp.getPatternOptions();
 
   let planAsSource;
@@ -69,13 +68,18 @@ function performSearch(scp) {
     // Require the caller want search results or at least one facet before
     // doing any work.
     if (includeSearchResults || facetRequests?.length > 0) {
+      // Facet-only requests don't need sorting or relevance scores.
+      if (!includeSearchResults) {
+        scp.setSortCriteria(null);
+      }
+
       const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({
         scp,
         planCriteria: searchCriteria,
         planScope: searchScope,
         allowMultiScope,
         groups: getResultRowGrouping(),
-        sortCriteria,
+        sortCriteria: scp.getSortCriteria(),
         patternOptions,
       });
 

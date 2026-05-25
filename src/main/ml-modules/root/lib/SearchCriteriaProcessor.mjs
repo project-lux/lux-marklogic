@@ -305,6 +305,11 @@ const SearchCriteriaProcessor = class {
     return this.#sortCriteria;
   }
 
+  // Engine sets to null for facet-only requests.
+  setSortCriteria(sortCriteria) {
+    this.#sortCriteria = sortCriteria;
+  }
+
   isAllowMultiScope() {
     return this.#allowMultiScope;
   }

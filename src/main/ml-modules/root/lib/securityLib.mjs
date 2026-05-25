@@ -51,6 +51,7 @@ const ROLE_NAME_ENDPOINT_CONSUMER_USER = '%%mlAppName%%-endpoint-consumer-user';
 
 const PRIVILEGE_NAME_SCALE_ENVIRONMENT = `${PRIVILEGES_PREFIX}/%%mlAppName%%-scale-environment`;
 const PRIVILEGE_NAME_UPDATE_TENANT_STATUS = `${PRIVILEGES_PREFIX}/%%mlAppName%%-update-tenant-status`;
+const PRIVILEGE_NAME_VALIDATE_DATASET = `${PRIVILEGES_PREFIX}/%%mlAppName%%-validate-dataset`;
 const ROLE_NAME_DEPLOYER = '%%mlAppName%%-deployer';
 
 const ROLE_NAME_MY_COLLECTIONS_FEATURE_DATA_UPDATER =
@@ -509,6 +510,13 @@ function mayScaleEnvironment() {
   );
 }
 
+function mayValidateDataset() {
+  return (
+    new User().hasRole(ROLE_NAME_ADMIN) ||
+    xdmp.passiveHasPrivilege(PRIVILEGE_NAME_VALIDATE_DATASET, 'execute')
+  );
+}
+
 function requireUserMayUpdateTenantStatus() {
   if (new User().hasRole(ROLE_NAME_ADMIN)) {
     return;
@@ -645,6 +653,7 @@ export {
   isCurrentUserServiceAccount,
   mayScaleEnvironment,
   mayUpdateTenantStatus,
+  mayValidateDataset,
   removeUnitConfigProperties,
   requireUserMayUpdateTenantStatus,
   throwIfCurrentUserIsServiceAccount,

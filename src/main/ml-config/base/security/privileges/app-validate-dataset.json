@@ -1,0 +1,6 @@
+{
+  "privilege-name": "%%mlAppName%%-validate-dataset",
+  "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-validate-dataset",
+  "role": [],
+  "kind": "execute"
+}

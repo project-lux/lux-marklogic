@@ -81,6 +81,10 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
+  '/ds/lux/validateDataset.mjs': {
+    allowInReadOnlyMode: true,
+    features: { myCollections: false },
+  },
   '/ds/lux/versionInfo.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },

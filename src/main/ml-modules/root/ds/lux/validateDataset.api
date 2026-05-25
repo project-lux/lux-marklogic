@@ -1,0 +1,39 @@
+{
+  "functionName": "datasetValidation",
+  "params": [
+    {
+      "name": "format",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
+      "name": "categories",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
+      "name": "unitNames",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
+      "name": "baseline",
+      "datatype": "jsonDocument",
+      "nullable": true
+    },
+    {
+      "name": "baselineId",
+      "datatype": "string",
+      "nullable": true
+    },
+    {
+      "name": "testConfig",
+      "datatype": "jsonDocument",
+      "nullable": true
+    }
+  ],
+  "return": {
+    "datatype": "jsonDocument",
+    "$javaClass": "com.fasterxml.jackson.databind.JsonNode"
+  }
+}

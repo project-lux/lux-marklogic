@@ -48,7 +48,6 @@ This design replaces that workflow with a **Dataset Test Framework**: a single D
 
 **Security**: The endpoint uses `handleRequest()` like all other LUX endpoints.
 
-<!-- TODO: Register in endpointsConfig.mjs (allowInReadOnlyMode: true, features: { myCollections: false }) -->
 <!-- TODO: Define an execute privilege for this endpoint and include an assert to require the requesting user have it -->
 <!-- TODO: Document within lux-backend-api-usage.md -->
 
@@ -433,8 +432,8 @@ Incremental updates — partial dataset changes applied as frequently as once a 
 
 # TODOs
 
-- [ ] Register endpoint in [endpointsConfig.mjs](/src/main/ml-modules/root/config/endpointsConfig.mjs) (`allowInReadOnlyMode: true`, `features: { myCollections: false }`)
-- [ ] Define an execute privilege for this endpoint and include an assert to require the requesting user have it
+- [x] Register endpoint in [endpointsConfig.mjs](/src/main/ml-modules/root/config/endpointsConfig.mjs) (`allowInReadOnlyMode: true`, `features: { myCollections: false }`)
+- [x] Define an execute privilege for this endpoint and include an assert to require the requesting user have it
 - [ ] Document endpoint in [lux-backend-api-usage.md](/docs/lux-backend-api-usage.md)
 - [ ] Review all scripts in [/scripts](/scripts) for additional test candidates
 - [ ] Design `delta` manifest parameter for incremental update-specific tests (once the incremental update pipeline's output format is known)

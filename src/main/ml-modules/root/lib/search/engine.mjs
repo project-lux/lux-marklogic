@@ -68,7 +68,10 @@ function performSearch(scp) {
     // Require the caller want search results or at least one facet before
     // doing any work.
     if (includeSearchResults || facetRequests?.length > 0) {
-      // Facet-only requests don't need sorting or relevance scores.
+      // Facet-only requests use the unsorted plan and never need relevance
+      // scores. Clearing sort criteria prevents assemblePlan from injecting
+      // op.fromSearch (via the areScoresRequired check) and prevents
+      // buildSortedResultsPlan from doing any sort-branch work.
       if (!includeSearchResults) {
         scp.setSortCriteria(null);
       }

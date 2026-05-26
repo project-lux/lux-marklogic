@@ -1,26 +1,54 @@
 import { DatasetTestBase } from './loadTests.mjs';
 import { getVersionInfo } from '../environmentLib.mjs';
-import { getEndpointAccessUnitNames } from '../securityLib.mjs';
+import {
+  getEndpointAccessUnitNames,
+  mayValidateDataset,
+  TENANT_OWNER,
+} from '../securityLib.mjs';
+import { AccessDeniedError, BadRequestError } from '../errorClasses.mjs';
+import { User } from '../User.mjs';
 import { split } from '../../utils/utils.mjs';
 
 const SEVERITY_CRITICAL = 'critical';
 
 const CRITICAL_WEIGHT = 2;
 const DEFAULT_WEIGHT = 1;
+const DEFAULT_OVERALL_PASS_THRESHOLD = 0.8;
 
-function runDatasetValidation({
-  format = 'json',
-  categories = null,
+function validateDataset({
   unitNames = null,
+  categories = null,
+  testConfig = null,
   baseline = null,
   baselineId = null,
-  testConfig = null,
+  format = 'json',
 }) {
+  // Access check.
+  if (!mayValidateDataset()) {
+    const user = new User();
+    throw new AccessDeniedError(
+      `User '${user.getUsername()}' is not authorized to validate the dataset`,
+    );
+  }
+
   const start = new Date();
 
-  // Resolve unit names: default to all known units.
-  const resolvedUnitNames =
-    unitNames != null ? split(unitNames) : getEndpointAccessUnitNames();
+  // Resolve unit names: default to the tenant's name only.
+  // When specified, only execute for the stated unit names.
+  const validUnitNames = [TENANT_OWNER, ...getEndpointAccessUnitNames()];
+  let resolvedUnitNames;
+  if (unitNames != null) {
+    const requested = split(unitNames);
+    const invalid = requested.filter((name) => !validUnitNames.includes(name));
+    if (invalid.length > 0) {
+      throw new BadRequestError(
+        `Invalid unit name(s): ${invalid.join(', ')}. Valid values: ${validUnitNames.join(', ')}.`,
+      );
+    }
+    resolvedUnitNames = requested;
+  } else {
+    resolvedUnitNames = [TENANT_OWNER];
+  }
 
   // Resolve categories filter.
   const resolvedCategories = categories != null ? split(categories) : null;
@@ -69,6 +97,7 @@ function runDatasetValidation({
       threshold: threshold,
       baseline: baselineByTestId[id] || null,
       unitNames: resolvedUnitNames,
+      config: config,
     };
 
     const testStart = new Date();
@@ -129,6 +158,11 @@ function runDatasetValidation({
       ? parseFloat((totalWeightedScore / totalWeight).toFixed(4))
       : 1.0;
 
+  const overallPassThreshold =
+    resolvedTestConfig.overallPassThreshold != null
+      ? resolvedTestConfig.overallPassThreshold
+      : DEFAULT_OVERALL_PASS_THRESHOLD;
+
   const end = new Date();
   const versionInfo = getVersionInfo();
 
@@ -139,20 +173,21 @@ function runDatasetValidation({
       durationMs: end - start,
       codeVersion: versionInfo.codeVersion,
       parameters: {
-        format: format,
-        categories: resolvedCategories,
         unitNames: resolvedUnitNames,
-        baselineId: baselineId,
-        baselineProvided: baselineProvided,
-        baselineTestsMatched: Object.keys(baselineByTestId).length,
+        categories: resolvedCategories,
         testConfig:
           Object.keys(resolvedTestConfig).length > 0
             ? resolvedTestConfig
             : null,
+        baselineProvided: baselineProvided,
+        baselineTestsMatched: Object.keys(baselineByTestId).length,
+        baselineId: baselineId,
+        format: format,
       },
     },
     summary: {
-      overallPass: criticalPass && aggregateScore >= 0.8,
+      overallPass: criticalPass && aggregateScore >= overallPassThreshold,
+      overallPassThreshold: overallPassThreshold,
       aggregateScore: aggregateScore,
       criticalPass: criticalPass,
       testsRun: testsRun,
@@ -164,4 +199,4 @@ function runDatasetValidation({
   };
 }
 
-export { runDatasetValidation };
+export { validateDataset };

@@ -5,50 +5,50 @@ import {
 } from '../../searchScope.mjs';
 import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
 import { SORT_BINDINGS } from '../../../config/searchResultsSortConfig.mjs';
-import { expandPredicate } from '../../search/prefixUtils.mjs';
+import { shortenPredicate } from '../../search/prefixUtils.mjs';
 import { isNonEmptyArray } from '../../../utils/utils.mjs';
 
 const op = require('/MarkLogic/optic');
 
 const TEST_ID = 'predicate-alignment';
 
-// Derive configured predicates from runtime configs (no hardcoded list).
-function getConfiguredPredicateIris() {
+// Derive configured predicates from runtime configs as CURIEs.
+function getConfiguredPredicates() {
   const searchTermsConfig = getSearchTermsConfig();
   const predicateSet = new Set();
 
-  // Search term predicates.
+  // Search term predicates (already CURIEs in config).
   Object.keys(searchTermsConfig).forEach((scopeName) => {
     const scopeTerms = searchTermsConfig[scopeName];
     Object.keys(scopeTerms).forEach((termName) => {
       const termConfig = scopeTerms[termName];
       if (isNonEmptyArray(termConfig.predicates)) {
         termConfig.predicates.forEach((predicate) => {
-          predicateSet.add(expandPredicate(predicate) + '');
+          predicateSet.add(predicate);
         });
       }
     });
   });
 
-  // Keyword search predicates.
+  // Keyword search predicates (already CURIEs).
   getSearchScopeNames().forEach((scopeName) => {
     getSearchScopePredicates(scopeName).forEach((predicate) => {
-      predicateSet.add(expandPredicate(predicate) + '');
+      predicateSet.add(predicate);
     });
   });
 
-  // Sort binding predicates.
+  // Sort binding predicates (already CURIEs).
   Object.keys(SORT_BINDINGS).forEach((sortBindingName) => {
     const sortBinding = SORT_BINDINGS[sortBindingName];
     if (sortBinding.predicate) {
-      predicateSet.add(expandPredicate(sortBinding.predicate) + '');
+      predicateSet.add(sortBinding.predicate);
     }
   });
 
   return [...predicateSet].sort();
 }
 
-// Query all distinct predicates from the triple index via Optic.
+// Query all distinct predicates from the triple index via Optic, returned as CURIEs.
 function getAllDatasetPredicates() {
   const s = op.col('s');
   const p = op.col('p');
@@ -58,7 +58,7 @@ function getAllDatasetPredicates() {
     .groupBy(p)
     .result()
     .toArray()
-    .map((row) => row.p + '')
+    .map((row) => shortenPredicate(row.p + ''))
     .sort();
 }
 
@@ -80,8 +80,11 @@ class PredicateAlignment extends DatasetTestBase {
   }
 
   run(context) {
-    const configuredPredicates = getConfiguredPredicateIris();
-    const allPredicates = getAllDatasetPredicates();
+    const configuredPredicates = getConfiguredPredicates();
+    // Filter out MarkLogic internal numeric hash predicates.
+    const allPredicates = getAllDatasetPredicates().filter(
+      (p) => !/^\d+$/.test(p),
+    );
 
     const referencedButDoesNotExist = configuredPredicates.filter(
       (item) => !allPredicates.includes(item),

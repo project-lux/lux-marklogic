@@ -17,6 +17,10 @@ function expandPredicate(predicate) {
   return sem.curieExpand(predicate, PREFIX_MAPPINGS);
 }
 
+function shortenPredicate(iri) {
+  return sem.curieShorten(sem.iri(iri), PREFIX_MAPPINGS) + '';
+}
+
 function expandPredicates(predicates) {
   return predicates.map((predicate) => expandPredicate(predicate));
 }
@@ -37,4 +41,5 @@ export {
   expandPredicates,
   formatPredicatesForSPARQL,
   getPrefixesForSPARQL,
+  shortenPredicate,
 };

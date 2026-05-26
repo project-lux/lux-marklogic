@@ -1,8 +1,8 @@
 {
-  "functionName": "datasetValidation",
+  "functionName": "validateDataset",
   "params": [
     {
-      "name": "format",
+      "name": "unitNames",
       "datatype": "string",
       "nullable": true
     },
@@ -12,8 +12,8 @@
       "nullable": true
     },
     {
-      "name": "unitNames",
-      "datatype": "string",
+      "name": "testConfig",
+      "datatype": "jsonDocument",
       "nullable": true
     },
     {
@@ -27,8 +27,8 @@
       "nullable": true
     },
     {
-      "name": "testConfig",
-      "datatype": "jsonDocument",
+      "name": "format",
+      "datatype": "string",
       "nullable": true
     }
   ],

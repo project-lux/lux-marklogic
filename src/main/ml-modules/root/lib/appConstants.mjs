@@ -5,6 +5,7 @@ const TENANT_NAME = '%%environmentName%%';
 const ML_ADMIN_PORT = parseInt('%%mlAdminPort%%'.trim());
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
+const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 
 const FEATURE_MY_COLLECTIONS_ENABLED =
   '%%featureMyCollectionsEnabled%%'.trim() === 'true';
@@ -208,6 +209,7 @@ export {
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   DEFAULT_VECTOR_COLUMN,
   ENDPOINT_ACCESS_UNIT_NAMES,
+  ENDPOINT_CONSUMER_ROLES_END_WITH,
   FACETS_PREFIX,
   FEATURE_MY_COLLECTIONS_ENABLED,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,

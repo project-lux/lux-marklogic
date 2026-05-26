@@ -65,9 +65,14 @@
   - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-15)
     - [Failed Request / Response Example](#failed-request--response-example-17)
-  - [Version Info](#version-info)
+  - [Validate Dataset](#validate-dataset)
     - [Successful Request / Response Example](#successful-request--response-example-16)
+      - [Default Parameters](#default-parameters)
+      - [With Test Config](#with-test-config)
     - [Failed Request / Response Example](#failed-request--response-example-18)
+  - [Version Info](#version-info)
+    - [Successful Request / Response Example](#successful-request--response-example-17)
+    - [Failed Request / Response Example](#failed-request--response-example-19)
 
 # Introduction
 
@@ -1757,7 +1762,7 @@ Response Body:
 
 ### Get
 
-The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.  Users with the `https://lux.collections.yale.edu/%%mlAppName%%-update-tenant-status` execute privilege will also receive estimates for the numbers of My Collection and user profile documents.
+The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.  Users with the [`%%mlAppName%%-update-tenant-status`](/src/main/ml-config/base/security/privileges/app-update-tenant-status.json) execute privilege will also receive estimates for the numbers of My Collection and user profile documents.
 
 **URL** : `/ds/lux/tenantStatus/get.mjs`
 
@@ -1934,6 +1939,222 @@ Response Body:
         "messageCode": "BadRequestError",
         "message": "Invalid search request: unable to parse criteria {\"\"}"
     }
+}
+```
+
+## Validate Dataset
+
+The `validateDataset` endpoint runs pluggable validation tests against the dataset and produces a structured report with scores.  Use it to verify dataset integrity before and after data imports, and to compare against a baseline for go/no-go decisions.  The complete design may be found in [LUX Dataset Test Framework](/docs/lux-dataset-test-framework.md).
+
+To consume, the user must have the `admin` role or the [`%%mlAppName%%-validate-dataset`](/src/main/ml-config/base/security/privileges/app-validate-dataset.json) execute privilege.  This execute privilege is granted to the [`%%mlAppName%%-deployer`](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.
+
+The endpoint is available on multiple ports.  The `mlDeployPort` is recommended as some tests (e.g. predicate alignment) may take several seconds.
+
+**URL** : `/ds/lux/validateDataset.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitNames` | `ipch,ypm` | **OPTIONAL** - Comma-separated list of unit names to include for per-unit validation.  Supported values are the tenant's name (e.g. `lux`) and the unit names returned by `getEndpointAccessUnitNames()`.  When omitted, defaults to the tenant's name only. Invalid unit names are silently ignored. |
+| `categories` | `relational` | **OPTIONAL** - Comma-separated list of test categories to run.  When omitted, all tests run. |
+| `testConfig` | _(JSON document)_ | **OPTIONAL** - Per-test configuration overrides and framework-level settings.  Submit as a multipart form-data text field containing the JSON string. |
+| `baseline` | _(JSON document)_ | **OPTIONAL** - A previous `validateDataset` response to compare against.  When provided, tests that support baseline comparison include `baselineEstimate` and `deltaPercent` fields.  Submit as a multipart form-data text field containing the JSON string. |
+| `baselineId` | `lux-content-2024-01-15...` | **OPTIONAL** - An identifier for the baseline.  Stored in the response metadata for traceability; no functional impact. |
+| `format` | `json` | **OPTIONAL** - Reserved for future use. Only implemented format is JSON. |
+
+**Test Config Structure**
+
+The `testConfig` parameter accepts a JSON object with per-test overrides (keyed by test ID) and framework-level settings:
+
+```json
+{
+  "overallPassThreshold": 0.9,
+  "predicate-coverage": {
+    "skip": true
+  },
+  "predicate-alignment": {
+    "threshold": 0.9,
+    "deltaThresholdPercent": 5
+  }
+}
+```
+
+| Property | Scope | Description |
+|----------|-------|-------------|
+| `overallPassThreshold` | Framework | The minimum `aggregateScore` required for `overallPass` to be `true`.  Default: `0.8`. |
+| *`<testId>`*`.skip` | Per-test | Set to `true` to exclude the test from the run.  `<testId>` is the test's `id` value (e.g. `predicate-coverage`). |
+| *`<testId>`*`.threshold` | Per-test | Overrides the test's default pass/fail threshold. |
+| *`<testId>`*`.deltaThresholdPercent` | Per-test (`predicate-coverage`) | The percentage change from baseline that flags a large delta.  Default: `10`. |
+
+### Successful Request / Response Example
+
+#### Default Parameters
+
+Scenario: Run all tests with default parameters.
+
+Parameters: _(none)_
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body (abbreviated):
+
+```json
+{
+  "metadata": {
+    "id": "lux-content-2026-05-25T18:46:35.629Z",
+    "timestamp": "2026-05-25T18:46:35.629Z",
+    "durationMs": 847,
+    "codeVersion": "v3.3.0-418-g886698a",
+    "parameters": {
+      "unitNames": ["lux"],
+      "categories": null,
+      "testConfig": null,
+      "baselineProvided": false,
+      "baselineTestsMatched": 0,
+      "baselineId": null,
+      "format": "json"
+    }
+  },
+  "summary": {
+    "overallPass": false,
+    "overallPassThreshold": 0.8,
+    "aggregateScore": 0.7193,
+    "criticalPass": false,
+    "testsRun": 2,
+    "testsPassed": 0,
+    "testsWarning": 0,
+    "testsFailed": 2
+  },
+  "tests": [
+    {
+      "id": "predicate-coverage",
+      "name": "Predicate Coverage",
+      "category": "relational",
+      "severity": "critical",
+      "score": 0.7193,
+      "pass": false,
+      "threshold": 1,
+      "durationMs": 63,
+      "message": "16 configured predicate(s) have zero matching documents.",
+      "result": { "..." : "..." }
+    },
+    {
+      "id": "predicate-alignment",
+      "name": "Predicate Alignment",
+      "category": "relational",
+      "severity": "critical",
+      "score": 0.7193,
+      "pass": false,
+      "threshold": 1,
+      "durationMs": 784,
+      "message": "16 configured predicate(s) not found in dataset.",
+      "result": { "..." : "..." }
+    },
+    ...more test results
+  ]
+}
+```
+
+#### With Test Config
+
+Scenario: Skip the `predicate-coverage` test, lower the overall pass threshold, and override `predicate-alignment`'s threshold.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `testConfig` | See below |
+
+```json
+{
+  "overallPassThreshold": 0.5,
+  "predicate-coverage": {
+    "skip": true
+  },
+  "predicate-alignment": {
+    "threshold": 0.7
+  }
+}
+```
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body (abbreviated):
+
+```json
+{
+  "metadata": {
+    "id": "lux-content-2026-05-25T19:02:11.123Z",
+    "timestamp": "2026-05-25T19:02:11.123Z",
+    "durationMs": 812,
+    "codeVersion": "v3.3.0-418-g886698a",
+    "parameters": {
+      "unitNames": ["lux"],
+      "categories": null,
+      "testConfig": {
+        "overallPassThreshold": 0.5,
+        "predicate-coverage": { "skip": true },
+        "predicate-alignment": { "threshold": 0.7 }
+      },
+      "baselineProvided": false,
+      "baselineTestsMatched": 0,
+      "baselineId": null,
+      "format": "json"
+    }
+  },
+  "summary": {
+    "overallPass": true,
+    "overallPassThreshold": 0.5,
+    "aggregateScore": 0.7193,
+    "criticalPass": true,
+    "testsRun": 1,
+    "testsPassed": 1,
+    "testsWarning": 0,
+    "testsFailed": 0
+  },
+  "tests": [
+    {
+      "id": "predicate-alignment",
+      "name": "Predicate Alignment",
+      "category": "relational",
+      "severity": "critical",
+      "score": 0.7193,
+      "pass": true,
+      "threshold": 0.7,
+      "durationMs": 784,
+      "message": "16 configured predicate(s) not found in dataset.",
+      "result": { "..." : "..." }
+    },
+    ...more test results
+  ]
+}
+```
+
+### Failed Request / Response Example
+
+Scenario: User does not have the required privilege.
+
+Response Status Code: 403
+
+Response Status Message: Forbidden
+
+Response Body:
+
+```json
+{
+  "errorResponse": {
+    "statusCode": 403,
+    "status": "AccessDeniedError",
+    "messageCode": "AccessDeniedError",
+    "message": "User 'example-user' is not authorized to validate the dataset"
+  }
 }
 ```
 

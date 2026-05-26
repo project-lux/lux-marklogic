@@ -1,4 +1,5 @@
 import { DatasetTestBase } from '../DatasetTestBase.mjs';
+import { TENANT_OWNER } from '../../securityLib.mjs';
 import {
   getSearchScopeNames,
   getSearchScopePredicates,
@@ -7,13 +8,14 @@ import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
 import { SORT_BINDINGS } from '../../../config/searchResultsSortConfig.mjs';
 import { expandPredicate } from '../../search/prefixUtils.mjs';
 import {
+  invokeAsUnit,
   isNonEmptyArray,
   sortObj,
   upToFirstUpperCaseCharacter,
 } from '../../../utils/utils.mjs';
 
 const TEST_ID = 'predicate-coverage';
-const DELTA_THRESHOLD_PERCENT = 20;
+const DEFAULT_DELTA_THRESHOLD_PERCENT = 10;
 
 // Collect all predicates referenced by search terms, keyword search, and sort configs.
 function getConfiguredPredicates() {
@@ -60,31 +62,27 @@ function getConfiguredPredicates() {
   return predicateTermMap;
 }
 
-// Estimate document counts for each predicate, optionally per unit.
-function estimatePredicateCounts(predicateTermMap, userId) {
+// Estimate document counts for each predicate.
+function estimatePredicateCounts(predicateTermMap) {
   const estimates = {};
-  const estimateFn = () => {
-    Object.keys(predicateTermMap).forEach((predicate) => {
-      // cts.estimate returns xs.unsignedLong; coerce to JS number for
-      // reliable === comparisons and || fallbacks.
-      estimates[predicate] = Number(
-        cts.estimate(
-          cts.jsonPropertyValueQuery('predicate', expandPredicate(predicate)),
-        ),
-      );
-    });
-  };
-
-  if (userId != null) {
-    fn.head(xdmp.invokeFunction(estimateFn, { userId: userId }));
-  } else {
-    estimateFn();
-  }
-
+  Object.keys(predicateTermMap).forEach((predicate) => {
+    // cts.estimate returns xs.unsignedLong; coerce to JS number for
+    // reliable === comparisons and || fallbacks.
+    estimates[predicate] = Number(
+      cts.estimate(
+        cts.jsonPropertyValueQuery('predicate', expandPredicate(predicate)),
+      ),
+    );
+  });
   return estimates;
 }
 
-function computeScore(predicateTermMap, estimates, baselineResult) {
+function computeScore(
+  predicateTermMap,
+  estimates,
+  baselineResult,
+  deltaThresholdPercent,
+) {
   const predicates = Object.keys(predicateTermMap);
   if (predicates.length === 0) {
     return { score: 1.0, zeroCountPredicates: [], predicateDetails: {} };
@@ -133,7 +131,7 @@ function computeScore(predicateTermMap, estimates, baselineResult) {
       const detail = predicateDetails[predicate];
       if (
         detail.deltaPercent !== undefined &&
-        Math.abs(detail.deltaPercent) > DELTA_THRESHOLD_PERCENT
+        Math.abs(detail.deltaPercent) > deltaThresholdPercent
       ) {
         largeDeltas++;
       }
@@ -171,27 +169,38 @@ class PredicateCoverage extends DatasetTestBase {
   run(context) {
     const predicateTermMap = getConfiguredPredicates();
     const unitNames = context.unitNames || [];
+    const config = context.config || {};
+    const deltaThresholdPercent =
+      config.deltaThresholdPercent != null
+        ? config.deltaThresholdPercent
+        : DEFAULT_DELTA_THRESHOLD_PERCENT;
 
     // Primary estimates (current user context).
-    const estimates = estimatePredicateCounts(predicateTermMap, null);
+    const estimates = estimatePredicateCounts(predicateTermMap);
     const { score, zeroCountPredicates, predicateDetails } = computeScore(
       predicateTermMap,
       estimates,
       context.baseline,
+      deltaThresholdPercent,
     );
 
     // Per-unit estimates.
     const unitResults = {};
     unitNames.forEach((unitName) => {
+      if (unitName === TENANT_OWNER) {
+        return;
+      }
       try {
-        const userId = xdmp.user(`%%mlAppName%%-${unitName}-endpoint-consumer`);
-        const unitEstimates = estimatePredicateCounts(predicateTermMap, userId);
+        const unitEstimates = invokeAsUnit(unitName, () =>
+          estimatePredicateCounts(predicateTermMap),
+        );
         const unitScored = computeScore(
           predicateTermMap,
           unitEstimates,
           context.baseline && context.baseline.unitResults
             ? context.baseline.unitResults[unitName]
             : null,
+          deltaThresholdPercent,
         );
         unitResults[unitName] = {
           score: unitScored.score,

@@ -7,6 +7,7 @@ import * as libWrapper from './libWrapper.mjs';
 import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
+  ENDPOINT_CONSUMER_ROLES_END_WITH,
   FEATURE_MY_COLLECTIONS_ENABLED,
   MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_APP_NAME,
@@ -43,7 +44,6 @@ import { setDefaultCollection } from './model.mjs';
 const TENANT_OWNER = ML_APP_NAME;
 
 const ROLE_NAME_ADMIN = 'admin';
-const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 const BASE_ENDPOINT_CONSUMER_ROLES_END_WITH = `base${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_TENANT_OWNER = `${TENANT_OWNER}${ENDPOINT_CONSUMER_ROLES_END_WITH}`;
 const ROLE_NAME_ENDPOINT_CONSUMER_BASE = '%%mlAppName%%-endpoint-consumer-base'; // users and service accounts

@@ -42,14 +42,11 @@ This design replaces that workflow with a **Dataset Test Framework**: a single D
 
 ## Path and Security
 
-**Path**: `/ds/lux/datasetValidation.mjs`
+**Path**: `/ds/lux/validateDataset.mjs`
 
 **Method**: `POST` (the `baseline` parameter may be large).
 
-**Security**: The endpoint uses `handleRequest()` like all other LUX endpoints.
-
-<!-- TODO: Define an execute privilege for this endpoint and include an assert to require the requesting user have it -->
-<!-- TODO: Document within lux-backend-api-usage.md -->
+**Security**: The endpoint uses `handleRequest()` like all other LUX endpoints.  The requesting user must have the `admin` role or the `%%mlAppName%%-validate-dataset` execute privilege.
 
 ## Parameters
 
@@ -66,7 +63,7 @@ The `.api` definition:
 
 ```json
 {
-  "functionName": "datasetValidation",
+  "functionName": "validateDataset",
   "params": [
     { "name": "format", "datatype": "string", "nullable": true },
     { "name": "categories", "datatype": "string", "nullable": true },
@@ -168,8 +165,8 @@ The endpoint accepts the `baseline` parameter: the full JSON response from a pri
 ```
 src/main/ml-modules/root/
 ├── ds/lux/
-│   ├── datasetValidation.mjs            # Data Service entry point
-│   └── datasetValidation.api            # Parameter definitions
+│   ├── validateDataset.mjs              # Data Service entry point
+│   └── validateDataset.api              # Parameter definitions
 ├── lib/datasetValidation/
 │   ├── datasetValidationLib.mjs         # Framework orchestrator
 │   ├── DatasetTestBase.mjs              # Base class + registry
@@ -415,8 +412,8 @@ Incremental updates — partial dataset changes applied as frequently as once a 
 
 2. **Parallel consumer requests**: The `categories` and `testConfig` parameters enable consumers to split work across concurrent requests.  For example:
    ```
-   POST /ds/lux/datasetValidation.mjs?categories=relational
-   POST /ds/lux/datasetValidation.mjs?categories=quantitative
+   POST /ds/lux/validateDataset.mjs?categories=relational
+   POST /ds/lux/validateDataset.mjs?categories=quantitative
    ```
 
 3. **Skip expensive tests**: `testConfig` allows skipping specific tests for quick spot checks:
@@ -434,7 +431,7 @@ Incremental updates — partial dataset changes applied as frequently as once a 
 
 - [x] Register endpoint in [endpointsConfig.mjs](/src/main/ml-modules/root/config/endpointsConfig.mjs) (`allowInReadOnlyMode: true`, `features: { myCollections: false }`)
 - [x] Define an execute privilege for this endpoint and include an assert to require the requesting user have it
-- [ ] Document endpoint in [lux-backend-api-usage.md](/docs/lux-backend-api-usage.md)
+- [x] Document endpoint in [lux-backend-api-usage.md](/docs/lux-backend-api-usage.md)
 - [ ] Review all scripts in [/scripts](/scripts) for additional test candidates
 - [ ] Design `delta` manifest parameter for incremental update-specific tests (once the incremental update pipeline's output format is known)
 - [ ] Evaluate baseline storage in the content database (option e) after initial deployment experience

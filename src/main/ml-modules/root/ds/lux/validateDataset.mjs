@@ -1,15 +1,15 @@
 import { handleRequest } from '../../lib/securityLib.mjs';
-import { runDatasetValidation } from '../../lib/datasetValidation/datasetValidationLib.mjs';
+import { validateDataset } from '../../lib/datasetValidation/datasetValidationLib.mjs';
 import { getObjectFromNode } from '../../utils/utils.mjs';
 
 const response = handleRequest(function () {
-  return runDatasetValidation({
-    format: external.format,
-    categories: external.categories,
+  return validateDataset({
     unitNames: external.unitNames,
+    categories: external.categories,
+    testConfig: getObjectFromNode(external.testConfig),
     baseline: getObjectFromNode(external.baseline),
     baselineId: external.baselineId,
-    testConfig: getObjectFromNode(external.testConfig),
+    format: external.format,
   });
 });
 

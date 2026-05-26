@@ -1,6 +1,7 @@
 import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
 import { BadRequestError, NotImplementedError } from '../lib/errorClasses.mjs';
 import {
+  ENDPOINT_CONSUMER_ROLES_END_WITH,
   FACETS_PREFIX,
   IRI_PREFIX,
   RELATED_LIST_PREFIX,
@@ -622,6 +623,16 @@ function formatString(str, args) {
   return str.replace(/%(\w+)/g, (_, key) => args[key]);
 }
 
+// Invoke a function as a unit's endpoint consumer service account.
+// Requires the calling user to have the xdmp-invoke-in privilege.
+function invokeAsUnit(unitName, f) {
+  const userId = xdmp.user(
+    `%%mlAppName%%-${unitName}${ENDPOINT_CONSUMER_ROLES_END_WITH}`,
+  );
+  const result = fn.head(xdmp.invokeFunction(f, { userId: userId }));
+  return result && result.toObject ? result.toObject() : result;
+}
+
 export {
   areArraysEqual,
   arrayToString,
@@ -649,6 +660,7 @@ export {
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,
   includesOrEquals,
+  invokeAsUnit,
   isArray,
   toArrayFallback, // for a scenario toArray doesn't handle
   isDefined,

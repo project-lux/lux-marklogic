@@ -22,27 +22,29 @@ class StorageInfo extends DatasetTestBase {
 
   run(context) {
     const storageInfo = getStorageInfo();
-    const issues = [];
-    let hasCritical = false;
+    const criticalIssues = [];
+    const warnings = [];
 
     Object.keys(storageInfo).forEach((host) => {
       Object.keys(storageInfo[host]).forEach((volume) => {
         const info = storageInfo[host][volume];
         if (info.message && info.message.startsWith('CRITICAL')) {
-          hasCritical = true;
-          issues.push({ host, volume, message: info.message });
+          criticalIssues.push({ host, volume, message: info.message });
         } else if (info.message && info.message.startsWith('WARNING')) {
-          issues.push({ host, volume, message: info.message });
+          warnings.push({ host, volume, message: info.message });
         }
       });
     });
 
-    const score = hasCritical ? 0 : issues.length === 0 ? 1.0 : 0.5;
+    // Only CRITICAL issues affect the score. Warnings are reported but do not fail the test.
+    const score = criticalIssues.length > 0 ? 0 : 1.0;
 
     const message =
-      issues.length === 0
+      criticalIssues.length === 0 && warnings.length === 0
         ? 'All hosts report normal storage levels.'
-        : `${issues.length} host/volume(s) report storage concerns.`;
+        : criticalIssues.length > 0
+          ? `${criticalIssues.length} critical storage issue(s) found.`
+          : `${warnings.length} warning(s) found.`;
 
     return {
       score: score,
@@ -50,7 +52,8 @@ class StorageInfo extends DatasetTestBase {
       message: message,
       result: {
         storageInfo: storageInfo,
-        issues: issues,
+        criticalIssues: criticalIssues,
+        warnings: warnings,
       },
     };
   }

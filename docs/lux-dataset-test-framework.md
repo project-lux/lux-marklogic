@@ -85,7 +85,7 @@ Seven tests are implemented, covering the five manual scripts and two API endpoi
 | **Predicate Coverage** | relational | Every configured predicate has matching documents.  Runs per unit to catch permission-based visibility gaps. | Per-predicate count deltas |
 | **Predicate Alignment** | relational | Predicates referenced in code exist in the dataset, and vice versa. | N/A (structural check) |
 | **Record Types by Predicates** | relational | Each predicate appears on expected record types (agent, work, item, etc.).  Hard failure if a predicate loses record type associations. | Record type additions/removals |
-| **Range Index Coverage** | indexing | Every field range index defined on the database contains values.  Runs per unit. | Per-index count deltas |
+| **Range Index Coverage** | indexing | Every field range index defined on the database contains values.  Runs per unit. Informational only; reported but does not affect go/no-go. | Per-index count deltas |
 | **Index Comparison** | indexing | Fields and field range indexes referenced in code match those configured on the database.  Reports missing and unused indexes. | N/A (structural check) |
 | **Scope Estimates** | content | Document count estimates per search scope are non-zero.  Runs per unit (since estimates honor document permissions). | Per-scope count deltas |
 | **Storage Info** | infrastructure | Cluster storage levels are within safe thresholds.  Flags WARNING and CRITICAL volumes. | N/A (point-in-time check) |
@@ -453,9 +453,11 @@ Responsibilities:
 
 **Ported from**: [getRangeIndexValueCounts.js](/scripts/getRangeIndexValueCounts.js)
 
-**Category**: `indexing` | **Severity**: `critical`
+**Category**: `indexing` | **Severity**: `informational`
 
 **What it does**: Uses the admin API to enumerate all range field indexes, then counts distinct values via `cts.fieldValues`. Flags indexes with zero values.
+
+**Why informational**: This test checks population of all configured range field indexes, including indexes that may be intentionally present for operational flexibility or future use. Unlike `index-comparison`, it is not limited to indexes referenced by the codebase, so empty indexes are useful to surface but should not block promotion on their own.
 
 **Baseline comparison**: Computes per-index percent delta. Score penalized for large deltas exceeding `deltaThresholdPercent` (configurable, default 10%). Supports per-unit execution.
 
@@ -475,7 +477,7 @@ Responsibilities:
 
 **Category**: `indexing` | **Severity**: `critical`
 
-**What it does**: Cross-references code-referenced indexes (from autoComplete, sort bindings, and search terms configurations) against database-configured indexes via the admin API. Reports missing and unused fields/field range indexes.
+**What it does**: Cross-references code-referenced indexes (from autoComplete, sort bindings, and search terms configurations) against database-configured indexes via the admin API. Missing fields/field range indexes are a hard failure. Unused indexes are reported for review but do not affect the score.
 
 ### `scope-estimates`
 
@@ -491,7 +493,7 @@ Responsibilities:
 
 **Category**: `infrastructure` | **Severity**: `critical`
 
-**What it does**: Calls `getStorageInfo()` to check cluster storage levels. Flags hosts/volumes with WARNING or CRITICAL thresholds. Score: 0 for any critical, 0.5 for warning-only, 1.0 for all OK.
+**What it does**: Calls `getStorageInfo()` to check cluster storage levels. Flags hosts/volumes with WARNING or CRITICAL thresholds. Score: 0 for any critical, 1.0 otherwise. WARNINGs are included in the result but do not block by themselves.
 
 ## Test Categories
 
@@ -505,6 +507,26 @@ Responsibilities:
 | `delta` | Expected vs. actual change counts, no unintended deletions | Incremental only |
 
 The `categories` parameter accepts a comma-delimited list.  When omitted, all categories are run.
+
+## Periodic Review Recommendations
+
+Observations from the first full-dataset validation runs suggest the following ongoing monitoring practices:
+
+### Unreferenced Predicates
+
+The **Predicate Alignment** test detected predicates in the dataset that are not referenced by any search term configuration. These may be:
+
+- **Intentionally unused**: populated for future feature work or analysis, with a conscious decision not to expose in search.
+- **Orphaned**: previously used but no longer needed, and candidates for removal.
+- **Missing configuration**: search term configs that reference them may have been lost or not yet added.
+
+**Recommendation**: Periodically review the `existsButNotReferenced` list from a Predicate Alignment run to confirm these are intentional. Consider documenting the purpose of each unreferenced predicate so future maintainers understand the original intent.
+
+### Index Configuration Drift
+
+The **Index Comparison** test reported unused indexes (configured on the database but not referenced by code). Over time, accumulation of unused indexes incurs storage and indexing overhead without benefit.
+
+**Recommendation**: Periodically review the `unused` list and remove indexes that are truly obsolete. This is particularly important after incremental dataset updates, which may introduce temporary misalignments as the code and database configuration are brought in sync.
 
 ## Gap Analysis and Future Tests
 

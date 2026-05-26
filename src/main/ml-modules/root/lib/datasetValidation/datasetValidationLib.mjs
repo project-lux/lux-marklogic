@@ -10,10 +10,21 @@ import { User } from '../User.mjs';
 import { split, getArrayDiff } from '../../utils/utils.mjs';
 
 const SEVERITY_CRITICAL = 'critical';
+const SEVERITY_INFORMATIONAL = 'informational';
 
 const CRITICAL_WEIGHT = 2;
 const DEFAULT_WEIGHT = 1;
 const DEFAULT_OVERALL_PASS_THRESHOLD = 0.8;
+
+function getSeverityWeight(severity) {
+  if (severity === SEVERITY_CRITICAL) {
+    return CRITICAL_WEIGHT;
+  }
+  if (severity === SEVERITY_INFORMATIONAL) {
+    return 0;
+  }
+  return DEFAULT_WEIGHT;
+}
 
 function validateDataset({
   unitNames = null,
@@ -133,13 +144,13 @@ function validateDataset({
   let testsPassed = 0;
   let testsWarning = 0;
   let testsFailed = 0;
+  const failedTestNames = [];
   let criticalPass = true;
   let totalWeightedScore = 0;
   let totalWeight = 0;
 
   testResults.forEach((entry) => {
-    const weight =
-      entry.severity === SEVERITY_CRITICAL ? CRITICAL_WEIGHT : DEFAULT_WEIGHT;
+    const weight = getSeverityWeight(entry.severity);
     totalWeightedScore += entry.score * weight;
     totalWeight += weight;
 
@@ -147,6 +158,7 @@ function validateDataset({
       testsPassed++;
     } else if (entry.severity === SEVERITY_CRITICAL) {
       testsFailed++;
+      failedTestNames.push(entry.name);
       criticalPass = false;
     } else {
       testsWarning++;
@@ -235,6 +247,7 @@ function validateDataset({
       testsPassed: testsPassed,
       testsWarning: testsWarning,
       testsFailed: testsFailed,
+      failedTestNames: failedTestNames,
     },
     tests: testResults,
   };

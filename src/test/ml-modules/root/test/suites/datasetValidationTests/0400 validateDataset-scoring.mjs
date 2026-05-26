@@ -41,6 +41,26 @@ const scenarios = [
       expectedOverallPass: true,
     },
   },
+  {
+    name: 'Informational failures do not affect overall pass',
+    input: {
+      testConfig: {
+        'predicate-coverage': { skip: true },
+        'predicate-alignment': { skip: true },
+        'record-types-by-predicates': { skip: true },
+        'index-comparison': { skip: true },
+        'scope-estimates': { skip: true },
+        'storage-info': { skip: true },
+      },
+    },
+    expected: {
+      error: false,
+      expectedCriticalPass: true,
+      expectedAggregateScore: 1.0,
+      expectedOverallPass: true,
+      expectedTestsWarning: 1,
+    },
+  },
 ];
 
 for (const scenario of scenarios) {
@@ -146,6 +166,16 @@ for (const scenario of scenarios) {
           scenario.expected.expectedOverallPass,
           summary.overallPass,
           `Scenario '${scenario.name}': unexpected overallPass.`,
+        ),
+      );
+    }
+
+    if (scenario.expected.expectedTestsWarning !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.expectedTestsWarning,
+          summary.testsWarning,
+          `Scenario '${scenario.name}': unexpected testsWarning.`,
         ),
       );
     }

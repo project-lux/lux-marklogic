@@ -146,23 +146,12 @@ function computeScore(configured, referenced) {
     referenced.fieldRanges,
   ).sort();
 
-  const totalChecked =
-    new Set([...configured.fields, ...referenced.fields]).size +
-    new Set([...configured.fieldRanges, ...referenced.fieldRanges]).size;
-
-  const totalIssues =
-    missingFields.length +
-    missingFieldRanges.length +
-    unusedFields.length +
-    unusedFieldRanges.length;
-
-  const score =
-    totalChecked > 0
-      ? parseFloat(((totalChecked - totalIssues) / totalChecked).toFixed(4))
-      : 1.0;
+  // Referenced but not configured (missing) is a hard fail.
+  const missingCount = missingFields.length + missingFieldRanges.length;
+  const score = missingCount > 0 ? 0 : 1.0;
 
   return {
-    score: Math.max(0, score),
+    score: score,
     missing: {
       fields: missingFields,
       fieldRanges: missingFieldRanges,

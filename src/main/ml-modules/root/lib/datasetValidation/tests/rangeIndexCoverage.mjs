@@ -107,7 +107,7 @@ class RangeIndexCoverage extends DatasetTestBase {
     return 'indexing';
   }
   getSeverity() {
-    return 'critical';
+    return 'informational';
   }
   getDefaultThreshold() {
     return 1.0;

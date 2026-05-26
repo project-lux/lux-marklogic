@@ -4,7 +4,7 @@ about: This template represents the tasks needed to run a performance test. Plea
   update actual tasks as needed or this template when necessary.
 title: Performance Test - scheduled for yyyy-mm-dd
 labels: performance, testing
-assignees: gigamorph, xinjianguo, clarkepeterf, jffcamp, prowns, kamerynB
+assignees: clarkepeterf, gigamorph, jffcamp, kamerynB, prowns, xinjianguo
 
 ---
 

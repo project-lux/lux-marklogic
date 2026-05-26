@@ -3,7 +3,7 @@ name: LUX - new ML Issue
 about: When this information is completed, it will provide the information necessary
   to promote a ticket for development. If a section is not needed, it can be removed.
 title: ''
-labels: ''
+labels: important
 assignees: ''
 
 ---

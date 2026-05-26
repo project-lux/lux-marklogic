@@ -7,7 +7,7 @@ import {
 } from '../securityLib.mjs';
 import { AccessDeniedError, BadRequestError } from '../errorClasses.mjs';
 import { User } from '../User.mjs';
-import { split } from '../../utils/utils.mjs';
+import { split, getArrayDiff } from '../../utils/utils.mjs';
 
 const SEVERITY_CRITICAL = 'critical';
 
@@ -163,10 +163,58 @@ function validateDataset({
       ? resolvedTestConfig.overallPassThreshold
       : DEFAULT_OVERALL_PASS_THRESHOLD;
 
+  // Baseline warnings: surface mismatches between the baseline and the
+  // current run so consumers are aware of comparison gaps.
+  const warnings = [];
+  if (baselineProvided) {
+    const runTestIds = testsToRun.map((test) => test.getId());
+    const baselineTestIds = Object.keys(baselineByTestId);
+
+    const baselineOnly = getArrayDiff(baselineTestIds, runTestIds).sort();
+    if (baselineOnly.length > 0) {
+      warnings.push(
+        `Baseline contains test(s) not in the current run: ${baselineOnly.join(', ')}.`,
+      );
+    }
+
+    const currentOnly = getArrayDiff(runTestIds, baselineTestIds).sort();
+    if (currentOnly.length > 0) {
+      warnings.push(
+        `Current run contains test(s) not in the baseline: ${currentOnly.join(', ')}.`,
+      );
+    }
+
+    const baselineUnitNames =
+      baseline.metadata &&
+      baseline.metadata.parameters &&
+      Array.isArray(baseline.metadata.parameters.unitNames)
+        ? baseline.metadata.parameters.unitNames
+        : [];
+    const unitDiff = getArrayDiff(resolvedUnitNames, baselineUnitNames).sort();
+    const baselineDiff = getArrayDiff(
+      baselineUnitNames,
+      resolvedUnitNames,
+    ).sort();
+    if (unitDiff.length > 0 || baselineDiff.length > 0) {
+      const parts = [];
+      if (unitDiff.length > 0) {
+        parts.push(
+          `current run has unit(s) not in baseline: ${unitDiff.join(', ')}`,
+        );
+      }
+      if (baselineDiff.length > 0) {
+        parts.push(
+          `baseline has unit(s) not in current run: ${baselineDiff.join(', ')}`,
+        );
+      }
+      warnings.push(`Unit name mismatch: ${parts.join('; ')}.`);
+    }
+  }
+
   const end = new Date();
   const versionInfo = getVersionInfo();
 
-  return {
+  const response = {
     metadata: {
       id: `${versionInfo.databaseName}-${end.toISOString()}`,
       timestamp: end.toISOString(),
@@ -180,7 +228,9 @@ function validateDataset({
             ? resolvedTestConfig
             : null,
         baselineProvided: baselineProvided,
-        baselineTestsMatched: Object.keys(baselineByTestId).length,
+        baselineTestsMatched: testsToRun.filter((test) =>
+          baselineByTestId.hasOwnProperty(test.getId()),
+        ).length,
         baselineId: baselineId,
         format: format,
       },
@@ -197,6 +247,12 @@ function validateDataset({
     },
     tests: testResults,
   };
+
+  if (warnings.length > 0) {
+    response.warnings = warnings;
+  }
+
+  return response;
 }
 
 export { validateDataset };

@@ -184,30 +184,21 @@ function validateDataset({
       );
     }
 
-    const baselineUnitNames =
-      baseline.metadata &&
-      baseline.metadata.parameters &&
-      Array.isArray(baseline.metadata.parameters.unitNames)
-        ? baseline.metadata.parameters.unitNames
-        : [];
-    const unitDiff = getArrayDiff(resolvedUnitNames, baselineUnitNames).sort();
-    const baselineDiff = getArrayDiff(
-      baselineUnitNames,
-      resolvedUnitNames,
-    ).sort();
-    if (unitDiff.length > 0 || baselineDiff.length > 0) {
-      const parts = [];
-      if (unitDiff.length > 0) {
-        parts.push(
-          `current run has unit(s) not in baseline: ${unitDiff.join(', ')}`,
+    // Only warn about unit differences when unitNames was explicitly provided.
+    if (unitNames != null) {
+      const baselineUnitNames = (
+        baseline.metadata?.parameters?.unitNames || []
+      ).filter((name) => name !== TENANT_OWNER);
+      const currentUnits = resolvedUnitNames.filter(
+        (name) => name !== TENANT_OWNER,
+      );
+      const addedUnits = getArrayDiff(currentUnits, baselineUnitNames).sort();
+      const removedUnits = getArrayDiff(baselineUnitNames, currentUnits).sort();
+      if (addedUnits.length > 0 || removedUnits.length > 0) {
+        warnings.push(
+          `Unit name mismatch:${addedUnits.length > 0 ? ` added: ${addedUnits.join(', ')}` : ''}${removedUnits.length > 0 ? ` removed: ${removedUnits.join(', ')}` : ''}.`,
         );
       }
-      if (baselineDiff.length > 0) {
-        parts.push(
-          `baseline has unit(s) not in current run: ${baselineDiff.join(', ')}`,
-        );
-      }
-      warnings.push(`Unit name mismatch: ${parts.join('; ')}.`);
     }
   }
 

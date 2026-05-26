@@ -192,7 +192,7 @@ The `.api` definition:
     "testsPassed": 3,
     "testsWarning": 1,
     "testsFailed": 0,
-    "failedTestNames": []
+    "failedTestIds": []
   },
   "tests": [
     {

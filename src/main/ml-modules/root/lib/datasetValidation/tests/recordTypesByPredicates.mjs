@@ -128,17 +128,31 @@ class RecordTypesByPredicates extends DatasetTestBase {
 
     let message;
     if (hasRemovedTypes) {
-      message =
-        'One or more predicates lost record type associations relative to baseline.';
+      const removedAssociations = [];
+      Object.keys(predicateDetails).forEach((predicate) => {
+        const detail = predicateDetails[predicate];
+        if (detail.typesRemoved && detail.typesRemoved.length > 0) {
+          detail.typesRemoved.forEach((removedType) => {
+            removedAssociations.push({
+              predicate: predicate,
+              removedType: removedType,
+            });
+            context.addCriticalFinding(
+              `Predicate '${predicate}' lost record type '${removedType}' relative to baseline.`,
+            );
+          });
+        }
+      });
+      message = `${removedAssociations.length} predicate/type association(s) were removed relative to baseline.`;
     } else if (emptyPredicates.length === 0) {
       message = `All ${predicates.length} predicate(s) have matching record types.`;
     } else {
       message = `${emptyPredicates.length} of ${predicates.length} predicate(s) have no matching record types.`;
     }
 
-    if (hasRemovedTypes || emptyPredicates.length > 0) {
+    if (emptyPredicates.length > 0) {
       context.addCriticalFinding(message);
-    } else {
+    } else if (!hasRemovedTypes) {
       context.addInformationalFinding(message);
     }
 

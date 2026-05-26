@@ -24,6 +24,7 @@ const ROLE_NAME_MAY_RUN_UNIT_TESTS = '%%mlAppName%%-may-run-unit-tests';
 const SCALE_OUT_TIMEOUT = parseInt('%%scaleOutTimeout%%'.trim());
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
+const VALIDATE_DATASET_TIMEOUT = parseInt('%%validateDatasetTimeout%%'.trim());
 
 // Default and maximum values for approximate nearest neighbor search (annTopK).
 const ANN_K_DEFAULT = parseInt('%%annKDefault%%'.trim()) || 50;
@@ -241,6 +242,7 @@ export {
   SEARCH_PREFIX,
   SEMANTIC_SORT_TIMEOUT,
   SPARQL_PREFIXES,
+  VALIDATE_DATASET_TIMEOUT,
   TOKEN_RUNTIME_PARAM,
   TRACE_NAME_ERROR,
   TRACE_NAME_FACETS,

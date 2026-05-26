@@ -1,5 +1,6 @@
 import { DatasetTestBase } from './loadTests.mjs';
 import { getVersionInfo } from '../environmentLib.mjs';
+import { VALIDATE_DATASET_TIMEOUT } from '../appConstants.mjs';
 import {
   getEndpointAccessUnitNames,
   mayValidateDataset,
@@ -172,6 +173,8 @@ function validateDataset({
     );
   }
 
+  xdmp.setRequestTimeLimit(VALIDATE_DATASET_TIMEOUT);
+
   const start = new Date();
 
   // Resolve unit names: default to the tenant's name only.
@@ -287,7 +290,7 @@ function validateDataset({
   let testsPassed = 0;
   let testsWarning = 0;
   let testsFailed = 0;
-  const failedTestNames = [];
+  const failedTestIds = [];
   let criticalPass = true;
   let totalWeightedScore = 0;
   let totalWeight = 0;
@@ -301,7 +304,7 @@ function validateDataset({
       testsPassed++;
     } else if (entry.severity === SEVERITY_CRITICAL) {
       testsFailed++;
-      failedTestNames.push(entry.name);
+      failedTestIds.push(entry.id);
       criticalPass = false;
     } else {
       testsWarning++;
@@ -390,7 +393,7 @@ function validateDataset({
       testsPassed: testsPassed,
       testsWarning: testsWarning,
       testsFailed: testsFailed,
-      failedTestNames: failedTestNames,
+      failedTestIds: failedTestIds,
     },
     tests: testResults,
   };

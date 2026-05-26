@@ -66,12 +66,12 @@
     - [Successful Request / Response Example](#successful-request--response-example-15)
     - [Failed Request / Response Example](#failed-request--response-example-17)
   - [Validate Dataset](#validate-dataset)
-    - [Successful Request / Response Example](#successful-request--response-example-16)
-      - [Default Parameters](#default-parameters)
-      - [With Test Config](#with-test-config)
+    - [Successful Default Parameters Request / Response Example](#successful-default-parameters-request--response-example)
+    - [Successful With Baseline Request / Response Example](#successful-with-baseline-request--response-example)
+    - [Successful With Test Config Request / Response Example](#successful-with-test-config-request--response-example)
     - [Failed Request / Response Example](#failed-request--response-example-18)
   - [Version Info](#version-info)
-    - [Successful Request / Response Example](#successful-request--response-example-17)
+    - [Successful Request / Response Example](#successful-request--response-example-16)
     - [Failed Request / Response Example](#failed-request--response-example-19)
 
 # Introduction
@@ -1993,18 +1993,16 @@ The `testConfig` parameter accepts a JSON object with per-test overrides (keyed 
 
 - `tests[]` entries include `findings` (array of `{ severity, message }`).
 - `tests[].severity` is derived from findings by default (`critical` > `warning` > `informational`).
-- `summary` includes `failedTestNames`.
+- `summary` includes `failedTestIds`.
 - Informational tests are visible in scoring output but have zero aggregate weight.
 
 **Note**: The successful response examples below are abbreviated and will be refreshed to match the latest response bodies.
 
-### Successful Request / Response Example
-
-#### Default Parameters
+### Successful Default Parameters Request / Response Example
 
 Scenario: Run all tests with default parameters.
 
-Parameters: _(none)_
+Parameters: None
 
 Response Status Code: 200
 
@@ -2015,12 +2013,12 @@ Response Body (abbreviated):
 ```json
 {
   "metadata": {
-    "id": "lux-content-2026-05-25T18:46:35.629Z",
-    "timestamp": "2026-05-25T18:46:35.629Z",
-    "durationMs": 847,
-    "codeVersion": "v3.3.0-418-g886698a",
+    "id": "lux-dev-data-content-2026-05-26T19:03:09.156Z",
+    "timestamp": "2026-05-26T19:03:09.156Z",
+    "durationMs": 171186,
+    "codeVersion": "v3.3.0-431-gd2d71a9",
     "parameters": {
-      "unitNames": ["lux"],
+      "unitNames": ["lux-dev-data"],
       "categories": null,
       "testConfig": null,
       "baselineProvided": false,
@@ -2032,44 +2030,212 @@ Response Body (abbreviated):
   "summary": {
     "overallPass": false,
     "overallPassThreshold": 0.8,
-    "aggregateScore": 0.7193,
+    "aggregateScore": 0,
     "criticalPass": false,
-    "testsRun": 2,
-    "testsPassed": 0,
-    "testsWarning": 0,
-    "testsFailed": 2
+    "testsRun": 7,
+    "testsPassed": 4,
+    "testsWarning": 1,
+    "testsFailed": 2,
+    "failedTestIds": ["index-comparison", "storage-info"]
   },
   "tests": [
     {
       "id": "predicate-coverage",
       "name": "Predicate Coverage",
       "category": "relational",
-      "severity": "critical",
-      "score": 0.7193,
-      "pass": false,
+      "severity": "informational",
+      "score": 1,
+      "pass": true,
       "threshold": 1,
-      "durationMs": 63,
-      "message": "16 configured predicate(s) have zero matching documents.",
-      "result": { "..." : "..." }
+      "durationMs": 885,
+      "message": "All configured predicates have matching documents.",
+      "findings": [
+        {
+          "severity": "informational",
+          "message": "All configured predicates have matching documents."
+        }
+      ],
+      "result": {
+        "predicates": {
+          "crm:P106i_forms_part_of": {
+            "estimate": 861188,
+            "terms": ["work.containsWork", "work.partOfWork"]
+          },
+          "crm:P107i_is_current_or_former_member_of": {
+            "estimate": 693500,
+            "terms": ["agent.memberOf", "agent.memberOfInverse"]
+          },
+          ...more predicates
+        },
+        "zeroCountPredicates": [],
+        "unitResults": {}
+      }
     },
     {
       "id": "predicate-alignment",
       "name": "Predicate Alignment",
       "category": "relational",
-      "severity": "critical",
-      "score": 0.7193,
-      "pass": false,
+      "severity": "informational",
+      "score": 1,
+      "pass": true,
       "threshold": 1,
-      "durationMs": 784,
-      "message": "16 configured predicate(s) not found in dataset.",
-      "result": { "..." : "..." }
+      "durationMs": 15601,
+      "message": "All 57 configured predicates exist in the dataset.",
+      "findings": [
+        {
+          "severity": "informational",
+          "message": "All 57 configured predicates exist in the dataset."
+        },
+        {
+          "severity": "informational",
+          "message": "27 dataset predicate(s) are not referenced by configuration."
+        }
+      ],
+      "result": {
+        "referencedButDoesNotExist": [],
+        "existsButNotReferenced": [
+          "crm:P128_carries",
+          "crm:P129_is_about",
+          "crm:P138_represents",
+          "crm:P2_has_type",
+          "crm:P65_shows_visual_item",
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "la:digitally_carries",
+          "la:digitally_shows",
+          "la:equivalent",
+          "lux:about_agent",
+          "lux:about_concept",
+          "lux:about_event",
+          "lux:about_item",
+          "lux:about_or_depicts",
+          "lux:about_or_depicts_set",
+          "lux:about_place",
+          "lux:about_set",
+          "lux:about_work",
+          "lux:agentInfluencedBeginning",
+          "lux:any",
+          "lux:depicts_agent",
+          "lux:depicts_concept",
+          "lux:depicts_item",
+          "lux:depicts_place",
+          "lux:depicts_work",
+          "lux:refCtr",
+          "lux:workLanguage"
+        ],
+        "totalPredicatesInDataset": 84,
+        "totalPredicatesInConfig": 57
+      }
     },
     ...more test results
   ]
 }
 ```
 
-#### With Test Config
+### Successful With Baseline Request / Response Example
+
+Scenario: Run all tests and compare to a provided baseline.
+
+Parameters: 
+
+| Parameter | Value |
+|-----------|-------|
+| `baseline` | _Response from this endpoint for the baseline dataset._ |
+| `baselineId` | `2026-05-01` |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body (abbreviated):
+
+```json
+{
+  "metadata": {
+    "id": "lux-dev-data-content-2026-05-26T19:52:13.871Z",
+    "timestamp": "2026-05-26T19:52:13.871Z",
+    "durationMs": 173376,
+    "codeVersion": "v3.3.0-431-gd2d71a9",
+    "parameters": {
+      "unitNames": ["lux-dev-data"],
+      "categories": null,
+      "testConfig": null,
+      "baselineProvided": true,
+      "baselineTestsMatched": 7,  <-- found same tests in baseline
+      "baselineId": "2026-05-01",
+      "format": "json"
+    }
+  },
+  "summary": {
+    "overallPass": false,
+    "overallPassThreshold": 0.8,
+    "aggregateScore": 0.2322,
+    "criticalPass": false,
+    "testsRun": 7,
+    "testsPassed": 1,
+    "testsWarning": 3,
+    "testsFailed": 3,
+    "failedTestIds": [
+      "record-types-by-predicates",  <-- failed comparison
+      "index-comparison",
+      "storage-info"
+    ]
+  },
+  "tests": [
+    ...some test results
+    {
+      "id": "record-types-by-predicates",
+      "name": "Record Types by Predicates",
+      "category": "relational",
+      "severity": "critical",
+      "score": 0,
+      "pass": false,
+      "threshold": 1,
+      "durationMs": 3478,
+      "message": "1 predicate/type association(s) were removed relative to baseline.",
+      "findings": [
+        {
+          "severity": "critical",
+          "message": "Predicate 'crm:P72_has_language' lost record type 'VisualItem' relative to baseline."
+        }
+      ],
+      "result": {
+        "types": [
+          "Activity",
+          "Currency",
+          "DigitalObject",
+          "Group",
+          "HumanMadeObject",
+          "Language",
+          "LinguisticObject",
+          "Material",
+          "MeasurementUnit",
+          "Period",
+          "Person",
+          "Place",
+          "Set",
+          "Type",
+          "VisualItem"
+        ],
+        "predicates": {
+          "crm:P106i_forms_part_of": {
+            "types": ["LinguisticObject"],
+            "baselineTypes": ["LinguisticObject"]
+          },
+          "crm:P107i_is_current_or_former_member_of": {
+            "types": ["Group", "Person"],
+            "baselineTypes": ["Group", "Person"]
+          },
+          ...more predicates
+        },
+        "emptyPredicates": []
+      }
+    },
+    ...more test results
+  ]
+}
+```
+
+### Successful With Test Config Request / Response Example
 
 Scenario: Skip the `predicate-coverage` test, lower the overall pass threshold, and override `predicate-alignment`'s threshold.
 

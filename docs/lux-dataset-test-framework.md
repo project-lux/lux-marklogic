@@ -29,6 +29,9 @@
     - [`scope-estimates`](#scope-estimates)
     - [`storage-info`](#storage-info)
   - [Test Categories](#test-categories)
+  - [Periodic Review Recommendations](#periodic-review-recommendations)
+    - [Unreferenced Predicates](#unreferenced-predicates)
+    - [Index Configuration Drift](#index-configuration-drift)
   - [Gap Analysis and Future Tests](#gap-analysis-and-future-tests)
 - [Incremental Update Support](#incremental-update-support)
 - [Performance Considerations](#performance-considerations)
@@ -65,7 +68,7 @@ The response contains three main sections:
 | **`summary.overallPass`** | Single boolean: safe to promote or not.  `false` if any critical test fails **or** the aggregate score is below threshold (default 80%). |
 | **`summary.criticalPass`** | `false` if any test marked `critical` failed.  Even a single critical failure blocks promotion regardless of the aggregate score. |
 | **`summary.aggregateScore`** | Weighted average of all test scores (0.0–1.0).  Critical tests carry double weight. |
-| **`tests[]`** | Per-test detail: ID, score, pass/fail, threshold, duration, a human-readable message, and a `result` object with test-specific data.  The `result` is preserved so this response can serve as the baseline for the next run. |
+| **`tests[]`** | Per-test detail: ID, derived severity, score, pass/fail, threshold, duration, summary message, `findings[]`, and a `result` object with test-specific data.  The `result` is preserved so this response can serve as the baseline for the next run. |
 | **`warnings`** | Present only when there are mismatches between the baseline and current run (e.g., a test was added or removed since the baseline was captured).  These are informational — they do not affect pass/fail. |
 
 **Severity tiers** control how each test's outcome affects the overall decision:
@@ -188,7 +191,8 @@ The `.api` definition:
     "testsRun": 4,
     "testsPassed": 3,
     "testsWarning": 1,
-    "testsFailed": 0
+    "testsFailed": 0,
+    "failedTestNames": []
   },
   "tests": [
     {
@@ -201,6 +205,12 @@ The `.api` definition:
       "threshold": 0.90,
       "durationMs": 1234,
       "message": "All configured predicates have matching documents.",
+      "findings": [
+        {
+          "severity": "informational",
+          "message": "All configured predicates have matching documents."
+        }
+      ],
       "result": {}
     }
   ],
@@ -215,6 +225,8 @@ The `.api` definition:
 **`metadata.parameters`**: All parameter values (except the full `baseline` body), including `baselineId` and `baselineTestsMatched` (count of running tests that matched a baseline entry).
 
 **`tests[]`**: Each entry conforms to the [Test Interface](#test-interface).
+
+**`tests[].findings[]`**: Structured findings emitted by the test (`critical`, `warning`, `informational`) with per-finding messages. The framework derives each test's overall `severity` from these findings.
 
 **`warnings`**: Optional array of strings.  Present only when there are baseline or parameter mismatches (e.g., test ID differences between baseline and current run, unit name differences when `unitNames` was explicitly provided).  TENANT_OWNER is excluded from unit name comparison.
 
@@ -233,6 +245,8 @@ Each test produces a `score` between 0.0 and 1.0 and a `pass` boolean derived fr
 **`criticalPass`**: `true` if all critical tests pass.
 
 **`aggregateScore`**: Weighted average of all test scores (critical tests weighted higher).  The framework computes this; the caller's pipeline applies its own promotion logic to the structured report rather than relying solely on a single number.
+
+`informational` tests are visible in the report and can still have `pass=false`, but they do not affect `overallPass` because their aggregate weight is zero.
 
 # Baseline Comparison Strategy
 
@@ -381,6 +395,10 @@ The framework constructs a context object and passes it to each test's `run()`:
   addWarningFinding(message),
   addCriticalFinding(message),
   getFindings(),
+  hasAnyFindings(),
+  hasCriticalFindings(),
+  hasWarningFindings(),
+  hasInformationalFindings(),
 
   // Scoring API
   setScore(number),
@@ -417,6 +435,8 @@ Responsibilities:
 
 **Category**: `relational` | **Severity**: `critical`
 
+**Severity behavior**: Usually `critical` when missing predicates are found; otherwise `informational`.
+
 **What it does**: For each predicate referenced in search terms, keyword search, and sort configurations, estimates the document count via `cts.estimate()`.  Runs per unit name.
 
 **Baseline comparison**: When a baseline is provided, computes per-predicate percent delta.  Score is the proportion of predicates within an acceptable delta range.
@@ -446,6 +466,8 @@ Responsibilities:
 **Ported from**: [comparePredicates.js](/scripts/comparePredicates.js)
 
 **Category**: `relational` | **Severity**: `critical`
+
+**Severity behavior**: `critical` when associations are missing or removed; otherwise `informational`.
 
 **What it does**: Queries all predicates in the dataset via Optic `fromTriples` grouped by predicate.  Compares against predicates referenced in code (derived at runtime from the same configs, not hardcoded).
 
@@ -489,6 +511,8 @@ Responsibilities:
 
 **Category**: `indexing` | **Severity**: `critical`
 
+**Severity behavior**: `critical` when referenced indexes are missing; `informational` when only unused indexes are present.
+
 **What it does**: Cross-references code-referenced indexes (from autoComplete, sort bindings, and search terms configurations) against database-configured indexes via the admin API. Missing fields/field range indexes are a hard failure. Unused indexes are reported for review but do not affect the score.
 
 ### `scope-estimates`
@@ -496,6 +520,8 @@ Responsibilities:
 **Ported from**: [stats.mjs](/src/main/ml-modules/root/ds/lux/stats.mjs) endpoint
 
 **Category**: `content` | **Severity**: `critical`
+
+**Severity behavior**: `critical` for zero scopes, `warning` for large baseline deltas, otherwise `informational`.
 
 **What it does**: Calls `getScopeEstimates()` to get document count estimates per search scope. Flags scopes with zero documents. Supports per-unit execution (since `cts.estimate` honors document permissions) and baseline delta comparison with configurable `deltaThresholdPercent`.
 
@@ -506,6 +532,8 @@ Responsibilities:
 **Category**: `infrastructure` | **Severity**: `critical`
 
 **What it does**: Calls `getStorageInfo()` to check cluster storage levels. Flags hosts/volumes with WARNING or CRITICAL thresholds. Score: 0 for any critical, 1.0 otherwise. WARNINGs are included in the result but do not block by themselves.
+
+**Severity behavior**: `critical` when critical storage findings are present; otherwise `informational`.
 
 ## Test Categories
 
@@ -570,7 +598,7 @@ Incremental updates — partial dataset changes applied as frequently as once a 
 1. The orchestrating process loads the incremental update into the target environment.
 2. The process calls the dataset validation endpoint with:
    - `baseline`: the response from the *pre-update* run (or the last known-good full-dataset run).
-   - `categories`: `"quantitative,relational,delta"` (or all).
+  - `categories`: `"content,relational,delta"` (or all).
    - Optionally, a `delta` manifest describing expected changes.
 3. Tests compare current state to baseline and flag unexpected regressions.
 

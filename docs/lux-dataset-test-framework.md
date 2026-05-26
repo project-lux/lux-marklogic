@@ -15,9 +15,14 @@
   - [Test Context](#test-context)
   - [Framework Orchestrator](#framework-orchestrator)
 - [Tests](#tests)
-  - [Initial Tests](#initial-tests)
+  - [Implemented Tests](#implemented-tests)
     - [`predicate-coverage`](#predicate-coverage)
     - [`predicate-alignment`](#predicate-alignment)
+    - [`range-index-coverage`](#range-index-coverage)
+    - [`record-types-by-predicates`](#record-types-by-predicates)
+    - [`index-comparison`](#index-comparison)
+    - [`scope-estimates`](#scope-estimates)
+    - [`storage-info`](#storage-info)
   - [Test Categories](#test-categories)
   - [Gap Analysis and Future Tests](#gap-analysis-and-future-tests)
 - [Incremental Update Support](#incremental-update-support)
@@ -52,12 +57,12 @@ This design replaces that workflow with a **Dataset Test Framework**: a single D
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `format` | string | No | Response format. Default: `json`. Only `json` is initially supported; `html` is a future option. |
+| `unitNames` | string | No | Comma-delimited list of unit names to validate. Default: TENANT_OWNER only. |
 | `categories` | string | No | Comma-delimited list of test categories to run. Default: all. See [Test Categories](#test-categories). |
-| `unitNames` | string | No | Comma-delimited list of unit names to validate. Default: all unit names returned by `getEndpointAccessUnitNames()`. |
+| `testConfig` | jsonDocument | No | Per-test overrides. Keys are test IDs; values are objects with optional `threshold` (number) and `skip` (boolean) properties. Also supports top-level `overallPassThreshold` (number). |
 | `baseline` | jsonDocument | No | The response body from a prior run.  When provided, tests that support comparison compute deltas and factor them into scores. |
 | `baselineId` | string | No | Freeform label identifying the baseline artifact (e.g., `prod-2026-05-20`). Captured in `metadata` for traceability. |
-| `testConfig` | jsonDocument | No | Per-test overrides. Keys are test IDs; values are objects with optional `threshold` (number) and `skip` (boolean) properties. |
+| `format` | string | No | Response format. Default: `json`. Only `json` is initially supported; `html` is a future option. |
 
 The `.api` definition:
 
@@ -65,12 +70,12 @@ The `.api` definition:
 {
   "functionName": "validateDataset",
   "params": [
-    { "name": "format", "datatype": "string", "nullable": true },
-    { "name": "categories", "datatype": "string", "nullable": true },
     { "name": "unitNames", "datatype": "string", "nullable": true },
+    { "name": "categories", "datatype": "string", "nullable": true },
+    { "name": "testConfig", "datatype": "jsonDocument", "nullable": true },
     { "name": "baseline", "datatype": "jsonDocument", "nullable": true },
     { "name": "baselineId", "datatype": "string", "nullable": true },
-    { "name": "testConfig", "datatype": "jsonDocument", "nullable": true }
+    { "name": "format", "datatype": "string", "nullable": true }
   ],
   "return": {
     "datatype": "jsonDocument",
@@ -89,15 +94,18 @@ The `.api` definition:
     "durationMs": 45000,
     "codeVersion": "1.2.3",
     "parameters": {
-      "format": "json",
-      "categories": ["quantitative", "relational"],
-      "unitNames": ["ypm", "yuag"],
+      "unitNames": ["lux"],
+      "categories": ["relational", "indexing"],
+      "testConfig": null,
+      "baselineProvided": true,
+      "baselineTestsMatched": 4,
       "baselineId": "prod-2026-05-20",
-      "testConfig": {}
+      "format": "json"
     }
   },
   "summary": {
     "overallPass": true,
+    "overallPassThreshold": 0.8,
     "aggregateScore": 0.94,
     "criticalPass": true,
     "testsRun": 4,
@@ -118,15 +126,20 @@ The `.api` definition:
       "message": "All configured predicates have matching documents.",
       "result": {}
     }
+  ],
+  "warnings": [
+    "Baseline contains test(s) not in the current run: old-removed-test."
   ]
 }
 ```
 
 **`metadata.id`**: Generated from the environment name and timestamp.  Identifies the artifact sufficiently for manual lookup in source control.
 
-**`metadata.parameters`**: All parameter values (except the full `baseline` body), including `baselineId`.  These make the response self-documenting: anyone reviewing the artifact knows exactly what was requested.
+**`metadata.parameters`**: All parameter values (except the full `baseline` body), including `baselineId` and `baselineTestsMatched` (count of running tests that matched a baseline entry).
 
 **`tests[]`**: Each entry conforms to the [Test Interface](#test-interface).
+
+**`warnings`**: Optional array of strings.  Present only when there are baseline or parameter mismatches (e.g., test ID differences between baseline and current run, unit name differences when `unitNames` was explicitly provided).  TENANT_OWNER is excluded from unit name comparison.
 
 ## Scoring and Go/No-Go
 
@@ -174,7 +187,12 @@ src/main/ml-modules/root/
 │   ├── loadTests.mjs                    # Barrel module (triggers registration)
 │   └── tests/
 │       ├── predicateCoverage.mjs        # checkPredicates logic
-│       └── predicateAlignment.mjs       # comparePredicates logic
+│       ├── predicateAlignment.mjs       # comparePredicates logic
+│       ├── rangeIndexCoverage.mjs       # getRangeIndexValueCounts logic
+│       ├── recordTypesByPredicates.mjs  # getRecordTypesByPredicates logic
+│       ├── indexComparison.mjs          # indexComparisonChecks logic
+│       ├── scopeEstimates.mjs           # stats endpoint logic
+│       └── storageInfo.mjs              # storageInfo endpoint logic
 ```
 
 ## Self-Registration Pattern
@@ -234,6 +252,11 @@ DatasetTestBase.register('predicate-coverage', new PredicateCoverage());
 // Side-effect imports: each test self-registers with DatasetTestBase.
 import './tests/predicateCoverage.mjs';
 import './tests/predicateAlignment.mjs';
+import './tests/rangeIndexCoverage.mjs';
+import './tests/recordTypesByPredicates.mjs';
+import './tests/indexComparison.mjs';
+import './tests/scopeEstimates.mjs';
+import './tests/storageInfo.mjs';
 
 // Re-export for consumers.
 export { DatasetTestBase } from './DatasetTestBase.mjs';
@@ -278,7 +301,8 @@ The framework constructs a context object and passes it to each test's `run()`:
 {
   threshold: 0.90,            // Effective threshold (consumer override or default)
   baseline: { /* ... */ },    // Previous result for this test (null if no baseline)
-  unitNames: ['ypm', 'yuag'], // Unit names to validate
+  unitNames: ['lux'],         // Unit names to validate
+  config: { /* ... */ },      // Per-test config from testConfig (e.g. deltaThresholdPercent)
 }
 ```
 
@@ -296,7 +320,7 @@ Responsibilities:
 
 # Tests
 
-## Initial Tests
+## Implemented Tests
 
 ### `predicate-coverage`
 
@@ -348,13 +372,58 @@ Responsibilities:
 }
 ```
 
+### `range-index-coverage`
+
+**Ported from**: [getRangeIndexValueCounts.js](/scripts/getRangeIndexValueCounts.js)
+
+**Category**: `indexing` | **Severity**: `critical`
+
+**What it does**: Uses the admin API to enumerate all range field indexes, then counts distinct values via `cts.fieldValues`. Flags indexes with zero values.
+
+**Baseline comparison**: Computes per-index percent delta. Score penalized for large deltas exceeding `deltaThresholdPercent` (configurable, default 10%). Supports per-unit execution.
+
+### `record-types-by-predicates`
+
+**Ported from**: [getRecordTypesByPredicates.js](/scripts/getRecordTypesByPredicates.js)
+
+**Category**: `relational` | **Severity**: `critical`
+
+**What it does**: For each configured predicate, determines which record types have matching triples. If a baseline shows a predicate lost record type associations (`typesRemoved`), the score drops to 0 (hard no-go).
+
+**Result payload** includes `hasRemovedTypes` boolean for quick assessment.
+
+### `index-comparison`
+
+**Ported from**: [indexComparisonChecks.js](/scripts/generateIndexConf/indexComparisonChecks.js)
+
+**Category**: `indexing` | **Severity**: `critical`
+
+**What it does**: Cross-references code-referenced indexes (from autoComplete, sort bindings, and search terms configurations) against database-configured indexes via the admin API. Reports missing and unused fields/field range indexes.
+
+### `scope-estimates`
+
+**Ported from**: [stats.mjs](/src/main/ml-modules/root/ds/lux/stats.mjs) endpoint
+
+**Category**: `content` | **Severity**: `critical`
+
+**What it does**: Calls `getScopeEstimates()` to get document count estimates per search scope. Flags scopes with zero documents. Supports per-unit execution (since `cts.estimate` honors document permissions) and baseline delta comparison with configurable `deltaThresholdPercent`.
+
+### `storage-info`
+
+**Ported from**: [storageInfo.mjs](/src/main/ml-modules/root/ds/lux/storageInfo.mjs) endpoint
+
+**Category**: `infrastructure` | **Severity**: `critical`
+
+**What it does**: Calls `getStorageInfo()` to check cluster storage levels. Flags hosts/volumes with WARNING or CRITICAL thresholds. Score: 0 for any critical, 0.5 for warning-only, 1.0 for all OK.
+
 ## Test Categories
 
 | Category | What it validates | Applicable to |
 |----------|-------------------|---------------|
-| `structural` | Index existence, field config alignment, TDE definitions | Full + incremental |
-| `quantitative` | Document counts, estimate ranges, scope-level totals | Full + incremental |
-| `relational` | Predicate coverage, predicate alignment, triple connectivity | Full + incremental |
+| `relational` | Predicate coverage, predicate alignment, record type associations | Full + incremental |
+| `indexing` | Range index population, index config alignment | Full + incremental |
+| `content` | Document counts, scope-level estimate totals | Full + incremental |
+| `infrastructure` | Storage utilization, cluster health | Full + incremental |
 | `permissions` | Document visibility by role/unit | Full + incremental |
 | `delta` | Expected vs. actual change counts, no unintended deletions | Incremental only |
 
@@ -366,19 +435,15 @@ The following are tracked for future implementation.  Priority and feasibility w
 
 | Test ID | Category | Description | Execution Time Concern |
 |---------|----------|-------------|----------------------|
-| `scope-doc-counts` | quantitative | Document count estimates per search scope, with baseline deltas | Low |
-| `range-index-population` | structural | Flag empty range field indexes (from [getRangeIndexValueCounts.js](/scripts/getRangeIndexValueCounts.js)) | High (~2 min) |
-| `index-config-alignment` | structural | Cross-reference configured vs. referenced fields/indexes (from [indexComparisonChecks.js](/scripts/generateIndexConf/indexComparisonChecks.js)) | Low |
-| `record-types-by-predicate` | relational | Map predicates to record types (from [getRecordTypesByPredicates.js](/scripts/getRecordTypesByPredicates.js)) | Medium |
-| `geospatial-index-population` | structural | Verify geospatial path indexes have values | Low–Medium |
-| `vector-tde-population` | structural | Verify the vector TDE ([vectors.json](/src/main/ml-schemas/tde/vectors.json)) has rows | Low–Medium |
-| `auto-complete-coverage` | structural | Verify auto-complete indexes have values | Medium |
-| `facet-value-coverage` | quantitative | Verify facets return expected value distributions | Medium |
-| `document-structure` | structural | Spot-check documents per record type for expected properties | Medium |
+| `geospatial-index-population` | indexing | Verify geospatial path indexes have values | Low–Medium |
+| `vector-tde-population` | indexing | Verify the vector TDE ([vectors.json](/src/main/ml-schemas/tde/vectors.json)) has rows | Low–Medium |
+| `auto-complete-coverage` | indexing | Verify auto-complete indexes have values | Medium |
+| `facet-value-coverage` | content | Verify facets return expected value distributions | Medium |
+| `document-structure` | content | Spot-check documents per record type for expected properties | Medium |
 | `triple-connectivity` | relational | Detect orphan subjects or broken inverse relationships | High |
 | `multi-user-visibility` | permissions | Automated cross-unit document visibility checks | Medium |
-| `duplicate-detection` | quantitative | Check for duplicate URIs or near-duplicate documents | High |
-| `query-performance` | quantitative | Representative queries execute within expected time bounds | Medium |
+| `duplicate-detection` | content | Check for duplicate URIs or near-duplicate documents | High |
+| `query-performance` | content | Representative queries execute within expected time bounds | Medium |
 | `incremental-delta-counts` | delta | Verify actual count changes match the update manifest | Low |
 | `incremental-no-deletions` | delta | Verify untouched record types did not lose documents | Low |
 | `incremental-permissions` | delta | Verify new/updated documents have correct permissions | Medium |

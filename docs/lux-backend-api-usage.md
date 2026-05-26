@@ -1958,10 +1958,10 @@ The endpoint is available on multiple ports.  The `mlDeployPort` is recommended 
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitNames` | `ipch,ypm` | **OPTIONAL** - Comma-separated list of unit names to include for per-unit validation.  Supported values are the tenant's name (e.g. `lux`) and the unit names returned by `getEndpointAccessUnitNames()`.  When omitted, defaults to the tenant's name only. Invalid unit names are silently ignored. |
-| `categories` | `relational` | **OPTIONAL** - Comma-separated list of test categories to run.  When omitted, all tests run. |
+| `unitNames` | `ipch,ypm` | **OPTIONAL** - Comma-separated list of unit names to include for per-unit validation.  Supported values are the tenant's name (e.g. `lux`) and unit names configured in the environment, which may include the likes of `ypm`.  When omitted, defaults to the tenant's name only. Invalid unit names cause a 400 Bad Request. |
+| `categories` | `relational,indexing,content,infrastructure` | **OPTIONAL** - Comma-separated list of test categories to run. Implemented categories: `relational`, `indexing`, `content`, `infrastructure`.  When omitted, all tests run. |
 | `testConfig` | _(JSON document)_ | **OPTIONAL** - Per-test configuration overrides and framework-level settings.  Submit as a multipart form-data text field containing the JSON string. |
-| `baseline` | _(JSON document)_ | **OPTIONAL** - A previous `validateDataset` response to compare against.  When provided, tests that support baseline comparison include `baselineEstimate` and `deltaPercent` fields.  Submit as a multipart form-data text field containing the JSON string. |
+| `baseline` | _(JSON document)_ | **OPTIONAL** - A previous `validateDataset` response to compare against.  When provided, tests that support baseline comparison include baseline and delta fields in their `result` payloads.  Submit as a multipart form-data text field containing the JSON string. |
 | `baselineId` | `lux-content-2024-01-15...` | **OPTIONAL** - An identifier for the baseline.  Stored in the response metadata for traceability; no functional impact. |
 | `format` | `json` | **OPTIONAL** - Reserved for future use. Only implemented format is JSON. |
 
@@ -1987,7 +1987,16 @@ The `testConfig` parameter accepts a JSON object with per-test overrides (keyed 
 | `overallPassThreshold` | Framework | The minimum `aggregateScore` required for `overallPass` to be `true`.  Default: `0.8`. |
 | *`<testId>`*`.skip` | Per-test | Set to `true` to exclude the test from the run.  `<testId>` is the test's `id` value (e.g. `predicate-coverage`). |
 | *`<testId>`*`.threshold` | Per-test | Overrides the test's default pass/fail threshold. |
-| *`<testId>`*`.deltaThresholdPercent` | Per-test (`predicate-coverage`) | The percentage change from baseline that flags a large delta.  Default: `10`. |
+| *`<testId>`*`.deltaThresholdPercent` | Per-test (where supported) | The percentage change from baseline that flags a large delta.  Supported by tests that implement baseline delta scoring (e.g. `predicate-coverage`, `range-index-coverage`, `scope-estimates`). Default: `10`. |
+
+**Current response shape notes**
+
+- `tests[]` entries include `findings` (array of `{ severity, message }`).
+- `tests[].severity` is derived from findings by default (`critical` > `warning` > `informational`).
+- `summary` includes `failedTestNames`.
+- Informational tests are visible in scoring output but have zero aggregate weight.
+
+**Note**: The successful response examples below are abbreviated and will be refreshed to match the latest response bodies.
 
 ### Successful Request / Response Example
 
@@ -2153,7 +2162,7 @@ Response Body:
     "statusCode": 403,
     "status": "AccessDeniedError",
     "messageCode": "AccessDeniedError",
-    "message": "User 'example-user' is not authorized to validate the dataset"
+    "message": "User 'lux-endpoint-consumer' is not authorized to validate the dataset"
   }
 }
 ```

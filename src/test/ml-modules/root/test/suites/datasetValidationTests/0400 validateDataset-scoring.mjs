@@ -58,7 +58,6 @@ const scenarios = [
       expectedCriticalPass: true,
       expectedAggregateScore: 1.0,
       expectedOverallPass: true,
-      expectedTestsWarning: 1,
     },
   },
 ];
@@ -79,6 +78,7 @@ for (const scenario of scenarios) {
   if (scenarioResults.applyErrorNotExpectedAssertions) {
     const response = scenarioResults.actualValue;
     const summary = response.summary;
+    const tests = response.tests || [];
 
     // Verify summary structure always has required fields.
     assertions.push(
@@ -105,6 +105,42 @@ for (const scenario of scenarios) {
         `Scenario '${scenario.name}': summary.overallPass should exist.`,
       ),
     );
+
+    // Findings contract: every test returns a findings array and valid severity.
+    tests.forEach((testEntry) => {
+      const hasCritical = (testEntry.findings || []).some(
+        (item) => item.severity === 'critical',
+      );
+      const hasWarning = (testEntry.findings || []).some(
+        (item) => item.severity === 'warning',
+      );
+
+      assertions.push(
+        testHelperProxy.assertTrue(
+          Array.isArray(testEntry.findings),
+          `Scenario '${scenario.name}': test '${testEntry.id}' should include findings array.`,
+        ),
+      );
+      assertions.push(
+        testHelperProxy.assertTrue(
+          ['critical', 'warning', 'informational'].includes(testEntry.severity),
+          `Scenario '${scenario.name}': test '${testEntry.id}' should have a valid severity.`,
+        ),
+      );
+
+      const expectedSeverity = hasCritical
+        ? 'critical'
+        : hasWarning
+          ? 'warning'
+          : 'informational';
+      assertions.push(
+        testHelperProxy.assertEqual(
+          expectedSeverity,
+          testEntry.severity,
+          `Scenario '${scenario.name}': test '${testEntry.id}' should derive severity from findings.`,
+        ),
+      );
+    });
 
     // When all tests run on a dataset-less database, critical tests will fail.
     if (scenario.name.includes('All critical tests failing')) {
@@ -166,16 +202,6 @@ for (const scenario of scenarios) {
           scenario.expected.expectedOverallPass,
           summary.overallPass,
           `Scenario '${scenario.name}': unexpected overallPass.`,
-        ),
-      );
-    }
-
-    if (scenario.expected.expectedTestsWarning !== undefined) {
-      assertions.push(
-        testHelperProxy.assertEqual(
-          scenario.expected.expectedTestsWarning,
-          summary.testsWarning,
-          `Scenario '${scenario.name}': unexpected testsWarning.`,
         ),
       );
     }

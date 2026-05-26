@@ -13,48 +13,40 @@ class StorageInfo extends DatasetTestBase {
   getCategory() {
     return 'infrastructure';
   }
-  getSeverity() {
-    return 'critical';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
 
   run(context) {
     const storageInfo = getStorageInfo();
-    const criticalIssues = [];
-    const warnings = [];
 
     Object.keys(storageInfo).forEach((host) => {
       Object.keys(storageInfo[host]).forEach((volume) => {
         const info = storageInfo[host][volume];
         if (info.message && info.message.startsWith('CRITICAL')) {
-          criticalIssues.push({ host, volume, message: info.message });
+          context.addCriticalFinding(
+            `Host '${host}', volume '${volume}': ${info.message}`,
+          );
         } else if (info.message && info.message.startsWith('WARNING')) {
-          warnings.push({ host, volume, message: info.message });
+          context.addInformationalFinding(
+            `Host '${host}', volume '${volume}': ${info.message}`,
+          );
         }
       });
     });
 
-    // Only CRITICAL issues affect the score. Warnings are reported but do not fail the test.
-    const score = criticalIssues.length > 0 ? 0 : 1.0;
+    if (!context.hasAnyFindings()) {
+      context.addInformationalFinding(
+        'All hosts report normal storage levels.',
+      );
+    }
 
-    const message =
-      criticalIssues.length === 0 && warnings.length === 0
-        ? 'All hosts report normal storage levels.'
-        : criticalIssues.length > 0
-          ? `${criticalIssues.length} critical storage issue(s) found.`
-          : `${warnings.length} warning(s) found.`;
+    // Only critical findings affect go/no-go for this test.
+    context.setScoreFromFindings('critical-only');
 
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        storageInfo: storageInfo,
-        criticalIssues: criticalIssues,
-        warnings: warnings,
-      },
+      storageInfo: storageInfo,
+      findings: context.getFindings(),
     };
   }
 }

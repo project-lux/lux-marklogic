@@ -10,7 +10,13 @@ import { User } from '../User.mjs';
 import { split, getArrayDiff } from '../../utils/utils.mjs';
 
 const SEVERITY_CRITICAL = 'critical';
+const SEVERITY_WARNING = 'warning';
 const SEVERITY_INFORMATIONAL = 'informational';
+const VALID_SEVERITIES = [
+  SEVERITY_INFORMATIONAL,
+  SEVERITY_WARNING,
+  SEVERITY_CRITICAL,
+];
 
 const CRITICAL_WEIGHT = 2;
 const DEFAULT_WEIGHT = 1;
@@ -24,6 +30,130 @@ function getSeverityWeight(severity) {
     return 0;
   }
   return DEFAULT_WEIGHT;
+}
+
+function buildSummaryMessage(findings) {
+  if (!Array.isArray(findings) || findings.length === 0) {
+    return 'No findings.';
+  }
+  if (findings.length === 1) {
+    return findings[0].message;
+  }
+
+  const criticalCount = findings.filter(
+    (item) => item.severity === SEVERITY_CRITICAL,
+  ).length;
+  const warningCount = findings.filter(
+    (item) => item.severity === SEVERITY_WARNING,
+  ).length;
+  const informationalCount = findings.filter(
+    (item) => item.severity === SEVERITY_INFORMATIONAL,
+  ).length;
+
+  return `${findings.length} finding(s): ${criticalCount} critical, ${warningCount} warning, ${informationalCount} informational.`;
+}
+
+function createTestContext({ threshold, baseline, unitNames, config }) {
+  const findings = [];
+  let score = null;
+  let message = null;
+
+  const validateMessage = (findingMessage) => {
+    if (
+      typeof findingMessage !== 'string' ||
+      findingMessage.trim().length === 0
+    ) {
+      throw new Error('Finding message must be a non-empty string.');
+    }
+  };
+
+  const addFinding = (severity, findingMessage) => {
+    validateMessage(findingMessage);
+    findings.push({ severity: severity, message: findingMessage.trim() });
+  };
+
+  const setScore = (value) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new Error('Score must be a finite number.');
+    }
+    score = value;
+  };
+
+  return {
+    threshold: threshold,
+    baseline: baseline,
+    unitNames: unitNames,
+    config: config,
+
+    addInformationalFinding(findingMessage) {
+      addFinding(SEVERITY_INFORMATIONAL, findingMessage);
+    },
+
+    addWarningFinding(findingMessage) {
+      addFinding(SEVERITY_WARNING, findingMessage);
+    },
+
+    addCriticalFinding(findingMessage) {
+      addFinding(SEVERITY_CRITICAL, findingMessage);
+    },
+
+    getFindings() {
+      return findings.slice();
+    },
+
+    hasAnyFindings() {
+      return findings.length > 0;
+    },
+
+    hasCriticalFindings() {
+      return findings.some((item) => item.severity === SEVERITY_CRITICAL);
+    },
+
+    hasWarningFindings() {
+      return findings.some((item) => item.severity === SEVERITY_WARNING);
+    },
+
+    hasInformationalFindings() {
+      return findings.some((item) => item.severity === SEVERITY_INFORMATIONAL);
+    },
+
+    setScore: setScore,
+
+    setScoreFromFindings(policy = 'critical-only') {
+      const hasCritical = findings.some(
+        (item) => item.severity === SEVERITY_CRITICAL,
+      );
+      const hasWarning = findings.some(
+        (item) => item.severity === SEVERITY_WARNING,
+      );
+
+      if (policy === 'critical-only') {
+        setScore(hasCritical ? 0 : 1);
+      } else if (policy === 'warning-or-critical') {
+        setScore(hasCritical || hasWarning ? 0 : 1);
+      } else if (policy === 'any-finding') {
+        setScore(findings.length > 0 ? 0 : 1);
+      } else {
+        throw new Error(
+          `Unknown score policy '${policy}'. Expected one of: critical-only, warning-or-critical, any-finding.`,
+        );
+      }
+      return score;
+    },
+
+    getScore() {
+      return score;
+    },
+
+    setMessage(summaryMessage) {
+      validateMessage(summaryMessage);
+      message = summaryMessage.trim();
+    },
+
+    getMessage() {
+      return message != null ? message : buildSummaryMessage(findings);
+    },
+  };
 }
 
 function validateDataset({
@@ -104,38 +234,51 @@ function validateDataset({
     const threshold =
       config.threshold != null ? config.threshold : test.getDefaultThreshold();
 
-    const context = {
+    const context = createTestContext({
       threshold: threshold,
       baseline: baselineByTestId[id] || null,
       unitNames: resolvedUnitNames,
       config: config,
-    };
+    });
 
     const testStart = new Date();
-    let result;
+    let resultPayload = null;
     try {
-      result = test.run(context);
+      resultPayload = test.run(context);
     } catch (e) {
-      result = {
-        score: 0,
-        pass: false,
-        message: `Test threw an error: ${e.message}`,
-        result: { error: e.message, stack: e.stack },
-      };
+      context.addCriticalFinding(`Test threw an error: ${e.message}`);
+      context.setScore(0);
+      resultPayload = { error: e.message, stack: e.stack };
     }
     const testEnd = new Date();
+
+    if (context.getScore() == null) {
+      context.setScoreFromFindings('critical-only');
+    }
+
+    const findings = context.getFindings();
+    let severity = test.getSeverity(findings);
+    if (!VALID_SEVERITIES.includes(severity)) {
+      throw new Error(
+        `Test '${id}' returned invalid severity '${severity}'. Valid severities: ${VALID_SEVERITIES.join(', ')}.`,
+      );
+    }
+
+    const score = context.getScore();
+    const pass = score >= threshold;
 
     return {
       id: id,
       name: test.getName(),
       category: test.getCategory(),
-      severity: test.getSeverity(),
-      score: result.score,
-      pass: result.pass,
+      severity: severity,
+      score: score,
+      pass: pass,
       threshold: threshold,
       durationMs: testEnd - testStart,
-      message: result.message,
-      result: result.result,
+      message: context.getMessage(),
+      findings: findings,
+      result: resultPayload,
     };
   });
 

@@ -159,9 +159,6 @@ class PredicateCoverage extends DatasetTestBase {
   getCategory() {
     return 'relational';
   }
-  getSeverity() {
-    return 'critical';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
@@ -217,15 +214,23 @@ class PredicateCoverage extends DatasetTestBase {
         ? 'All configured predicates have matching documents.'
         : `${zeroCountPredicates.length} configured predicate(s) have zero matching documents.`;
 
+    if (zeroCountPredicates.length > 0) {
+      context.addWarningFinding(message);
+    } else if (score < 1.0) {
+      context.addWarningFinding(
+        'Predicate count deltas exceeded the configured threshold.',
+      );
+    } else {
+      context.addInformationalFinding(message);
+    }
+
+    context.setScore(score);
+    context.setMessage(message);
+
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        predicates: predicateDetails,
-        zeroCountPredicates: zeroCountPredicates,
-        unitResults: unitResults,
-      },
+      predicates: predicateDetails,
+      zeroCountPredicates: zeroCountPredicates,
+      unitResults: unitResults,
     };
   }
 }

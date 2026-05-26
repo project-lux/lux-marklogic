@@ -19,12 +19,6 @@ class DatasetTestInterface {
     );
   }
 
-  getSeverity() {
-    throw new NotImplementedError(
-      `${this.constructor.name}.getSeverity must be implemented.`,
-    );
-  }
-
   getDefaultThreshold() {
     throw new NotImplementedError(
       `${this.constructor.name}.getDefaultThreshold must be implemented.`,

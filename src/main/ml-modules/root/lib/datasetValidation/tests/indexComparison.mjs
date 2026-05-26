@@ -173,9 +173,6 @@ class IndexComparison extends DatasetTestBase {
   getCategory() {
     return 'indexing';
   }
-  getSeverity() {
-    return 'critical';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
@@ -192,29 +189,30 @@ class IndexComparison extends DatasetTestBase {
     if (missingCount === 0 && unusedCount === 0) {
       message =
         'All referenced indexes are configured and no unused indexes found.';
+      context.addInformationalFinding(message);
     } else {
       const parts = [];
       if (missingCount > 0) {
-        parts.push(`${missingCount} referenced index(es) not configured`);
+        const missingMessage = `${missingCount} referenced index(es) not configured`;
+        parts.push(missingMessage);
+        context.addCriticalFinding(missingMessage);
       }
       if (unusedCount > 0) {
-        parts.push(
-          `${unusedCount} configured index(es) not referenced by code`,
-        );
+        const unusedMessage = `${unusedCount} configured index(es) not referenced by code`;
+        parts.push(unusedMessage);
+        context.addInformationalFinding(unusedMessage);
       }
       message = parts.join('; ') + '.';
     }
 
+    context.setScore(score);
+    context.setMessage(message);
+
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        missing: missing,
-        unused: unused,
-        references: sortObj(referenced.references.fields),
-        rangeReferences: sortObj(referenced.references.fieldRanges),
-      },
+      missing: missing,
+      unused: unused,
+      references: sortObj(referenced.references.fields),
+      rangeReferences: sortObj(referenced.references.fieldRanges),
     };
   }
 }

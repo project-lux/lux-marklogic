@@ -72,9 +72,6 @@ class PredicateAlignment extends DatasetTestBase {
   getCategory() {
     return 'relational';
   }
-  getSeverity() {
-    return 'critical';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
@@ -112,16 +109,26 @@ class PredicateAlignment extends DatasetTestBase {
         ? `All ${configuredPredicates.length} configured predicates exist in the dataset.`
         : `${referencedButDoesNotExist.length} configured predicate(s) not found in dataset.`;
 
+    if (referencedButDoesNotExist.length > 0) {
+      context.addCriticalFinding(message);
+    } else {
+      context.addInformationalFinding(message);
+    }
+
+    if (existsButNotReferenced.length > 0) {
+      context.addInformationalFinding(
+        `${existsButNotReferenced.length} dataset predicate(s) are not referenced by configuration.`,
+      );
+    }
+
+    context.setScore(score);
+    context.setMessage(message);
+
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        referencedButDoesNotExist: referencedButDoesNotExist,
-        existsButNotReferenced: existsButNotReferenced,
-        totalPredicatesInDataset: allPredicates.length,
-        totalPredicatesInConfig: configuredPredicates.length,
-      },
+      referencedButDoesNotExist: referencedButDoesNotExist,
+      existsButNotReferenced: existsButNotReferenced,
+      totalPredicatesInDataset: allPredicates.length,
+      totalPredicatesInConfig: configuredPredicates.length,
     };
   }
 }

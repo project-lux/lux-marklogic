@@ -114,9 +114,6 @@ class RecordTypesByPredicates extends DatasetTestBase {
   getCategory() {
     return 'relational';
   }
-  getSeverity() {
-    return 'critical';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
@@ -139,15 +136,19 @@ class RecordTypesByPredicates extends DatasetTestBase {
       message = `${emptyPredicates.length} of ${predicates.length} predicate(s) have no matching record types.`;
     }
 
+    if (hasRemovedTypes || emptyPredicates.length > 0) {
+      context.addCriticalFinding(message);
+    } else {
+      context.addInformationalFinding(message);
+    }
+
+    context.setScore(score);
+    context.setMessage(message);
+
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        types: types,
-        predicates: predicateDetails,
-        emptyPredicates: emptyPredicates,
-      },
+      types: types,
+      predicates: predicateDetails,
+      emptyPredicates: emptyPredicates,
     };
   }
 }

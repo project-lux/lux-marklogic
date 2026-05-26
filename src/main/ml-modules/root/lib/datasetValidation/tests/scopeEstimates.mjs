@@ -77,9 +77,6 @@ class ScopeEstimates extends DatasetTestBase {
   getCategory() {
     return 'content';
   }
-  getSeverity() {
-    return 'critical';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
@@ -130,15 +127,23 @@ class ScopeEstimates extends DatasetTestBase {
         ? `All ${scopeCount} search scope(s) have documents.`
         : `${emptyScopes.length} of ${scopeCount} search scope(s) have zero documents.`;
 
+    if (emptyScopes.length > 0) {
+      context.addCriticalFinding(message);
+    } else if (score < 1.0) {
+      context.addWarningFinding(
+        'Scope estimate deltas exceeded the configured threshold.',
+      );
+    } else {
+      context.addInformationalFinding(message);
+    }
+
+    context.setScore(score);
+    context.setMessage(message);
+
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        scopes: scopeDetails,
-        emptyScopes: emptyScopes,
-        unitResults: unitResults,
-      },
+      scopes: scopeDetails,
+      emptyScopes: emptyScopes,
+      unitResults: unitResults,
     };
   }
 }

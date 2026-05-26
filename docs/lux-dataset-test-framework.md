@@ -312,7 +312,6 @@ class PredicateCoverage extends DatasetTestBase {
   getId()              { return 'predicate-coverage'; }
   getName()            { return 'Predicate Coverage'; }
   getCategory()        { return 'relational'; }
-  getSeverity()        { return 'critical'; }
   getDefaultThreshold(){ return 1.0; }
 
   run(context) {
@@ -349,7 +348,6 @@ class DatasetTestInterface {
   getId()               { throw new NotImplementedError(...); }
   getName()             { throw new NotImplementedError(...); }
   getCategory()         { throw new NotImplementedError(...); }
-  getSeverity()         { throw new NotImplementedError(...); }
   getDefaultThreshold() { throw new NotImplementedError(...); }
 
   // Execution
@@ -357,18 +355,15 @@ class DatasetTestInterface {
 }
 ```
 
-**`run(context)`** must return:
+`getSeverity(findings)` is implemented by `DatasetTestBase` by default (derived from findings: `critical` > `warning` > `informational`). A test may override it when needed.
+
+**`run(context)`** returns test-specific payload only:
 
 ```javascript
-{
-  score: 0.95,              // 0.0–1.0
-  pass: true,               // score >= context.threshold
-  message: '...',           // Human-readable summary
-  result: { /* ... */ },    // Test-specific detail (preserved for future baselines)
-}
+{ /* test-specific detail, preserved for future baselines */ }
 ```
 
-The `result` object is test-specific and opaque to the framework.  It is included in the response so that this response can later serve as a baseline for a subsequent run.
+The returned payload is test-specific and opaque to the framework. It is included in the response as `result` so that this response can later serve as a baseline for a subsequent run.
 
 ## Test Context
 
@@ -380,8 +375,25 @@ The framework constructs a context object and passes it to each test's `run()`:
   baseline: { /* ... */ },    // Previous result for this test (null if no baseline)
   unitNames: ['lux'],         // Unit names to validate
   config: { /* ... */ },      // Per-test config from testConfig (e.g. deltaThresholdPercent)
+
+  // Findings API
+  addInformationalFinding(message),
+  addWarningFinding(message),
+  addCriticalFinding(message),
+  getFindings(),
+
+  // Scoring API
+  setScore(number),
+  setScoreFromFindings(policy), // policy: 'critical-only' | 'warning-or-critical' | 'any-finding'
+  getScore(),
+
+  // Optional message override
+  setMessage(message),
+  getMessage(),
 }
 ```
+
+`message` is required and must be a non-empty string for all `add*Finding` calls and for `setMessage`.
 
 ## Framework Orchestrator
 

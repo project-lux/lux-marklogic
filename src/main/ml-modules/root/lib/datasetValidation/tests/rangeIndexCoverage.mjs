@@ -106,9 +106,6 @@ class RangeIndexCoverage extends DatasetTestBase {
   getCategory() {
     return 'indexing';
   }
-  getSeverity() {
-    return 'informational';
-  }
   getDefaultThreshold() {
     return 1.0;
   }
@@ -163,15 +160,15 @@ class RangeIndexCoverage extends DatasetTestBase {
         ? `All ${indexNames.length} range field index(es) have values.`
         : `${emptyIndexes.length} of ${indexNames.length} range field index(es) have no values.`;
 
+    context.addInformationalFinding(message);
+
+    context.setScore(score);
+    context.setMessage(message);
+
     return {
-      score: score,
-      pass: score >= context.threshold,
-      message: message,
-      result: {
-        indexes: indexDetails,
-        emptyIndexes: emptyIndexes,
-        unitResults: unitResults,
-      },
+      indexes: indexDetails,
+      emptyIndexes: emptyIndexes,
+      unitResults: unitResults,
     };
   }
 }

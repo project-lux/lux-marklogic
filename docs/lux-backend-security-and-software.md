@@ -164,6 +164,7 @@ The project has the following custom executive privileges:
 
 1. [%%mlAppName%%-scale-environment](/src/main/ml-config/base/security/privileges/app-scale-environment.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Scale Out endpoint](./lux-backend-api-usage.md#scale-out).
 2. [%%mlAppName%%-update-tenant-status](/src/main/ml-config/base/security/privileges/app-update-tenant-status.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Set Tenant Status endpoint](./lux-backend-api-usage.md#set).
+3. [%%mlAppName%%-validate-dataset-status](/src/main/ml-config/base/security/privileges/app-validate-dataset-status.json).  It is granted to the [%%mlAppName%%-deployer](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role in order to consume the [Validate Dataset endpoint](./lux-backend-api-usage.md#validate-dataset).
 
 ## Amps
 

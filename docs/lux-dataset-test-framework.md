@@ -1,5 +1,10 @@
 ## **Dataset Test Framework**
 
+- [Executive Summary](#executive-summary)
+  - [What the Endpoint Does](#what-the-endpoint-does)
+  - [Reading the Response](#reading-the-response)
+  - [What Is Checked Today](#what-is-checked-today)
+  - [Recommended Next Tests](#recommended-next-tests)
 - [Introduction](#introduction)
 - [Goals](#goals)
 - [Endpoint](#endpoint)
@@ -28,6 +33,78 @@
 - [Incremental Update Support](#incremental-update-support)
 - [Performance Considerations](#performance-considerations)
 - [TODOs](#todos)
+
+# Executive Summary
+
+The backend now includes a **Dataset Validation endpoint** (`/ds/lux/validateDataset.mjs`) that replaces the manual script-running and output-comparison workflow documented in [existing-dataset-checks-summary.md](/docs/existing-dataset-checks-summary.md).  A single POST request runs a suite of pluggable tests against the current dataset and returns a structured report with an automated go/no-go decision.
+
+## What the Endpoint Does
+
+The orchestrating process (CI/CD pipeline, deployment script, or human operator) calls the endpoint with optional parameters:
+
+- **`baseline`** — the saved JSON response from a prior run (e.g., production).  Tests that support comparison compute deltas and flag regressions.  This is **stateless**: environments do not need to talk to each other.  The caller simply passes in a previously saved report.
+- **`unitNames`** — restrict validation to specific museum units (e.g., `ypm`).  Tests that support per-unit execution run as each unit's user, catching permission regressions that affect one museum but not others.
+- **`categories`** — run only a subset of tests (e.g., `relational`, `indexing`).
+- **`testConfig`** — skip specific tests or override pass/fail thresholds.
+
+A typical promotion workflow:
+
+1. Load the candidate dataset into the target environment.
+2. POST to the validation endpoint, passing the last known-good report as `baseline`.
+3. Inspect the response's `overallPass` flag and per-test details.
+4. Promote or block based on the results.
+
+The new endpoint is documented in full in the [API usage documentation](./lux-backend-api-usage.md#validate-dataset).
+
+## Reading the Response
+
+The response contains three main sections:
+
+| Section | What it tells you |
+|---------|-------------------|
+| **`summary.overallPass`** | Single boolean: safe to promote or not.  `false` if any critical test fails **or** the aggregate score is below threshold (default 80%). |
+| **`summary.criticalPass`** | `false` if any test marked `critical` failed.  Even a single critical failure blocks promotion regardless of the aggregate score. |
+| **`summary.aggregateScore`** | Weighted average of all test scores (0.0–1.0).  Critical tests carry double weight. |
+| **`tests[]`** | Per-test detail: ID, score, pass/fail, threshold, duration, a human-readable message, and a `result` object with test-specific data.  The `result` is preserved so this response can serve as the baseline for the next run. |
+| **`warnings`** | Present only when there are mismatches between the baseline and current run (e.g., a test was added or removed since the baseline was captured).  These are informational — they do not affect pass/fail. |
+
+**Severity tiers** control how each test's outcome affects the overall decision:
+
+| Severity | Effect |
+|----------|--------|
+| **critical** | Any failure sets `overallPass = false` |
+| **warning** | Contributes to aggregate score but does not block alone |
+| **informational** | Reported for visibility; no effect on pass/fail |
+
+## What Is Checked Today
+
+Seven tests are implemented, covering the five manual scripts and two API endpoints that were previously run by hand, which is everything documented within [./existing-dataset-checks-summary.md](./existing-dataset-checks-summary.md):
+
+| Test | Category | What it validates | Baseline comparison |
+|------|----------|-------------------|---------------------|
+| **Predicate Coverage** | relational | Every configured predicate has matching documents.  Runs per unit to catch permission-based visibility gaps. | Per-predicate count deltas |
+| **Predicate Alignment** | relational | Predicates referenced in code exist in the dataset, and vice versa. | N/A (structural check) |
+| **Record Types by Predicates** | relational | Each predicate appears on expected record types (agent, work, item, etc.).  Hard failure if a predicate loses record type associations. | Record type additions/removals |
+| **Range Index Coverage** | indexing | Every field range index defined on the database contains values.  Runs per unit. | Per-index count deltas |
+| **Index Comparison** | indexing | Fields and field range indexes referenced in code match those configured on the database.  Reports missing and unused indexes. | N/A (structural check) |
+| **Scope Estimates** | content | Document count estimates per search scope are non-zero.  Runs per unit (since estimates honor document permissions). | Per-scope count deltas |
+| **Storage Info** | infrastructure | Cluster storage levels are within safe thresholds.  Flags WARNING and CRITICAL volumes. | N/A (point-in-time check) |
+
+The two helper scripts (`compareCounts.js` and `compareArrays.js`) are no longer needed separately — their comparison logic is built into the baseline comparison capability of the tests above.
+
+## Recommended Next Tests
+
+Adding a new test is a single-file operation: create one module that extends [DatasetTestBase](/src/main/ml-modules/root/lib/datasetValidation/DatasetTestBase.mjs), self-register it, and it appears in the next run.  The following would close the most significant remaining gaps:
+
+| Test | Category | Why |
+|------|----------|-----|
+| **Geospatial Index Population** | indexing | Verifies geospatial path indexes have values — currently unchecked |
+| **Vector TDE Population** | indexing | Verifies the vector TDE has rows — critical for semantic search |
+| **Multi-User Visibility** | permissions | Automated cross-unit document visibility spot-checks — currently manual |
+| **Facet Value Coverage** | content | Verifies facets return expected value distributions — a user-visible feature |
+| **Triple Connectivity** | relational | Detects orphan subjects or broken inverse relationships — data quality check |
+
+Full gap analysis with execution-time estimates: [Gap Analysis and Future Tests](#gap-analysis-and-future-tests).
 
 # Introduction
 

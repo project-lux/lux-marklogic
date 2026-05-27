@@ -1,0 +1,21 @@
+{
+  "_scope": "item",
+  "OR": [
+    {
+      "memberOf": {
+        "curatedBy": {
+          "id": "https://lux.collections.yale.edu/data/group/0a5ed086-396b-4cc2-8120-fdc3f8953ce2"
+        }
+      }
+    },
+    {
+      "memberOf": {
+        "curatedBy": {
+          "memberOf": {
+            "id": "https://lux.collections.yale.edu/data/group/0a5ed086-396b-4cc2-8120-fdc3f8953ce2"
+          }
+        }
+      }
+    }
+  ]
+}

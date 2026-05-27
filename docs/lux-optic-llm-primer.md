@@ -1,8 +1,72 @@
-# LUX Optic Search Engine Primer
+## **LUX Optic Search Engine Primer**
 
-**Audience:** Developers and LLMs working on or extending the LUX Optic search engine.
+- [Introduction](#introduction)
+- [System Architecture](#system-architecture)
+  - [Request Flow](#request-flow)
+  - [Key Source Files](#key-source-files)
+- [Pattern System](#pattern-system)
+  - [Self-Registration on SearchPatternBase](#self-registration-on-searchpatternbase)
+  - [Pattern Interface Contract](#pattern-interface-contract)
+  - [Registered Patterns](#registered-patterns)
+  - [Pattern Contributions](#pattern-contributions)
+- [MarkLogic Optic API Reference](#marklogic-optic-api-reference)
+- [Engine Internals](#engine-internals)
+  - [The Three Constraint Buckets](#the-three-constraint-buckets)
+    - [Bucket Selection Rule](#bucket-selection-rule)
+  - [Nested Conjunction Handling — The 3×3 Matrix](#nested-conjunction-handling--the-33-matrix)
+  - [Column Naming Strategy](#column-naming-strategy)
+  - [Plan Assembly (`assemblePlan`)](#plan-assembly-assembleplan)
+  - [Result Finalization (`collapseToResultRows`)](#result-finalization-collapsetoresultrows)
+  - [Pagination (`paginateResults`)](#pagination-paginateresults)
+  - [Term Validation in `buildLeafSearchTerm`](#term-validation-in-buildleafsearchterm)
+    - [Value-type enforcement](#value-type-enforcement)
+    - [Wildcard sanitization](#wildcard-sanitization)
+    - [Stop-word and punctuation-only detection](#stop-word-and-punctuation-only-detection)
+- [Pattern Details](#pattern-details)
+  - [Bucket Decisions by Pattern](#bucket-decisions-by-pattern)
+  - [`keyword` Details](#keyword-details)
+  - [`hopWithField` Details](#hopwithfield-details)
+  - [`hopInverse` Details](#hopinverse-details)
+  - [`annTopK` Details](#anntopk-details)
+- [Related Lists](#related-lists)
+- [Facets](#facets)
+- [Configuration Dependencies](#configuration-dependencies)
+  - [Imports in engine.mjs](#imports-in-enginemjs)
+  - [RDF Prefix Expansion](#rdf-prefix-expansion)
+  - [Search Term Config Shape](#search-term-config-shape)
+  - [PatternOptions](#patternoptions)
+- [Non-obvious Behaviors](#non-obvious-behaviors)
+- [Optic Gotchas \& Lessons](#optic-gotchas--lessons)
+  - [Plan construction](#plan-construction)
+  - [Triple navigation](#triple-navigation)
+  - [AND/OR composition](#andor-composition)
+  - [Other](#other)
+  - [Build pipeline](#build-pipeline)
+- [Glossary](#glossary)
+- [LLM Operational Checklist](#llm-operational-checklist)
+  - [Core Principle: Prefer Optic-Level Operations](#core-principle-prefer-optic-level-operations)
+  - [When implementing a change:](#when-implementing-a-change)
+    - [1. Classify the request](#1-classify-the-request)
+    - [2. For new patterns](#2-for-new-patterns)
+    - [3. Preserve invariants](#3-preserve-invariants)
+    - [4. How to verify](#4-how-to-verify)
+- [Candidate Optimizations](#candidate-optimizations)
+  - [Real-World Performance Context](#real-world-performance-context)
+  - [Isolated Benchmark Reference (MarkLogic 12.0.1)](#isolated-benchmark-reference-marklogic-1201)
+    - [Key findings](#key-findings)
+  - [Optimization 1: `plan.where()` when scores are not needed](#optimization-1-planwhere-when-scores-are-not-needed)
+  - [Optimization 2: Combine OR'd keywords into a single pattern instance](#optimization-2-combine-ord-keywords-into-a-single-pattern-instance)
+  - [Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints)
+  - [Optimization 4: Reduce keyword pattern IRI payload](#optimization-4-reduce-keyword-pattern-iri-payload)
+  - [Optimization 5: Remove unused `iri` column from `fromLexicons` for keyword-only queries](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries)
+  - [Optimization 6: Analyze the optimized plan for join strategy issues](#optimization-6-analyze-the-optimized-plan-for-join-strategy-issues)
+  - [Warm-run gap breakdown (AND'd keywords with scores)](#warm-run-gap-breakdown-andd-keywords-with-scores)
+
+# Introduction
 
 The LUX backend uses MarkLogic's Optic API to build relational-style query plans (lexicon scans, triple joins, CTS filters) from a JSON search criteria grammar. This document covers the architecture, pattern system, engine internals, and operational lessons needed to work in this codebase.
+
+It is for developers and LLMs working on or extending the LUX Optic search engine.
 
 ---
 
@@ -585,3 +649,106 @@ Facets are calculated after the main search executes. The implementation:
 1. **Plan inspection**: Use `SCP.buildPlans()` or the `getPlansFromSearchCriteria.js` script to examine `planAsSource` without executing.
 2. **Result inspection**: Execute and check result counts, null values, column presence.
 3. **Debug array**: Inspect for unexpected entries.
+
+---
+
+# Candidate Optimizations
+
+Performance investigation comparing the Optic-based search engine against the former CTS implementation. Benchmarked with three AND'd keyword terms ("woman", "greek", "art") in the `item` scope. Scripts in `scratch/performance/woman-greek-art-memberOf/`.
+
+## Real-World Performance Context
+
+The isolated benchmarks below use two extremes — fully cold (caches cleared) and fully hot (10th identical iteration). Neither reflects production. Real queries hit **partially warm ("lukewarm") caches** under concurrent load, with cache entries evicted between diverse queries.
+
+**Serialized 5K-request test** (back-to-back, no pause between requests):
+
+| Implementation | Observed latency | Notes |
+|---|---|---|
+| CTS | ~810ms | Includes one additional criterion (different pattern); believed to add little to the gap |
+| Optic | ~4,634ms | Same additional criterion omitted from isolated tests below |
+
+**System resource observations during the 5K test:**
+- CPU 85–95% idle — **not CPU-bound**; this is an I/O and cache-efficiency problem.
+- Free memory dropped from ~20 GB to ~7 GB — caches filling but under eviction pressure.
+- Triple cache miss spikes (~220 misses/sec) correlate with page-in spikes (~53K pages/sec). Each keyword query's `cts.tripleRangeQuery` with tens of thousands of IRIs hammers the triple cache; entries are evicted between diverse queries.
+- Triple value cache miss rate peaked at ~2,626 misses/sec.
+- HTTP request rate: ~5 req/sec sustained.
+
+**Optimization target:** The customer tolerance is ≥100 ms for individual query differences. The primary goal is closing the 5.7× serialized-test gap (4,634 ms vs 810 ms), which aligns with the 6× cold-start gap in isolated testing. Hot-cache micro-benchmark gaps (179 ms vs 93 ms) are secondary — they over-state cache warmth relative to production.
+
+## Isolated Benchmark Reference (MarkLogic 12.0.1)
+
+| Approach | First run (cold) | Warm avg | Notes |
+|---|---|---|---|
+| CTS baseline | 682ms | 93ms | Direct `cts.search()`, re-resolves IRIs each iteration |
+| Optic baseline (`fromSearch` with full query) | 4,104ms | 179ms | `fromSearch(fullQuery) + joinInner`, 49K IRIs in plan |
+| Optic `plan.where()` only (no scoring) | 3,990ms | 128ms | Full query via `where()`, no `fromSearch`, no score column |
+| Optic non-semantic only (`fromSearch`) | 407ms | 136ms | `fromSearch` with `fieldWordQuery` AND only, no `tripleRangeQuery` |
+
+### Key findings
+
+1. **Warm-run gap: 1.9x** (Optic baseline 179ms vs CTS 93ms). ~35ms is irreducible Optic framework overhead (lexicon scan, groupBy, orderBy, select). ~51ms is `fromSearch+joinInner` scoring overhead.
+2. **Cold-start gap: 6x** (Optic 4,104ms vs CTS 682ms). Dominated by Optic `prepare()` (3,818ms from phase timing). Cold triple-index scan contributes to both but Optic pays an additional plan-preparation penalty.
+3. **`plan.where()` vs `op.fromSearch()`**: `where()` passes the CTS query by reference; `fromSearch()` incorporates it into the plan AST. With 49K IRI literals in `cts.tripleRangeQuery`, `fromSearch` adds measurable overhead. On warm runs: 128ms (`where`) vs 179ms (`fromSearch+joinInner`).
+4. **IRI count in the keyword pattern**: Each keyword's `apply()` eagerly resolves IRIs via `cts.values().toArray()`. For this query: woman=11,670, greek=2,456, art=34,987 — totaling 49,113 IRIs embedded as literals in `cts.tripleRangeQuery` objects.
+
+## Optimization 1: `plan.where()` when scores are not needed
+
+**Status:** Ready to implement.
+
+When `wantScore` is false in `assemblePlan`, the engine already uses `plan.where(ctsQuery)` instead of `op.fromSearch()`. This path is confirmed faster (128ms vs 179ms warm). No code change needed — this path already exists. The optimization is to ensure callers that don't need scoring (e.g., count-only, unsorted, or non-relevance-sorted queries) do not request scores.
+
+## Optimization 2: Combine OR'd keywords into a single pattern instance
+
+**Status:** Idea — needs design.
+
+When the engine encounters multiple keyword terms under an OR conjunction, it currently processes each as a separate pattern `apply()` call. Each call independently resolves IRIs via `cts.values()` and builds its own `cts.tripleRangeQuery`. If combined into a single pattern invocation, the engine could:
+- Issue a single `cts.values()` call with a combined word query
+- Build a single `cts.tripleRangeQuery` with the union of IRIs
+- Reduce the number of CTS query nodes in the plan
+
+This applies to OR'd keywords specifically; AND'd keywords must remain separate (each constrains independently).
+
+## Optimization 3: Reduce or eliminate redundant dataType constraints
+
+**Status:** Idea — needs investigation.
+
+The `dataType` constraint (`op.in(op.col('dataType'), [...])`) is applied at the top level of every plan via `constraints[]`. Field indexes (e.g., `itemAnyText`) are already scope-specific — only documents of the correct scope contain values in those fields. If the field-level filtering already implies the scope, the explicit `dataType` constraint may be redundant work. Investigation areas:
+- Does removing the `dataType` constraint change result sets? (It shouldn't if fields are truly scope-exclusive.)
+- Does removing it eliminate a lexicon column, simplifying the `fromLexicons` scan?
+- Does it change join strategies in the optimized plan (e.g., bloom vs scatter)?
+- The `dataType` column is needed in the final `select` output — could it be joined late (after filtering) rather than scanned early?
+
+## Optimization 4: Reduce keyword pattern IRI payload
+
+**Status:** Non-starter. All sub-options involve unacceptable trade-offs (semantic recall loss, reintroduced sub-plan overhead, API limitations, or data model changes).
+
+## Optimization 5: Remove unused `iri` column from `fromLexicons` for keyword-only queries
+
+**Status:** Idea — needs investigation.
+
+`createPlanAccumulator` always includes `iri: cts.iriReference()` in the lexicon scan. The keyword pattern's `cts.tripleRangeQuery` uses `subjects=[]` (any subject) — it does not reference the `iri` column from the lexicon. For queries composed entirely of keyword terms, the `iri` column adds a lexicon scan dimension that produces no value. Removing it may reduce the row count from `fromLexicons` and simplify downstream joins. Patterns that DO use the `iri` column (e.g., `hopWithField`, `hopInverse`) would still include it. The engine could conditionally omit it when no pattern contributions reference it.
+
+## Optimization 6: Analyze the optimized plan for join strategy issues
+
+**Status:** TODO — awaiting data reload to capture the XML-formatted actual plan.
+
+The Optic optimizer selects join strategies (bloom, scatter, etc.) and operator ordering. The `fromSearch+joinInner` overhead (51ms warm) may partly stem from a sub-optimal join strategy when the CTS query contains large `cts.tripleRangeQuery` objects. The actual plan will reveal:
+- Which join strategy the optimizer chose for the `fromSearch` join
+- Whether the `tripleRangeQuery` evaluation cost is in the join or in the `fromSearch` row source
+- Whether reordering operators (e.g., filtering before joining) would help
+
+Note: `op.export()` does not expose the optimized plan. Use the MarkLogic admin tools to capture the XML-formatted actual plan. Visualization may not render for complex plans.
+
+## Warm-run gap breakdown (AND'd keywords with scores)
+
+For reference, decomposing the 179ms Optic baseline vs 93ms CTS warm gap:
+
+| Component | Estimated cost | Source |
+|---|---|---|
+| Optic framework (lexicon scan, groupBy, orderBy, select) | ~35ms | Theory A (128ms) minus CTS (93ms) |
+| `tripleRangeQuery` overhead inside `fromSearch` | ~43ms | Baseline (179ms) minus non-semantic fromSearch (136ms) |
+| `fromSearch+joinInner` structural overhead | ~8ms | Non-semantic fromSearch (136ms) minus Theory A (128ms) |
+| **Total Optic overhead** | **~86ms** | Baseline (179ms) minus CTS (93ms) |
+
+The 35ms framework overhead is structural to Optic. The 43ms `tripleRangeQuery` overhead inside `fromSearch` is the largest addressable component — Optimization 6 (plan analysis) targets this. The 8ms join overhead is negligible.

@@ -2,13 +2,13 @@ import { EndpointConfig } from '../lib/EndpointConfig.mjs';
 import { InternalConfigurationError } from '../lib/errorClasses.mjs';
 import { isUndefined } from '../utils/utils.mjs';
 
+const PROP_NAME_AMP_AS_ADMIN = 'ampAsAdmin';
 const PROP_NAME_ALLOW_IN_READ_ONLY_MODE = 'allowInReadOnlyMode';
 const PROP_NAME_FEATURES = 'features';
 const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 
-// Do not export this config or otherwise enable the runtime environment
-// to modify it.
-const ENDPOINTS_CONFIG = {
+// Frozen to prevent modification; exported to support unit testing.
+const ENDPOINTS_CONFIG = Object.freeze({
   '/ds/lux/advancedSearchConfig.mjs': {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
@@ -19,11 +19,11 @@ const ENDPOINTS_CONFIG = {
   },
   '/ds/lux/document/create.mjs': {
     allowInReadOnlyMode: false,
-    features: { myCollections: true },
+    features: { myCollections: false },
   },
   '/ds/lux/document/delete.mjs': {
     allowInReadOnlyMode: false,
-    features: { myCollections: true },
+    features: { myCollections: false },
   },
   '/ds/lux/document/read.mjs': {
     allowInReadOnlyMode: true,
@@ -31,13 +31,15 @@ const ENDPOINTS_CONFIG = {
   },
   '/ds/lux/document/update.mjs': {
     allowInReadOnlyMode: false,
-    features: { myCollections: true },
+    features: { myCollections: false },
   },
   '/ds/lux/facets.mjs': {
+    ampAsAdmin: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/relatedList.mjs': {
+    ampAsAdmin: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
@@ -46,10 +48,12 @@ const ENDPOINTS_CONFIG = {
     features: { myCollections: false },
   },
   '/ds/lux/search.mjs': {
+    ampAsAdmin: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/searchEstimate.mjs': {
+    ampAsAdmin: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
@@ -58,6 +62,7 @@ const ENDPOINTS_CONFIG = {
     features: { myCollections: false },
   },
   '/ds/lux/searchWillMatch.mjs': {
+    ampAsAdmin: true,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
@@ -89,21 +94,18 @@ const ENDPOINTS_CONFIG = {
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
-};
+});
 
 function getCurrentEndpointPath() {
   return xdmp.getRequestPath();
 }
 
-function getCurrentEndpointConfig(myCollectionsFeatureEnabled = true) {
+function getCurrentEndpointConfig() {
   const endpointConfig = ENDPOINTS_CONFIG[getCurrentEndpointPath()];
   if (isUndefined(endpointConfig)) {
-    if (myCollectionsFeatureEnabled) {
-      throw new InternalConfigurationError(
-        `The ${getCurrentEndpointPath()} endpoint is not configured.`,
-      );
-    }
-    return null;
+    throw new InternalConfigurationError(
+      `The ${getCurrentEndpointPath()} endpoint is not configured.`,
+    );
   }
   return new EndpointConfig(endpointConfig);
 }
@@ -111,6 +113,8 @@ function getCurrentEndpointConfig(myCollectionsFeatureEnabled = true) {
 export {
   getCurrentEndpointConfig,
   getCurrentEndpointPath,
+  ENDPOINTS_CONFIG,
+  PROP_NAME_AMP_AS_ADMIN,
   PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
   PROP_NAME_FEATURES,
   PROP_NAME_MY_COLLECTIONS,

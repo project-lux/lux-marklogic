@@ -8,7 +8,6 @@ import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   ENDPOINT_CONSUMER_ROLES_END_WITH,
-  FEATURE_MY_COLLECTIONS_ENABLED,
   MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
@@ -251,6 +250,16 @@ function getExclusiveDocumentPermissions(user) {
   ];
 }
 
+function __executeAsAdmin(f) {
+  const hasAdmin = xdmp
+    .getCurrentRoles()
+    .toArray()
+    .map((id) => xdmp.roleName(id))
+    .includes(ROLE_NAME_ADMIN);
+  return f(hasAdmin);
+}
+const _executeAsAdmin = import.meta.amp(__executeAsAdmin);
+
 /*
  * All endpoint requests are to go through this function.
  *
@@ -259,33 +268,30 @@ function getExclusiveDocumentPermissions(user) {
  *    This is optional and intended to enable users to log into unit portals, utilize functionality
  *    restricted to individual users (vs. service accounts), yet restrict the results to what the
  *    specified (unit portal's) service account can see.
- * @param {boolean} forceInvoke If true, the function is to be invoked via xdmp.invokeFunction
- *    versus simply called f(). This is needed when the a service account needs to make a change
- *    to the database, such as updating the tenant status document.  Only applicable when the
- *    My Collections feature is enabled.
- * @throws {AccessDeniedError} when a service account attempts to use a My Collections endpoint.
- * @throws {BadRequestError} bubbles up when the specified unit name is not associated with a
- *    service account.
  * @throws {InternalConfigurationError} bubbles up when the endpoint is not property configured.
- * @throws {NotAcceptingWriteRequestsError} when the request is able to modify the database but
- *    the instances is in read-only mode.
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
+// Most of handleRequest's implementation. Accepts an EndpointConfig instance directly
+// so that unit tests may supply it without going through xdmp.getRequestPath().
+// Not exported; only called by handleRequest and handleRequestForUnitTesting.
+function _handleRequest(f, unitName = TENANT_OWNER, endpointConfig) {
+  // Adjust from null
+  if (isUndefined(unitName) || unitName === null) {
+    unitName = TENANT_OWNER;
+  }
+  // If the unit is the tenant owner and allowed by the endpoint, amp the request
+  // as an admin for improved performance.
+  if (unitName === TENANT_OWNER && endpointConfig.mayAmpAsAdmin()) {
+    return _executeAsAdmin(f);
+  }
+  return f();
+}
+
+function handleRequest(f, unitName = TENANT_OWNER) {
   try {
-    const endpointConfig = getCurrentEndpointConfig(
-      FEATURE_MY_COLLECTIONS_ENABLED,
-    );
-    if (FEATURE_MY_COLLECTIONS_ENABLED) {
-      // Require the current endpoint's configuration; an error is throw upon
-      // retrieving the configuration when the configuration is invalid.
-      return _handleRequestV2(f, unitName, endpointConfig, forceInvoke);
-    } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
-      throw new BadRequestError('The My Collections feature is disabled.');
-    }
-    // Feature is disabled, just do what we used to do.
-    return f();
+    const endpointConfig = getCurrentEndpointConfig();
+    return _handleRequest(f, unitName, endpointConfig);
   } catch (e) {
     if (xdmp.traceEnabled(TRACE_NAME_ERROR)) {
       xdmp.trace(
@@ -316,9 +322,9 @@ function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
     }
   }
 }
-// Handle a version 2 request initiated by a unit test. We otherwise do not want to accept the
+// Handle a request initiated by a unit test. We otherwise do not want to accept the
 // endpoint configuration as a parameter.
-function handleRequestV2ForUnitTesting(
+function handleRequestForUnitTesting(
   f,
   unitName = TENANT_OWNER,
   endpointConfig,
@@ -333,7 +339,7 @@ function handleRequestV2ForUnitTesting(
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
 
-  return _handleRequestV2(f, unitName, endpointConfig);
+  return _handleRequest(f, unitName, endpointConfig);
 }
 
 // Handle a version 2 request. Version 2 request support includes the My Collections feature.
@@ -345,7 +351,7 @@ function __handleRequestV2(
   forceInvoke = false,
 ) {
   // Adjust from null
-  if (isUndefined(unitName)) {
+  if (isUndefined(unitName) || unitName === null) {
     unitName = TENANT_OWNER;
   }
 
@@ -648,7 +654,7 @@ export {
   getExclusiveRoleNameByUsername,
   getExclusiveRoleNamesByUsername,
   handleRequest,
-  handleRequestV2ForUnitTesting,
+  handleRequestForUnitTesting,
   isConfiguredForUnit,
   isCurrentUserServiceAccount,
   mayScaleEnvironment,

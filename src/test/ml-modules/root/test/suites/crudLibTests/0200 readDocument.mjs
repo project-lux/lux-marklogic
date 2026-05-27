@@ -3,7 +3,7 @@ import { COLLECTION_NAME_USER_PROFILE } from '/lib/appConstants.mjs';
 import { PROP_NAME_DEFAULT_COLLECTION } from '/lib/model.mjs';
 import { readDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
-import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
+import { handleRequestForUnitTesting } from '/lib/securityLib.mjs';
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
   USERNAME_FOR_BONNIE,
@@ -21,31 +21,31 @@ const userProfileDocNode = fn.head(
   xdmp.invokeFunction(
     () => {
       return fn.head(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
+        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)),
       );
     },
     {
       userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
+    },
+  ),
 );
 assertions.push(
   testHelperProxy.assertExists(
     userProfileDocNode,
-    `The readDocument tests are dependent on the createDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
-  )
+    `The readDocument tests are dependent on the createDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`,
+  ),
 );
 assertions.push(
   testHelperProxy.assertTrue(
     userProfileDocNode.xpath('exists(indexedProperties)'),
-    'The indexedProperties property is missing from the user profile document'
-  )
+    'The indexedProperties property is missing from the user profile document',
+  ),
 );
 assertions.push(
   testHelperProxy.assertFalse(
     userProfileDocNode.xpath('exists(root) or exists(baseURI)'),
-    'Regression: the document node was saved rather than just its JSON'
-  )
+    'Regression: the document node was saved rather than just its JSON',
+  ),
 );
 const userProfileUri = fn.baseUri(userProfileDocNode) + '';
 
@@ -152,10 +152,10 @@ for (const scenario of scenarios) {
       return readDocument(scenario.input.uri, scenario.input.profileName);
     };
     const unitName = null;
-    return handleRequestV2ForUnitTesting(
+    return handleRequestForUnitTesting(
       innerZeroArityFun,
       unitName,
-      endpointConfig
+      endpointConfig,
     );
   };
   const scenarioResults = executeScenario(scenario, zeroArityFun, {
@@ -167,7 +167,7 @@ for (const scenario of scenarios) {
   }
 }
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
 );
 
 assertions;

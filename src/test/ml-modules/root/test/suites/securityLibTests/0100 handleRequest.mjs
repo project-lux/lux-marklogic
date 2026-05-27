@@ -4,7 +4,7 @@ import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import {
   CAPABILITY_UPDATE,
   TENANT_OWNER,
-  handleRequestV2ForUnitTesting,
+  handleRequestForUnitTesting,
   getEndpointAccessUnitNames,
   getExclusiveRoleNameByUsername,
 } from '/lib/securityLib.mjs';
@@ -26,8 +26,8 @@ try {
   assertions.push(
     testHelperProxy.assertTrue(
       false,
-      `The handleRequests tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`
-    )
+      `The handleRequests tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`,
+    ),
   );
 }
 
@@ -42,8 +42,8 @@ const canReadDoc = () => {
 assertions.push(
   testHelperProxy.assertTrue(
     canReadDoc(),
-    `Setup wasn't able to create ${FOO_URI}`
-  )
+    `Setup wasn't able to create ${FOO_URI}`,
+  ),
 );
 
 const regularUserRoleNames = [
@@ -190,10 +190,10 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    return handleRequestV2ForUnitTesting(
+    return handleRequestForUnitTesting(
       scenario.input.function,
       scenario.input.unitName,
-      new EndpointConfig(scenario.input.endpointConfig)
+      new EndpointConfig(scenario.input.endpointConfig),
     );
   };
 
@@ -210,8 +210,8 @@ for (const scenario of scenarios) {
       testHelperProxy.assertEqual(
         scenario.expected.value,
         scenarioResults.actualValue,
-        `Scenario '${scenario.name}' did not return the expected value.`
-      )
+        `Scenario '${scenario.name}' did not return the expected value.`,
+      ),
     );
     // Need to run in its own transaction as the call to handleRequest could have created the roles.
     // Not really necessary for scenarios that share the same user but :shrug:
@@ -223,7 +223,7 @@ for (const scenario of scenarios) {
         } catch (e) {
           return testHelperProxy.assertTrue(
             false,
-            `Scenario '${scenario.name}' expected role ${roleName} to exist but it didn't.`
+            `Scenario '${scenario.name}' expected role ${roleName} to exist but it didn't.`,
           );
         }
       });
@@ -232,7 +232,7 @@ for (const scenario of scenarios) {
   }
 }
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
 );
 
 assertions;

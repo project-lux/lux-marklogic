@@ -1,5 +1,6 @@
 import {
   getCurrentEndpointPath,
+  PROP_NAME_AMP_AS_ADMIN,
   PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
   PROP_NAME_FEATURES,
   PROP_NAME_MY_COLLECTIONS,
@@ -33,6 +34,10 @@ const EndpointConfig = class {
 
   mayNotExecuteInReadOnlyMode() {
     return !this.mayExecuteInReadOnlyMode();
+  }
+
+  mayAmpAsAdmin() {
+    return this[PROP_NAME_AMP_AS_ADMIN] === true;
   }
 
   isPartOfMyCollectionsFeature() {

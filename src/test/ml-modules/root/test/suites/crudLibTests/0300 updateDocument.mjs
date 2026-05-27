@@ -6,7 +6,7 @@ import {
 import { updateDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
-import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
+import { handleRequestForUnitTesting } from '/lib/securityLib.mjs';
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
   HMO_URI,
@@ -37,7 +37,7 @@ xdmp.invokeFunction(
     const sec = require('/MarkLogic/security.xqy');
     sec.userAddRoles(USERNAME_FOR_BONNIE, ROLE_NAME_TENANT_ENDPOINT_CONSUMER);
   },
-  { database: xdmp.securityDatabase() }
+  { database: xdmp.securityDatabase() },
 );
 
 // Get values required by these tests.
@@ -49,10 +49,10 @@ const { hmoDocObj, userProfileDocNode, defaultMyCollectionDocNode } = fn.head(
       hmoDocObj.id = HMO_URI; // Ensure the ID is set for the test.
 
       const userProfileDocNode = fn.head(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
+        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)),
       );
       const defaultMyCollectionDocNode = cts.doc(
-        getDefaultCollection(userProfileDocNode)
+        getDefaultCollection(userProfileDocNode),
       );
 
       return {
@@ -63,28 +63,28 @@ const { hmoDocObj, userProfileDocNode, defaultMyCollectionDocNode } = fn.head(
     },
     {
       userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
+    },
+  ),
 );
 assertions.push(
   testHelperProxy.assertExists(
     hmoDocObj,
-    `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`
-  )
+    `The updateDocument tests are dependent on finding a document with a type that the function should not accept.`,
+  ),
 );
 const hmoUri = hmoDocObj.id;
 assertions.push(
   testHelperProxy.assertExists(
     userProfileDocNode,
-    `The updateDocument tests are dependent on the createDocument tests creating a User Profile document for '${USERNAME_FOR_BONNIE}'`
-  )
+    `The updateDocument tests are dependent on the createDocument tests creating a User Profile document for '${USERNAME_FOR_BONNIE}'`,
+  ),
 );
 const userProfileUri = userProfileDocNode.baseURI;
 assertions.push(
   testHelperProxy.assertExists(
     defaultMyCollectionDocNode,
-    `The updateDocument tests are dependent on the createDocument tests creating a default for '${USERNAME_FOR_BONNIE}'`
-  )
+    `The updateDocument tests are dependent on the createDocument tests creating a default for '${USERNAME_FOR_BONNIE}'`,
+  ),
 );
 const defaultMyCollectionUri = defaultMyCollectionDocNode.baseURI;
 
@@ -94,10 +94,10 @@ xdmp.invokeFunction(
     const sec = require('/MarkLogic/security.xqy');
     sec.userRemoveRoles(
       USERNAME_FOR_BONNIE,
-      ROLE_NAME_TENANT_ENDPOINT_CONSUMER
+      ROLE_NAME_TENANT_ENDPOINT_CONSUMER,
     );
   },
-  { database: xdmp.securityDatabase() }
+  { database: xdmp.securityDatabase() },
 );
 //
 // END: OK, let's get on with the tests.
@@ -384,15 +384,15 @@ for (const scenario of scenarios) {
           ? scenario.input.idOverride
           : scenario.input.doc.id,
         getNodeFromObject(scenario.input.doc),
-        newUserMode
+        newUserMode,
       );
     };
     const unitName = null;
     // These tests are dependent on handleRequest creating the user's exclusive roles.
-    return handleRequestV2ForUnitTesting(
+    return handleRequestForUnitTesting(
       innerZeroArityFun,
       unitName,
-      endpointConfig
+      endpointConfig,
     );
   };
   const scenarioResults = executeScenario(scenario, zeroArityFun, {
@@ -404,7 +404,7 @@ for (const scenario of scenarios) {
   }
 }
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
 );
 
 assertions;

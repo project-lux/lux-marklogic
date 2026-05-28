@@ -97,6 +97,41 @@ const scenarios = [
       planContains: ['Person', 'Group'],
     },
   },
+  {
+    name: 'Avoid join full outer from empty AND (all stop words) within an OR',
+    input: {
+      scopeName: 'item',
+      searchCriteria: {
+        OR: [
+          {
+            AND: [
+              {
+                text: 'within',
+              },
+              {
+                text: 'without',
+              },
+            ],
+          },
+          {
+            AND: [
+              {
+                text: 'actually',
+              },
+              {
+                text: 'fish',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      planContains: ['joinInner', 'fish'],
+      planExcludes: ['joinFullOuter', 'within', 'without', 'actually'],
+    },
+  },
 ];
 
 for (const scenario of scenarios) {

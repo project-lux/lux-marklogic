@@ -145,8 +145,9 @@ function processCriteria({
   groups = null,
   parentId = null,
   allowMultiScope = false,
+  returnNullIfEmpty = false,
 }) {
-  const { acc, assemblyContext } = buildCriteriaAccumulator({
+  const { acc, assemblyContext, localUsableCount } = buildCriteriaAccumulator({
     scp,
     planCriteria,
     planScope,
@@ -154,6 +155,9 @@ function processCriteria({
     parentId,
     allowMultiScope,
   });
+  if (returnNullIfEmpty && localUsableCount === 0) {
+    return null;
+  }
   return assemblePlan(scp, { ...acc, ...assemblyContext });
 }
 
@@ -233,7 +237,7 @@ function buildCriteriaAccumulator({
 
   let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
 
-  const { criteria, logicType } = parseCriteriaAndLogicType(planCriteria);
+  let { criteria, logicType } = parseCriteriaAndLogicType(planCriteria);
 
   const acc = createPlanAccumulator({
     scope,
@@ -243,6 +247,8 @@ function buildCriteriaAccumulator({
     dataTypeCol,
     isMultiScope,
   });
+
+  let localUsableCount = 0;
 
   // Loop through search criteria, building the accumulator.
   // criteria.length is evaluated each iteration — NOT cached — because
@@ -271,7 +277,10 @@ function buildCriteriaAccumulator({
         fragCol,
         scp,
       });
-      if (result.inlineCriteria) {
+      if (result.skip) {
+        // The sub-group's criteria were all filtered (e.g. stop words); treat
+        // the group as non-existent so it doesn't contribute an empty plan.
+      } else if (result.inlineCriteria) {
         criteria.push(...result.inlineCriteria);
       } else if (result.andOrSubPlan) {
         // Deferred: AND-encounters-OR sub-plans are combined off the outer
@@ -279,8 +288,10 @@ function buildCriteriaAccumulator({
         // chained against the same outer (which silently zeroes results or
         // blows memory). See docs/optic-lessons.md.
         acc.andOrSubPlans.push(result.andOrSubPlan);
+        localUsableCount++;
       } else {
         acc.conjunctionJoins.push(result.join);
+        localUsableCount++;
       }
       continue;
     }
@@ -323,6 +334,7 @@ function buildCriteriaAccumulator({
     }
 
     scp.incrementCriteriaCount();
+    localUsableCount++;
     mergeTermPlanContributions(
       acc,
       criteria,
@@ -341,6 +353,18 @@ function buildCriteriaAccumulator({
     throw new InvalidSearchRequestError('more search criteria is required.');
   }
 
+  // A single-branch OR is semantically equivalent to AND. Collapsing avoids
+  // a joinFullOuter against the base plan, which would include every doc in
+  // the search scope.
+  if (logicType === 'or' && localUsableCount === 1) {
+    logicType = 'and';
+    for (const join of acc.conjunctionJoins) {
+      if (join.type === 'joinFullOuter') {
+        join.type = 'joinInner';
+      }
+    }
+  }
+
   const assemblyContext = {
     fragCol,
     uriCol,
@@ -349,7 +373,7 @@ function buildCriteriaAccumulator({
     logicType,
     isTopLevel,
   };
-  return { acc, assemblyContext };
+  return { acc, assemblyContext, localUsableCount };
 }
 
 // Parses a planCriteria object into a mutable array of criteria and a logic type
@@ -561,9 +585,10 @@ function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
   }
 }
 
-// Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor
-// or inline criteria to be appended to the processing queue.
-// Returns: { join: { type, right, on, condition } } or { inlineCriteria: Array }
+// Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor,
+// inline criteria to be appended to the processing queue, or a skip signal when the
+// sub-group's criteria were all filtered out (e.g. stop words).
+// Returns: { join: ... } | { inlineCriteria: Array } | { andOrSubPlan: ... } | { skip: true }
 function buildConjunctionJoin({
   criterion,
   logicType,
@@ -594,7 +619,10 @@ function buildConjunctionJoin({
       planScope: scope,
       patternOptions,
       parentId: id,
+      returnNullIfEmpty: true,
     });
+
+  let plan;
 
   if (criterion.AND) {
     switch (logicType) {
@@ -604,11 +632,13 @@ function buildConjunctionJoin({
 
       case 'or': {
         // We are in an OR and encounter an AND - full outer join
+        plan = subPlan(criterion);
+        if (!plan) return { skip: true };
         const _joinCol = fullOuterJoinCol();
         return {
           join: {
             type: 'joinFullOuter',
-            right: subPlan(criterion).select([
+            right: plan.select([
               _joinCol,
               op.as('dataType', op.col(id + '_dataType')),
             ]),
@@ -620,18 +650,18 @@ function buildConjunctionJoin({
 
       case 'not':
         // We are in a NOT and encounter an AND - not exists join
+        plan = subPlan(criterion);
+        if (!plan) return { skip: true };
         return {
           join: {
             type: 'notExistsJoin',
-            right: subPlan(criterion).select(singleColSelect()),
+            right: plan.select(singleColSelect()),
             on: makeJoinOn(),
             condition: null,
           },
         };
     }
-  }
-
-  if (criterion.OR) {
+  } else if (criterion.OR) {
     switch (logicType) {
       case 'and': {
         // AND encounters OR. Defer: assemblePlan combines all such
@@ -642,10 +672,12 @@ function buildConjunctionJoin({
         // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
         // groupBy on that same column dedupes and adds a materialization
         // barrier so the merger sees a single, fully-typed binding.
+        plan = subPlan(criterion);
+        if (!plan) return { skip: true };
         const cols = singleColSelect();
         return {
           andOrSubPlan: {
-            plan: subPlan(criterion).select(cols).groupBy(cols, []),
+            plan: plan.select(cols).groupBy(cols, []),
             joinCol: cols[0],
             preferFrag: patternOptions.getPreferFragJoins(),
           },
@@ -658,26 +690,28 @@ function buildConjunctionJoin({
 
       case 'not':
         // We are in a NOT and encounter an OR - not exists join
+        plan = subPlan(criterion);
+        if (!plan) return { skip: true };
         return {
           join: {
             type: 'notExistsJoin',
-            right: subPlan(criterion).select(singleColSelect()),
+            right: plan.select(singleColSelect()),
             on: makeJoinOn(),
             condition: null,
           },
         };
     }
-  }
-
-  if (criterion.NOT) {
+  } else if (criterion.NOT) {
     switch (logicType) {
       case 'and':
         // We are in an AND and encounter a NOT - not exists join and change to OR
         // This is equivalent and likely more performant (needs testing)
+        plan = subPlan({ OR: criterion.NOT });
+        if (!plan) return { skip: true };
         return {
           join: {
             type: 'notExistsJoin',
-            right: subPlan({ OR: criterion.NOT }).select(singleColSelect()),
+            right: plan.select(singleColSelect()),
             on: makeJoinOn(),
             condition: null,
           },
@@ -685,11 +719,13 @@ function buildConjunctionJoin({
 
       case 'or': {
         // We are in an OR and encounter a NOT - full outer join
+        plan = subPlan(criterion);
+        if (!plan) return { skip: true };
         const _joinCol = fullOuterJoinCol();
         return {
           join: {
             type: 'joinFullOuter',
-            right: subPlan(criterion).select([
+            right: plan.select([
               _joinCol,
               op.as('dataType', op.col(id + '_dataType')),
             ]),
@@ -702,10 +738,12 @@ function buildConjunctionJoin({
       case 'not':
         // We are in a NOT and encounter a NOT - inner join and change to OR
         // This is equivalent and likely more performant (needs testing)
+        plan = subPlan({ OR: criterion.NOT });
+        if (!plan) return { skip: true };
         return {
           join: {
             type: 'joinInner',
-            right: subPlan({ OR: criterion.NOT }).select(singleColSelect()),
+            right: plan.select(singleColSelect()),
             on: makeJoinOn(),
             condition: null,
           },

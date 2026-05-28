@@ -145,9 +145,8 @@ function processCriteria({
   groups = null,
   parentId = null,
   allowMultiScope = false,
-  returnNullIfEmpty = false,
 }) {
-  const { acc, assemblyContext, localUsableCount } = buildCriteriaAccumulator({
+  const { acc, assemblyContext } = buildCriteriaAccumulator({
     scp,
     planCriteria,
     planScope,
@@ -155,9 +154,6 @@ function processCriteria({
     parentId,
     allowMultiScope,
   });
-  if (returnNullIfEmpty && localUsableCount === 0) {
-    return null;
-  }
   return assemblePlan(scp, { ...acc, ...assemblyContext });
 }
 
@@ -248,7 +244,7 @@ function buildCriteriaAccumulator({
     isMultiScope,
   });
 
-  let localUsableCount = 0;
+  let usableLeafTermCount = 0;
 
   // Loop through search criteria, building the accumulator.
   // criteria.length is evaluated each iteration — NOT cached — because
@@ -288,10 +284,8 @@ function buildCriteriaAccumulator({
         // chained against the same outer (which silently zeroes results or
         // blows memory). See docs/optic-lessons.md.
         acc.andOrSubPlans.push(result.andOrSubPlan);
-        localUsableCount++;
       } else {
         acc.conjunctionJoins.push(result.join);
-        localUsableCount++;
       }
       continue;
     }
@@ -334,7 +328,7 @@ function buildCriteriaAccumulator({
     }
 
     scp.incrementCriteriaCount();
-    localUsableCount++;
+    usableLeafTermCount++;
     mergeTermPlanContributions(
       acc,
       criteria,
@@ -356,7 +350,11 @@ function buildCriteriaAccumulator({
   // A single-branch OR is semantically equivalent to AND. Collapsing avoids
   // a joinFullOuter against the base plan, which would include every doc in
   // the search scope.
-  if (logicType === 'or' && localUsableCount === 1) {
+  const usableBranchCount =
+    acc.conjunctionJoins.length +
+    acc.andOrSubPlans.length +
+    usableLeafTermCount;
+  if (logicType === 'or' && usableBranchCount === 1) {
     logicType = 'and';
     for (const join of acc.conjunctionJoins) {
       if (join.type === 'joinFullOuter') {
@@ -373,7 +371,7 @@ function buildCriteriaAccumulator({
     logicType,
     isTopLevel,
   };
-  return { acc, assemblyContext, localUsableCount };
+  return { acc, assemblyContext };
 }
 
 // Parses a planCriteria object into a mutable array of criteria and a logic type
@@ -612,15 +610,17 @@ function buildConjunctionJoin({
       ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
       : op.as(uriCol, op.col(id + '_uri'));
 
-  const subPlan = (planCriteria) =>
-    processCriteria({
+  const subPlan = (planCriteria) => {
+    const countBefore = scp.getCriteriaCount();
+    const plan = processCriteria({
       scp,
       planCriteria,
       planScope: scope,
       patternOptions,
       parentId: id,
-      returnNullIfEmpty: true,
     });
+    return scp.getCriteriaCount() > countBefore ? plan : null;
+  };
 
   let plan;
 

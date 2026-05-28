@@ -19,11 +19,11 @@ const ENDPOINTS_CONFIG = Object.freeze({
   },
   '/ds/lux/document/create.mjs': {
     allowInReadOnlyMode: false,
-    features: { myCollections: false },
+    features: { myCollections: true },
   },
   '/ds/lux/document/delete.mjs': {
     allowInReadOnlyMode: false,
-    features: { myCollections: false },
+    features: { myCollections: true },
   },
   '/ds/lux/document/read.mjs': {
     allowInReadOnlyMode: true,
@@ -31,7 +31,7 @@ const ENDPOINTS_CONFIG = Object.freeze({
   },
   '/ds/lux/document/update.mjs': {
     allowInReadOnlyMode: false,
-    features: { myCollections: false },
+    features: { myCollections: true },
   },
   '/ds/lux/facets.mjs': {
     ampAsAdmin: true,

@@ -60,7 +60,14 @@
   - [Optimization 4: Reduce keyword pattern IRI payload](#optimization-4-reduce-keyword-pattern-iri-payload)
   - [Optimization 5: Remove unused `iri` column from `fromLexicons` for keyword-only queries](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries)
   - [Optimization 6: Analyze the optimized plan for join strategy issues](#optimization-6-analyze-the-optimized-plan-for-join-strategy-issues)
+  - [Optimization 7: Use scope-specific dataType lexicons](#optimization-7-use-scope-specific-datatype-lexicons)
   - [Warm-run gap breakdown (AND'd keywords with scores)](#warm-run-gap-breakdown-andd-keywords-with-scores)
+  - [Cold-start gap analysis](#cold-start-gap-analysis)
+  - [Optimization 8: Use `op.param` for non-CTS plan parameters](#optimization-8-use-opparam-for-non-cts-plan-parameters)
+  - [Optimization 9: Lazy IRI resolution (pass Sequence, not Array)](#optimization-9-lazy-iri-resolution-pass-sequence-not-array)
+  - [Optimization 10: fromTriples architecture (avoid IRIs in plan AST entirely)](#optimization-10-fromtriples-architecture-avoid-iris-in-plan-ast-entirely)
+  - [Updated results (without `prepare()`, 2026-05-29)](#updated-results-without-prepare-2026-05-29)
+  - [Benchmark Templates](#benchmark-templates)
 
 # Introduction
 
@@ -678,18 +685,27 @@ The isolated benchmarks below use two extremes — fully cold (caches cleared) a
 
 ## Isolated Benchmark Reference (MarkLogic 12.0.1)
 
+**Important:** Early benchmarks (Theories A–L) called `plan.prepare(1)` before `.result()`, which forces re-optimization on every invocation and adds ~140ms to each warm run. The production code does NOT call `prepare()` — MarkLogic caches and reuses optimized plans automatically. The table below includes a corrected baseline without `prepare()`.
+
 | Approach | First run (cold) | Warm avg | Notes |
 |---|---|---|---|
-| CTS baseline | 682ms | 93ms | Direct `cts.search()`, re-resolves IRIs each iteration |
-| Optic baseline (`fromSearch` with full query) | 4,104ms | 179ms | `fromSearch(fullQuery) + joinInner`, 49K IRIs in plan |
-| Optic `plan.where()` only (no scoring) | 3,990ms | 128ms | Full query via `where()`, no `fromSearch`, no score column |
-| Optic non-semantic only (`fromSearch`) | 407ms | 136ms | `fromSearch` with `fieldWordQuery` AND only, no `tripleRangeQuery` |
+| CTS baseline | 662–680ms | 93–98ms | Direct `cts.search()`, re-resolves IRIs each iteration |
+| Optic baseline (with `prepare(1)`) | 4,043–4,297ms | 178–203ms | Inflated by forced re-optimization each warm run |
+| **Optic baseline (no `prepare()`)** | **3,855–3,868ms** | **29–30ms** | **As admin; Optic 3.2× faster than CTS warm** |
+| **Optic baseline (no `prepare()`, consumer)** | **3,928–4,013ms** | **32–37ms** | **With permissions; Optic 2.7× faster than CTS warm** |
+| Optic non-semantic only (no `prepare()`) | 267–272ms | 3–7ms | No `tripleRangeQuery` in plan — **14× faster cold than baseline** |
+| Optic lazy IRI (Theory M, no `prepare()`) | 3,804–3,891ms | 28–34ms | No improvement — `cts.tripleRangeQuery` materializes eagerly |
+| Optic `plan.where()` only (no scoring) | 3,990ms | 128ms | With `prepare(1)`; full query via `where()` |
+| Optic non-semantic only (`fromSearch`) | 407ms | 136ms | With `prepare(1)`; `fieldWordQuery` AND only |
 
 ### Key findings
 
-1. **Warm-run gap: 1.9x** (Optic baseline 179ms vs CTS 93ms). ~35ms is irreducible Optic framework overhead (lexicon scan, groupBy, orderBy, select). ~51ms is `fromSearch+joinInner` scoring overhead.
-2. **Cold-start gap: 6x** (Optic 4,104ms vs CTS 682ms). Dominated by Optic `prepare()` (3,818ms from phase timing). Cold triple-index scan contributes to both but Optic pays an additional plan-preparation penalty.
-3. **`plan.where()` vs `op.fromSearch()`**: `where()` passes the CTS query by reference; `fromSearch()` incorporates it into the plan AST. With 49K IRI literals in `cts.tripleRangeQuery`, `fromSearch` adds measurable overhead. On warm runs: 128ms (`where`) vs 179ms (`fromSearch+joinInner`).
+1. **Warm-run performance: Optic is faster than CTS.** Without `prepare()`, Optic warm avg is 29–37ms vs CTS 93–98ms (2.7–3.2× faster). The earlier 1.9× Optic-is-slower conclusion was an artifact of forced re-optimization in benchmark scripts.
+2. **Cold-start gap: 5.8×** (Optic 3,928ms vs CTS 662ms). This is the dominant problem. Driven by Optic plan optimization cost for the 49K-IRI CTS query. The `prepare()` phase alone was measured at 3,818ms in phase timing (Theory E).
+3. **The entire cold penalty is from 49K-IRI plan optimization.** Theory D (non-semantic only, no `tripleRangeQuery`) cold = 267ms — 14× faster than baseline, actually faster than CTS. The optimizer processing literal IRI values in the plan AST accounts for 97% of the cold-start overhead.
+4. **Lazy IRI resolution doesn't help (Theory M).** `cts.tripleRangeQuery` eagerly materializes Sequence arguments into the plan AST regardless of whether input is Array or Sequence. The `.toArray()` call is not the bottleneck.
+5. **`plan.where()` vs `op.fromSearch()`**: `where()` passes the CTS query by reference; `fromSearch()` incorporates it into the plan AST. With 49K IRI literals in `cts.tripleRangeQuery`, `fromSearch` adds measurable overhead. On warm runs: 128ms (`where`) vs 179ms (`fromSearch+joinInner`) — both with `prepare(1)`.
+6. **Admin vs consumer permissions**: ~100ms cold, ~5ms warm — negligible factor.
 4. **IRI count in the keyword pattern**: Each keyword's `apply()` eagerly resolves IRIs via `cts.values().toArray()`. For this query: woman=11,670, greek=2,456, art=34,987 — totaling 49,113 IRIs embedded as literals in `cts.tripleRangeQuery` objects.
 
 ## Optimization 1: `plan.where()` when scores are not needed
@@ -731,24 +747,159 @@ The `dataType` constraint (`op.in(op.col('dataType'), [...])`) is applied at the
 
 ## Optimization 6: Analyze the optimized plan for join strategy issues
 
-**Status:** TODO — awaiting data reload to capture the XML-formatted actual plan.
+**Status:** Complete — plan captured and analyzed.
 
-The Optic optimizer selects join strategies (bloom, scatter, etc.) and operator ordering. The `fromSearch+joinInner` overhead (51ms warm) may partly stem from a sub-optimal join strategy when the CTS query contains large `cts.tripleRangeQuery` objects. The actual plan will reveal:
-- Which join strategy the optimizer chose for the `fromSearch` join
-- Whether the `tripleRangeQuery` evaluation cost is in the join or in the `fromSearch` row source
-- Whether reordering operators (e.g., filtering before joining) would help
+The actual plan (WGA-actual-plan.xml, captured 2026-05-28) reveals the optimizer's execution structure for the three AND'd keyword query. Key findings:
 
-Note: `op.export()` does not expose the optimized plan. Use the MarkLogic admin tools to capture the XML-formatted actual plan. Visualization may not render for complex plans.
+- **Join strategy:** scatter-join throughout, no bloom filters. The top scatter-join (fromSearch ⋈ lexicon chain) dominates at cost=25,585 out of total plan cost=39,009.
+- **`iri` column overhead confirmed:** The optimizer splits `cts.iriReference()` into two lexicon-index scans (one `cast-to-IRI=true`, one `cast-to-IRI=false`), hash-joins them on `frag`, then scatter-joins with the dataType lexicon — yet the iri column is never projected into the output. The uri+iri lexicon reports 43.9M cardinality.
+- **dataType constraint placement:** `op.in(dataType, [...])` is pushed down as a join-filter on the dataType lexicon-index (good), but the lexicon is still scanned and joined before fromSearch results are available.
+- **from-search selectivity:** 10,105 estimated matching fragments — the CTS query is selective. The cost=7,849 for from-search is reasonable relative to the lexicon chain overhead.
+
+See `scratch/performance/woman-greek-art-memberOf/WGA-actual-plan.xml` for the full plan.
+
+## Optimization 7: Use scope-specific dataType lexicons
+
+**Status:** Tested — no gain (Theory K). MarkLogic handles large lexicons efficiently.
+
+`createPlanAccumulator` always uses `cts.fieldReference('anyDataTypeName')` which indexes `/json/type` across all ~44M documents regardless of scope. Each scope has a dedicated, smaller lexicon: e.g., `itemDataTypeName` indexes only `/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType`. Using the scope-specific lexicon should reduce the lexicon scan cardinality and may improve join strategies. Scope-to-field mapping:
+
+| Scope | Field | JSON path scope |
+|---|---|---|
+| item | `itemDataTypeName` | `HumanMadeObject`, `DigitalObject` |
+| agent | `agentDataTypeName` | `Person`, `Group` |
+| concept | `conceptDataTypeName` | `Type`, `Currency`, `Language`, `MeasurementUnit`, `Material` |
+| event | `eventDataTypeName` | `Activity`, `Period` |
+| place | `placeDataTypeName` | `Place` |
+| set | `setDataTypeName` | `Set` |
+| work | `workDataTypeName` | `LinguisticObject`, `VisualItem` |
+
+MarkLogic is reportedly efficient with larger lexicons, so the gain may be marginal — but worth verifying empirically. The `anyDataTypeName` lexicon must remain available for multi-scope queries and the `any` scope.
 
 ## Warm-run gap breakdown (AND'd keywords with scores)
 
-For reference, decomposing the 179ms Optic baseline vs 93ms CTS warm gap:
+**Note:** The warm-run numbers below used `prepare(1)`, which inflated all Optic warm times by ~140ms. Without `prepare()`, Optic warm is 32–37ms — faster than CTS (93–98ms). The decomposition below applies to the `prepare(1)` numbers and is preserved for reference, but the warm-run gap is no longer the performance concern. **The cold-start gap (3,928ms vs 662ms) is the primary optimization target.**
 
 | Component | Estimated cost | Source |
 |---|---|---|
-| Optic framework (lexicon scan, groupBy, orderBy, select) | ~35ms | Theory A (128ms) minus CTS (93ms) |
-| `tripleRangeQuery` overhead inside `fromSearch` | ~43ms | Baseline (179ms) minus non-semantic fromSearch (136ms) |
-| `fromSearch+joinInner` structural overhead | ~8ms | Non-semantic fromSearch (136ms) minus Theory A (128ms) |
-| **Total Optic overhead** | **~86ms** | Baseline (179ms) minus CTS (93ms) |
+| `prepare(1)` re-optimization overhead | ~140ms | Baseline with prepare (178ms) minus baseline without (37ms) |
+| Optic execution (lexicon scan, groupBy, orderBy, select, fromSearch) | ~37ms | Baseline without prepare() |
+| CTS baseline execution | ~98ms | CTS warm avg |
 
-The 35ms framework overhead is structural to Optic. The 43ms `tripleRangeQuery` overhead inside `fromSearch` is the largest addressable component — Optimization 6 (plan analysis) targets this. The 8ms join overhead is negligible.
+## Cold-start gap analysis
+
+The 5.8× cold-start gap (Optic 3,928ms vs CTS 662ms = 3,266ms overhead) breaks down as:
+
+| Component | Estimated cost | Source |
+|---|---|---|
+| Plan optimization (prepare/optimize) | ~3,818ms | Theory E phase timing |
+| IRI resolution (cts.values × 3 keywords) | ~134ms | Theory E phase timing (49K IRIs total) |
+| Plan build (Optic API calls) | ~38ms | Theory E phase timing |
+| Execution | ~302ms | Theory E phase timing (cold caches) |
+
+**The plan optimization cost (3.8s) is 97% of the cold-start overhead.** This is the optimizer processing the plan AST which contains 49K IRI literals embedded in `cts.tripleRangeQuery` objects. Each distinct keyword query produces a unique plan that cannot be reused.
+
+## Optimization 8: Use `op.param` for non-CTS plan parameters
+
+**Status:** Idea — needs investigation.
+
+Optic's [`op.param`](https://docs.marklogic.com/op.param) allows parameterizing plan values so the optimizer can cache and reuse prepared plans across executions that differ only in parameter values. Currently the engine does not use `op.param` anywhere. Every distinct query builds and prepares a new plan from scratch — and `prepare()` costs up to ~1 second cold (3.8s observed for the keyword query with 49K IRIs).
+
+**Limitation:** `op.param` cannot parameterize CTS queries (used in `op.fromSearch` and `plan.where`). Since keyword queries embed resolved IRIs in `cts.tripleRangeQuery`, the CTS query changes with every distinct keyword — so `op.param` cannot help with the dominant `prepare()` cost for keyword-only queries. MarkLogic 12.1 may address CTS query parameterization.
+
+**Where `op.param` can help:** Non-CTS constraints that vary per query, such as:
+- The `dataType` constraint: `op.in(op.col('dataType'), op.param('scopeTypes'))` — plans that differ only in scope could share a cached prepared plan.
+- Offset/limit values for pagination.
+- Sort column references that vary by user selection.
+- Pattern join parameters (e.g., hop field values, record link IDs).
+
+Even partial plan caching would reduce `prepare()` overhead for queries that share structural patterns but differ in scope, pagination, or facet selections — especially under concurrent load where diverse queries currently each pay the full prepare penalty.
+
+## Optimization 9: Lazy IRI resolution (pass Sequence, not Array)
+
+**Status:** Tested — no gain (Theory M). `cts.tripleRangeQuery` eagerly materializes all values regardless.
+
+The CTS baseline uses `fn.insertBefore(cts.values(...), 0, sentinel)` — passing a Sequence directly to `cts.tripleRangeQuery` without `.toArray()`. Theory M tested this same approach in the Optic plan.
+
+**Result:** Cold 3,804–3,891ms — identical to baseline (3,855–3,868ms as admin). `cts.tripleRangeQuery` eagerly materializes Sequence arguments into the plan AST regardless of input type. The `.toArray()` call in `Keyword.mjs` is not the source of plan bloat.
+
+## Optimization 10: fromTriples architecture (avoid IRIs in plan AST entirely)
+
+**Status:** Most promising direction — needs Theory N.
+
+Theory D (non-semantic only, no tripleRangeQuery) proved that removing the 49K-IRI CTS query from the plan drops cold-start from 3,855ms to **267ms** (14× faster, actually faster than CTS at 662ms). The semantic `fromTriples` joins were built in Theory D but never wired into the final plan.
+
+**Approach:** Instead of pre-resolving IRIs and embedding them as literals in `cts.tripleRangeQuery`, push the semantic matching into `op.fromTriples` with a `where(cts.fieldWordQuery('referenceName', term))` filter. The optimizer resolves this via indexes during execution without needing to process 49K literal values in the plan AST.
+
+**Design challenge:** Reproducing the OR semantics. Per keyword, a document matches if:
+- It matches the text field (`fieldWordQuery`), OR
+- It's the subject of a triple (via scope predicate) pointing to an object whose `referenceName` matches
+
+Options under consideration:
+1. Per-keyword `op.union()` of text-only matches and fromTriples semantic matches, then intersect across keywords
+2. `existsJoin` / `joinLeftOuter` with fromTriples per keyword — keeps non-semantic matches, adds semantic-only matches
+3. Two-pass: non-semantic plan for filtering+scoring, then semantic expansion via fromTriples union
+
+**Results so far (Theories N, N2):**
+
+| Theory | Architecture | Cold | Warm | Result count | Notes |
+|---|---|---|---|---|---|
+| N | (text-AND) ∪ (semantic-AND) | 464ms | 10ms | 127 / 10,105 | Fast but only 1.3% recall — most results match some keywords via text, others via semantic |
+| N2 | Per-keyword OR via fromLexicons(iri) union + fromTriples | — | — | — | MEMCANCELED (8.5GB) — 3 × fromLexicons(iri) scanning 43.9M IRIs each |
+
+**Findings:**
+- `fromTriples.where(fieldWordQuery('referenceName', term))` is fast: Theory N's Plan B (3 chained `joinInner` with `fromTriples` semantic filters) adds only ~190ms over the non-semantic baseline (464ms vs 270ms).
+- Per-keyword OR between CTS text matching and `fromTriples` semantic matching cannot be expressed in a single Optic plan without hitting memory limits or API constraints: `existsJoin` causes SQL-MISMATCH (SPARQL fusion), `fromLexicons(iri)` union causes MEMCANCELED, and union-of-slices grows as 2^N.
+- The root cause is that Optic has no native operator to OR a CTS fragment filter with a join-based row filter.
+
+## Optimization 11: MarkLogic enhancement — CTS object filter in `cts.tripleRangeQuery`
+
+**Status:** Idea — to raise with MarkLogic.
+
+The root cause of the cold-start penalty is that `cts.tripleRangeQuery` requires pre-materialized IRI values as its object constraint. For keyword searches, this means resolving all matching IRIs via `cts.values()` (131ms) and then embedding them as literals in the plan AST (49K values), which the Optic optimizer must traverse and cost (3.8s).
+
+**Proposed enhancement:** A variant of `cts.tripleRangeQuery` (or an additional parameter) that accepts a CTS query as the object filter instead of pre-resolved IRIs. For example:
+
+```javascript
+// Current: pre-resolve 49K IRIs, embed as literals
+const iris = cts.values(cts.iriReference(), null, opts, fieldWordQuery).toArray();
+cts.tripleRangeQuery([], predicate, iris, '=', [], weight);
+
+// Proposed: pass the CTS query directly — MarkLogic resolves lazily
+cts.tripleRangeQuery([], predicate, fieldWordQuery, '=', [], weight);
+// or:
+cts.tripleRangeQuery([], predicate, null, '=', [], weight, { objectQuery: fieldWordQuery });
+```
+
+**Why this would solve the problem:**
+- The plan AST stays compact (a CTS query reference instead of 49K IRI literals).
+- The optimizer processes a small, fixed-size plan node regardless of how many objects match.
+- MarkLogic resolves the object filter lazily at execution time using its triple and field indexes jointly — the same work it does today, but without the plan AST bloat.
+- CTS already does this efficiently: the CTS baseline (662ms cold) uses the same IRI resolution + triple matching but bypasses the Optic optimizer entirely.
+- Theory N proved that `fromTriples.where(fieldWordQuery)` handles this resolution in 190ms — the capability exists in the triple index engine.
+
+**Impact:** This single enhancement would eliminate the dominant cold-start cost (3.8s → estimated <500ms based on Theory N) while preserving the current `Keyword.mjs` architecture. It would require only a one-line change in `Keyword.mjs`: removing `.toArray()` and passing the CTS query instead of the IRI array.
+
+## Updated results (without `prepare()`, 2026-05-29)
+
+| Approach | Cold (avg of 2 runs) | Warm avg | Notes |
+|---|---|---|---|
+| CTS baseline | 662ms | 93-98ms | — |
+| **Optic baseline (as admin)** | **3,862ms** | **29-30ms** | Eliminates permission overhead |
+| **Theory D (non-semantic only)** | **270ms** | **4ms** | **14× faster cold — no IRIs in plan** |
+| Theory E (phase timing, no prepare) | 4,056ms total | — | IRI=136ms, build=37ms, execute=3,883ms |
+| **Theory M (lazy IRI)** | **3,805ms (admin)** | **28-29ms** | No improvement over baseline |
+| **Theory N (fromTriples, text-AND ∪ sem-AND)** | **464ms** | **10ms** | 127/10,105 results — fast but incomplete recall |
+| Theory N2 (per-keyword OR) | — | — | MEMCANCELED — 3 × fromLexicons(iri) over 43.9M entries |
+
+**Key insight from Theory E without prepare():** The 3.8s optimization cost doesn't disappear — it shifts from explicit `prepare()` into implicit optimization inside `.result()` on first execution. Plan cache makes subsequent warm calls fast (28-37ms).
+
+**Key insight from Theory D:** The entire 3.6s cold penalty comes from the Optic optimizer processing a plan AST containing 49K IRI literals. This is NOT about resolving IRIs (131ms) or permission checks (100ms) — it's about the optimizer traversing and costing the plan nodes. CTS avoids this because queries go directly to the search engine without passing through the Optic plan optimizer.
+
+## Benchmark Templates
+
+Reusable benchmark templates for the team:
+- CTS: `scratch/performance/TEMPLATE-cts-benchmark.js`
+- Optic: `scratch/performance/TEMPLATE-optic-benchmark.js`
+
+**Do not call `plan.prepare()` in Optic benchmarks.** MarkLogic caches optimized plans automatically. Calling `prepare()` forces re-optimization on every invocation, adding ~140ms per warm run and producing results that do not reflect production. The production code does not call `prepare()`. See the Optic template header for details.

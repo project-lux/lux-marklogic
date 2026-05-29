@@ -1,0 +1,440 @@
+<export><workspace name="Performance"><query name="Get CTS" focus="false" listorder="2" taborder="2" active="true" database="16296972423960182001" server="12469143693025051885" database-name="lux-dev-data-content" server-name="lux-dev-data-request-group-1" mode="javascript" optimize="1">// Copy of getCtsQueryForSearchCriteria.js in a CTS branch.
+
+// This script may be used to convert search criteria into a CTS query,
+// formatted as a string or object.  The script is also capable of returning
+// the entire call to cts.search.  One may provide additional values into
+// the call to processSearchCriteria.  Lastly, by modifying the bottom of the
+// script, one may return anything available to the instance of
+// SearchCriteriaProcessor.  Enjoy!
+'use strict';
+import { processSearchCriteria } from '/lib/searchLib.mjs';
+import { START_OF_GENERATED_QUERY } from '/lib/SearchCriteriaProcessor.mjs';
+
+// formatAsObject: when true, get the CTS query as a JavaScript object; else,
+// the CTS query is a string.  As an object, all values functions are called
+// (potentially longer to execute and more coming back).
+const formatAsObject = false;
+//
+// filterResults: set to true for filtered results or false for unfiltered.
+const filterResults = false;
+//
+// searchCriteria: the search criteria to convert.  Both search grammars are
+// supported.
+const searchCriteria = {"_scope":"item","OR":[{"AND":[{"text":"within","_lang":"en"},{"text":"without","_lang":"en"},{"text":"by","_lang":"en"},{"text":"in","_lang":"en"},{"text":"out","_lang":"en"},{"text":"of","_lang":"en"}]},{"AND":[{"text":"AND","_lang":"en"},{"text":"fish","_lang":"en"}]}]}
+;
+
+//
+// searchScope: required by the string search grammar and when not specified
+// by the _scope property in the JSON search grammar.
+const searchScope = null;
+
+/*
+  Additional values may be provided to processSearchCriteria.  Below is a 
+  potentially data list of properties and default values.  Note that this
+  function accepts more than the search endpoint.  See the current impl.
+  of processSearchCriteria for updated properties and defaults.
+
+  searchCriteria = null,
+  searchScope = null,
+  searchPatternOptions = null,
+  includeTypeConstraint = DEFAULT_INCLUDE_TYPE_CONSTRAINT (true),
+  page = DEFAULT_PAGE (1),
+  pageLength = DEFAULT_PAGE_LENGTH (20),
+  sortCriteria = new SortCriteria(""),
+  synonymsEnabled = DEFAULT_SYNONYMS_ENABLED (false),
+  facetsAreLikely = DEFAULT_FACETS_ARE_LIKELY (false),
+  stopWatch = new StopWatch(true),
+  valuesOnly = DEFAULT_VALUES_ONLY (false),
+ */
+const searchCriteriaProcessor = processSearchCriteria({
+  searchCriteria,
+  searchScope,
+  filterResults,
+});
+
+// Rather than returning the CTS Query, one may also elect to return other or
+// additional information from the SearchCriteriaProcessor instance.  See that
+// class's implementation for available functions.
+const ctsQueryStr = searchCriteriaProcessor.getCtsQueryStr();
+const requestedQuery = formatAsObject
+  ? xdmp
+      .eval(START_OF_GENERATED_QUERY.concat(ctsQueryStr))
+      .toArray()[0]
+      .toObject()
+  : ctsQueryStr;
+
+requestedQuery;
+export default requestedQuery;
+</query><query name="Get Plan" focus="false" listorder="3" taborder="3" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">// Copy of getPlansFromSearchCriteria.js from the optic-refactor branch.
+
+/*
+ * Generates an executable Optic plan from search criteria without running
+ * SCP's execute() or executeForValues().  Instead, it stops at buildPlans()
+ * to obtain the compiled plan, converts it to readable source, and wraps it
+ * in a self-contained script for MarkLogic Query Console.
+ *
+ * When andExecute is true, this script also runs the plan directly (bypassing
+ * SCP's execute path) so you can inspect both the plan and its results.
+ *
+ * Configure the variables below, then run this script in Query Console.
+ */
+'use strict';
+import op from '/MarkLogic/optic.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+
+//#region Developer configuration
+
+// searchCriteria: the search criteria to convert.  Both search grammars are
+// supported (JSON grammar and string grammar).
+const searchCriteria = {"_scope":"item","OR":[{"AND":[{"text":"within","_lang":"en"},{"text":"without","_lang":"en"},{"text":"by","_lang":"en"},{"text":"in","_lang":"en"},{"text":"out","_lang":"en"},{"text":"of","_lang":"en"}]},{"AND":[{"text":"AND","_lang":"en"},{"text":"fish","_lang":"en"}]}]};
+
+// scopeName: required by the string search grammar and when not specified
+// by the _scope property in the JSON search grammar.
+const scopeName = null;
+
+// Join on fragments or URIs?
+const preferFragJoins = false;
+
+// useSortedPlan: true for the sorted plan, false for the unsorted plan.
+const useSortedPlan = true;
+
+// sortDelimitedStr: sort specification (e.g., 'anySortName:desc').
+const sortDelimitedStr = '';
+
+// offset and limit for the executable template output.
+const offset = 0;
+const limit = 20;
+
+// andExecute: when true, also execute the plan and return results alongside
+// the generated script.  When false, only the script is returned.
+const andExecute = false;
+
+//#endregion
+
+// prepare() accepts these parameters; those marked [buildPlans] affect plan
+// generation, while those marked [execute-only] only matter for execute():
+//
+//   searchCriteria        [buildPlans]    - JSON or string grammar search input
+//   scopeName             [buildPlans]    - overrides _scope in criteria
+//   sortDelimitedStr      [buildPlans]    - sort spec influences sortedResultsPlan
+//   allowMultiScope       [buildPlans]    - must be true for scope 'multi'
+//   patternOptions        [buildPlans]    - Instance of PatternOptions
+//   includeTypeConstraint [execute-only]  - TBD whether this will be implemented in Optic.s
+//   includeSearchResults  [execute-only]  - controls whether execute() fetches result rows
+//   page                  [execute-only]  - pagination offset
+//   pageLength            [execute-only]  - pagination limit
+//   pageWith              [execute-only]  - find page containing a specific document
+//   filterResults         [execute-only]  - TBD whether this will be implemented in Optic.
+//   facetRequests         [execute-only]  - Instance of FacetRequests
+const { sortedResultsPlan, unsortedResultsPlan } = new SCP()
+  .prepare({
+    searchCriteria,
+    scopeName,
+    sortDelimitedStr,
+  })
+  .buildPlans(preferFragJoins);
+
+const selectedPlan = useSortedPlan ? sortedResultsPlan : unsortedResultsPlan;
+
+// Convert the Optic plan to readable source code with basic formatting:
+// - SPARQL strings converted to template literals for valid multi-line JS
+// - each chained method call on its own line
+const planSource = op
+  .toSource(selectedPlan.export())
+  .replace(/op\.fromSPARQL\('([\s\S]*?)'/g, 'op.fromSPARQL(`$1`')
+  .replace(/\)\s*\./g, ')\n  .');
+
+// Assemble the executable template.
+const script = `import op from 'MarkLogic/optic.mjs';
+
+const selectedPlan = ${planSource}
+
+const offset = ${offset};
+const limit = ${limit};
+const results = selectedPlan.offset(offset).limit(limit).result().toArray();
+export default results;
+`;
+
+const output = andExecute
+  ? {
+      script,
+      results: selectedPlan.offset(offset).limit(limit).result().toArray(),
+    }
+  : script;
+
+output;
+export default output;
+</query><query name="DSL" focus="false" listorder="4" taborder="4" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="querydsl" optimize="1">'use strict';
+
+// To use the DSL, do not not define op and omit the call to plan.
+//
+// If coming from the Get Plan tab, you just need the value of the fullPlan variable,
+// in that script's output.
+
+</query><query name="Clear Caches" focus="true" listorder="1" taborder="1" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
+
+xdmp.groupCacheClear(xdmp.group("Default"), ["compressed-tree-cache", "expanded-tree-cache", "list-cache"])
+xdmp.tripleCacheClear()
+xdmp.tripleValueCacheClear()
+xdmp.programCacheClear()
+// xdmp.cacheStatus()</query><query name="CTS Benchmark" focus="false" listorder="5" taborder="5" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
+
+// Copy of scripts/performance/benchmark-template-cts.js
+
+// CTS BENCHMARK TEMPLATE
+//
+// Use this template to benchmark CTS queries in MarkLogic Query Console.  Copy this file, update
+// getQuery, and adjust other values within the Configuration region as needed.
+//
+// Output format (when not returning results or estimates):
+//   &lt;scenarioName&gt; firstRun=&lt;ms&gt; warmRuns=&lt;n&gt; warmMin=&lt;ms&gt; warmMax=&lt;ms&gt; warmAvg=&lt;ms&gt; stddev=&lt;ms&gt; totalItemsRead=&lt;n&gt;
+//
+// IMPORTANT: Clear caches before running to get a true cold firstRun and be aware of concurrent demand:
+//   xdmp.programCacheClear(); xdmp.tripleCacheClear(); xdmp.tripleValueCacheClear()
+//   xdmp.groupCacheClear(xdmp.group("Default"), ["compressed-tree-cache", "expanded-tree-cache", "list-cache"]);
+
+//#region Configuration
+
+const scenarioName = `${xdmp.version()}-cts-&lt;YOUR_SCENARIO_NAME&gt;`;
+
+// The user to execute the query as (for security/permissions testing).
+const username = 'lux-dev-data-endpoint-consumer';
+
+// When true, only a cts.estimate is calculated (no actual search).
+const justEstimate = false;
+
+// When true, the query is only executed once, and the results are returned.
+// Ignored when justEstimate is true.
+const returnResults = false;
+
+// Number of warm runs. Ignored when other variables force the query to run once.
+const warmRuns = 10;
+
+// CTS search options. Adjust scoring method as needed.
+const ctsSearchOptions = ['unfiltered', 'unfaceted', 'score-logtfidf'];
+
+// Number of results to retrieve per execution.
+const resultLimit = 20;
+
+const getQuery = () =&gt; {
+  return cts.fieldWordQuery('placePrimaryName', 'manchester');
+};
+
+//#endregion Configuration
+
+//#region Benchmarking functions
+
+function round(x, places = 0) {
+  return Number.parseFloat(x).toFixed(places);
+}
+function getStandardDeviation(array) {
+  const n = array.length;
+  const mean = array.reduce((a, b) =&gt; a + b) / n;
+  return Math.sqrt(
+    array.map((x) =&gt; Math.pow(x - mean, 2)).reduce((a, b) =&gt; a + b) / n,
+  );
+}
+function microBenchmark(label, func, warmRuns, userName) {
+  let totalResults = 0;
+  let startTime = new Date();
+  const firstRunResults = fn.head(
+    xdmp.invokeFunction(func, { userId: xdmp.user(userName) }),
+  );
+  let firstRunMs = new Date() - startTime;
+  if (justEstimate === true || returnResults === true) {
+    return firstRunResults;
+  } else {
+    totalResults += firstRunResults;
+    let r = [];
+    for (let i = 0; i &lt; warmRuns; i++) {
+      startTime = new Date();
+      totalResults += fn.head(
+        xdmp.invokeFunction(func, { userId: xdmp.user(userName) }),
+      );
+      r.push(new Date() - startTime);
+    }
+    const avg = r.reduce((a, b) =&gt; a + b) / r.length;
+    const min = Math.min(...r);
+    const max = Math.max(...r);
+    const stddev = getStandardDeviation(r);
+    return (
+      label +
+      ' firstRun=' +
+      firstRunMs +
+      ' warmRuns=' +
+      warmRuns +
+      ' warmMin=' +
+      min +
+      ' warmMax=' +
+      max +
+      ' warmAvg=' +
+      round(avg) +
+      ' stddev=' +
+      round(stddev) +
+      ' totalItemsRead=' +
+      totalResults
+    );
+  }
+}
+
+const benchmark = function () {
+  if (justEstimate === true) {
+    const start = new Date();
+    const estimate = cts.estimate(getQuery());
+    return `Estimated ${estimate} results in ${
+      new Date() - start
+    } milliseconds.`;
+  } else {
+    const results = fn
+      .subsequence(cts.search(getQuery(), ctsSearchOptions), 1, resultLimit)
+      .toArray()
+      .map((doc) =&gt; {
+        return { id: doc.baseURI, score: cts.score(doc) };
+      });
+    if (returnResults) {
+      return {
+        length: results.length,
+        results,
+      };
+    }
+    return results.length;
+  }
+};
+
+//#endregion Benchmarking functions
+
+microBenchmark(scenarioName, benchmark, warmRuns, username);
+</query><query name="Optic Benchmark" focus="false" listorder="6" taborder="6" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
+
+// Copy of scripts/performance/benchmark-template-cts.js
+
+'use strict';
+
+// OPTIC BENCHMARK TEMPLATE
+//
+// Use this template to benchmark Optic plans in MarkLogic Query Console.  Copy this file, replace the
+// plan, and adjust other values within the Configuration region as needed.
+//
+// Output format (when not returning results or estimates):
+//   &lt;scenarioName&gt; firstRun=&lt;ms&gt; warmRuns=&lt;n&gt; warmMin=&lt;ms&gt; warmMax=&lt;ms&gt; warmAvg=&lt;ms&gt; stddev=&lt;ms&gt; totalItemsRead=&lt;n&gt;
+//
+// IMPORTANT:
+//   1. Clear caches before running to get a true cold firstRun and be aware of concurrent demand:
+//      xdmp.programCacheClear(); xdmp.tripleCacheClear(); xdmp.tripleValueCacheClear()
+//      xdmp.groupCacheClear(xdmp.group("Default"), ["compressed-tree-cache", "expanded-tree-cache", "list-cache"]);
+//
+//   2. Do not blindly override Optic's optimization level or seed.  A previous version of the benchmark
+//      template included a call to .prepare(1), which ended up increasing the warm average duration from
+//      37ms to 178ms.
+
+const op = require('/MarkLogic/optic');
+
+//#region Configuration
+
+const scenarioName = `${xdmp.version()}-optic-&lt;YOUR_SCENARIO_NAME&gt;`;
+
+// The user to execute the query as (for security/permissions testing).
+const username = 'lux-dev-data-endpoint-consumer';
+
+// When true, the query is only executed once, and the results are returned.
+// Ignored when estimating.
+const returnResults = false;
+
+// Set to a unique value to have the query's plan, optimization and execution
+// details logged. Query will only run once when not null.
+const traceId = null;
+
+// Number of warm runs. Ignored when other variables force the query to run once.
+const warmRuns = 10;
+
+// Number of results to retrieve per execution.
+const resultLimit = 20;
+
+const plan = op
+  .fromLexicons(
+    {
+      uri: cts.uriReference(),
+      iri: cts.iriReference(),
+      dataType: cts.fieldReference('anyDataTypeName', [
+        'type=string',
+        'collation=http://marklogic.com/collation/codepoint',
+      ]),
+    },
+    null,
+    op.fragmentIdCol('frag'),
+  )
+  .where(op.in(op.col('dataType'), ['Place']))
+  .joinInner(
+    op.fromSearch(cts.fieldWordQuery('placePrimaryName', 'manchester')),
+    op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+  )
+  .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+
+//#endregion Configuration
+
+//#region Benchmarking functions
+
+function round(x, places = 0) {
+  return Number.parseFloat(x).toFixed(places);
+}
+function getStandardDeviation(array) {
+  const n = array.length;
+  const mean = array.reduce((a, b) =&gt; a + b) / n;
+  return Math.sqrt(
+    array.map((x) =&gt; Math.pow(x - mean, 2)).reduce((a, b) =&gt; a + b) / n,
+  );
+}
+function microBenchmark(label, func, warmRuns, userName) {
+  let totalResults = 0;
+  let startTime = new Date();
+  const firstRunResults = fn.head(
+    xdmp.invokeFunction(func, { userId: xdmp.user(userName) }),
+  );
+  let firstRunMs = new Date() - startTime;
+  if (returnResults === true || traceId != null) {
+    return firstRunResults;
+  } else {
+    totalResults += firstRunResults;
+    let r = [];
+    for (let i = 0; i &lt; warmRuns; i++) {
+      startTime = new Date();
+      totalResults += fn.head(
+        xdmp.invokeFunction(func, { userId: xdmp.user(userName) }),
+      );
+      r.push(new Date() - startTime);
+    }
+    const avg = r.reduce((a, b) =&gt; a + b) / r.length;
+    const min = Math.min(...r);
+    const max = Math.max(...r);
+    const stddev = getStandardDeviation(r);
+    return (
+      label +
+      ' firstRun=' +
+      firstRunMs +
+      ' warmRuns=' +
+      warmRuns +
+      ' warmMin=' +
+      min +
+      ' warmMax=' +
+      max +
+      ' warmAvg=' +
+      round(avg) +
+      ' stddev=' +
+      round(stddev) +
+      ' totalItemsRead=' +
+      totalResults
+    );
+  }
+}
+
+const zeroArityFun = () =&gt; {
+  // If inclined to set the optimization level or override the optimization seed, see header comment.
+  return plan.limit(resultLimit).result().toArray();
+};
+
+//#endregion Benchmarking functions
+
+const result = microBenchmark(scenarioName, zeroArityFun, warmRuns, username);
+result;
+export default result;
+</query></workspace></export>

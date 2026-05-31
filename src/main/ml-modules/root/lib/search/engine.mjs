@@ -654,6 +654,49 @@ function buildConjunctionJoin({
       ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
       : op.as(uriCol, op.col(id + '_uri'));
 
+  // --- Join-descriptor builders -----------------------------------------
+  // Each takes the assembled sub-plan and returns the join descriptor that
+  // buildConjunctionJoin's caller will push into the parent's join queue.
+  // Centralized so the 3x3 logic-type matrix below stays readable.
+  const notExistsJoinDesc = (plan) => ({
+    join: {
+      type: 'notExistsJoin',
+      right: plan.select(singleColSelect()),
+      on: makeJoinOn(),
+      condition: null,
+    },
+  });
+  const innerJoinDesc = (plan) => ({
+    join: {
+      type: 'joinInner',
+      right: plan.select(singleColSelect()),
+      on: makeJoinOn(),
+      condition: null,
+    },
+  });
+  const fullOuterJoinDesc = (plan) => ({
+    join: {
+      type: 'joinFullOuter',
+      right: plan.select([
+        fullOuterJoinCol(),
+        op.as('dataType', op.col(id + '_dataType')),
+      ]),
+      on: null,
+      condition: null,
+    },
+  });
+  // andOrSubPlan is deferred to assemblePlan; see the AND-encounters-OR arm.
+  const andOrSubPlanDesc = (plan) => {
+    const cols = singleColSelect();
+    return {
+      andOrSubPlan: {
+        plan: plan.select(cols).groupBy(cols, []),
+        joinCol: cols[0],
+        preferFrag: patternOptions.getPreferFragJoins(),
+      },
+    };
+  };
+
   // Builds the sub-accumulator and decides between three outcomes:
   //   1) { skip: true }             — sub had no usable criteria
   //   2) { ctsConstraints: q }      — sub is pure-CTS and can be folded into
@@ -717,32 +760,12 @@ function buildConjunctionJoin({
 
       case 'or':
         // We are in an OR and encounter an AND - full outer join (or fold)
-        return dispatchToJoin(buildSubOrFold(criterion), (plan) => {
-          const _joinCol = fullOuterJoinCol();
-          return {
-            join: {
-              type: 'joinFullOuter',
-              right: plan.select([
-                _joinCol,
-                op.as('dataType', op.col(id + '_dataType')),
-              ]),
-              on: null,
-              condition: null,
-            },
-          };
-        });
+        return dispatchToJoin(buildSubOrFold(criterion), fullOuterJoinDesc);
 
       case 'not':
         // We are in a NOT and encounter an AND - not exists join
         // (NOT context disables folding inside buildSubOrFold.)
-        return dispatchToJoin(buildSubOrFold(criterion), (plan) => ({
-          join: {
-            type: 'notExistsJoin',
-            right: plan.select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        }));
+        return dispatchToJoin(buildSubOrFold(criterion), notExistsJoinDesc);
     }
   } else if (criterion.OR) {
     switch (logicType) {
@@ -756,16 +779,7 @@ function buildConjunctionJoin({
         // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
         // groupBy on that same column dedupes and adds a materialization
         // barrier so the merger sees a single, fully-typed binding.
-        return dispatchToJoin(buildSubOrFold(criterion), (plan) => {
-          const cols = singleColSelect();
-          return {
-            andOrSubPlan: {
-              plan: plan.select(cols).groupBy(cols, []),
-              joinCol: cols[0],
-              preferFrag: patternOptions.getPreferFragJoins(),
-            },
-          };
-        });
+        return dispatchToJoin(buildSubOrFold(criterion), andOrSubPlanDesc);
 
       case 'or':
         // OR can be inlined because we're already in an OR here
@@ -773,14 +787,7 @@ function buildConjunctionJoin({
 
       case 'not':
         // We are in a NOT and encounter an OR - not exists join
-        return dispatchToJoin(buildSubOrFold(criterion), (plan) => ({
-          join: {
-            type: 'notExistsJoin',
-            right: plan.select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        }));
+        return dispatchToJoin(buildSubOrFold(criterion), notExistsJoinDesc);
     }
   } else if (criterion.NOT) {
     switch (logicType) {
@@ -791,46 +798,19 @@ function buildConjunctionJoin({
         // negation is preserved when the sub bypasses the notExistsJoin path.
         return dispatchToJoin(
           buildSubOrFold({ OR: criterion.NOT }, 'not'),
-          (plan) => ({
-            join: {
-              type: 'notExistsJoin',
-              right: plan.select(singleColSelect()),
-              on: makeJoinOn(),
-              condition: null,
-            },
-          }),
+          notExistsJoinDesc,
         );
 
       case 'or':
         // We are in an OR and encounter a NOT - full outer join
-        return dispatchToJoin(buildSubOrFold(criterion), (plan) => {
-          const _joinCol = fullOuterJoinCol();
-          return {
-            join: {
-              type: 'joinFullOuter',
-              right: plan.select([
-                _joinCol,
-                op.as('dataType', op.col(id + '_dataType')),
-              ]),
-              on: null,
-              condition: null,
-            },
-          };
-        });
+        return dispatchToJoin(buildSubOrFold(criterion), fullOuterJoinDesc);
 
       case 'not':
         // We are in a NOT and encounter a NOT - inner join and change to OR
         // This is equivalent and likely more performant (needs testing)
         return dispatchToJoin(
           buildSubOrFold({ OR: criterion.NOT }),
-          (plan) => ({
-            join: {
-              type: 'joinInner',
-              right: plan.select(singleColSelect()),
-              on: makeJoinOn(),
-              condition: null,
-            },
-          }),
+          innerJoinDesc,
         );
     }
   }

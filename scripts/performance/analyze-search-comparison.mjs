@@ -191,7 +191,9 @@ function patternDisplayName(p) {
 function patternLink(p) {
   const f = PATTERN_FILE[p];
   if (!f) return `\`${p}\``;
-  const dir = opts.patternsDir.startsWith('/') ? opts.patternsDir : `/${opts.patternsDir}`;
+  const dir = opts.patternsDir.startsWith('/')
+    ? opts.patternsDir
+    : `/${opts.patternsDir}`;
   return `[${patternDisplayName(p)}](${dir}/${f})`;
 }
 
@@ -316,7 +318,8 @@ for (const row of union.values()) {
 const groups = new Map();
 for (const r of rows) {
   const key = `${r.terms.join(',')} | ${r.logics.join(',')}`;
-  if (!groups.has(key)) groups.set(key, { key, members: [], patterns: r.patterns });
+  if (!groups.has(key))
+    groups.set(key, { key, members: [], patterns: r.patterns });
   groups.get(key).members.push(r);
 }
 
@@ -336,7 +339,8 @@ const groupList = [...groups.values()]
       currMin: currents.length ? Math.min(...currents) : null,
       currMax: currents.length ? Math.max(...currents) : null,
       avgRatio: ratios.length
-        ? Math.round((ratios.reduce((a, b) => a + b, 0) / ratios.length) * 10) / 10
+        ? Math.round((ratios.reduce((a, b) => a + b, 0) / ratios.length) * 10) /
+          10
         : null,
       maxRatio: ratios.length ? Math.max(...ratios) : null,
     };
@@ -346,9 +350,7 @@ const groupList = [...groups.values()]
     const impactA = (a.avgRatio ?? 0) * a.n;
     const impactB = (b.avgRatio ?? 0) * b.n;
     return (
-      impactB - impactA ||
-      (b.maxRatio ?? 0) - (a.maxRatio ?? 0) ||
-      b.n - a.n
+      impactB - impactA || (b.maxRatio ?? 0) - (a.maxRatio ?? 0) || b.n - a.n
     );
   });
 
@@ -398,14 +400,13 @@ const dp = comparison.detailed_performance ?? {};
 
 const totalTests =
   summary.test_count?.baseline ?? summary.test_count?.current ?? '?';
-const baselineLabel =
-  meta.baseline_dir ?? meta.baseline_file ?? 'baseline';
+const baselineLabel = meta.baseline_dir ?? meta.baseline_file ?? 'baseline';
 const currentLabel = meta.current_dir ?? meta.current_file ?? 'current';
 
 const totalUnion = rows.length;
 const severe = rows.filter((r) => r.ratio != null && r.ratio >= 10).length;
 const flips = rows.filter(
-  (r) => r.currentStatus && r.currentStatus !== 'PASS'
+  (r) => r.currentStatus && r.currentStatus !== 'PASS',
 ).length;
 const sev = bucket(rows);
 
@@ -431,9 +432,13 @@ out.push('## Contents');
 out.push('');
 out.push('- [Input](#input)');
 out.push('- [Scope of this analysis](#scope-of-this-analysis)');
-out.push(`- [Aggregate (full ${totalTests} tests)](#aggregate-full-${totalTests}-tests)`);
+out.push(
+  `- [Aggregate (full ${totalTests} tests)](#aggregate-full-${totalTests}-tests)`,
+);
 out.push('- [Severity distribution](#severity-distribution)');
-out.push(`- [Pattern shapes — ${totalUnion}-test union](#pattern-shapes--${totalUnion}-test-union)`);
+out.push(
+  `- [Pattern shapes — ${totalUnion}-test union](#pattern-shapes--${totalUnion}-test-union)`,
+);
 out.push('- [Detailed per-shape analysis](#detailed-per-shape-analysis)');
 // Sub-entries added once group anchors are known (see below).
 const tocShapeIdx = out.length;
@@ -443,9 +448,15 @@ out.push('');
 // -------- Input --------
 out.push('# Input');
 out.push('');
-out.push(`Source: \`${path.relative(repoRoot, inputPath).replace(/\\/g, '/')}\``);
-out.push(`- baseline: \`${baselineLabel}\` (${meta.baseline_timestamp ?? 'n/a'})`);
-out.push(`- current:  \`${currentLabel}\` (${meta.current_timestamp ?? 'n/a'})`);
+out.push(
+  `Source: \`${path.relative(repoRoot, inputPath).replace(/\\/g, '/')}\``,
+);
+out.push(
+  `- baseline: \`${baselineLabel}\` (${meta.baseline_timestamp ?? 'n/a'})`,
+);
+out.push(
+  `- current:  \`${currentLabel}\` (${meta.current_timestamp ?? 'n/a'})`,
+);
 out.push(`- generated: ${new Date().toISOString()}`);
 out.push('');
 
@@ -453,16 +464,16 @@ out.push('');
 out.push(`# Scope of this analysis`);
 out.push('');
 out.push(
-  `- Source contains \`slowest_baseline_analysis\` and \`slowest_current_analysis\` (top-100 each).`
+  `- Source contains \`slowest_baseline_analysis\` and \`slowest_current_analysis\` (top-100 each).`,
 );
 out.push(
-  `- This analysis covers the **union of those two lists, restricted to /api/search/{scope} = ${totalUnion} distinct tests**.`
+  `- This analysis covers the **union of those two lists, restricted to /api/search/{scope} = ${totalUnion} distinct tests**.`,
 );
 out.push(
-  `- The middle of the ${totalTests}-test distribution is not visible per-test in this JSON, so this view is tail-biased. Aggregate stats below reflect all ${totalTests}.`
+  `- The middle of the ${totalTests}-test distribution is not visible per-test in this JSON, so this view is tail-biased. Aggregate stats below reflect all ${totalTests}.`,
 );
 out.push(
-  `- Within the union: **${flips} functional regression(s)** (non-PASS in current) and **${severe} tests with ≥10× regression**.`
+  `- Within the union: **${flips} functional regression(s)** (non-PASS in current) and **${severe} tests with ≥10× regression**.`,
 );
 out.push('');
 
@@ -479,7 +490,7 @@ for (const k of ['p50', 'p90', 'p95', 'p99', 'p99.9']) {
 }
 if (summary.pass_rate) {
   out.push(
-    `| Pass rate | ${summary.pass_rate.baseline}% | ${summary.pass_rate.current}% | ${summary.pass_rate.change} |`
+    `| Pass rate | ${summary.pass_rate.baseline}% | ${summary.pass_rate.current}% | ${summary.pass_rate.change} |`,
   );
 }
 out.push('');
@@ -502,18 +513,20 @@ out.push(`| Functional fail | ${sev.fail} | status != PASS in current |`);
 out.push(`| Severe (≥10× ratio) | ${sev.severe} | |`);
 out.push(`| Moderate (3–10×) | ${sev.moderate} | |`);
 out.push(`| Mild (<3×) | ${sev.mild} | |`);
-out.push(`| Unscored | ${sev.unscored} | missing baseline or current duration |`);
+out.push(
+  `| Unscored | ${sev.unscored} | missing baseline or current duration |`,
+);
 out.push('');
 
 // -------- Shape table --------
 out.push(`# Pattern shapes — ${totalUnion}-test union`);
 out.push('');
 out.push(
-  `Rows ordered by impact (avg ratio × n), then max ratio. Pattern files live in [${opts.patternsDir}](/${opts.patternsDir}).`
+  `Rows ordered by impact (avg ratio × n), then max ratio. Pattern files live in [${opts.patternsDir}](/${opts.patternsDir}).`,
 );
 out.push('');
 out.push(
-  '| # | Shape | Patterns | n | scopes | base range (ms) | curr range (ms) | avg ratio | max ratio |'
+  '| # | Shape | Patterns | n | scopes | base range (ms) | curr range (ms) | avg ratio | max ratio |',
 );
 out.push('|---|---|---|---|---|---|---|---|---|');
 for (const g of groupList) {
@@ -528,11 +541,13 @@ for (const g of groupList) {
         ? `${g.currMin}`
         : `${g.currMin}–${g.currMax}`;
   out.push(
-    `| ${numCell} | ${g.description} | ${patterns} | ${g.n} | ${g.scopes.join(',')} | ${baseRange} | ${currRange} | ${g.avgRatio ?? '—'}× | ${g.maxRatio ?? '—'}× |`
+    `| ${numCell} | ${g.description} | ${patterns} | ${g.n} | ${g.scopes.join(',')} | ${baseRange} | ${currRange} | ${g.avgRatio ?? '—'}× | ${g.maxRatio ?? '—'}× |`,
   );
 }
 out.push('');
-out.push(`Total: ${totalUnion} tests across ${groupList.length} distinct shapes.`);
+out.push(
+  `Total: ${totalUnion} tests across ${groupList.length} distinct shapes.`,
+);
 out.push('');
 
 function slug(s) {
@@ -552,7 +567,9 @@ function sectionAnchor(g) {
 
 function sectionHeaderText(g) {
   const ratio =
-    g.maxRatio == null ? '' : ` (n=${g.n}, avg ${g.avgRatio}×, max ${g.maxRatio}×)`;
+    g.maxRatio == null
+      ? ''
+      : ` (n=${g.n}, avg ${g.avgRatio}×, max ${g.maxRatio}×)`;
   return `Shape ${g.shape} - ${g.description}${ratio}`;
 }
 
@@ -568,7 +585,7 @@ for (const g of detailGroups) {
   out.push(`- Patterns: ${g.patterns.map(patternLink).join(', ')}`);
   out.push(`- Scopes: ${g.scopes.join(', ')}`);
   out.push(
-    `- Baseline range: ${g.baseMin}–${g.baseMax} ms; current range: ${g.currMin == null ? '—' : `${g.currMin}–${g.currMax}`} ms`
+    `- Baseline range: ${g.baseMin}–${g.baseMax} ms; current range: ${g.currMin == null ? '—' : `${g.currMin}–${g.currMax}`} ms`,
   );
   if (g.avgRatio != null) {
     out.push(`- Ratio: avg ${g.avgRatio}×, max ${g.maxRatio}×`);
@@ -582,7 +599,7 @@ for (const g of detailGroups) {
   out.push('|---|---|---|---|---|---|');
   for (const m of sorted.slice(0, showN)) {
     out.push(
-      `| ${m.test} | ${m.scope} | ${m.baseline ?? '—'} | ${m.current ?? '—'} | ${m.ratio ?? '—'}× | ${m.currentStatus ?? '—'} |`
+      `| ${m.test} | ${m.scope} | ${m.baseline ?? '—'} | ${m.current ?? '—'} | ${m.ratio ?? '—'}× | ${m.currentStatus ?? '—'} |`,
     );
   }
   const worst = sorted[0];
@@ -603,7 +620,7 @@ for (const g of detailGroups) {
 
 if (detailGroups.length < groupList.length) {
   out.push(
-    `_(${groupList.length - detailGroups.length} additional shape(s) omitted; rerun without \`--top-detail\` to include them.)_`
+    `_(${groupList.length - detailGroups.length} additional shape(s) omitted; rerun without \`--top-detail\` to include them.)_`,
   );
   out.push('');
 }
@@ -622,4 +639,3 @@ if (opts.output) {
 } else {
   process.stdout.write(md);
 }
-

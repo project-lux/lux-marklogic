@@ -1,360 +1,56 @@
-## **5K Comparison: Pattern-Level Analysis**
+## **Search Comparison: Pattern-Level Analysis**
+
+## Contents
 
 - [Input](#input)
 - [Scope of this analysis](#scope-of-this-analysis)
-- [Aggregate (full 5,588 tests)](#aggregate-full-5588-tests)
+- [LLM Recommended Optimization Priorities](#llm-recommended-optimization-priorities)
+- [Aggregate (full 5588 tests)](#aggregate-full-5588-tests)
+- [Severity distribution](#severity-distribution)
 - [Pattern shapes — 173-test union](#pattern-shapes--173-test-union)
 - [Detailed per-shape analysis](#detailed-per-shape-analysis)
-  - [Shape 1 — work-scope concept-linkage OR (n=86, avg 3.3×, max 6.0×)](#shape-1--work-scope-concept-linkage-or-n86-avg-33-max-60)
-  - [Shape 2 — work-scope actor-role OR (n=42, avg 20.7×, max 136×)](#shape-2--work-scope-actor-role-or-n42-avg-207-max-136)
-  - [Shape 3 — single rare keyword (n=8, avg 8.3×, max 14.1×)](#shape-3--single-rare-keyword-n8-avg-83-max-141)
-  - [Shape 4 — multi-text AND (n=6, avg 6.4×, max 7.2×)](#shape-4--multi-text-and-n6-avg-64-max-72)
-  - [Shape 5 — `carries.id` (n=4, avg 1.8×, max 2.1×)](#shape-5--carriesid-n4-avg-18-max-21)
-  - [Shape 6 — `aboutConcept.id` in degenerate 1-element AND (n=4, avg 9.3×, max 13.2×)](#shape-6--aboutconceptid-in-degenerate-1-element-and-n4-avg-93-max-132)
-  - [Shape 7 — `AND(aboutPlace.id, aboutConcept.id)` (n=3, avg 3.6×, max 7.5×)](#shape-7--andaboutplaceid-aboutconceptid-n3-avg-36-max-75)
-  - [Shape 8 — top-level `memberOf.id` (n=3, avg 7.2×, max 10.9×)](#shape-8--top-level-memberofid-n3-avg-72-max-109)
-  - [Shape 9 — 3-deep event hop chain (n=2, avg 43×, max 63.5×)](#shape-9--3-deep-event-hop-chain-n2-avg-43-max-635)
-  - [Shape 10 — WGA-style `AND(AND(text…), AND(memberOf.id))` (n=2, avg 6.8×, max 7.8×)](#shape-10--wga-style-andandtext-andmemberofid-n2-avg-68-max-78)
-  - [Shape 11 — `AND(aboutAgent.id, aboutConcept.id)` (n=2, avg 1.6×, max 1.6×)](#shape-11--andaboutagentid-aboutconceptid-n2-avg-16-max-16)
-  - [Shape 12 — 2-deep event hop chain (n=2, avg 15.5×, max 16.2×)](#shape-12--2-deep-event-hop-chain-n2-avg-155-max-162)
-  - [Shape 13 — `aboutPlace.id` in degenerate 1-element AND (n=2, avg 16.8×, max 22.3×)](#shape-13--aboutplaceid-in-degenerate-1-element-and-n2-avg-168-max-223)
-  - [Shape 14 — `agent.classification.id` (n=1, avg 2.1×)](#shape-14--agentclassificationid-n1-avg-21)
-  - [Shape 15 — item-scope actor-role OR (n=1, avg 18.9×)](#shape-15--item-scope-actor-role-or-n1-avg-189)
-  - [Shape 16 — `OR(classification.id, material.id)` (n=1, avg 24.9×)](#shape-16--orclassificationid-materialid-n1-avg-249)
-  - [Shape 17 — nested `OR(memberOf.curatedBy.…)` — TIMEOUT (n=1)](#shape-17--nested-ormemberofcuratedby--timeout-n1)
-  - [Shape 18 — `agent.occupation.id` (n=1, avg 13.5×)](#shape-18--agentoccupationid-n1-avg-135)
-  - [Shape 19 — `work.partOfWork.id` (n=1, avg 1.8×)](#shape-19--workpartofworkid-n1-avg-18)
-  - [Shape 20 — `work.aboutAgent.id` (n=1, avg 4.0×)](#shape-20--workaboutagentid-n1-avg-40)
-- [Where the regressions cluster](#where-the-regressions-cluster)
-- [What's NOT regressing](#whats-not-regressing)
-- [Recommended priority for next engine work](#recommended-priority-for-next-engine-work)
+  - [Shape 1 - OR(`createdBy`, `creationInfluencedBy`, `id`, `publishedBy`) (n=42, avg 20.7×, max 136×)](#shape-1---orcreatedby-creationinfluencedby-id-publishedby-n42-avg-207-max-136)
+  - [Shape 2 - OR(`aboutConcept`, `classification`, `id`, `influencedByConcept`, `language`) (n=86, avg 3.3×, max 6×)](#shape-2---oraboutconcept-classification-id-influencedbyconcept-language-n86-avg-33-max-6)
+  - [Shape 3 - `containingItem`, `id`, `producedBy`, `used` (n=2, avg 43×, max 63.5×)](#shape-3---containingitem-id-producedby-used-n2-avg-43-max-635)
+  - [Shape 4 - OR(`curatedBy`, `id`, `memberOf`) (n=1, avg 67.2×, max 67.2×)](#shape-4---orcuratedby-id-memberof-n1-avg-672-max-672)
+  - [Shape 5 - single `text` keyword (n=8, avg 8.3×, max 14.1×)](#shape-5---single-text-keyword-n8-avg-83-max-141)
+  - [Shape 6 - multi-`text` AND (n=6, avg 6.5×, max 7.2×)](#shape-6---multi-text-and-n6-avg-65-max-72)
+  - [Shape 7 - `aboutConcept.id` in 1-element AND (n=4, avg 9.3×, max 13.3×)](#shape-7---aboutconceptid-in-1-element-and-n4-avg-93-max-133)
+  - [Shape 8 - `aboutPlace.id` in 1-element AND (n=2, avg 16.8×, max 22.3×)](#shape-8---aboutplaceid-in-1-element-and-n2-avg-168-max-223)
+  - [Shape 9 - `containingItem`, `id`, `used` (n=2, avg 15.5×, max 16.2×)](#shape-9---containingitem-id-used-n2-avg-155-max-162)
+  - [Shape 10 - OR(`classification`, `id`, `material`) (n=1, avg 24.9×, max 24.9×)](#shape-10---orclassification-id-material-n1-avg-249-max-249)
+  - [Shape 11 - naked `memberOf.id` (n=3, avg 7.2×, max 10.9×)](#shape-11---naked-memberofid-n3-avg-72-max-109)
+  - [Shape 12 - OR(`encounteredBy`, `id`, `producedBy`, `productionInfluencedBy`) (n=1, avg 18.9×, max 18.9×)](#shape-12---orencounteredby-id-producedby-productioninfluencedby-n1-avg-189-max-189)
+  - [Shape 13 - AND(`id`, `memberOf`, `text`) (n=2, avg 6.8×, max 7.8×)](#shape-13---andid-memberof-text-n2-avg-68-max-78)
+  - [Shape 14 - naked `occupation.id` (n=1, avg 13.5×, max 13.5×)](#shape-14---naked-occupationid-n1-avg-135-max-135)
+  - [Shape 15 - AND(`aboutConcept`, `aboutPlace`, `id`) (n=3, avg 3.6×, max 7.5×)](#shape-15---andaboutconcept-aboutplace-id-n3-avg-36-max-75)
+  - [Shape 16 - naked `carries.id` (n=4, avg 1.8×, max 2.1×)](#shape-16---naked-carriesid-n4-avg-18-max-21)
+  - [Shape 17 - naked `aboutAgent.id` (n=1, avg 4×, max 4×)](#shape-17---naked-aboutagentid-n1-avg-4-max-4)
+  - [Shape 18 - AND(`aboutAgent`, `aboutConcept`, `id`) (n=2, avg 1.6×, max 1.6×)](#shape-18---andaboutagent-aboutconcept-id-n2-avg-16-max-16)
+  - [Shape 19 - naked `classification.id` (n=1, avg 2.1×, max 2.1×)](#shape-19---naked-classificationid-n1-avg-21-max-21)
+  - [Shape 20 - naked `partOfWork.id` (n=1, avg 1.8×, max 1.8×)](#shape-20---naked-partofworkid-n1-avg-18-max-18)
 
 # Input
 
-Source: [scratch/5k-search-comparison.json](scratch/5k-search-comparison.json) (baseline = CTS, current = Optic, 2026-05-27).
-Pattern definitions are linked inline from [src/main/ml-modules/root/lib/search/patterns/](src/main/ml-modules/root/lib/search/patterns/).
-Term → pattern mapping derived from [scratch/config/searchTermsConfigOptic.mjs](scratch/config/searchTermsConfigOptic.mjs).
-
+Source: `scratch/5k-search-comparison.json`
+- baseline: `2026-05-27-cts-search-performance-5k` (2026-05-27T14:43:14.401Z)
+- current:  `2026-05-27-optic-search-performance-5k` (2026-05-27T15:04:38.884Z)
+- generated: 2026-05-31T13:26:12.047Z
+ 
 # Scope of this analysis
 
-- The summary JSON contains two pre-built top-100 lists: `slowest_baseline_analysis` (slowest under CTS) and `slowest_current_analysis` (slowest under Optic).
-- This analysis covers the **union of those two lists = 173 distinct tests** (27 appear in both).
-- The middle of the 5,588-test distribution is not visible per-test in this JSON, so this view is necessarily tail-biased. Aggregate stats (mean, percentiles) come from the `summary` block and reflect all 5,588.
-- Within the 173-test union: **1 functional regression** (timeout, status flip) and **56 tests with ≥10× regression**.
-- **Sample-size caveat:** several shapes are represented by only 1–5 tests. Their ratios (some 18–24×) are *alarming* but the sample is small; treat each as a strong signal worth a dedicated investigation rather than a statistically stable measurement.
+- Source contains `slowest_baseline_analysis` and `slowest_current_analysis` (top-100 each).
+- This analysis covers the **union of those two lists, restricted to /api/search/{scope} = 173 distinct tests**.
+- The middle of the 5588-test distribution is not visible per-test in this JSON, so this view is tail-biased. Aggregate stats below reflect all 5588.
+- Within the union: **1 functional regression(s)** (non-PASS in current) and **56 tests with ≥10× regression**.
 
----
+# LLM Recommended Optimization Priorities
 
-# Aggregate (full 5,588 tests)
+This section was provided by an LLM.  The rest of the document was created by [analyze-search-comparison.mjs](scripts/performance/analyze-search-comparison.mjs):
 
-| Metric | Baseline (CTS) | Current (Optic) | Δ |
-|---|---|---|---|
-| Mean | 37 ms | 229 ms | +513% |
-| p50 | 32 ms | 171 ms | +434% |
-| p90 | 46 ms | 335 ms | +628% |
-| p95 | 54 ms | 361 ms | +569% |
-| p99 | 133 ms | 428 ms | +223% |
-| p99.9 | 286 ms | 2,327 ms | **+715%** |
-| Pass rate | 96.8% | 96.8% | 1 status flip |
+ > node scripts/performance/analyze-search-comparison.mjs scratch/5k-search-comparison.json --output scratch/5k-search-comparison.md
 
-Across the 173-test union, total wall time grew from **18.4 s → 123.1 s (6.7×)**.
-
----
-
-# Pattern shapes — 173-test union
-
-Patterns column lists every pattern class involved in the shape (alphabetized within each cell). Pattern files live in [src/main/ml-modules/root/lib/search/patterns/](src/main/ml-modules/root/lib/search/patterns/).
-
-| # | Shape | Patterns | n | scopes | base range (ms) | curr range (ms) | avg ratio | max ratio |
-|---|---|---|---|---|---|---|---|---|
-| [1](#shape-1--work-scope-concept-linkage-or-n86-avg-33-max-60) | work-scope concept-linkage `OR(classification.OR(id, influencedByConcept), language.OR(id, influencedByConcept), aboutConcept.id)` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 86 | work | 82–162 | 339–530 | 3.3× | 6.0× |
-| [2](#shape-2--work-scope-actor-role-or-n42-avg-207-max-136) | work-scope actor-role `OR(createdBy.id, publishedBy.id, creationInfluencedBy.id)` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 42 | work | 27–109 | 325–4625 | **20.7×** | **136×** |
-| [3](#shape-3--single-rare-keyword-n8-avg-83-max-141) | single `text` keyword | [Keyword](src/main/ml-modules/root/lib/search/patterns/Keyword.mjs) | 8 | item | 59–199 | 564–1210 | 8.3× | 14.1× |
-| [4](#shape-4--multi-text-and-n6-avg-64-max-72) | multi-`text` AND | [Keyword](src/main/ml-modules/root/lib/search/patterns/Keyword.mjs) | 6 | item, work | 191–489 | 1175–3293 | 6.4× | 7.2× |
-| [5](#shape-5--carriesid-n4-avg-18-max-21) | `carries.id` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 4 | item | 95–101 | 161–208 | 1.8× | 2.1× |
-| [6](#shape-6--aboutconceptid-in-degenerate-1-element-and-n4-avg-93-max-132) | `aboutConcept.id` in degenerate 1-elem AND | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 4 | work | 44–128 | 175–761 | 9.3× | 13.2× |
-| [7](#shape-7--andaboutplaceid-aboutconceptid-n3-avg-36-max-75) | `AND(aboutPlace.id, aboutConcept.id)` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 3 | work | 71–102 | 160–529 | 3.6× | 7.5× |
-| [8](#shape-8--top-level-memberofid-n3-avg-72-max-109) | top-level `memberOf.id` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 3 | agent, item | 45–99 | 168–515 | 7.2× | 10.9× |
-| [9](#shape-9--3-deep-event-hop-chain-n2-avg-43-max-635) | `event.used → containingItem → producedBy.id` (3-deep) | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopInverse](src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | event | 33–37 | 833–2094 | **43×** | **63.5×** |
-| [10](#shape-10--wga-style-andandtext-andmemberofid-n2-avg-68-max-78) | `AND(AND(text…), AND(memberOf.id))` — WGA shape | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs), [Keyword](src/main/ml-modules/root/lib/search/patterns/Keyword.mjs) | 2 | item | 64–810 | 498–4634 | 6.8× | 7.8× |
-| [11](#shape-11--andaboutagentid-aboutconceptid-n2-avg-16-max-16) | `AND(aboutAgent.id, aboutConcept.id)` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | work | 102–103 | 166–168 | 1.6× | 1.6× |
-| [12](#shape-12--2-deep-event-hop-chain-n2-avg-155-max-162) | `event.used → containingItem.id` (2-deep) | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopInverse](src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | event | 32–34 | 504–518 | 15.5× | 16.2× |
-| [13](#shape-13--aboutplaceid-in-degenerate-1-element-and-n2-avg-168-max-223) | `aboutPlace.id` in degenerate 1-elem AND | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | work | 58–68 | 655–1519 | 16.8× | 22.3× |
-| [14](#shape-14--agentclassificationid-n1-avg-21) | `agent.classification.id` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | agent | 98 | 201 | 2.1× | 2.1× |
-| [15](#shape-15--item-scope-actor-role-or-n1-avg-189) | item-scope actor-role `OR(producedBy.id, encounteredBy.id, productionInfluencedBy.id)` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | item | 31 | 586 | 18.9× | 18.9× |
-| [16](#shape-16--orclassificationid-materialid-n1-avg-249) | `OR(classification.id, material.id)` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | item | 64 | 1595 | 24.9× | 24.9× |
-| [17](#shape-17--nested-ormemberofcuratedby--timeout-n1) | nested `OR(memberOf.curatedBy.…)` (TIMEOUT) | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | item | 313 | **21032** | **67.2×** | **67.2×** |
-| [18](#shape-18--agentoccupationid-n1-avg-135) | `agent.occupation.id` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | agent | 37 | 500 | 13.5× | 13.5× |
-| [19](#shape-19--workpartofworkid-n1-avg-18) | `work.partOfWork.id` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | work | 96 | 176 | 1.8× | 1.8× |
-| [20](#shape-20--workaboutagentid-n1-avg-40) | `work.aboutAgent.id` | [DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | work | 127 | 510 | 4.0× | 4.0× |
-
-Total: 173 tests across 20 distinct shapes.
-
----
-
-# Detailed per-shape analysis
-
-## Shape 1 — work-scope concept-linkage OR (n=86, avg 3.3×, max 6.0×)
-
-86 tests share this exact template, varying only in concept id. By volume the largest contributor to the slowest-200 list. Drives moderate-band aggregate regression.
-
-Example — **`Backend log test 3659`** · work · 89 → 530 ms (6×):
-```json
-{ "OR": [
-  { "classification": { "OR": [
-    { "id": "…concept/75b5…" },
-    { "influencedByConcept": { "id": "…concept/75b5…" } }
-  ]}},
-  { "language": { "OR": [
-    { "id": "…concept/75b5…" },
-    { "influencedByConcept": { "id": "…concept/75b5…" } }
-  ]}},
-  { "aboutConcept": { "id": "…concept/75b5…" } }
-]}
-```
-
-Five leaf occurrences, all `HopWithField` with id leaves. Top-level OR has three branches, two of which contain nested OR sub-shapes. The empty-groups parentScope rule (just merged) already removes any redundant dataType filters. Remaining cost is the same patternJoins-OR wrap as shape 2 — the three OR branches each become a patternJoin against the work-scope lexicon. Likely the "what works are linked to this concept" client query.
-
-## Shape 2 — work-scope actor-role OR (n=42, avg 20.7×, max 136×)
-
-42 tests, identical shape, varying only by person/group id. **Highest-severity bulk regression in the entire union.** Worst 5:
-
-| Test | id | base → curr | ratio |
-|---|---|---|---|
-| 3965 | person c521… | 34 → **4625** | 136× |
-| 3653 | person a90a… | 31 → 3135 | 101× |
-| 3644 | person e791… | 27 → 2114 | 78× |
-| 3655 | group c29d… | 32 → 1970 | 62× |
-| 3654 | (person)    | 31 → 778  | 25× |
-
-Example (test 3965):
-```json
-{ "OR": [
-  { "createdBy":            { "id": "…person/c521…" } },
-  { "publishedBy":          { "id": "…person/c521…" } },
-  { "creationInfluencedBy": { "id": "…person/c521…" } }
-]}
-```
-
-Each branch is purely CTS-resolvable (one `cts.tripleRangeQuery`), but each is currently emitted as a `patternJoin` by `HopWithField`. Top-level OR therefore triggers the assemblePlan patternJoins-OR wrap: **duplicate the full work-scope lexicon for each of the 3 branches, inner-join each, then full-outer-join them all back together** — three lexicon scans against the entire work corpus for what should be a single `cts.orQuery` of three tripleRangeQueries.
-
-## Shape 3 — single rare keyword (n=8, avg 8.3×, max 14.1×)
-
-`{"text": "…", "_lang": "en"}` at top level, no AND/OR. Eight item-scope rare-term searches:
-
-| Test | term | base → curr | ratio |
-|---|---|---|---|
-| 4568 | Mellon       | 59 → 831  | 14.1× |
-| 4360 | Divination   | 199 → 1202 | 6.0× |
-| 4447 | Incantation  | 197 → 1191 | 6.0× |
-| 4766 | Summoning    | 190 → 1203 | 6.3× |
-| 4837 | Spells       | 191 → 1210 | 6.3× |
-
-(Three more with comparable timings.) Driven by the 49K-IRI `referenceName` expansion the `Keyword` pattern emits straight into the top-level plan AST. No sub-plan to fold; the cost is in plan optimization itself. This is the WGA root cause when stripped to a single keyword.
-
-## Shape 4 — multi-text AND (n=6, avg 6.4×, max 7.2×)
-
-Linear in keyword count — each `text` term adds one tripleRangeQuery-with-N-IRIs to the plan AST.
-
-| Test | scope | criteria | base → curr | ratio |
-|---|---|---|---|---|
-| 141 | item | `Babylonian AND collection` | 379 → 2722 | 7.2× |
-| 4144 | item | `The AND Mellon AND Alchemy` | 345 → 2353 | 6.8× |
-| 845 | item | `Malena AND Rice` | 335 → 2289 | 6.8× |
-| 849 | work | `Malena AND Rice` | 489 → 3293 | 6.7× |
-| 194 | item | 4-term (Babylonian collection MLC 2153) | 246 → 1175 | 4.8× |
-| 4865 | item | `Magic AND Spells` | 191 → 1223 | 6.4× |
-
-Same `Keyword` 49K-IRI cost as shape 3, paid per term.
-
-## Shape 5 — `carries.id` (n=4, avg 1.8×, max 2.1×)
-
-Near parity. Example — **`Backend log test 1610`** · item · 101 → 208 ms (2.1×):
-```json
-{ "carries": { "id": "…text/4fd2…" } }
-```
-
-Single `HopWithField` by id at top level, no wrapping. The 2× tax appears to be plan-cache miss / generic Optic overhead vs. raw CTS, not the patternJoins wrap. Lowest-priority shape; useful as a baseline of "what Optic costs even when the engine does the right thing."
-
-## Shape 6 — `aboutConcept.id` in degenerate 1-element AND (n=4, avg 9.3×, max 13.2×)
-
-Example — **`Backend log test 3652`** · work · 44 → 583 ms (13.2×):
-```json
-{ "AND": [ { "aboutConcept": { "id": "…concept/b72e…" } } ] }
-```
-
-Single `HopWithField` by id wrapped in a 1-element AND. The newly-added pure-CTS fold doesn't trigger because there's no sub-plan; the 1-element AND collapses to its leaf directly, leaving the patternJoin at top level — and the assemblePlan wrap fires anyway for a lone patternJoin. Same root cause as shape 2; fix is the same (id-leaf hop → ctsConstraint).
-
-## Shape 7 — `AND(aboutPlace.id, aboutConcept.id)` (n=3, avg 3.6×, max 7.5×)
-
-Example — **`Backend log test 279`** · work · 71 → 529 ms (7.5×):
-```json
-{ "AND": [
-  { "aboutPlace":   { "id": "…place/f148…" } },
-  { "aboutConcept": { "id": "…concept/fbea…" } }
-]}
-```
-
-Two top-level `HopWithField` branches joined by AND. Each is a patternJoin → inner-join in assemblePlan. The fix from shape 2 collapses both branches into ctsConstraints, which then become a single `cts.andQuery` of two tripleRangeQueries — no joins.
-
-## Shape 8 — top-level `memberOf.id` (n=3, avg 7.2×, max 10.9×)
-
-Example — **`Backend log test 4600`** · item · 45 → 492 ms (10.9×):
-```json
-{ "memberOf": { "id": "…set/55d8…" } }
-```
-
-Naked `HopWithField` by id, no wrapper. Should be identical-cost to shape 5 (`carries.id`) but isn't — shape 5 averages 1.8×, shape 8 averages 7.2×. Suggests the cost is driven by referenceName/predicate set size (memberOf has many backing predicates / large IRI expansions for set membership) rather than the engine pattern itself. Fix from shape 2 still applies, but **even after the fix this shape may not collapse fully if the underlying tripleRangeQuery is expensive on memberOf's predicate set.** Worth re-measuring after the fix.
-
-## Shape 9 — 3-deep event hop chain (n=2, avg 43×, max 63.5×)
-
-Example — **`Backend log test 3516`** · event · 33 → 2094 ms (63.5×):
-```json
-{ "used": { "containingItem": { "producedBy": { "id": "…person/d564…" } } } }
-```
-
-`event.used` (`HopWithField`) → `item.containingItem` (`HopInverse`) → `item.producedBy` (`HopWithField`) → id-leaf. Three nested duplicate-lexicon scans, each with its own join. **Highest avg-ratio shape (43×).** The id-leaf fix collapses the innermost level (`producedBy.id` → tripleRangeQuery), which then folds into the parent hop's child query expression. The middle and outer hops remain joins because their children are nested term expressions, not ids. Expected outcome: dramatic but not complete improvement.
-
-## Shape 10 — WGA-style `AND(AND(text…), AND(memberOf.id))` (n=2, avg 6.8×, max 7.8×)
-
-Example — **`Backend log test 169`** · item · 64 → 498 ms (7.8×):
-```json
-{ "AND": [
-  { "AND": [ {"text":"Babylonian"}, {"text":"collection"} ] },
-  { "AND": [ {"memberOf": { "id": "…set/a996…" }} ] }
-]}
-```
-
-(Test 110 — the original WGA case at 810 → 4634 — is the other test in this group.) The inner-AND dataType filter is now suppressed by the broad parentScope rule already merged. The `memberOf` sub-tree may fold via the new pure-CTS fold once the id-leaf hop fix lands. Keyword cost (shapes 3/4) remains the dominant tax.
-
-## Shape 11 — `AND(aboutAgent.id, aboutConcept.id)` (n=2, avg 1.6×, max 1.6×)
-
-Example — **`Backend log test 4707`** · work · 102 → 166 ms (1.6×):
-```json
-{ "AND": [
-  { "aboutAgent":   { "id": "…person/dde4…" } },
-  { "aboutConcept": { "id": "…concept/3cd2…" } }
-]}
-```
-
-Near parity. Structurally identical to shape 7 (`aboutPlace + aboutConcept`) but lower regression. Two reasonable explanations: (a) `aboutAgent` has a much smaller IRI expansion than `aboutPlace`, making the patternJoin cheap, or (b) both branches return small result sets that limit the join cost. Either way, very low priority — likely resolves automatically when shape 2 fix lands.
-
-## Shape 12 — 2-deep event hop chain (n=2, avg 15.5×, max 16.2×)
-
-Example — **`Backend log test 2328`** · event · 32 → 518 ms (16.2×):
-```json
-{ "used": { "containingItem": { "id": "…object/fe89…" } } }
-```
-
-Same family as shape 9 but only 2 levels deep (id-leaf at the second level). The id-leaf fix should collapse this further than shape 9 — `containingItem.id` becomes a tripleRangeQuery, fused into the outer `used` hop's child query. Expected: near-baseline performance after fix.
-
-## Shape 13 — `aboutPlace.id` in degenerate 1-element AND (n=2, avg 16.8×, max 22.3×)
-
-Example — **`Backend log test 287`** · work · 68 → 1519 ms (22.3×):
-```json
-{ "AND": [ { "aboutPlace": { "id": "…place/58a5…" } } ] }
-```
-
-Same structural pattern as shape 6 (`aboutConcept` variant). Higher regression ratio because `aboutPlace` has a larger IRI expansion than `aboutConcept`. Same fix.
-
-## Shape 14 — `agent.classification.id` (n=1, avg 2.1×)
-
-Example — **`Backend log test 4860`** · agent · 98 → 201 ms (2.1×):
-```json
-{ "classification": { "id": "…concept/1ee3…" } }
-```
-
-Near-parity single-shape. Naked `HopWithField` by id on agent scope. Same fix as shape 5/8; comparable expected post-fix behavior.
-
-## Shape 15 — item-scope actor-role OR (n=1, avg 18.9×)
-
-Example — **`Backend log test 2945`** · item · 31 → 586 ms (18.9×):
-```json
-{ "OR": [
-  { "producedBy":              { "id": "…person/d63f…" } },
-  { "encounteredBy":           { "id": "…person/d63f…" } },
-  { "productionInfluencedBy":  { "id": "…person/d63f…" } }
-]}
-```
-
-**Item-scope structural twin of shape 2.** Same three-branch OR of `HopWithField`-by-id pattern — just in `item` scope instead of `work`, with item's actor predicates instead of work's. Same fix resolves it. The fact that this only shows up once in the slowest-200 (vs. 42 in shape 2) suggests the production traffic profile heavily favors work-scope actor probes; the item-scope version is still very likely to be a hot pattern in real usage that just wasn't exercised much in this test corpus.
-
-## Shape 16 — `OR(classification.id, material.id)` (n=1, avg 24.9×)
-
-Example — **`Backend log test 4858`** · item · 64 → 1595 ms (24.9×):
-```json
-{ "OR": [
-  { "classification": { "id": "…concept/1ee3…" } },
-  { "material":       { "id": "…concept/1ee3…" } }
-]}
-```
-
-Two-branch variant of shape 2. Same root cause (patternJoins-OR wrap), same fix. Notable because `classification` and `material` are common item-faceting attributes — this exact shape (or its 3-branch variants) likely shows up in any "items of type X" query. **Probably a frequent shape in production not well represented in the test corpus.**
-
-## Shape 17 — nested `OR(memberOf.curatedBy.…)` — TIMEOUT (n=1)
-
-**`Backend log test 10`** · item · 313 → **21,032 ms (HTTP 500, ≥20 s timeout)**:
-```json
-{ "OR": [
-  { "memberOf": { "curatedBy": { "id": "…group/0a5e…" } } },
-  { "memberOf": { "curatedBy": { "memberOf": { "id": "…group/0a5e…" } } } }
-]}
-```
-
-Top-level OR of two nested `HopWithField` chains (2-deep and 3-deep). Cost compounds along two dimensions: (a) patternJoins-OR wrap at the OR root, (b) nested patternJoins inside each branch. The id-leaf fix collapses the innermost `id` of both branches into a tripleRangeQuery, then the parent `curatedBy` / `memberOf` hops may further fold via the new pure-CTS fold if their children become pure ctsConstraints. **Likely (but not guaranteed) to resolve with the id-leaf fix.** If it doesn't, this is the canonical "deeply nested hop chain in OR" shape that would need a dedicated optimization (e.g., flattening hop chains into compound tripleRangeQueries when only id-leaves are present).
-
-## Shape 18 — `agent.occupation.id` (n=1, avg 13.5×)
-
-Example — **`Backend log test 3650`** · agent · 37 → 500 ms (13.5×):
-```json
-{ "occupation": { "id": "…concept/e02e…" } }
-```
-
-Naked `HopWithField` by id on agent scope. Surprisingly large regression for such a simple shape — higher than `agent.classification.id` (shape 14) at 2.1×. Likely explanation: `occupation` predicate has a much larger IRI expansion in the indexes than `classification`, so the patternJoin's underlying lexicon scan and join are more expensive. Same fix as shape 5/8/14, but expected post-fix gain is large here.
-
-## Shape 19 — `work.partOfWork.id` (n=1, avg 1.8×)
-
-Example — **`Backend log test 4841`** · work · 96 → 176 ms (1.8×):
-```json
-{ "partOfWork": { "id": "…text/d66c…" } }
-```
-
-Near-parity. Naked `HopWithField` by id. Lowest-priority single-shape regression; included for completeness. Fix from shape 2 should bring it to baseline.
-
-## Shape 20 — `work.aboutAgent.id` (n=1, avg 4.0×)
-
-Example — **`Backend log test 1`** · work · 127 → 510 ms (4.0×):
-```json
-{ "aboutAgent": { "id": "…group/bf21…" } }
-```
-
-Naked `HopWithField` by id, no wrapping. Mid-range single-shape regression. Same fix as shape 5/8/14/18.
-
----
-
-# Where the regressions cluster
-
-| Severity bucket | Count (of 173) | Notes |
-|---|---|---|
-| Functional fail (timeout) | 1 | shape 17 |
-| Severe (≥10× ratio) | 56 | dominated by shape 2 (~42 tests), plus outliers from shapes 3, 4, 9, 12, 13, 15, 16, 18 |
-| Moderate (3–10×) | ~110 | dominated by shape 1 (86 tests) plus shapes 6, 7, 8, 20 |
-| Mild (<3×) | ~6 | shapes 5, 11, 14, 19 |
-
----
-
-# What's NOT regressing
-
-Shapes absent from the slowest-200 union (and thus presumably at parity for their typical inputs):
-- Pure `id`-only document lookups ([DocumentIdOrIri](src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs) alone)
-- [IndexedValue](src/main/ml-modules/root/lib/search/patterns/IndexedValue.mjs) / [IndexedWord](src/main/ml-modules/root/lib/search/patterns/IndexedWord.mjs) exact-match terms
-- [IndexedRange](src/main/ml-modules/root/lib/search/patterns/IndexedRange.mjs) / [DateRange](src/main/ml-modules/root/lib/search/patterns/DateRange.mjs) terms
-- [Geospatial](src/main/ml-modules/root/lib/search/patterns/Geospatial.mjs) terms
-- [AnnTopK](src/main/ml-modules/root/lib/search/patterns/AnnTopK.mjs) terms
-
----
-
-# Recommended priority for next engine work
+On to the LLM's recommendations:
 
 1. **`HopWithField` with id-leaf → emit a `ctsConstraint` instead of a `patternJoin`.**
    - Directly resolves shapes 2, 5, 6, 7, 8, 11, 13, 14, 15, 16, 18, 19, 20.
@@ -372,3 +68,693 @@ Shapes absent from the slowest-200 union (and thus presumably at parity for thei
    - If deeply-nested hop chains in OR still time out, consider a dedicated optimization that flattens hop chains into compound tripleRangeQueries when only id-leaves are present.
 
 If items 1 + 2 land, p99.9 should drop sharply and the large majority of the 56 severe regressions should resolve.
+
+# Aggregate (full 5588 tests)
+
+| Metric | Baseline | Current | Δ |
+|---|---|---|---|
+| Mean | 37.44 ms | 229.48 ms | **+513%** |
+| p50 | 32 ms | 171 ms | +434% |
+| p90 | 46 ms | 335 ms | +628% |
+| p95 | 54 ms | 361 ms | +569% |
+| p99 | 132.55 ms | 427.6 ms | +223% |
+| p99.9 | 285.6 ms | 2326.89 ms | **+715%** |
+| Pass rate | 96.8% | 96.8% | 0.0 |
+
+# Severity distribution
+
+Bucketed counts across the 173-test union.
+
+| Severity | Count | Notes |
+|---|---|---|
+| Functional fail | 1 | status != PASS in current |
+| Severe (≥10× ratio) | 55 | |
+| Moderate (3–10×) | 62 | |
+| Mild (<3×) | 55 | |
+| Unscored | 0 | missing baseline or current duration |
+
+# Pattern shapes — 173-test union
+
+Rows ordered by impact (avg ratio × n), then max ratio. Pattern files live in [src/main/ml-modules/root/lib/search/patterns](/src/main/ml-modules/root/lib/search/patterns).
+
+| # | Shape | Patterns | n | scopes | base range (ms) | curr range (ms) | avg ratio | max ratio |
+|---|---|---|---|---|---|---|---|---|
+| [1](#shape-1---orcreatedby-creationinfluencedby-id-publishedby-n42-avg-207-max-136) | OR(`createdBy`, `creationInfluencedBy`, `id`, `publishedBy`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 42 | work | 27–109 | 325–4625 | 20.7× | 136× |
+| [2](#shape-2---oraboutconcept-classification-id-influencedbyconcept-language-n86-avg-33-max-6) | OR(`aboutConcept`, `classification`, `id`, `influencedByConcept`, `language`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 86 | work | 82–162 | 339–530 | 3.3× | 6× |
+| [3](#shape-3---containingitem-id-producedby-used-n2-avg-43-max-635) | `containingItem`, `id`, `producedBy`, `used` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopInverse](/src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | event | 33–37 | 833–2094 | 43× | 63.5× |
+| [4](#shape-4---orcuratedby-id-memberof-n1-avg-672-max-672) | OR(`curatedBy`, `id`, `memberOf`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | item | 313–313 | 21032 | 67.2× | 67.2× |
+| [5](#shape-5---single-text-keyword-n8-avg-83-max-141) | single `text` keyword | [Keyword](/src/main/ml-modules/root/lib/search/patterns/Keyword.mjs) | 8 | item | 59–199 | 564–1210 | 8.3× | 14.1× |
+| [6](#shape-6---multi-text-and-n6-avg-65-max-72) | multi-`text` AND | [Keyword](/src/main/ml-modules/root/lib/search/patterns/Keyword.mjs) | 6 | item,work | 191–489 | 1175–3293 | 6.5× | 7.2× |
+| [7](#shape-7---aboutconceptid-in-1-element-and-n4-avg-93-max-133) | `aboutConcept.id` in 1-element AND | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 4 | work | 44–128 | 175–761 | 9.3× | 13.3× |
+| [8](#shape-8---aboutplaceid-in-1-element-and-n2-avg-168-max-223) | `aboutPlace.id` in 1-element AND | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | work | 58–68 | 655–1519 | 16.8× | 22.3× |
+| [9](#shape-9---containingitem-id-used-n2-avg-155-max-162) | `containingItem`, `id`, `used` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopInverse](/src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | event | 32–34 | 504–518 | 15.5× | 16.2× |
+| [10](#shape-10---orclassification-id-material-n1-avg-249-max-249) | OR(`classification`, `id`, `material`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | item | 64–64 | 1595 | 24.9× | 24.9× |
+| [11](#shape-11---naked-memberofid-n3-avg-72-max-109) | naked `memberOf.id` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 3 | agent,item | 45–99 | 168–515 | 7.2× | 10.9× |
+| [12](#shape-12---orencounteredby-id-producedby-productioninfluencedby-n1-avg-189-max-189) | OR(`encounteredBy`, `id`, `producedBy`, `productionInfluencedBy`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | item | 31–31 | 586 | 18.9× | 18.9× |
+| [13](#shape-13---andid-memberof-text-n2-avg-68-max-78) | AND(`id`, `memberOf`, `text`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs), [Keyword](/src/main/ml-modules/root/lib/search/patterns/Keyword.mjs) | 2 | item | 64–810 | 498–4634 | 6.8× | 7.8× |
+| [14](#shape-14---naked-occupationid-n1-avg-135-max-135) | naked `occupation.id` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | agent | 37–37 | 500 | 13.5× | 13.5× |
+| [15](#shape-15---andaboutconcept-aboutplace-id-n3-avg-36-max-75) | AND(`aboutConcept`, `aboutPlace`, `id`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 3 | work | 71–102 | 160–529 | 3.6× | 7.5× |
+| [16](#shape-16---naked-carriesid-n4-avg-18-max-21) | naked `carries.id` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 4 | item | 95–101 | 161–208 | 1.8× | 2.1× |
+| [17](#shape-17---naked-aboutagentid-n1-avg-4-max-4) | naked `aboutAgent.id` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | work | 127–127 | 510 | 4× | 4× |
+| [18](#shape-18---andaboutagent-aboutconcept-id-n2-avg-16-max-16) | AND(`aboutAgent`, `aboutConcept`, `id`) | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 2 | work | 102–103 | 166–168 | 1.6× | 1.6× |
+| [19](#shape-19---naked-classificationid-n1-avg-21-max-21) | naked `classification.id` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | agent | 98–98 | 201 | 2.1× | 2.1× |
+| [20](#shape-20---naked-partofworkid-n1-avg-18-max-18) | naked `partOfWork.id` | [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs) | 1 | work | 96–96 | 176 | 1.8× | 1.8× |
+
+Total: 173 tests across 20 distinct shapes.
+
+# Detailed per-shape analysis
+
+## Shape 1 - OR(`createdBy`, `creationInfluencedBy`, `id`, `publishedBy`) (n=42, avg 20.7×, max 136×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 27–109 ms; current range: 325–4625 ms
+- Ratio: avg 20.7×, max 136×
+
+Worst 5 of 42:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 3965 | work | 34 | 4625 | 136× | — |
+| Backend log test 3653 | work | 31 | 3135 | 101.1× | — |
+| Backend log test 3644 | work | 27 | 2114 | 78.3× | — |
+| Backend log test 3655 | work | 32 | 1970 | 61.6× | — |
+| Backend log test 3654 | work | 31 | 778 | 25.1× | — |
+
+Example criteria (test `Backend log test 3965`):
+
+```json
+{
+  "OR": [
+    {
+      "createdBy": {
+        "id": "https://lux.collections.yale.edu/data/person/c5215e59-acb6-43d3-a210-e12ec3ccde5b"
+      }
+    },
+    {
+      "publishedBy": {
+        "id": "https://lux.collections.yale.edu/data/person/c5215e59-acb6-43d3-a210-e12ec3ccde5b"
+      }
+    },
+    {
+      "creationInfluencedBy": {
+        "id": "https://lux.collections.yale.edu/data/person/c5215e59-acb6-43d3-a210-e12ec3ccde5b"
+      }
+    }
+  ]
+}
+```
+
+## Shape 2 - OR(`aboutConcept`, `classification`, `id`, `influencedByConcept`, `language`) (n=86, avg 3.3×, max 6×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 82–162 ms; current range: 339–530 ms
+- Ratio: avg 3.3×, max 6×
+
+Worst 5 of 86:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 3659 | work | 89 | 530 | 6× | — |
+| Backend log test 3660 | work | 83 | 465 | 5.6× | — |
+| Backend log test 1436 | work | 82 | 423 | 5.2× | — |
+| Backend log test 4848 | work | 84 | 428 | 5.1× | — |
+| Backend log test 945 | work | 82 | 411 | 5× | — |
+
+Example criteria (test `Backend log test 3659`):
+
+```json
+{
+  "OR": [
+    {
+      "classification": {
+        "OR": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/75b52304-86e2-48d9-bf24-0f56b75c23f0"
+          },
+          {
+            "influencedByConcept": {
+              "id": "https://lux.collections.yale.edu/data/concept/75b52304-86e2-48d9-bf24-0f56b75c23f0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "language": {
+        "OR": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/75b52304-86e2-48d9-bf24-0f56b75c23f0"
+          },
+          {
+            "influencedByConcept": {
+              "id": "https://lux.collections.yale.edu/data/concept/75b52304-86e2-48d9-bf24-0f56b75c23f0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "aboutConcept": {
+        "id": "https://lux.collections.yale.edu/data/concept/75b52304-86e2-48d9-bf24-0f56b75c23f0"
+      }
+    }
+  ]
+}
+```
+
+## Shape 3 - `containingItem`, `id`, `producedBy`, `used` (n=2, avg 43×, max 63.5×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopInverse](/src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: event
+- Baseline range: 33–37 ms; current range: 833–2094 ms
+- Ratio: avg 43×, max 63.5×
+
+Worst 2 of 2:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 3516 | event | 33 | 2094 | 63.5× | — |
+| Backend log test 186 | event | 37 | 833 | 22.5× | — |
+
+Example criteria (test `Backend log test 3516`):
+
+```json
+{
+  "used": {
+    "containingItem": {
+      "producedBy": {
+        "id": "https://lux.collections.yale.edu/data/person/d564dc62-0bc3-4295-92b9-f116e515972c"
+      }
+    }
+  }
+}
+```
+
+## Shape 4 - OR(`curatedBy`, `id`, `memberOf`) (n=1, avg 67.2×, max 67.2×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: item
+- Baseline range: 313–313 ms; current range: 21032–21032 ms
+- Ratio: avg 67.2×, max 67.2×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 10 | item | 313 | 21032 | 67.2× | FAIL |
+
+Example criteria (test `Backend log test 10`):
+
+```json
+{
+  "OR": [
+    {
+      "memberOf": {
+        "curatedBy": {
+          "id": "https://lux.collections.yale.edu/data/group/0a5ed086-396b-4cc2-8120-fdc3f8953ce2"
+        }
+      }
+    },
+    {
+      "memberOf": {
+        "curatedBy": {
+          "memberOf": {
+            "id": "https://lux.collections.yale.edu/data/group/0a5ed086-396b-4cc2-8120-fdc3f8953ce2"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+## Shape 5 - single `text` keyword (n=8, avg 8.3×, max 14.1×)
+
+- Patterns: [Keyword](/src/main/ml-modules/root/lib/search/patterns/Keyword.mjs)
+- Scopes: item
+- Baseline range: 59–199 ms; current range: 564–1210 ms
+- Ratio: avg 8.3×, max 14.1×
+
+Worst 5 of 8:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 4568 | item | 59 | 831 | 14.1× | — |
+| Backend log test 4482 | item | 63 | 883 | 14× | — |
+| Backend log test 4582 | item | 68 | 683 | 10× | — |
+| Backend log test 4837 | item | 191 | 1210 | 6.3× | PASS |
+| Backend log test 4766 | item | 190 | 1203 | 6.3× | PASS |
+
+Example criteria (test `Backend log test 4568`):
+
+```json
+{
+  "text": "Mellon",
+  "_lang": "en"
+}
+```
+
+## Shape 6 - multi-`text` AND (n=6, avg 6.5×, max 7.2×)
+
+- Patterns: [Keyword](/src/main/ml-modules/root/lib/search/patterns/Keyword.mjs)
+- Scopes: item, work
+- Baseline range: 191–489 ms; current range: 1175–3293 ms
+- Ratio: avg 6.5×, max 7.2×
+
+Worst 5 of 6:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 141 | item | 379 | 2722 | 7.2× | PASS |
+| Backend log test 4144 | item | 345 | 2353 | 6.8× | PASS |
+| Backend log test 845 | item | 335 | 2289 | 6.8× | PASS |
+| Backend log test 849 | work | 489 | 3293 | 6.7× | PASS |
+| Backend log test 4865 | item | 191 | 1223 | 6.4× | PASS |
+
+Example criteria (test `Backend log test 141`):
+
+```json
+{
+  "AND": [
+    {
+      "text": "Babylonian",
+      "_lang": "en"
+    },
+    {
+      "text": "collection",
+      "_lang": "en"
+    }
+  ]
+}
+```
+
+## Shape 7 - `aboutConcept.id` in 1-element AND (n=4, avg 9.3×, max 13.3×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 44–128 ms; current range: 175–761 ms
+- Ratio: avg 9.3×, max 13.3×
+
+Worst 4 of 4:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 3652 | work | 44 | 583 | 13.3× | — |
+| Backend log test 4987 | work | 58 | 761 | 13.1× | — |
+| Backend log test 3460 | work | 61 | 575 | 9.4× | — |
+| Backend log test 3299 | work | 128 | 175 | 1.4× | PASS |
+
+Example criteria (test `Backend log test 3652`):
+
+```json
+{
+  "AND": [
+    {
+      "aboutConcept": {
+        "id": "https://lux.collections.yale.edu/data/concept/b72e8ef0-502c-4563-a04b-3fbde5d9f838"
+      }
+    }
+  ]
+}
+```
+
+## Shape 8 - `aboutPlace.id` in 1-element AND (n=2, avg 16.8×, max 22.3×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 58–68 ms; current range: 655–1519 ms
+- Ratio: avg 16.8×, max 22.3×
+
+Worst 2 of 2:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 287 | work | 68 | 1519 | 22.3× | — |
+| Backend log test 286 | work | 58 | 655 | 11.3× | — |
+
+Example criteria (test `Backend log test 287`):
+
+```json
+{
+  "AND": [
+    {
+      "aboutPlace": {
+        "id": "https://lux.collections.yale.edu/data/place/58a57603-f224-4cc7-ab41-f08876619e23"
+      }
+    }
+  ]
+}
+```
+
+## Shape 9 - `containingItem`, `id`, `used` (n=2, avg 15.5×, max 16.2×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopInverse](/src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: event
+- Baseline range: 32–34 ms; current range: 504–518 ms
+- Ratio: avg 15.5×, max 16.2×
+
+Worst 2 of 2:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 2328 | event | 32 | 518 | 16.2× | — |
+| Backend log test 3365 | event | 34 | 504 | 14.8× | — |
+
+Example criteria (test `Backend log test 2328`):
+
+```json
+{
+  "used": {
+    "containingItem": {
+      "id": "https://lux.collections.yale.edu/data/object/fe89fc06-a20b-4809-b30d-6d2507b4c7c2"
+    }
+  }
+}
+```
+
+## Shape 10 - OR(`classification`, `id`, `material`) (n=1, avg 24.9×, max 24.9×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: item
+- Baseline range: 64–64 ms; current range: 1595–1595 ms
+- Ratio: avg 24.9×, max 24.9×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 4858 | item | 64 | 1595 | 24.9× | — |
+
+Example criteria (test `Backend log test 4858`):
+
+```json
+{
+  "OR": [
+    {
+      "classification": {
+        "id": "https://lux.collections.yale.edu/data/concept/1ee3a28c-d10c-4e7d-8d73-dea682a7ca28"
+      }
+    },
+    {
+      "material": {
+        "id": "https://lux.collections.yale.edu/data/concept/1ee3a28c-d10c-4e7d-8d73-dea682a7ca28"
+      }
+    }
+  ]
+}
+```
+
+## Shape 11 - naked `memberOf.id` (n=3, avg 7.2×, max 10.9×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: agent, item
+- Baseline range: 45–99 ms; current range: 168–515 ms
+- Ratio: avg 7.2×, max 10.9×
+
+Worst 3 of 3:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 4600 | item | 45 | 492 | 10.9× | — |
+| Backend log test 138 | item | 57 | 515 | 9× | — |
+| Backend log test 9 | agent | 99 | 168 | 1.7× | PASS |
+
+Example criteria (test `Backend log test 4600`):
+
+```json
+{
+  "memberOf": {
+    "id": "https://lux.collections.yale.edu/data/set/55d8fe4d-31da-4b33-9f0a-1738b78aa24e"
+  }
+}
+```
+
+## Shape 12 - OR(`encounteredBy`, `id`, `producedBy`, `productionInfluencedBy`) (n=1, avg 18.9×, max 18.9×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: item
+- Baseline range: 31–31 ms; current range: 586–586 ms
+- Ratio: avg 18.9×, max 18.9×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 2945 | item | 31 | 586 | 18.9× | — |
+
+Example criteria (test `Backend log test 2945`):
+
+```json
+{
+  "OR": [
+    {
+      "producedBy": {
+        "id": "https://lux.collections.yale.edu/data/person/d63f9b4d-d4cd-4cdc-809f-62646e6b7297"
+      }
+    },
+    {
+      "encounteredBy": {
+        "id": "https://lux.collections.yale.edu/data/person/d63f9b4d-d4cd-4cdc-809f-62646e6b7297"
+      }
+    },
+    {
+      "productionInfluencedBy": {
+        "id": "https://lux.collections.yale.edu/data/person/d63f9b4d-d4cd-4cdc-809f-62646e6b7297"
+      }
+    }
+  ]
+}
+```
+
+## Shape 13 - AND(`id`, `memberOf`, `text`) (n=2, avg 6.8×, max 7.8×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs), [Keyword](/src/main/ml-modules/root/lib/search/patterns/Keyword.mjs)
+- Scopes: item
+- Baseline range: 64–810 ms; current range: 498–4634 ms
+- Ratio: avg 6.8×, max 7.8×
+
+Worst 2 of 2:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 169 | item | 64 | 498 | 7.8× | — |
+| Backend log test 110 | item | 810 | 4634 | 5.7× | PASS |
+
+Example criteria (test `Backend log test 169`):
+
+```json
+{
+  "AND": [
+    {
+      "AND": [
+        {
+          "text": "Babylonian",
+          "_lang": "en"
+        },
+        {
+          "text": "collection",
+          "_lang": "en"
+        }
+      ]
+    },
+    {
+      "AND": [
+        {
+          "memberOf": {
+            "id": "https://lux.collections.yale.edu/data/set/a996e468-616e-47b3-966a-ced654bc53a6"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Shape 14 - naked `occupation.id` (n=1, avg 13.5×, max 13.5×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: agent
+- Baseline range: 37–37 ms; current range: 500–500 ms
+- Ratio: avg 13.5×, max 13.5×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 3650 | agent | 37 | 500 | 13.5× | — |
+
+Example criteria (test `Backend log test 3650`):
+
+```json
+{
+  "occupation": {
+    "id": "https://lux.collections.yale.edu/data/concept/e02efaff-9b3f-4c9b-a328-9384c81a3f57"
+  }
+}
+```
+
+## Shape 15 - AND(`aboutConcept`, `aboutPlace`, `id`) (n=3, avg 3.6×, max 7.5×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 71–102 ms; current range: 160–529 ms
+- Ratio: avg 3.6×, max 7.5×
+
+Worst 3 of 3:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 279 | work | 71 | 529 | 7.5× | — |
+| Backend log test 4009 | work | 102 | 184 | 1.8× | PASS |
+| Backend log test 4989 | work | 101 | 160 | 1.6× | PASS |
+
+Example criteria (test `Backend log test 279`):
+
+```json
+{
+  "AND": [
+    {
+      "aboutPlace": {
+        "id": "https://lux.collections.yale.edu/data/place/f14804ea-6bd1-4bfb-9394-6f5428c83c34"
+      }
+    },
+    {
+      "aboutConcept": {
+        "id": "https://lux.collections.yale.edu/data/concept/fbeaa4e8-5a0f-4db0-9f16-b7fbdd66cd54"
+      }
+    }
+  ]
+}
+```
+
+## Shape 16 - naked `carries.id` (n=4, avg 1.8×, max 2.1×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: item
+- Baseline range: 95–101 ms; current range: 161–208 ms
+- Ratio: avg 1.8×, max 2.1×
+
+Worst 4 of 4:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 1610 | item | 101 | 208 | 2.1× | PASS |
+| Backend log test 4936 | item | 98 | 168 | 1.7× | PASS |
+| Backend log test 5142 | item | 95 | 163 | 1.7× | PASS |
+| Backend log test 5119 | item | 98 | 161 | 1.6× | PASS |
+
+Example criteria (test `Backend log test 1610`):
+
+```json
+{
+  "carries": {
+    "id": "https://lux.collections.yale.edu/data/text/4fd2aaa9-9b5f-4141-bc95-17feee05126e"
+  }
+}
+```
+
+## Shape 17 - naked `aboutAgent.id` (n=1, avg 4×, max 4×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 127–127 ms; current range: 510–510 ms
+- Ratio: avg 4×, max 4×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 1 | work | 127 | 510 | 4× | PASS |
+
+Example criteria (test `Backend log test 1`):
+
+```json
+{
+  "aboutAgent": {
+    "id": "https://lux.collections.yale.edu/data/group/bf219a49-0005-40df-a1d7-402537e9b485"
+  }
+}
+```
+
+## Shape 18 - AND(`aboutAgent`, `aboutConcept`, `id`) (n=2, avg 1.6×, max 1.6×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 102–103 ms; current range: 166–168 ms
+- Ratio: avg 1.6×, max 1.6×
+
+Worst 2 of 2:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 4802 | work | 103 | 168 | 1.6× | PASS |
+| Backend log test 4707 | work | 102 | 166 | 1.6× | PASS |
+
+Example criteria (test `Backend log test 4802`):
+
+```json
+{
+  "AND": [
+    {
+      "aboutAgent": {
+        "id": "https://lux.collections.yale.edu/data/group/b6002217-ed85-4fb6-9dd9-e68b89f6677d"
+      }
+    },
+    {
+      "aboutConcept": {
+        "id": "https://lux.collections.yale.edu/data/concept/e6a9d1f0-fbea-4cd6-a154-dbd159c4993e"
+      }
+    }
+  ]
+}
+```
+
+## Shape 19 - naked `classification.id` (n=1, avg 2.1×, max 2.1×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: agent
+- Baseline range: 98–98 ms; current range: 201–201 ms
+- Ratio: avg 2.1×, max 2.1×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 4860 | agent | 98 | 201 | 2.1× | PASS |
+
+Example criteria (test `Backend log test 4860`):
+
+```json
+{
+  "classification": {
+    "id": "https://lux.collections.yale.edu/data/concept/1ee3a28c-d10c-4e7d-8d73-dea682a7ca28"
+  }
+}
+```
+
+## Shape 20 - naked `partOfWork.id` (n=1, avg 1.8×, max 1.8×)
+
+- Patterns: [DocumentIdOrIri](/src/main/ml-modules/root/lib/search/patterns/DocumentIdOrIri.mjs), [HopWithField](/src/main/ml-modules/root/lib/search/patterns/HopWithField.mjs)
+- Scopes: work
+- Baseline range: 96–96 ms; current range: 176–176 ms
+- Ratio: avg 1.8×, max 1.8×
+
+Worst 1 of 1:
+
+| Test | scope | base (ms) | curr (ms) | ratio | currStatus |
+|---|---|---|---|---|---|
+| Backend log test 4841 | work | 96 | 176 | 1.8× | PASS |
+
+Example criteria (test `Backend log test 4841`):
+
+```json
+{
+  "partOfWork": {
+    "id": "https://lux.collections.yale.edu/data/text/d66c0c3b-bf2f-4049-a1db-57f0cee886a7"
+  }
+}
+```
+
+---

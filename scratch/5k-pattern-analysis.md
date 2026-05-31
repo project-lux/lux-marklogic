@@ -1,181 +1,209 @@
 # 5K Comparison: Pattern-Level Analysis
 
-Source: `scratch/5k-search-comparison.json` (baseline=CTS, current=Optic, 2026-05-27).
-Sample size: 5,588 tests; 1 functional regression (timeout), 17 significant performance regressions.
+Source: [scratch/5k-search-comparison.json](scratch/5k-search-comparison.json) (baseline = CTS, current = Optic, 2026-05-27).
 Pattern names from [scratch/config/searchTermsConfigOptic.mjs](scratch/config/searchTermsConfigOptic.mjs).
+
+## Scope of this analysis
+
+- The summary JSON contains **two pre-built top-100 lists**: `slowest_baseline_analysis` (slowest under CTS) and `slowest_current_analysis` (slowest under Optic).
+- This analysis covers the **union of those two lists = 173 distinct tests** (27 appear in both).
+- The middle of the 5,588-test distribution is not visible per-test in this JSON, so this view is necessarily tail-biased. Aggregate stats (mean, percentiles) come from the `summary` block and reflect all 5,588.
+- Within the 173-test union: **1 functional regression** (timeout, status flip) and **56 tests with ≥10× regression**.
 
 ---
 
-## Headline numbers
+## Aggregate (full 5,588 tests)
 
-| Metric | Baseline (CTS) | Current (Optic) | Change |
+| Metric | Baseline (CTS) | Current (Optic) | Δ |
 |---|---|---|---|
-| Mean | 37 ms | 229 ms | **+513%** |
+| Mean | 37 ms | 229 ms | +513% |
 | p50 | 32 ms | 171 ms | +434% |
 | p90 | 46 ms | 335 ms | +628% |
 | p95 | 54 ms | 361 ms | +569% |
 | p99 | 133 ms | 428 ms | +223% |
 | p99.9 | 286 ms | 2,327 ms | **+715%** |
-| Pass rate | 96.8% | 96.8% | (1 status flip) |
+| Pass rate | 96.8% | 96.8% | 1 status flip |
 
-The gap is **uniform** across all percentiles, not driven by a few outliers. Every shape pays a multi-hundred-ms tax. The tail (p99.9) is where shape-specific regressions concentrate.
+Across the 173-test union, total wall time grew from **18.4 s → 123.1 s (6.7×)**. The regression is uniform across all percentiles — every shape pays a multi-hundred-ms tax. The tail (p99.9) is where shape-specific regressions concentrate.
 
 ---
 
-## Functional regression (must-fix)
+## Functional regression — TIMEOUT
 
-### Pattern: deeply-nested `hopWithField` chain inside top-level OR — **timeout**
+### Pattern: deeply-nested `hopWithField` chain inside top-level OR
 
 **`Backend log test 10`** — `item` scope — 313 ms → **21,032 ms (HTTP 500, ≥20 s timeout)**
 
 ```json
-{
-  "OR": [
-    { "memberOf": { "curatedBy": { "id": "…group/0a5e…" } } },
-    { "memberOf": { "curatedBy": { "memberOf": { "id": "…group/0a5e…" } } } }
-  ]
-}
+{ "OR": [
+  { "memberOf": { "curatedBy": { "id": "…group/0a5e…" } } },
+  { "memberOf": { "curatedBy": { "memberOf": { "id": "…group/0a5e…" } } } }
+]}
 ```
 
-All patterns are `hopWithField` (item.memberOf, set.curatedBy → 4-level chain in second branch).
-This shape becomes nested patternJoins in OR mode → the "duplicate lexicon + full-outer join" wrap fires for both branches, and each branch carries a sub-tree of further patternJoins. Hits the timeout deterministically.
-
-**Action:** the new pure-CTS fold (just landed) does not help here because `hopWithField` contributes a `patternJoin`, not a `ctsConstraint`. The chain is intrinsically join-shaped under the current pattern. Would need either (a) `hopWithField` pattern emitting a `cts.tripleRangeQuery` chain when only id-leaves are present, or (b) limiting OR of hopWithField branches at top level the same way `andOrSubPlans` are merged before joining.
+All `hopWithField`. Nested patternJoins inside top-level OR → duplicate-lexicon + full-outer joins compound. **The new pure-CTS fold does not help** here (`hopWithField` emits a patternJoin, not a ctsConstraint).
 
 ---
 
-## Pattern shapes ranked by regression severity
+## Pattern shapes — 173-test union, grouped by term/logic signature
 
-### 1. `keyword` only — the dominant production hot spot
+The table is sorted approximately by total impact (count × severity).
 
-This is the single biggest category by count and shows up at every multiplicity (1, 2, 3, 4 terms). The 49K-IRI plan-AST issue documented in [memories](/memories/repo/optic-lessons.md) drives the entire shape.
+| # | Shape | n | scopes | base range (ms) | curr range (ms) | avg ratio | comment |
+|---|---|---|---|---|---|---|---|
+| 1 | `OR` of `aboutConcept` \| `classification.OR(id, influencedByConcept)` \| `language.OR(id, influencedByConcept)` | **86** | work | 82–162 | 339–530 | **3.3×** | "linked-to-this-concept" template; mild regression × huge volume |
+| 2 | `OR` of `createdBy.id` \| `publishedBy.id` \| `creationInfluencedBy.id` | **42** | work | 27–109 | 325–4625 | **20.7×** | actor-role probe; **highest-severity bulk shape** |
+| 3 | single `text` keyword | 8 | item | 59–1210 | (curr ≈ base) | **8.3×** | rare-term keyword: Divination, Summoning, Spells, Incantation, … |
+| 4 | multi-`text` AND | 6 | item, work | 191–489 | 1175–3293 | 6.5× | Malena Rice, Babylonian collection, The Mellon Alchemy, 4-term ANDs |
+| 5 | `carries` + `id` | 4 | item | 95–208 | — | 1.8× | mild — id lookup w/ carries; near parity |
+| 6 | `aboutConcept.id` AND group | 4 | work | 44–761 | — | 9.3× | id-leaf hopWithField in degenerate AND wrapper |
+| 7 | `aboutConcept` \| `aboutPlace` AND | 3 | work | 71–529 | — | 3.6× | mixed hopWithField AND |
+| 8 | `memberOf` (top-level hop) | 3 | agent, item | 45–515 | — | 7.2× | id-leaf hopWithField, plain |
+| 9 | `aboutAgent` \| `aboutConcept` AND | 2 | work | 102–168 | — | 1.6× | near parity |
+| 10 | `event.containingItem` + `used` | 2 | event | 32–518 | — | 15.5× | event-scope hop chain (no producedBy leaf) |
+| 11 | `id, memberOf, text` AND | 2 | item | 64–4634 | — | 6.8× | **WGA shape (test 110)** is here |
+| 12 | `event.used → containingItem → producedBy.id` | 2 | event | 33–2094 | — | **43.0×** | 3-deep hop chain |
+| 13 | `aboutPlace.id` AND | 2 | work | 58–1519 | — | 16.8× | single-hop wrapped in degenerate AND |
+| — | `OR` of `classification.id` \| `material.id` | 1 | item | 64 → 1595 | — | 24.9× | (test 4858) |
+| — | `OR` of `encounteredBy` \| `producedBy` \| `productionInfluencedBy` (id) | 1 | item | 31 → 586 | — | 18.9× | item-scope variant of shape #2 |
+| — | `OR` of nested `memberOf.curatedBy.…` | 1 | item | 313 → **21032** | — | 67.2× | **TIMEOUT (test 10)** |
+| — | misc near-parity (id+occupation, partOfWork, agent.classification, aboutAgent) | 5 | various | — | — | 1.8–13.5× | one-off shapes, mostly mild |
 
-#### Single-term keyword (rare term, large referenceName expansion)
-
-| Test | Scope | Criteria | Baseline → Current |
-|---|---|---|---|
-| 4360 | item | `{"text":"Divination"}` | 199 → 1,202 ms (+504%) |
-| 4447 | item | `{"text":"Incantation"}` | 197 → 1,191 ms (+505%) |
-| 4766 | item | `{"text":"Summoning"}` | 190 → 1,203 ms (+533%) |
-| 4837 | item | `{"text":"Spells"}` | 191 → 1,210 ms (+534%) |
-
-These four are isomorphic. All four are rare item-domain terms with large referenceName IRI sets. The "fold pure-CTS sub-plan into parent" engine fix does NOT help these — there's no sub-plan, it's a single leaf at top level. **The WGA-style optimizer cost (49K IRIs in plan AST) is the cause.** This is exactly the [approach-D-cts-then-optic.js](scratch/performance/woman-greek-art-memberOf/approach-D-cts-then-optic.js) target.
-
-#### Multi-term keyword AND
-
-| Test | Scope | Criteria | Baseline → Current |
-|---|---|---|---|
-| 4865 | item | `Magic AND Spells` | 191 → 1,223 ms (+540%) |
-| 845 | item | `Malena AND Rice` | 335 → 2,289 ms (+583%) |
-| 849 | work | `Malena AND Rice` | 489 → 3,293 ms (+573%) |
-| 141 | item | `Babylonian AND collection` | 379 → 2,722 ms (+618%) |
-| 4144 | item | `The AND Mellon AND Alchemy` | 345 → 2,353 ms (+582%) |
-| 194 | item | `Babylonian AND collection AND MLC AND 2153` | 246 → 1,175 ms (+378%) |
-
-Linear in keyword count — each adds one tripleRangeQuery-with-N-IRIs to the plan AST. WGA is the 3-term version with an extra nested AND.
-
-#### Multi-term keyword AND with a nested AND group containing hopWithField
-
-**`Backend log test 110`** — item — 810 → **4,634 ms** — the WGA case
-
-```json
-{
-  "AND": [
-    { "AND": [ {"text":"woman"}, {"text":"greek"}, {"text":"art"} ] },
-    { "AND": [ {"memberOf": {"id": "…set/5e9b…"}} ] }
-  ]
-}
-```
-
-Now benefits from the empty-groups dataType-suppression you just merged (the inner AND group no longer emits its own dataType filter). The keyword cost remains.
+Counts add to 173. Single-test shapes are collapsed in the lower section.
 
 ---
 
-### 2. `hopWithField` triple-OR by id (work scope) — **second-worst shape**
+## Detailed write-ups for the highest-impact shapes
 
-Four nearly-identical regressions at `work` scope, all of form "OR of 3 hopWithField-by-id":
+### Shape #1 — work-scope concept linkage OR (n=86, avg 3.3×)
 
-| Test | Criteria (compacted) | Baseline → Current | Regression |
+86 tests share this exact template, varying only in concept id. Despite a small per-test regression it is by volume the largest contributor to the slowest-200 list.
+
+Example — **`Backend log test 3659`** · work · 89 → 530 ms:
+```json
+{ "OR": [
+  { "classification": { "OR": [
+    { "id": "…concept/75b5…" },
+    { "influencedByConcept": { "id": "…concept/75b5…" } }
+  ]}},
+  { "language": { "OR": [
+    { "id": "…concept/75b5…" },
+    { "influencedByConcept": { "id": "…concept/75b5…" } }
+  ]}},
+  { "aboutConcept": { "id": "…concept/75b5…" } }
+]}
+```
+
+All five leaf occurrences are `hopWithField` with id leaves. Top-level OR has three `hopWithField` branches; two of them have nested OR sub-shapes (id-leaf + one extra hop level). Likely fed by a "what works are linked to this concept" client query.
+
+The empty-groups parentScope rule already merged removes any redundant dataType filters here. The remaining cost is the same patternJoins-OR wrap as shape #2.
+
+### Shape #2 — work-scope actor-role OR (n=42, avg 20.7×, max 136×)
+
+42 tests, all the same shape, varying only in person/group id. **This is the highest-severity bulk regression.** Worst 5:
+
+| Test | id | base → curr | ratio |
 |---|---|---|---|
-| 3644 | `createdBy.id OR publishedBy.id OR creationInfluencedBy.id` (person e791…) | 27 → 2,114 ms | **78×** |
-| 3653 | same shape, person a90a… | 31 → 3,135 ms | **101×** |
-| 3655 | same shape, group c29d… | 32 → 1,970 ms | 62× |
-| 3965 | same shape, person c521… | 34 → 4,625 ms | **136×** |
+| 3965 | person c521… | 34 → **4625** | 136× |
+| 3653 | person a90a… | 31 → 3135 | 101× |
+| 3644 | person e791… | 27 → 2114 | 78× |
+| 3655 | group c29d… | 32 → 1970 | 62× |
+| 3654 | (person) | 31 → 778 | 25× |
 
-Example ([Backend log test 3965](scratch/5k-search-comparison.json)):
+Example (test 3965):
 ```json
-{
-  "OR": [
-    { "createdBy":            { "id": "…person/c521…" } },
-    { "publishedBy":          { "id": "…person/c521…" } },
-    { "creationInfluencedBy": { "id": "…person/c521…" } }
-  ]
-}
+{ "OR": [
+  { "createdBy":            { "id": "…person/c521…" } },
+  { "publishedBy":          { "id": "…person/c521…" } },
+  { "creationInfluencedBy": { "id": "…person/c521…" } }
+]}
 ```
 
-All three branches are `hopWithField` with an id-leaf — purely CTS-resolvable (each becomes a `cts.tripleRangeQuery`). But because each is a *patternJoin*, top-level OR triggers the `assemblePlan` patternJoins-OR branch: **duplicate the full work-scope lexicon for each branch, inner-join each, then full-outer-join them all back together**. Three lexicon scans of the entire work scope (~tens of millions of docs) for a query that should be one `cts.tripleRangeQuery` per branch ORed.
+Each branch is purely CTS-resolvable (one `cts.tripleRangeQuery`), but each is currently emitted as a `patternJoin`, so top-level OR triggers the assemblePlan wrap: **duplicate the full work-scope lexicon for each of the 3 branches, inner-join each, then full-outer-join them all back together.** Three lexicon scans against the work corpus for what should be a single `cts.orQuery` of three tripleRangeQueries.
 
-**Action — recommended next:** when a `hopWithField` term has an id-leaf (no nested term-as-child), emit it as a `ctsConstraint` (single `cts.tripleRangeQuery`) instead of a `patternJoin`. Then top-level OR collapses to `cts.orQuery([tripleRangeQuery_1, tripleRangeQuery_2, tripleRangeQuery_3])` — one CTS query against the lexicon, no joins. The 27→2,114 ms regression should evaporate. This is the single highest-leverage change available after WGA.
+This shape is also represented in single-test variants (item-scope test 4858 with `classification | material`, item-scope test for `encounteredBy | producedBy | productionInfluencedBy`).
 
-#### Two-branch OR variant
+### Shape #3 — single rare keyword (n=8, avg 8.3×)
 
-**`Backend log test 4858`** — item — 64 → 1,595 ms (+2,392%)
+`text`-only at top level. Eight item-scope rare-term searches:
 
+| Test | term | base → curr |
+|---|---|---|
+| 4360 | Divination | 199 → 1202 |
+| 4447 | Incantation | 197 → 1191 |
+| 4766 | Summoning | 190 → 1203 |
+| 4837 | Spells | 191 → 1210 |
+
+(Plus four more with comparable timings.) Driven by the WGA-style 49K-IRI plan-AST issue. No sub-plan to fold; the keyword pattern itself emits a large referenceName expansion straight into the top-level plan AST.
+
+### Shape #4 — multi-text AND (n=6, avg 6.5×)
+
+Linear in keyword count — each term adds one tripleRangeQuery-with-N-IRIs to the plan AST.
+
+| Test | scope | criteria | base → curr |
+|---|---|---|---|
+| 845 | item | `Malena AND Rice` | 335 → 2289 |
+| 849 | work | `Malena AND Rice` | 489 → 3293 |
+| 141 | item | `Babylonian AND collection` | 379 → 2722 |
+| 4144 | item | `The AND Mellon AND Alchemy` | 345 → 2353 |
+| 194 | item | 4-term AND | 246 → 1175 |
+| 4865 | item | `Magic AND Spells` | 191 → 1223 |
+
+### Shape #11 — WGA outlier (test 110, in n=2 group)
+
+**`Backend log test 110`** · item · 810 → 4634 ms:
 ```json
-{
-  "OR": [
-    { "classification": { "id": "…concept/1ee3…" } },
-    { "material":       { "id": "…concept/1ee3…" } }
-  ]
-}
+{ "AND": [
+  { "AND": [ {"text":"woman"}, {"text":"greek"}, {"text":"art"} ] },
+  { "AND": [ {"memberOf": { "id": "…set/5e9b…" }} ] }
+]}
 ```
+Inner-AND dataType filter now suppressed by the new broad parentScope rule. Keyword cost (shapes #3/#4) remains the dominant tax.
 
-Same shape, two branches. Same fix applies.
+### Shape #12 — event-scope deep hop chain (n=2, avg 43×)
 
----
-
-### 3. `hopWithField` chained 3-deep (event scope)
-
-**`Backend log test 3516`** — event — 33 → 2,094 ms (+6,245%)
-
+**`Backend log test 3516`** · event · 33 → 2094 ms:
 ```json
 { "used": { "containingItem": { "producedBy": { "id": "…person/d564…" } } } }
 ```
-
-Term chain: `event.used` (hopWithField) → `item.containingItem` (hopInverse) → `item.producedBy` (hopWithField) → id. Each level is a patternJoin → three nested duplicate-lexicon scans. Compounds the issue from #2.
-
-Same fix as #2 helps the inner two levels (id-leaf hops collapse to tripleRangeQuery). The outer `used` would still need a join because its child is a nested term, not an id.
+`event.used` (hopWithField) → `item.containingItem` (hopInverse) → `item.producedBy` (hopWithField) → id. Three nested duplicate-lexicon scans.
 
 ---
 
-### 4. Single-hop wrapped in degenerate AND
+## Where the regressions cluster
 
-**`Backend log test 287`** — work — 68 → 1,519 ms (+2,134%)
-
-```json
-{ "AND": [ { "aboutPlace": { "id": "…place/58a5…" } } ] }
-```
-
-Single `hopWithField` by id, but wrapped in a 1-element AND. The newly-added pure-CTS fold doesn't apply because there's no sub-plan — the engine collapses 1-element AND to the leaf directly. The cost is still the patternJoins-OR-style wrap at top level. Same fix as #2 applies.
+| Severity bucket | Count (of 173) | Notes |
+|---|---|---|
+| Functional fail (timeout) | 1 | test 10 |
+| Severe (≥10× ratio) | 56 | dominated by shape #2 (42 of these), plus outliers from #3, #4, #10, #12, #13 |
+| Moderate (3–10×) | ~110 | dominated by shape #1 (86 tests) plus shapes #6–8 |
+| Mild (<3×) | ~6 | id-only & near-parity shapes |
 
 ---
 
-## What's *not* regressing
+## What's NOT regressing
 
-The 5,587 status-unchanged tests include all the simple shapes:
-- `id`-only lookup (documentId pattern)
-- Single `hopWithField` at top level (without OR/AND wrapping)
+Shapes absent from the slowest-200 union (and thus presumably at parity for their typical inputs):
+- Pure `id`-only document lookups
+- Single top-level `hopWithField` *without* OR/AND wrapping
 - `indexedValue` / `indexedWord` exact-match terms
 - Date / number range terms
 
-These are absent from both the slowest-baseline and slowest-current top-100 lists, suggesting they're at parity (or close).
-
 ---
 
-## Priority of follow-up engine work
+## Recommended priority for next engine work
 
-1. **`hopWithField` with id-leaf → `ctsConstraint`** (tests 287, 3516, 3644, 3653, 3655, 3965, 4858 — 7 of 17 regressions, including the worst). Highest leverage; smallest code surface.
-2. **`keyword` plan-AST cost** (WGA + 10 of 17 regressions). Validation scripts already staged in [scratch/performance/woman-greek-art-memberOf/](scratch/performance/woman-greek-art-memberOf/) — waiting on run results.
-3. **`hopWithField` chained-by-id timeout fix** (test 10). Lower frequency but functional failure. Likely subsumed by #1 once the inner id-leaf levels collapse.
+1. **`hopWithField` with id-leaf → emit a `ctsConstraint` instead of a `patternJoin`.**
+   - Resolves shape #2 (42 tests, including the four worst at 78–136× regression).
+   - Likely also resolves shapes #6, #8, #10, #12, #13, the two single-test OR-by-id variants, and the timeout on test 10 (its inner id-leaf levels collapse).
+   - Estimate: roughly 50–55 of the 56 severe regressions in this union.
+   - Once these become ctsConstraints, the new pure-CTS fold (just landed) picks them up automatically inside nested AND/OR.
+   - **Highest leverage / smallest code surface.**
+2. **`keyword` plan-AST cost (49K-IRI expansion).**
+   - Resolves shapes #3, #4, and the WGA outlier (#11). ~15 tests in this union, but very high frequency in production.
+   - Validation harness already staged in [scratch/performance/woman-greek-art-memberOf/](scratch/performance/woman-greek-art-memberOf/) — waiting on run.
+3. **Shape #1 mild regression (n=86).**
+   - The 3.3× ratio is partially the same patternJoins-OR wrap from #2; the fix in #1 should also reduce this group's regression substantially.
+   - Re-measure after #1 lands before targeting separately.
 
-If #1 + #2 land, the p99.9 should drop sharply and most or all of the 17 regressions should resolve.
+If items 1 + 2 land, the p99.9 should drop sharply and the large majority of the 56 severe regressions should resolve.

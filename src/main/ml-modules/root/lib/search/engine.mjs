@@ -713,11 +713,12 @@ function buildConjunctionJoin({
   //   - sub contributes ONLY ctsConstraints (no joins, no patternJoins, no
   //     andOrSubPlans, no extra constraints beyond the scope filter that has
   //     already been suppressed via parentScope propagation)
-  // wrapAs overrides the cts wrapper used for a folded sub. Needed when the
-  // caller pre-rewrites a NOT criterion as {OR:[...]} for a notExistsJoin
-  // fallback path: the sub's own logicType is then 'or', but if the sub folds
-  // we must wrap as 'not' to preserve negation in the parent's ctsConstraints.
-  const buildSubOrFold = (planCriteria, wrapAs = null) => {
+  // negateFold forces a folded sub to be wrapped as cts.notQuery(...) instead
+  // of using the sub's own logicType. Needed when the caller pre-rewrites a
+  // NOT criterion as {OR:[...]} for a notExistsJoin fallback path: the sub's
+  // own logicType is then 'or', but if the sub folds we must wrap as 'not' to
+  // preserve negation in the parent's ctsConstraints.
+  const buildSubOrFold = (planCriteria, negateFold = false) => {
     const countBefore = scp.getCriteriaCount();
     const { acc, assemblyContext } = buildCriteriaAccumulator({
       scp,
@@ -736,11 +737,9 @@ function buildConjunctionJoin({
       (logicType === 'and' || logicType === 'or') &&
       accContainsOnly(acc, 'ctsConstraints');
     if (foldable) {
+      const wrapLogic = negateFold ? 'not' : assemblyContext.logicType;
       return {
-        ctsConstraint: wrapCtsByLogicType(
-          wrapAs ?? assemblyContext.logicType,
-          acc.ctsConstraints,
-        ),
+        ctsConstraint: wrapCtsByLogicType(wrapLogic, acc.ctsConstraints),
       };
     }
     return { plan: assemblePlan(scp, { ...acc, ...assemblyContext }) };
@@ -796,9 +795,9 @@ function buildConjunctionJoin({
       case 'and': {
         // We are in an AND and encounter a NOT - not exists join and change to OR
         // This is equivalent and likely more performant (needs testing).
-        // wrapAs='not' ensures a folded sub is wrapped as cts.notQuery(...) so
-        // negation is preserved when the sub bypasses the notExistsJoin path.
-        const sub = buildSubOrFold({ OR: criterion.NOT }, 'not');
+        // negateFold=true ensures a folded sub is wrapped as cts.notQuery(...)
+        // so negation is preserved when the sub bypasses the notExistsJoin path.
+        const sub = buildSubOrFold({ OR: criterion.NOT }, true);
         return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
       }
 

@@ -43,6 +43,18 @@ import { STOP_WORDS } from '../../data/stopWords.mjs';
 
 //#region Constants
 const MAXIMUM_PAGE_WITH_LENGTH = 100000;
+
+// Accumulator buckets that carry "content" (real plan contributions).
+// Keep in sync with createPlanAccumulator. Used by accContainsOnly to answer
+// shape questions about the accumulator without each caller re-listing every
+// bucket name (which becomes WET and outdated when a new bucket is added).
+const ACC_CONTENT_BUCKETS = [
+  'constraints',
+  'ctsConstraints',
+  'conjunctionJoins',
+  'andOrSubPlans',
+  'patternJoins',
+];
 //#endregion
 
 //#region Exported functions
@@ -137,6 +149,9 @@ function performSearch(scp) {
 }
 
 // For recursive calls from pattern classes — returns a single assembled plan.
+// parentScope: when set, the caller's plan already constrains results to that
+// search scope's types. Sub-plans built for the same scope can skip the
+// redundant dataType constraint ("empty-groups" optimization).
 function processCriteria({
   scp,
   planCriteria,
@@ -144,6 +159,7 @@ function processCriteria({
   patternOptions,
   groups = null,
   parentId = null,
+  parentScope = null,
   allowMultiScope = false,
 }) {
   const { acc, assemblyContext } = buildCriteriaAccumulator({
@@ -152,6 +168,7 @@ function processCriteria({
     planScope,
     patternOptions,
     parentId,
+    parentScope,
     allowMultiScope,
   });
   return assemblePlan(scp, { ...acc, ...assemblyContext });
@@ -212,6 +229,7 @@ function buildCriteriaAccumulator({
   planScope = 'item',
   patternOptions,
   parentId = null,
+  parentScope = null,
   allowMultiScope = false,
 }) {
   const isTopLevel = !parentId;
@@ -235,8 +253,15 @@ function buildCriteriaAccumulator({
 
   let { criteria, logicType } = parseCriteriaAndLogicType(planCriteria);
 
+  // Empty-groups optimization: if the caller already constrains results to a
+  // single scope and this sub-plan is for the same scope, the dataType
+  // constraint on this sub-plan is redundant. Skip emitting it.
+  const scopeAlreadyConstrained =
+    !isTopLevel && !isMultiScope && parentScope === scope;
+
   const acc = createPlanAccumulator({
     scope,
+    scopeAlreadyConstrained,
     uriCol,
     iriCol,
     fragCol,
@@ -272,20 +297,34 @@ function buildCriteriaAccumulator({
         uriCol,
         fragCol,
         scp,
+        // Parent's plan only constrains scope when the parent itself is not
+        // multi-scope. Sub-plans use this to decide whether they can skip
+        // their own dataType constraint and whether their pure-CTS form can
+        // be folded into the parent's ctsConstraints.
+        parentIsScopeConstrained: !isMultiScope,
       });
       if (result.skip) {
         // The sub-group's criteria were all filtered (e.g. stop words); treat
         // the group as non-existent so it doesn't contribute an empty plan.
       } else if (result.inlineCriteria) {
         criteria.push(...result.inlineCriteria);
+      } else if (result.ctsConstraint) {
+        // Pure-CTS sub-plan folded directly into our ctsConstraints; the wrap
+        // in assemblePlan (and/or/notQuery) composes correctly with the
+        // sub's already-wrapped query as a peer.
+        acc.ctsConstraints.push(result.ctsConstraint);
       } else if (result.andOrSubPlan) {
         // Deferred: AND-encounters-OR sub-plans are combined off the outer
         // fragment in assemblePlan to avoid SPARQL fusion when 2+ are
         // chained against the same outer (which silently zeroes results or
         // blows memory). See docs/optic-lessons.md.
         acc.andOrSubPlans.push(result.andOrSubPlan);
-      } else {
+      } else if (result.join) {
         acc.conjunctionJoins.push(result.join);
+      } else {
+        throw new InternalServerError(
+          `buildConjunctionJoin's return did not include a recognized property: ${JSON.stringify(Object.keys(result))}`,
+        );
       }
       continue;
     }
@@ -404,6 +443,7 @@ function parseCriteriaAndLogicType(planCriteria) {
 // Initialized with scope-level base lexicons and an optional dataType constraint.
 function createPlanAccumulator({
   scope,
+  scopeAlreadyConstrained = false,
   uriCol,
   iriCol,
   fragCol,
@@ -416,9 +456,10 @@ function createPlanAccumulator({
       [iriCol]: cts.iriReference(),
       [dataTypeCol]: cts.fieldReference('anyDataTypeName'),
     },
-    constraints: isMultiScope
-      ? []
-      : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
+    constraints:
+      isMultiScope || scopeAlreadyConstrained
+        ? []
+        : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
     ctsConstraints: [],
     conjunctionJoins: [],
     // AND-encounters-OR sub-plans deferred until assemblePlan, where
@@ -584,9 +625,11 @@ function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
 }
 
 // Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor,
-// inline criteria to be appended to the processing queue, or a skip signal when the
-// sub-group's criteria were all filtered out (e.g. stop words).
-// Returns: { join: ... } | { inlineCriteria: Array } | { andOrSubPlan: ... } | { skip: true }
+// inline criteria to be appended to the processing queue, a pure-CTS contribution to be
+// folded into the parent's ctsConstraints, or a skip signal when the sub-group's criteria
+// were all filtered out (e.g. stop words).
+// Returns: { join: ... } | { inlineCriteria: Array } | { andOrSubPlan: ... }
+//        | { ctsConstraint: ctsQuery } | { skip: true }
 function buildConjunctionJoin({
   criterion,
   logicType,
@@ -596,6 +639,7 @@ function buildConjunctionJoin({
   uriCol,
   fragCol,
   scp,
+  parentIsScopeConstrained,
 }) {
   const makeJoinOn = () =>
     patternOptions.getPreferFragJoins()
@@ -610,19 +654,60 @@ function buildConjunctionJoin({
       ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
       : op.as(uriCol, op.col(id + '_uri'));
 
-  const subPlan = (planCriteria) => {
+  // Builds the sub-accumulator and decides between three outcomes:
+  //   1) { skip: true }             — sub had no usable criteria
+  //   2) { ctsConstraints: q }      — sub is pure-CTS and can be folded into
+  //                                   the parent's ctsConstraints
+  //   3) { plan }                   — sub assembled into a regular plan
+  //
+  // Folding requires:
+  //   - parent logicType is 'and' or 'or' (NOT composition with negation
+  //     conversion is not a simple peer push)
+  //   - sub contributes ONLY ctsConstraints (no joins, no patternJoins, no
+  //     andOrSubPlans, no extra constraints beyond the scope filter that has
+  //     already been suppressed via parentScope propagation)
+  // wrapAs overrides the cts wrapper used for a folded sub. Needed when the
+  // caller pre-rewrites a NOT criterion as {OR:[...]} for a notExistsJoin
+  // fallback path: the sub's own logicType is then 'or', but if the sub folds
+  // we must wrap as 'not' to preserve negation in the parent's ctsConstraints.
+  const buildSubOrFold = (planCriteria, wrapAs = null) => {
     const countBefore = scp.getCriteriaCount();
-    const plan = processCriteria({
+    const { acc, assemblyContext } = buildCriteriaAccumulator({
       scp,
       planCriteria,
       planScope: scope,
       patternOptions,
       parentId: id,
+      // Sub-plan can drop the duplicate dataType filter only when the
+      // parent's plan really constrains scope (i.e. parent is not multi).
+      parentScope: parentIsScopeConstrained ? scope : null,
     });
-    return scp.getCriteriaCount() > countBefore ? plan : null;
+    if (scp.getCriteriaCount() === countBefore) {
+      return { skip: true };
+    }
+    const foldable =
+      (logicType === 'and' || logicType === 'or') &&
+      accContainsOnly(acc, 'ctsConstraints');
+    if (foldable) {
+      return {
+        ctsConstraint: wrapCtsByLogicType(
+          wrapAs ?? assemblyContext.logicType,
+          acc.ctsConstraints,
+        ),
+      };
+    }
+    return { plan: assemblePlan(scp, { ...acc, ...assemblyContext }) };
   };
 
-  let plan;
+  // Build the sub once and dispatch on what came back. ctsConstraint is
+  // surfaced unchanged so the caller's loop can push to its ctsConstraints.
+  const dispatchToJoin = (subResult, joinBuilder) => {
+    if (subResult.skip) return { skip: true };
+    if (subResult.ctsConstraint) {
+      return { ctsConstraint: subResult.ctsConstraint };
+    }
+    return joinBuilder(subResult.plan);
+  };
 
   if (criterion.AND) {
     switch (logicType) {
@@ -630,41 +715,40 @@ function buildConjunctionJoin({
         // AND can be inlined because we're already in an AND here
         return { inlineCriteria: criterion.AND };
 
-      case 'or': {
-        // We are in an OR and encounter an AND - full outer join
-        plan = subPlan(criterion);
-        if (!plan) return { skip: true };
-        const _joinCol = fullOuterJoinCol();
-        return {
-          join: {
-            type: 'joinFullOuter',
-            right: plan.select([
-              _joinCol,
-              op.as('dataType', op.col(id + '_dataType')),
-            ]),
-            on: null,
-            condition: null,
-          },
-        };
-      }
+      case 'or':
+        // We are in an OR and encounter an AND - full outer join (or fold)
+        return dispatchToJoin(buildSubOrFold(criterion), (plan) => {
+          const _joinCol = fullOuterJoinCol();
+          return {
+            join: {
+              type: 'joinFullOuter',
+              right: plan.select([
+                _joinCol,
+                op.as('dataType', op.col(id + '_dataType')),
+              ]),
+              on: null,
+              condition: null,
+            },
+          };
+        });
 
       case 'not':
         // We are in a NOT and encounter an AND - not exists join
-        plan = subPlan(criterion);
-        if (!plan) return { skip: true };
-        return {
+        // (NOT context disables folding inside buildSubOrFold.)
+        return dispatchToJoin(buildSubOrFold(criterion), (plan) => ({
           join: {
             type: 'notExistsJoin',
             right: plan.select(singleColSelect()),
             on: makeJoinOn(),
             condition: null,
           },
-        };
+        }));
     }
   } else if (criterion.OR) {
     switch (logicType) {
-      case 'and': {
-        // AND encounters OR. Defer: assemblePlan combines all such
+      case 'and':
+        // AND encounters OR. Prefer the pure-CTS fold; otherwise defer the
+        // sub-plan join until assemblePlan, which combines all such
         // sub-plans off the outer fragment first, then joins the combined
         // result to the outer ONCE. Chaining 2+ of these as joinInner
         // against the same outer fragment causes SPARQL fusion that
@@ -672,17 +756,16 @@ function buildConjunctionJoin({
         // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
         // groupBy on that same column dedupes and adds a materialization
         // barrier so the merger sees a single, fully-typed binding.
-        plan = subPlan(criterion);
-        if (!plan) return { skip: true };
-        const cols = singleColSelect();
-        return {
-          andOrSubPlan: {
-            plan: plan.select(cols).groupBy(cols, []),
-            joinCol: cols[0],
-            preferFrag: patternOptions.getPreferFragJoins(),
-          },
-        };
-      }
+        return dispatchToJoin(buildSubOrFold(criterion), (plan) => {
+          const cols = singleColSelect();
+          return {
+            andOrSubPlan: {
+              plan: plan.select(cols).groupBy(cols, []),
+              joinCol: cols[0],
+              preferFrag: patternOptions.getPreferFragJoins(),
+            },
+          };
+        });
 
       case 'or':
         // OR can be inlined because we're already in an OR here
@@ -690,66 +773,75 @@ function buildConjunctionJoin({
 
       case 'not':
         // We are in a NOT and encounter an OR - not exists join
-        plan = subPlan(criterion);
-        if (!plan) return { skip: true };
-        return {
+        return dispatchToJoin(buildSubOrFold(criterion), (plan) => ({
           join: {
             type: 'notExistsJoin',
             right: plan.select(singleColSelect()),
             on: makeJoinOn(),
             condition: null,
           },
-        };
+        }));
     }
   } else if (criterion.NOT) {
     switch (logicType) {
       case 'and':
         // We are in an AND and encounter a NOT - not exists join and change to OR
-        // This is equivalent and likely more performant (needs testing)
-        plan = subPlan({ OR: criterion.NOT });
-        if (!plan) return { skip: true };
-        return {
-          join: {
-            type: 'notExistsJoin',
-            right: plan.select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        };
+        // This is equivalent and likely more performant (needs testing).
+        // wrapAs='not' ensures a folded sub is wrapped as cts.notQuery(...) so
+        // negation is preserved when the sub bypasses the notExistsJoin path.
+        return dispatchToJoin(
+          buildSubOrFold({ OR: criterion.NOT }, 'not'),
+          (plan) => ({
+            join: {
+              type: 'notExistsJoin',
+              right: plan.select(singleColSelect()),
+              on: makeJoinOn(),
+              condition: null,
+            },
+          }),
+        );
 
-      case 'or': {
+      case 'or':
         // We are in an OR and encounter a NOT - full outer join
-        plan = subPlan(criterion);
-        if (!plan) return { skip: true };
-        const _joinCol = fullOuterJoinCol();
-        return {
-          join: {
-            type: 'joinFullOuter',
-            right: plan.select([
-              _joinCol,
-              op.as('dataType', op.col(id + '_dataType')),
-            ]),
-            on: null,
-            condition: null,
-          },
-        };
-      }
+        return dispatchToJoin(buildSubOrFold(criterion), (plan) => {
+          const _joinCol = fullOuterJoinCol();
+          return {
+            join: {
+              type: 'joinFullOuter',
+              right: plan.select([
+                _joinCol,
+                op.as('dataType', op.col(id + '_dataType')),
+              ]),
+              on: null,
+              condition: null,
+            },
+          };
+        });
 
       case 'not':
         // We are in a NOT and encounter a NOT - inner join and change to OR
         // This is equivalent and likely more performant (needs testing)
-        plan = subPlan({ OR: criterion.NOT });
-        if (!plan) return { skip: true };
-        return {
-          join: {
-            type: 'joinInner',
-            right: plan.select(singleColSelect()),
-            on: makeJoinOn(),
-            condition: null,
-          },
-        };
+        return dispatchToJoin(
+          buildSubOrFold({ OR: criterion.NOT }),
+          (plan) => ({
+            join: {
+              type: 'joinInner',
+              right: plan.select(singleColSelect()),
+              on: makeJoinOn(),
+              condition: null,
+            },
+          }),
+        );
     }
   }
+}
+
+// Wraps an array of cts queries per logicType, matching the convention used
+// in assemblePlan for top-level ctsConstraints (NOT → notQuery(orQuery(...))).
+function wrapCtsByLogicType(logicType, ctsConstraints) {
+  if (logicType === 'and') return cts.andQuery(ctsConstraints);
+  if (logicType === 'or') return cts.orQuery(ctsConstraints);
+  return cts.notQuery(cts.orQuery(ctsConstraints));
 }
 
 // Assembles the Optic plan by applying all accumulated constraints, CTS queries, and joins.
@@ -779,13 +871,7 @@ function assemblePlan(
   }
 
   if (ctsConstraints.length) {
-    const ctsWrapper =
-      logicType === 'and'
-        ? cts.andQuery
-        : logicType === 'or'
-          ? cts.orQuery
-          : (x) => cts.notQuery(cts.orQuery(x));
-    const ctsQuery = ctsWrapper(ctsConstraints);
+    const ctsQuery = wrapCtsByLogicType(logicType, ctsConstraints);
     // TODO, FUNC: Scores are only requested for top-level plans. Consider
     // whether sub-plan scores should contribute to the final relevance ranking.
     const wantScore = isTopLevel && scp.getSortCriteria()?.areScoresRequired();
@@ -1434,6 +1520,15 @@ function getPlanSource(plan) {
     .toSource(plan.export ? plan.export() : plan)
     .replace(/\n\s*/g, ' ')
     .replace(/"/g, "'");
+}
+
+// True iff `bucketName` is non-empty and every other content bucket is empty.
+// Throws (via undefined.length) on a typo, which surfaces immediately.
+function accContainsOnly(acc, bucketName) {
+  if (acc[bucketName].length === 0) return false;
+  return ACC_CONTENT_BUCKETS.every(
+    (b) => b === bucketName || acc[b].length === 0,
+  );
 }
 
 // Extracts the IRI string from a child { id: value } or { iri: value } term.

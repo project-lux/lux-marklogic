@@ -228,6 +228,103 @@ const scenarios = [
       sortedMatchesUnsorted: true,
     },
   },
+
+  // --- Pure-CTS fold optimization tests ---
+  // These lock in the optimization that collapses pure-CTS sub-plans into the
+  // parent's ctsConstraints. The signal is `op.fromLexicons`: each non-folded
+  // sub-plan adds another call, so an exact count of 1 proves everything
+  // folded into the base plan.
+  {
+    name: 'AND with nested OR (pure CTS) folds into single fromLexicons',
+    input: {
+      scopeName: 'item',
+      searchCriteria: {
+        _scope: 'item',
+        AND: [{ name: 'box' }, { OR: [{ name: 'red' }, { name: 'blue' }] }],
+      },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      sortedPlanCounts: {
+        'op.fromLexicons': 1,
+        'cts.orQuery': 1,
+      },
+    },
+  },
+  {
+    name: 'Two ANDed ORs (pure CTS) both fold into single fromLexicons',
+    input: {
+      scopeName: 'item',
+      searchCriteria: {
+        _scope: 'item',
+        AND: [
+          { OR: [{ name: 'red' }, { name: 'blue' }] },
+          { OR: [{ name: 'small' }, { name: 'large' }] },
+        ],
+      },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      sortedPlanCounts: {
+        // Single fromLexicons + two peer orQuery wrappers under the parent's
+        // andQuery prove both sub-plans folded (no andOrSubPlan joins). A
+        // joinInner is still present here because default relevance sort
+        // joins op.fromSearch for scoring — that's unrelated to the fold.
+        'op.fromLexicons': 1,
+        'cts.orQuery': 2,
+      },
+    },
+  },
+  {
+    name: 'NOT-encounters-AND fold preserves negation (regression: was returning 0)',
+    input: {
+      scopeName: 'item',
+      searchCriteria: {
+        _scope: 'item',
+        AND: [
+          { name: 'box' },
+          { NOT: [{ name: 'giraffe' }, { recordType: 'DigitalObject' }] },
+        ],
+      },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      // Folded; sub must be wrapped as notQuery(orQuery(...)) — without the
+      // wrapAs='not' override the sub would be wrapped as a positive orQuery
+      // and the AND would silently drop the negation.
+      sortedPlanContains: ['cts.notQuery'],
+      sortedPlanCounts: {
+        'op.fromLexicons': 1,
+        'cts.notQuery': 1,
+      },
+    },
+  },
+  {
+    name: 'OR with nested AND (pure CTS) folds into single fromLexicons',
+    input: {
+      scopeName: 'item',
+      searchCriteria: {
+        _scope: 'item',
+        OR: [
+          { name: 'unique_name_z' }, // forces OR (single-branch collapse off)
+          { AND: [{ name: 'red' }, { name: 'small' }] },
+        ],
+      },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      sortedPlanCounts: {
+        'op.fromLexicons': 1,
+        // Inner AND folded as cts.andQuery, wrapped with peer leaf under
+        // parent's cts.orQuery.
+        'cts.andQuery': 1,
+      },
+    },
+  },
 ];
 
 for (const scenario of scenarios) {
@@ -270,6 +367,25 @@ for (const scenario of scenarios) {
           testHelperProxy.assertFalse(
             typeof sortedSource === 'string' && sortedSource.includes(text),
             `${p}: sorted plan should NOT contain '${text}'`,
+          ),
+        );
+      }
+    }
+
+    if (e.sortedPlanCounts) {
+      // Map of substring -> expected number of occurrences. Lets us assert
+      // plan shape (e.g. exactly one `op.fromLexicons` proves a pure-CTS fold
+      // collapsed all sub-plans into the base).
+      for (const [text, expected] of Object.entries(e.sortedPlanCounts)) {
+        const actual =
+          typeof sortedSource === 'string'
+            ? sortedSource.split(text).length - 1
+            : -1;
+        assertions.push(
+          testHelperProxy.assertEqual(
+            expected,
+            actual,
+            `${p}: sorted plan should contain '${text}' exactly ${expected} time(s); got ${actual}`,
           ),
         );
       }

@@ -270,12 +270,20 @@ const SearchCriteriaProcessor = class {
 
   // Delegates to engine.processCriteria. Used by executeForValues() and by
   // search pattern classes to process nested criteria.
+  //
+  // parentScope: forwarded as-is to enable the empty-groups (same-scope
+  // dataType-filter) optimization in engine.processCriteria. Defaults to null
+  // (optimization disabled). Current pattern callers (HopInverse,
+  // HopWithField) cross scope boundaries via termConfig.getTargetScopeName()
+  // and so must leave it null; a future same-scope caller can opt in by
+  // passing the parent's scope.
   processCriteria({
     planCriteria,
     planScope = 'item',
     patternOptions,
     groups = null,
     parentId = null,
+    parentScope = null,
     allowMultiScope = false,
   }) {
     return engine.processCriteria({
@@ -285,6 +293,7 @@ const SearchCriteriaProcessor = class {
       patternOptions,
       groups,
       parentId,
+      parentScope,
       allowMultiScope,
     });
   }

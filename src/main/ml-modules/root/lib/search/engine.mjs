@@ -697,11 +697,15 @@ function buildConjunctionJoin({
     };
   };
 
-  // Builds the sub-accumulator and decides between three outcomes:
-  //   1) { skip: true }             — sub had no usable criteria
-  //   2) { ctsConstraints: q }      — sub is pure-CTS and can be folded into
-  //                                   the parent's ctsConstraints
-  //   3) { plan }                   — sub assembled into a regular plan
+  // Builds the sub-accumulator and returns one of the shapes that
+  // buildConjunctionJoin itself emits, so the caller can either return the
+  // result directly or wrap an assembled plan via a join-descriptor builder:
+  //   1) { skip: true }         — sub had no usable criteria (passes through)
+  //   2) { ctsConstraint: q }   — sub is pure-CTS, folded into the parent's
+  //                                ctsConstraints (passes through)
+  //   3) { plan }               — sub assembled into a regular plan; the
+  //                                caller wraps it with the appropriate
+  //                                join-descriptor builder
   //
   // Folding requires:
   //   - parent logicType is 'and' or 'or' (NOT composition with negation
@@ -742,34 +746,28 @@ function buildConjunctionJoin({
     return { plan: assemblePlan(scp, { ...acc, ...assemblyContext }) };
   };
 
-  // Build the sub once and dispatch on what came back. ctsConstraint is
-  // surfaced unchanged so the caller's loop can push to its ctsConstraints.
-  const dispatchToJoin = (subResult, joinBuilder) => {
-    if (subResult.skip) return { skip: true };
-    if (subResult.ctsConstraint) {
-      return { ctsConstraint: subResult.ctsConstraint };
-    }
-    return joinBuilder(subResult.plan);
-  };
-
   if (criterion.AND) {
     switch (logicType) {
       case 'and':
         // AND can be inlined because we're already in an AND here
         return { inlineCriteria: criterion.AND };
 
-      case 'or':
+      case 'or': {
         // We are in an OR and encounter an AND - full outer join (or fold)
-        return dispatchToJoin(buildSubOrFold(criterion), fullOuterJoinDesc);
+        const sub = buildSubOrFold(criterion);
+        return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
+      }
 
-      case 'not':
+      case 'not': {
         // We are in a NOT and encounter an AND - not exists join
         // (NOT context disables folding inside buildSubOrFold.)
-        return dispatchToJoin(buildSubOrFold(criterion), notExistsJoinDesc);
+        const sub = buildSubOrFold(criterion);
+        return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
+      }
     }
   } else if (criterion.OR) {
     switch (logicType) {
-      case 'and':
+      case 'and': {
         // AND encounters OR. Prefer the pure-CTS fold; otherwise defer the
         // sub-plan join until assemblePlan, which combines all such
         // sub-plans off the outer fragment first, then joins the combined
@@ -779,39 +777,43 @@ function buildConjunctionJoin({
         // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
         // groupBy on that same column dedupes and adds a materialization
         // barrier so the merger sees a single, fully-typed binding.
-        return dispatchToJoin(buildSubOrFold(criterion), andOrSubPlanDesc);
+        const sub = buildSubOrFold(criterion);
+        return sub.plan ? andOrSubPlanDesc(sub.plan) : sub;
+      }
 
       case 'or':
         // OR can be inlined because we're already in an OR here
         return { inlineCriteria: criterion.OR };
 
-      case 'not':
+      case 'not': {
         // We are in a NOT and encounter an OR - not exists join
-        return dispatchToJoin(buildSubOrFold(criterion), notExistsJoinDesc);
+        const sub = buildSubOrFold(criterion);
+        return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
+      }
     }
   } else if (criterion.NOT) {
     switch (logicType) {
-      case 'and':
+      case 'and': {
         // We are in an AND and encounter a NOT - not exists join and change to OR
         // This is equivalent and likely more performant (needs testing).
         // wrapAs='not' ensures a folded sub is wrapped as cts.notQuery(...) so
         // negation is preserved when the sub bypasses the notExistsJoin path.
-        return dispatchToJoin(
-          buildSubOrFold({ OR: criterion.NOT }, 'not'),
-          notExistsJoinDesc,
-        );
+        const sub = buildSubOrFold({ OR: criterion.NOT }, 'not');
+        return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
+      }
 
-      case 'or':
+      case 'or': {
         // We are in an OR and encounter a NOT - full outer join
-        return dispatchToJoin(buildSubOrFold(criterion), fullOuterJoinDesc);
+        const sub = buildSubOrFold(criterion);
+        return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
+      }
 
-      case 'not':
+      case 'not': {
         // We are in a NOT and encounter a NOT - inner join and change to OR
         // This is equivalent and likely more performant (needs testing)
-        return dispatchToJoin(
-          buildSubOrFold({ OR: criterion.NOT }),
-          innerJoinDesc,
-        );
+        const sub = buildSubOrFold({ OR: criterion.NOT });
+        return sub.plan ? innerJoinDesc(sub.plan) : sub;
+      }
     }
   }
 }

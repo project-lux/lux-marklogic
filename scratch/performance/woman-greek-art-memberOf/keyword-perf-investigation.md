@@ -1,6 +1,22 @@
 # Keyword Search Pattern Performance Investigation
 
-## Status: In Progress (started 2026-05-27)
+## Status: Resolved via page-slice hydration path (2026-05-31)
+
+### Outcome
+- **Root cause confirmed**: cold-start gap is Optic optimizer cost on a plan AST containing a large `cts.tripleRangeQuery` literal payload (49K IRIs for "woman greek art"). Not IRI resolution, not search, not retrieval — pure AST traversal/costing.
+- **Smoking gun (same final CTS query, three execution shapes)**:
+  - Native `cts.search`: ~1.6s cold
+  - Page-slice (cts.search outside Optic + tiny `op.fromParam` hydration): ~2.8s cold
+  - Standard Optic plan: ~4.9s cold
+- **Mitigation shipped**: page-slice path behind `searchPageSliceEnabled` toggle (gradle.properties). Module: `src/main/ml-modules/root/lib/search/keywordPageSlice.mjs`. Eligibility is conservative (keyword-only, relevance sort, no facets, single scope, no pageWith). When ineligible → standard path unchanged.
+- **Measured (WGA reference, page 1, pageLength 20)**: cold 4898→2762ms (1.77×), warm 656→202ms (3.25×), warm stddev 70→3ms.
+- **Parity**: identical totals (10105 vs 10105); `maxAbsScoreDelta=0`; 17/20 ranked matches; mismatches isolated to tied-score groups.
+- **Customer-facing summary**: `docs/search-cold-start-mitigation.md`.
+- **Open**: deep-pagination behavior not characterized; MarkLogic 12.1 may move the needle on the underlying optimizer cost (worth re-measuring + Progress support ticket).
+
+---
+
+## Original investigation (preserved for reference)
 
 ## Context
 Comparing Optic-based search engine performance against the former CTS implementation. Functional parity confirmed; investigating the performance gap.

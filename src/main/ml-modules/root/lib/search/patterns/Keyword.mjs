@@ -11,61 +11,65 @@ import { expandPredicates } from '../prefixUtils.mjs';
 import * as utils from '../../../utils/utils.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
+// Builds the same `cts.orQuery([nonSemanticWordQuery, tripleRangeQuery])`
+// produced by Keyword.apply, but driven by raw values instead of a SearchTerm.
+// Used by the experimental page-slice hydration path (keywordPageSlice.mjs)
+// so the two execution paths cannot drift on query semantics.
+function buildKeywordCtsQuery({
+  termValues,
+  termScopeName,
+  isCompleteMatch = false,
+  searchOptions,
+  termWeight = 1.0,
+}) {
+  const nonSemanticWordQuery = buildWordQueries(
+    getSearchScopeFields(termScopeName),
+    termValues,
+    isCompleteMatch,
+    searchOptions,
+    termWeight,
+  );
+  const semanticWordQuery = buildWordQueries(
+    [FULL_TEXT_SEARCH_RELATED_FIELD_NAME],
+    termValues,
+    isCompleteMatch,
+    searchOptions,
+    termWeight,
+  );
+  const refIris = cts
+    .values(
+      cts.iriReference(),
+      null,
+      ['eager', 'concurrent'],
+      semanticWordQuery,
+    )
+    .toArray();
+  // An empty array is interpreted as "any object" by cts.tripleRangeQuery
+  // (incorrect when no objects matched). Sentinel guards against that.
+  refIris.unshift(sem.iri(IRI_DOES_NOT_EXIST));
+
+  const tripleRangeQuery = cts.tripleRangeQuery(
+    [],
+    expandPredicates(getSearchScopePredicates(termScopeName)),
+    refIris,
+    '=',
+    [],
+    termWeight,
+  );
+
+  return cts.orQuery([nonSemanticWordQuery, tripleRangeQuery]);
+}
+
 class Keyword extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
-    const termValues = utils.toArray(searchTerm.getValue());
-    const termWeight = searchTerm.getWeight() ?? 1.0;
-    const termScopeName = searchTerm.getScopeName();
-    const isCompleteMatch = searchTerm.isCompleteMatch();
-    const searchOptions = searchTerm.getSearchOptions();
-
-    // Non-semantic side: word/value match in this document's scope-any field(s).
-    const nonSemanticWordQuery = buildWordQueries(
-      getSearchScopeFields(termScopeName),
-      termValues,
-      isCompleteMatch,
-      searchOptions,
-      termWeight,
-    );
-
-    // Semantic side: this document's IRI must subject a scope-any predicate
-    // pointing to an object whose referenceName field matches the term.
-    // Resolve the matching object IRIs first, then express the constraint as
-    // a triple-range query over the document's IRI. This collapses what was
-    // previously a triple-hop OR sub-plan in Optic into a single CTS query
-    // that ANDs cleanly with sibling keyword constraints on the outer
-    // lexicon's where().
-    const semanticWordQuery = buildWordQueries(
-      [FULL_TEXT_SEARCH_RELATED_FIELD_NAME],
-      termValues,
-      isCompleteMatch,
-      searchOptions,
-      termWeight,
-    );
-    const refIris = cts
-      .values(
-        cts.iriReference(),
-        null,
-        ['eager', 'concurrent'],
-        semanticWordQuery,
-      )
-      .toArray();
-    // An empty array is interpreted as "any object" by cts.tripleRangeQuery
-    // (incorrect when no objects matched). Sentinel guards against that.
-    refIris.unshift(sem.iri(IRI_DOES_NOT_EXIST));
-
-    const tripleRangeQuery = cts.tripleRangeQuery(
-      [],
-      expandPredicates(getSearchScopePredicates(termScopeName)),
-      refIris,
-      '=',
-      [],
-      termWeight,
-    );
-
-    return {
-      ctsConstraints: [cts.orQuery([nonSemanticWordQuery, tripleRangeQuery])],
-    };
+    const ctsQuery = buildKeywordCtsQuery({
+      termValues: utils.toArray(searchTerm.getValue()),
+      termScopeName: searchTerm.getScopeName(),
+      isCompleteMatch: searchTerm.isCompleteMatch(),
+      searchOptions: searchTerm.getSearchOptions(),
+      termWeight: searchTerm.getWeight() ?? 1.0,
+    });
+    return { ctsConstraints: [ctsQuery] };
   }
 
   mayTokenizeValue() {
@@ -105,4 +109,4 @@ function buildWordQueries(fields, values, isCompleteMatch, options, weight) {
 const PATTERN_NAME_KEYWORD = 'keyword';
 SearchPatternBase.register(PATTERN_NAME_KEYWORD, new Keyword());
 
-export { PATTERN_NAME_KEYWORD };
+export { PATTERN_NAME_KEYWORD, buildKeywordCtsQuery };

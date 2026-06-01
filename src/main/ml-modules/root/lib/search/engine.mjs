@@ -18,6 +18,7 @@ import {
   SEARCH_OPTIONS_INVERSE_MAP,
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
+  SEARCH_PAGE_SLICE_ENABLED,
   SEMANTIC_SORT_TIMEOUT,
 } from '../appConstants.mjs';
 import {
@@ -30,6 +31,7 @@ import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { SearchTerm } from './SearchTerm.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
 import { PatternOptions } from './PatternOptions.mjs';
+import { tryExecuteKeywordPageSlice } from './keywordPageSlice.mjs';
 import {
   CHILD_TYPE_ATOMIC,
   CHILD_TYPE_GROUP,
@@ -86,6 +88,29 @@ function performSearch(scp) {
       // buildSortedResultsPlan from doing any sort-branch work.
       if (!includeSearchResults) {
         scp.setSortCriteria(null);
+      }
+
+      // Simple-keyword queries can bypass the Optic pipeline entirely
+      // (cts.search → top-K → hydrate dataType). Returns null when the
+      // request is not eligible; see lib/search/keywordPageSlice.mjs.
+      const pageSlice = SEARCH_PAGE_SLICE_ENABLED
+        ? tryExecuteKeywordPageSlice(scp)
+        : null;
+      if (pageSlice) {
+        const paginationResult = paginateResults({
+          rows: pageSlice.rows,
+          pageWith: null, // page-slice path is ineligible when pageWith is set
+          page,
+          pageLength: pageLength ?? 20,
+        });
+        return new SearchExecutionResult({
+          searchResults: paginationResult.searchResults,
+          total: pageSlice.total,
+          resultPage: paginationResult.resultPage,
+          planAsJson: null,
+          planAsSource: '(page-slice: cts.search outside Optic)',
+          facetResponses: null,
+        });
       }
 
       const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({

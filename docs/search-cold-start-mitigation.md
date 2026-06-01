@@ -1,6 +1,26 @@
-# Search Cold-Start Mitigation: Page-Slice Hydration
+## **Search Cold-Start Mitigation: Page-Slice Hydration**
 
-## Audience
+- [Audience](#audience)
+- [LLM Disclaimer](#llm-disclaimer)
+- [1. Executive Summary](#1-executive-summary)
+  - [Why this is interesting beyond "a 2-second win"](#why-this-is-interesting-beyond-a-2-second-win)
+- [2. What Was Actually Happening](#2-what-was-actually-happening)
+  - [The smoking gun: native CTS does the same work in ~1.6 seconds](#the-smoking-gun-native-cts-does-the-same-work-in-16-seconds)
+- [3. The Change: Page-Slice Hydration](#3-the-change-page-slice-hydration)
+  - [Why the name "page-slice hydration"](#why-the-name-page-slice-hydration)
+  - [What "the slice" does and does not buy us](#what-the-slice-does-and-does-not-buy-us)
+- [4. Why This Is Not Specific To Keyword Search — And Why We Aren't Applying It Globally](#4-why-this-is-not-specific-to-keyword-search--and-why-we-arent-applying-it-globally)
+  - [Recognizing the next candidate (developer guidance)](#recognizing-the-next-candidate-developer-guidance)
+  - [Sketch of how to add a second pattern](#sketch-of-how-to-add-a-second-pattern)
+  - [Where this approach does *not* help, or actively hurts](#where-this-approach-does-not-help-or-actively-hurts)
+  - [Honest list of cons and risks](#honest-list-of-cons-and-risks)
+- [5. MarkLogic 12.1 and a Possible Path Forward With Progress Engineering](#5-marklogic-121-and-a-possible-path-forward-with-progress-engineering)
+- [6. Other Findings That Surfaced Along The Way](#6-other-findings-that-surfaced-along-the-way)
+- [7. Current Status and Recommendation](#7-current-status-and-recommendation)
+  - [Recommended path to enabling by default](#recommended-path-to-enabling-by-default)
+  - [Other next steps (independent — order is preference, not dependency)](#other-next-steps-independent--order-is-preference-not-dependency)
+
+# Audience
 
 Mixed: written for engineering review and for sharing with non-engineering
 stakeholders. Section 1 is the executive summary; Sections 2–6 add technical
@@ -8,7 +28,13 @@ depth.
 
 ---
 
-## 1. Executive Summary
+# LLM Disclaimer
+
+This document was initially produced with assistance from a LLM. It has been reviewed and revised by a human, but it may still contain inaccuracies.
+
+---
+
+# 1. Executive Summary
 
 A common keyword search — *"woman greek art"* against the `item` scope — was
 taking roughly **4.9 seconds** on a cold cache and **0.66 seconds** when warm.
@@ -24,14 +50,16 @@ results the user sees and no change to MarkLogic, the indexes, or the data.
 
 Result correctness was verified separately: the two execution paths return
 the same total match count (10,105 vs. 10,105), the same per-document
-relevance scores byte-for-byte, and the same top-of-page ordering except
+relevance scores byte-for-byte*, and the same top-of-page ordering except
 where scores are exactly tied (and tie-break order is not contractual on
 either path).
 
 The change is currently behind a build-time toggle, narrowly scoped to
 plain text-keyword searches, and ships off by default while it is evaluated.
 
-### Why this is interesting beyond "a 2-second win"
+\* I believe this was checked for the requested page (page 1) versus all 10k results.
+
+## Why this is interesting beyond "a 2-second win"
 
 - The **warm-path variance collapse** (stddev 70 ms → 3 ms) is arguably as
   valuable as the average speedup. Variance is what users perceive as "the
@@ -44,7 +72,7 @@ plain text-keyword searches, and ships off by default while it is evaluated.
 
 ---
 
-## 2. What Was Actually Happening
+# 2. What Was Actually Happening
 
 LUX builds its searches as **Optic** plans. Optic is MarkLogic's relational
 query engine, and it is the right tool for almost everything LUX does: joins
@@ -63,7 +91,7 @@ on every cold execution. That AST traversal — not the search itself, not the
 ranking, not retrieving the documents — is what was taking roughly 2.4
 seconds.
 
-### The smoking gun: native CTS does the same work in ~1.6 seconds
+## The smoking gun: native CTS does the same work in ~1.6 seconds
 
 The most important piece of evidence in this investigation is also the
 simplest. The exact same matching and ranking work — same query, same
@@ -94,7 +122,7 @@ the core problem this work addresses.
 
 ---
 
-## 3. The Change: Page-Slice Hydration
+# 3. The Change: Page-Slice Hydration
 
 The new execution path does the following:
 
@@ -111,7 +139,7 @@ Conceptually we are still using Optic — just for the cheap part (hydrating
 a handful of rows) rather than the expensive part (wrapping a 49,000-IRI
 CTS node in an AST).
 
-### Why the name "page-slice hydration"
+## Why the name "page-slice hydration"
 
 An earlier working name, "hybrid," correctly described *how* the path
 works (a mix of `cts.search` and Optic) but said nothing about *why* it is
@@ -121,7 +149,7 @@ full match set. **No results are hidden, no scores are altered, no facets
 are truncated.** The displayed total is still the full match count; every
 page the user navigates to is still hydrated correctly.
 
-### What "the slice" does and does not buy us
+## What "the slice" does and does not buy us
 
 - **The slice is necessary**: without it, the hydration plan would carry a
   10,000+ URI `documentQuery`, which is itself expensive (~1.1 s on the
@@ -135,7 +163,7 @@ page the user navigates to is still hydrated correctly.
 
 ---
 
-## 4. Why This Is Not Specific To Keyword Search — And Why We Aren't Applying It Globally
+# 4. Why This Is Not Specific To Keyword Search — And Why We Aren't Applying It Globally
 
 The general observation is:
 
@@ -162,7 +190,7 @@ plan otherwise. We have a sketch of this design (a new "contribution type"
 in the per-request accumulator) but have deliberately deferred it until V1
 has had real-world exposure.
 
-### Recognizing the next candidate (developer guidance)
+## Recognizing the next candidate (developer guidance)
 
 A request is worth investigating as a page-slice candidate when **all**
 of the following are true. Any "no" disqualifies it; eligibility is
@@ -190,7 +218,7 @@ genuinely having nothing useful left to do.
    page-depth cap (the keyword path does not yet have one because
    the realistic workload is shallow).
 
-### Sketch of how to add a second pattern
+## Sketch of how to add a second pattern
 
 If a candidate clears the five tests above, the implementation pattern
 is:
@@ -225,7 +253,7 @@ is:
    meaningful if you already trust the answers — otherwise you are
    benchmarking the speed of a wrong result.
 
-### Where this approach does *not* help, or actively hurts
+## Where this approach does *not* help, or actively hurts
 
 - **Deep pagination.** As page depth grows, the slice grows, and the
   `documentQuery` payload to the hydration plan grows with it. Past some
@@ -243,7 +271,7 @@ is:
   warm runs on the original path; we are not introducing a new class of
   problem, only a new dimension of it.
 
-### Honest list of cons and risks
+## Honest list of cons and risks
 
 In the interest of not over-selling:
 
@@ -285,14 +313,9 @@ In the interest of not over-selling:
 
 ---
 
-## 5. MarkLogic 12.1 and a Possible Path Forward With Progress Engineering
+# 5. MarkLogic 12.1 and a Possible Path Forward With Progress Engineering
 
-LUX is currently on MarkLogic 12.0.1. MarkLogic **12.1** has begun shipping
-optimizer and Optic improvements. We have not yet quantified the impact on
-this specific workload, but it is plausible that some portion of the
-2.4-second AST wrap cost is addressed upstream. We intend to re-measure
-under 12.1 as soon as it is in a test environment and adjust both the
-toggle default and the eligibility rules accordingly.
+LUX is currently on MarkLogic 12.0.1. MarkLogic **12.1** is to include various optimizations. One we are anticipating is being able to parameterize CTS queries within Optic, thereby allowing LUX to benefit from Optic's plan cache.  When able to use a cached plan, Optic's optimizer does not have to run.  Once available, we should assess.   We can test with and without keyword page-slice by toggling the `searchPageSliceEnabled` build property.
 
 Independently of 12.1, this is also a workload Progress Engineering would
 likely find informative. We have a small, reproducible case (the
@@ -307,7 +330,7 @@ hydration path entirely. Any of those outcomes is a good one.
 
 ---
 
-## 6. Other Findings That Surfaced Along The Way
+# 6. Other Findings That Surfaced Along The Way
 
 These came out of the same investigation and are recorded here so they are
 not lost.
@@ -341,7 +364,7 @@ not lost.
 
 ---
 
-## 7. Current Status and Recommendation
+# 7. Current Status and Recommendation
 
 - **Implemented**: page-slice hydration for plain keyword text searches,
   behind a build-time toggle (`searchPageSliceEnabled`). The toggle is
@@ -352,7 +375,7 @@ not lost.
 - **Measured**: ~1.77× cold speedup, ~3.25× warm speedup, ~23× tighter
   warm-path variance on the reference query.
 
-### Recommended path to enabling by default
+## Recommended path to enabling by default
 
 The default should be **on** once one remaining check passes. The toggle
 itself stays in the build so production can be reverted instantly if
@@ -374,7 +397,7 @@ something the test suite does not cover surfaces in the wild.
    exists to be on by default and off in emergencies is operational
    hygiene.
 
-### Other next steps (independent — order is preference, not dependency)
+## Other next steps (independent — order is preference, not dependency)
 
 - **Open a Progress support ticket** with the reproducer and our
   measurements. This does not have to wait for anything else; the case

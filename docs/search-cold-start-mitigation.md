@@ -3,6 +3,7 @@
 - [Audience](#audience)
 - [LLM Disclaimer](#llm-disclaimer)
 - [1. Executive Summary](#1-executive-summary)
+  - [Additional potential gap-closure levers](#additional-potential-gap-closure-levers)
   - [Why this is interesting beyond "a 2-second win"](#why-this-is-interesting-beyond-a-2-second-win)
 - [2. What Was Actually Happening](#2-what-was-actually-happening)
   - [The smoking gun: native CTS does the same work in ~1.6 seconds](#the-smoking-gun-native-cts-does-the-same-work-in-16-seconds)
@@ -15,6 +16,9 @@
   - [Where this approach does *not* help, or actively hurts](#where-this-approach-does-not-help-or-actively-hurts)
   - [Honest list of cons and risks](#honest-list-of-cons-and-risks)
 - [5. MarkLogic 12.1 and a Possible Path Forward With Progress Engineering](#5-marklogic-121-and-a-possible-path-forward-with-progress-engineering)
+  - [CTS parameterization within Optic](#cts-parameterization-within-optic)
+  - [Graviton](#graviton)
+  - [Progress Engineering](#progress-engineering)
 - [6. Other Findings That Surfaced Along The Way](#6-other-findings-that-surfaced-along-the-way)
 - [7. Current Status and Recommendation](#7-current-status-and-recommendation)
   - [Recommended path to enabling by default](#recommended-path-to-enabling-by-default)
@@ -58,6 +62,12 @@ The change is currently behind a build-time toggle, narrowly scoped to
 plain text-keyword searches, and ships off by default while it is evaluated.
 
 \* I believe this was checked for the requested page (page 1) versus all 10k results.
+
+## Additional potential gap-closure levers
+
+- [CTS parameterization](#cts-parameterization-within-optic)
+- [Graviton](#graviton)
+- [Progress Engineering](#progress-engineering)
 
 ## Why this is interesting beyond "a 2-second win"
 
@@ -315,7 +325,27 @@ In the interest of not over-selling:
 
 # 5. MarkLogic 12.1 and a Possible Path Forward With Progress Engineering
 
-LUX is currently on MarkLogic 12.0.1. MarkLogic **12.1** is to include various optimizations. One we are anticipating is being able to parameterize CTS queries within Optic, thereby allowing LUX to benefit from Optic's plan cache.  When able to use a cached plan, Optic's optimizer does not have to run.  Once available, we should assess.   We can test with and without keyword page-slice by toggling the `searchPageSliceEnabled` build property.
+LUX is currently on MarkLogic 12.0.1. MarkLogic **12.1** is to include various
+optimizations that may help close the CTS-vs-Optic gap.
+
+## CTS parameterization within Optic
+
+One anticipated 12.1 capability is parameterizing CTS queries within Optic,
+which would let LUX benefit from Optic's plan cache. When a cached plan can be
+used, Optic's optimizer does not have to run. Once available, we should assess
+with and without keyword page-slice by toggling the
+`searchPageSliceEnabled` build property.
+
+## Graviton
+
+MarkLogic 12.1 is to also add Graviton support. We are currently on Intel, and in an
+early-access test of MarkLogic 11.4 we observed Graviton doing significantly
+less work than Intel for the same workload. That makes infrastructure choice
+another plausible lever for narrowing this gap. Once 12.1 is available in our
+test environment, we should re-run the Intel-vs-Graviton comparison on this
+reproducer and capture both latency and throughput-per-cost.
+
+## Progress Engineering
 
 Independently of 12.1, this is also a workload Progress Engineering would
 likely find informative. We have a small, reproducible case (the

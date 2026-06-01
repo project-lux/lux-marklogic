@@ -39,7 +39,7 @@ import { buildKeywordCtsQuery } from './patterns/Keyword.mjs';
 function tryExecuteKeywordPageSlice(scp) {
   if (!scp.getIncludeSearchResults()) return null;
   if (scp.getFacetRequests()?.length > 0) return null;
-  if (scp.isAllowMultiScope()) return null;
+  if (scp.getSearchScope() === 'multi') return null;
   if (scp.getPageWith()) return null;
 
   const sortCriteria = scp.getSortCriteria();
@@ -151,7 +151,7 @@ function extractSimpleTextTerms(criteria) {
 
   if (key === 'text') {
     const v = criteria.text;
-    if (typeof v === 'string') return [v];
+    if (typeof v === 'string') return v.split(' '); // TODO: HACK!
     if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v;
     return null;
   }

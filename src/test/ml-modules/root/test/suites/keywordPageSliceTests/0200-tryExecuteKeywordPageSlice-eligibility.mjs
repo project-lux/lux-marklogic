@@ -90,8 +90,8 @@ const scenarios = [
     overrides: { facetRequests: [{ name: 'someFacet' }] },
   },
   {
-    name: 'Returns null when allowMultiScope is true',
-    overrides: { allowMultiScope: true },
+    name: "Returns null when searchScope is 'multi'",
+    overrides: { searchScope: 'multi' },
   },
   {
     name: 'Returns null when pageWith is set',

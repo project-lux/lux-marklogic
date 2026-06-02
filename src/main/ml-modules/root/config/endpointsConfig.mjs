@@ -115,12 +115,15 @@ function getCurrentEndpointPath() {
   return xdmp.getRequestPath();
 }
 
-function getCurrentEndpointConfig() {
+function getCurrentEndpointConfig(myCollectionsFeatureEnabled = true) {
   const endpointConfig = ENDPOINTS_CONFIG[getCurrentEndpointPath()];
   if (isUndefined(endpointConfig)) {
-    throw new InternalConfigurationError(
-      `The ${getCurrentEndpointPath()} endpoint is not configured.`,
-    );
+    if (myCollectionsFeatureEnabled) {
+      throw new InternalConfigurationError(
+        `The ${getCurrentEndpointPath()} endpoint is not configured.`,
+      );
+    }
+    return null;
   }
   return new EndpointConfig(endpointConfig);
 }

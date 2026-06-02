@@ -104,6 +104,7 @@ xdmp.invokeFunction(
 //
 
 const endpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });

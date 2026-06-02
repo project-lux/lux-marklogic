@@ -50,6 +50,7 @@ assertions.push(
 const userProfileUri = fn.baseUri(userProfileDocNode) + '';
 
 const endpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: true,
   features: { myCollections: false },
 });

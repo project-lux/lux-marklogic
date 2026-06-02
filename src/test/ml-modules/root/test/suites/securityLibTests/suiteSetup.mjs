@@ -16,6 +16,7 @@ xdmp.invokeFunction(zeroArityFun);
 
 // Prime Bonnie's My Collections profile/roles so tests do not fail on the first-request retry behavior.
 const myCollectionsEndpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: true,
   features: { myCollections: true },
 });

@@ -20,6 +20,7 @@ let assertions = [];
 // result in the documents being created, which subsequent tests can verify the collections
 // and permissions of.
 const endpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });

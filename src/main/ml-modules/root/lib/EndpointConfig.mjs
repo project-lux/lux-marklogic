@@ -46,6 +46,12 @@ const EndpointConfig = class {
 
   assertValidConfiguration() {
     this.assertValidPropertyValue(
+      PROP_NAME_AMP_AS_ADMIN,
+      this[PROP_NAME_AMP_AS_ADMIN],
+      propertyIsRequired,
+      trueOrFalse,
+    );
+    this.assertValidPropertyValue(
       PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
       this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE],
       propertyIsRequired,

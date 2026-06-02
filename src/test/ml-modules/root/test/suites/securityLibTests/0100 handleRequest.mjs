@@ -75,6 +75,7 @@ const scenarios = [
       function: returnBar,
       unitName: TENANT_OWNER,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: true },
       },
@@ -92,6 +93,7 @@ const scenarios = [
       function: returnBar,
       unitName: null,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: true },
       },
@@ -108,6 +110,7 @@ const scenarios = [
       function: returnBar,
       unitName: TENANT_OWNER,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
@@ -125,6 +128,7 @@ const scenarios = [
       function: returnBar,
       unitName: null,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
@@ -142,6 +146,7 @@ const scenarios = [
       function: canReadDoc,
       unitName: null,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
@@ -155,6 +160,7 @@ const scenarios = [
       function: canReadDoc,
       unitName: TENANT_OWNER,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
@@ -168,6 +174,7 @@ const scenarios = [
       function: canReadDoc,
       unitName: getEndpointAccessUnitNames()[0],
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },
@@ -181,6 +188,7 @@ const scenarios = [
       function: canReadDoc,
       unitName: null,
       endpointConfig: {
+        ampAsAdmin: false,
         allowInReadOnlyMode: true,
         features: { myCollections: false },
       },

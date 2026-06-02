@@ -388,11 +388,13 @@ for (const scenario of scenarios) {
       );
     };
     const unitName = null;
+    const featureMyCollectionsEnabled = true;
     // These tests are dependent on handleRequest creating the user's exclusive roles.
     return handleRequestForUnitTesting(
       innerZeroArityFun,
       unitName,
       endpointConfig,
+      featureMyCollectionsEnabled,
     );
   };
   const scenarioResults = executeScenario(scenario, zeroArityFun, {

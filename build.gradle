@@ -312,6 +312,7 @@ task addSupportForExecutingWithServiceAccounts() {
     def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
       .replaceAll("\\s", "")
       .tokenize(",")
+    endpointAccessUnitNames.add('admin') // in support of amp-as-admin
     endpointAccessUnitNames.add(tenantName)
     endpointAccessUnitNames.each{ unit -> 
       count += 1

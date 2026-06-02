@@ -20,19 +20,22 @@ let $preview := fn:true()
 let $tenant-name := "lux"
 (: END: Configuration :)
 
-let $database-name := $tenant-name || "-modules"
-let $amp-docs := /fn:collection(sec:amps-collection())[sec:amp/sec:database/text() = $database-name]
+let $database-suffixes := ("-modules", "-test-modules")
 let $namespace := ''
 
 return
-for $doc in $amp-docs
-  let $name := $doc/sec:amp/sec:local-name
-  let $lib := $doc/sec:amp/sec:document-uri
-  let $ref := "'" || $name || "' amp in the '" || $lib || "' library of the '" || $database-name || "' database."
-  return 
-    if ($preview) then
-      "PREVIEW: " || $ref
-    else (
-      sec:remove-amp($namespace, $name, $lib, $database-name),
-      "DELETED: " || $ref
-    )
+for $database-suffix in $database-suffixes
+  let $database-name := $tenant-name || $database-suffix
+  let $amp-docs := /fn:collection(sec:amps-collection())[sec:amp/sec:database/text() = $database-name]
+  return
+    for $doc in $amp-docs
+      let $name := $doc/sec:amp/sec:local-name
+      let $lib := $doc/sec:amp/sec:document-uri
+      let $ref := "'" || $name || "' amp in the '" || $lib || "' library of the '" || $database-name || "' database."
+      return 
+        if ($preview) then
+          "PREVIEW: " || $ref
+        else (
+          sec:remove-amp($namespace, $name, $lib, $database-name),
+          "DELETED: " || $ref
+        )

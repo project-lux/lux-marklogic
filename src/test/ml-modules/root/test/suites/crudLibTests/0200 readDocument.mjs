@@ -152,10 +152,12 @@ for (const scenario of scenarios) {
       return readDocument(scenario.input.uri, scenario.input.profileName);
     };
     const unitName = null;
+    const featureMyCollectionsEnabled = true;
     return handleRequestForUnitTesting(
       innerZeroArityFun,
       unitName,
       endpointConfig,
+      featureMyCollectionsEnabled,
     );
   };
   const scenarioResults = executeScenario(scenario, zeroArityFun, {

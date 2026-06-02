@@ -10,26 +10,32 @@ const PROP_NAME_MY_COLLECTIONS = 'myCollections';
 // Frozen to prevent modification; exported to support unit testing.
 const ENDPOINTS_CONFIG = Object.freeze({
   '/ds/lux/advancedSearchConfig.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/autoComplete.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/document/create.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: false,
     features: { myCollections: true },
   },
   '/ds/lux/document/delete.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: false,
     features: { myCollections: true },
   },
   '/ds/lux/document/read.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/document/update.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: false,
     features: { myCollections: true },
   },
@@ -44,6 +50,7 @@ const ENDPOINTS_CONFIG = Object.freeze({
     features: { myCollections: false },
   },
   '/ds/lux/scaleOut.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
@@ -58,6 +65,7 @@ const ENDPOINTS_CONFIG = Object.freeze({
     features: { myCollections: false },
   },
   '/ds/lux/searchInfo.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
@@ -67,30 +75,37 @@ const ENDPOINTS_CONFIG = Object.freeze({
     features: { myCollections: false },
   },
   '/ds/lux/stats.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/storageInfo.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/tenantStatus/get.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/tenantStatus/set.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/translate.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/validateDataset.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },
   '/ds/lux/versionInfo.mjs': {
+    ampAsAdmin: false,
     allowInReadOnlyMode: true,
     features: { myCollections: false },
   },

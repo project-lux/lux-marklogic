@@ -194,6 +194,7 @@ for (const scenario of scenarios) {
       scenario.input.function,
       scenario.input.unitName,
       new EndpointConfig(scenario.input.endpointConfig),
+      true, // we're using Bonnie and Clyde
     );
   };
 

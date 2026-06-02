@@ -8,6 +8,7 @@ import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   ENDPOINT_CONSUMER_ROLES_END_WITH,
+  FEATURE_MY_COLLECTIONS_ENABLED,
   MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
@@ -250,16 +251,6 @@ function getExclusiveDocumentPermissions(user) {
   ];
 }
 
-function __executeAsAdmin(f) {
-  const hasAdmin = xdmp
-    .getCurrentRoles()
-    .toArray()
-    .map((id) => xdmp.roleName(id))
-    .includes(ROLE_NAME_ADMIN);
-  return f(hasAdmin);
-}
-const _executeAsAdmin = import.meta.amp(__executeAsAdmin);
-
 /*
  * All endpoint requests are to go through this function.
  *
@@ -268,30 +259,31 @@ const _executeAsAdmin = import.meta.amp(__executeAsAdmin);
  *    This is optional and intended to enable users to log into unit portals, utilize functionality
  *    restricted to individual users (vs. service accounts), yet restrict the results to what the
  *    specified (unit portal's) service account can see.
+ * @param {boolean} forceInvoke If true, the function is to be invoked via xdmp.invokeFunction
+ *    versus simply called f(). This is needed when the a service account needs to make a change
+ *    to the database, such as updating the tenant status document.  Only applicable when the
+ *    My Collections feature is enabled.
+ * @throws {AccessDeniedError} when a service account attempts to use a My Collections endpoint.
+ * @throws {BadRequestError} bubbles up when the specified unit name is not associated with a
+ *    service account.
  * @throws {InternalConfigurationError} bubbles up when the endpoint is not property configured.
+ * @throws {NotAcceptingWriteRequestsError} when the request is able to modify the database but
+ *    the instances is in read-only mode.
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-// Most of handleRequest's implementation. Accepts an EndpointConfig instance directly
-// so that unit tests may supply it without going through xdmp.getRequestPath().
-// Not exported; only called by handleRequest and handleRequestForUnitTesting.
-function _handleRequest(f, unitName = TENANT_OWNER, endpointConfig) {
-  // Adjust from null
-  if (isUndefined(unitName) || unitName === null) {
-    unitName = TENANT_OWNER;
-  }
-  // If the unit is the tenant owner and allowed by the endpoint, amp the request
-  // as an admin for improved performance.
-  if (unitName === TENANT_OWNER && endpointConfig.mayAmpAsAdmin()) {
-    return _executeAsAdmin(f);
-  }
-  return f();
-}
-
-function handleRequest(f, unitName = TENANT_OWNER) {
+function handleRequest(f, unitName = TENANT_OWNER, forceInvoke = false) {
   try {
-    const endpointConfig = getCurrentEndpointConfig();
-    return _handleRequest(f, unitName, endpointConfig);
+    const endpointConfig = getCurrentEndpointConfig(
+      FEATURE_MY_COLLECTIONS_ENABLED,
+    );
+    return _handleRequest(
+      f,
+      unitName,
+      endpointConfig,
+      FEATURE_MY_COLLECTIONS_ENABLED,
+      forceInvoke,
+    );
   } catch (e) {
     if (xdmp.traceEnabled(TRACE_NAME_ERROR)) {
       xdmp.trace(
@@ -322,12 +314,47 @@ function handleRequest(f, unitName = TENANT_OWNER) {
     }
   }
 }
-// Handle a request initiated by a unit test. We otherwise do not want to accept the
+
+function __handleRequest(
+  f,
+  unitName = TENANT_OWNER,
+  endpointConfig,
+  featureMyCollectionsEnabled = FEATURE_MY_COLLECTIONS_ENABLED,
+  forceInvoke = false,
+) {
+  if (isUndefined(unitName)) {
+    unitName = TENANT_OWNER;
+  }
+
+  if (featureMyCollectionsEnabled) {
+    // Require the current endpoint's configuration; an error is throw upon
+    // retrieving the configuration when the configuration is invalid.
+    return _handleMyCollectionsEnabledRequest(
+      f,
+      unitName,
+      endpointConfig,
+      forceInvoke,
+    );
+  } else if (endpointConfig.isPartOfMyCollectionsFeature()) {
+    throw new BadRequestError('The My Collections feature is disabled.');
+  }
+
+  // Feature is disabled.  If the unit is the tenant owner and allowed by the endpoint,
+  // amp the request as an admin for improved performance.
+  if (unitName === TENANT_OWNER && endpointConfig.mayAmpAsAdmin()) {
+    return libWrapper['execute_with_admin'](f);
+  }
+  return f();
+}
+const _handleRequest = import.meta.amp(__handleRequest);
+
+// Handle a version 2 request initiated by a unit test. We otherwise do not want to accept the
 // endpoint configuration as a parameter.
 function handleRequestForUnitTesting(
   f,
   unitName = TENANT_OWNER,
   endpointConfig,
+  myCollectionsFeatureEnabled = FEATURE_MY_COLLECTIONS_ENABLED,
 ) {
   // As this allows the caller to specify which endpoint configuration to use and is only
   // intended to be called when running a unit test, restrict it.
@@ -339,19 +366,24 @@ function handleRequestForUnitTesting(
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
 
-  return _handleRequest(f, unitName, endpointConfig);
+  return _handleRequest(
+    f,
+    unitName,
+    endpointConfig,
+    myCollectionsFeatureEnabled,
+  );
 }
 
-// Handle a version 2 request. Version 2 request support includes the My Collections feature.
-// This function is to be private and in support of two public functions.
-function __handleRequestV2(
+// Handle a request when the MyCollections feature is enabled. This function is to be private and
+// only called by _handleRequest.
+function __handleMyCollectionsEnabledRequest(
   f,
   unitName = TENANT_OWNER,
   endpointConfig,
   forceInvoke = false,
 ) {
   // Adjust from null
-  if (isUndefined(unitName) || unitName === null) {
+  if (isUndefined(unitName)) {
     unitName = TENANT_OWNER;
   }
 
@@ -405,7 +437,9 @@ function __handleRequestV2(
     },
   );
 }
-const _handleRequestV2 = import.meta.amp(__handleRequestV2);
+const _handleMyCollectionsEnabledRequest = import.meta.amp(
+  __handleMyCollectionsEnabledRequest,
+);
 
 function _createUserProfileAndDefaultCollection(user) {
   try {

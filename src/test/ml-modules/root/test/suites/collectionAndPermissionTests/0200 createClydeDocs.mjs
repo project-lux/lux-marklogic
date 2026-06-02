@@ -30,10 +30,12 @@ const zeroArityFun = () => {
     return createDocument(getNodeFromObject({ foo: 'bar' }), newUserMode);
   };
   const unitName = null;
+  const featureMyCollectionsEnabled = true;
   return handleRequestForUnitTesting(
     innerZeroArityFun,
     unitName,
     endpointConfig,
+    featureMyCollectionsEnabled,
   );
 };
 try {
@@ -47,10 +49,11 @@ try {
     ),
   );
 } catch (e) {
+  console.dir(e);
   assertions.push(
     testHelperProxy.assertTrue(
       e.stack.includes('security profile changed'),
-      'Expected ServerConfigurationChangedError error',
+      `Expected ServerConfigurationChangedError error, but got: ${e}`,
     ),
   );
 

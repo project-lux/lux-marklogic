@@ -5,7 +5,7 @@ import {
 } from '/test/unitTestConstants.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
 import { createDocument } from '/lib/crudLib.mjs';
-import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
+import { handleRequestForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
 import { getNodeFromObject } from '/utils/utils.mjs';
@@ -22,12 +22,13 @@ try {
   assertions.push(
     testHelperProxy.assertTrue(
       false,
-      `The createDocument tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`
-    )
+      `The createDocument tests are dependent on the tenant status document existing yet getTenantStatus() threw an error: ${e.message}`,
+    ),
   );
 }
 
 const endpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
@@ -117,8 +118,8 @@ function assertIdIsUri(docNode, username) {
     return testHelperProxy.assertTrue(
       fn.docAvailable(docNode.xpath('id')),
       `The document's ID '${docNode.xpath(
-        'id'
-      )}' is not a document in the database`
+        'id',
+      )}' is not a document in the database`,
     );
   };
   return xdmp.invokeFunction(zeroArityFun, { userId: xdmp.user(username) });
@@ -284,11 +285,13 @@ for (const scenario of scenarios) {
       return createDocument(getNodeFromObject(scenario.input.doc), newUserMode);
     };
     const unitName = null;
+    const featureMyCollectionsEnabled = true;
     // These tests are dependent on handleRequest creating the user's exclusive roles.
-    return handleRequestV2ForUnitTesting(
+    return handleRequestForUnitTesting(
       innerZeroArityFun,
       unitName,
-      endpointConfig
+      endpointConfig,
+      featureMyCollectionsEnabled,
     );
   };
   const scenarioResults = executeScenario(scenario, zeroArityFun, {
@@ -300,7 +303,7 @@ for (const scenario of scenarios) {
   }
 }
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
 );
 
 assertions;

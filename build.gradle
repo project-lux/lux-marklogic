@@ -312,6 +312,7 @@ task addSupportForExecutingWithServiceAccounts() {
     def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
       .replaceAll("\\s", "")
       .tokenize(",")
+    endpointAccessUnitNames.add('admin') // in support of amp-as-admin
     endpointAccessUnitNames.add(tenantName)
     endpointAccessUnitNames.each{ unit -> 
       count += 1
@@ -324,9 +325,13 @@ task addSupportForExecutingWithServiceAccounts() {
       // 1. The modules database name provides multi-tenancy support.
       // 2. When the unit is the tenant owner, we only need one represented.
       def includeUnit = unit != tenantName
+      def roleName = unit == 'admin'
+        ? 'admin'
+        : "${tenantName}${includeUnit ? "-${unit}" : ""}-endpoint-consumer"
+     
       // Generate amp for main modules database
       def templateBindings = [
-          roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
+          roleName: roleName, 
           functionName: "_${functionName}", // underscore needed
           moduleFilename: moduleFilename,
           modulesDatabase: project.getProperty("tenantModulesDatabase")

@@ -255,15 +255,65 @@ function classify(row) {
   const patterns = new Set();
   const terms = new Set();
   const logics = new Set();
-  if (!row.criteria) return { patterns, terms, logics, parseError: true };
+  const topLevelTerms = new Set();
+  const topLevelLogics = new Set();
+  if (!row.criteria) {
+    return {
+      patterns,
+      terms,
+      logics,
+      topLevelTerms,
+      topLevelLogics,
+      parseError: true,
+    };
+  }
   let obj;
   try {
     obj = JSON.parse(row.criteria);
   } catch {
-    return { patterns, terms, logics, parseError: true };
+    return {
+      patterns,
+      terms,
+      logics,
+      topLevelTerms,
+      topLevelLogics,
+      parseError: true,
+    };
   }
+  collectTopLevelShape(obj, topLevelTerms, topLevelLogics);
   walk(obj, row.scope, patterns, terms, logics);
-  return { patterns, terms, logics, parseError: false };
+  return {
+    patterns,
+    terms,
+    logics,
+    topLevelTerms,
+    topLevelLogics,
+    parseError: false,
+  };
+}
+
+function collectTopLevelShape(node, topLevelTerms, topLevelLogics) {
+  if (!node || Array.isArray(node) || typeof node !== 'object') return;
+  for (const [name, value] of Object.entries(node)) {
+    if (STOP_KEYS.has(name)) continue;
+    if (LOGIC_KEYS.has(name)) {
+      topLevelLogics.add(name);
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (!child || Array.isArray(child) || typeof child !== 'object') {
+            continue;
+          }
+          for (const childKey of Object.keys(child)) {
+            if (!STOP_KEYS.has(childKey) && !LOGIC_KEYS.has(childKey)) {
+              topLevelTerms.add(childKey);
+            }
+          }
+        }
+      }
+      continue;
+    }
+    topLevelTerms.add(name);
+  }
 }
 
 function walk(node, scope, patterns, terms, logics) {
@@ -310,14 +360,16 @@ for (const row of union.values()) {
     patterns: [...c.patterns].sort(),
     terms: [...c.terms].sort(),
     logics: [...c.logics].sort(),
+    topLevelTerms: [...c.topLevelTerms].sort(),
+    topLevelLogics: [...c.topLevelLogics].sort(),
     parseError: c.parseError,
   });
 }
 
-// Group key: terms + logics produces stable shape buckets.
+// Group key: top-level terms + top-level logics produces stable shape buckets.
 const groups = new Map();
 for (const r of rows) {
-  const key = `${r.terms.join(',')} | ${r.logics.join(',')}`;
+  const key = `${r.topLevelTerms.join(',')} | ${r.topLevelLogics.join(',')}`;
   if (!groups.has(key))
     groups.set(key, { key, members: [], patterns: r.patterns });
   groups.get(key).members.push(r);
@@ -362,9 +414,8 @@ groupList.forEach((g, i) => {
 
 // Produce a human-friendly shape description (markdown-flavoured) from terms+logics.
 function shapeDescription(g) {
-  const terms = g.members[0]?.terms ?? [];
-  const logics = g.members[0]?.logics ?? [];
-  const nonIdTerms = terms.filter((t) => t !== 'id');
+  const terms = g.members[0]?.topLevelTerms ?? [];
+  const logics = g.members[0]?.topLevelLogics ?? [];
 
   // Special cases for keyword shapes.
   if (terms.length === 1 && terms[0] === 'text' && logics.length === 0) {
@@ -377,18 +428,18 @@ function shapeDescription(g) {
   const ttick = (t) => `\`${t}\``;
   const termList = (terms.length ? terms : ['?']).map(ttick).join(', ');
 
-  // Degenerate single-term in AND (1-element AND wrapper).
-  if (nonIdTerms.length === 1 && logics.length === 1 && logics[0] === 'AND') {
-    return `\`${nonIdTerms[0]}.id\` in 1-element AND`;
-  }
-  // Single naked hop by id.
-  if (nonIdTerms.length === 1 && logics.length === 0 && terms.includes('id')) {
-    return `naked \`${nonIdTerms[0]}.id\``;
-  }
   if (logics.length === 0) {
     return termList;
   }
   return `${logics.join('+')}(${termList})`;
+}
+
+function criteriaWithScope(criteria, scope) {
+  if (!scope) return criteria;
+  if (!criteria || Array.isArray(criteria) || typeof criteria !== 'object') {
+    return criteria;
+  }
+  return { _scope: scope, ...criteria };
 }
 
 // -------------------- Render markdown --------------------
@@ -609,7 +660,9 @@ for (const g of detailGroups) {
     out.push('');
     out.push('```json');
     try {
-      out.push(JSON.stringify(JSON.parse(worst.criteria), null, 2));
+      const parsedCriteria = JSON.parse(worst.criteria);
+      const withScope = criteriaWithScope(parsedCriteria, worst.scope);
+      out.push(JSON.stringify(withScope, null, 2));
     } catch {
       out.push(worst.criteria);
     }

@@ -4,7 +4,7 @@
 - [LLM Disclaimer](#llm-disclaimer)
 - [1. Executive Summary](#1-executive-summary)
   - [Additional potential gap-closure levers](#additional-potential-gap-closure-levers)
-  - [Why this is interesting beyond "a 2-second win"](#why-this-is-interesting-beyond-a-2-second-win)
+  - [Why this is interesting beyond "a 2.8-second win"](#why-this-is-interesting-beyond-a-28-second-win)
 - [2. What Was Actually Happening](#2-what-was-actually-happening)
   - [The smoking gun: native CTS does the same work in ~1.6 seconds](#the-smoking-gun-native-cts-does-the-same-work-in-16-seconds)
 - [3. The Change: Page-Slice Hydration](#3-the-change-page-slice-hydration)
@@ -41,16 +41,17 @@ This document was initially produced with assistance from a LLM. It has been rev
 # 1. Executive Summary
 
 A common keyword search — *"woman greek art"* against the `item` scope — was
-taking roughly **4.9 seconds** on a cold cache and **0.66 seconds** when warm.
-A targeted change to the way the request is executed reduced those numbers to
-roughly **2.8 seconds cold** and **0.20 seconds warm**, with no change to the
-results the user sees and no change to MarkLogic, the indexes, or the data.
+taking roughly **4.4 seconds** on a cold cache. A targeted change to the way
+the request is executed reduced that to roughly **1.6 seconds cold**, with no
+change to the results the user sees and no change to MarkLogic, the indexes,
+or the data. Warm performance is equivalent between the two paths.
 
 | Metric (n=3 cold, n=10 warm) | Before | After | Change |
 | --- | --- | --- | --- |
-| Cold average | 4,898 ms | 2,762 ms | **−2,136 ms / 1.77× faster** |
-| Warm average | 656 ms | 202 ms | **−454 ms / 3.25× faster** |
-| Warm standard deviation | 70 ms | 3 ms | **~23× more consistent** |
+| Cold average | 4,350 ms | 1,562 ms | **−2,788 ms / 2.79× faster** |
+| Cold standard deviation | 302 ms | 877 ms | Higher variance (small n) |
+| Warm average | 217 ms | 233 ms | +16 ms (equivalent) |
+| Warm standard deviation | 44 ms | 14 ms | **~3× more consistent** |
 
 Result correctness was verified separately: the two execution paths return
 the same total match count (10,105 vs. 10,105), the same per-document
@@ -69,13 +70,12 @@ plain text-keyword searches, and ships off by default while it is evaluated.
 - [Graviton](#graviton)
 - [Progress Engineering](#progress-engineering)
 
-## Why this is interesting beyond "a 2-second win"
+## Why this is interesting beyond "a 2.8-second win"
 
-- The **warm-path variance collapse** (stddev 70 ms → 3 ms) is arguably as
-  valuable as the average speedup. Variance is what users perceive as "the
-  system is slow today"; making warm responses predictable improves the
-  felt quality of the application even when the average is already
-  acceptable.
+- The **warm-path variance collapse** (stddev 44 ms → 14 ms) makes warm
+  responses more predictable. Variance is what users perceive as "the
+  system is slow today"; consistency improves the felt quality of the
+  application even when the average is already acceptable.
 - The technique is not, in principle, specific to keyword searches. The
   underlying observation generalizes (see §3), but applying it broadly is
   not free (see §4).
@@ -112,20 +112,16 @@ via `cts.search`, *outside* Optic.
 | Path | Cold | What it does |
 | --- | --- | --- |
 | Native `cts.search` only | ~1,600 ms | Match + rank, no plan, no AST |
-| Page-slice hydration (new) | ~2,760 ms | `cts.search` + tiny Optic hydration |
-| Standard Optic (current) | ~4,900 ms | Full Optic plan around the CTS payload |
+| Page-slice hydration (new) | ~1,562 ms | `cts.search` + tiny Optic hydration |
+| Standard Optic (current) | ~4,350 ms | Full Optic plan around the CTS payload |
 
-In other words, **roughly half of the cold-path time on the standard route
-is Optic overhead that produces no additional information** — the index has
-already determined the matches and computed the scores by the time Optic's
-optimizer gets involved. The new path closes most of that gap. The small
-remaining delta between native CTS (1.6 s) and page-slice hydration (2.8 s)
-is the production scaffolding around the call (per-term construction,
-separate `cts.values` lookups per AND'd term) plus the tiny hydration plan
-itself; there is likely more to recover later, but it is a second-order
-opportunity.
+In other words, **roughly two-thirds of the cold-path time on the standard
+route is Optic overhead that produces no additional information** — the
+index has already determined the matches and computed the scores by the time
+Optic's optimizer gets involved. The page-slice path has essentially closed
+the gap to native CTS entirely.
 
-This is not a subtle finding. A 3.3-second gap between the index's own
+This is not a subtle finding. A 2.8-second gap between the index's own
 relevance-ranked answer and the answer the application returns — for a
 workload that is, conceptually, exactly what the index is built for — is
 the core problem this work addresses.

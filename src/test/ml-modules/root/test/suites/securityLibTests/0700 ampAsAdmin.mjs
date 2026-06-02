@@ -6,17 +6,14 @@ import {
   handleRequestForUnitTesting,
   getEndpointAccessUnitNames,
 } from '/lib/securityLib.mjs';
-import { isDefined } from '/utils/utils.mjs';
+import { toArray } from '/utils/utils.mjs';
 
 const LIB = '0700 ampAsAdmin.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
-// f() is called by _handleRequest. On the amped path (__executeAsAdmin), MarkLogic passes
-// hasAdmin as an argument because amp-context module state is isolated from non-amp state,
-// so return values / arguments are the only way to communicate across the boundary.
-// On the non-amped path, f() is called with no arguments, so hasAdmin is undefined.
+// Return the effective roles when in handleRequestForUnitTesting.
 const f = () => {
   return xdmp
     .getCurrentRoles()
@@ -24,43 +21,32 @@ const f = () => {
     .map((roleId) => xdmp.roleName(roleId));
 };
 
-const normalizeArrayRoleNames = (arr) => {
-  const asStrings = arr.map((name) => `${name}`.trim()).filter((name) => name);
-
-  // Some invoke/amp paths return one array entry containing all roles as CSV.
-  if (asStrings.length === 1 && asStrings[0].includes(',')) {
-    return asStrings[0]
-      .split(',')
-      .map((name) => name.trim())
-      .filter((name) => name);
-  }
-
-  return asStrings;
+const invokeAsUser = (username, f) => {
+  const result = fn.head(
+    xdmp.invokeFunction(f, { userId: xdmp.user(username) }),
+  );
+  return result && result.toObject ? result.toObject() : result;
 };
 
 const toRoleNamesArray = (roleNames) => {
-  if (Array.isArray(roleNames)) {
-    return normalizeArrayRoleNames(roleNames);
+  // fn.head(xdmp.invokeFunction(...)) gives us the first sequence item, but invoke/amp
+  // boundaries do not always preserve native JS array shape. Sometimes roles arrive as
+  // one comma-delimited string item, so normalize both representations to string[].
+  const normalized = toArray(roleNames, 'string')
+    .map((roleName) => roleName.trim())
+    .filter((roleName) => roleName.length > 0);
+
+  // Some invoke/amp paths return all role names as a single comma-delimited value.
+  if (normalized.length === 1 && normalized[0].includes(',')) {
+    return normalized[0]
+      .split(',')
+      .map((roleName) => roleName.trim())
+      .filter((roleName) => roleName.length > 0);
   }
-  if (roleNames && typeof roleNames.toArray === 'function') {
-    return normalizeArrayRoleNames(roleNames.toArray());
-  }
-  if (typeof roleNames === 'string') {
-    try {
-      const parsed = JSON.parse(roleNames);
-      if (Array.isArray(parsed)) {
-        return normalizeArrayRoleNames(parsed);
-      }
-    } catch (e) {
-      // Fall through to scalar handling.
-    }
-    return normalizeArrayRoleNames([roleNames]);
-  }
-  if (!isDefined(roleNames)) {
-    return [];
-  }
-  return normalizeArrayRoleNames([`${roleNames}`]);
+
+  return normalized;
 };
+
 const hasAdminRole = (roleNames) => {
   return toRoleNamesArray(roleNames).some((roleName) => {
     return `${roleName}`.trim() === 'admin';
@@ -68,8 +54,9 @@ const hasAdminRole = (roleNames) => {
 };
 
 const firstUnitName = getEndpointAccessUnitNames()[0];
-let testCount = 0;
+let endpointCount = 0;
 for (const key of Object.keys(ENDPOINTS_CONFIG)) {
+  endpointCount++;
   console.log(`Processing endpoint '${key}'...`);
   const endpointConfig = new EndpointConfig(ENDPOINTS_CONFIG[key]);
 
@@ -78,11 +65,8 @@ for (const key of Object.keys(ENDPOINTS_CONFIG)) {
   // For My Collections endpoints, run as Bonnie (non-service account); for others, run as current user.
   let tenantOwnerRoleNames;
   if (endpointConfig.features.myCollections) {
-    tenantOwnerRoleNames = fn.head(
-      xdmp.invokeFunction(
-        () => handleRequestForUnitTesting(f, null, endpointConfig, true),
-        { userId: xdmp.user(USERNAME_FOR_BONNIE) },
-      ),
+    tenantOwnerRoleNames = invokeAsUser(USERNAME_FOR_BONNIE, () =>
+      handleRequestForUnitTesting(f, null, endpointConfig, true),
     );
   } else {
     tenantOwnerRoleNames = handleRequestForUnitTesting(
@@ -110,7 +94,6 @@ for (const key of Object.keys(ENDPOINTS_CONFIG)) {
       ),
     );
   }
-  testCount++;
 
   // d: a specific unit's service account must never receive the admin role, even
   //    when the endpoint declares ampAsAdmin: true.
@@ -123,7 +106,8 @@ for (const key of Object.keys(ENDPOINTS_CONFIG)) {
       endpointConfig,
       false,
     );
-    const unitHasAdmin = hasAdminRole(toRoleNamesArray(unitRoleNames));
+    const unitRoleNamesArr = toRoleNamesArray(unitRoleNames);
+    const unitHasAdmin = hasAdminRole(unitRoleNamesArr);
 
     assertions.push(
       testHelperProxy.assertTrue(
@@ -131,12 +115,11 @@ for (const key of Object.keys(ENDPOINTS_CONFIG)) {
         `Endpoint '${key}': expected admin role NOT to be present for unit '${firstUnitName}' but it was.`,
       ),
     );
-    testCount++;
   }
 }
 
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${testCount} endpoints.`,
+  `${LIB}: completed ${assertions.length} assertions from ${endpointCount} endpoints.`,
 );
 
 assertions;

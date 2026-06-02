@@ -51,22 +51,23 @@ const regularUserRoleNames = [
 ];
 
 const scenarios = [
-  {
-    name: 'Bonnie making her first request',
-    input: {
-      username: USERNAME_FOR_BONNIE,
-      function: returnBar,
-      unitName: TENANT_OWNER,
-      endpointConfig: {
-        allowInReadOnlyMode: true,
-        features: { myCollections: true },
-      },
-    },
-    expected: {
-      error: true,
-      stackToInclude: 'retry the request to enable the changes to take effect',
-    },
-  },
+  // Commented out this scenario after having suiteSetup.mjs create Bonnie's My Collections profile/roles.
+  // {
+  //   name: 'Bonnie making her first request',
+  //   input: {
+  //     username: USERNAME_FOR_BONNIE,
+  //     function: returnBar,
+  //     unitName: TENANT_OWNER,
+  //     endpointConfig: {
+  //       allowInReadOnlyMode: true,
+  //       features: { myCollections: true },
+  //     },
+  //   },
+  //   expected: {
+  //     error: true,
+  //     stackToInclude: 'retry the request to enable the changes to take effect',
+  //   },
+  // },
   {
     name: 'User consuming My Collections endpoint',
     input: {

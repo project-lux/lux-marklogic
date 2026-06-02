@@ -66,6 +66,8 @@
   - [Optimization 8: Use `op.param` for non-CTS plan parameters](#optimization-8-use-opparam-for-non-cts-plan-parameters)
   - [Optimization 9: Lazy IRI resolution (pass Sequence, not Array)](#optimization-9-lazy-iri-resolution-pass-sequence-not-array)
   - [Optimization 10: fromTriples architecture (avoid IRIs in plan AST entirely)](#optimization-10-fromtriples-architecture-avoid-iris-in-plan-ast-entirely)
+  - [Optimization 11: MarkLogic enhancement — CTS object filter in `cts.tripleRangeQuery`](#optimization-11-marklogic-enhancement--cts-object-filter-in-ctstriplerangequery)
+  - [Optimization 12: Scope-specific predicates to eliminate dataType constraints](#optimization-12-scope-specific-predicates-to-eliminate-datatype-constraints)
   - [Updated results (without `prepare()`, 2026-05-29)](#updated-results-without-prepare-2026-05-29)
   - [Benchmark Templates](#benchmark-templates)
 
@@ -879,6 +881,24 @@ cts.tripleRangeQuery([], predicate, null, '=', [], weight, { objectQuery: fieldW
 - Theory N proved that `fromTriples.where(fieldWordQuery)` handles this resolution in 190ms — the capability exists in the triple index engine.
 
 **Impact:** This single enhancement would eliminate the dominant cold-start cost (3.8s → estimated <500ms based on Theory N) while preserving the current `Keyword.mjs` architecture. It would require only a one-line change in `Keyword.mjs`: removing `.toArray()` and passing the CTS query instead of the IRI array.
+
+## Optimization 12: Scope-specific predicates to eliminate dataType constraints
+
+**Status:** Idea — extends Optimization 3; needs investigation.
+
+**Observation:** All lexicons used to resolve search criteria are already search scope–specific (e.g., `itemAnyText`, `agentPrimaryName`). However, the RDF predicates used in `cts.tripleRangeQuery` (e.g., `lux:itemAny`) are currently the only scope-differentiating mechanism on the semantic side. If predicates were also scope-specific — meaning a triple's predicate alone is sufficient to identify the scope — then the explicit `dataType` constraint (`op.in(op.col('dataType'), [...])`) would no longer be needed for filtering. The `dataType` lexicon would only need to appear late in the plan to project each result's type into the output row.
+
+**Why this matters:**
+- The `dataType` constraint is applied early in every plan via `constraints[]`, forcing a lexicon scan and join before the selective CTS/triple filters have narrowed the result set (see Optimization 6 plan analysis).
+- Removing it as a filter would simplify the plan AST and potentially change join strategies (e.g., eliminating an early scatter-join on the dataType lexicon).
+- This is a natural extension of Optimization 3 (reduce or eliminate redundant dataType constraints), which is only partially implemented and warrants further investigation.
+- If implemented, Optimization 7 (scope-specific dataType lexicons) would become obsolete — there would be no dataType constraint to optimize, only a late projection.
+
+**Design sketch:**
+1. Verify that each scope's predicates are already exclusive (no predicate shared across scopes).
+2. If not, introduce scope-specific predicate variants or confirm that field-level scope specificity is sufficient.
+3. Move the `dataType` lexicon from `createPlanAccumulator`'s base lexicons to a late join in `collapseToResultRows` — join on fragment after filtering, purely for output projection.
+4. Validate that result sets remain identical with the constraint removed.
 
 ## Updated results (without `prepare()`, 2026-05-29)
 

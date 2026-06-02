@@ -94,7 +94,7 @@ function performSearch(scp) {
       // (cts.search → top-K → hydrate dataType). Returns null when the
       // request is not eligible; see lib/search/keywordPageSlice.mjs.
       const pageSlice = SEARCH_PAGE_SLICE_ENABLED
-        ? tryExecuteKeywordPageSlice(scp)
+        ? tryExecuteKeywordPageSlice(scp, analyzeLeafCriteria)
         : null;
       if (pageSlice) {
         const paginationResult = paginateResults({
@@ -625,6 +625,73 @@ function buildLeafSearchTerm(
   }
 
   return searchTerm;
+}
+
+// Analyzes search criteria into validated SearchTerm objects without building
+// an Optic plan or accumulator. Reuses parseCriteriaAndLogicType,
+// buildLeafSearchTerm, and tokenizeTermValue so criteria interpretation is
+// identical to buildCriteriaAccumulator.
+//
+// Returns null when the criteria are ineligible for leaf-only analysis:
+//   - OR or NOT logic type
+//   - Any nested conjunction (AND/OR/NOT criterion)
+//   - Unrecognized term name
+// Returns { terms: SearchTerm[], logicType: 'and' } when every criterion
+// resolves to a usable leaf term. Returns null when all terms are unusable
+// (stop words / punctuation) — the caller should treat that as ineligible.
+//
+// Side effect: may add ignored terms to scp via buildLeafSearchTerm.
+// Harmless — on success the standard path never runs; on bail it re-adds
+// the same terms.
+function analyzeLeafCriteria(scp, searchCriteria, scopeName) {
+  if (!searchCriteria || typeof searchCriteria !== 'object') return null;
+
+  const { criteria, logicType } = parseCriteriaAndLogicType(searchCriteria);
+  if (logicType !== 'and') return null;
+
+  const searchTermNames = getSearchTermNames(scopeName);
+  const terms = [];
+
+  // Dynamic loop — tokenizeTermValue may push new criteria (same pattern
+  // as buildCriteriaAccumulator).
+  for (let idx = 0; idx < criteria.length; idx++) {
+    const criterion = criteria[idx];
+
+    if (criterion.AND || criterion.OR || criterion.NOT) return null;
+
+    const name = Object.keys(criterion).find(
+      (k) => k[0] !== '_' && searchTermNames.includes(k),
+    );
+    if (!name) return null;
+
+    const searchTerm = buildLeafSearchTerm(scp, {
+      criterion,
+      id: `analyze_${idx}`,
+      name,
+      scope: scopeName,
+      isTopLevel: true,
+      iriCol: 'iri',
+      uriCol: 'uri',
+      fragCol: 'frag',
+      dataTypeCol: 'dataType',
+    });
+
+    if (!searchTerm.isUsable()) continue;
+
+    const patternInstance = SearchPatternBase.get(
+      searchTerm.getSearchTermConfig().getPatternName(),
+    );
+
+    const tokenizedCriterion = tokenizeTermValue(patternInstance, searchTerm);
+    if (tokenizedCriterion) {
+      criteria.push(...tokenizedCriterion.AND);
+      continue;
+    }
+
+    terms.push(searchTerm);
+  }
+
+  return terms.length > 0 ? { terms, logicType: 'and' } : null;
 }
 
 // Merges contributions from a pattern application into the accumulator.
@@ -1686,6 +1753,7 @@ function applyPatternRequirements(searchTerm, termConfig) {
 
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
+  analyzeLeafCriteria,
   buildPlans,
   buildSortedResultsPlan,
   getChildId,

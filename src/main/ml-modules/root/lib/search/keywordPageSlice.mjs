@@ -26,6 +26,7 @@
 import op from '/MarkLogic/optic.mjs';
 import { DEFAULT_SEARCH_OPTIONS_KEYWORD } from '../appConstants.mjs';
 import { buildKeywordCtsQuery } from './patterns/Keyword.mjs';
+import { PATTERN_NAME_KEYWORD } from './patterns/loadPatterns.mjs';
 
 // Returns null when the request is not eligible for the page-slice path.
 // Otherwise returns { rows, total } where rows is the top-K array of
@@ -36,7 +37,7 @@ import { buildKeywordCtsQuery } from './patterns/Keyword.mjs';
 // is gated at the call site (engine.mjs::performSearch) so verification
 // scripts can invoke this function directly to compare paths without a
 // redeploy.
-function tryExecuteKeywordPageSlice(scp) {
+function tryExecuteKeywordPageSlice(scp, analyzeLeafCriteria) {
   if (!scp.getIncludeSearchResults()) return null;
   if (scp.getFacetRequests()?.length > 0) return null;
   if (scp.getSearchScope() === 'multi') return null;
@@ -57,8 +58,14 @@ function tryExecuteKeywordPageSlice(scp) {
   const scopeName = scp.getSearchScope();
   if (!scopeName) return null;
 
-  const textTerms = extractSimpleTextTerms(scp.getSearchCriteria());
-  if (!textTerms) return null;
+  const analysis = analyzeLeafCriteria(scp, scp.getSearchCriteria(), scopeName);
+  if (!analysis) return null;
+  if (
+    !analysis.terms.every(
+      (t) => t.getSearchTermConfig().getPatternName() === PATTERN_NAME_KEYWORD,
+    )
+  )
+    return null;
 
   const page = Math.max(scp.getPage() ?? 1, 1);
   const pageLength = scp.getPageLength() ?? 20;
@@ -68,12 +75,13 @@ function tryExecuteKeywordPageSlice(scp) {
   // D'1 showed ~1.1s page-1 difference between 10K-URI and 20-URI payloads).
   const topK = page * pageLength;
 
-  const perTermQueries = textTerms.map((value) =>
+  const perTermQueries = analysis.terms.map((searchTerm) =>
     buildKeywordCtsQuery({
-      termValues: [value],
-      termScopeName: scopeName,
-      isCompleteMatch: false,
-      searchOptions: DEFAULT_SEARCH_OPTIONS_KEYWORD,
+      termValues: [String(searchTerm.getValue())],
+      termScopeName: searchTerm.getScopeName(),
+      isCompleteMatch: searchTerm.isCompleteMatch(),
+      searchOptions:
+        searchTerm.getSearchOptions() ?? DEFAULT_SEARCH_OPTIONS_KEYWORD,
       termWeight: 1.0,
     }),
   );
@@ -138,45 +146,4 @@ function tryExecuteKeywordPageSlice(scp) {
   return { rows, total };
 }
 
-// Detects the V1-eligible shapes:
-//   { text: 'foo' } | { text: ['foo'] }
-//   { AND: [{ text: 'foo' }, { text: 'bar' }, ...] }
-// Returns an array of string term values, or null when ineligible.
-// _scope has already been stripped by SearchCriteriaProcessor by this point.
-function extractSimpleTextTerms(criteria) {
-  if (!criteria || typeof criteria !== 'object') return null;
-  const keys = Object.keys(criteria);
-  if (keys.length !== 1) return null;
-  const key = keys[0];
-
-  if (key === 'text') {
-    const v = criteria.text;
-    if (typeof v === 'string') return v.split(' '); // TODO: HACK!
-    if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v;
-    return null;
-  }
-
-  if (key === 'AND') {
-    const children = criteria.AND;
-    if (!Array.isArray(children) || children.length === 0) return null;
-    const values = [];
-    for (const child of children) {
-      if (!child || typeof child !== 'object') return null;
-      const childKeys = Object.keys(child);
-      if (childKeys.length !== 1 || childKeys[0] !== 'text') return null;
-      const v = child.text;
-      if (typeof v === 'string') {
-        values.push(v);
-      } else if (Array.isArray(v) && v.every((x) => typeof x === 'string')) {
-        values.push(...v);
-      } else {
-        return null;
-      }
-    }
-    return values;
-  }
-
-  return null;
-}
-
-export { tryExecuteKeywordPageSlice, extractSimpleTextTerms };
+export { tryExecuteKeywordPageSlice };

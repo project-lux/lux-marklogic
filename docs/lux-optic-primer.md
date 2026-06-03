@@ -51,10 +51,9 @@
     - [3. Preserve invariants](#3-preserve-invariants)
     - [4. How to verify](#4-how-to-verify)
 - [Optimizations \& Performance Investigations](#optimizations--performance-investigations)
-  - [Performance Targets \& Principles](#performance-targets--principles)
+  - [Performance Context \& Targets](#performance-context--targets)
   - [Investigation Tooling](#investigation-tooling)
   - [Theory Index](#theory-index)
-  - [Real-World Performance Context](#real-world-performance-context)
   - [Isolated Benchmark Reference (MarkLogic 12.0.1)](#isolated-benchmark-reference-marklogic-1201)
     - [Key findings](#key-findings)
     - [Warm-run gap breakdown](#warm-run-gap-breakdown)
@@ -675,13 +674,34 @@ Facets are calculated after the main search executes. The implementation:
 
 Unless otherwise noted, analysis and benchmarks are for a three AND'd keyword terms ("woman", "greek", "art") in the `item` scope.  This search is sometimes referred to as WGA.  Much time was spent on this one as it constitutes LUX's most common end-user search: multiple AND'd keywords.
 
-## Performance Targets & Principles
+## Performance Context & Targets
 
+**Targets:**
 - **3 seconds or less** for simple search (keyword search).
 - **6 seconds or less** for advanced search.
 - The goal is to approach CTS performance, but not at the cost of fixation. Hit the target durations first.
+
+**Principles:**
 - **End-user experience reigns.** The performance test and comparisons thereof should only be given so much weight. Observations may inform optimization ideas beyond search itself (e.g., consolidating facet requests — already supported by the engine but not yet by the middle tier or backend endpoints).
 - **Weight actual durations over percentages.** A 434% relative change sounds horrific, yet the actual increase was 139 ms — well within customer tolerance (≥100 ms for individual query differences).
+
+**Benchmark context:** The isolated benchmarks in this document use two extremes — fully cold (caches cleared) and fully hot (10th identical iteration). Production falls somewhere in between, but the serialized 5K-request test (Optic avg ~4,634 ms) aligns closely with isolated cold-cache measurements (~3,928–4,013 ms), indicating that under diverse query load the plan cache provides little benefit. Each distinct keyword query produces a unique plan AST (different IRIs), so warm-cache numbers (29–37 ms) apply only when the exact same query repeats before plan eviction.
+
+**Pre-optimization WGA in the serialized 5K-request context** (back-to-back, no pause between requests):
+
+| Implementation | Observed latency | Notes |
+|---|---|---|
+| CTS | ~810ms | Includes one additional criterion (different pattern); believed to add little to the gap |
+| Optic | ~4,634ms | Same additional criterion omitted from isolated tests below |
+
+**System resource observations during the 5K test:**
+- CPU 85–95% idle — **not CPU-bound**; this is an I/O and cache-efficiency problem.
+- Free memory dropped from ~20 GB to ~7 GB — caches filling but under eviction pressure.
+- Triple cache miss spikes (~220 misses/sec) correlate with page-in spikes (~53K pages/sec). Each keyword query's `cts.tripleRangeQuery` with tens of thousands of IRIs hammers the triple cache; entries are evicted between diverse queries.
+- Triple value cache miss rate peaked at ~2,626 misses/sec.
+- HTTP request rate: ~5 req/sec sustained.
+
+**Optimization target:** The customer tolerance is ≥100 ms for individual query differences. The primary goal is closing the 5.7× serialized-test gap (4,634 ms vs 810 ms), which aligns with the 6× cold-start gap in isolated testing. Hot-cache micro-benchmark gaps (179 ms vs 93 ms) are secondary — they over-state cache warmth relative to production.
 
 ## Investigation Tooling
 
@@ -721,26 +741,6 @@ The following table describes various theories that were tested and are referenc
 | M | Lazy IRI resolution — pass `cts.values()` Sequence directly, skip `.toArray()` | 9 | No gain — `cts.tripleRangeQuery` materializes eagerly |
 | N | `fromTriples` architecture: (text-AND) ∪ (semantic-AND) via `union` | 10 | Fast (464ms cold) but only 1.3% recall |
 | N2 | Per-keyword OR via `fromLexicons(iri)` union + `fromTriples` — full recall attempt | 10 | SVC-MEMCANCELED (~8.5 GB) — 3 × `fromLexicons(iri)` over 43.9M entries |
-
-## Real-World Performance Context
-
-The isolated benchmarks below use two extremes — fully cold (caches cleared) and fully hot (10th identical iteration). Neither reflects production. Real queries hit **partially warm ("lukewarm") caches** under concurrent load, with cache entries evicted between diverse queries.
-
-**Serialized 5K-request test** (back-to-back, no pause between requests):
-
-| Implementation | Observed latency | Notes |
-|---|---|---|
-| CTS | ~810ms | Includes one additional criterion (different pattern); believed to add little to the gap |
-| Optic | ~4,634ms | Same additional criterion omitted from isolated tests below |
-
-**System resource observations during the 5K test:**
-- CPU 85–95% idle — **not CPU-bound**; this is an I/O and cache-efficiency problem.
-- Free memory dropped from ~20 GB to ~7 GB — caches filling but under eviction pressure.
-- Triple cache miss spikes (~220 misses/sec) correlate with page-in spikes (~53K pages/sec). Each keyword query's `cts.tripleRangeQuery` with tens of thousands of IRIs hammers the triple cache; entries are evicted between diverse queries.
-- Triple value cache miss rate peaked at ~2,626 misses/sec.
-- HTTP request rate: ~5 req/sec sustained.
-
-**Optimization target:** The customer tolerance is ≥100 ms for individual query differences. The primary goal is closing the 5.7× serialized-test gap (4,634 ms vs 810 ms), which aligns with the 6× cold-start gap in isolated testing. Hot-cache micro-benchmark gaps (179 ms vs 93 ms) are secondary — they over-state cache warmth relative to production.
 
 ## Isolated Benchmark Reference (MarkLogic 12.0.1)
 

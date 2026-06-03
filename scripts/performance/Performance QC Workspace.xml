@@ -1,4 +1,6 @@
-<export><workspace name="Performance"><query name="Get CTS" focus="false" listorder="2" taborder="2" active="true" database="16296972423960182001" server="12469143693025051885" database-name="lux-dev-data-content" server-name="lux-dev-data-request-group-1" mode="javascript" optimize="1">// Copy of getCtsQueryForSearchCriteria.js in a CTS branch.
+<export>
+  <workspace name="Performance">
+    <query name="Get CTS" focus="false" listorder="2" taborder="2" active="true" database="16296972423960182001" server="12469143693025051885" database-name="lux-dev-data-content" server-name="lux-dev-data-request-group-1" mode="javascript" optimize="1">// Copy of getCtsQueryForSearchCriteria.js in a CTS branch.
 
 // This script may be used to convert search criteria into a CTS query,
 // formatted as a string or object.  The script is also capable of returning
@@ -65,7 +67,8 @@ const requestedQuery = formatAsObject
 
 requestedQuery;
 export default requestedQuery;
-</query><query name="Get Plan" focus="false" listorder="3" taborder="3" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">// Copy of getPlansFromSearchCriteria.js from the optic-refactor branch.
+</query>
+    <query name="Get Plan" focus="false" listorder="3" taborder="3" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">// Copy of getPlansFromSearchCriteria.js from the optic-refactor branch.
 
 /*
  * Generates an executable Optic plan from search criteria without running
@@ -164,14 +167,20 @@ const output = andExecute
 
 output;
 export default output;
-</query><query name="DSL" focus="false" listorder="4" taborder="4" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="querydsl" optimize="1">'use strict';
+</query>
+    <query name="DSL" focus="false" listorder="4" taborder="4" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="querydsl" optimize="1">'use strict';
 
-// To use the DSL, do not not define op and omit the call to plan.
+// To use the DSL:
 //
-// If coming from the Get Plan tab, you just need the value of the fullPlan variable,
-// in that script's output.
+// 1. Paste the value of the selectedPlan variable from the Get Plan tab.
+//
+// 2. Consider adding a limit before the select.
+//
+// 3. Neither define op nor add a call to result.
+//
 
-</query><query name="Clear Caches" focus="true" listorder="1" taborder="1" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
+</query>
+    <query name="Clear Caches" focus="true" listorder="1" taborder="1" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
 
 /* 
  * NOTE: The latest benchmark scripts can clear caches.
@@ -181,7 +190,8 @@ xdmp.groupCacheClear(xdmp.group("Default"), ["compressed-tree-cache", "expanded-
 xdmp.tripleCacheClear()
 xdmp.tripleValueCacheClear()
 xdmp.programCacheClear()
-// xdmp.cacheStatus()</query><query name="CTS Benchmark" focus="false" listorder="5" taborder="5" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
+// xdmp.cacheStatus()</query>
+    <query name="CTS Benchmark" focus="false" listorder="5" taborder="5" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
 
 // CTS BENCHMARK TEMPLATE
 //
@@ -352,7 +362,8 @@ const result = microBenchmark(
   username,
 );
 result;
-</query><query name="Optic Benchmark" focus="false" listorder="6" taborder="6" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
+</query>
+    <query name="Optic Benchmark" focus="false" listorder="6" taborder="6" active="true" database="16296972423960182001" server="796606552536190625" database-name="lux-dev-data-content" server-name="lux-dev-data-optic-request-group-1" mode="javascript" optimize="1">'use strict';
 
 // OPTIC BENCHMARK TEMPLATE
 //
@@ -535,4 +546,6 @@ const result = microBenchmark(
 );
 result;
 export default result;
-</query></workspace></export>
+</query>
+  </workspace>
+</export>

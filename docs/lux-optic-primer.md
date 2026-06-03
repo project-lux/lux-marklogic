@@ -58,6 +58,10 @@
     - [Warm-run gap breakdown](#warm-run-gap-breakdown)
     - [Cold-start gap breakdown](#cold-start-gap-breakdown)
   - [Benchmark Templates](#benchmark-templates)
+    - [Optimization Implementation Order](#optimization-implementation-order)
+  - [Optimization 15: CTS Fold](#optimization-15-cts-fold)
+  - [Optimization 13: Amp as Admin](#optimization-13-amp-as-admin)
+  - [Optimization 14: Page-Slice Hydration](#optimization-14-page-slice-hydration)
   - [Optimization 1: `plan.where()` when scores are not needed](#optimization-1-planwhere-when-scores-are-not-needed)
   - [Optimization 2: Combine OR'd keywords into a single pattern instance](#optimization-2-combine-ord-keywords-into-a-single-pattern-instance)
   - [Data Type Constraint Investigations (Optimizations 3, 7, 12)](#data-type-constraint-investigations-optimizations-3-7-12)
@@ -770,6 +774,91 @@ Reusable benchmark templates for the team:
 
 **Do not call `plan.prepare()` in Optic benchmarks.** MarkLogic caches optimized plans automatically. Calling `prepare()` forces re-optimization on every invocation, adding ~140ms per warm run and producing results that do not reflect production. The production code does not call `prepare()`. See the Optic template header for details.
 
+### Optimization Implementation Order
+
+| Order | Optimization | Summary | Date |
+|---|---|---|---|
+| 1 | Opt 3 (partial) | Empty-groups: skip redundant dataType constraint on same-scope sub-plans | 2026-05-31 |
+| 2 | Opt 15 | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
+| 3 | Opt 14 | Page-Slice Hydration: CTS-based page slice with minimal Optic hydration | 2026-06-02 |
+| 4 | Opt 13 | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
+
+## Optimization 15: CTS Fold
+
+**Status:** Implemented.
+
+When a nested conjunction (AND/OR/NOT group) produces a sub-accumulator that contains *only* `ctsConstraints` — no joins, no patternJoins, no andOrSubPlans — the engine folds the CTS query directly into the parent's `ctsConstraints` instead of building a full sub-plan. This eliminates the sub-plan's `fromLexicons` scan, UUID-namespaced columns, and the join back to the parent.
+
+[Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints) is a prerequisite for this optimization.
+
+Before both:
+```javascript
+op.fromLexicons().where(dataTypeConstraint).joinInner(op.fromLexicons().where(dataTypeConstraint).where(keywordConstraint))
+```
+
+After Optimization 3 and before Optimization 15:
+```javascript
+op.fromLexicons().where(dataTypeConstraint).joinInner(op.fromLexicons().where(keywordConstraint))
+```
+
+After both:
+
+```javascript
+op.fromLexicons().where(dataTypeConstraint).where(keywordConstraint)
+```
+
+The fold is implemented in `buildSubOrFold` inside `buildConjunctionJoin`. After building the sub-accumulator, `accContainsOnly(acc, 'ctsConstraints')` checks whether the sub contributed only CTS queries. When true, the sub's CTS queries are wrapped per their own `logicType` (via `wrapCtsByLogicType`) and returned as a `{ ctsConstraint }` that the parent pushes into its own `ctsConstraints` array. The parent's assembly then wraps all its `ctsConstraints` together — the folded sub's query becomes a peer of the parent's other CTS queries with no join involved.
+
+Folding is eligible when the parent `logicType` is `and` or `or`. NOT parents are excluded because negation composition (inverting the sub's logic) is not a simple peer push. A `negateFold` flag handles the AND-encounters-NOT case: the engine rewrites `{ NOT: [...] }` as `{ OR: [...] }` for the sub-plan, and when the sub folds, wraps the result as `cts.notQuery(...)` to preserve negation semantics.
+
+The optimization fires for the common case of nested groups whose children are all CTS-expressible patterns (keyword, indexedWord, geospatial, etc.). It does not fire when any child contributes a patternJoin (e.g., hop patterns) or a nested conjunction that itself requires a join.
+
+## Optimization 13: Amp as Admin
+
+**Status:** Implemented (My Collections feature disabled path only). Design for My Collections support documented in [amp-as-admin-design.md](./amp-as-admin-design.md).
+
+MarkLogic evaluates document permissions for every candidate document when the requesting user is not an admin. For read-only endpoints where the user already has access to every matching document, this overhead is avoidable.
+
+The implementation configures per-endpoint eligibility via `ampAsAdmin` in `endpointsConfig.mjs` (exposed as `endpointConfig.mayAmpAsAdmin()`). The enforcement point is `__handleRequest` in `securityLib.mjs` — the single function all endpoint requests pass through. When the My Collections feature is disabled and the requesting unit is the tenant owner, the request is executed via `libWrapper['execute_with_admin']`, an amp'd function that grants the `admin` role for the duration of the call. This bypasses per-document permission evaluation.
+
+**Why tenant-owner only:** Individual units (service accounts) are restricted to a subset of documents via their permissions. Amping them to admin would expose documents outside their unit's scope.
+
+**Benchmark results** (woman-greek-art, item scope, MarkLogic 12.0.1):
+
+| Metric | Page Slice only | Page Slice + Amp as Admin | Difference |
+|---|---|---|---|
+| Cold avg (n=3) | 1,510 ms | 1,404 ms | −106 ms |
+| Cold stddev | 874 ms | 890 ms | — |
+| Warm avg (n=10) | 215 ms | 210 ms | −5 ms |
+| Warm stddev | 3 ms | 4 ms | — |
+
+The warm-path gain (~5 ms) is modest for this query but expected to compound under concurrent load where permission checks are more expensive.
+
+## Optimization 14: Page-Slice Hydration
+
+**Status:** Implemented. Behind build-time toggle (`searchPageSliceEnabled`), scoped to simple keyword-only searches. See [search-cold-start-mitigation.md](./search-cold-start-mitigation.md) for the full analysis.
+
+For keyword searches, the engine builds a `cts.tripleRangeQuery` containing up to 49K IRI literals. Optic wraps this in a plan AST that the optimizer must walk, cost, and rewrite — taking ~2.4 seconds on a cold cache even though the index has already determined the matches and computed the scores. The page-slice path bypasses this overhead:
+
+1. Build the same CTS query the standard path would build.
+2. Execute it directly via `cts.search` (lazy, pre-sorted by relevance).
+3. Slice to the requested page (e.g., 20 URIs for page 1).
+4. Hand the small slice to a tiny Optic plan whose only job is to attach the `dataType` column.
+5. Use `cts.estimate` for the displayed total.
+
+No results are hidden, no scores are altered. The technique works because Optic's only remaining contribution for this class of query is materializing and paginating — work that `cts.search` already does natively.
+
+**Benchmark results** (woman-greek-art, item scope, MarkLogic 12.0.1):
+
+| Metric | Standard Optic | Page Slice | Difference |
+|---|---|---|---|
+| Cold avg (n=3) | 4,350 ms | 1,562 ms | **−2,788 ms / 2.8× faster** |
+| Cold stddev | 302 ms | 877 ms | Higher variance (small n) |
+| Warm avg (n=10) | 217 ms | 233 ms | +16 ms (equivalent) |
+| Warm stddev | 44 ms | 14 ms | **3× more consistent** |
+
+**5K search performance test:** Neither Opt 13 nor Opt 14 moved the serialized 5K-request test needle. The 5K test's emphasis is being reconsidered: its relative-change metric inflates absolute differences, and it does not mimic end-user activity (back-to-back serialized requests with no pause). The current performance targets are: under 3 seconds for simple search, under 6 seconds for advanced search, and — time permitting — closing the remaining gap to CTS.
+
 ## Optimization 1: `plan.where()` when scores are not needed
 
 **Status:** Ready to implement.
@@ -778,7 +867,7 @@ When `wantScore` is false in `assemblePlan`, the engine already uses `plan.where
 
 ## Optimization 2: Combine OR'd keywords into a single pattern instance
 
-**Status:** Idea — needs design.
+**Status:** Proven in standalone scripts during the initial CTS and Optic comparison circa 2024 using ML 11.3.1.  Re-confirmed in 2025 with ML 12.0.0 EA.  Reference: `12.0.0-q07-cts-unfiltered-con` where "con" stands for consolidated (combined).
 
 When the engine encounters multiple keyword terms under an OR conjunction, it currently processes each as a separate pattern `apply()` call. Each call independently resolves IRIs via `cts.values()` and builds its own `cts.tripleRangeQuery`. If combined into a single pattern invocation, the engine could:
 - Issue a single `cts.values()` call with a combined word query

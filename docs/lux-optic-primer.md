@@ -50,26 +50,29 @@
     - [2. For new patterns](#2-for-new-patterns)
     - [3. Preserve invariants](#3-preserve-invariants)
     - [4. How to verify](#4-how-to-verify)
-- [Candidate Optimizations](#candidate-optimizations)
+- [Optimizations \& Performance Investigations](#optimizations--performance-investigations)
+    - [Theory Index](#theory-index)
   - [Real-World Performance Context](#real-world-performance-context)
   - [Isolated Benchmark Reference (MarkLogic 12.0.1)](#isolated-benchmark-reference-marklogic-1201)
     - [Key findings](#key-findings)
+    - [Warm-run gap breakdown](#warm-run-gap-breakdown)
+    - [Cold-start gap breakdown](#cold-start-gap-breakdown)
+  - [Benchmark Templates](#benchmark-templates)
   - [Optimization 1: `plan.where()` when scores are not needed](#optimization-1-planwhere-when-scores-are-not-needed)
   - [Optimization 2: Combine OR'd keywords into a single pattern instance](#optimization-2-combine-ord-keywords-into-a-single-pattern-instance)
-  - [Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints)
+  - [Data Type Constraint Investigations (Optimizations 3, 7, 12)](#data-type-constraint-investigations-optimizations-3-7-12)
+    - [Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints)
+      - [Implemented: empty-groups optimization](#implemented-empty-groups-optimization)
+      - [Finding: hop-side dataType constraint is required (2026-06-03)](#finding-hop-side-datatype-constraint-is-required-2026-06-03)
+    - [Optimization 7: Use scope-specific dataType lexicons](#optimization-7-use-scope-specific-datatype-lexicons)
+    - [Optimization 12: Scope-specific predicates to eliminate dataType constraints](#optimization-12-scope-specific-predicates-to-eliminate-datatype-constraints)
   - [Optimization 4: Reduce keyword pattern IRI payload](#optimization-4-reduce-keyword-pattern-iri-payload)
   - [Optimization 5: Remove unused `iri` column from `fromLexicons` for keyword-only queries](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries)
   - [Optimization 6: Analyze the optimized plan for join strategy issues](#optimization-6-analyze-the-optimized-plan-for-join-strategy-issues)
-  - [Optimization 7: Use scope-specific dataType lexicons](#optimization-7-use-scope-specific-datatype-lexicons)
-  - [Warm-run gap breakdown (AND'd keywords with scores)](#warm-run-gap-breakdown-andd-keywords-with-scores)
-  - [Cold-start gap analysis](#cold-start-gap-analysis)
   - [Optimization 8: Use `op.param` for non-CTS plan parameters](#optimization-8-use-opparam-for-non-cts-plan-parameters)
   - [Optimization 9: Lazy IRI resolution (pass Sequence, not Array)](#optimization-9-lazy-iri-resolution-pass-sequence-not-array)
   - [Optimization 10: fromTriples architecture (avoid IRIs in plan AST entirely)](#optimization-10-fromtriples-architecture-avoid-iris-in-plan-ast-entirely)
   - [Optimization 11: MarkLogic enhancement — CTS object filter in `cts.tripleRangeQuery`](#optimization-11-marklogic-enhancement--cts-object-filter-in-ctstriplerangequery)
-  - [Optimization 12: Scope-specific predicates to eliminate dataType constraints](#optimization-12-scope-specific-predicates-to-eliminate-datatype-constraints)
-  - [Updated results (without `prepare()`, 2026-05-29)](#updated-results-without-prepare-2026-05-29)
-  - [Benchmark Templates](#benchmark-templates)
 
 # Introduction
 
@@ -661,9 +664,31 @@ Facets are calculated after the main search executes. The implementation:
 
 ---
 
-# Candidate Optimizations
+# Optimizations & Performance Investigations
 
-Performance investigation comparing the Optic-based search engine against the former CTS implementation. Benchmarked with three AND'd keyword terms ("woman", "greek", "art") in the `item` scope. Scripts in `scratch/performance/woman-greek-art-memberOf/`.
+Unless otherwise noted, analysis and benchmarks are for a three AND'd keyword terms ("woman", "greek", "art") in the `item` scope.  Much time was spent on this one as it constitutes LUX's most common end-user search: multiple AND'd keywords.
+
+### Theory Index
+
+The following table describes various theories that were tested and are referenced in subsequent sections.  These all pertain to multiple AND'd keywords.  
+
+| Theory | What it tests | Optimization | Status |
+|---|---|---|---|
+| A | `plan.where(ctsQuery)` instead of `fromSearch` + `joinInner` — eliminates score column | 1 | Confirms `where()` is faster; no scoring available |
+| B | Non-semantic only via `fromSearch` — drops all IRI resolution and `tripleRangeQuery` | — | Isolates IRI payload cost from `fromSearch`/`joinInner` cost |
+| C | Capped IRI count per keyword (configurable N) — tests plan AST size scaling | 4 | Confirms cold-start scales with IRI literal count |
+| D | Semantic side moved to `fromTriples` joins — no IRIs in plan AST | 10 | **14× faster cold** — proves IRIs in plan AST are the bottleneck |
+| E | Phase timing breakdown: IRI resolve, plan build, execute — measured separately | — | Analysis only — quantifies where time is spent |
+| F | Split: `where()` for full CTS filtering, `fromSearch(OR)` for lightweight scoring | 1 | `joinLeftOuter` with broad OR scoring too expensive |
+| G | Like F but `fromSearch(AND)` scoring — only text-AND matches get scores | 1 | Selective scoring works; semantic-only matches rank last |
+| H | Remove `op.in(dataType)` constraint — keep dataType column for output only | 3 | Marginal gain; field-level scope specificity is sufficient for filtering |
+| I | Remove both dataType constraint AND `iri` column from `fromLexicons` | 3, 5 | Best `prepare(1)` result — fewer lexicon columns, no constraint |
+| J | Late-bind dataType: minimal `fromLexicons(uri)` first, join dataType after `groupBy` | 3, 12 | Tests late-projection design from Optimization 12 |
+| K | Scope-specific dataType lexicon (`itemDataTypeName` instead of `anyDataTypeName`) | 7 | No gain; contradicted by 2026-06-03 finding |
+| L | `fromSearch` as driving (left) side of join — lexicon probed, not scanned | — | Tests whether join direction affects optimizer's strategy |
+| M | Lazy IRI resolution — pass `cts.values()` Sequence directly, skip `.toArray()` | 9 | No gain — `cts.tripleRangeQuery` materializes eagerly |
+| N | `fromTriples` architecture: (text-AND) ∪ (semantic-AND) via `union` | 10 | Fast (464ms cold) but only 1.3% recall |
+| N2 | Per-keyword OR via `fromLexicons(iri)` union + `fromTriples` — full recall attempt | 10 | SVC-MEMCANCELED (~8.5 GB) — 3 × `fromLexicons(iri)` over 43.9M entries |
 
 ## Real-World Performance Context
 
@@ -687,28 +712,63 @@ The isolated benchmarks below use two extremes — fully cold (caches cleared) a
 
 ## Isolated Benchmark Reference (MarkLogic 12.0.1)
 
-**Important:** Early benchmarks (Theories A–L) called `plan.prepare(1)` before `.result()`, which forces re-optimization on every invocation and adds ~140ms to each warm run. The production code does NOT call `prepare()` — MarkLogic caches and reuses optimized plans automatically. The table below includes a corrected baseline without `prepare()`.
+**Important:** Early benchmarks (Theories A–L) called `plan.prepare(1)` before `.result()`, which forces re-optimization on every invocation and adds ~140ms to each warm run. The production code does NOT call `prepare()` — MarkLogic caches and reuses optimized plans automatically. The table below uses corrected numbers without `prepare()` where available.
 
 | Approach | First run (cold) | Warm avg | Notes |
 |---|---|---|---|
 | CTS baseline | 662–680ms | 93–98ms | Direct `cts.search()`, re-resolves IRIs each iteration |
 | Optic baseline (with `prepare(1)`) | 4,043–4,297ms | 178–203ms | Inflated by forced re-optimization each warm run |
-| **Optic baseline (no `prepare()`)** | **3,855–3,868ms** | **29–30ms** | **As admin; Optic 3.2× faster than CTS warm** |
+| **Optic baseline (no `prepare()`, admin)** | **3,855–3,868ms** | **29–30ms** | **Optic 3.2× faster than CTS warm** |
 | **Optic baseline (no `prepare()`, consumer)** | **3,928–4,013ms** | **32–37ms** | **With permissions; Optic 2.7× faster than CTS warm** |
-| Optic non-semantic only (no `prepare()`) | 267–272ms | 3–7ms | No `tripleRangeQuery` in plan — **14× faster cold than baseline** |
-| Optic lazy IRI (Theory M, no `prepare()`) | 3,804–3,891ms | 28–34ms | No improvement — `cts.tripleRangeQuery` materializes eagerly |
+| **Theory D** (non-semantic only, no `prepare()`) | **267–272ms** | **3–7ms** | No `tripleRangeQuery` in plan — **14× faster cold than baseline** |
+| Theory E (phase timing, no `prepare()`) | 4,056ms total | — | IRI=136ms, build=37ms, execute=3,883ms |
+| **Theory M** (lazy IRI, no `prepare()`) | **3,804–3,891ms** | **28–34ms** | No improvement — materializes eagerly |
+| **Theory N** (fromTriples, text-AND ∪ sem-AND) | **464ms** | **10ms** | 127/10,105 results — fast but incomplete recall |
+| Theory N2 (per-keyword OR via fromLexicons) | — | — | SVC-MEMCANCELED — 3 × fromLexicons(iri) over 43.9M entries |
 | Optic `plan.where()` only (no scoring) | 3,990ms | 128ms | With `prepare(1)`; full query via `where()` |
 | Optic non-semantic only (`fromSearch`) | 407ms | 136ms | With `prepare(1)`; `fieldWordQuery` AND only |
 
 ### Key findings
 
 1. **Warm-run performance: Optic is faster than CTS.** Without `prepare()`, Optic warm avg is 29–37ms vs CTS 93–98ms (2.7–3.2× faster). The earlier 1.9× Optic-is-slower conclusion was an artifact of forced re-optimization in benchmark scripts.
-2. **Cold-start gap: 5.8×** (Optic 3,928ms vs CTS 662ms). This is the dominant problem. Driven by Optic plan optimization cost for the 49K-IRI CTS query. The `prepare()` phase alone was measured at 3,818ms in phase timing (Theory E).
+2. **Cold-start gap: 5.8×** (Optic 3,928ms vs CTS 662ms). This is the dominant problem. Driven by Optic plan optimization cost for the 49K-IRI CTS query.
 3. **The entire cold penalty is from 49K-IRI plan optimization.** Theory D (non-semantic only, no `tripleRangeQuery`) cold = 267ms — 14× faster than baseline, actually faster than CTS. The optimizer processing literal IRI values in the plan AST accounts for 97% of the cold-start overhead.
 4. **Lazy IRI resolution doesn't help (Theory M).** `cts.tripleRangeQuery` eagerly materializes Sequence arguments into the plan AST regardless of whether input is Array or Sequence. The `.toArray()` call is not the bottleneck.
 5. **`plan.where()` vs `op.fromSearch()`**: `where()` passes the CTS query by reference; `fromSearch()` incorporates it into the plan AST. With 49K IRI literals in `cts.tripleRangeQuery`, `fromSearch` adds measurable overhead. On warm runs: 128ms (`where`) vs 179ms (`fromSearch+joinInner`) — both with `prepare(1)`.
 6. **Admin vs consumer permissions**: ~100ms cold, ~5ms warm — negligible factor.
-4. **IRI count in the keyword pattern**: Each keyword's `apply()` eagerly resolves IRIs via `cts.values().toArray()`. For this query: woman=11,670, greek=2,456, art=34,987 — totaling 49,113 IRIs embedded as literals in `cts.tripleRangeQuery` objects.
+7. **IRI count in the keyword pattern**: Each keyword's `apply()` eagerly resolves IRIs via `cts.values().toArray()`. For this query: woman=11,670, greek=2,456, art=34,987 — totaling 49,113 IRIs embedded as literals in `cts.tripleRangeQuery` objects.
+8. **The 3.8s optimization cost doesn't disappear without `prepare()`.** It shifts from explicit `prepare()` into implicit optimization inside `.result()` on first execution. Plan cache makes subsequent warm calls fast (28–37ms).
+
+### Warm-run gap breakdown
+
+Applies to the `prepare(1)` numbers and is preserved for reference. Without `prepare()`, Optic warm is 32–37ms — faster than CTS (93–98ms) — so the warm-run gap is no longer the performance concern. **The cold-start gap is the primary optimization target.**
+
+| Component | Estimated cost | Source |
+|---|---|---|
+| `prepare(1)` re-optimization overhead | ~140ms | Baseline with prepare (178ms) minus baseline without (37ms) |
+| Optic execution (lexicon scan, groupBy, orderBy, select, fromSearch) | ~37ms | Baseline without prepare() |
+| CTS baseline execution | ~98ms | CTS warm avg |
+
+### Cold-start gap breakdown
+
+The 5.8× cold-start gap (Optic 3,928ms vs CTS 662ms = 3,266ms overhead) breaks down as:
+
+| Component | Estimated cost | Source |
+|---|---|---|
+| Plan optimization (prepare/optimize) | ~3,818ms | Theory E phase timing |
+| IRI resolution (cts.values × 3 keywords) | ~134ms | Theory E phase timing (49K IRIs total) |
+| Plan build (Optic API calls) | ~38ms | Theory E phase timing |
+| Execution | ~302ms | Theory E phase timing (cold caches) |
+
+**The plan optimization cost (3.8s) is 97% of the cold-start overhead.** This is the optimizer processing the plan AST which contains 49K IRI literals embedded in `cts.tripleRangeQuery` objects. Each distinct keyword query produces a unique plan that cannot be reused.
+
+## Benchmark Templates
+
+Reusable benchmark templates for the team:
+- CTS: [/scripts/performance/benchmark-template-cts.js](/scripts/performance/benchmark-template-cts.js)
+- Optic: [/scripts/performance/benchmark-template-optic.js](/scripts/performance/benchmark-template-optic.js)
+
+**Do not call `plan.prepare()` in Optic benchmarks.** MarkLogic caches optimized plans automatically. Calling `prepare()` forces re-optimization on every invocation, adding ~140ms per warm run and producing results that do not reflect production. The production code does not call `prepare()`. See the Optic template header for details.
 
 ## Optimization 1: `plan.where()` when scores are not needed
 
@@ -727,15 +787,107 @@ When the engine encounters multiple keyword terms under an OR conjunction, it cu
 
 This applies to OR'd keywords specifically; AND'd keywords must remain separate (each constrains independently).
 
-## Optimization 3: Reduce or eliminate redundant dataType constraints
+## Data Type Constraint Investigations (Optimizations 3, 7, 12)
 
-**Status:** Idea — needs investigation.
+The `dataType` constraint (`op.in(op.col('dataType'), [...])`) is a recurring theme across several optimization investigations. This subsection groups the three related efforts: removing redundant constraints (Opt 3), using scope-specific lexicons (Opt 7), and eliminating constraints via scope-specific predicates (Opt 12).
 
-The `dataType` constraint (`op.in(op.col('dataType'), [...])`) is applied at the top level of every plan via `constraints[]`. Field indexes (e.g., `itemAnyText`) are already scope-specific — only documents of the correct scope contain values in those fields. If the field-level filtering already implies the scope, the explicit `dataType` constraint may be redundant work. Investigation areas:
-- Does removing the `dataType` constraint change result sets? (It shouldn't if fields are truly scope-exclusive.)
-- Does removing it eliminate a lexicon column, simplifying the `fromLexicons` scan?
-- Does it change join strategies in the optimized plan (e.g., bloom vs scatter)?
-- The `dataType` column is needed in the final `select` output — could it be joined late (after filtering) rather than scanned early?
+### Optimization 3: Reduce or eliminate redundant dataType constraints
+
+**Status:** Partially implemented — "empty-groups" optimization in `engine.mjs`. Further removal is **blocked** by a memory blowup finding (2026-06-03).
+
+#### Implemented: empty-groups optimization
+
+The engine now skips the `op.in(op.col('dataType'), [...])` constraint on sub-plans when the parent plan already constrains to the same scope. This applies to nested AND/OR/NOT groups that do not cross scope boundaries.
+
+**Where it lives:** `buildCriteriaAccumulator` in `engine.mjs` computes `scopeAlreadyConstrained`:
+
+```javascript
+const scopeAlreadyConstrained =
+  !isTopLevel && !isMultiScope && parentScope === scope;
+```
+
+`createPlanAccumulator` uses this flag to skip emitting the constraint:
+
+```javascript
+constraints:
+  isMultiScope || scopeAlreadyConstrained
+    ? []
+    : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
+```
+
+**Propagation:** The parent passes its scope into recursive `buildCriteriaAccumulator` calls via `parentScope`. In `buildConjunctionJoin`, the condition `parentIsScopeConstrained ? scope : null` determines whether to propagate — `parentIsScopeConstrained` is true when the parent is not a multi-scope plan.
+
+**When it fires:**
+- Nested AND/OR/NOT groups processed by `buildConjunctionJoin` → `buildSubOrFold`, where the sub-plan's scope matches the parent's scope.
+
+**When it does not fire:**
+- Top-level plans (`isTopLevel = true`).
+- Multi-scope plans (`isMultiScope = true`).
+- Pattern recursion: `HopInverse` and `HopWithField` call `scp.processCriteria()` without passing `parentScope` (defaults to `null`). Both patterns cross scope boundaries via `termConfig.getTargetScopeName()`, so the parent scope never matches the child scope. Technically a same-scope pattern caller could opt in by passing `parentScope`, but none currently do.
+
+#### Finding: hop-side dataType constraint is required (2026-06-03)
+
+Removing the dataType constraint from hop sub-plans (the inner `fromLexicons` in a `hopWithField` or `hopInverse` pattern) causes MarkLogic to attempt ~8.4 GB of memory, exceeding the host limit and triggering SVC-MEMCANCELED. The constraint acts as an early selectivity filter that prevents the optimizer from materializing the full cross-product of lexicon rows × triple rows.
+
+**Test query:** Agent-scope search with a `hopWithField` joining to item-scope documents filtered by dimension range queries (`itemDepthDimensionValue >= 100 OR itemWidthDimensionValue >= 100`). Scripts in `scratch/performance/extraneousDataTypeConstraints/`.
+
+| Variant | Root lexicon | Root `op.in` | Hop lexicon | Hop `op.in` | Result |
+|---|---|---|---|---|---|
+| `any-3-dt-wheres` | `anyDataTypeName` | `['Person','Group']` | `anyDataTypeName` | `['DigitalObject','HumanMadeObject']` | **442ms cold, 26ms warm** |
+| `any-2-dt-wheres` | `anyDataTypeName` | `['Person','Group']` | `anyDataTypeName` | _(removed)_ | **SVC-MEMCANCELED** (~8.4 GB) |
+| `specific-2-dt-wheres` | `agentDataTypeName` | `['Person','Group']` | `itemDataTypeName` | _(removed)_ | **SVC-MEMCANCELED** (~8.4 GB) |
+| `specific-3-dt-wheres` | `agentDataTypeName` | `['Person','Group']` | `itemDataTypeName` | `['DigitalObject','HumanMadeObject']` | **SVC-MEMCANCELED** (~8.4 GB) |
+
+**Key observations:**
+
+1. **The hop-side dataType constraint is not redundant.** Without it, the hop's `fromLexicons` scan produces an unconstrained row set that the optimizer cannot efficiently join with the triple pattern, causing memory blowup. This is true even when the hop's CTS `.where()` clause (field range queries) would eventually narrow results — the optimizer plans the lexicon-triple join before considering the CTS filter.
+2. **Scope-specific lexicons are worse, not better.** Switching from `anyDataTypeName` to `agentDataTypeName`/`itemDataTypeName` causes SVC-MEMCANCELED even with the `op.in` constraint present (`specific-3-dt-wheres`). The scope-specific lexicons have different cardinality characteristics that apparently lead to a worse join plan. This contradicts the hypothesis in Optimization 7.
+3. **The only working variant** uses `anyDataTypeName` for all `fromLexicons` calls with `op.in` constraints on every sub-plan — which is the current production behavior.
+
+**Implications for further dataType removal:**
+- The empty-groups optimization (same-scope sub-plans within AND/OR/NOT groups) is safe because those sub-plans share the parent's `fromLexicons` and never introduce their own lexicon scan.
+- Hop patterns introduce new `fromLexicons` calls for the target scope. These **must** retain their dataType constraint to avoid memory blowup.
+- Any future attempt to remove dataType constraints from hop sub-plans should be validated with memory-intensive queries, not just correctness checks.
+
+### Optimization 7: Use scope-specific dataType lexicons
+
+**Status:** Tested — no gain (Theory K), and now **contradicted** by the 2026-06-03 finding.
+
+`createPlanAccumulator` always uses `cts.fieldReference('anyDataTypeName')` which indexes `/json/type` across all ~44M documents regardless of scope. Each scope has a dedicated, smaller lexicon: e.g., `itemDataTypeName` indexes only `/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType`. Using the scope-specific lexicon should reduce the lexicon scan cardinality and may improve join strategies. Scope-to-field mapping:
+
+| Scope | Field | JSON path scope |
+|---|---|---|
+| item | `itemDataTypeName` | `HumanMadeObject`, `DigitalObject` |
+| agent | `agentDataTypeName` | `Person`, `Group` |
+| concept | `conceptDataTypeName` | `Type`, `Currency`, `Language`, `MeasurementUnit`, `Material` |
+| event | `eventDataTypeName` | `Activity`, `Period` |
+| place | `placeDataTypeName` | `Place` |
+| set | `setDataTypeName` | `Set` |
+| work | `workDataTypeName` | `LinguisticObject`, `VisualItem` |
+
+The `anyDataTypeName` lexicon must remain available for multi-scope queries and the `any` scope.
+
+**2026-06-03 update:** The `specific-3-dt-wheres` variant (scope-specific lexicons with all constraints present) caused SVC-MEMCANCELED while the equivalent `any-3-dt-wheres` (anyDataTypeName) ran in 442ms cold / 26ms warm. This indicates that scope-specific dataType lexicons can produce **worse** optimizer plans, not better — likely due to different cardinality estimates that the optimizer uses for join ordering. This optimization should be considered a **non-starter** until there is evidence of a query where scope-specific lexicons help.
+
+### Optimization 12: Scope-specific predicates to eliminate dataType constraints
+
+**Status:** Idea — extends Optimization 3; needs investigation. The 2026-06-03 finding (Optimization 3) adds nuance but does not invalidate this approach.
+
+**Observation:** All lexicons used to resolve search criteria are already search scope–specific (e.g., `itemAnyText`, `agentPrimaryName`). However, the RDF predicates used in `cts.tripleRangeQuery` (e.g., `lux:itemAny`) are currently the only scope-differentiating mechanism on the semantic side. If predicates were also scope-specific — meaning a triple's predicate alone is sufficient to identify the scope — then the explicit `dataType` constraint (`op.in(op.col('dataType'), [...])`) would no longer be needed for filtering. The `dataType` lexicon would only need to appear late in the plan to project each result's type into the output row.
+
+**Why this matters:**
+- The `dataType` constraint is applied early in every plan via `constraints[]`, forcing a lexicon scan and join before the selective CTS/triple filters have narrowed the result set (see Optimization 6 plan analysis).
+- Removing it as a filter would simplify the plan AST and potentially change join strategies (e.g., eliminating an early scatter-join on the dataType lexicon).
+- If implemented, Optimization 7 (scope-specific dataType lexicons) would become obsolete — there would be no dataType constraint to optimize, only a late projection.
+
+**2026-06-03 update:** The Optimization 3 finding shows that naively removing the `op.in` constraint from hop sub-plans causes SVC-MEMCANCELED. This approach would need to ensure that scope-specific predicates provide **equivalent selectivity** to the current `op.in` constraint during plan optimization. The late-join design (moving `dataType` to `collapseToResultRows`) should only be pursued if predicates alone give the optimizer enough information to avoid materializing unconstrained lexicon×triple cross-products.
+
+**Design sketch:**
+1. Verify that each scope's predicates are already exclusive (no predicate shared across scopes).
+2. If not, introduce scope-specific predicate variants or confirm that field-level scope specificity is sufficient.
+3. Move the `dataType` lexicon from `createPlanAccumulator`'s base lexicons to a late join in `collapseToResultRows` — join on fragment after filtering, purely for output projection.
+4. Validate that result sets remain identical with the constraint removed.
+5. **Critically:** Validate that memory usage does not spike on hop-heavy queries (per the `any-2-dt-wheres` finding).
 
 ## Optimization 4: Reduce keyword pattern IRI payload
 
@@ -759,47 +911,6 @@ The actual plan (WGA-actual-plan.xml, captured 2026-05-28) reveals the optimizer
 - **from-search selectivity:** 10,105 estimated matching fragments — the CTS query is selective. The cost=7,849 for from-search is reasonable relative to the lexicon chain overhead.
 
 See `scratch/performance/woman-greek-art-memberOf/WGA-actual-plan.xml` for the full plan.
-
-## Optimization 7: Use scope-specific dataType lexicons
-
-**Status:** Tested — no gain (Theory K). MarkLogic handles large lexicons efficiently.
-
-`createPlanAccumulator` always uses `cts.fieldReference('anyDataTypeName')` which indexes `/json/type` across all ~44M documents regardless of scope. Each scope has a dedicated, smaller lexicon: e.g., `itemDataTypeName` indexes only `/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType`. Using the scope-specific lexicon should reduce the lexicon scan cardinality and may improve join strategies. Scope-to-field mapping:
-
-| Scope | Field | JSON path scope |
-|---|---|---|
-| item | `itemDataTypeName` | `HumanMadeObject`, `DigitalObject` |
-| agent | `agentDataTypeName` | `Person`, `Group` |
-| concept | `conceptDataTypeName` | `Type`, `Currency`, `Language`, `MeasurementUnit`, `Material` |
-| event | `eventDataTypeName` | `Activity`, `Period` |
-| place | `placeDataTypeName` | `Place` |
-| set | `setDataTypeName` | `Set` |
-| work | `workDataTypeName` | `LinguisticObject`, `VisualItem` |
-
-MarkLogic is reportedly efficient with larger lexicons, so the gain may be marginal — but worth verifying empirically. The `anyDataTypeName` lexicon must remain available for multi-scope queries and the `any` scope.
-
-## Warm-run gap breakdown (AND'd keywords with scores)
-
-**Note:** The warm-run numbers below used `prepare(1)`, which inflated all Optic warm times by ~140ms. Without `prepare()`, Optic warm is 32–37ms — faster than CTS (93–98ms). The decomposition below applies to the `prepare(1)` numbers and is preserved for reference, but the warm-run gap is no longer the performance concern. **The cold-start gap (3,928ms vs 662ms) is the primary optimization target.**
-
-| Component | Estimated cost | Source |
-|---|---|---|
-| `prepare(1)` re-optimization overhead | ~140ms | Baseline with prepare (178ms) minus baseline without (37ms) |
-| Optic execution (lexicon scan, groupBy, orderBy, select, fromSearch) | ~37ms | Baseline without prepare() |
-| CTS baseline execution | ~98ms | CTS warm avg |
-
-## Cold-start gap analysis
-
-The 5.8× cold-start gap (Optic 3,928ms vs CTS 662ms = 3,266ms overhead) breaks down as:
-
-| Component | Estimated cost | Source |
-|---|---|---|
-| Plan optimization (prepare/optimize) | ~3,818ms | Theory E phase timing |
-| IRI resolution (cts.values × 3 keywords) | ~134ms | Theory E phase timing (49K IRIs total) |
-| Plan build (Optic API calls) | ~38ms | Theory E phase timing |
-| Execution | ~302ms | Theory E phase timing (cold caches) |
-
-**The plan optimization cost (3.8s) is 97% of the cold-start overhead.** This is the optimizer processing the plan AST which contains 49K IRI literals embedded in `cts.tripleRangeQuery` objects. Each distinct keyword query produces a unique plan that cannot be reused.
 
 ## Optimization 8: Use `op.param` for non-CTS plan parameters
 
@@ -882,44 +993,3 @@ cts.tripleRangeQuery([], predicate, null, '=', [], weight, { objectQuery: fieldW
 
 **Impact:** This single enhancement would eliminate the dominant cold-start cost (3.8s → estimated <500ms based on Theory N) while preserving the current `Keyword.mjs` architecture. It would require only a one-line change in `Keyword.mjs`: removing `.toArray()` and passing the CTS query instead of the IRI array.
 
-## Optimization 12: Scope-specific predicates to eliminate dataType constraints
-
-**Status:** Idea — extends Optimization 3; needs investigation.
-
-**Observation:** All lexicons used to resolve search criteria are already search scope–specific (e.g., `itemAnyText`, `agentPrimaryName`). However, the RDF predicates used in `cts.tripleRangeQuery` (e.g., `lux:itemAny`) are currently the only scope-differentiating mechanism on the semantic side. If predicates were also scope-specific — meaning a triple's predicate alone is sufficient to identify the scope — then the explicit `dataType` constraint (`op.in(op.col('dataType'), [...])`) would no longer be needed for filtering. The `dataType` lexicon would only need to appear late in the plan to project each result's type into the output row.
-
-**Why this matters:**
-- The `dataType` constraint is applied early in every plan via `constraints[]`, forcing a lexicon scan and join before the selective CTS/triple filters have narrowed the result set (see Optimization 6 plan analysis).
-- Removing it as a filter would simplify the plan AST and potentially change join strategies (e.g., eliminating an early scatter-join on the dataType lexicon).
-- This is a natural extension of Optimization 3 (reduce or eliminate redundant dataType constraints), which is only partially implemented and warrants further investigation.
-- If implemented, Optimization 7 (scope-specific dataType lexicons) would become obsolete — there would be no dataType constraint to optimize, only a late projection.
-
-**Design sketch:**
-1. Verify that each scope's predicates are already exclusive (no predicate shared across scopes).
-2. If not, introduce scope-specific predicate variants or confirm that field-level scope specificity is sufficient.
-3. Move the `dataType` lexicon from `createPlanAccumulator`'s base lexicons to a late join in `collapseToResultRows` — join on fragment after filtering, purely for output projection.
-4. Validate that result sets remain identical with the constraint removed.
-
-## Updated results (without `prepare()`, 2026-05-29)
-
-| Approach | Cold (avg of 2 runs) | Warm avg | Notes |
-|---|---|---|---|
-| CTS baseline | 662ms | 93-98ms | — |
-| **Optic baseline (as admin)** | **3,862ms** | **29-30ms** | Eliminates permission overhead |
-| **Theory D (non-semantic only)** | **270ms** | **4ms** | **14× faster cold — no IRIs in plan** |
-| Theory E (phase timing, no prepare) | 4,056ms total | — | IRI=136ms, build=37ms, execute=3,883ms |
-| **Theory M (lazy IRI)** | **3,805ms (admin)** | **28-29ms** | No improvement over baseline |
-| **Theory N (fromTriples, text-AND ∪ sem-AND)** | **464ms** | **10ms** | 127/10,105 results — fast but incomplete recall |
-| Theory N2 (per-keyword OR) | — | — | MEMCANCELED — 3 × fromLexicons(iri) over 43.9M entries |
-
-**Key insight from Theory E without prepare():** The 3.8s optimization cost doesn't disappear — it shifts from explicit `prepare()` into implicit optimization inside `.result()` on first execution. Plan cache makes subsequent warm calls fast (28-37ms).
-
-**Key insight from Theory D:** The entire 3.6s cold penalty comes from the Optic optimizer processing a plan AST containing 49K IRI literals. This is NOT about resolving IRIs (131ms) or permission checks (100ms) — it's about the optimizer traversing and costing the plan nodes. CTS avoids this because queries go directly to the search engine without passing through the Optic plan optimizer.
-
-## Benchmark Templates
-
-Reusable benchmark templates for the team:
-- CTS: `scratch/performance/TEMPLATE-cts-benchmark.js`
-- Optic: `scratch/performance/TEMPLATE-optic-benchmark.js`
-
-**Do not call `plan.prepare()` in Optic benchmarks.** MarkLogic caches optimized plans automatically. Calling `prepare()` forces re-optimization on every invocation, adding ~140ms per warm run and producing results that do not reflect production. The production code does not call `prepare()`. See the Optic template header for details.

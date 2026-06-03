@@ -58,8 +58,8 @@
     - [Warm-run gap breakdown](#warm-run-gap-breakdown)
     - [Cold-start gap breakdown](#cold-start-gap-breakdown)
   - [Benchmark Templates](#benchmark-templates)
-  - [Optimization Implementation Order](#optimization-implementation-order)
   - [Ideas from Previous Analysis](#ideas-from-previous-analysis)
+  - [Optimization Implementation Order](#optimization-implementation-order)
   - [Optimization 15: CTS Fold](#optimization-15-cts-fold)
   - [Optimization 13: Amp as Admin](#optimization-13-amp-as-admin)
   - [Optimization 14: Page-Slice Hydration](#optimization-14-page-slice-hydration)
@@ -775,15 +775,6 @@ Reusable benchmark templates for the team:
 
 **Do not call `plan.prepare()` in Optic benchmarks.** MarkLogic caches optimized plans automatically. Calling `prepare()` forces re-optimization on every invocation, adding ~140ms per warm run and producing results that do not reflect production. The production code does not call `prepare()`. See the Optic template header for details.
 
-## Optimization Implementation Order
-
-| Order | Optimization | Summary | Date |
-|---|---|---|---|
-| 1 | Opt 3 (partial) | Empty-groups: skip redundant dataType constraint on same-scope sub-plans | 2026-05-31 |
-| 2 | Opt 15 | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
-| 3 | Opt 14 | Page-Slice Hydration: CTS-based page slice with minimal Optic hydration | 2026-06-02 |
-| 4 | Opt 13 | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
-
 ## Ideas from Previous Analysis
 
 The following ideas were identified in earlier analysis (pre-Optic migration) and are not yet covered by the optimization sections below. Source: *LUX Search Criteria Processor Optimizations.docx* within [Optic and CTS Comparison](https://yaleedu.sharepoint.com/:f:/r/sites/MarkLogic/Shared%20Documents/1%20-%20LUX_ML/Optic%20and%20CTS%20Comparison?csf=1&web=1&e=hJ4fdF), along with all of that analysis' scripts and spreadsheets.
@@ -795,6 +786,15 @@ The following ideas were identified in earlier analysis (pre-Optic migration) an
 5. **ML 113: Resolve non-Hop-Inverse criteria as objects parameter in `cts.triples`** — constrain the objects parameter to reduce the number of triples returned.
 6. **Move criteria into Hop with Field term's code** — similar to ML 113 but for `hopWithField`; push additional criteria lower.
 7. **Shared `op.fromLexicons` for multiple terms on the same lexicon** — e.g., overlapping date range queries could share one lexicon scan with multiple `.where()` clauses.
+
+## Optimization Implementation Order
+
+| Order | Optimization | Summary | Date |
+|---|---|---|---|
+| 1 | Opt 3 (partial) | Empty-groups: skip redundant dataType constraint on same-scope sub-plans | 2026-05-31 |
+| 2 | Opt 15 | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
+| 3 | Opt 14 | Page-Slice Hydration: CTS-based page slice with minimal Optic hydration | 2026-06-02 |
+| 4 | Opt 13 | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
 
 ## Optimization 15: CTS Fold
 

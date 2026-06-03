@@ -51,7 +51,9 @@
     - [3. Preserve invariants](#3-preserve-invariants)
     - [4. How to verify](#4-how-to-verify)
 - [Optimizations \& Performance Investigations](#optimizations--performance-investigations)
-    - [Theory Index](#theory-index)
+  - [Performance Targets \& Principles](#performance-targets--principles)
+  - [Investigation Tooling](#investigation-tooling)
+  - [Theory Index](#theory-index)
   - [Real-World Performance Context](#real-world-performance-context)
   - [Isolated Benchmark Reference (MarkLogic 12.0.1)](#isolated-benchmark-reference-marklogic-1201)
     - [Key findings](#key-findings)
@@ -671,9 +673,34 @@ Facets are calculated after the main search executes. The implementation:
 
 # Optimizations & Performance Investigations
 
-Unless otherwise noted, analysis and benchmarks are for a three AND'd keyword terms ("woman", "greek", "art") in the `item` scope.  Much time was spent on this one as it constitutes LUX's most common end-user search: multiple AND'd keywords.
+Unless otherwise noted, analysis and benchmarks are for a three AND'd keyword terms ("woman", "greek", "art") in the `item` scope.  This search is sometimes referred to as WGA.  Much time was spent on this one as it constitutes LUX's most common end-user search: multiple AND'd keywords.
 
-### Theory Index
+## Performance Targets & Principles
+
+- **3 seconds or less** for simple search (keyword search).
+- **6 seconds or less** for advanced search.
+- The goal is to approach CTS performance, but not at the cost of fixation. Hit the target durations first.
+- **End-user experience reigns.** The performance test and comparisons thereof should only be given so much weight. Observations may inform optimization ideas beyond search itself (e.g., consolidating facet requests — already supported by the engine but not yet by the middle tier or backend endpoints).
+- **Weight actual durations over percentages.** A 434% relative change sounds horrific, yet the actual increase was 139 ms — well within customer tolerance (≥100 ms for individual query differences).
+
+## Investigation Tooling
+
+| Resource | Purpose |
+|---|---|
+| [Performance QC Workspace](/scripts/performance/Performance%20QC%20Workspace.xml) | Query Console workspace with benchmark tabs, plan inspection, and DSL execution |
+| [/scripts/performance/](/scripts/performance/) | Maintained benchmark scripts and analysis tools |
+| [/scratch/performance/](/scratch/performance/) | Exploratory/throwaway scripts from specific investigations |
+| [getPlansFromSearchCriteria.js](/scripts/getPlansFromSearchCriteria.js) | Generates Optic plans from JSON search criteria without executing.  **Warning:** this script calls `buildPlans` which --unless since refactored-- is downstream of the [Page-slice hydration optimization](#optimization-14-page-slice-hydration) for select keyword searches. |
+| [analyze-search-comparison.mjs](/scripts/performance/analyze-search-comparison.mjs) | Surface the worst performing pattern shapes from a search comparison's 200 slowest requests based on frequency and delta with CTS' performance. |
+| [5k-pattern-analysis.md](/scratch/5k-pattern-analysis.md) | Breakdown of the 5K-request performance test by search pattern |
+| [search-cold-start-mitigation.md](/docs/search-cold-start-mitigation.md) | [Page-slice hydration optimization](#optimization-14-page-slice-hydration) design and analysis |
+| [keyword-perf-investigation.md](/scratch/performance/woman-greek-art-memberOf/keyword-perf-investigation.md) | Multi-keyword search investigation findings and theory results |
+
+**Plan visualization:** The Query Plan Viewer in Query Console supports Optic plans. Set query type to "Optic DSL Query", then paste the `selectedPlan` value from `getPlansFromSearchCriteria.js` into the DSL tab. Add a `limit` before `select` if needed — the `op` import and `.result()` call are automatic (including either causes an error). The "Get Plan" and "DSL" tabs in the Performance QC Workspace are pre-configured for this workflow.  For more, see [Introduction to Query Console](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/intro.html) -> [Query Console Walkthrough](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/walkthru.html) -> [Viewing Query Plans](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/walkthru.html#id_27533).
+
+**XML plan extraction:** Benchmark scripts with a `traceId` write detailed plans to `8000_ErrorLog.txt`. Find the plan that has your trace ID and includes cost attributes. To produce valid XML, strip timestamps with regex. Some LLM sessions request JSON. W3 Schools has an online [XML to JSON transformer](https://www.w3schools.com/tools/tool_xml_json.php) that preserves attributes.
+
+## Theory Index
 
 The following table describes various theories that were tested and are referenced in subsequent sections.  These all pertain to multiple AND'd keywords.  
 

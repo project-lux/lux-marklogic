@@ -52,6 +52,7 @@
     - [4. How to verify](#4-how-to-verify)
 - [Optimizations \& Performance Investigations](#optimizations--performance-investigations)
   - [Performance Context \& Targets](#performance-context--targets)
+  - [CTS vs Optic Comparisons](#cts-vs-optic-comparisons)
   - [Investigation Tooling](#investigation-tooling)
   - [Theory Index](#theory-index)
   - [Isolated Benchmark Reference (MarkLogic 12.0.1)](#isolated-benchmark-reference-marklogic-1201)
@@ -702,6 +703,10 @@ Unless otherwise noted, analysis and benchmarks are for a three AND'd keyword te
 - HTTP request rate: ~5 req/sec sustained.
 
 **Optimization target:** The customer tolerance is ≥100 ms for individual query differences. The primary goal is closing the 5.7× serialized-test gap (4,634 ms vs 810 ms), which aligns with the 6× cold-start gap in isolated testing. Hot-cache micro-benchmark gaps (179 ms vs 93 ms) are secondary — they over-state cache warmth relative to production.
+
+## CTS vs Optic Comparisons
+
+Disable transitive search before running functional or performance comparisons. Transitive search is Optic-only (CTS does not support it), so leaving it enabled skews both result counts and timings. Set both `transitive` properties to `false` in [searchTermsConfig.mjs](src/main/ml-modules/root/config/searchTermsConfig.mjs).
 
 ## Investigation Tooling
 

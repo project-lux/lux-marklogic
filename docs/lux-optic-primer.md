@@ -825,7 +825,7 @@ The following ideas were identified in earlier analysis (pre-Optic migration) an
 |---|---|---|---|
 | 1 | [Opt 3 (partial)](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints) | Empty-groups: skip redundant dataType constraint on same-scope sub-plans | 2026-05-31 |
 | 2 | [Opt 15](#optimization-15-cts-fold) | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
-| 3 | [Opt 14](#optimization-14-page-slice-hydration) | Page-Slice Hydration: CTS-based page slice with minimal Optic hydration | 2026-06-02 |
+| 3 | [Opt 14](#optimization-14-page-slice-hydration) | Page-Slice Hydration: CTS-based page-slice with minimal Optic hydration | 2026-06-02 |
 | 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
 
 ## Data Type Constraint Optimizations
@@ -1063,7 +1063,7 @@ The implementation configures per-endpoint eligibility via `ampAsAdmin` in `endp
 
 **Benchmark results** (woman-greek-art, item scope, MarkLogic 12.0.1):
 
-| Metric | Page Slice only | Page Slice + Amp as Admin | Difference |
+| Metric | Page-Slice only | Page-Slice and Amp as Admin | Difference |
 |---|---|---|---|
 | Cold avg (n=3) | 1,510 ms | 1,404 ms | −106 ms |
 | Cold stddev | 874 ms | 890 ms | — |
@@ -1086,9 +1086,18 @@ For keyword searches, the engine builds a `cts.tripleRangeQuery` containing up t
 
 No results are hidden, no scores are altered. The technique works because Optic's only remaining contribution for this class of query is materializing and paginating — work that `cts.search` already does natively.
 
+**Eligibility criteria** — all must be true for the page-slice path to activate:
+- All search criteria are keyword terms (no hops, ranges, geospatial, etc.).
+- Sort is relevance (the default). `cts.search` returns results pre-sorted by relevance; other sort orders would require full materialization.
+- Search scope is not `multi`. Multi-scope searches require per-scope plan assembly.
+- The request is for search results, not a facet request. Facets require aggregation over the full result set — page slicing would omit the unsliced documents.
+- `pageWith` is not requested. `pageWith` requires locating a specific document's position in the full result set, which is incompatible with slicing.
+
+The page-slice technique is not inherently limited to keyword searches. Any query whose criteria are entirely CTS-expressible (no joins) could benefit. See [Why This Is Not Specific To Keyword Search — And Why We Aren't Applying It Globally](./search-cold-start-mitigation.md#4-why-this-is-not-specific-to-keyword-search--and-why-we-arent-applying-it-globally) for the analysis.
+
 **Benchmark results** (woman-greek-art, item scope, MarkLogic 12.0.1):
 
-| Metric | Standard Optic | Page Slice | Difference |
+| Metric | Standard Optic | Page-Slice | Difference |
 |---|---|---|---|
 | Cold avg (n=3) | 4,350 ms | 1,562 ms | **−2,788 ms / 2.8× faster** |
 | Cold stddev | 302 ms | 877 ms | Higher variance (small n) |

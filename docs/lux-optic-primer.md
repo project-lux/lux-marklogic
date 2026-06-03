@@ -59,7 +59,7 @@
     - [Cold-start gap breakdown](#cold-start-gap-breakdown)
   - [Benchmark Templates](#benchmark-templates)
   - [Ideas from Previous Analysis](#ideas-from-previous-analysis)
-  - [Optimization Implementation Order](#optimization-implementation-order)
+  - [Implemented Optimizations](#implemented-optimizations)
   - [Data Type Constraint Optimizations](#data-type-constraint-optimizations)
     - [Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints)
       - [Implemented: empty-groups optimization](#implemented-empty-groups-optimization)
@@ -787,7 +787,7 @@ The following ideas were identified in earlier analysis (pre-Optic migration) an
 6. **Move criteria into Hop with Field term's code** — similar to ML 113 but for `hopWithField`; push additional criteria lower.
 7. **Shared `op.fromLexicons` for multiple terms on the same lexicon** — e.g., overlapping date range queries could share one lexicon scan with multiple `.where()` clauses.
 
-## Optimization Implementation Order
+## Implemented Optimizations
 
 | Order | Optimization | Summary | Date |
 |---|---|---|---|

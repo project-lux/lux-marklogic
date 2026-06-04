@@ -61,6 +61,7 @@
     - [Cold-start gap breakdown](#cold-start-gap-breakdown)
   - [Benchmark Templates](#benchmark-templates)
   - [Ideas from Previous Analysis](#ideas-from-previous-analysis)
+  - [Ideas Above the Backend](#ideas-above-the-backend)
   - [Implemented Optimizations](#implemented-optimizations)
   - [Data Type Constraint Optimizations](#data-type-constraint-optimizations)
     - [Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints)
@@ -822,6 +823,13 @@ The following ideas were identified in earlier analysis (pre-Optic migration) an
 5. **ML 113: Resolve non-Hop-Inverse criteria as objects parameter in `cts.triples`** — constrain the objects parameter to reduce the number of triples returned.
 6. **Move criteria into Hop with Field term's code** — similar to ML 113 but for `hopWithField`; push additional criteria lower.
 7. **Shared `op.fromLexicons` for multiple terms on the same lexicon** — e.g., overlapping date range queries could share one lexicon scan with multiple `.where()` clauses.
+
+## Ideas Above the Backend
+
+Performance opportunities that could be implemented above the backend (mostly).
+
+1. **Defer facet requests until search results arrive** — the frontend should not make any facet requests until receiving at least one search result.
+2. **Consolidate facet requests** — a minority subset of the most used or typically fastest-to-calculate facets could be requested in advance of or in parallel with the rest. The `SearchCriteriaProcessor` supports requesting zero or more facets at the same time as the search results, or one or more facets without search results. To expose the former, the search endpoint would need to accept facet requests. To expose the latter, the facets endpoint would need to once again support multiple facets.
 
 ## Implemented Optimizations
 

@@ -13,8 +13,8 @@ const op = require('/MarkLogic/optic');
 
 //#region Configuration
 
-const scenarioName = `${xdmp.version()}-WGA-page-slice`;
-const username = 'lux-dev-data-endpoint-consumer';
+const scenarioName = `${xdmp.version()}-WGA-page-slice-as-admin`;
+const username = 'admin'; // 'lux-dev-data-endpoint-consumer';
 const returnResults = false;
 const traceId = null;
 const coldRuns = 3;

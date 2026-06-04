@@ -7,6 +7,7 @@ import {
 
 const SEMANTIC_FACETS_CONFIG = {
   responsibleCollections: {
+    scope: 'item',
     plan: op
       .fromSearch(
         cts.andQuery(
@@ -61,6 +62,7 @@ const SEMANTIC_FACETS_CONFIG = {
     },
   },
   responsibleUnits: {
+    scope: 'item',
     plan: op.fromSPARQL(`
       ${getPrefixesForSPARQL()}
       SELECT ?item ?set ?curator ?unit

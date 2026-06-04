@@ -1201,3 +1201,27 @@ The `cts.values(cts.iriReference(), ..., innerCts)` call resolves the set of doc
 | Warm avg (ms) | 45 | 2 | ~22× faster |
 | Warm min (ms) | 43 | 1 | 43× |
 | Warm max (ms) | 53 | 2 | 26× |
+
+**5k performance test results (5,000 searches, MarkLogic 12.0.1):** Unlike previous optimizations, Opt 16 moved the 5k performance test needle. Compared against the Optic baseline without Opt 16, p90 and p95 improved ~30% while p50 was unchanged (those searches don't hit HopWithField). p99/p99.9 regressed, likely due to cold-start variance in the small tail population.
+
+*Optic with Opt 16 vs. Optic without Opt 16:*
+
+| Percentile | Baseline (ms) | Current (ms) | Change (ms) | Relative Change |
+|---|---|---|---|---|
+| p50 | 176 | 176 | +0 | +0% |
+| p90 | 297 | 196 | -101 | -34% |
+| p95 | 309 | 216.65 | -92.35 | -29.9% |
+| p99 | 349.93 | 502.93 | +153 | +43.7% |
+| p99.9 | 940.95 | 1,002.69 | +61.73 | +6.6% |
+
+The remaining gap to CTS is concentrated in the median — searches that don't benefit from Opt 16 (keyword-only, `indexedValue`, etc.) still carry the Optic overhead. Searches that do benefit (p90–p95 range) are approaching CTS latency.
+
+*Optic with Opt 16 vs. CTS baseline:*
+
+| Percentile | CTS Baseline (ms) | Optic Current (ms) | Change (ms) | Relative Change |
+|---|---|---|---|---|
+| p50 | 32 | 176 | +144 | +450% |
+| p90 | 46 | 196 | +150 | +326.1% |
+| p95 | 54 | 216.65 | +162.65 | +301.2% |
+| p99 | 132.55 | 502.93 | +370.38 | +279.4% |
+| p99.9 | 285.6 | 1,002.69 | +717.09 | +251.1% |

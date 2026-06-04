@@ -76,35 +76,70 @@ select ?${id}_s ?${id}_o where {
     const hopFragCol = searchTerm.getParentFragmentColumn();
     const hopTripleFragCol = id + '_hopFrag';
 
-    // When criteria is a direct IRI ({ iri: value } or { id: value }),
-    // use it in the triple pattern instead of a full lexicon scan.
+    // When criteria is a direct IRI ({ iri: value } or { id: value }) and no
+    // idIndexReferences exist (the engine rewrite didn't fire), resolve via
+    // cts.tripleRangeQuery with the IRI as a document-backed object constraint.
     const childId = SCP.getChildId(searchTerm.getCriteria());
     if (!termValue && childId) {
-      const hopPlan = op.fromTriples([
-        op.pattern(
-          op.col(id + '_s'),
-          expandPredicates(termConfig.getPredicates()),
-          sem.iri(childId),
-          op.fragmentIdCol(hopTripleFragCol),
-        ),
-      ]);
       return {
-        patternJoins: [
-          {
-            right: hopPlan,
-            on: [
-              op.on(op.col(hopIriCol), op.col(id + '_s')),
-              op.on(
-                op.fragmentIdCol(hopFragCol),
-                op.fragmentIdCol(hopTripleFragCol),
+        ctsConstraints: [
+          cts.tripleRangeQuery(
+            [],
+            expandPredicates(termConfig.getPredicates()),
+            fn.insertBefore(
+              cts.values(
+                cts.iriReference(),
+                '',
+                ['eager', 'concurrent'],
+                cts.documentQuery(childId),
               ),
-            ],
-            extraCols: [],
-          },
+              0,
+              sem.iri('/does/not/exist'),
+            ),
+            '=',
+            [],
+            1,
+          ),
         ],
       };
     }
 
+    // When criteria is nested, attempt to resolve the inner criteria as a pure
+    // CTS query. If successful, emit cts.tripleRangeQuery with cts.values to
+    // resolve object IRIs — avoiding the Optic fromTriples join entirely.
+    if (!termValue) {
+      const innerCts = scp.processCriteriaAsCts({
+        planCriteria: searchTerm.getCriteria(),
+        planScope: termConfig.getTargetScopeName(),
+        patternOptions: SCP.initializePatternOptions(),
+        parentId: searchTerm.getId(),
+      });
+      if (innerCts) {
+        return {
+          ctsConstraints: [
+            cts.tripleRangeQuery(
+              [],
+              expandPredicates(termConfig.getPredicates()),
+              fn.insertBefore(
+                cts.values(
+                  cts.iriReference(),
+                  '',
+                  ['eager', 'concurrent'],
+                  innerCts,
+                ),
+                0,
+                sem.iri('/does/not/exist'),
+              ),
+              '=',
+              [],
+              1,
+            ),
+          ],
+        };
+      }
+    }
+
+    // Fallback: Optic join path (when inner criteria requires joins).
     const hopPlan = op.fromTriples([
       op.pattern(
         op.col(id + '_s'),

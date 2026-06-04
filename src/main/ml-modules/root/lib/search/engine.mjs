@@ -199,6 +199,36 @@ function processCriteria({
   return assemblePlan(scp, { ...acc, ...assemblyContext });
 }
 
+// Like processCriteria but returns a bare CTS query when the inner criteria
+// resolves to pure CTS constraints (no Optic joins needed). Returns null when
+// the criteria requires an Optic plan — caller should fall back to the join path.
+// The dataType constraint is intentionally omitted: callers use cts.values to
+// resolve matching document IRIs, and the triple predicate already limits which
+// scope's documents are valid objects.
+function processCriteriaAsCts({
+  scp,
+  planCriteria,
+  planScope = 'item',
+  patternOptions,
+  parentId = null,
+}) {
+  const { acc, assemblyContext } = buildCriteriaAccumulator({
+    scp,
+    planCriteria,
+    planScope,
+    patternOptions,
+    parentId,
+    // Set parentScope = planScope so the accumulator skips the dataType
+    // constraint (empty-groups optimization). The caller resolves IRIs via
+    // cts.values; the triple predicate already scopes the objects.
+    parentScope: planScope,
+  });
+  if (!accContainsOnly(acc, 'ctsConstraints')) {
+    return null;
+  }
+  return wrapCtsByLogicType(assemblyContext.logicType, acc.ctsConstraints);
+}
+
 // Needed outside the module in support of building the plans without executing them.
 function getResultRowGrouping() {
   return {
@@ -1763,6 +1793,7 @@ export {
   paginateResults,
   performSearch,
   processCriteria,
+  processCriteriaAsCts,
   resolveSearchOptions,
   sanitizeAndValidateWildcardedStrings,
 };

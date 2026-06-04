@@ -298,6 +298,19 @@ const SearchCriteriaProcessor = class {
     });
   }
 
+  // Like processCriteria but returns a bare CTS query when the inner criteria
+  // resolves entirely to CTS constraints. Returns null when an Optic plan is
+  // required — caller should fall back to the join path.
+  processCriteriaAsCts({ planCriteria, planScope, patternOptions, parentId }) {
+    return engine.processCriteriaAsCts({
+      scp: this,
+      planCriteria,
+      planScope,
+      patternOptions,
+      parentId,
+    });
+  }
+
   appendValues(arr) {
     this.#values = this.#values.concat(arr);
   }

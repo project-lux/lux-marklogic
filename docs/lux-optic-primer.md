@@ -80,6 +80,7 @@
   - [Optimization 13: Amp as Admin](#optimization-13-amp-as-admin)
   - [Optimization 14: Page-Slice Hydration](#optimization-14-page-slice-hydration)
   - [Optimization 15: CTS Fold](#optimization-15-cts-fold)
+  - [Optimization 16: HopWithField CTS](#optimization-16-hopwithfield-cts)
 
 # Introduction
 
@@ -406,15 +407,18 @@ The result is a single `cts.orQuery([nonSemanticQuery, tripleRangeQuery])` place
 
 ## `hopWithField` Details
 
-Always joins — triple navigation requires its own row source (`op.fromTriples`).
+**CTS path** ([Opt 16](#optimization-16-hopwithfield-cts)): When the non-transitive term's inner criteria resolves to pure CTS (no Optic joins), the pattern emits `cts.tripleRangeQuery` as a `ctsConstraint` instead of an Optic `fromTriples` join. This eliminates the `fromTriples` scan and the `joinInner` back to the base plan. Two sub-paths:
 
-**Simple hop** (string `termValue`): Triple scan → reference lexicon filtered by value → inner-join on object=iri.
+- **Id-leaf**: `{ id: IRI }` or `{ iri: IRI }` — wraps `cts.documentQuery(childId)` inside `cts.values(cts.iriReference())` to resolve matching object IRIs.
+- **Nested pure-CTS**: `{ name: "painting" }`, `{ OR: [{ id: IRI }, ...] }` — calls `processCriteriaAsCts` on the inner criteria. If the inner accumulator is pure CTS, wraps it inside `cts.values` the same way.
 
-**Complex hop** (object `termValue` / nested criteria): Triple scan → recursive `processCriteria` on nested criteria → inner-join on object=iri.
+Both paths fall back to the Optic join path when inner criteria requires Optic contributions (e.g., `DocumentIdOrIri` under AND logic contributes `constraints`, not `ctsConstraints`).
 
-**Literal IRI optimization**: When the child criteria is `{ iri: value }` or `{ id: value }`, `SCP.getChildId()` extracts the IRI string and uses `sem.iri(value)` directly as the object in the `op.fromTriples` pattern. This eliminates one `fromLexicons` + one `joinInner` per such term. This optimization applies to both regular search and related lists.
+Note: the engine's `idIndexReferences` rewrite (in `buildLeafSearchTerm`) preempts this optimization for terms that have `idIndexReferences` — those are rewritten to `IndexedValue` before `HopWithField.apply()` is called.
 
-**Transitive hops**: `HopWithField` supports transitive triple traversal via `#processTransitiveHopWithFieldTerm`. Intermediate IRIs are embedded as SPARQL `VALUES`.
+**Optic join path** (fallback): Triple scan via `op.fromTriples` → inner-join on object=iri. Used when inner criteria cannot be expressed as pure CTS.
+
+**Transitive hops**: `HopWithField` supports transitive triple traversal via `#processTransitiveHopWithFieldTerm`. Intermediate IRIs are embedded as SPARQL `VALUES`. The CTS path does not apply to transitive terms.
 
 **OR case — "duplicate lexicon then outer join"**: Because `op.fromTriples` has no URI column, the code creates a second `op.fromLexicons`, inner-joins it to the triple result, then `joinFullOuter`s back to the base plan with column alignment.
 
@@ -827,6 +831,7 @@ The following ideas were identified in earlier analysis (pre-Optic migration) an
 | 2 | [Opt 15](#optimization-15-cts-fold) | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
 | 3 | [Opt 14](#optimization-14-page-slice-hydration) | Page-Slice Hydration: CTS-based page-slice with minimal Optic hydration. **More may be possible:** see the eligibility criteria for details. | 2026-06-02 |
 | 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
+| 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
 
 ## Data Type Constraint Optimizations
 
@@ -1135,3 +1140,64 @@ The fold is implemented in `buildSubOrFold` inside `buildConjunctionJoin`. After
 Folding is eligible when the parent `logicType` is `and` or `or`. NOT parents are excluded because negation composition (inverting the sub's logic) is not a simple peer push. A `negateFold` flag handles the AND-encounters-NOT case: the engine rewrites `{ NOT: [...] }` as `{ OR: [...] }` for the sub-plan, and when the sub folds, wraps the result as `cts.notQuery(...)` to preserve negation semantics.
 
 The optimization fires for the common case of nested groups whose children are all CTS-expressible patterns (keyword, indexedWord, geospatial, etc.). It does not fire when any child contributes a patternJoin (e.g., hop patterns) or a nested conjunction that itself requires a join.
+
+## Optimization 16: HopWithField CTS
+
+**Status:** Implemented.
+
+**Prerequisite:** [Opt 15 (CTS Fold)](#optimization-15-cts-fold) must be in place — the fold mechanism is what makes inner criteria produce pure-CTS accumulators.
+
+When a non-transitive `hopWithField` term's inner criteria resolves to pure CTS, the pattern emits `cts.tripleRangeQuery` as a `ctsConstraint` instead of building an Optic `fromTriples` join. This eliminates the `fromTriples` row source, the `joinInner` to the field plan, and the `joinInner` back to the base plan.
+
+Before (Optic join):
+```javascript
+op.fromLexicons(...)
+  .where(dataTypeConstraint)
+  .joinInner(
+    op.fromTriples([pattern(s, predicates, o)])
+      .joinInner(op.fromSearch(cts.andQuery(innerCts))),
+    op.on(iri, s)
+  )
+```
+
+After (CTS path):
+```javascript
+op.fromLexicons(...)
+  .where(dataTypeConstraint)
+  .where(
+    cts.tripleRangeQuery(
+      [],
+      expandPredicates(predicates),
+      fn.insertBefore(
+        cts.values(cts.iriReference(), '', ['eager', 'concurrent'], innerCts),
+        0, sem.iri('/does/not/exist')
+      ),
+      '=', [], 1
+    )
+  )
+```
+
+The `cts.values(cts.iriReference(), ..., innerCts)` call resolves the set of document IRIs matching the inner CTS query, and `cts.tripleRangeQuery` constrains the parent to documents whose triples have one of those IRIs as the object. The `sem.iri('/does/not/exist')` sentinel is prepended via `fn.insertBefore` because `cts.tripleRangeQuery` requires at least one value when the object argument is a Sequence.
+
+**Implementation:** Three paths in `#processHopWithFieldTerm`:
+1. **Id-leaf** (`childId` is set, no `termValue`): wraps `cts.documentQuery(childId)` inside `cts.values`.
+2. **Nested pure-CTS** (no `termValue`, no `childId`): calls `scp.processCriteriaAsCts()` — if it returns non-null, wraps the result inside `cts.values`.
+3. **Fallback**: original Optic `fromTriples` + `joinInner` path.
+
+`processCriteriaAsCts` (added to `engine.mjs`) is a variant of `processCriteria` that builds the inner accumulator with `parentScope: planScope` (to skip the dataType constraint) and returns the CTS query only if `accContainsOnly(acc, 'ctsConstraints')` is true.
+
+**Scope:** Non-transitive `hopWithField` terms without `idIndexReferences`. Terms with `idIndexReferences` are rewritten to `IndexedValue` by the engine before `HopWithField.apply()` is called. Transitive terms always use SPARQL embedding.
+
+**5k pattern analysis:** This optimization resolves the majority of severe regressions identified in `scratch/5k-pattern-analysis.md`. The most common regression shape — a single `hopWithField` with `{ id: IRI }` inner criteria on a term lacking `idIndexReferences` — is fully covered by the id-leaf path.
+
+**Benchmark (Shape 2, MarkLogic 12.0.1):** `OR(classification{OR}, language{OR}, aboutConcept{id})` — three hops, two of which use the CTS path.
+
+| Metric | Baseline | Optimized | Improvement |
+|---|---|---|---|
+| Cold avg (ms) | 1,699 | 344 | ~5× faster |
+| Cold min (ms) | 401 | 287 | 1.4× |
+| Cold max (ms) | 4,290 | 457 | 9.4× |
+| Cold stddev | 1,832 | 80 | 23× less variance |
+| Warm avg (ms) | 45 | 2 | ~22× faster |
+| Warm min (ms) | 43 | 1 | 43× |
+| Warm max (ms) | 53 | 2 | 26× |

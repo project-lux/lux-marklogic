@@ -1,0 +1,17 @@
+{
+  "_scope": "item",
+  "memberOf": {
+    "AND": [
+      {
+        "classification": {
+          "identifier": "http://vocab.getty.edu/aat/300375748"
+        }
+      },
+      {
+        "containingItem": {
+          "id": "https://lux.collections.yale.edu/data/object/08d51cd3-c968-4185-9f5c-bc2131b98041"
+        }
+      }
+    ]
+  }
+}

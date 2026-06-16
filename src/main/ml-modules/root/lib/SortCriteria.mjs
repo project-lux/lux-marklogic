@@ -9,15 +9,16 @@ const SortCriteria = class {
   #sortCriteriaStr;
   #semanticSortOption = null;
   #nonSemanticSortDescriptors = [];
-  #relevanceSort = true; // Default
+  #relevanceSort = false;
   #randomSort = false;
   #warnings = [];
 
   // Accepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
-  constructor(scopeName, sortCriteriaStr) {
+  constructor(scopeName, sortCriteriaStr, relevanceSort = false) {
     this.#scopeName = scopeName;
     this.#sortCriteriaStr = sortCriteriaStr;
+    this.#relevanceSort = relevanceSort;
     this.#parse();
   }
 

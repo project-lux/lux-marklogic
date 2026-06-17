@@ -473,17 +473,15 @@ const SearchCriteriaProcessor = class {
     if (!effectiveScopeName) {
       return false;
     }
-    if (criteria.hasOwnProperty('AND')) {
+    if (criteria.AND) {
       return criteria.AND.some((item) =>
         this.#requiresRelevanceSort(item, effectiveScopeName),
       );
-    }
-    if (criteria.hasOwnProperty('OR')) {
+    } else if (criteria.OR) {
       return criteria.OR.some((item) =>
         this.#requiresRelevanceSort(item, effectiveScopeName),
       );
-    }
-    if (criteria.hasOwnProperty('NOT')) {
+    } else if (criteria.NOT) {
       return criteria.NOT.some((item) =>
         this.#requiresRelevanceSort(item, effectiveScopeName),
       );

@@ -27,6 +27,16 @@ console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
+// 6/18 where-clause optimization: keyword plans now embed column names derived
+// from a per-SearchTerm UUID (e.g. "a1b2c3d4_e5f6_..."). Two SCP instances for
+// the same criteria produce structurally identical plans that differ only in
+// those UUID tokens. Normalize them before string comparison so consistency
+// assertions remain meaningful.
+const UUID_COL_RE = /\b[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}_/gi;
+function normalizePlanSource(src) {
+  return typeof src === 'string' ? src.replace(UUID_COL_RE, 'UUID_') : src;
+}
+
 // Keyword search produces CTS constraints — exercises the areScoresRequired path.
 const TEXT_CRITERIA = { _scope: 'agent', text: 'Pablo' };
 
@@ -132,15 +142,16 @@ for (const scenario of scenarios) {
       );
     }
 
-    // Store for cross-scenario consistency check.
+    // Store for cross-scenario consistency check (normalize UUIDs first).
     const group = scenario.consistencyGroup;
+    const normalizedSource = normalizePlanSource(unsortedSource);
     if (!unsortedByGroup[group]) {
-      unsortedByGroup[group] = { source: unsortedSource, name: p };
+      unsortedByGroup[group] = { source: normalizedSource, name: p };
     } else {
       assertions.push(
         testHelperProxy.assertEqual(
           unsortedByGroup[group].source,
-          unsortedSource,
+          normalizedSource,
           `${p}: unsorted plan should match '${unsortedByGroup[group].name}' (same areScoresRequired group)`,
         ),
       );

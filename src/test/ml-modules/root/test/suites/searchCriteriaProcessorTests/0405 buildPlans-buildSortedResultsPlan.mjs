@@ -89,7 +89,10 @@ const scenarios = [
     expected: {
       error: false,
       sortedPlanContains: ['randomSortCol'],
-      sortedPlanExcludes: ['fromSearch', 'score', 'fromTriples'],
+      // 6/18 where-clause optimization: fromTriples now appears in keyword
+      // plans when areScoresRequired=false (random sort). Only exclude
+      // sort-specific markers, not keyword-pattern fromTriples.
+      sortedPlanExcludes: ['fromSearch', 'score'],
     },
   },
   {
@@ -105,7 +108,8 @@ const scenarios = [
       sortedPlanExcludes: [
         'agentActiveStartDateLong',
         'fromSearch',
-        'fromTriples',
+        // 6/18 where-clause optimization: fromTriples is now present in
+        // keyword plans when areScoresRequired=false (random sort wins).
       ],
     },
   },
@@ -119,7 +123,10 @@ const scenarios = [
     expected: {
       error: false,
       sortedPlanContains: ['randomSortCol'],
-      sortedPlanExcludes: ['fromTriples', 'fromSearch'],
+      // 6/18 where-clause optimization: fromTriples now appears in keyword
+      // plans when areScoresRequired=false. When random wins, no semantic sort
+      // column is added, but the keyword opt still uses fromTriples.
+      sortedPlanExcludes: ['fromSearch'],
     },
   },
   {

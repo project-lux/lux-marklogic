@@ -57,6 +57,30 @@ const ACC_CONTENT_BUCKETS = [
   'andOrSubPlans',
   'patternJoins',
 ];
+
+// 6/16 Optimization - Option 1 and Option 4: Classify which patterns produce
+// meaningful relevance scoring versus plain filtering.
+function termCanContributeToRelevance(searchTerm) {
+  // 6/16 Optimization - Option 1 and Option 4: Be defensive for non-standard
+  // terms that may not expose a full SearchTermConfig shape at runtime.
+  const patternName = searchTerm?.getSearchTermConfig?.()?.getPatternName?.();
+
+  if (!patternName) {
+    return false;
+  }
+
+  if (patternName === 'keyword') {
+    return true;
+  }
+
+  if (patternName === 'indexedWord') {
+    return typeof searchTerm?.isCompleteMatch === 'function'
+      ? !searchTerm.isCompleteMatch()
+      : false;
+  }
+
+  return false;
+}
 //#endregion
 
 //#region Exported functions
@@ -368,6 +392,11 @@ function buildCriteriaAccumulator({
         // in assemblePlan (and/or/notQuery) composes correctly with the
         // sub's already-wrapped query as a peer.
         acc.ctsConstraints.push(result.ctsConstraint);
+        if (result.hasScoringCtsConstraints) {
+          // 6/16 Optimization - Option 1 and Option 4: Preserve nested
+          // score-bearing relevance when a pure-CTS subgroup folds into parent.
+          acc.hasScoringCtsConstraints = true;
+        }
       } else if (result.andOrSubPlan) {
         // Deferred: AND-encounters-OR sub-plans are combined off the outer
         // fragment in assemblePlan to avoid SPARQL fusion when 2+ are
@@ -423,11 +452,21 @@ function buildCriteriaAccumulator({
 
     scp.incrementCriteriaCount();
     usableLeafTermCount++;
-    mergeTermPlanContributions(
-      acc,
-      criteria,
-      patternInstance.apply(scp, searchTerm, logicType, patternOptions),
+    const contributions = patternInstance.apply(
+      scp,
+      searchTerm,
+      logicType,
+      patternOptions,
     );
+    // 6/16 Optimization - Option 1 and Option 4: Mark if this term's CTS
+    // constraints should drive relevance scoring.
+    if (
+      contributions?.ctsConstraints?.length &&
+      termCanContributeToRelevance(searchTerm)
+    ) {
+      acc.hasScoringCtsConstraints = true;
+    }
+    mergeTermPlanContributions(acc, criteria, contributions);
   }
 
   // Guard against searches composed entirely of stop words / punctuation.
@@ -516,6 +555,9 @@ function createPlanAccumulator({
         ? []
         : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
     ctsConstraints: [],
+    // 6/16 Optimization - Option 1 and Option 4: Track whether any CTS
+    // constraint is expected to contribute meaningful relevance scoring.
+    hasScoringCtsConstraints: false,
     conjunctionJoins: [],
     // AND-encounters-OR sub-plans deferred until assemblePlan, where
     // 2+ are combined off the outer fragment before being joined back in.
@@ -862,6 +904,9 @@ function buildConjunctionJoin({
       const wrapLogic = negateFold ? 'not' : assemblyContext.logicType;
       return {
         ctsConstraint: wrapCtsByLogicType(wrapLogic, acc.ctsConstraints),
+        // 6/16 Optimization - Option 1 and Option 4: Folded subgroups must
+        // carry their scoring eligibility back to the parent accumulator.
+        hasScoringCtsConstraints: acc.hasScoringCtsConstraints,
       };
     }
     return { plan: assemblePlan(scp, { ...acc, ...assemblyContext }) };
@@ -954,6 +999,9 @@ function assemblePlan(
     lexicons,
     constraints,
     ctsConstraints,
+    // 6/16 Optimization - Option 1 and Option 4: Bring score eligibility
+    // into scope for selective fromSearch gating.
+    hasScoringCtsConstraints,
     conjunctionJoins,
     andOrSubPlans,
     patternJoins,
@@ -977,7 +1025,13 @@ function assemblePlan(
     const ctsQuery = wrapCtsByLogicType(logicType, ctsConstraints);
     // TODO, FUNC: Scores are only requested for top-level plans. Consider
     // whether sub-plan scores should contribute to the final relevance ranking.
-    const wantScore = isTopLevel && scp.getSortCriteria()?.areScoresRequired();
+    // 6/16 Optimization - Option 1 and Option 4: Only use scored fromSearch
+    // when the CTS layer contains meaningful relevance terms; use direct
+    // lexicon constraint for pure filters.
+    const wantScore =
+      isTopLevel &&
+      scp.getSortCriteria()?.areScoresRequired() &&
+      hasScoringCtsConstraints;
     if (wantScore) {
       // Use op.fromSearch to obtain the score column for relevance sorting.
       // Only done at the top level; sub-plans use plan.where to avoid
@@ -990,6 +1044,8 @@ function assemblePlan(
         op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol('fragmentId')),
       );
     } else {
+      // 6/16 Optimization - Option 1 and Option 4: Direct lexicon constraint
+      // (Option 1) when no meaningful scoring is present.
       plan = plan.where(ctsQuery);
     }
   }
@@ -1360,8 +1416,14 @@ function buildSortedResultsPlan({
     );
   }
 
-  if (sortCriteria?.areScoresRequired() && acc.ctsConstraints.length > 0) {
+  if (
+    sortCriteria?.areScoresRequired() &&
+    acc.ctsConstraints.length > 0 &&
+    acc.hasScoringCtsConstraints
+  ) {
     // Relevance sort — use the score column produced by op.fromSearch.
+    // 6/16 Optimization - Option 1 and Option 4: Only collapse on score
+    // when the CTS layer contains meaningful relevance terms, not pure filters.
     const scoreColName = 'score';
     // TODO, FUNC: Using op.max to aggregate scores across fragments. Should
     // we use op.sum (rewards matching across multiple fragments) or keep

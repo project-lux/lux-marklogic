@@ -41,6 +41,10 @@ class SearchPatternBase extends SearchPatternInterface {
   onlyAcceptsAtomicValue() {
     return this.getAllowedChildren() === CHILD_TYPE_ATOMIC;
   }
+
+  contributesRelevanceScore() {
+    return false;
+  }
   //#endregion
 }
 

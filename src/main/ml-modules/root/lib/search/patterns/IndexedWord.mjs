@@ -48,6 +48,10 @@ class IndexedWord extends SearchPatternBase {
   getDefaultSearchOptionsName() {
     return SEARCH_OPTIONS_NAME_KEYWORD;
   }
+
+  contributesRelevanceScore() {
+    return true;
+  }
 }
 
 const PATTERN_NAME_INDEXED_WORD = 'indexedWord';

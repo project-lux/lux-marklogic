@@ -12,9 +12,9 @@
  *   - sort_          — non-semantic sort column prefix (e.g. sort_agentActiveStartDateLong)
  *
  * Additionally verifies that unsorted plans are consistent across sort
- * criteria that share the same areScoresRequired() value:
- *   - Group A (areScoresRequired = true): empty, 'relevance', non-semantic sorts
- *   - Group B (areScoresRequired = false): 'random', semantic sorts
+ * criteria that share the same score-injection behavior for this query shape:
+ *   - Group A: scores requested and criteria contributes scores
+ *   - Group B: scores not requested
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
@@ -27,7 +27,7 @@ console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
-// Keyword search produces CTS constraints — exercises the areScoresRequired path.
+// Keyword search produces score-contributing CTS constraints.
 const TEXT_CRITERIA = { _scope: 'agent', text: 'Pablo' };
 
 // Markers that are exclusively produced by sort branches and must never
@@ -38,9 +38,9 @@ const SORT_ONLY_MARKERS = ['randomSortCol', 'sortByMe', 'orderBy', 'sort_'];
 // unsorted plan for marker and consistency assertions.
 //
 // consistencyGroup groups scenarios that should produce identical unsorted
-// plans (same areScoresRequired value with the same search criteria).
+// plans (same score-injection behavior with the same search criteria).
 const scenarios = [
-  // --- Group A: areScoresRequired() = true ---
+  // --- Group A: scores requested and criteria contributes scores ---
   {
     name: 'No sort string (default relevance)',
     input: { sortDelimitedStr: '' },
@@ -72,7 +72,7 @@ const scenarios = [
     consistencyGroup: 'A',
   },
 
-  // --- Group B: areScoresRequired() = false ---
+  // --- Group B: scores not requested ---
   {
     name: 'Random sort',
     input: { sortDelimitedStr: 'random' },
@@ -158,7 +158,7 @@ if (unsortedByGroup['A'] && unsortedByGroup['B']) {
     testHelperProxy.assertNotEqual(
       unsortedByGroup['A'].source,
       unsortedByGroup['B'].source,
-      'Group A (areScoresRequired=true) and Group B (areScoresRequired=false) unsorted plans should differ',
+      'Group A (score-injecting) and Group B (non-score-injecting) unsorted plans should differ',
     ),
   );
 }

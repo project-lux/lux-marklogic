@@ -4,11 +4,14 @@
  * Tests sort precedence (random > non-semantic > semantic > relevance > unsorted)
  * and that each branch produces distinguishing plan markers.
  *
- * Note: fromSearch is injected by assemblePlan whenever areScoresRequired() is
- * true — that is independent of which sort branch runs. Non-semantic sort
- * coexists with fromSearch because SortCriteria keeps #relevanceSort = true
- * (the default) when non-semantic descriptors are added. Random and semantic
- * sort clear relevance, so their plans do NOT have fromSearch.
+ * Note: fromSearch is injected by assemblePlan only when two conditions are
+ * both true:
+ *   1. SortCriteria requests scores (default relevance or non-semantic sort)
+ *   2. The processed criteria includes at least one score-contributing pattern
+ *      (currently keyword or indexedWord)
+ *
+ * Non-semantic sort can therefore coexist with fromSearch for keyword-style
+ * searches, while random and semantic sort clear relevance and skip fromSearch.
  *
  * Uses a keyword text search ('Pablo') so CTS constraints are present — the
  * relevance branch requires them.
@@ -24,13 +27,22 @@ console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
-// Shared search criteria that produces CTS constraints (needed for relevance sort).
+// Shared search criteria that produces score-contributing CTS constraints.
 const TEXT_CRITERIA = { _scope: 'agent', text: 'Pablo' };
 
 // Search criteria with no CTS constraints (ID-based, uses indexedValue pattern).
 const ID_CRITERIA = {
   _scope: 'agent',
   id: 'https://lux.collections.yale.edu/data/person/mock-id',
+};
+
+// Search criteria with CTS constraints that do not contribute relevance scores.
+const NON_SCORING_CTS_CRITERIA = {
+  _scope: 'agent',
+  OR: [
+    { id: 'https://lux.collections.yale.edu/data/person/mock-id-1' },
+    { id: 'https://lux.collections.yale.edu/data/person/mock-id-2' },
+  ],
 };
 
 const scenarios = [
@@ -66,6 +78,24 @@ const scenarios = [
     input: {
       scopeName: 'agent',
       searchCriteria: ID_CRITERIA,
+      sortDelimitedStr: 'relevance',
+    },
+    expected: {
+      error: false,
+      sortedPlanExcludes: [
+        'fromSearch',
+        'score',
+        'randomSortCol',
+        'fromTriples',
+      ],
+      sortedMatchesUnsorted: true,
+    },
+  },
+  {
+    name: 'Relevance with non-scoring CTS constraints falls through to unsorted',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: NON_SCORING_CTS_CRITERIA,
       sortDelimitedStr: 'relevance',
     },
     expected: {
@@ -147,6 +177,19 @@ const scenarios = [
       // Non-semantic sort coexists with fromSearch (relevance is still true).
       sortedPlanContains: ['agentActiveStartDateLong', 'fromSearch'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
+    },
+  },
+  {
+    name: 'Non-semantic sort with non-scoring CTS constraints skips fromSearch',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: NON_SCORING_CTS_CRITERIA,
+      sortDelimitedStr: 'agentActiveDate',
+    },
+    expected: {
+      error: false,
+      sortedPlanContains: ['agentActiveStartDateLong'],
+      sortedPlanExcludes: ['randomSortCol', 'fromTriples', 'fromSearch'],
     },
   },
   {

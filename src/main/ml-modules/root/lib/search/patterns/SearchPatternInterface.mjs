@@ -45,6 +45,36 @@ class SearchPatternInterface {
     );
   }
 
+  // Indicates whether this pattern's CTS query output has scoring semantics.
+  // Must return a consistent value across all execution paths; patterns must
+  // produce either always-scoring or always-non-scoring CTS queries regardless
+  // of logicType, options, or other runtime context.
+  //
+  // If a new or modified pattern requires runtime context to determine scoring
+  // capability (e.g., range queries with optional score-function options, or
+  // conditional CTS functions based on dynamic state), an option is to extend
+  // this method signature:
+  //   contributesRelevanceScore(scp, searchTerm, logicType)
+  //
+  // CTS functions used by LUX that return relevance scores by default (return true):
+  //   - cts.fieldWordQuery() not in where()
+  //
+  // CTS functions used by LUX that DO NOT score by default (return false):
+  //   - cts.fieldRangeQuery()
+  //   - cts.geospatialRegionQuery()
+  //   - cts.pathGeospatialQuery()
+  //   - cts.tripleRangeQuery()
+  //
+  // CTS functions used by LUX that CANNOT return relevance scores (return false):
+  //   - cts.collectionQuery()
+  //   - cts.documentQuery()
+  //   - cts.fieldValueQuery()
+  contributesRelevanceScore() {
+    throw new NotImplementedError(
+      `${this.constructor.name}.contributesRelevanceScore must be implemented.`,
+    );
+  }
+
   //#region Types of children allowed by the pattern; impl'd by base class.
   acceptsGroup() {
     throw new NotImplementedError(

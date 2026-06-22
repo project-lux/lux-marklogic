@@ -15,10 +15,10 @@ const SortCriteria = class {
 
   // Accepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
-  constructor(scopeName, sortCriteriaStr, relevanceSort = false) {
+  constructor(scopeName, sortCriteriaStr) {
     this.#scopeName = scopeName;
     this.#sortCriteriaStr = sortCriteriaStr;
-    this.#relevanceSort = relevanceSort;
+    this.#relevanceSort = true; // default
     this.#parse();
   }
 

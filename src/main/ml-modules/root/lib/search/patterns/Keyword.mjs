@@ -95,6 +95,10 @@ class Keyword extends SearchPatternBase {
   getDefaultSearchOptionsName() {
     return SEARCH_OPTIONS_NAME_KEYWORD;
   }
+
+  contributesRelevanceScore() {
+    return true;
+  }
 }
 
 // Builds a single CTS field query, or an AND of them when multiple values

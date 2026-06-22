@@ -154,10 +154,6 @@ const SearchCriteriaProcessor = class {
     this.#sortCriteria = new SortCriteria(
       this.#scopeName,
       this.#sortDelimitedStr,
-      this.#requiresRelevanceSort(
-        this.#resolvedSearchCriteria,
-        this.#scopeName,
-      ),
     );
 
     return this; // supports chaining from prepare to execute
@@ -462,36 +458,6 @@ const SearchCriteriaProcessor = class {
   //#endregion
 
   //#region Private instance methods
-
-  // Returns true if any top-level term in the criteria uses the indexedWord or keyword
-  // pattern, which requires relevance scoring. Recurses into AND/OR/NOT groups but not
-  // into the values of hop-type terms (e.g. {"producedBy": {"name": "..."}} only checks
-  // producedBy, not name). Branches that declare their own _scope use it for the lookup.
-  #requiresRelevanceSort(criteria, scopeName) {
-    if (!criteria) return false;
-    const effectiveScopeName = criteria._scope ?? scopeName;
-    if (!effectiveScopeName) {
-      return false;
-    }
-    if (criteria.AND) {
-      return criteria.AND.some((item) =>
-        this.#requiresRelevanceSort(item, effectiveScopeName),
-      );
-    } else if (criteria.OR) {
-      return criteria.OR.some((item) =>
-        this.#requiresRelevanceSort(item, effectiveScopeName),
-      );
-    } else if (criteria.NOT) {
-      return criteria.NOT.some((item) =>
-        this.#requiresRelevanceSort(item, effectiveScopeName),
-      );
-    }
-    const termName = Object.keys(criteria).find((k) => !k.startsWith('_'));
-    if (!termName) return false;
-    const rawConfig = getSearchTermConfig(effectiveScopeName, termName);
-    const patternName = rawConfig?.patternName;
-    return patternName === 'indexedWord' || patternName === 'keyword';
-  }
 
   #initProcessState({
     scopeName,

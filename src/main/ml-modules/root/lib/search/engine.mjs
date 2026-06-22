@@ -266,6 +266,7 @@ function buildPlans({
     unsortedResultsPlan,
     sortCriteria,
     acc,
+    hasScoreContributingCriteria: assemblyContext.hasScoreContributingCriteria,
     assemblyContext,
     scp,
     groups,
@@ -325,6 +326,7 @@ function buildCriteriaAccumulator({
   });
 
   let usableLeafTermCount = 0;
+  let hasScoreContributingCriteria = false;
 
   // Loop through search criteria, building the accumulator.
   // criteria.length is evaluated each iteration — NOT cached — because
@@ -423,6 +425,8 @@ function buildCriteriaAccumulator({
 
     scp.incrementCriteriaCount();
     usableLeafTermCount++;
+    hasScoreContributingCriteria ||=
+      patternInstance.contributesRelevanceScore();
     mergeTermPlanContributions(
       acc,
       criteria,
@@ -464,6 +468,7 @@ function buildCriteriaAccumulator({
     scope,
     logicType,
     isTopLevel,
+    hasScoreContributingCriteria,
   };
   return { acc, assemblyContext };
 }
@@ -963,6 +968,7 @@ function assemblePlan(
     scope,
     logicType,
     isTopLevel,
+    hasScoreContributingCriteria = false,
   },
 ) {
   let plan = op.fromLexicons(lexicons, null, op.fragmentIdCol(fragCol));
@@ -977,7 +983,10 @@ function assemblePlan(
     const ctsQuery = wrapCtsByLogicType(logicType, ctsConstraints);
     // TODO, FUNC: Scores are only requested for top-level plans. Consider
     // whether sub-plan scores should contribute to the final relevance ranking.
-    const wantScore = isTopLevel && scp.getSortCriteria()?.areScoresRequired();
+    const wantScore =
+      isTopLevel &&
+      hasScoreContributingCriteria &&
+      scp.getSortCriteria()?.areScoresRequired();
     if (wantScore) {
       // Use op.fromSearch to obtain the score column for relevance sorting.
       // Only done at the top level; sub-plans use plan.where to avoid
@@ -1300,6 +1309,7 @@ function buildSortedResultsPlan({
   unsortedResultsPlan,
   sortCriteria,
   acc,
+  hasScoreContributingCriteria = false,
   assemblyContext,
   scp,
   groups,
@@ -1360,7 +1370,11 @@ function buildSortedResultsPlan({
     );
   }
 
-  if (sortCriteria?.areScoresRequired() && acc.ctsConstraints.length > 0) {
+  if (
+    sortCriteria?.areScoresRequired() &&
+    hasScoreContributingCriteria &&
+    acc.ctsConstraints.length > 0
+  ) {
     // Relevance sort — use the score column produced by op.fromSearch.
     const scoreColName = 'score';
     // TODO, FUNC: Using op.max to aggregate scores across fragments. Should

@@ -128,8 +128,16 @@ const scenarios = [
     },
     expected: {
       error: false,
-      planContains: ['joinInner', 'fish'],
-      planExcludes: ['joinFullOuter', 'within', 'without', 'actually'],
+      // The all-stop-words AND branch is skipped; the fish AND branch folds into
+      // a pure-CTS constraint (cts.orQuery > cts.andQuery) rather than a joinInner.
+      planContains: ['cts.orQuery', 'cts.andQuery', 'fish'],
+      planExcludes: [
+        'joinInner',
+        'joinFullOuter',
+        'within',
+        'without',
+        'actually',
+      ],
     },
   },
 ];

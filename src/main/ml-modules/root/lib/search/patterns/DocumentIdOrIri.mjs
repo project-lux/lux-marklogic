@@ -11,7 +11,7 @@ class DocumentIdOrIri extends SearchPatternBase {
           constraints: [op.eq(op.col(uriCol), termValue)],
         }
       : {
-          // ctsContraints proven to be required for OR, at least given engine's
+          // ctsConstraints proven to be required for OR, at least given engine's
           // implementation at the time.
           ctsConstraints: [cts.documentQuery(termValue)],
         };

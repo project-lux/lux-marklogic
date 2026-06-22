@@ -20,7 +20,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 77,
+      value: 3,
     },
   },
   {
@@ -33,7 +33,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 1,
+      value: 0,
     },
   },
   {
@@ -46,7 +46,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 1,
+      value: 0,
     },
   },
   {
@@ -66,7 +66,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 2,
+      value: 0,
     },
   },
   {
@@ -80,7 +80,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 15,
+      value: 8,
     },
   },
   {
@@ -95,7 +95,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 15,
+      value: 8,
     },
   },
   {
@@ -110,7 +110,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 15,
+      value: 8,
     },
   },
   {
@@ -125,7 +125,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 15,
+      value: 8,
     },
   },
   {
@@ -139,7 +139,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 23368,
+      value: 4034,
     },
   },
   {
@@ -153,7 +153,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 114,
+      value: 49,
     },
   },
   {
@@ -167,7 +167,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 99,
+      value: 41,
     },
   },
   {
@@ -181,7 +181,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 23269,
+      value: 3993,
     },
   },
   {
@@ -195,7 +195,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 23284,
+      value: 4001,
     },
   },
   {
@@ -225,7 +225,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 64,
+      value: 2,
     },
   },
   {
@@ -241,7 +241,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 63,
+      value: 2,
     },
   },
   {
@@ -257,7 +257,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 64,
+      value: 2,
     },
   },
   {
@@ -270,7 +270,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 18774,
+      value: 2600,
     },
   },
   {
@@ -283,7 +283,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 15449,
+      value: 2488,
     },
   },
   {
@@ -296,7 +296,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 15386,
+      value: 2486,
     },
   },
   {
@@ -309,7 +309,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 3389,
+      value: 114,
     },
   },
   {
@@ -322,7 +322,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 3452,
+      value: 116,
     },
   },
   // Two-date range '1790;1800': exercises the distinct startDateLong/endDateLong boundary-
@@ -338,7 +338,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 757,
+      value: 64,
     },
   },
   {
@@ -354,7 +354,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 18081,
+      value: 2538,
     },
   },
   {
@@ -370,7 +370,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 11598,
+      value: 2306,
     },
   },
   {
@@ -383,7 +383,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 10841,
+      value: 2242,
     },
   },
   {
@@ -396,7 +396,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 7240,
+      value: 296,
     },
   },
   {
@@ -412,7 +412,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 7997,
+      value: 360,
     },
   },
   {
@@ -422,7 +422,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 16,
+      value: 3,
     },
   },
   {
@@ -432,7 +432,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 4917,
+      value: 50,
     },
   },
   {
@@ -445,7 +445,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 43,
+      value: 2,
     },
   },
   {
@@ -467,7 +467,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 10912,
+      value: 55,
     },
   },
   {
@@ -488,7 +488,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 3,
+      value: 0,
     },
   },
   {
@@ -509,7 +509,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 10,
+      value: 0,
     },
   },
   {
@@ -533,7 +533,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 10,
+      value: 0,
     },
   },
   {
@@ -551,7 +551,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 9755,
+      value: 109,
     },
   },
   {
@@ -564,7 +564,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 10170,
+      value: 48,
     },
   },
   {
@@ -587,7 +587,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 140,
+      value: 4,
     },
   },
   {
@@ -610,7 +610,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 17,
+      value: 1,
     },
   },
   {
@@ -633,22 +633,22 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 2135,
+      value: 16,
     },
   },
   {
-    name: 'similar event',
+    name: 'similar agent',
     input: {
       searchCriteria: {
-        _scope: 'event',
-        _maxDistance: 0.5,
+        _scope: 'agent',
+        _maxDistance: 0.3,
         similar:
-          'https://lux.collections.yale.edu/data/activity/0102514a-03d8-4467-a84d-6b901cfae7c8',
+          'https://lux.collections.yale.edu/data/person/662aa06d-7c0e-4b5a-8614-807248851543',
       },
     },
     expected: {
       error: false,
-      value: 1,
+      value: 2,
     },
   },
   {
@@ -666,7 +666,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 8,
+      value: 0,
     },
   },
   {
@@ -740,7 +740,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 59,
+      value: 3,
     },
   },
   {
@@ -774,7 +774,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 2,
+      value: 0,
     },
   },
   {
@@ -788,7 +788,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 12,
+      value: 3,
     },
   },
   {
@@ -802,7 +802,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 5,
+      value: 40,
     },
   },
   {
@@ -816,7 +816,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      value: 2,
+      value: 37,
     },
   },
   {

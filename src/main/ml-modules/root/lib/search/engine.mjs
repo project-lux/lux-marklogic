@@ -173,7 +173,6 @@ function processCriteria({
   planCriteria,
   planScope = 'item',
   patternOptions,
-  groups = null,
   parentId = null,
   parentScope = null,
   allowMultiScope = false,
@@ -192,7 +191,30 @@ function processCriteria({
     patternOptions,
     parentScope,
   });
-  return assemblePlan(scp, { ...acc, ...assemblyContext });
+  let plan = assemblePlan(scp, { ...acc, ...assemblyContext });
+  if (parentId) {
+    // CRITICAL OPTIMIZATION (Opt 17): Do not remove this select barrier.
+    // Without it, MarkLogic's optimizer sees all columns across nested join
+    // levels, flattens the join tree, and picks cross-product hash-joins that
+    // explode to millions of intermediate rows (8+ seconds, 8GB memory).
+    // With it, the optimizer is forced to plan each level independently,
+    // reducing multi-hop queries from ~8400ms to ~11ms (764x improvement).
+    //
+    // Search this was found in:
+    // {
+    //   "_scope": "event",
+    //   "used": {
+    //     "containingItem": {
+    //       "producedBy": {
+    //         "id": "https://lux.collections.yale.edu/data/person/e17df9e9-7254-409f-98c3-7c2fb3e73cd1"
+    //       }
+    //     }
+    //   }
+    // }
+    const { iriCol, fragCol } = analysis.criteriaTree.columns;
+    plan = plan.select([iriCol, fragCol]);
+  }
+  return plan;
 }
 
 // Like processCriteria but returns a bare CTS query when the inner criteria

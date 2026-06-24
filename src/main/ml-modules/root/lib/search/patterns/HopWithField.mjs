@@ -204,7 +204,6 @@ select ?${id}_s ?${id}_o where {
       planCriteria: searchTerm.getCriteria(),
       planScope: termConfig.getTargetScopeName(),
       patternOptions: SCP.initializePatternOptions(),
-      groups: null, // groupBy here prevents grouping by at the end.
       parentId: searchTerm.getId(),
     });
   }

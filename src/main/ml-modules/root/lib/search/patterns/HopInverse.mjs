@@ -47,9 +47,6 @@ class HopInverse extends SearchPatternBase {
         planCriteria: searchTerm.getCriteria(),
         planScope: termConfig.getTargetScopeName(),
         patternOptions,
-        groups: {
-          by: [refFragCol],
-        },
         parentId: id,
       }),
       [

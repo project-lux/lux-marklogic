@@ -63,48 +63,10 @@ function createAnalysisResult({
   });
 }
 
-// Walks the IR tree, calling handlers for each node. Handlers:
-//   onLeaf(node, parent)  — called for leaf nodes
-//   onGroup(node, parent) — called for group nodes (before visiting children)
-function walkIR(node, handlers, parent = null) {
-  if (node.type === NODE_TYPE_LEAF) {
-    handlers.onLeaf?.(node, parent);
-  } else if (node.type === NODE_TYPE_GROUP) {
-    handlers.onGroup?.(node, parent);
-    for (const child of node.children) {
-      walkIR(child, handlers, node);
-    }
-  }
-}
-
-// Returns true if the IR subtree rooted at `node` contains any leaf
-// whose contributesScore flag is true.
-function hasScoreContributor(node) {
-  if (node.type === NODE_TYPE_LEAF) {
-    return node.contributesScore;
-  }
-  return node.children.some(hasScoreContributor);
-}
-
-// Collects all usable leaf nodes from the IR subtree.
-function collectLeaves(node) {
-  if (node.type === NODE_TYPE_LEAF) {
-    return [node];
-  }
-  const leaves = [];
-  for (const child of node.children) {
-    leaves.push(...collectLeaves(child));
-  }
-  return leaves;
-}
-
 export {
   NODE_TYPE_GROUP,
   NODE_TYPE_LEAF,
-  collectLeaves,
   createAnalysisResult,
   createGroupNode,
   createLeafNode,
-  hasScoreContributor,
-  walkIR,
 };

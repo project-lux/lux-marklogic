@@ -34,6 +34,7 @@ function makeStubScp(overrides = {}) {
     pageLength: 20,
   };
   const ignoredTerms = [];
+  let criteriaCount = 0;
   const state = { ...defaults, ...overrides };
   return {
     getIncludeSearchResults: () => state.includeSearchResults,
@@ -47,6 +48,8 @@ function makeStubScp(overrides = {}) {
     getPageLength: () => state.pageLength,
     addIgnoredTerm: (term) => ignoredTerms.push(term),
     getIgnoredTerms: () => ignoredTerms,
+    incrementCriteriaCount: () => criteriaCount++,
+    getCriteriaCount: () => criteriaCount,
   };
 }
 
@@ -129,7 +132,7 @@ const scenarios = [
     name: 'Returns null for unsupported criteria shape (OR)',
     input: {
       sortCriteria: relevanceSort(),
-      searchCriteria: { OR: [{ text: 'a' }, { text: 'b' }] },
+      searchCriteria: { OR: [{ text: 'alpha' }, { text: 'beta' }] },
     },
     expected: { error: false, null: true },
   },

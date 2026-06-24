@@ -58,7 +58,7 @@ function tryExecuteKeywordPageSlice(scp, analyzeLeafCriteria) {
   const scopeName = scp.getSearchScope();
   if (!scopeName) return null;
 
-  const analysis = analyzeLeafCriteria(scp, scp.getSearchCriteria(), scopeName);
+  const analysis = analyzeLeafCriteria(scp);
   if (!analysis) return null;
   if (
     !analysis.terms.every(

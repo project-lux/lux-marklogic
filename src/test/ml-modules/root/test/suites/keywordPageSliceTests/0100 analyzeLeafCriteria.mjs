@@ -15,11 +15,16 @@ console.log(`${LIB}: starting.`);
 
 let assertions = [];
 
-function makeStubScp() {
+function makeStubScp(criteria) {
   const ignoredTerms = [];
+  let criteriaCount = 0;
   return {
+    getSearchCriteria: () => criteria,
+    getSearchScope: () => 'item',
     addIgnoredTerm: (term) => ignoredTerms.push(term),
     getIgnoredTerms: () => ignoredTerms,
+    incrementCriteriaCount: () => criteriaCount++,
+    getCriteriaCount: () => criteriaCount,
   };
 }
 
@@ -64,13 +69,13 @@ const scenarios = [
     expected: { error: false, value: null },
   },
   {
-    name: 'AND with nested conjunction returns null',
+    name: 'AND with nested conjunction returns flattened terms',
     input: {
       criteria: {
         AND: [{ text: 'woman' }, { AND: [{ text: 'greek' }] }],
       },
     },
-    expected: { error: false, value: null },
+    expected: { error: false, value: ['woman', 'greek'] },
   },
   {
     name: 'Empty AND returns null',
@@ -86,8 +91,8 @@ const scenarios = [
 
 for (const scenario of scenarios) {
   const zeroArityFun = () => {
-    const scp = makeStubScp();
-    const result = analyzeLeafCriteria(scp, scenario.input.criteria, 'item');
+    const scp = makeStubScp(scenario.input.criteria);
+    const result = analyzeLeafCriteria(scp);
     if (!result) return null;
     return result.terms.map((t) => String(t.getValue()));
   };

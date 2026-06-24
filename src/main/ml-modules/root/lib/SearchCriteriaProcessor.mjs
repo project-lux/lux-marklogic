@@ -1,6 +1,12 @@
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
 import * as engine from './search/engine.mjs';
+import {
+  getChildId,
+  getFirstNonOptionPropertyName,
+  hasNonOptionPropertyName,
+  sanitizeAndValidateWildcardedStrings,
+} from './search/analyzeCriteria.mjs';
 import { PatternOptions } from './search/PatternOptions.mjs';
 import { SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC } from './SortCriteria.mjs';
 import {
@@ -370,7 +376,7 @@ const SearchCriteriaProcessor = class {
   }
 
   static sanitizeAndValidateWildcardedStrings(strOrArr) {
-    return engine.sanitizeAndValidateWildcardedStrings(strOrArr);
+    return sanitizeAndValidateWildcardedStrings(strOrArr);
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
@@ -400,16 +406,16 @@ const SearchCriteriaProcessor = class {
   }
 
   static getFirstNonOptionPropertyName(termValue) {
-    return engine.getFirstNonOptionPropertyName(termValue);
+    return getFirstNonOptionPropertyName(termValue);
   }
 
   static hasNonOptionPropertyName(termValue) {
-    return engine.hasNonOptionPropertyName(termValue);
+    return hasNonOptionPropertyName(termValue);
   }
 
-  // Pass-through method; canonical implementation in engine.getChildId.
+  // Pass-through method; canonical implementation in analyzeCriteria.getChildId.
   static getChildId(termValue) {
-    return engine.getChildId(termValue);
+    return getChildId(termValue);
   }
 
   static requireSearchCriteriaObject(searchCriteria) {

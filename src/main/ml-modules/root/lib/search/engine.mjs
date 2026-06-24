@@ -2,45 +2,27 @@
 
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
-import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
+import { getSearchScopeTypes } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
 import { isSemanticFacet } from '../facetsLib.mjs';
-import {
-  getSearchTermNames,
-  getSearchTermConfig,
-} from '../../config/searchTermsConfig.mjs';
 import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import {
-  DEFAULT_SEARCH_OPTIONS_EXACT,
-  DEFAULT_SEARCH_OPTIONS_KEYWORD,
-  SEARCH_OPTIONS_INVERSE_MAP,
-  SEARCH_OPTIONS_NAME_EXACT,
-  SEARCH_OPTIONS_NAME_KEYWORD,
   SEARCH_PAGE_SLICE_ENABLED,
   SEMANTIC_SORT_TIMEOUT,
 } from '../appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
-  NotImplementedError,
 } from '../errorClasses.mjs';
 import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
-import { SearchTerm } from './SearchTerm.mjs';
-import { SearchTermConfig } from './SearchTermConfig.mjs';
-import { PatternOptions } from './PatternOptions.mjs';
 import { tryExecuteKeywordPageSlice } from './keywordPageSlice.mjs';
-import {
-  CHILD_TYPE_ATOMIC,
-  CHILD_TYPE_GROUP,
-  CHILD_TYPE_TERM,
-  PATTERN_NAME_INDEXED_VALUE,
-  SearchPatternBase,
-} from './patterns/loadPatterns.mjs';
+import { SearchPatternBase } from './patterns/loadPatterns.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
-import { STOP_WORDS } from '../../data/stopWords.mjs';
+import { NODE_TYPE_GROUP } from './criteriaNodes.mjs';
+import { analyzeCriteria } from './analyzeCriteria.mjs';
 //#endregion
 
 //#region Constants
@@ -90,11 +72,23 @@ function performSearch(scp) {
         scp.setSortCriteria(null);
       }
 
+      // Run analysis once (Pass 1). The result is used for both page-slice
+      // eligibility and — if the page-slice path is not taken — plan
+      // construction (Pass 2).
+      const analysis = analyzeCriteria({
+        scp,
+        planCriteria: searchCriteria,
+        planScope: searchScope,
+        allowMultiScope,
+      });
+
       // Simple-keyword queries can bypass the Optic pipeline entirely
       // (cts.search → top-K → hydrate dataType). Returns null when the
       // request is not eligible; see lib/search/keywordPageSlice.mjs.
       const pageSlice = SEARCH_PAGE_SLICE_ENABLED
-        ? tryExecuteKeywordPageSlice(scp, analyzeLeafCriteria)
+        ? tryExecuteKeywordPageSlice(scp, (_scp) =>
+            getLeafTermsFromAnalysis(analysis),
+          )
         : null;
       if (pageSlice) {
         const paginationResult = paginateResults({
@@ -115,9 +109,7 @@ function performSearch(scp) {
 
       const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({
         scp,
-        planCriteria: searchCriteria,
-        planScope: searchScope,
-        allowMultiScope,
+        analysis,
         groups: getResultRowGrouping(),
         sortCriteria: scp.getSortCriteria(),
         patternOptions,
@@ -187,14 +179,19 @@ function processCriteria({
   parentScope = null,
   allowMultiScope = false,
 }) {
-  const { acc, assemblyContext } = buildCriteriaAccumulator({
+  const analysis = analyzeCriteria({
     scp,
     planCriteria,
     planScope,
-    patternOptions,
     parentId,
     parentScope,
     allowMultiScope,
+  });
+  const { acc, assemblyContext } = buildAccumulatorFromIR({
+    scp,
+    analysis,
+    patternOptions,
+    parentScope,
   });
   return assemblePlan(scp, { ...acc, ...assemblyContext });
 }
@@ -212,15 +209,20 @@ function processCriteriaAsCts({
   patternOptions,
   parentId = null,
 }) {
-  const { acc, assemblyContext } = buildCriteriaAccumulator({
+  const analysis = analyzeCriteria({
     scp,
     planCriteria,
     planScope,
-    patternOptions,
     parentId,
     // Set parentScope = planScope so the accumulator skips the dataType
     // constraint (empty-groups optimization). The caller resolves IRIs via
     // cts.values; the triple predicate already scopes the objects.
+    parentScope: planScope,
+  });
+  const { acc, assemblyContext } = buildAccumulatorFromIR({
+    scp,
+    analysis,
+    patternOptions,
     parentScope: planScope,
   });
   if (!accContainsOnly(acc, 'ctsConstraints')) {
@@ -239,8 +241,10 @@ function getResultRowGrouping() {
 
 // Top-level entry point called from performSearch — returns sorted and
 // unsorted plans with finalization and optional sort applied.
+// Accepts either a pre-computed analysis result or raw criteria params.
 function buildPlans({
   scp,
+  analysis: precomputedAnalysis = null,
   planCriteria,
   planScope = 'item',
   patternOptions,
@@ -248,12 +252,19 @@ function buildPlans({
   groups,
   sortCriteria = null,
 }) {
-  const { acc, assemblyContext } = buildCriteriaAccumulator({
+  const analysis =
+    precomputedAnalysis ??
+    analyzeCriteria({
+      scp,
+      planCriteria,
+      planScope,
+      allowMultiScope,
+    });
+
+  const { acc, assemblyContext } = buildAccumulatorFromIR({
     scp,
-    planCriteria,
-    planScope,
+    analysis,
     patternOptions,
-    allowMultiScope,
   });
 
   // Unsorted plan — used by facets.
@@ -266,7 +277,7 @@ function buildPlans({
     unsortedResultsPlan,
     sortCriteria,
     acc,
-    hasScoreContributingCriteria: assemblyContext.hasScoreContributingCriteria,
+    hasScoreContributingCriteria: analysis.hasScoreContributingCriteria,
     assemblyContext,
     scp,
     groups,
@@ -276,42 +287,23 @@ function buildPlans({
 }
 //#endregion
 
-//#region Core engine functions
-// Builds the raw plan accumulator from search criteria.  Shared by both
-// top-level (buildPlans) and recursive (processCriteria) paths.
-function buildCriteriaAccumulator({
+//#region Core engine functions — Pass 2 (plan construction from IR)
+
+// Builds the raw plan accumulator by walking the IR tree produced by
+// analyzeCriteria (Pass 1). Each leaf node's pattern.apply() is called here;
+// conjunction sub-groups are recursively accumulated and assembled into
+// sub-plans as needed.
+function buildAccumulatorFromIR({
   scp,
-  planCriteria,
-  planScope = 'item',
+  analysis,
   patternOptions,
-  parentId = null,
   parentScope = null,
-  allowMultiScope = false,
 }) {
-  const isTopLevel = !parentId;
-  const uriCol = isTopLevel ? 'uri' : parentId + '_uri';
-  const fragCol = isTopLevel ? 'frag' : parentId + '_frag';
-  const iriCol = isTopLevel ? 'iri' : parentId + '_iri';
-  const dataTypeCol = isTopLevel ? 'dataType' : parentId + '_dataType';
+  const { ir, scope, isMultiScope } = analysis;
+  const { uriCol, fragCol, iriCol, dataTypeCol } = ir.columns;
+  const isTopLevel = ir.isTopLevel;
+  const logicType = ir.conjunctionType;
 
-  if (!utils.isDefined(planCriteria)) {
-    throw new InvalidSearchRequestError('search criteria must be defined.');
-  }
-
-  let scope = isTopLevel ? (planCriteria._scope ?? planScope) : planScope;
-
-  const isMultiScope = scope === 'multi';
-  if (isMultiScope) {
-    validateMultiScopeCriteria(planCriteria, isTopLevel, allowMultiScope);
-  }
-
-  let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
-
-  let { criteria, logicType } = parseCriteriaAndLogicType(planCriteria);
-
-  // Empty-groups optimization: if the caller already constrains results to a
-  // single scope and this sub-plan is for the same scope, the dataType
-  // constraint on this sub-plan is redundant. Skip emitting it.
   const scopeAlreadyConstrained =
     !isTopLevel && !isMultiScope && parentScope === scope;
 
@@ -325,135 +317,45 @@ function buildCriteriaAccumulator({
     isMultiScope,
   });
 
-  let usableLeafTermCount = 0;
-  let hasScoreContributingCriteria = false;
-
-  // Loop through search criteria, building the accumulator.
-  // criteria.length is evaluated each iteration — NOT cached — because
-  // tokenization, conjunction inlining, and pattern contributions all push
-  // new entries onto the array that must be processed in the same pass.
-  for (let idx = 0; idx < criteria.length; idx++) {
-    const criterion = criteria[idx];
-
-    if (isMultiScope) {
-      scope = criterion._scope;
-      searchTermNames = getSearchTermNames(scope);
-    }
-
-    // Used when creating a new column that needs to be joined or filtered.
-    const id = sem.uuidString().replace(/-/g, '_');
-
-    // If the criterion is a nested conjunction, resolve it to a join or inline expansion
-    if (criterion.AND || criterion.OR || criterion.NOT) {
-      const result = buildConjunctionJoin({
-        criterion,
+  for (const child of ir.children) {
+    if (child.type === NODE_TYPE_GROUP) {
+      const result = buildConjunctionFromIR({
+        groupNode: child,
         logicType,
         scope,
         patternOptions,
-        id,
         uriCol,
         fragCol,
         scp,
-        // Parent's plan only constrains scope when the parent itself is not
-        // multi-scope. Sub-plans use this to decide whether they can skip
-        // their own dataType constraint and whether their pure-CTS form can
-        // be folded into the parent's ctsConstraints.
         parentIsScopeConstrained: !isMultiScope,
       });
-      if (result.skip) {
-        // The sub-group's criteria were all filtered (e.g. stop words); treat
-        // the group as non-existent so it doesn't contribute an empty plan.
-      } else if (result.inlineCriteria) {
-        criteria.push(...result.inlineCriteria);
-      } else if (result.ctsConstraint) {
-        // Pure-CTS sub-plan folded directly into our ctsConstraints; the wrap
-        // in assemblePlan (and/or/notQuery) composes correctly with the
-        // sub's already-wrapped query as a peer.
+      if (result.ctsConstraint) {
         acc.ctsConstraints.push(result.ctsConstraint);
       } else if (result.andOrSubPlan) {
-        // Deferred: AND-encounters-OR sub-plans are combined off the outer
-        // fragment in assemblePlan to avoid SPARQL fusion when 2+ are
-        // chained against the same outer (which silently zeroes results or
-        // blows memory). See docs/optic-lessons.md.
         acc.andOrSubPlans.push(result.andOrSubPlan);
       } else if (result.join) {
         acc.conjunctionJoins.push(result.join);
-      } else {
-        throw new InternalServerError(
-          `buildConjunctionJoin's return did not include a recognized property: ${JSON.stringify(Object.keys(result))}`,
-        );
       }
-      continue;
-    }
-
-    const name = Object.keys(criterion).find(
-      (k) => k[0] !== '_' && searchTermNames.includes(k),
-    );
-    if (!name) {
-      throw new InvalidSearchRequestError(
-        `search term does not specify a term name in criteria ${JSON.stringify(criterion)}.`,
+    } else {
+      // Leaf node — call the pattern's apply method.
+      const contributions = child.patternInstance.apply(
+        scp,
+        child.searchTerm,
+        logicType,
+        patternOptions,
       );
+      mergeTermPlanContributions(acc, contributions);
     }
-    const searchTerm = buildLeafSearchTerm(scp, {
-      criterion,
-      id,
-      name,
-      scope,
-      isTopLevel,
-      iriCol,
-      uriCol,
-      fragCol,
-      dataTypeCol,
-    });
-
-    if (!searchTerm.isUsable()) {
-      continue;
-    }
-
-    const patternInstance = SearchPatternBase.get(
-      searchTerm.getSearchTermConfig().getPatternName(),
-    );
-
-    // When allowed by the pattern, tokenize multi-word string values into an
-    // AND group so each word is searched independently.  The returned criterion
-    // is pushed onto the live criteria queue for the dynamic for-loop to pick up.
-    const tokenizedCriterion = tokenizeTermValue(patternInstance, searchTerm);
-    if (tokenizedCriterion) {
-      criteria.push(tokenizedCriterion);
-      continue;
-    }
-
-    scp.incrementCriteriaCount();
-    usableLeafTermCount++;
-    hasScoreContributingCriteria ||=
-      patternInstance.contributesRelevanceScore();
-    mergeTermPlanContributions(
-      acc,
-      criteria,
-      patternInstance.apply(scp, searchTerm, logicType, patternOptions),
-    );
   }
 
-  // Guard against searches composed entirely of stop words / punctuation.
-  if (isTopLevel && scp.getCriteriaCount() < 1) {
-    const ignored = scp.getIgnoredTerms();
-    if (ignored.length > 0) {
-      throw new InvalidSearchRequestError(
-        `the search criteria given only contains '${ignored.join("', '")}', which is an ignored term(s). Please consider creating phrases using double quotes and/or adding additional criteria.`,
-      );
-    }
-    throw new InvalidSearchRequestError('more search criteria is required.');
-  }
-
-  // A single-branch OR is semantically equivalent to AND. Collapsing avoids
-  // a joinFullOuter against the base plan, which would include every doc in
-  // the search scope.
-  const usableBranchCount =
-    acc.conjunctionJoins.length +
-    acc.andOrSubPlans.length +
-    usableLeafTermCount;
-  if (logicType === 'or' && usableBranchCount === 1) {
-    logicType = 'and';
+  // Single-branch OR collapse was already handled in Pass 1 (the IR's
+  // conjunctionType is 'and' when collapsed). But conjunctionJoins built
+  // in Pass 2 may still carry joinFullOuter from pre-collapse state.
+  // Re-check and fix up here.
+  if (
+    logicType === 'and' &&
+    acc.conjunctionJoins.length + acc.andOrSubPlans.length === 1
+  ) {
     for (const join of acc.conjunctionJoins) {
       if (join.type === 'joinFullOuter') {
         join.type = 'joinInner';
@@ -468,35 +370,9 @@ function buildCriteriaAccumulator({
     scope,
     logicType,
     isTopLevel,
-    hasScoreContributingCriteria,
+    hasScoreContributingCriteria: analysis.hasScoreContributingCriteria,
   };
   return { acc, assemblyContext };
-}
-
-// Parses a planCriteria object into a mutable array of criteria and a logic type
-// ('and', 'or', or 'not'). A bare object (no AND/OR/NOT key) is treated as a
-// single-element AND array.
-function parseCriteriaAndLogicType(planCriteria) {
-  let criteria;
-  let logicType;
-  if (planCriteria.AND) {
-    criteria = xdmp.toJSON(planCriteria.AND).toObject();
-    logicType = 'and';
-  } else if (planCriteria.OR) {
-    criteria = xdmp.toJSON(planCriteria.OR).toObject();
-    logicType = 'or';
-  } else if (planCriteria.NOT) {
-    criteria = xdmp.toJSON(planCriteria.NOT).toObject();
-    logicType = 'not';
-  } else {
-    // Single criteria are equivalent to AND
-    criteria = [xdmp.toJSON(planCriteria).toObject()];
-    logicType = 'and';
-  }
-  return {
-    criteria,
-    logicType,
-  };
 }
 
 // Mutable accumulator for all pattern/conjunction contributions during criteria iteration.
@@ -522,224 +398,17 @@ function createPlanAccumulator({
         : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
     ctsConstraints: [],
     conjunctionJoins: [],
-    // AND-encounters-OR sub-plans deferred until assemblePlan, where
-    // 2+ are combined off the outer fragment before being joined back in.
     andOrSubPlans: [],
     patternJoins: [],
   };
 }
 
-// Constructs a SearchTerm for a single leaf criterion (non-conjunction).
-// Resolves the term's config, applies pattern requirements, casts the value
-// to the configured scalar type, validates wildcards, detects stop words,
-// and selects search options.  Unusable terms are marked as such and their
-// words are added to scp's ignored terms list.
-function buildLeafSearchTerm(
-  scp,
-  {
-    criterion,
-    id,
-    name,
-    scope,
-    isTopLevel,
-    iriCol,
-    uriCol,
-    fragCol,
-    dataTypeCol,
-  },
-) {
-  let termConfig = new SearchTermConfig(getSearchTermConfig(scope, name));
-
-  const searchTerm = new SearchTerm()
-    .addId(id)
-    .addName(name)
-    .addScopeName(scope)
-    .addSearchTermConfig(termConfig)
-    .addTopLevel(isTopLevel)
-    .addChildInfo(getChildInfo(scope, criterion[name]))
-    .addParentColumns({ iriCol, uriCol, fragCol, dataTypeCol })
-    .addCriteria(criterion[name]);
-
-  // Runtime search term properties are represented with leading underscores on criteria.
-  Object.keys(criterion)
-    .filter((k) => k.startsWith('_'))
-    .forEach((k) => {
-      searchTerm.addProperty(k.substring(1), criterion[k]);
-    });
-
-  applyPatternRequirements(searchTerm, termConfig);
-
-  // Validate that the pattern accepts the value's structural type.
-  const rawValue = searchTerm.getCriteria();
-  if (utils.isObject(rawValue)) {
-    // When the child term is { id: value } or { iri: value } and the config specifies ID index
-    // references, rewrite the search term to a simple indexedValue query on that index.  Skip when
-    // the search term is transitive as valid results would be dropped.
-    const childId = getChildId(rawValue);
-    if (
-      childId &&
-      termConfig.hasIdIndexReferences() &&
-      !termConfig.isTransitive()
-    ) {
-      termConfig = new SearchTermConfig({
-        indexReferences: termConfig.getIdIndexReferences(),
-        patternName: PATTERN_NAME_INDEXED_VALUE,
-        scalarType: 'string',
-        forceExactMatch: true,
-      });
-      searchTerm
-        .addName(name + 'Id')
-        .addSearchTermConfig(termConfig)
-        .setCriteria(childId);
-    } else if (rawValue.AND || rawValue.OR || rawValue.NOT) {
-      if (!termConfig.acceptsGroupAsChild()) {
-        throw new InvalidSearchRequestError(
-          `the '${name}' term contains a group but is not allowed to.`,
-        );
-      }
-    } else if (Object.keys(rawValue).some((k) => !k.startsWith('_'))) {
-      if (!termConfig.acceptsTermAsChild()) {
-        throw new InvalidSearchRequestError(
-          `the '${name}' term contains another term but is not allowed to.`,
-        );
-      }
-    }
-  } else if (!termConfig.acceptsAtomicValue()) {
-    throw new InvalidSearchRequestError(
-      `the search term '${name}' in scope '${scope}' does not accept atomic values.`,
-    );
-  }
-
-  // Cast value to the correct type if scalar and not dateTime.
-  let value;
-  const scalarType = termConfig.getScalarType();
-  const rawTermValue = searchTerm.getCriteria();
-  if (scalarType && scalarType !== 'dateTime') {
-    const caster = xs[scalarType];
-    if (typeof caster !== 'function') {
-      throw new InternalServerError(
-        `Search term '${searchTerm.getName()}' has invalid scalarType '${scalarType}': xs.${scalarType} is not a function.`,
-      );
-    }
-    value = caster(rawTermValue);
-  } else {
-    value = typeof rawTermValue === 'string' ? rawTermValue : null;
-  }
-  searchTerm.setValue(value);
-
-  // forceExactMatch overrides the configured options reference.
-  const searchOptions = resolveSearchOptions(
-    termConfig.isForceExactMatch()
-      ? SEARCH_OPTIONS_NAME_EXACT
-      : termConfig.getOptionsReference(),
-    termConfig.getPatternName(),
-    [],
-    searchTerm.getSearchOptions(),
-  );
-  searchTerm.setSearchOptions(searchOptions);
-
-  // Validate and sanitize wildcard characters for keyword-type terms.
-  const rawCriteria = searchTerm.getCriteria();
-  if (
-    typeof rawCriteria === 'string' &&
-    SearchPatternBase.get(
-      termConfig.getPatternName(),
-    ).getAllowedSearchOptionsName() === SEARCH_OPTIONS_NAME_KEYWORD &&
-    WILDCARD_CHAR_REGEX.test(rawCriteria)
-  ) {
-    searchTerm.setValue(sanitizeAndValidateWildcardedStrings(rawCriteria));
-  }
-
-  // Skip stop words and punctuation-only terms.
-  // Check the raw criteria (pre-cast JS string), not getValue() which may
-  // be an xs.string typed value that fails the typeof === 'string' guard.
-  const unusableWords = getUnusableTermWords(searchTerm.getCriteria());
-  if (unusableWords.length > 0) {
-    searchTerm.setUsable(false);
-    unusableWords.forEach((w) => scp.addIgnoredTerm(w));
-  }
-
-  return searchTerm;
-}
-
-// Analyzes search criteria into validated SearchTerm objects without building
-// an Optic plan or accumulator. Reuses parseCriteriaAndLogicType,
-// buildLeafSearchTerm, and tokenizeTermValue so criteria interpretation is
-// identical to buildCriteriaAccumulator.
-//
-// Returns null when the criteria are ineligible for leaf-only analysis:
-//   - OR or NOT logic type
-//   - Any nested conjunction (AND/OR/NOT criterion)
-//   - Unrecognized term name
-// Returns { terms: SearchTerm[], logicType: 'and' } when every criterion
-// resolves to a usable leaf term. Returns null when all terms are unusable
-// (stop words / punctuation) — the caller should treat that as ineligible.
-//
-// Side effect: may add ignored terms to scp via buildLeafSearchTerm.
-// Harmless — on success the standard path never runs; on bail it re-adds
-// the same terms.
-function analyzeLeafCriteria(scp, searchCriteria, scopeName) {
-  if (!searchCriteria || typeof searchCriteria !== 'object') return null;
-
-  const { criteria, logicType } = parseCriteriaAndLogicType(searchCriteria);
-  if (logicType !== 'and') return null;
-
-  const searchTermNames = getSearchTermNames(scopeName);
-  const terms = [];
-
-  // Dynamic loop — tokenizeTermValue may push new criteria (same pattern
-  // as buildCriteriaAccumulator).
-  for (let idx = 0; idx < criteria.length; idx++) {
-    const criterion = criteria[idx];
-
-    if (criterion.AND || criterion.OR || criterion.NOT) return null;
-
-    const name = Object.keys(criterion).find(
-      (k) => k[0] !== '_' && searchTermNames.includes(k),
-    );
-    if (!name) return null;
-
-    const searchTerm = buildLeafSearchTerm(scp, {
-      criterion,
-      id: `analyze_${idx}`,
-      name,
-      scope: scopeName,
-      isTopLevel: true,
-      iriCol: 'iri',
-      uriCol: 'uri',
-      fragCol: 'frag',
-      dataTypeCol: 'dataType',
-    });
-
-    if (!searchTerm.isUsable()) continue;
-
-    const patternInstance = SearchPatternBase.get(
-      searchTerm.getSearchTermConfig().getPatternName(),
-    );
-
-    const tokenizedCriterion = tokenizeTermValue(patternInstance, searchTerm);
-    if (tokenizedCriterion) {
-      criteria.push(...tokenizedCriterion.AND);
-      continue;
-    }
-
-    terms.push(searchTerm);
-  }
-
-  return terms.length > 0 ? { terms, logicType: 'and' } : null;
-}
-
 // Merges contributions from a pattern application into the accumulator.
-// criteriaQueue is the live criteria iteration array; pattern-returned criteria are pushed there
-// so they are processed in the same loop iteration pass.
-function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
+function mergeTermPlanContributions(acc, contributions) {
   if (!contributions) {
     return;
   }
   Object.assign(acc.lexicons, contributions.lexicons ?? {});
-  if (contributions.criteria?.length) {
-    criteriaQueue.push(...contributions.criteria);
-  }
   if (contributions.constraints?.length) {
     acc.constraints.push(...contributions.constraints);
   }
@@ -751,23 +420,53 @@ function mergeTermPlanContributions(acc, criteriaQueue, contributions) {
   }
 }
 
-// Resolves a nested conjunction criterion (AND/OR/NOT-keyed) into either a join descriptor,
-// inline criteria to be appended to the processing queue, a pure-CTS contribution to be
-// folded into the parent's ctsConstraints, or a skip signal when the sub-group's criteria
-// were all filtered out (e.g. stop words).
-// Returns: { join: ... } | { inlineCriteria: Array } | { andOrSubPlan: ... }
-//        | { ctsConstraint: ctsQuery } | { skip: true }
-function buildConjunctionJoin({
-  criterion,
+// Page-slice eligibility check using a pre-computed analysis result.
+// Returns { terms, logicType } when eligible, null otherwise.
+function getLeafTermsFromAnalysis(analysis) {
+  const ir = analysis.ir;
+  if (ir.conjunctionType !== 'and') return null;
+  if (ir.children.some((c) => c.type === NODE_TYPE_GROUP)) return null;
+  const terms = ir.children.map((leaf) => leaf.searchTerm);
+  return terms.length > 0 ? { terms, logicType: 'and' } : null;
+}
+
+// Lightweight entry point for page-slice eligibility: runs analyzeCriteria
+// on the SCP's current criteria/scope and extracts leaf terms when eligible.
+// Side effects (criteriaCount, ignoredTerms) fire — callers should treat
+// this as the definitive analysis pass.
+function analyzeLeafCriteria(scp) {
+  const searchCriteria = scp.getSearchCriteria();
+  const scopeName = scp.getSearchScope();
+  if (!searchCriteria || typeof searchCriteria !== 'object') return null;
+  try {
+    const analysis = analyzeCriteria({
+      scp,
+      planCriteria: searchCriteria,
+      planScope: scopeName,
+    });
+    return getLeafTermsFromAnalysis(analysis);
+  } catch (_e) {
+    return null;
+  }
+}
+
+// Resolves an IR group node into either a join descriptor, a pure-CTS
+// contribution to be folded into the parent's ctsConstraints, or a
+// deferred andOrSubPlan.
+// Returns: { join: ... } | { andOrSubPlan: ... } | { ctsConstraint: ctsQuery }
+function buildConjunctionFromIR({
+  groupNode,
   logicType,
   scope,
   patternOptions,
-  id,
   uriCol,
   fragCol,
   scp,
   parentIsScopeConstrained,
 }) {
+  const id = groupNode.id;
+  const subConjunctionType = groupNode.conjunctionType;
+
   const makeJoinOn = () =>
     patternOptions.getPreferFragJoins()
       ? op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(id + '_frag'))
@@ -781,10 +480,6 @@ function buildConjunctionJoin({
       ? op.as(fragCol, op.fragmentIdCol(id + '_frag'))
       : op.as(uriCol, op.col(id + '_uri'));
 
-  // --- Join-descriptor builders -----------------------------------------
-  // Each takes the assembled sub-plan and returns the join descriptor that
-  // buildConjunctionJoin's caller will push into the parent's join queue.
-  // Centralized so the 3x3 logic-type matrix below stays readable.
   const notExistsJoinDesc = (plan) => ({
     join: {
       type: 'notExistsJoin',
@@ -812,7 +507,6 @@ function buildConjunctionJoin({
       condition: null,
     },
   });
-  // andOrSubPlan is deferred to assemblePlan; see the AND-encounters-OR arm.
   const andOrSubPlanDesc = (plan) => {
     const cols = singleColSelect();
     return {
@@ -824,42 +518,22 @@ function buildConjunctionJoin({
     };
   };
 
-  // Builds the sub-accumulator and returns one of the shapes that
-  // buildConjunctionJoin itself emits, so the caller can either return the
-  // result directly or wrap an assembled plan via a join-descriptor builder:
-  //   1) { skip: true }         — sub had no usable criteria (passes through)
-  //   2) { ctsConstraint: q }   — sub is pure-CTS, folded into the parent's
-  //                                ctsConstraints (passes through)
-  //   3) { plan }               — sub assembled into a regular plan; the
-  //                                caller wraps it with the appropriate
-  //                                join-descriptor builder
-  //
-  // Folding requires:
-  //   - parent logicType is 'and' or 'or' (NOT composition with negation
-  //     conversion is not a simple peer push)
-  //   - sub contributes ONLY ctsConstraints (no joins, no patternJoins, no
-  //     andOrSubPlans, no extra constraints beyond the scope filter that has
-  //     already been suppressed via parentScope propagation)
-  // negateFold forces a folded sub to be wrapped as cts.notQuery(...) instead
-  // of using the sub's own logicType. Needed when the caller pre-rewrites a
-  // NOT criterion as {OR:[...]} for a notExistsJoin fallback path: the sub's
-  // own logicType is then 'or', but if the sub folds we must wrap as 'not' to
-  // preserve negation in the parent's ctsConstraints.
-  const buildSubOrFold = (planCriteria, negateFold = false) => {
-    const countBefore = scp.getCriteriaCount();
-    const { acc, assemblyContext } = buildCriteriaAccumulator({
+  // Build the sub-accumulator from the IR sub-group and check whether
+  // the result can be folded as pure CTS into the parent.
+  const buildSubOrFold = (irNode, negateFold = false) => {
+    const subAnalysis = {
+      ir: irNode,
+      scope: irNode.columns ? scope : scope,
+      isMultiScope: false,
+      hasScoreContributingCriteria: false,
+      usableLeafCount: 0,
+    };
+    const { acc, assemblyContext } = buildAccumulatorFromIR({
       scp,
-      planCriteria,
-      planScope: scope,
+      analysis: subAnalysis,
       patternOptions,
-      parentId: id,
-      // Sub-plan can drop the duplicate dataType filter only when the
-      // parent's plan really constrains scope (i.e. parent is not multi).
       parentScope: parentIsScopeConstrained ? scope : null,
     });
-    if (scp.getCriteriaCount() === countBefore) {
-      return { skip: true };
-    }
     const foldable =
       (logicType === 'and' || logicType === 'or') &&
       accContainsOnly(acc, 'ctsConstraints');
@@ -872,76 +546,73 @@ function buildConjunctionJoin({
     return { plan: assemblePlan(scp, { ...acc, ...assemblyContext }) };
   };
 
-  if (criterion.AND) {
+  // The 3×3 logic matrix, using the pre-analyzed IR group node.
+  // AND-in-AND and OR-in-OR inlining is normally handled during Pass 1
+  // (the children were flattened into the parent's IR children array).
+  // However, the single-branch OR→AND collapse can re-introduce same-type
+  // nesting post-factum, so Pass 2 handles all nine combinations.
+  if (subConjunctionType === 'and') {
     switch (logicType) {
-      case 'and':
-        // AND can be inlined because we're already in an AND here
-        return { inlineCriteria: criterion.AND };
-
+      case 'and': {
+        const sub = buildSubOrFold(groupNode);
+        return sub.plan ? innerJoinDesc(sub.plan) : sub;
+      }
       case 'or': {
-        // We are in an OR and encounter an AND - full outer join (or fold)
-        const sub = buildSubOrFold(criterion);
+        const sub = buildSubOrFold(groupNode);
         return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
       }
-
       case 'not': {
-        // We are in a NOT and encounter an AND - not exists join
-        // (NOT context disables folding inside buildSubOrFold.)
-        const sub = buildSubOrFold(criterion);
+        const sub = buildSubOrFold(groupNode);
         return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
       }
     }
-  } else if (criterion.OR) {
+  } else if (subConjunctionType === 'or') {
     switch (logicType) {
       case 'and': {
-        // AND encounters OR. Prefer the pure-CTS fold; otherwise defer the
-        // sub-plan join until assemblePlan, which combines all such
-        // sub-plans off the outer fragment first, then joins the combined
-        // result to the outer ONCE. Chaining 2+ of these as joinInner
-        // against the same outer fragment causes SPARQL fusion that
-        // silently zeroes results or blows memory.
-        // singleColSelect() projects [id+'_uri'] (or [id+'_frag']); the
-        // groupBy on that same column dedupes and adds a materialization
-        // barrier so the merger sees a single, fully-typed binding.
-        const sub = buildSubOrFold(criterion);
+        const sub = buildSubOrFold(groupNode);
         return sub.plan ? andOrSubPlanDesc(sub.plan) : sub;
       }
-
-      case 'or':
-        // OR can be inlined because we're already in an OR here
-        return { inlineCriteria: criterion.OR };
-
+      case 'or': {
+        const sub = buildSubOrFold(groupNode);
+        return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
+      }
       case 'not': {
-        // We are in a NOT and encounter an OR - not exists join
-        const sub = buildSubOrFold(criterion);
+        const sub = buildSubOrFold(groupNode);
         return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
       }
     }
-  } else if (criterion.NOT) {
+  } else if (subConjunctionType === 'not') {
     switch (logicType) {
       case 'and': {
-        // We are in an AND and encounter a NOT - not exists join and change to OR
-        // This is equivalent and likely more performant (needs testing).
-        // negateFold=true ensures a folded sub is wrapped as cts.notQuery(...)
-        // so negation is preserved when the sub bypasses the notExistsJoin path.
-        const sub = buildSubOrFold({ OR: criterion.NOT }, true);
+        // NOT-in-AND → notExistsJoin on { OR: child.NOT } rewrite.
+        // The IR node already has the NOT's children; we reinterpret it
+        // as an OR group for the sub-plan build, then negate the fold.
+        const orRewrite = {
+          ...groupNode,
+          conjunctionType: 'or',
+        };
+        const sub = buildSubOrFold(orRewrite, true);
         return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
       }
-
       case 'or': {
-        // We are in an OR and encounter a NOT - full outer join
-        const sub = buildSubOrFold(criterion);
+        const sub = buildSubOrFold(groupNode);
         return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
       }
-
       case 'not': {
-        // We are in a NOT and encounter a NOT - inner join and change to OR
-        // This is equivalent and likely more performant (needs testing)
-        const sub = buildSubOrFold({ OR: criterion.NOT });
+        // NOT-in-NOT → double negation → innerJoin on { OR: child.NOT }.
+        const orRewrite = {
+          ...groupNode,
+          conjunctionType: 'or',
+        };
+        const sub = buildSubOrFold(orRewrite);
         return sub.plan ? innerJoinDesc(sub.plan) : sub;
       }
     }
   }
+
+  throw new InternalServerError(
+    `buildConjunctionFromIR: unhandled combination logicType=${logicType}, subConjunctionType=${subConjunctionType}`,
+  );
 }
 
 // Wraps an array of cts queries per logicType, matching the convention used
@@ -1477,160 +1148,6 @@ function paginateResults({ rows, pageWith, page, pageLength }) {
 }
 //#endregion
 
-//#region Stop word / punctuation detection
-const PUNCTUATION_ONLY_REGEX = /^[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]*$/;
-
-function isUnusableWord(word) {
-  const cleaned = word.replace(/^"|"$/g, '');
-  return (
-    PUNCTUATION_ONLY_REGEX.test(cleaned) ||
-    STOP_WORDS.has(cleaned.toLowerCase())
-  );
-}
-
-// Returns the unusable words from a term value.  An empty array means the
-// value is usable; a non-empty array lists every stop-word / punctuation
-// token that should be reported as ignored.
-function getUnusableTermWords(value) {
-  if (typeof value !== 'string') return [];
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return [value];
-  if (PUNCTUATION_ONLY_REGEX.test(trimmed)) return [trimmed];
-  const words = utils.splitHonoringPhrases(trimmed);
-  const unusable = words.filter(isUnusableWord);
-  return unusable.length === words.length ? unusable : [];
-}
-//#endregion
-
-//#region Wildcard validation
-const WILDCARD_CHARS = '*?';
-const WILDCARD_CHAR_REGEX = new RegExp(`[${WILDCARD_CHARS}]`);
-const QUALIFYING_CHARS = '\\s\\-';
-const QUALIFYING_CHARS_REGEX = new RegExp(`[${QUALIFYING_CHARS}]`);
-const MINIMUM_QUALIFYING_CHAR_COUNT = 3;
-const QUALIFYING_WILDCARD_REGEX = new RegExp(
-  `([${WILDCARD_CHARS}][^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},})|([^${WILDCARD_CHARS}${QUALIFYING_CHARS}]{${MINIMUM_QUALIFYING_CHAR_COUNT},}[${WILDCARD_CHARS}])`,
-);
-const WILDCARDS_TO_CONSOLIDATE_REGEX = new RegExp('([?*]+[*])|([*][?*]+)');
-
-function hasInvalidWildcardCriteria(str) {
-  const pieces = str.split(QUALIFYING_CHARS_REGEX);
-  for (let i = 0; i < pieces.length; i++) {
-    if (
-      WILDCARD_CHAR_REGEX.test(pieces[i]) &&
-      !QUALIFYING_WILDCARD_REGEX.test(pieces[i])
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Whenever an asterisk touches another wildcard character, convert to a single asterisk.
-function consolidateApplicableWildcards(str) {
-  let matches;
-  while ((matches = str.match(WILDCARDS_TO_CONSOLIDATE_REGEX))) {
-    str = str.replace(matches[0], '*');
-  }
-  return str;
-}
-
-// After consolidating applicable wildcards, validate there is no invalid wildcard criteria.
-// strOrArr may be a string or array of strings; the given type will be returned.
-// Each string may be a word or phrase.
-// The value of strOrArr can be modified; caller to update their variable to this function's return,
-// providing caller wants the cleaned up value(s).
-function sanitizeAndValidateWildcardedStrings(strOrArr) {
-  if (strOrArr) {
-    const returnOneValue = !utils.isArray(strOrArr);
-    if (returnOneValue) {
-      strOrArr = [strOrArr];
-    }
-    for (let i = 0; i < strOrArr.length; i++) {
-      const origValue = strOrArr[i] + '';
-      strOrArr[i] = consolidateApplicableWildcards(origValue.trim());
-      if (hasInvalidWildcardCriteria(strOrArr[i])) {
-        let msg = `wildcarded strings must have at least three non-wildcard characters before or after the wildcard; '${origValue}' does not qualify`;
-        if (origValue != strOrArr[i]) {
-          msg += `, even after adjusting to '${strOrArr[i]}'`;
-        }
-        throw new InvalidSearchRequestError(msg);
-      }
-    }
-    if (returnOneValue) {
-      strOrArr = strOrArr[0];
-    }
-  }
-  return strOrArr;
-}
-//#endregion
-
-//#region Search options resolution
-// Returns an array of search options starting from an options or pattern name.
-//
-// At present, an options name must be provided or derived to get a non-null response.  Further,
-// only the keyword search options are overridable.  Please extend if not sufficient.
-function resolveSearchOptions(
-  optionsName = null,
-  patternName = null,
-  requestOverridesArr = [],
-  instanceOverridesArr = {},
-) {
-  optionsName = resolveSearchOptionsName(optionsName, patternName);
-  if (SEARCH_OPTIONS_NAME_EXACT == optionsName) {
-    return DEFAULT_SEARCH_OPTIONS_EXACT;
-  } else if (optionsName == SEARCH_OPTIONS_NAME_KEYWORD) {
-    // Instance options override request options which override the defaults.
-    return mergeSearchOptions(
-      mergeSearchOptions(DEFAULT_SEARCH_OPTIONS_KEYWORD, requestOverridesArr),
-      instanceOverridesArr,
-    );
-  }
-  if (optionsName) {
-    console.warn(
-      `The '${optionsName}' search options reference is unknown. Please check the search criteria configuration. Using null.`,
-    );
-  }
-  return null;
-}
-
-function resolveSearchOptionsName(optionsName = null, patternName = null) {
-  if (optionsName) {
-    return optionsName;
-  }
-  const pattern = SearchPatternBase.get(patternName);
-  return pattern ? pattern.getDefaultSearchOptionsName() : null;
-}
-
-function mergeSearchOptions(defaultOptionsArr, overrideOptionsArr) {
-  if (utils.isNonEmptyArray(overrideOptionsArr)) {
-    // If the exact option is specified, that's all we need to know.
-    if (overrideOptionsArr.includes('exact')) {
-      return DEFAULT_SEARCH_OPTIONS_EXACT;
-    }
-
-    // Else, let's go through each override, replacing the associated default.
-    let mergedOptionsArr = defaultOptionsArr;
-    overrideOptionsArr.forEach((searchOption) => {
-      if (SEARCH_OPTIONS_INVERSE_MAP.hasOwnProperty(searchOption)) {
-        // The default option need not be present for the override to be added.
-        mergedOptionsArr = utils.replaceValueInArray(
-          mergedOptionsArr,
-          SEARCH_OPTIONS_INVERSE_MAP[searchOption],
-          searchOption,
-        );
-      } else {
-        console.log(
-          `Ignoring an unrecognized search term option of '${searchOption}'.`,
-        );
-      }
-    });
-    return mergedOptionsArr;
-  }
-  return defaultOptionsArr;
-}
-//#endregion
-
 //#region Helper functions
 function getPlanSource(plan) {
   return op
@@ -1647,152 +1164,6 @@ function accContainsOnly(acc, bucketName) {
     (b) => b === bucketName || acc[b].length === 0,
   );
 }
-
-// Extracts the IRI string from a child { id: value } or { iri: value } term.
-// Returns null when the value is not a direct ID/IRI reference.
-function getChildId(termValue) {
-  const value = termValue?.id ?? termValue?.iri ?? null;
-  return typeof value === 'string' ? value : null;
-}
-
-// Could add childId.
-function getChildInfo(scopeName, parentTermValue) {
-  // Override when not a group.
-  let valueType = CHILD_TYPE_GROUP;
-  let patternName = null;
-
-  const childIsGroup = hasGroup(parentTermValue);
-  if (!childIsGroup) {
-    const childTermName = getFirstNonOptionPropertyName(parentTermValue);
-    const childTermValue = parentTermValue[childTermName];
-    const searchTermConfig = new SearchTermConfig(
-      getSearchTermConfig(scopeName, childTermName),
-    );
-    patternName = searchTermConfig.getPatternName();
-    valueType =
-      utils.isArray(childTermValue) || utils.isObject(childTermValue)
-        ? CHILD_TYPE_TERM
-        : CHILD_TYPE_ATOMIC;
-  }
-
-  return {
-    patternName,
-    valueType,
-  };
-}
-
-function hasGroup(termValue) {
-  return termValue && (termValue.AND || termValue.OR || termValue.NOT);
-}
-
-function getFirstNonOptionPropertyName(termValue) {
-  let propName = null;
-  if (utils.isObject(termValue)) {
-    for (const p of Object.keys(termValue)) {
-      if (!p.startsWith('_')) {
-        propName = p;
-        break;
-      }
-    }
-  }
-  return propName;
-}
-
-function hasNonOptionPropertyName(termValue) {
-  return getFirstNonOptionPropertyName(termValue) != null;
-}
-
-function validateMultiScopeCriteria(planCriteria, topLevel, allowMultiScope) {
-  if (!topLevel || !allowMultiScope) {
-    throw new InvalidSearchRequestError(
-      "search scope of 'multi' not supported by this operation or level.",
-    );
-  }
-
-  if (!planCriteria?.OR || !utils.isArray(planCriteria.OR)) {
-    throw new InvalidSearchRequestError(
-      "a search with scope 'multi' must contain an 'OR' array.",
-    );
-  }
-
-  planCriteria.OR.forEach((branch, idx) => {
-    const branchScope = branch?._scope;
-    if (
-      !branchScope ||
-      !isSearchScopeName(branchScope) ||
-      branchScope === 'multi'
-    ) {
-      throw new InvalidSearchRequestError(
-        `Invalid criteria: OR branch ${idx} in '_scope: multi' must declare a valid non-multi _scope.`,
-      );
-    }
-  });
-}
-
-// Tokenizes a multi-word string value into an AND group criterion.
-// Returns the AND criterion object when tokenization applies, or null when
-// the value should not be tokenized (single word, quoted phrase, non-string,
-// complete match, already tokenized, or pattern disallows it).
-function tokenizeTermValue(patternInstance, searchTerm) {
-  const termValue = searchTerm.getCriteria();
-  if (
-    typeof termValue !== 'string' ||
-    searchTerm.isCompleteMatch() ||
-    searchTerm.isTokenized() ||
-    !patternInstance.mayTokenizeValue()
-  ) {
-    return null;
-  }
-  const trimmed = termValue.trim();
-  if (!trimmed.includes(' ') || trimmed.match(/^('|").+\1$/)) {
-    return null;
-  }
-  const tokens = utils.splitHonoringPhrases(trimmed);
-  if (tokens.length <= 1) {
-    return null;
-  }
-  const name = searchTerm.getName();
-  const props = searchTerm.getProperties();
-  const sharedProps = {
-    _tokenized: true,
-    ...Object.keys(props).reduce((acc, k) => {
-      acc[`_${k}`] = props[k];
-      return acc;
-    }, {}),
-  };
-  const tokenCriteria = tokens.map((token) => {
-    return { [name]: token, ...sharedProps };
-  });
-  return { AND: tokenCriteria, _scope: searchTerm.getScopeName() };
-}
-
-function applyPatternRequirements(searchTerm, termConfig) {
-  const patternName = termConfig.getPatternName();
-  const pattern = SearchPatternBase.get(patternName);
-
-  // Validate that the pattern is registered; throw NotImplementedError if not.
-  if (!pattern) {
-    throw new NotImplementedError(
-      `Unimplemented pattern name: ${patternName}.`,
-    );
-  }
-
-  // Validate that the search term satisfies all runtime properties required by the pattern.
-  const requiredProps = pattern.getRequiredRuntimeSearchTermProperties();
-  const missingProps = requiredProps.filter((propName) => {
-    const propValue = searchTerm.getProperty(propName);
-    return !utils.isNonEmptyString(propValue, true);
-  });
-
-  if (missingProps.length) {
-    const formattedMissing = missingProps
-      .map((propName) => `_${propName}`)
-      .join(', ');
-    throw new InvalidSearchRequestError(
-      `Search term '${searchTerm.getName()}' with pattern '${patternName}' is missing required runtime property(ies): ${formattedMissing}`,
-    );
-  }
-}
 //#endregion
 
 export {
@@ -1800,14 +1171,9 @@ export {
   analyzeLeafCriteria,
   buildPlans,
   buildSortedResultsPlan,
-  getChildId,
-  getFirstNonOptionPropertyName,
   getResultRowGrouping,
-  hasNonOptionPropertyName,
   paginateResults,
   performSearch,
   processCriteria,
   processCriteriaAsCts,
-  resolveSearchOptions,
-  sanitizeAndValidateWildcardedStrings,
 };

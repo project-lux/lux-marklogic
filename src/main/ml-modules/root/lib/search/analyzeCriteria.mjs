@@ -124,6 +124,7 @@ function analyzeCriteria({
         criteria.push(...result.inlineCriteria);
         continue;
       }
+      hasScoreContributingCriteria ||= result.hasScoreContributingCriteria;
       children.push(result.groupNode);
       continue;
     }
@@ -225,7 +226,7 @@ function analyzeCriteria({
 // Returns one of:
 //   { skip: true }            — sub-group had no usable criteria
 //   { inlineCriteria: [...] } — same-type nesting, flatten into parent
-//   { groupNode: IRNode }     — analyzed sub-group IR node
+//   { groupNode, hasScoreContributingCriteria } — analyzed sub-group IR node
 function analyzeConjunction({
   criterion,
   logicType,
@@ -273,7 +274,10 @@ function analyzeConjunction({
     return { skip: true };
   }
 
-  return { groupNode: subAnalysis.ir };
+  return {
+    groupNode: subAnalysis.ir,
+    hasScoreContributingCriteria: subAnalysis.hasScoreContributingCriteria,
+  };
 }
 //#endregion
 

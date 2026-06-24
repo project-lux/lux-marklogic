@@ -368,6 +368,73 @@ const scenarios = [
       },
     },
   },
+
+  // --- Score gate edge cases ---
+  {
+    name: 'Mixed scoring + non-scoring criteria still uses fromSearch',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [{ text: 'Pablo' }, { classification: { name: 'painter' } }],
+      },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      // keyword contributes score → hasScoreContributingCriteria is true
+      sortedPlanContains: ['fromSearch', 'score'],
+    },
+  },
+  {
+    name: 'IndexedWord pattern contributes relevance score',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: { _scope: 'agent', name: 'Picasso' },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      sortedPlanContains: ['fromSearch', 'score', 'agentName'],
+    },
+  },
+  {
+    name: 'Scoring leaf inside nested OR still triggers fromSearch',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { classification: { name: 'painter' } },
+          { OR: [{ text: 'Pablo' }, { text: 'Vincent' }] },
+        ],
+      },
+      sortDelimitedStr: '',
+    },
+    expected: {
+      error: false,
+      sortedPlanContains: ['fromSearch', 'score'],
+    },
+  },
+  {
+    name: 'Only non-scoring patterns with relevance sort falls through to unsorted',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: {
+        _scope: 'agent',
+        AND: [
+          { classification: { name: 'painter' } },
+          { nationality: { name: 'Dutch' } },
+        ],
+      },
+      sortDelimitedStr: 'relevance',
+    },
+    expected: {
+      error: false,
+      sortedPlanExcludes: ['fromSearch', 'score'],
+      sortedMatchesUnsorted: true,
+    },
+  },
 ];
 
 for (const scenario of scenarios) {

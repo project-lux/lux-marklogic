@@ -87,6 +87,28 @@ const scenarios = [
     input: { criteria: { text: 'the' } },
     expected: { error: false, value: null },
   },
+  {
+    name: 'IndexedWord (name) criteria returns terms (pattern filtering is caller concern)',
+    input: { criteria: { name: 'Picasso' } },
+    expected: { error: false, value: ['Picasso'] },
+  },
+  {
+    name: 'Wildcard keyword returns validated term',
+    input: { criteria: { text: 'wom*' } },
+    expected: { error: false, value: ['wom*'] },
+  },
+  {
+    name: 'AND-in-AND-in-AND flattens all levels',
+    input: {
+      criteria: {
+        AND: [
+          { text: 'alpha' },
+          { AND: [{ text: 'beta' }, { AND: [{ text: 'gamma' }] }] },
+        ],
+      },
+    },
+    expected: { error: false, value: ['alpha', 'beta', 'gamma'] },
+  },
 ];
 
 for (const scenario of scenarios) {

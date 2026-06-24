@@ -179,6 +179,27 @@ const scenarios = [
     },
     expected: { error: false, null: false },
   },
+  {
+    name: 'Returns null when criteria uses non-keyword pattern (indexedWord)',
+    input: {
+      searchCriteria: { AND: [{ text: 'woman' }, { name: 'Mona Lisa' }] },
+    },
+    expected: { error: false, null: true },
+  },
+  {
+    name: 'Returns null for AND containing only non-keyword patterns',
+    input: {
+      searchCriteria: { AND: [{ name: 'Rembrandt' }, { name: 'Picasso' }] },
+    },
+    expected: { error: false, null: true },
+  },
+  {
+    name: 'Single-branch OR collapse with keyword survivor triggers page-slice',
+    input: {
+      searchCriteria: { OR: [{ text: 'woman' }] },
+    },
+    expected: { error: false, null: false },
+  },
 ];
 
 for (const scenario of scenarios) {

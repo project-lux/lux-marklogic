@@ -11,10 +11,50 @@ import { expandPredicates } from '../prefixUtils.mjs';
 import * as utils from '../../../utils/utils.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 
-// Builds the same `cts.orQuery([nonSemanticWordQuery, tripleRangeQuery])`
-// produced by Keyword.apply, but driven by raw values instead of a SearchTerm.
-// Used by the experimental page-slice hydration path (keywordPageSlice.mjs)
-// so the two execution paths cannot drift on query semantics.
+class Keyword extends SearchPatternBase {
+  apply(scp, searchTerm, logicType, patternOptions) {
+    const ctsQuery = buildKeywordCtsQuery({
+      termValues: utils.toArray(searchTerm.getValue()),
+      termScopeName: searchTerm.getScopeName(),
+      isCompleteMatch: searchTerm.isCompleteMatch(),
+      searchOptions: searchTerm.getSearchOptions(),
+      termWeight: searchTerm.getWeight() ?? 1.0,
+    });
+    return { ctsConstraints: [ctsQuery] };
+  }
+
+  mayTokenizeValue() {
+    return true;
+  }
+
+  getRequiredRuntimeSearchTermProperties() {
+    return [];
+  }
+
+  getAllowedChildren() {
+    return CHILD_TYPE_ATOMIC;
+  }
+
+  isConvertIdChildToIri() {
+    return false;
+  }
+
+  getAllowedSearchOptionsName() {
+    return SEARCH_OPTIONS_NAME_KEYWORD;
+  }
+
+  getDefaultSearchOptionsName() {
+    return SEARCH_OPTIONS_NAME_KEYWORD;
+  }
+
+  contributesRelevanceScore() {
+    return true;
+  }
+}
+
+// Builds `cts.orQuery([nonSemanticWordQuery, tripleRangeQuery])` from raw
+// values. Used by both Keyword.apply (via SearchTerm) and the page-slice
+// hydration path (keywordPageSlice.mjs) so query semantics stay in one place.
 function buildKeywordCtsQuery({
   termValues,
   termScopeName,
@@ -58,47 +98,6 @@ function buildKeywordCtsQuery({
   );
 
   return cts.orQuery([nonSemanticWordQuery, tripleRangeQuery]);
-}
-
-class Keyword extends SearchPatternBase {
-  apply(scp, searchTerm, logicType, patternOptions) {
-    const ctsQuery = buildKeywordCtsQuery({
-      termValues: utils.toArray(searchTerm.getValue()),
-      termScopeName: searchTerm.getScopeName(),
-      isCompleteMatch: searchTerm.isCompleteMatch(),
-      searchOptions: searchTerm.getSearchOptions(),
-      termWeight: searchTerm.getWeight() ?? 1.0,
-    });
-    return { ctsConstraints: [ctsQuery] };
-  }
-
-  mayTokenizeValue() {
-    return true;
-  }
-
-  getRequiredRuntimeSearchTermProperties() {
-    return [];
-  }
-
-  getAllowedChildren() {
-    return CHILD_TYPE_ATOMIC;
-  }
-
-  isConvertIdChildToIri() {
-    return false;
-  }
-
-  getAllowedSearchOptionsName() {
-    return SEARCH_OPTIONS_NAME_KEYWORD;
-  }
-
-  getDefaultSearchOptionsName() {
-    return SEARCH_OPTIONS_NAME_KEYWORD;
-  }
-
-  contributesRelevanceScore() {
-    return true;
-  }
 }
 
 // Builds a single CTS field query, or an AND of them when multiple values

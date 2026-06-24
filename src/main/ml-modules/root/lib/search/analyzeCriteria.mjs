@@ -2,7 +2,7 @@
 
 // Pass 1 of the two-pass criteria pipeline.
 // Traverses raw search criteria JSON, validates, normalizes, and produces
-// an immutable IR tree plus an analysis summary. No Optic plans are built.
+// an immutable criteria tree plus an analysis summary. No Optic plans are built.
 
 //#region Imports
 import {
@@ -55,11 +55,11 @@ const WILDCARDS_TO_CONSOLIDATE_REGEX = new RegExp('([?*]+[*])|([*][?*]+)');
 
 //#region Public API
 
-// Analyzes raw search criteria and produces an IR tree with an analysis summary.
+// Analyzes raw search criteria and produces a criteria tree with an analysis summary.
 // This is Pass 1 of the two-pass pipeline: all validation, normalization,
 // tokenization, and stop-word detection happen here. No Optic API calls.
 //
-// Returns: createAnalysisResult({ ir, scope, isMultiScope,
+// Returns: createAnalysisResult({ criteriaTree, scope, isMultiScope,
 //          hasScoreContributingCriteria, usableLeafCount })
 function analyzeCriteria({
   scp,
@@ -124,7 +124,8 @@ function analyzeCriteria({
         criteria.push(...result.inlineCriteria);
         continue;
       }
-      hasScoreContributingCriteria ||= result.hasScoreContributingCriteria;
+      hasScoreContributingCriteria ||=
+        result.groupNode.hasScoreContributingCriteria;
       children.push(result.groupNode);
       continue;
     }
@@ -201,17 +202,36 @@ function analyzeCriteria({
     logicType = 'and';
   }
 
-  const ir = createGroupNode({
+  // After a single-branch OR→AND collapse, a surviving group child whose
+  // conjunctionType matches the new parent type should be inlined (its
+  // children flattened into the parent). This guarantees same-type nesting
+  // never reaches Pass 2, keeping the 3×3 matrix free of degenerate cases.
+  const finalChildren = [];
+  for (const child of children) {
+    if (
+      child.type === 'group' &&
+      child.conjunctionType === logicType &&
+      logicType !== 'not'
+    ) {
+      finalChildren.push(...child.children);
+      hasScoreContributingCriteria ||= child.hasScoreContributingCriteria;
+    } else {
+      finalChildren.push(child);
+    }
+  }
+
+  const criteriaTree = createGroupNode({
     id: parentId,
     conjunctionType: logicType,
     scope,
-    children,
+    children: finalChildren,
     columns,
     isTopLevel,
+    hasScoreContributingCriteria,
   });
 
   return createAnalysisResult({
-    ir,
+    criteriaTree,
     scope,
     isMultiScope,
     hasScoreContributingCriteria,
@@ -226,7 +246,8 @@ function analyzeCriteria({
 // Returns one of:
 //   { skip: true }            — sub-group had no usable criteria
 //   { inlineCriteria: [...] } — same-type nesting, flatten into parent
-//   { groupNode, hasScoreContributingCriteria } — analyzed sub-group IR node
+//   { groupNode }             — analyzed sub-group node (carries
+//                               hasScoreContributingCriteria on itself)
 function analyzeConjunction({
   criterion,
   logicType,
@@ -245,7 +266,7 @@ function analyzeConjunction({
 
   // NOT-in-AND and NOT-in-NOT are rewritten to { OR: criterion.NOT }
   // before recursive analysis (see buildConjunctionFromIR in engine.mjs).
-  // The IR preserves the original conjunction type — the rewrite is a
+  // The tree preserves the original conjunction type — the rewrite is a
   // construction concern (Pass 2 decides join type from the 3×3 matrix).
 
   const subCriteria = criterion.AND ?? criterion.OR ?? criterion.NOT ?? null;
@@ -274,10 +295,7 @@ function analyzeConjunction({
     return { skip: true };
   }
 
-  return {
-    groupNode: subAnalysis.ir,
-    hasScoreContributingCriteria: subAnalysis.hasScoreContributingCriteria,
-  };
+  return { groupNode: subAnalysis.criteriaTree };
 }
 //#endregion
 

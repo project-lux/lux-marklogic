@@ -1,10 +1,10 @@
 'use strict';
 
-// Intermediate Representation (IR) node type discriminators.
+// Node type discriminators for the analyzed criteria tree.
 const NODE_TYPE_LEAF = 'leaf';
 const NODE_TYPE_GROUP = 'group';
 
-// Creates a leaf IR node representing a single resolved search term.
+// Creates a leaf node representing a single resolved search term.
 function createLeafNode({
   id,
   name,
@@ -24,9 +24,11 @@ function createLeafNode({
   });
 }
 
-// Creates a group IR node representing an AND/OR/NOT conjunction.
+// Creates a group node representing an AND/OR/NOT conjunction.
 // Children are an array of leaf and/or group nodes (already flattened
 // where inlining applies — e.g. AND-in-AND, OR-in-OR).
+// hasScoreContributingCriteria summarizes whether any leaf in this subtree
+// contributes a relevance score — eliminates propagation bugs between passes.
 function createGroupNode({
   id = null,
   conjunctionType,
@@ -34,6 +36,7 @@ function createGroupNode({
   children,
   columns,
   isTopLevel = false,
+  hasScoreContributingCriteria = false,
 }) {
   return Object.freeze({
     type: NODE_TYPE_GROUP,
@@ -43,19 +46,20 @@ function createGroupNode({
     children: Object.freeze(children),
     columns,
     isTopLevel,
+    hasScoreContributingCriteria,
   });
 }
 
 // Top-level analysis result returned by analyzeCriteria.
 function createAnalysisResult({
-  ir,
+  criteriaTree,
   scope,
   isMultiScope,
   hasScoreContributingCriteria,
   usableLeafCount,
 }) {
   return Object.freeze({
-    ir,
+    criteriaTree,
     scope,
     isMultiScope,
     hasScoreContributingCriteria,

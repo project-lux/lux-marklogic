@@ -287,22 +287,42 @@ function buildPlans({
 }
 //#endregion
 
-//#region Core engine functions — Pass 2 (plan construction from IR)
+//#region Core engine functions — Pass 2 (plan construction from criteria tree)
 
-// Builds the raw plan accumulator by walking the IR tree produced by
-// analyzeCriteria (Pass 1). Each leaf node's pattern.apply() is called here;
-// conjunction sub-groups are recursively accumulated and assembled into
-// sub-plans as needed.
+// Builds the raw plan accumulator by walking the criteria tree produced by
+// analyzeCriteria (Pass 1). Thin wrapper that unpacks the analysis result
+// and delegates to buildAccumulatorFromGroup.
 function buildAccumulatorFromIR({
   scp,
   analysis,
   patternOptions,
   parentScope = null,
 }) {
-  const { ir, scope, isMultiScope } = analysis;
-  const { uriCol, fragCol, iriCol, dataTypeCol } = ir.columns;
-  const isTopLevel = ir.isTopLevel;
-  const logicType = ir.conjunctionType;
+  const { criteriaTree, scope, isMultiScope } = analysis;
+  return buildAccumulatorFromGroup({
+    scp,
+    groupNode: criteriaTree,
+    scope,
+    isMultiScope,
+    patternOptions,
+    parentScope,
+  });
+}
+
+// Core accumulator builder — operates directly on a group node.
+// Used by buildAccumulatorFromIR (top-level) and buildConjunctionFromIR
+// (sub-groups) without requiring synthetic wrapper objects.
+function buildAccumulatorFromGroup({
+  scp,
+  groupNode,
+  scope,
+  isMultiScope = false,
+  patternOptions,
+  parentScope = null,
+}) {
+  const { uriCol, fragCol, iriCol, dataTypeCol } = groupNode.columns;
+  const isTopLevel = groupNode.isTopLevel;
+  const logicType = groupNode.conjunctionType;
 
   const scopeAlreadyConstrained =
     !isTopLevel && !isMultiScope && parentScope === scope;
@@ -317,7 +337,7 @@ function buildAccumulatorFromIR({
     isMultiScope,
   });
 
-  for (const child of ir.children) {
+  for (const child of groupNode.children) {
     if (child.type === NODE_TYPE_GROUP) {
       const result = buildConjunctionFromIR({
         groupNode: child,
@@ -348,7 +368,7 @@ function buildAccumulatorFromIR({
     }
   }
 
-  // Single-branch OR collapse was already handled in Pass 1 (the IR's
+  // Single-branch OR collapse was already handled in Pass 1 (the tree's
   // conjunctionType is 'and' when collapsed). But conjunctionJoins built
   // in Pass 2 may still carry joinFullOuter from pre-collapse state.
   // Re-check and fix up here.
@@ -370,7 +390,7 @@ function buildAccumulatorFromIR({
     scope,
     logicType,
     isTopLevel,
-    hasScoreContributingCriteria: analysis.hasScoreContributingCriteria,
+    hasScoreContributingCriteria: groupNode.hasScoreContributingCriteria,
   };
   return { acc, assemblyContext };
 }
@@ -423,10 +443,10 @@ function mergeTermPlanContributions(acc, contributions) {
 // Page-slice eligibility check using a pre-computed analysis result.
 // Returns { terms, logicType } when eligible, null otherwise.
 function getLeafTermsFromAnalysis(analysis) {
-  const ir = analysis.ir;
-  if (ir.conjunctionType !== 'and') return null;
-  if (ir.children.some((c) => c.type === NODE_TYPE_GROUP)) return null;
-  const terms = ir.children.map((leaf) => leaf.searchTerm);
+  const tree = analysis.criteriaTree;
+  if (tree.conjunctionType !== 'and') return null;
+  if (tree.children.some((c) => c.type === NODE_TYPE_GROUP)) return null;
+  const terms = tree.children.map((leaf) => leaf.searchTerm);
   return terms.length > 0 ? { terms, logicType: 'and' } : null;
 }
 
@@ -450,7 +470,7 @@ function analyzeLeafCriteria(scp) {
   }
 }
 
-// Resolves an IR group node into either a join descriptor, a pure-CTS
+// Resolves a group node into either a join descriptor, a pure-CTS
 // contribution to be folded into the parent's ctsConstraints, or a
 // deferred andOrSubPlan.
 // Returns: { join: ... } | { andOrSubPlan: ... } | { ctsConstraint: ctsQuery }
@@ -518,19 +538,13 @@ function buildConjunctionFromIR({
     };
   };
 
-  // Build the sub-accumulator from the IR sub-group and check whether
-  // the result can be folded as pure CTS into the parent.
+  // Build the sub-accumulator from the sub-group directly and check
+  // whether the result can be folded as pure CTS into the parent.
   const buildSubOrFold = (irNode, negateFold = false) => {
-    const subAnalysis = {
-      ir: irNode,
-      scope: irNode.columns ? scope : scope,
-      isMultiScope: false,
-      hasScoreContributingCriteria: false,
-      usableLeafCount: 0,
-    };
-    const { acc, assemblyContext } = buildAccumulatorFromIR({
+    const { acc, assemblyContext } = buildAccumulatorFromGroup({
       scp,
-      analysis: subAnalysis,
+      groupNode: irNode,
+      scope,
       patternOptions,
       parentScope: parentIsScopeConstrained ? scope : null,
     });
@@ -546,17 +560,11 @@ function buildConjunctionFromIR({
     return { plan: assemblePlan(scp, { ...acc, ...assemblyContext }) };
   };
 
-  // The 3×3 logic matrix, using the pre-analyzed IR group node.
-  // AND-in-AND and OR-in-OR inlining is normally handled during Pass 1
-  // (the children were flattened into the parent's IR children array).
-  // However, the single-branch OR→AND collapse can re-introduce same-type
-  // nesting post-factum, so Pass 2 handles all nine combinations.
+  // The 3×3 logic matrix (minus same-type combinations which are guaranteed
+  // to be inlined by Pass 1). Each remaining combination resolves the
+  // sub-group into a join descriptor, pure-CTS fold, or deferred sub-plan.
   if (subConjunctionType === 'and') {
     switch (logicType) {
-      case 'and': {
-        const sub = buildSubOrFold(groupNode);
-        return sub.plan ? innerJoinDesc(sub.plan) : sub;
-      }
       case 'or': {
         const sub = buildSubOrFold(groupNode);
         return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
@@ -572,10 +580,6 @@ function buildConjunctionFromIR({
         const sub = buildSubOrFold(groupNode);
         return sub.plan ? andOrSubPlanDesc(sub.plan) : sub;
       }
-      case 'or': {
-        const sub = buildSubOrFold(groupNode);
-        return sub.plan ? fullOuterJoinDesc(sub.plan) : sub;
-      }
       case 'not': {
         const sub = buildSubOrFold(groupNode);
         return sub.plan ? notExistsJoinDesc(sub.plan) : sub;
@@ -585,7 +589,7 @@ function buildConjunctionFromIR({
     switch (logicType) {
       case 'and': {
         // NOT-in-AND → notExistsJoin on { OR: child.NOT } rewrite.
-        // The IR node already has the NOT's children; we reinterpret it
+        // The node already has the NOT's children; we reinterpret it
         // as an OR group for the sub-plan build, then negate the fold.
         const orRewrite = {
           ...groupNode,

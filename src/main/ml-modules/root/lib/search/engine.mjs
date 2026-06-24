@@ -19,7 +19,6 @@ import {
 import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { tryExecuteKeywordPageSlice } from './keywordPageSlice.mjs';
-import { SearchPatternBase } from './patterns/loadPatterns.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
 import { NODE_TYPE_GROUP } from './criteriaNodes.mjs';
 import { analyzeCriteria } from './analyzeCriteria.mjs';
@@ -187,7 +186,7 @@ function processCriteria({
     parentScope,
     allowMultiScope,
   });
-  const { acc, assemblyContext } = buildAccumulatorFromIR({
+  const { acc, assemblyContext } = buildAccumulator({
     scp,
     analysis,
     patternOptions,
@@ -219,7 +218,7 @@ function processCriteriaAsCts({
     // cts.values; the triple predicate already scopes the objects.
     parentScope: planScope,
   });
-  const { acc, assemblyContext } = buildAccumulatorFromIR({
+  const { acc, assemblyContext } = buildAccumulator({
     scp,
     analysis,
     patternOptions,
@@ -261,7 +260,7 @@ function buildPlans({
       allowMultiScope,
     });
 
-  const { acc, assemblyContext } = buildAccumulatorFromIR({
+  const { acc, assemblyContext } = buildAccumulator({
     scp,
     analysis,
     patternOptions,
@@ -292,7 +291,7 @@ function buildPlans({
 // Builds the raw plan accumulator by walking the criteria tree produced by
 // analyzeCriteria (Pass 1). Thin wrapper that unpacks the analysis result
 // and delegates to buildAccumulatorFromGroup.
-function buildAccumulatorFromIR({
+function buildAccumulator({
   scp,
   analysis,
   patternOptions,
@@ -310,7 +309,7 @@ function buildAccumulatorFromIR({
 }
 
 // Core accumulator builder — operates directly on a group node.
-// Used by buildAccumulatorFromIR (top-level) and buildConjunctionFromIR
+// Used by buildAccumulator (top-level) and buildConjunction
 // (sub-groups) without requiring synthetic wrapper objects.
 function buildAccumulatorFromGroup({
   scp,
@@ -339,7 +338,7 @@ function buildAccumulatorFromGroup({
 
   for (const child of groupNode.children) {
     if (child.type === NODE_TYPE_GROUP) {
-      const result = buildConjunctionFromIR({
+      const result = buildConjunction({
         groupNode: child,
         logicType,
         scope,
@@ -474,7 +473,7 @@ function analyzeLeafCriteria(scp) {
 // contribution to be folded into the parent's ctsConstraints, or a
 // deferred andOrSubPlan.
 // Returns: { join: ... } | { andOrSubPlan: ... } | { ctsConstraint: ctsQuery }
-function buildConjunctionFromIR({
+function buildConjunction({
   groupNode,
   logicType,
   scope,
@@ -540,10 +539,10 @@ function buildConjunctionFromIR({
 
   // Build the sub-accumulator from the sub-group directly and check
   // whether the result can be folded as pure CTS into the parent.
-  const buildSubOrFold = (irNode, negateFold = false) => {
+  const buildSubOrFold = (groupNode, negateFold = false) => {
     const { acc, assemblyContext } = buildAccumulatorFromGroup({
       scp,
-      groupNode: irNode,
+      groupNode,
       scope,
       patternOptions,
       parentScope: parentIsScopeConstrained ? scope : null,
@@ -615,7 +614,7 @@ function buildConjunctionFromIR({
   }
 
   throw new InternalServerError(
-    `buildConjunctionFromIR: unhandled combination logicType=${logicType}, subConjunctionType=${subConjunctionType}`,
+    `buildConjunction: unhandled combination logicType=${logicType}, subConjunctionType=${subConjunctionType}`,
   );
 }
 

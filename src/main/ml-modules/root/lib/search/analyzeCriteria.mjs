@@ -265,7 +265,7 @@ function analyzeConjunction({
   }
 
   // NOT-in-AND and NOT-in-NOT are rewritten to { OR: criterion.NOT }
-  // before recursive analysis (see buildConjunctionFromIR in engine.mjs).
+  // before recursive analysis (see buildConjunction in engine.mjs).
   // The tree preserves the original conjunction type — the rewrite is a
   // construction concern (Pass 2 decides join type from the 3×3 matrix).
 

@@ -41,7 +41,7 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 ## AND + OR sub-plans: use existsJoin, not joinInner
 - OR sub-plans (e.g. keyword expanding to `OR: [keywordNoHop, referencedBy]`) can produce multiple rows per document when the hop matches multiple triples.
 - `joinInner(groupBy(singleColSelect(), []))` deduplicates but causes MarkLogic to merge chained groupBy sub-plans into one SPARQL query with multiple GROUP BY clauses → XDMP-EXTIME.
-- `existsJoin(select(singleColSelect()))` is a semi-join: keeps left rows with any match, no row multiplication, no GROUP BY generated. Correct for `and → OR` in `buildConjunctionJoin`.
+- `existsJoin(select(singleColSelect()))` is a semi-join: keeps left rows with any match, no row multiplication, no GROUP BY generated. Correct for `and → OR` in `buildConjunction`.
 - `cts.iriReference()` only returns IRIs for documents that are triple **subjects** — never for triple objects (e.g. Set docs referenced via `la:member_of`). Use `sem.iri(literalValue)` as the triple object in `op.fromTriples` pattern instead.
 
 ## AND'd keyword OR-wraps: chain via joinInner on UNIQUELY-NAMED uri columns
@@ -62,7 +62,7 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - **Column collision**: When both a top-level plan and a sub-plan (e.g., hopInverse) use `op.fromSearch`, both produce `fragmentId` and `score` columns. On `joinInner`, Optic treats same-named columns as implicit join conditions — cross-scope fragmentId values never match → 0 results.
 - **Fix**: Use `op.fromSearch` + `joinInner` ONLY at the top level when `areScoresRequired()` is true. All other plans use `plan.where(ctsQuery)`. Sub-plans never carry extra `fragmentId`/`score` columns.
 - Join uses `op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol('fragmentId'))` — must use `op.fragmentIdCol` wrappers on both sides (matches codebase convention for all fragment-to-fragment joins).
-- Relevance sort branch in `buildPlans` is guarded by `sortCriteria?.areScoresRequired() && acc.ctsConstraints.length > 0` — no CTS constraints means no scores to sort by, falls through to unsorted.
+- Relevance sort branch in `buildSortedResultsPlan` is guarded by three conditions: `sortCriteria?.areScoresRequired() && hasScoreContributingCriteria && acc.ctsConstraints.length > 0`. All must be true for `op.fromSearch` to be used.
 - Score aggregation uses `op.max('score', op.col('score'))` with a TODO comment about max vs sum.
 
 ## propertyValue in Optic must avoid CTS field-value search
@@ -71,9 +71,9 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Keep legacy `recordType` normalization: scope names like `item` expand to that scope's concrete types, otherwise case-normalize the provided type.
 
 
-## assembleOpticPlan is cheap to call twice
-- `assembleOpticPlan` only constructs an Optic plan object from a pre-populated accumulator. The expensive work (pattern contributions, transitive hop inner-query executions in `HopWithField`) is already captured in `acc` before assembly.
-- Calling `assembleOpticPlan` twice on the same (or shallow-copied) accumulator does NOT re-execute pattern searches — safe for producing variant plans (e.g., with/without sort lexicons).
+## assemblePlan is cheap to call twice
+- `assemblePlan` only constructs an Optic plan object from a pre-populated accumulator. The expensive work (pattern contributions, transitive hop inner-query executions in `HopWithField`) is already captured in `acc` before assembly.
+- Calling `assemblePlan` twice on the same (or shallow-copied) accumulator does NOT re-execute pattern searches — safe for producing variant plans (e.g., with/without sort lexicons).
 - Original implementation mutated `acc.distanceCols` as a side effect during patternJoins processing. Removed this to make the function safe for repeated calls. If distance columns are re-added, collect them as a return value rather than mutating `acc`.
 
 ## Optic plans are immutable — reassign or lose the result
@@ -82,6 +82,8 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Same applies to `fromLexicons` chains: `mainPlan.joinInner(lexiconPlan, ...).select(...)` must be reassigned.
 
 ## Sort lexicons contaminate the base plan
+- Adding sort field references to `acc.lexicons` before `assemblePlan` means the `fromLexicons` call includes sort indexes, which constrains results to documents that have those index values and adds cost.
+- Solution (Option D): build the constraint plan from the original accumulator, then shallow-copy `acc.lexicons` with sort fields for a separate sorted plan. `processCriteria` returns `{ plan, constraintPlan }` at top-level; facets use `constraintPlan`, search results use `plan`.
 
 ## cts.estimate() returns xs.unsignedLong, not a JS number
 - `xs.unsignedLong(0)` is an object → truthy, so `|| 0` fallback doesn't trigger
@@ -90,8 +92,6 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Serializes correctly as `0` in JSON, hiding the problem in output
 - Fix: wrap in `Number(cts.estimate(...))` when you need JS number semantics
 - Original scripts used `==` (loose equality) which masked this
-- Adding sort field references to `acc.lexicons` before `assembleOpticPlan` means the `fromLexicons` call includes sort indexes, which constrains results to documents that have those index values and adds cost.
-- Solution (Option D): build the constraint plan from the original accumulator, then shallow-copy `acc.lexicons` with sort fields for a separate sorted plan. `processCriteria` returns `{ plan, constraintPlan }` at top-level; facets use `constraintPlan`, search results use `plan`.
 
 
 ## Function naming conventions
@@ -133,3 +133,30 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Under diverse production load, MarkLogic's plan cache likely cannot retain all distinct plans.
 - 5K serialized test (4,634ms avg) aligns with cold-start (4,043ms) — plan cache doesn't help much.
 - Warm numbers (29-37ms) only apply when the exact same query repeats before plan cache eviction.
+
+## Two-pass pipeline: same-type flattening prevents inlining bugs
+- Pass 1 (`analyzeCriteria.mjs`) flattens AND-in-AND and OR-in-OR at analysis time, before the criteria tree is frozen.
+- Pass 2's 3×3 conjunction matrix never encounters same-type nesting (reduced from 9 to 7 cases).
+- This eliminates a class of bugs where runtime inlining (pushing into a mutable `criteria[]` array mid-loop) interacted poorly with CTS fold eligibility and score propagation.
+- Single-branch OR→AND collapse triggers a post-collapse sweep that re-flattens any same-type children introduced by the rewrite.
+
+## Score propagation must live on nodes, not be re-derived
+- `hasScoreContributingCriteria` is stored on each group node at analysis time and frozen.
+- Pass 2 reads it directly from `analysis.hasScoreContributingCriteria` — no re-traversal.
+- Before this was fixed, scoring leaves inside nested ORs failed to bubble up to the top-level `fromSearch` gate. The symptom: `plan.where()` was used (no scoring) when `op.fromSearch` should have been used.
+- Root cause: the old code derived the flag by checking only immediate children, not the full subtree.
+- Fix: each `analyzeConjunction` sub-call propagates its `hasScoreContributingCriteria` upward via `||=`.
+
+## Separation of concerns: analysis vs. construction
+- Validation, tokenization, stop-word detection, search-option resolution, and tree normalization belong in Pass 1 (pure data, no Optic API calls).
+- Plan construction (pattern `apply()`, `fromLexicons`, `assemblePlan`) belongs in Pass 2.
+- This separation prevents optimizations from being forced into non-ideal locations due to execution flow/order. Example: CTS fold eligibility depends on tree shape; normalizing that shape in the same pass that builds plans creates ordering dependencies.
+- The criteria tree is an immutable inspectable artifact — useful for testing analysis logic without needing Optic/MarkLogic at all.
+
+## op.fromSearch score gate requires three conditions
+- `op.fromSearch` + `joinInner` (for relevance scoring) is only used when ALL three are true:
+  1. `sortCriteria.areScoresRequired()` — relevance sort requested
+  2. `hasScoreContributingCriteria === true` — at least one leaf contributes scores
+  3. `acc.ctsConstraints.length > 0` — there are CTS constraints to score against
+- Only `Keyword` and `IndexedWord` patterns set `contributesScore: true` on their leaf nodes.
+- When any condition is false, `plan.where(ctsQuery)` is used — simpler plan, no score column, no `joinInner` overhead.

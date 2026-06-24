@@ -2,6 +2,7 @@
 
 - [Introduction](#introduction)
 - [System Architecture](#system-architecture)
+  - [Two-Pass Criteria Pipeline](#two-pass-criteria-pipeline)
   - [Request Flow](#request-flow)
   - [Key Source Files](#key-source-files)
 - [Pattern System](#pattern-system)
@@ -13,7 +14,7 @@
 - [Engine Internals](#engine-internals)
   - [The Three Constraint Buckets](#the-three-constraint-buckets)
     - [Bucket Selection Rule](#bucket-selection-rule)
-  - [Nested Conjunction Handling — The 3×3 Matrix](#nested-conjunction-handling--the-33-matrix)
+  - [Nested Conjunction Handling — The 7-Case Matrix](#nested-conjunction-handling--the-7-case-matrix)
   - [Column Naming Strategy](#column-naming-strategy)
   - [Plan Assembly (`assemblePlan`)](#plan-assembly-assembleplan)
   - [Result Finalization (`collapseToResultRows`)](#result-finalization-collapsetoresultrows)
@@ -93,25 +94,42 @@ It is for developers and LLMs working on or extending the LUX Optic search engin
 
 # System Architecture
 
+## Two-Pass Criteria Pipeline
+
+Search criteria processing is split into two passes with an intermediate representation (the **criteria tree**) between them:
+
+| Pass | Module | Responsibility | Output |
+|---|---|---|---|
+| **Pass 1** — Analysis | `analyzeCriteria.mjs` | Traverse raw JSON criteria, validate, normalize, tokenize, detect stop words, resolve patterns. No Optic API calls. | Frozen criteria tree + analysis summary |
+| **Pass 2** — Construction | `engine.mjs` | Walk the criteria tree, call `pattern.apply()`, collect accumulator buckets, build Optic plan. | Executable Optic plan |
+
+**Why two passes:**
+- Separation of concern — validation/normalization logic is isolated from plan construction. Optimizations can be implemented in the ideal location rather than being forced by execution order.
+- The criteria tree is an immutable, inspectable artifact: useful for testing, debugging, and future analysis (e.g., query complexity estimation).
+- Same-type nesting (AND-in-AND, OR-in-OR) is eliminated during analysis. Pass 2 never encounters it — reducing the 3×3 conjunction matrix to 7 cases and preventing a class of inlining bugs.
+- Score-contributing status is computed once per node and frozen. Pass 2 reads it without re-traversal, eliminating propagation bugs.
+
 ## Request Flow
 
 ```
 Endpoint handler
   └─ SearchCriteriaProcessor (SCP)
-       ├─ prepare()              ← configures scope, criteria, options
-       ├─ execute()              ← full search: plan + results
+       ├─ prepare()                    ← configures scope, criteria, options
+       ├─ execute()                    ← full search: plan + results
        │    └─ engine.performSearch(scp)
        │         └─ engine.buildPlans(...)
-       │              └─ engine.buildCriteriaAccumulator(...)   ← iterates criteria
-       │                   └─ buildLeafSearchTerm(...)          ← validates value-type, wildcards, stop words
-       │                   └─ SearchPatternBase.get(name).apply(scp, searchTerm, logicType, patternOptions)
-       │              └─ engine.assemblePlan(...)               ← builds Optic plan from accumulator
-       │              └─ engine.collapseToResultRows(...)       ← groupBy, sort, select
-       │         └─ plan.limit() if pageWith                   ← caps materialization
-       │         └─ plan.result().toArray()                    ← executes plan
-       │         └─ engine.paginateResults(...)                ← resolves page (normal or pageWith)
-       ├─ executeForValues()     ← related lists: values only, no Optic plan
-       └─ buildPlans(...)        ← developer tool: returns plans without executing
+       │              ├─ Pass 1: analyzeCriteria(...)         ← produces criteria tree
+       │              │    └─ buildLeafSearchTerm(...)        ← validates, resolves pattern, tokenizes
+       │              │    └─ analyzeConjunction(...)         ← flattens same-type nesting
+       │              ├─ Pass 2: buildAccumulator(...)        ← walks tree, calls pattern.apply()
+       │              │    └─ buildConjunction(...)           ← resolves 7-case matrix (sub-groups)
+       │              ├─ assemblePlan(...)                    ← builds Optic plan from accumulator
+       │              └─ collapseToResultRows(...)            ← groupBy, sort, select
+       │         └─ plan.limit() if pageWith                 ← caps materialization
+       │         └─ plan.result().toArray()                  ← executes plan
+       │         └─ engine.paginateResults(...)              ← resolves page (normal or pageWith)
+       ├─ executeForValues()           ← related lists: values only, no Optic plan
+       └─ buildPlans(...)              ← developer tool: returns plans without executing
 ```
 
 ## Key Source Files
@@ -119,7 +137,9 @@ Endpoint handler
 | File | Purpose |
 |---|---|
 | `lib/SearchCriteriaProcessor.mjs` | Orchestrator. `prepare()` → `execute()` / `executeForValues()` / `buildPlans()`. Holds search state. |
-| `lib/search/engine.mjs` | Core engine. `performSearch`, `buildPlans`, `processCriteria`, `buildCriteriaAccumulator`, `assemblePlan`, `collapseToResultRows`, `paginateResults`. Also owns term validation (value-type, wildcards, stop words). |
+| `lib/search/analyzeCriteria.mjs` | **Pass 1.** Traverses raw criteria JSON, validates, normalizes, and produces the frozen criteria tree. No Optic API calls. |
+| `lib/search/criteriaNodes.mjs` | Node factories and type constants for the criteria tree (`createLeafNode`, `createGroupNode`, `createAnalysisResult`). |
+| `lib/search/engine.mjs` | **Pass 2 + orchestration.** `performSearch`, `buildPlans`, `processCriteria`, `buildAccumulator`, `buildAccumulatorFromGroup`, `assemblePlan`, `collapseToResultRows`, `paginateResults`. |
 | `lib/search/patterns/loadPatterns.mjs` | **Barrel module.** Imports all pattern files (triggering self-registration) and re-exports `SearchPatternBase` plus every `PATTERN_NAME_*` constant. All consumers should import from here, never from individual pattern files or `SearchPatternBase.mjs` directly. |
 | `lib/search/patterns/SearchPatternBase.mjs` | Base class for all patterns. Hosts the static pattern registry. |
 | `lib/search/patterns/SearchPatternInterface.mjs` | Abstract interface defining required methods for pattern classes. |
@@ -283,23 +303,23 @@ Additionally, `conjunctionJoins[]` holds pre-built join descriptors from nested 
 
 Patterns with **no CTS equivalent** (e.g., `annTopK`): always `patternJoins[]` for all logicTypes.
 
-## Nested Conjunction Handling — The 3×3 Matrix
+## Nested Conjunction Handling — The 7-Case Matrix
 
-When a criterion is itself an AND/OR/NOT group, `buildConjunctionJoin` resolves it:
+Pass 1 (`analyzeCriteria`) eliminates same-type nesting: AND-in-AND and OR-in-OR children are flattened into the parent's children array before the criteria tree is frozen. Pass 2 therefore never encounters those cases. The remaining 7 combinations are resolved by `buildConjunction` in `engine.mjs`:
 
 | Parent \ Child | AND | OR | NOT |
 |---|---|---|---|
-| **AND** | Inline (push to `criteria[]`) | Deferred sub-plan (combined in `assemblePlan`) | `notExistsJoin` on `{ OR: child.NOT }` |
-| **OR** | `joinFullOuter` on child sub-plan | Inline (push to `criteria[]`) | `joinFullOuter` on child sub-plan |
-| **NOT** | `notExistsJoin` on child sub-plan | `notExistsJoin` on child sub-plan | `joinInner` on `{ OR: child.NOT }` (double negation) |
+| **AND** | _(eliminated by Pass 1)_ | Deferred sub-plan (combined in `assemblePlan`) or CTS fold | `notExistsJoin` on `{ OR: child.NOT }` rewrite, or CTS fold |
+| **OR** | `joinFullOuter` on child sub-plan, or CTS fold | _(eliminated by Pass 1)_ | `joinFullOuter` on child sub-plan, or CTS fold |
+| **NOT** | `notExistsJoin` on child sub-plan, or CTS fold | `notExistsJoin` on child sub-plan, or CTS fold | `joinInner` on `{ OR: child.NOT }` (double negation), or CTS fold |
 
-**Inlining** (AND-in-AND, OR-in-OR): child items are pushed onto `criteria[]`. The dynamic `for` loop picks them up in subsequent iterations — no join, no recursion.
+**CTS fold** ([Opt 15](#optimization-15-cts-fold)): Every case first checks whether the sub-group's accumulator is pure CTS (no joins). If so, the sub's CTS query is folded directly into the parent's `ctsConstraints[]` — no sub-plan, no join. The fold is the common path for groups whose children are all CTS-expressible patterns.
 
-**AND-encounters-OR** is deferred: sub-plans are accumulated and combined off the outer fragment in `assemblePlan`. Chaining 2+ directly as `joinInner` against the same outer fragment triggers SPARQL fusion that silently zeroes results or blows memory.
+**AND-encounters-OR** (when not foldable): sub-plans are accumulated and combined off the outer fragment in `assemblePlan`. Chaining 2+ directly as `joinInner` against the same outer fragment triggers SPARQL fusion that silently zeroes results or blows memory.
 
 ## Column Naming Strategy
 
-Every `buildCriteriaAccumulator` call receives a `parentId` (UUID or `null` for root). Columns are namespaced to prevent collisions:
+Every `buildAccumulatorFromGroup` call receives a scope and optional `parentId`. Columns are namespaced to prevent collisions:
 
 | Column | Root (`parentId=null`) | Recursive (`parentId=<uuid>`) |
 |---|---|---|
@@ -352,7 +372,7 @@ After plan execution materializes all result rows, `paginateResults` determines 
 
 ## Term Validation in `buildLeafSearchTerm`
 
-After resolving a search term's config and pattern, the engine performs three categories of validation before the pattern's `apply()` method is called:
+After resolving a search term's config and pattern, Pass 1 performs three categories of validation before constructing the leaf node:
 
 ### Value-type enforcement
 
@@ -371,11 +391,11 @@ For keyword-pattern terms with wildcard characters (`*`, `?`):
 2. Each wildcard segment must have at least 3 non-wildcard characters adjacent to it.
 3. Violations throw `InvalidSearchRequestError`.
 
-This logic lives in `engine.mjs` (`sanitizeAndValidateWildcardedStrings`). `SCP` exposes a static pass-through for use by other modules (e.g., autocomplete).
+This logic lives in `analyzeCriteria.mjs` (`sanitizeAndValidateWildcardedStrings`). `SCP` exposes a static pass-through for use by other modules (e.g., autocomplete).
 
 ### Stop-word and punctuation-only detection
 
-Terms composed entirely of stop words (e.g., "a the and") or punctuation-only characters are marked unusable and added to the SCP's ignored terms list. If all criteria are unusable, an error is thrown. Detection is handled by `getUnusableTermWords()` in the engine.
+Terms composed entirely of stop words (e.g., "a the and") or punctuation-only characters are marked unusable and added to the SCP's ignored terms list. If all criteria are unusable, an error is thrown. Detection is handled by `getUnusableTermWords()` in `analyzeCriteria.mjs`.
 
 ---
 
@@ -498,14 +518,13 @@ Facets are calculated after the main search executes. The implementation:
 | Import | Source | Purpose |
 |---|---|---|
 | `op` | `/MarkLogic/optic.mjs` | The Optic API module |
-| `getSearchScopeTypes`, `isSearchScopeName` | `searchScope.mjs` | Maps scope name → RDF types; validates scope names |
-| `getSearchTermNames`, `getSearchTermConfig` | `searchTermsConfig.mjs` | Build-time generated search term definitions |
-| `SearchPatternBase` | `patterns/SearchPatternBase.mjs` | Pattern registry: `get()`, `has()` |
-| `PatternOptions` | `PatternOptions.mjs` | Options bag threaded through pattern calls |
+| `getSearchScopeTypes` | `searchScope.mjs` | Maps scope name → RDF types |
+| `SearchPatternBase` | `patterns/loadPatterns.mjs` | Pattern registry: `get()`, `has()` |
 | `expandPredicate` | `prefixUtils.mjs` | Expands CURIE predicate strings to full IRIs |
-| Pattern side-effect imports | `patterns/*.mjs` | Trigger self-registration of all 10 pattern classes |
+| `NODE_TYPE_GROUP` | `criteriaNodes.mjs` | Node type discriminator for tree walking |
+| `analyzeCriteria` | `analyzeCriteria.mjs` | Pass 1 entry point — produces the criteria tree |
 
-> **Note:** `getSearchTermNames` and `getSearchTermConfig` are **build-time generated**. The source file exports stubs; real implementations are injected by the `generateRemainingSearchTerms` Gradle task at deployment.
+> **Note:** `getSearchTermNames` and `getSearchTermConfig` are **build-time generated** (imported by `analyzeCriteria.mjs`). The source file exports stubs; real implementations are injected by the `generateRemainingSearchTerms` Gradle task at deployment.
 
 ## RDF Prefix Expansion
 
@@ -551,9 +570,9 @@ Facets are calculated after the main search executes. The implementation:
 
 # Non-obvious Behaviors
 
-- **Dynamic `for` loop**: `for (let idx = 0; idx < criteria.length; idx++)` reads live `.length`. AND-in-AND inlining, OR-in-OR inlining, and macro patterns push to `criteria[]` mid-loop. Deliberate — avoids recursion for flattenable cases.
+- **Same-type flattening in Pass 1**: `analyzeCriteria` flattens AND-in-AND and OR-in-OR children into the parent's children array. After single-branch OR→AND collapse, a post-collapse sweep re-checks for any same-type children introduced by the rewrite. This guarantees same-type nesting never reaches Pass 2.
 
-- **Deep copy via `xdmp.toJSON`**: `criteria = xdmp.toJSON(planCriteria.AND).toObject()` is required because the loop mutates `criteria[]`. Without it, recursive calls would corrupt the caller's input.
+- **Deep copy via `xdmp.toJSON`**: `criteria = xdmp.toJSON(planCriteria.AND).toObject()` is required in `analyzeCriteria` because the analysis loop can append to `criteria[]` (via `inlineCriteria` from `analyzeConjunction`). Without it, recursive calls would corrupt the caller's input.
 
 - **`_scope` override**: Any criteria object can carry `_scope` to override the search scope for that sub-plan.
 
@@ -575,9 +594,11 @@ Facets are calculated after the main search executes. The implementation:
 
 - **Optic plans are immutable.** Every method (`.joinInner()`, `.where()`, `.select()`, etc.) returns a NEW plan. `plan.where(...)` without `plan = plan.where(...)` silently discards the result.
 
-- **`assembleOpticPlan` is cheap to call twice.** It only constructs an Optic plan from a pre-populated accumulator. The expensive work (pattern contributions, transitive hop inner-query executions) is already captured in `acc`. Safe for producing variant plans (e.g., with/without sort lexicons).
+- **`assemblePlan` is cheap to call twice.** It only constructs an Optic plan from a pre-populated accumulator. The expensive work (pattern contributions, transitive hop inner-query executions) is already captured in `acc`. Safe for producing variant plans (e.g., with/without sort lexicons).
 
 - **Sort lexicons contaminate the base plan.** Adding sort field references to `acc.lexicons` before assembly constrains results to documents that have those index values. Solution: build the constraint plan from the original accumulator, then shallow-copy `acc.lexicons` with sort fields for a separate sorted plan.
+
+- **Score propagation must be stored on nodes, not re-derived.** `hasScoreContributingCriteria` is set on each group node during Pass 1 and frozen. Pass 2 reads it directly from the analysis result. Re-traversing the tree in Pass 2 to detect scoring leaves is fragile — nested ORs containing scoring leaves failed to propagate before this was fixed.
 
 ## Triple navigation
 
@@ -623,6 +644,7 @@ Facets are calculated after the main search executes. The implementation:
 | **Search Term** | A named criterion within a scope (e.g., `name`, `producedBy`, `classification`). Configured in `searchTermsConfig.mjs`. |
 | **Pattern** | The implementation strategy for a search term (e.g., `indexedWord`, `hopWithField`). Each pattern is a class extending `SearchPatternBase`, registered by name, and dispatched via `SearchPatternBase.get(patternName).apply(...)`. |
 | **Criterion** | A single element in the search criteria JSON. Either a conjunction (`AND`/`OR`/`NOT` wrapping an array) or a leaf (a search term + value). |
+| **Criteria Tree** | The immutable intermediate representation produced by Pass 1 (`analyzeCriteria`). A tree of group nodes (conjunctions) and leaf nodes (resolved search terms). Frozen via `Object.freeze`. Pass 2 walks this tree to build the Optic plan. |
 | **logicType** | The boolean context of the current processing call: `'and'`, `'or'`, or `'not'`. Determines bucket selection and join types. |
 | **SCP** | `SearchCriteriaProcessor` — the orchestrator class that holds search state and delegates to the engine. |
 | **D-Node pushdown** | A MarkLogic optimization where computation is sent to the data node owning the fragment, avoiding network transfer. Enabled by joining on fragment IDs. |
@@ -647,8 +669,8 @@ Facets are calculated after the main search executes. The implementation:
 
 - [ ] New pattern? → Create a new class extending `SearchPatternBase`, implement the interface, self-register.
 - [ ] Modify existing pattern? → Read the pattern's `apply()` method and understand its bucket decisions for all three `logicType` values.
-- [ ] Change engine behavior? → Read `buildCriteriaAccumulator`, `assemblePlan`, `collapseToResultRows`.
-- [ ] Change search orchestration? → Read `SearchCriteriaProcessor.mjs`.
+- [ ] Change engine behavior? → Read `buildAccumulatorFromGroup`, `assemblePlan`, `collapseToResultRows`.
+- [ ] Change analysis/validation behavior? → Read `analyzeCriteria.mjs`.
 
 ### 2. For new patterns
 
@@ -816,7 +838,7 @@ Reusable benchmark templates for the team:
 
 The following ideas were identified in earlier analysis (pre-Optic migration) and are not yet covered by the optimization sections below. Source: *LUX Search Criteria Processor Optimizations.docx* within [Optic and CTS Comparison](https://yaleedu.sharepoint.com/:f:/r/sites/MarkLogic/Shared%20Documents/1%20-%20LUX_ML/Optic%20and%20CTS%20Comparison?csf=1&web=1&e=hJ4fdF), along with all of that analysis' scripts and spreadsheets.
 
-1. **Remove Unnecessary Groups** — flatten redundant nested groups of the same type (e.g., OR-in-OR, AND-in-AND) to simplify the plan and enable downstream optimizations.
+1. **Remove Unnecessary Groups** — ✅ Implemented in the two-pass pipeline. Pass 1 (`analyzeCriteria`) flattens redundant nested groups of the same type (AND-in-AND, OR-in-OR) and collapses single-branch OR→AND. Pass 2 never encounters same-type nesting.
 2. **Selectively Join on IRIs Instead of Fragment IDs** — when IRIs are already in columns, join directly on them instead of going through the IRI lexicon to get fragment IDs. Reduced query 14 from 25s to ~3.5s warm.
 3. **Consolidation is Not Always Better** — splitting `op.fromTriples` calls (one per `op.pattern`) can outperform consolidating them into fewer calls. Engineering suspects implicit vs explicit join conditions. MarkLogic-internal ticket MLE-19738.
 4. **Semantic Facets** — revert CTS-defined facet configuration back to JSON search grammar when migrating to Optic, eliminating the CTS workaround from the Jan 2025 optimization (ML 365).
@@ -840,6 +862,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 3 | [Opt 14](#optimization-14-page-slice-hydration) | Page-Slice Hydration: CTS-based page-slice with minimal Optic hydration. **More may be possible:** see the eligibility criteria for details. | 2026-06-02 |
 | 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
 | 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
+| 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
 
 ## Data Type Constraint Optimizations
 
@@ -853,7 +876,7 @@ The `dataType` constraint (`op.in(op.col('dataType'), [...])`) is a recurring th
 
 The engine now skips the `op.in(op.col('dataType'), [...])` constraint on sub-plans when the parent plan already constrains to the same scope. This applies to nested AND/OR/NOT groups that do not cross scope boundaries.
 
-**Where it lives:** `buildCriteriaAccumulator` in `engine.mjs` computes `scopeAlreadyConstrained`:
+**Where it lives:** `buildAccumulatorFromGroup` in `engine.mjs` computes `scopeAlreadyConstrained`:
 
 ```javascript
 const scopeAlreadyConstrained =
@@ -869,10 +892,10 @@ constraints:
     : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
 ```
 
-**Propagation:** The parent passes its scope into recursive `buildCriteriaAccumulator` calls via `parentScope`. In `buildConjunctionJoin`, the condition `parentIsScopeConstrained ? scope : null` determines whether to propagate — `parentIsScopeConstrained` is true when the parent is not a multi-scope plan.
+**Propagation:** The parent passes its scope into recursive `buildAccumulatorFromGroup` calls via `parentScope`. In `buildConjunction`, the condition `parentIsScopeConstrained ? scope : null` determines whether to propagate — `parentIsScopeConstrained` is true when the parent is not a multi-scope plan.
 
 **When it fires:**
-- Nested AND/OR/NOT groups processed by `buildConjunctionJoin` → `buildSubOrFold`, where the sub-plan's scope matches the parent's scope.
+- Nested AND/OR/NOT groups processed by `buildConjunction` → `buildSubOrFold`, where the sub-plan's scope matches the parent's scope.
 
 **When it does not fire:**
 - Top-level plans (`isTopLevel = true`).
@@ -945,9 +968,18 @@ The `anyDataTypeName` lexicon must remain available for multi-scope queries and 
 
 ## Optimization 1: `plan.where()` when scores are not needed
 
-**Status:** Ready to implement.
+**Status:** Implemented.
 
-When `wantScore` is false in `assemblePlan`, the engine already uses `plan.where(ctsQuery)` instead of `op.fromSearch()`. This path is confirmed faster (128ms vs 179ms warm). No code change needed — this path already exists. The optimization is to ensure callers that don't need scoring (e.g., count-only, unsorted, or non-relevance-sorted queries) do not request scores.
+The engine uses `op.fromSearch()` + `joinInner` only when all three conditions are met:
+1. `sortCriteria.areScoresRequired()` — the sort order is relevance-based.
+2. `hasScoreContributingCriteria === true` — at least one leaf in the criteria tree contributes a relevance score (currently only `Keyword` and `IndexedWord` patterns).
+3. `acc.ctsConstraints.length > 0` — there are CTS constraints to score against.
+
+When any condition is false, the engine uses `plan.where(ctsQuery)` instead. This avoids incorporating the CTS query into the plan AST (which `fromSearch` does) and eliminates the `score`/`fragmentId` columns and the `joinInner` back to the base plan.
+
+The `hasScoreContributingCriteria` flag is computed during Pass 1 and stored on each group node. It propagates upward: if any leaf in a sub-group contributes scores, the parent group's flag is set. This ensures that scoring leaves inside nested ORs correctly trigger `fromSearch` at the top level.
+
+**Performance context (from investigation, not current implementation):** Theory A confirmed `where()` is faster than `fromSearch+joinInner` in isolation (128ms vs 179ms warm, both with `prepare(1)`). The current implementation has not been independently benchmarked — the score gate activates only for non-relevance-sorted queries, which are a subset of the 5K test population. The simpler plan AST (no `score`/`fragmentId` columns, no extra `joinInner`) is expected to modestly benefit the optimizer on cold runs.
 
 ## Optimization 2: Combine OR'd keywords into a single pattern instance
 
@@ -1125,7 +1157,7 @@ The page-slice technique is not inherently limited to keyword searches. Any quer
 
 When a nested conjunction (AND/OR/NOT group) produces a sub-accumulator that contains *only* `ctsConstraints` — no joins, no patternJoins, no andOrSubPlans — the engine folds the CTS query directly into the parent's `ctsConstraints` instead of building a full sub-plan. This eliminates the sub-plan's `fromLexicons` scan, UUID-namespaced columns, and the join back to the parent.
 
-[Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints) is a prerequisite for this optimization.
+[Optimization 3: Reduce or eliminate redundant dataType constraints](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints) is a prerequisite for this optimization (the sub-plan must have no `constraints[]` — which the empty-groups optimization achieves by skipping the redundant dataType constraint on same-scope sub-plans).
 
 Before both:
 ```javascript
@@ -1143,7 +1175,7 @@ After both:
 op.fromLexicons().where(dataTypeConstraint).where(keywordConstraint)
 ```
 
-The fold is implemented in `buildSubOrFold` inside `buildConjunctionJoin`. After building the sub-accumulator, `accContainsOnly(acc, 'ctsConstraints')` checks whether the sub contributed only CTS queries. When true, the sub's CTS queries are wrapped per their own `logicType` (via `wrapCtsByLogicType`) and returned as a `{ ctsConstraint }` that the parent pushes into its own `ctsConstraints` array. The parent's assembly then wraps all its `ctsConstraints` together — the folded sub's query becomes a peer of the parent's other CTS queries with no join involved.
+The fold is implemented in `buildSubOrFold` inside `buildConjunction`. After building the sub-accumulator, `accContainsOnly(acc, 'ctsConstraints')` checks whether the sub contributed only CTS queries. When true, the sub's CTS queries are wrapped per their own `logicType` (via `wrapCtsByLogicType`) and returned as a `{ ctsConstraint }` that the parent pushes into its own `ctsConstraints` array. The parent's assembly then wraps all its `ctsConstraints` together — the folded sub's query becomes a peer of the parent's other CTS queries with no join involved.
 
 Folding is eligible when the parent `logicType` is `and` or `or`. NOT parents are excluded because negation composition (inverting the sub's logic) is not a simple peer push. A `negateFold` flag handles the AND-encounters-NOT case: the engine rewrites `{ NOT: [...] }` as `{ OR: [...] }` for the sub-plan, and when the sub folds, wraps the result as `cts.notQuery(...)` to preserve negation semantics.
 

@@ -94,7 +94,7 @@ const scenarios = [
         _scope: 'work',
         // DocumentIdOrIri returns Optic constraints (not ctsConstraints) for
         // AND logic, so the inner accumulator is not pure CTS and
-        // processCriteriaAsCts returns null → Optic fallback fires.
+        // processNestedCriteriaAsCts returns null → Optic fallback fires.
         classification: { AND: [{ id: MOCK_IRI }, { name: 'painting' }] },
       },
     },

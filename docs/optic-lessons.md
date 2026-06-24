@@ -83,7 +83,7 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 
 ## Sort lexicons contaminate the base plan
 - Adding sort field references to `acc.lexicons` before `assemblePlan` means the `fromLexicons` call includes sort indexes, which constrains results to documents that have those index values and adds cost.
-- Solution (Option D): build the constraint plan from the original accumulator, then shallow-copy `acc.lexicons` with sort fields for a separate sorted plan. `processCriteria` returns `{ plan, constraintPlan }` at top-level; facets use `constraintPlan`, search results use `plan`.
+- Solution (Option D): build the constraint plan from the original accumulator, then shallow-copy `acc.lexicons` with sort fields for a separate sorted plan. `processNestedCriteria` returns `{ plan, constraintPlan }` at top-level; facets use `constraintPlan`, search results use `plan`.
 
 ## cts.estimate() returns xs.unsignedLong, not a JS number
 - `xs.unsignedLong(0)` is an object → truthy, so `|| 0` fallback doesn't trigger
@@ -160,3 +160,13 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
   3. `acc.ctsConstraints.length > 0` — there are CTS constraints to score against
 - Only `Keyword` and `IndexedWord` patterns set `contributesScore: true` on their leaf nodes.
 - When any condition is false, `plan.where(ctsQuery)` is used — simpler plan, no score column, no `joinInner` overhead.
+
+## Extraneous columns in sub-plans cause optimizer join fusion
+- When a nested sub-plan exposes more columns than the caller actually joins on, the optimizer sees the combined column set from all nesting levels, treats the multi-level join tree as a single optimization scope, and may choose cross-product hash-joins with catastrophic cardinality estimates.
+- Discovery: a 3-level nested hop (`event.used → item.containingItem → agent.producedBy → { id }`) consistently ran 8+ seconds — warm or cold — despite returning only 11 results. The optimizer's plan showed cardinality estimates as low as 4e-14 and intermediate row explosions consuming ~8 GB.
+- Fix: `.select([iriCol, fragCol])` on sub-plans before returning them to the caller. These are the only columns hop patterns join on. The projection creates an opaque barrier — the optimizer treats each nesting level as a black box.
+- Result: 764× warm improvement (8,404ms → 11ms), 35× cold improvement (8,594ms → 245ms).
+- Removing extraneous lexicon columns from `fromLexicons` (variant A: drop `uri` and `dataType`) also helps (16× cold improvement) but is insufficient without a hard barrier — the optimizer can still reason across the join boundary. The select barrier subsumes the lexicon reduction.
+- Inside-out plan assembly order (variant B) provided no improvement — confirms the optimizer freely reorders joins regardless of construction order.
+- Lesson: always project sub-plans down to the minimum column set needed by the caller. More columns = larger optimization scope = higher risk of the optimizer choosing a catastrophic strategy.
+- For more, see [Optimization 17: Select barrier on nested sub-plans](/docs/lux-optic-primer.md#optimization-17-select-barrier-on-nested-sub-plans).

@@ -29,7 +29,7 @@ class HopInverse extends SearchPatternBase {
     // TODO, PERF: Potential optimization.  When the child criteria is a literal IRI
     // (same condition #processValuesOnly checks), both hops could be resolved via
     // cts.triples and injected as op.fromLiterals, avoiding the inner
-    // processCriteria call.  This path only compiles one plan, but it could
+    // processNestedCriteria call.  This path only compiles one plan, but it could
     // still matter for latency-sensitive queries.  Consider prototyping if
     // profiling shows the inner plan construction is a bottleneck.
 
@@ -43,7 +43,7 @@ class HopInverse extends SearchPatternBase {
     ]);
 
     const right = tri.joinInner(
-      scp.processCriteria({
+      scp.processNestedCriteria({
         planCriteria: searchTerm.getCriteria(),
         planScope: termConfig.getTargetScopeName(),
         patternOptions,

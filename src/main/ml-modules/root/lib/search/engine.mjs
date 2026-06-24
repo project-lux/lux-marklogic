@@ -164,16 +164,34 @@ function performSearch(scp) {
   }
 }
 
-// For recursive calls from pattern classes — returns a single assembled plan.
-// parentScope: when set, the caller's plan already constrains results to that
-// search scope's types. Sub-plans built for the same scope can skip the
-// redundant dataType constraint ("empty-groups" optimization).
-function processCriteria({
+// Traverses criteria to fire pattern.apply() for side effects (e.g. value
+// population via appendValues) without building or executing an Optic plan.
+// Used by executeForValues in the related-list values-only path.
+function traverseCriteria({
   scp,
   planCriteria,
   planScope = 'item',
   patternOptions,
-  parentId = null,
+  allowMultiScope = false,
+}) {
+  const analysis = analyzeCriteria({
+    scp,
+    planCriteria,
+    planScope,
+    allowMultiScope,
+  });
+  buildAccumulator({ scp, analysis, patternOptions });
+}
+
+// Builds a sub-plan for nested criteria (called by pattern classes).
+// Always applies a select barrier projecting only iri + frag — the two
+// columns hop patterns join on. parentId is required.
+function processNestedCriteria({
+  scp,
+  planCriteria,
+  planScope = 'item',
+  patternOptions,
+  parentId,
   parentScope = null,
   allowMultiScope = false,
 }) {
@@ -191,39 +209,24 @@ function processCriteria({
     patternOptions,
     parentScope,
   });
-  let plan = assemblePlan(scp, { ...acc, ...assemblyContext });
-  if (parentId) {
-    // CRITICAL OPTIMIZATION (Opt 17): Do not remove this select barrier.
-    // Without it, MarkLogic's optimizer sees all columns across nested join
-    // levels, flattens the join tree, and picks cross-product hash-joins that
-    // explode to millions of intermediate rows (8+ seconds, 8GB memory).
-    // With it, the optimizer is forced to plan each level independently,
-    // reducing multi-hop queries from ~8400ms to ~11ms (764x improvement).
-    //
-    // Search this was found in:
-    // {
-    //   "_scope": "event",
-    //   "used": {
-    //     "containingItem": {
-    //       "producedBy": {
-    //         "id": "https://lux.collections.yale.edu/data/person/e17df9e9-7254-409f-98c3-7c2fb3e73cd1"
-    //       }
-    //     }
-    //   }
-    // }
-    const { iriCol, fragCol } = analysis.criteriaTree.columns;
-    plan = plan.select([iriCol, fragCol]);
-  }
-  return plan;
+  const plan = assemblePlan(scp, { ...acc, ...assemblyContext });
+  // CRITICAL OPTIMIZATION (Opt 17): Do not remove this select barrier.
+  // Without it, MarkLogic's optimizer sees all columns across nested join
+  // levels, flattens the join tree, and picks cross-product hash-joins that
+  // explode to millions of intermediate rows (8+ seconds, 8GB memory).
+  // With it, the optimizer is forced to plan each level independently,
+  // reducing multi-hop queries from ~8400ms to ~11ms (764x improvement).
+  const { iriCol, fragCol } = analysis.criteriaTree.columns;
+  return plan.select([iriCol, fragCol]);
 }
 
-// Like processCriteria but returns a bare CTS query when the inner criteria
+// Like processNestedCriteria but returns a bare CTS query when the inner criteria
 // resolves to pure CTS constraints (no Optic joins needed). Returns null when
 // the criteria requires an Optic plan — caller should fall back to the join path.
 // The dataType constraint is intentionally omitted: callers use cts.values to
 // resolve matching document IRIs, and the triple predicate already limits which
 // scope's documents are valid objects.
-function processCriteriaAsCts({
+function processNestedCriteriaAsCts({
   scp,
   planCriteria,
   planScope = 'item',
@@ -1199,6 +1202,7 @@ export {
   getResultRowGrouping,
   paginateResults,
   performSearch,
-  processCriteria,
-  processCriteriaAsCts,
+  processNestedCriteria,
+  processNestedCriteriaAsCts,
+  traverseCriteria,
 };

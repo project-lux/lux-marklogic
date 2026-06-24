@@ -247,7 +247,8 @@ const SearchCriteriaProcessor = class {
     this.#prepareForExecution(); // does not accummulate values across multiple calls
     this.#patternOptions.setReturnValues(true);
 
-    this.processCriteria({
+    engine.traverseCriteria({
+      scp: this,
       planCriteria: this.#resolvedSearchCriteria,
       planScope: this.#scopeName,
       allowMultiScope: this.#allowMultiScope,
@@ -275,24 +276,23 @@ const SearchCriteriaProcessor = class {
     });
   }
 
-  // Delegates to engine.processCriteria. Used by executeForValues() and by
-  // search pattern classes to process nested criteria.
+  // Delegates to engine.processNestedCriteria. Used by search pattern classes
+  // to build sub-plans for nested criteria (hop patterns).
   //
   // parentScope: forwarded as-is to enable the empty-groups (same-scope
-  // dataType-filter) optimization in engine.processCriteria. Defaults to null
-  // (optimization disabled). Current pattern callers (HopInverse,
-  // HopWithField) cross scope boundaries via termConfig.getTargetScopeName()
-  // and so must leave it null; a future same-scope caller can opt in by
-  // passing the parent's scope.
-  processCriteria({
+  // dataType-filter) optimization. Defaults to null (optimization disabled).
+  // Current pattern callers (HopInverse, HopWithField) cross scope boundaries
+  // via termConfig.getTargetScopeName() and so must leave it null; a future
+  // same-scope caller can opt in by passing the parent's scope.
+  processNestedCriteria({
     planCriteria,
     planScope = 'item',
     patternOptions,
-    parentId = null,
+    parentId,
     parentScope = null,
     allowMultiScope = false,
   }) {
-    return engine.processCriteria({
+    return engine.processNestedCriteria({
       scp: this,
       planCriteria,
       planScope,
@@ -303,11 +303,16 @@ const SearchCriteriaProcessor = class {
     });
   }
 
-  // Like processCriteria but returns a bare CTS query when the inner criteria
+  // Like processNestedCriteria but returns a bare CTS query when the inner criteria
   // resolves entirely to CTS constraints. Returns null when an Optic plan is
   // required — caller should fall back to the join path.
-  processCriteriaAsCts({ planCriteria, planScope, patternOptions, parentId }) {
-    return engine.processCriteriaAsCts({
+  processNestedCriteriaAsCts({
+    planCriteria,
+    planScope,
+    patternOptions,
+    parentId,
+  }) {
+    return engine.processNestedCriteriaAsCts({
       scp: this,
       planCriteria,
       planScope,

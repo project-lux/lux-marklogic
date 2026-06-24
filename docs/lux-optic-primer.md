@@ -4,6 +4,7 @@
 - [System Architecture](#system-architecture)
   - [Two-Pass Criteria Pipeline](#two-pass-criteria-pipeline)
   - [Request Flow](#request-flow)
+    - [Engine Entry Points](#engine-entry-points)
   - [Key Source Files](#key-source-files)
 - [Pattern System](#pattern-system)
   - [Self-Registration on SearchPatternBase](#self-registration-on-searchpatternbase)
@@ -83,6 +84,9 @@
   - [Optimization 14: Page-Slice Hydration](#optimization-14-page-slice-hydration)
   - [Optimization 15: CTS Fold](#optimization-15-cts-fold)
   - [Optimization 16: HopWithField CTS](#optimization-16-hopwithfield-cts)
+  - [Optimization 17: Select barrier on nested sub-plans](#optimization-17-select-barrier-on-nested-sub-plans)
+    - [Benchmark (MarkLogic 12.0.1)](#benchmark-marklogic-1201)
+    - [Analysis](#analysis)
 
 # Introduction
 
@@ -117,20 +121,40 @@ Endpoint handler
        ├─ prepare()                    ← configures scope, criteria, options
        ├─ execute()                    ← full search: plan + results
        │    └─ engine.performSearch(scp)
-       │         └─ engine.buildPlans(...)
+       │         └─ engine.buildPlans(...)             [top-level entry point]
        │              ├─ Pass 1: analyzeCriteria(...)         ← produces criteria tree
        │              │    └─ buildLeafSearchTerm(...)        ← validates, resolves pattern, tokenizes
        │              │    └─ analyzeConjunction(...)         ← flattens same-type nesting
        │              ├─ Pass 2: buildAccumulator(...)        ← walks tree, calls pattern.apply()
        │              │    └─ buildConjunction(...)           ← resolves 7-case matrix (sub-groups)
+       │              │    └─ pattern.apply(...)              ← may call processNestedCriteria ↓
        │              ├─ assemblePlan(...)                    ← builds Optic plan from accumulator
        │              └─ collapseToResultRows(...)            ← groupBy, sort, select
        │         └─ plan.limit() if pageWith                 ← caps materialization
-       │         └─ plan.result().toArray()                  ← executes plan
-       │         └─ engine.paginateResults(...)              ← resolves page (normal or pageWith)
+       │         └─ plan.result().toArray()                   ← executes plan
+       │         └─ engine.paginateResults(...)               ← resolves page (normal or pageWith)
        ├─ executeForValues()           ← related lists: values only, no Optic plan
+       │    └─ engine.traverseCriteria(...)            [side-effects-only entry point]
+       │         ├─ Pass 1: analyzeCriteria(...)
+       │         └─ Pass 2: buildAccumulator(...)             ← fires pattern.apply() for side effects
+       │              (no assemblePlan — no plan built or returned)
        └─ buildPlans(...)              ← developer tool: returns plans without executing
 ```
+
+### Engine Entry Points
+
+The engine exports three entry points that each use the two-pass pipeline differently. Understanding which one is called — and why — prevents confusion about where plans are built vs. where side effects fire.
+
+| Entry point | Called by | Pass 1 | Pass 2 | Plan built? | Returns |
+|---|---|---|---|---|---|
+| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan }` |
+| `processNestedCriteria` | Pattern classes (`HopWithField`, `HopInverse`) | Yes | Yes + `assemblePlan` + select barrier | Yes — sub-plan projected to `[iriCol, fragCol]` | Optic plan (two columns) |
+| `processNestedCriteriaAsCts` | `HopWithField` (CTS optimization path) | Yes | Yes (accumulator only) | No — returns CTS query or null | `ctsQuery \| null` |
+| `traverseCriteria` | `SCP.executeForValues()` (related lists) | Yes | Yes (accumulator only) | No — side effects only | `undefined` |
+
+**Key distinction:** `buildPlans` is the top-level entry — it calls `collapseToResultRows` (groupBy + sort + select) to produce the final result shape. `processNestedCriteria` is for sub-plans within a pattern — it calls `assemblePlan` but applies a select barrier (`.select([iriCol, fragCol])`) instead of finalization, because the caller will join the sub-plan into a larger plan. `traverseCriteria` skips plan construction entirely — it only runs the pipeline so that `pattern.apply()` can fire side effects like `scp.appendValues()`.
+
+Patterns that navigate to a nested scope (e.g., `HopWithField` processing the inner `{ producedBy: { id: ... } }`) call `scp.processNestedCriteria()`, which re-enters the engine: Pass 1 analyzes the inner criteria into its own criteria tree, Pass 2 walks that tree and builds a sub-plan, and the select barrier projects it down before returning it to the pattern's join logic.
 
 ## Key Source Files
 
@@ -139,7 +163,7 @@ Endpoint handler
 | `lib/SearchCriteriaProcessor.mjs` | Orchestrator. `prepare()` → `execute()` / `executeForValues()` / `buildPlans()`. Holds search state. |
 | `lib/search/analyzeCriteria.mjs` | **Pass 1.** Traverses raw criteria JSON, validates, normalizes, and produces the frozen criteria tree. No Optic API calls. |
 | `lib/search/criteriaNodes.mjs` | Node factories and type constants for the criteria tree (`createLeafNode`, `createGroupNode`, `createAnalysisResult`). |
-| `lib/search/engine.mjs` | **Pass 2 + orchestration.** `performSearch`, `buildPlans`, `processCriteria`, `buildAccumulator`, `buildAccumulatorFromGroup`, `assemblePlan`, `collapseToResultRows`, `paginateResults`. |
+| `lib/search/engine.mjs` | **Pass 2 + orchestration.** Entry points: `performSearch`, `buildPlans` (top-level), `processNestedCriteria` (sub-plans with select barrier), `processNestedCriteriaAsCts` (CTS-only sub-plans), `traverseCriteria` (side-effects only). Internals: `buildAccumulator`, `buildAccumulatorFromGroup`, `assemblePlan`, `collapseToResultRows`, `paginateResults`. |
 | `lib/search/patterns/loadPatterns.mjs` | **Barrel module.** Imports all pattern files (triggering self-registration) and re-exports `SearchPatternBase` plus every `PATTERN_NAME_*` constant. All consumers should import from here, never from individual pattern files or `SearchPatternBase.mjs` directly. |
 | `lib/search/patterns/SearchPatternBase.mjs` | Base class for all patterns. Hosts the static pattern registry. |
 | `lib/search/patterns/SearchPatternInterface.mjs` | Abstract interface defining required methods for pattern classes. |
@@ -431,7 +455,7 @@ The result is a single `cts.orQuery([nonSemanticQuery, tripleRangeQuery])` place
 **CTS path** ([Opt 16](#optimization-16-hopwithfield-cts)): When the non-transitive term's inner criteria resolves to pure CTS (no Optic joins), the pattern emits `cts.tripleRangeQuery` as a `ctsConstraint` instead of an Optic `fromTriples` join. This eliminates the `fromTriples` scan and the `joinInner` back to the base plan. Two sub-paths:
 
 - **Id-leaf**: `{ id: IRI }` or `{ iri: IRI }` — wraps `cts.documentQuery(childId)` inside `cts.values(cts.iriReference())` to resolve matching object IRIs.
-- **Nested pure-CTS**: `{ name: "painting" }`, `{ OR: [{ id: IRI }, ...] }` — calls `processCriteriaAsCts` on the inner criteria. If the inner accumulator is pure CTS, wraps it inside `cts.values` the same way.
+- **Nested pure-CTS**: `{ name: "painting" }`, `{ OR: [{ id: IRI }, ...] }` — calls `processNestedCriteriaAsCts` on the inner criteria. If the inner accumulator is pure CTS, wraps it inside `cts.values` the same way.
 
 Both paths fall back to the Optic join path when inner criteria requires Optic contributions (e.g., `DocumentIdOrIri` under AND logic contributes `constraints`, not `ctsConstraints`).
 
@@ -491,7 +515,7 @@ Related lists find entities related to a given entity via triple navigation. Eac
 **Execution flow** (`relatedListsLib.mjs`):
 1. Iterates `searchConfigs` for the requested related list.
 2. For each, creates an `SCP`, calls `prepare()`, then `executeForValues()`.
-3. `executeForValues()` runs `processCriteria` (triggering `HopInverse.#processValuesOnly`), then returns the collected values without building or executing a full Optic plan.
+3. `executeForValues()` calls `engine.traverseCriteria` — this runs both passes (analysis + accumulator walk) to fire `pattern.apply()` for side effects (e.g., `HopInverse.#processValuesOnly` appending IRIs via `scp.appendValues()`), but does not build or return an Optic plan.
 4. Results are aggregated by URI, sorted by relationship count, and paginated.
 
 **PatternOptions for set by related lists**:
@@ -863,6 +887,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
 | 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
 | 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
+| 7 | [Opt 17](#optimization-17-select-barrier-on-nested-sub-plans) | Select barrier: `.select([iriCol, fragCol])` on nested sub-plans prevents optimizer from fusing join trees across nesting levels (764× warm improvement on 3-level hops) | 2026-06-24 |
 
 ## Data Type Constraint Optimizations
 
@@ -900,7 +925,7 @@ constraints:
 **When it does not fire:**
 - Top-level plans (`isTopLevel = true`).
 - Multi-scope plans (`isMultiScope = true`).
-- Pattern recursion: `HopInverse` and `HopWithField` call `scp.processCriteria()` without passing `parentScope` (defaults to `null`). Both patterns cross scope boundaries via `termConfig.getTargetScopeName()`, so the parent scope never matches the child scope. Technically a same-scope pattern caller could opt in by passing `parentScope`, but none currently do.
+- Pattern recursion: `HopInverse` and `HopWithField` call `scp.processNestedCriteria()` without passing `parentScope` (defaults to `null`). Both patterns cross scope boundaries via `termConfig.getTargetScopeName()`, so the parent scope never matches the child scope. Technically a same-scope pattern caller could opt in by passing `parentScope`, but none currently do.
 
 #### Finding: hop-side dataType constraint is required (2026-06-03)
 
@@ -1221,10 +1246,10 @@ The `cts.values(cts.iriReference(), ..., innerCts)` call resolves the set of doc
 
 **Implementation:** Three paths in `#processHopWithFieldTerm`:
 1. **Id-leaf** (`childId` is set, no `termValue`): wraps `cts.documentQuery(childId)` inside `cts.values`.
-2. **Nested pure-CTS** (no `termValue`, no `childId`): calls `scp.processCriteriaAsCts()` — if it returns non-null, wraps the result inside `cts.values`.
+2. **Nested pure-CTS** (no `termValue`, no `childId`): calls `scp.processNestedCriteriaAsCts()` — if it returns non-null, wraps the result inside `cts.values`.
 3. **Fallback**: original Optic `fromTriples` + `joinInner` path.
 
-`processCriteriaAsCts` (added to `engine.mjs`) is a variant of `processCriteria` that builds the inner accumulator with `parentScope: planScope` (to skip the dataType constraint) and returns the CTS query only if `accContainsOnly(acc, 'ctsConstraints')` is true.
+`processNestedCriteriaAsCts` (added to `engine.mjs`) is a variant of `processNestedCriteria` that builds the inner accumulator with `parentScope: planScope` (to skip the dataType constraint) and returns the CTS query only if `accContainsOnly(acc, 'ctsConstraints')` is true.
 
 **Scope:** Non-transitive `hopWithField` terms without `idIndexReferences`. Terms with `idIndexReferences` are rewritten to `IndexedValue` by the engine before `HopWithField.apply()` is called. Transitive terms always use SPARQL embedding.
 
@@ -1265,3 +1290,50 @@ The remaining gap to CTS is concentrated in the median — searches that don't b
 | p95 | 54 | 216.65 | +162.65 | +301.2% |
 | p99 | 132.55 | 502.93 | +370.38 | +279.4% |
 | p99.9 | 285.6 | 1,002.69 | +717.09 | +251.1% |
+
+## Optimization 17: Select barrier on nested sub-plans
+
+**Status:** Implemented.
+
+**Discovery query:** A three-level nested hop in the `event` scope:
+
+```json
+{
+  "_scope": "event",
+  "used": {
+    "containingItem": {
+      "producedBy": {
+        "id": "https://lux.collections.yale.edu/data/person/e17df9e9-7254-409f-98c3-7c2fb3e73cd1"
+      }
+    }
+  }
+}
+```
+
+This query was consistently 8+ seconds — warm or cold — despite returning only 11 results. The optimizer's plan revealed that it was seeing all columns from every nested join level, flattening the join tree into a single optimization scope, and choosing cross-product hash-joins with catastrophic cardinality estimates (as low as 4e-14). The intermediate row explosion consumed ~8 GB of memory.
+
+**Root cause:** When `processNestedCriteria` returned a full sub-plan with all its columns (uri, iri, dataType, frag, plus any pattern-specific columns), the parent plan's `joinInner` exposed all those columns to the optimizer. With three nesting levels, the optimizer saw the combined column set from all levels simultaneously, fused the joins into a single optimization block, and selected a strategy that materialized millions of intermediate rows.
+
+**Fix:** `processNestedCriteria` now appends `.select([iriCol, fragCol])` to the sub-plan before returning it. These are the only two columns that hop patterns actually join on. By projecting away all other columns, the optimizer is forced to plan each nesting level independently — it can no longer see across the barrier to flatten the join tree.
+
+**Why both columns:** The `PREFER_FRAG_JOINS` option controls whether hop patterns join on fragment ID or URI. The select barrier projects both `iriCol` and `fragCol` to cover either join strategy. Projecting only the one currently in use would break if the option were toggled.
+
+**Why not also remove extraneous lexicons:** The `uri` column from `fromLexicons` is referenced by `assemblePlan`'s OR `fullOuterJoin` path in its `.select(...)`. Removing `uri` from sub-plan lexicons would break that edge case. The select barrier alone provides the dominant improvement — variant A (minimal lexicons, no barrier) achieved 533ms cold while variant C (barrier, full lexicons) achieved 245ms cold / 11ms warm.
+
+### Benchmark (MarkLogic 12.0.1)
+
+All variants use the discovery query above. Each execution returned 11 results (`totalItemsRead=143` ÷ 13 runs), confirmed identical across all variants.
+
+| Variant | Cold avg (ms) | Cold stddev | Warm avg (ms) | Warm stddev | Description |
+|---|---|---|---|---|---|
+| **Baseline** | 8,594 | 9 | 8,404 | 86 | No optimization. Full column set visible across all nesting levels. |
+| **A — Minimal lexicons** | 533 | 11 | 292 | 3 | Removed `uri` and `dataType` columns from sub-plan `fromLexicons`. Fewer columns = smaller optimization scope, but still no hard barrier. |
+| **B — Inside-out assembly** | 8,569 | 59 | 8,251 | 48 | Reversed plan assembly order (innermost first). No improvement — the optimizer fuses join trees regardless of assembly order. |
+| **C — Select barrier** | **245** | 9 | **11** | 1 | `.select([iriCol, fragCol])` after `assemblePlan` in `processNestedCriteria`. **Implemented.** |
+
+### Analysis
+
+- **Baseline vs. C (select barrier):** 764× warm improvement (8,404ms → 11ms), 35× cold improvement (8,594ms → 245ms). The warm improvement is larger because the optimizer's plan cache retains the catastrophic strategy — even cached, the bad plan takes 8+ seconds to execute.
+- **A (minimal lexicons):** 16× cold improvement over baseline (8,594ms → 533ms). Reducing the column count shrinks the optimization scope enough to avoid the worst cross-product strategies, but without a hard projection barrier the optimizer can still see more columns than necessary. Warm runs (292ms) remain ~26× slower than the barrier approach.
+- **B (inside-out assembly):** No improvement. Confirms the problem is optimizer join fusion, not plan construction order. The optimizer freely reorders joins regardless of how the application builds them.
+- **Why the barrier dominates:** Variant A improves cold starts by reducing column count, but the optimizer can still reason across the join boundary. The select barrier (variant C) creates an opaque wall — the optimizer treats each sub-plan as a black box returning exactly two columns. This prevents cross-level fusion entirely, which explains the additional 2× cold improvement and 26× warm improvement over variant A.

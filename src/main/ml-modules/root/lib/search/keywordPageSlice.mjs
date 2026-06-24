@@ -92,6 +92,9 @@ function tryExecuteKeywordPageSlice(scp, analyzeLeafCriteria) {
 
   // cts.scoreOrder('descending') means raw results arrive sorted; slicing
   // before any further work shrinks the payload from 10K+ URIs to top-K.
+  //
+  // TODO: *If* we keep this optimization, switch from Array.slice to fn.subsequence.
+  //
   const survivors = cts
     .search(finalQuery, [
       'unfiltered',

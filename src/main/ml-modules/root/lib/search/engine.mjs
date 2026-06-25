@@ -684,9 +684,12 @@ function assemblePlan(
     // whether sub-plan scores should contribute to the final relevance ranking.
     const wantScore =
       isTopLevel &&
-      hasScoreContributingCriteria &&
+      // hasScoreContributingCriteria &&  // DISABLED OPT 1: testing score skip
       scp.getSortCriteria()?.areScoresRequired();
     if (wantScore) {
+      console.log(
+        `OPT1-DISABLED: computing scores (hasScoreContributing=${hasScoreContributingCriteria})`,
+      );
       // Use op.fromSearch to obtain the score column for relevance sorting.
       // Only done at the top level; sub-plans use plan.where to avoid
       // 'fragmentId'/'score' column collisions when joined back in.
@@ -698,6 +701,9 @@ function assemblePlan(
         op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol('fragmentId')),
       );
     } else {
+      console.log(
+        `OPT1-APPLIED: skipping scores (hasScoreContributing=${hasScoreContributingCriteria})`,
+      );
       plan = plan.where(ctsQuery);
     }
   }
@@ -1071,7 +1077,7 @@ function buildSortedResultsPlan({
 
   if (
     sortCriteria?.areScoresRequired() &&
-    hasScoreContributingCriteria &&
+    // hasScoreContributingCriteria &&  // DISABLED OPT 1: testing score skip
     acc.ctsConstraints.length > 0
   ) {
     // Relevance sort — use the score column produced by op.fromSearch.

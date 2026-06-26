@@ -93,6 +93,11 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Fix: wrap in `Number(cts.estimate(...))` when you need JS number semantics
 - Original scripts used `==` (loose equality) which masked this
 
+## cts.estimate requires explicit scope filter to match Optic totals
+- `cts.estimate(query)` counts all fragments matching the CTS query — including documents outside the requested search scope when cross-scope fields are involved (e.g., `anyAnyText` matches items, agents, works, etc.).
+- The Optic path naturally filters scope via `op.in(op.col('dataType'), scopeTypes)` on `fromLexicons`. This fires before `groupBy`, so out-of-scope documents never enter the result set.
+- To match: compose the CTS query with `cts.fieldValueQuery('anyDataTypeName', scopeTypes)` via `cts.andQuery`. This is what `buildEstimateQuery` in engine.mjs does for Opt 18.
+- The page-slice hydration path (Opt 14, abandoned) produced incorrect totals in part because its `cts.estimate` call did not include this scope filter for all query shapes.
 
 ## Function naming conventions
 - Exported functions: no underscore prefix (e.g., `invokeAsUnit`)
@@ -170,3 +175,19 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Inside-out plan assembly order (variant B) provided no improvement — confirms the optimizer freely reorders joins regardless of construction order.
 - Lesson: always project sub-plans down to the minimum column set needed by the caller. More columns = larger optimization scope = higher risk of the optimizer choosing a catastrophic strategy.
 - For more, see [Optimization 17: Select barrier on nested sub-plans](/docs/lux-optic-primer.md#optimization-17-select-barrier-on-nested-sub-plans).
+
+## Test suite conventions
+- Test files live under `src/test/ml-modules/root/test/suites/` in subdirectories by module (e.g., `searchCriteriaProcessorTests/`).
+- Files are numbered for ordering (0601, 0602, etc.). One function per test file.
+- Each file exports `assertions` (`export default assertions;`) — an array of assertion results.
+- Use the **scenarios array pattern**: define a `scenarios` array where each element has `{ name, input, expected }`. Iterate scenarios calling `executeScenario(scenario, zeroArityFun)` for each.
+- **`input`**: shape is catered to the function under test. Contains whatever arguments/state the function needs. Keep it direct — mirror the function's parameters rather than inventing a dispatch mechanism.
+- **`expected`**: standard properties handled by `executeScenario`:
+  - `expected.error` (boolean): whether the function should throw.
+  - `expected.errorMessage` (string): if `error: true`, the thrown message must include this substring.
+  - `expected.stackToInclude` (string): if `error: true`, the stack trace must include this substring.
+  - `expected.value`: the exact return value to assert against via `assertEqual`. Used for direct value comparison — not derived booleans.
+- Beyond these standard properties, `expected` can include any custom fields for function-specific assertions applied after `executeScenario` returns.
+- `executeScenario` wraps the zero-arity function call, catches errors, and returns `{ actualValue, applyErrorNotExpectedAssertions, applyErrorExpectedAssertions }` — use these flags to gate subsequent assertions.
+- Integration tests (e.g., 0600) hit the deployed engine with real search criteria. Unit tests (e.g., 0601–0603) import functions directly and test with synthetic inputs.
+- Assertions use `testHelperProxy.assertEqual(expected, actual, message)`, `assertTrue`, `assertFalse`.

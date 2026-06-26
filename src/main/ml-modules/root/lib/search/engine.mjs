@@ -1277,10 +1277,12 @@ function accContainsOnly(acc, bucketName) {
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
   analyzeLeafCriteria,
+  buildEstimateQuery,
   buildPlans,
   buildSortedResultsPlan,
   canUseEstimate,
   getResultRowGrouping,
+  isAccumulatorJoinFree,
   paginateResults,
   performSearch,
   processNestedCriteria,

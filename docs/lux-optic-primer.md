@@ -99,6 +99,31 @@
     - [Design sketch](#design-sketch)
     - [Scope leakage](#scope-leakage)
     - [Constraints](#constraints)
+  - [Optimization 20: Eliminate fromLexicons for join-free queries](#optimization-20-eliminate-fromlexicons-for-join-free-queries)
+    - [Problem](#problem-2)
+    - [Approach](#approach)
+    - [Eligibility](#eligibility)
+    - [Implementation plan](#implementation-plan)
+      - [1. Build the page results via `fromSearch`](#1-build-the-page-results-via-fromsearch)
+      - [2. Handle relevance sort vs other sorts](#2-handle-relevance-sort-vs-other-sorts)
+      - [3. Handle the `dataType` extraction](#3-handle-the-datatype-extraction)
+      - [4. Wire into `performSearch`](#4-wire-into-performsearch)
+      - [5. Verify correctness](#5-verify-correctness)
+    - [What this does NOT address](#what-this-does-not-address)
+    - [Benchmark (prototype, MarkLogic 12.0.1)](#benchmark-prototype-marklogic-1201)
+    - [Relationship to other optimizations](#relationship-to-other-optimizations)
+  - [Optimization 21: Eliminate URI-list materialization for facets](#optimization-21-eliminate-uri-list-materialization-for-facets)
+    - [Problem](#problem-3)
+    - [Approach](#approach-1)
+    - [Eligibility](#eligibility-1)
+    - [Implementation plan](#implementation-plan-1)
+      - [1. Modify `calculateFacets` to accept an optional CTS query](#1-modify-calculatefacets-to-accept-an-optional-cts-query)
+      - [2. Modify `performSearch` to pass `estimateQuery` to `calculateFacets`](#2-modify-performsearch-to-pass-estimatequery-to-calculatefacets)
+      - [3. Handle `rows = null` in `calculateFacets`](#3-handle-rows--null-in-calculatefacets)
+      - [4. Verify correctness](#4-verify-correctness)
+    - [What this does NOT address](#what-this-does-not-address-1)
+    - [Relationship to other optimizations](#relationship-to-other-optimizations-1)
+    - [Estimated impact](#estimated-impact)
 
 # Introduction
 
@@ -1474,3 +1499,369 @@ Scope leakage may be acceptable for estimates, especially if for a minority subs
 - **Not for `pageWith`.** The `pageWith` path needs to locate a specific document's position in the full result set.
 - **Plan construction cost.** Building a second plan (without dataType) doubles the `buildPlans` work. This may be mitigable by sharing the analysis pass and only diverging at `createPlanAccumulator`.
 - **Memory safety.** The Opt 3 investigation showed that removing the dataType constraint from hop sub-plans caused SVC-MEMCANCELED. The count plan would remove it only from the *top-level* accumulator — hop sub-plans would retain their constraints. This distinction needs validation.
+
+## Optimization 20: Eliminate fromLexicons for join-free queries
+
+**Status:** Idea — prototype validated at 170ms cold (vs 4,609ms baseline).
+
+### Problem
+
+When [CTS Estimate (Opt 18)](#optimization-18-cts-estimate) is eligible, the engine already trusts `cts.estimate` for the total count and applies `.offset().limit()` to cap materialization. However, the Optic plan still begins with `op.fromLexicons` scanning three range indexes — `uri` (43.9M entries), `iri` (43.9M entries split into two sub-scans), and `dataType` (43.9M entries) — joined together via scatter-join and hash-join. For a query like `item.memberOf { id }` returning 219K matches, this plan:
+
+1. Scans three lexicons over 43.9M entries each
+2. Hash-joins the two IRI scans by fragment
+3. Scatter-joins the result with the dataType lexicon
+4. Applies the CTS constraint filter
+5. Sorts and groups 219K rows to dedup (required because `iri` multiplies rows)
+6. **Only then** applies `limit(20)`
+
+The limit cannot be pushed below `groupBy`, so all 219K rows are materialized, sorted, and grouped before the top 20 are selected. Result: 3.8–4.6s cold vs 125ms for the equivalent CTS query.
+
+The `iri` column is unused (no hop patterns joined), the `groupBy` exists only to dedup rows inflated by `iri`, and the `dataType` lexicon scan exists only to project the record type into the output — work that could be done for 20 rows instead of 219K.
+
+### Approach
+
+Replace `fromLexicons` with `op.fromSearch(ctsQuery)` + `.limit(pageLength)` + `joinDocAndUri()` when the query is CTS Estimate-eligible. This eliminates all lexicon scans and lets the CTS index do filtering, ordering, and pagination directly.
+
+**Prototype** (`scratch/performance/memberOf/memberOf-variantA-pull-docs.js`):
+
+```javascript
+op.fromSearch(q, ['fragmentId', 'score'])
+  .limit(resultLimit)
+  .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
+  .result()
+  .toArray()
+  .map(row => ({ id: row.uri, type: row.doc.xpath('/json/type') }));
+```
+
+Result: **170ms cold** vs 4,609ms baseline (27× faster). The `fromSearch` plan is compact (no IRI literals, no lexicon scans), the limit is applied before any document retrieval, and `joinDocAndUri` pulls only 20 documents from disk to extract `dataType` via XPath.
+
+### Eligibility
+
+Same as `canUseEstimate` (Opt 18) — all of the following must be true:
+
+1. Top-level accumulator is join-free (`isAccumulatorJoinFree`).
+2. Request includes search results (`includeSearchResults`).
+3. No `pageWith` requested.
+4. No facet requests.
+5. `buildEstimateQuery` returns non-null.
+
+When these hold, no pattern needs the `iri`, `uri`, or `dataType` lexicon columns for joins. The only purpose of `fromLexicons` is to produce `{id, type}` output rows — which `fromSearch` + `joinDocAndUri` achieves without scanning any lexicons.
+
+### Implementation plan
+
+The implementation should be in `performSearch` in `engine.mjs`, extending the existing `canUseEstimate` path.
+
+#### 1. Build the page results via `fromSearch`
+
+Instead of the current flow (build full `fromLexicons` plan → `.offset().limit()` → `.result()`), build a minimal plan:
+
+```javascript
+const estimateQuery = buildEstimateQuery(acc, scope);
+if (canUseEstimate({ includeSearchResults, pageWith, facetRequests, estimateQuery })) {
+  // Total via cts.estimate (already implemented in Opt 18)
+  const total = Number(cts.estimate(estimateQuery));
+
+  // Page via fromSearch — no fromLexicons, no lexicon scans
+  const ctsQuery = wrapCtsByLogicType(acc.ctsConstraints, 'and');
+  const pageRows = op.fromSearch(ctsQuery, ['fragmentId', 'score'])
+    .offset(offset)
+    .limit(pageLength)
+    .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
+    .result()
+    .toArray()
+    .map(row => ({
+      id: row.uri,
+      type: String(row.doc.xpath('/json/type')),
+    }));
+
+  // Return as SearchExecutionResult
+}
+```
+
+**Key details:**
+- `fromSearch(ctsQuery, ['fragmentId', 'score'])` uses the **unwrapped CTS query** (without the scope dataType filter from `buildEstimateQuery`). The scope filter is only needed for the estimate — `fromSearch` naturally scopes via the CTS query's field-level specificity. Verify this by comparing result counts.
+- If scores are NOT required (`!areScoresRequired`), use `fromSearch(ctsQuery, ['fragmentId'])` — omit `score` to skip scoring computation.
+- `.offset(offset).limit(pageLength)` paginates at the CTS level — only the requested page is materialized.
+- `joinDocAndUri` pulls documents from disk. For 20 docs this is negligible (~1ms per doc on warm cache). The XPath `/json/type` extracts the `dataType` value that `collapseToResultRows` currently gets from the `dataType` lexicon.
+- The `groupBy` is unnecessary — `fromSearch` returns one row per matching fragment (no `iri` multiplication).
+
+#### 2. Handle relevance sort vs other sorts
+
+`fromSearch` returns results ordered by relevance score by default. This is correct for relevance-sorted queries (the default). For non-relevance sort orders, this optimization cannot apply in V1 — the sort would require Optic lexicon columns that this path eliminates.
+
+For V1, add a sort check to `canUseEstimate` or add a separate gate:
+
+```javascript
+const canEliminateLexicons = canUseEstimate(...) &&
+  (sortCriteria.isRelevanceSort() || !sortCriteria.hasSortCriteria());
+```
+
+Non-relevance-sorted queries fall through to the existing `fromLexicons` path.
+
+#### 3. Handle the `dataType` extraction
+
+Two options for extracting `dataType` from the 20 page documents:
+
+**Option A — `joinDocAndUri` + XPath (prototype approach):**
+```javascript
+.joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
+// then map: row.doc.xpath('/json/type')
+```
+Pulls documents from disk. For 20 docs, ~negligible cost. Simple. The XPath path `/json/type` must match the actual document structure — verify against sample documents.
+
+**Option B — Tiny `fromLexicons` hydration (index-only):**
+```javascript
+const uris = pageRows.map(r => r.uri);
+const hydrated = op.fromLexicons(
+  { uri: cts.uriReference(), dataType: cts.fieldReference('anyDataTypeName') },
+  null, op.fragmentIdCol('frag')
+).where(cts.documentQuery(uris))
+  .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+  .result().toArray();
+```
+Stays in the index — no documents pulled from disk. But adds a second Optic plan execution. For 20 URIs, the `cts.documentQuery` is tiny and the lexicon scan is essentially a point lookup.
+
+**Recommendation:** Start with Option A (simpler, validated in prototype). If document retrieval shows measurable cost at scale or on cold cache, switch to Option B.
+
+#### 4. Wire into `performSearch`
+
+The change is localized to `performSearch` in `engine.mjs`. The existing structure:
+
+```javascript
+if (canUseEstimate({ ... })) {
+  total = Number(cts.estimate(estimateQuery));
+  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
+  // ...
+}
+```
+
+Becomes:
+
+```javascript
+if (canUseEstimate({ ... }) && canEliminateLexicons) {
+  // Opt 20: fromSearch path — no fromLexicons
+  total = Number(cts.estimate(estimateQuery));
+  searchResults = buildFromSearchPage(acc, offset, pageLength, areScoresRequired);
+} else if (canUseEstimate({ ... })) {
+  // Opt 18: fromLexicons with offset/limit
+  total = Number(cts.estimate(estimateQuery));
+  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
+} else {
+  // Full materialization
+  // ...
+}
+```
+
+The `buildFromSearchPage` helper encapsulates the `fromSearch` + `joinDocAndUri` + XPath logic.
+
+#### 5. Verify correctness
+
+- **Result parity:** For the same query, compare `{id, type}` rows between the `fromLexicons` path and the `fromSearch` path. They must match exactly (same URIs, same types). Order may differ for tied scores — same exposure as existing tied-score behavior.
+- **Total parity:** `cts.estimate(estimateQuery)` is already validated by Opt 18 tests.
+- **Scope filtering:** Confirm that `fromSearch(ctsQuery)` without the explicit `anyDataTypeName` scope filter returns only in-scope documents. The CTS query uses scope-specific fields (e.g., `itemMemberOfId`) which inherently limit to the correct scope. Cross-scope fields like `anyAnyText` would leak — but those fields produce `patternJoins` or `andOrSubPlans` in the accumulator, making `isAccumulatorJoinFree` false and disqualifying the query from this path.
+- **XPath correctness:** Verify `/json/type` returns the correct `dataType` string for documents in each scope.
+
+### What this does NOT address
+
+- **Queries with hops/joins.** These have `patternJoins` and are ineligible for CTS Estimate, so they never enter this path. The `fromLexicons` + `iri` overhead remains for those queries. [Opt 5](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries) (conditionally omitting `iri`) is a separate, complementary optimization for queries that use `fromLexicons` but don't need `iri`.
+- **Keyword search cold-start.** The keyword pattern's 49K-IRI `cts.tripleRangeQuery` still produces a large CTS query object. `fromSearch` with that query still requires the optimizer to process the AST. However, the `fromSearch` plan is structurally simpler (no lexicon joins, no groupBy), so the optimizer cost may be lower — worth measuring.
+- **Non-relevance sort.** Field-based sorts require lexicon columns. V1 restricts to relevance sort.
+- **Facets, pageWith.** Excluded by `canUseEstimate` eligibility.
+
+### Benchmark (prototype, MarkLogic 12.0.1)
+
+Query: `item.memberOf { id }` — 219K matching items.
+
+| Approach | Cold (ms) | Notes |
+|---|---|---|
+| CTS baseline | 125 | `cts.andQuery([jsonPropertyValueQuery, fieldValueQuery])` |
+| Standard Optic (`fromLexicons`, Opt 18 limit) | 4,609 | 3 lexicon scans × 43.9M, sort+groupBy 219K rows, then limit 20 |
+| **Prototype (`fromSearch` + `joinDocAndUri`)** | **170** | No lexicon scans, limit before doc retrieval, XPath for dataType |
+
+### Relationship to other optimizations
+
+- **Opt 18 (CTS Estimate):** Prerequisite. Opt 20 extends Opt 18 by also eliminating the Optic plan for the page results, not just the total count.
+- **Opt 5 (Remove `iri` from `fromLexicons`):** Complementary but subsumed for eligible queries. Opt 5 would still help queries that use `fromLexicons` but don't need `iri` (e.g., non-relevance-sorted join-free queries). If Opt 20 is implemented first, Opt 5's remaining value is limited to the non-Opt-20-eligible subset.
+- **Opt 14 (Page-Slice, abandoned):** Opt 20 is structurally similar — both bypass `fromLexicons` for page results and use CTS for pagination. The key differences: Opt 20 uses `op.fromSearch` (stays within Optic's API), has a well-defined eligibility gate (`canUseEstimate`), and does not introduce a separate `cts.search` code path. The total-count concern that killed Opt 14 does not apply — Opt 18's `cts.estimate` with scope filter is already validated.
+
+## Optimization 21: Eliminate URI-list materialization for facets
+
+**Status:** Idea — not yet prototyped.
+
+### Problem
+
+`calculateFacets` receives the full materialized row array from `performSearch` and builds its document-set constraint like this:
+
+```javascript
+const uriList = rows.map((row) => row.id);
+const docsPlan = op.fromSearch(cts.documentQuery(uriList));
+```
+
+For large result sets, this has three costs:
+
+1. **Full materialization in `performSearch`.** All matching rows must be materialized into a JS array so URIs can be extracted. For 219K matches, this is the dominant cost (3-4s). For 2.5M matches (`item.memberOf` on Sterling Memorial Library), it's 15s.
+2. **URI-list AST bloat.** `cts.documentQuery(uriList)` with 219K URI strings produces a massive plan AST node. This is the same class of optimizer-cost problem as the keyword pattern's 49K IRIs in `cts.tripleRangeQuery`.
+3. **Redundant work.** The Optic plan already determined which documents match. Materializing them into JS, extracting URIs, and feeding them back into a new Optic plan via `documentQuery` is a round-trip through the V8 heap that MarkLogic's indexes could skip entirely.
+
+### Approach
+
+When the search criteria produce a CTS query (join-free accumulator), pass the CTS query directly to `calculateFacets` instead of materializing rows. `calculateFacets` uses it as `docsPlan = op.fromSearch(ctsQuery)` — a compact CTS query reference instead of a 219K-URI literal list.
+
+For non-foldable searches (accumulator has joins), the current materialization path remains unchanged.
+
+### Eligibility
+
+This optimization applies when `buildEstimateQuery` returns non-null (the accumulator is join-free and can be expressed as a pure CTS query). This is the same `isAccumulatorJoinFree` check used by Opt 18 and Opt 20.
+
+Note the distinction from `canUseEstimate`: that function also checks `!facetRequests?.length`, which would always be false for facet requests. The CTS query eligibility is determined by the accumulator shape, not the request type. The relevant check is:
+
+```javascript
+const estimateQuery = buildEstimateQuery(acc, assemblyContext, analysis.scope);
+const hasCtsQuery = estimateQuery != null;
+```
+
+When `hasCtsQuery` is true, the CTS query can be used for both facet document-set definition and (if page results are also requested) Opt 18/20.
+
+### Implementation plan
+
+The change spans two functions in `engine.mjs`: `performSearch` (the call site) and `calculateFacets` (the consumer).
+
+#### 1. Modify `calculateFacets` to accept an optional CTS query
+
+Change the signature from:
+
+```javascript
+function calculateFacets(rows, facetRequests)
+```
+
+To:
+
+```javascript
+function calculateFacets(rows, facetRequests, ctsQuery = null)
+```
+
+Replace the `docsPlan` construction:
+
+```javascript
+// Current:
+const uriList = rows.map((row) => row.id);
+if (!utils.isNonEmptyArray(uriList)) {
+  return buildEmptyFacetResponses(requests);
+}
+// ...
+const docsPlan = op.fromSearch(cts.documentQuery(uriList));
+
+// New:
+let docsPlan;
+if (ctsQuery) {
+  // Opt 21: use CTS query directly -- no URI materialization, no AST bloat.
+  docsPlan = op.fromSearch(ctsQuery);
+} else {
+  const uriList = rows.map((row) => row.id);
+  if (!utils.isNonEmptyArray(uriList)) {
+    return buildEmptyFacetResponses(requests);
+  }
+  docsPlan = op.fromSearch(cts.documentQuery(uriList));
+}
+```
+
+The rest of `calculateFacets` is unchanged. Every facet's `facetSourcePlan` starts from `docsPlan` and joins to its constraint plan — the `docsPlan` construction is the only difference.
+
+**Empty-result guard:** When `ctsQuery` is provided, the `isNonEmptyArray(uriList)` guard is bypassed. If the CTS query matches zero documents, `op.fromSearch(ctsQuery)` produces zero rows, and each facet's `joinInner` produces zero rows — the correct behavior. But `facets[facetName].totalItems` will be 0, matching the empty-facet response. Verify this behaves identically to the `buildEmptyFacetResponses` path.
+
+#### 2. Modify `performSearch` to pass `estimateQuery` to `calculateFacets`
+
+The current `performSearch` structure (simplified):
+
+```javascript
+if (canEstimate) {
+  // Opt 18 path: page results only, no facets
+  total = cts.estimate(estimateQuery);
+  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
+} else {
+  // Full materialization path
+  const rows = useThisPlan.result().toArray();
+  if (includeSearchResults) {
+    total = rows.length;
+    // ... paginate ...
+  }
+  facetResponses = calculateFacets(rows, facetRequests);
+}
+```
+
+The key insight: `canUseEstimate` returns false when facets are requested (it checks `!facetRequests?.length`). But `estimateQuery` may still be non-null — the accumulator is join-free, the CTS query exists, it's just that `canUseEstimate` also gates on the absence of facets.
+
+Refactored:
+
+```javascript
+const hasCtsQuery = estimateQuery != null;
+
+if (canEstimate) {
+  // Opt 18/20 path: page results only, no facets
+  total = cts.estimate(estimateQuery);
+  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
+} else if (hasCtsQuery && !includeSearchResults && facetRequests?.length > 0) {
+  // Opt 21: facet-only request with join-free accumulator.
+  // No need to materialize rows -- pass CTS query directly.
+  facetResponses = calculateFacets(null, facetRequests, estimateQuery);
+} else {
+  // Full materialization path (non-foldable, or page + facets combined)
+  const rows = useThisPlan.result().toArray();
+  if (includeSearchResults) {
+    total = rows.length;
+    // ... paginate ...
+  }
+  // Pass estimateQuery when available to avoid URI-list AST bloat;
+  // fall back to rows when not.
+  facetResponses = calculateFacets(rows, facetRequests, hasCtsQuery ? estimateQuery : null);
+}
+```
+
+**Five cases:**
+
+| Case | `hasCtsQuery` | `includeSearchResults` | `facetRequests` | What happens |
+|---|---|---|---|---|
+| Page only, no facets | true | true | empty | Opt 18/20 path (unchanged) |
+| Facet only, join-free | true | false | non-empty | **Opt 21: no materialization** — CTS query passed directly |
+| Facet only, non-foldable | false | false | non-empty | Full materialization (unchanged) |
+| Page + facets, join-free | true | true | non-empty | Full materialization BUT `calculateFacets` uses CTS query instead of URI list |
+| Page + facets, non-foldable | false | true | non-empty | Full materialization, URI list (unchanged) |
+
+The fourth case (page + facets, join-free) still materializes for the page — but `calculateFacets` benefits from the CTS query path, avoiding the URI-list AST bloat. If Opt 20 is implemented first, this case could avoid materialization entirely: Opt 20 for the page, Opt 21 for the facets.
+
+#### 3. Handle `rows = null` in `calculateFacets`
+
+When called from the Opt 21 facet-only path, `rows` is `null`. The function must not call `rows.map(...)` in that case. The guard from step 1 handles this — when `ctsQuery` is provided, `rows` is never accessed.
+
+#### 4. Verify correctness
+
+- **Facet parity:** For the same query, compare facet results between the CTS-query path and the URI-list path. Values, counts, ordering, and pagination must match exactly.
+- **Scope filtering:** `estimateQuery` includes the scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`). This ensures `op.fromSearch(estimateQuery)` constrains to the correct scope — same guarantee as the current `cts.documentQuery(uriList)` where the URIs were already scope-filtered by the Optic plan.
+- **Semantic facets:** Semantic facets join `docsPlan` to triples via the `iri` column. When `docsPlan` is `op.fromSearch(ctsQuery)`, the plan produces `fragmentId` and (optionally) `score` columns. The semantic facet path does `facetSourcePlan.joinInner(fromLexicons({iri: cts.iriReference()}, ...), op.on('fragmentId', 'iriFragId'))` to add the `iri` column. This should work identically with the CTS-query-based `docsPlan` — the join is on `fragmentId`, which `fromSearch` provides. Verify with a semantic facet request.
+- **Empty results:** When the CTS query matches zero documents, verify that each facet returns `{ totalItems: 0, facetValues: [] }` — matching the existing `buildEmptyFacetResponses` behavior.
+
+### What this does NOT address
+
+- **Non-foldable queries.** When the accumulator has joins (`hopInverse`, transitive `hopWithField`, `annTopK`), there is no CTS query to pass. The current materialization + URI-list path remains. [Opt 19](#optimization-19-datatype-split-estimate-for-non-cts-foldable-searches) is a separate idea for those cases.
+- **Consolidation (page + facets in one call).** This optimization works when page + facets are consolidated: the page uses Opt 18/20 while facets use Opt 21. No materialization needed for either. However, this consolidated call path is not currently exercised — `performSearch` is called for page OR facet, never both.
+
+### Relationship to other optimizations
+
+- **Opt 18 (CTS Estimate):** Shares the same `estimateQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for `op.fromSearch` (facet document set). The two are independent — neither is a prerequisite.
+- **Opt 20 (Eliminate fromLexicons):** Not a prerequisite. Opt 20 addresses page results; Opt 21 addresses facets. They are complementary and can be implemented in either order. When both are implemented and page + facets are consolidated into one call, the full materialization path is only needed for non-foldable queries.
+- **Opt 19 (DataType-split estimate):** Opt 19 targets the non-foldable case (queries with joins). Opt 21 targets the foldable case (join-free). They address different subsets of the query population.
+
+### Estimated impact
+
+For the `item.memberOf` reference query (219K matches):
+
+| Step | Current cost | With Opt 21 |
+|---|---|---|
+| Materialize all rows | 3-4s (219K rows) | **Eliminated** |
+| Extract URIs | ~50ms | **Eliminated** |
+| Build `cts.documentQuery(219K URIs)` | Plan AST bloat | **Eliminated** |
+| `op.fromSearch(ctsQuery)` | N/A | ~0 (compact CTS reference) |
+| Facet join + groupBy + orderBy | ~200ms (per facet) | ~200ms (unchanged) |
+
+The facet join/aggregation cost is unchanged — the optimization eliminates the materialization and AST-bloat overhead that precedes it. For the 2.5M-row case (Sterling Memorial Library), the current path spends 15s on materialization before facet computation even begins.

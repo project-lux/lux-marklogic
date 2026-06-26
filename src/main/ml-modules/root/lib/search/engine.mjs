@@ -130,11 +130,12 @@ function performSearch(scp) {
       planAsSource = getPlanSource(planAsJson);
 
       // Opt 18: use cts.estimate + offset/limit when eligible.
-      const canEstimate =
-        includeSearchResults &&
-        !pageWith &&
-        !facetRequests?.length &&
-        estimateQuery != null;
+      const canEstimate = canUseEstimate({
+        includeSearchResults,
+        pageWith,
+        facetRequests,
+        estimateQuery,
+      });
 
       if (canEstimate) {
         const effectivePageLength = pageLength ?? 20;
@@ -860,6 +861,54 @@ function collapseToResultRows(
 
   return plan;
 }
+
+// True when the accumulator has no Optic joins and no pattern-contributed
+// Optic constraints — only the initial dataType constraint and CTS queries.
+// Patterns like DateRange and IndexedRange add op.ge/op.le to constraints;
+// cts.estimate can't evaluate those, so the fast path must not fire.
+function isAccumulatorJoinFree(acc) {
+  return (
+    acc.conjunctionJoins.length === 0 &&
+    acc.andOrSubPlans.length === 0 &&
+    acc.patternJoins.length === 0 &&
+    acc.ctsConstraints.length > 0 &&
+    acc.constraints.length === acc._initialConstraintCount
+  );
+}
+
+// Opt 18: Returns a composed CTS query suitable for cts.estimate when the
+// accumulator is join-free, or null when full materialization is required.
+// Includes the scope's dataType filter so fields spanning scopes (e.g.
+// anyAnyText) don't overcount.
+function buildEstimateQuery(acc, assemblyContext, scope) {
+  if (!isAccumulatorJoinFree(acc)) return null;
+  const composedCts = wrapCtsByLogicType(
+    assemblyContext.logicType,
+    acc.ctsConstraints,
+  );
+  const scopeTypes = getSearchScopeTypes(scope, false);
+  if (scopeTypes.length === 0) return composedCts;
+  return cts.andQuery([
+    composedCts,
+    cts.fieldValueQuery('anyDataTypeName', scopeTypes),
+  ]);
+}
+
+// Opt 18: returns true when the request shape and plan structure allow
+// cts.estimate to replace full materialization for counting.
+function canUseEstimate({
+  includeSearchResults,
+  pageWith,
+  facetRequests,
+  estimateQuery,
+}) {
+  return (
+    includeSearchResults &&
+    !pageWith &&
+    !facetRequests?.length &&
+    estimateQuery != null
+  );
+}
 //#endregion
 
 //#region Facets
@@ -1223,38 +1272,6 @@ function accContainsOnly(acc, bucketName) {
     (b) => b === bucketName || acc[b].length === 0,
   );
 }
-
-// True when the accumulator has no Optic joins and no pattern-contributed
-// Optic constraints — only the initial dataType constraint and CTS queries.
-// Patterns like DateRange and IndexedRange add op.ge/op.le to constraints;
-// cts.estimate can't evaluate those, so the fast path must not fire.
-function accIsJoinFree(acc) {
-  return (
-    acc.conjunctionJoins.length === 0 &&
-    acc.andOrSubPlans.length === 0 &&
-    acc.patternJoins.length === 0 &&
-    acc.ctsConstraints.length > 0 &&
-    acc.constraints.length === acc._initialConstraintCount
-  );
-}
-
-// Opt 18: Returns a composed CTS query suitable for cts.estimate when the
-// accumulator is join-free, or null when full materialization is required.
-// Includes the scope's dataType filter so fields spanning scopes (e.g.
-// anyAnyText) don't overcount.
-function buildEstimateQuery(acc, assemblyContext, scope) {
-  if (!accIsJoinFree(acc)) return null;
-  const composedCts = wrapCtsByLogicType(
-    assemblyContext.logicType,
-    acc.ctsConstraints,
-  );
-  const scopeTypes = getSearchScopeTypes(scope, false);
-  if (scopeTypes.length === 0) return composedCts;
-  return cts.andQuery([
-    composedCts,
-    cts.fieldValueQuery('anyDataTypeName', scopeTypes),
-  ]);
-}
 //#endregion
 
 export {
@@ -1262,6 +1279,7 @@ export {
   analyzeLeafCriteria,
   buildPlans,
   buildSortedResultsPlan,
+  canUseEstimate,
   getResultRowGrouping,
   paginateResults,
   performSearch,

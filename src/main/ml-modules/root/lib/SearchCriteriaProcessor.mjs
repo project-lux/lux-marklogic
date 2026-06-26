@@ -32,16 +32,6 @@ import {
 //#region Constants
 const PREFER_FRAG_JOINS = false;
 
-// Optic comparison operators
-const COMPARATORS = {
-  '=': op.eq,
-  '!=': op.ne,
-  '<': op.lt,
-  '>': op.gt,
-  '<=': op.le,
-  '>=': op.ge,
-};
-
 const SEARCH_STATE_NOT_REQUESTED = 'not requested';
 const SEARCH_STATE_REQUESTED = 'requested';
 const SEARCH_STATE_COMPLETED = 'completed';
@@ -529,4 +519,4 @@ const SearchCriteriaProcessor = class {
   //#endregion
 };
 
-export { COMPARATORS, SearchCriteriaProcessor };
+export { SearchCriteriaProcessor };

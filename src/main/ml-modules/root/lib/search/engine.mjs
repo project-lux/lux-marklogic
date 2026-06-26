@@ -106,13 +106,14 @@ function performSearch(scp) {
         });
       }
 
-      const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({
-        scp,
-        analysis,
-        groups: getResultRowGrouping(),
-        sortCriteria: scp.getSortCriteria(),
-        patternOptions,
-      });
+      const { sortedResultsPlan, unsortedResultsPlan, estimateQuery } =
+        buildPlans({
+          scp,
+          analysis,
+          groups: getResultRowGrouping(),
+          sortCriteria: scp.getSortCriteria(),
+          patternOptions,
+        });
 
       let useThisPlan = includeSearchResults
         ? sortedResultsPlan
@@ -128,22 +129,41 @@ function performSearch(scp) {
       planAsJson = useThisPlan.export();
       planAsSource = getPlanSource(planAsJson);
 
-      const rows = useThisPlan.result().toArray();
+      // Opt 18: use cts.estimate + offset/limit when eligible.
+      const canEstimate =
+        includeSearchResults &&
+        !pageWith &&
+        !facetRequests?.length &&
+        estimateQuery != null;
 
-      if (includeSearchResults) {
-        total = rows.length;
-        const paginationResult = paginateResults({
-          rows,
-          pageWith,
-          page,
-          pageLength: pageLength ?? 20,
-        });
-        resultPage = paginationResult.resultPage;
-        searchResults = paginationResult.searchResults;
+      if (canEstimate) {
+        const effectivePageLength = pageLength ?? 20;
+        total = cts.estimate(estimateQuery);
+        resultPage = Math.max(page, 1);
+        const offset = (resultPage - 1) * effectivePageLength;
+        searchResults = useThisPlan
+          .offset(offset)
+          .limit(effectivePageLength)
+          .result()
+          .toArray();
+      } else {
+        const rows = useThisPlan.result().toArray();
+
+        if (includeSearchResults) {
+          total = rows.length;
+          const paginationResult = paginateResults({
+            rows,
+            pageWith,
+            page,
+            pageLength: pageLength ?? 20,
+          });
+          resultPage = paginationResult.resultPage;
+          searchResults = paginationResult.searchResults;
+        }
+
+        // calculateFacets returns null when facets are not requested.
+        facetResponses = calculateFacets(rows, facetRequests);
       }
-
-      // calculateFacets returns null when facets are not requested.
-      facetResponses = calculateFacets(rows, facetRequests);
     }
 
     return new SearchExecutionResult({
@@ -307,7 +327,16 @@ function buildPlans({
     groups,
   });
 
-  return { sortedResultsPlan, unsortedResultsPlan };
+  // Opt 18: compute a CTS query for cts.estimate when the top-level
+  // accumulator is join-free (only base constraints + CTS queries).
+  // Returns null when the plan requires full materialization.
+  const estimateQuery = buildEstimateQuery(
+    acc,
+    assemblyContext,
+    analysis.scope,
+  );
+
+  return { sortedResultsPlan, unsortedResultsPlan, estimateQuery };
 }
 //#endregion
 
@@ -430,16 +459,18 @@ function createPlanAccumulator({
   dataTypeCol,
   isMultiScope,
 }) {
+  const constraints =
+    isMultiScope || scopeAlreadyConstrained
+      ? []
+      : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))];
   return {
     lexicons: {
       [uriCol]: cts.uriReference(),
       [iriCol]: cts.iriReference(),
       [dataTypeCol]: cts.fieldReference('anyDataTypeName'),
     },
-    constraints:
-      isMultiScope || scopeAlreadyConstrained
-        ? []
-        : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
+    constraints,
+    _initialConstraintCount: constraints.length,
     ctsConstraints: [],
     conjunctionJoins: [],
     andOrSubPlans: [],
@@ -1191,6 +1222,38 @@ function accContainsOnly(acc, bucketName) {
   return ACC_CONTENT_BUCKETS.every(
     (b) => b === bucketName || acc[b].length === 0,
   );
+}
+
+// True when the accumulator has no Optic joins and no pattern-contributed
+// Optic constraints — only the initial dataType constraint and CTS queries.
+// Patterns like DateRange and IndexedRange add op.ge/op.le to constraints;
+// cts.estimate can't evaluate those, so the fast path must not fire.
+function accIsJoinFree(acc) {
+  return (
+    acc.conjunctionJoins.length === 0 &&
+    acc.andOrSubPlans.length === 0 &&
+    acc.patternJoins.length === 0 &&
+    acc.ctsConstraints.length > 0 &&
+    acc.constraints.length === acc._initialConstraintCount
+  );
+}
+
+// Opt 18: Returns a composed CTS query suitable for cts.estimate when the
+// accumulator is join-free, or null when full materialization is required.
+// Includes the scope's dataType filter so fields spanning scopes (e.g.
+// anyAnyText) don't overcount.
+function buildEstimateQuery(acc, assemblyContext, scope) {
+  if (!accIsJoinFree(acc)) return null;
+  const composedCts = wrapCtsByLogicType(
+    assemblyContext.logicType,
+    acc.ctsConstraints,
+  );
+  const scopeTypes = getSearchScopeTypes(scope, false);
+  if (scopeTypes.length === 0) return composedCts;
+  return cts.andQuery([
+    composedCts,
+    cts.fieldValueQuery('anyDataTypeName', scopeTypes),
+  ]);
 }
 //#endregion
 

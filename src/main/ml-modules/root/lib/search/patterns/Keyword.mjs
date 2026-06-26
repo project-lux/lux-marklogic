@@ -52,9 +52,6 @@ class Keyword extends SearchPatternBase {
   }
 }
 
-// Builds `cts.orQuery([nonSemanticWordQuery, tripleRangeQuery])` from raw
-// values. Used by both Keyword.apply (via SearchTerm) and the page-slice
-// hydration path (keywordPageSlice.mjs) so query semantics stay in one place.
 function buildKeywordCtsQuery({
   termValues,
   termScopeName,

@@ -87,6 +87,18 @@
   - [Optimization 17: Select barrier on nested sub-plans](#optimization-17-select-barrier-on-nested-sub-plans)
     - [Benchmark (MarkLogic 12.0.1)](#benchmark-marklogic-1201)
     - [Analysis](#analysis)
+  - [Optimization 18: CTS Estimate](#optimization-18-cts-estimate)
+    - [Problem](#problem)
+    - [When CTS Estimate applies](#when-cts-estimate-applies)
+    - [Pattern CTS Conversions](#pattern-cts-conversions)
+    - [Benchmark (MarkLogic 12.0.1)](#benchmark-marklogic-1201-1)
+    - [Key findings](#key-findings-1)
+  - [Optimization 19: DataType-split estimate for non-CTS-foldable searches](#optimization-19-datatype-split-estimate-for-non-cts-foldable-searches)
+    - [Problem](#problem-1)
+    - [Observation](#observation)
+    - [Design sketch](#design-sketch)
+    - [Scope leakage](#scope-leakage)
+    - [Constraints](#constraints)
 
 # Introduction
 
@@ -431,15 +443,15 @@ Terms composed entirely of stop words (e.g., "a the and") or punctuation-only ch
 |---|---|---|---|
 | `indexedValue` | `constraints[]` + lexicon (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | Exact-match on `indexReferences[0]`. |
 | `indexedWord` + `_complete` | `constraints[]` + lexicon (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | Requires range index. |
-| `indexedWord` (no `_complete`) | `ctsConstraints[]` | `ctsConstraints[]` | Word queries always use CTS — no Optic-native stemming/wildcards. |
-| `indexedRange` | `constraints[]` + lexicon (comparator) | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Comparator map: `">="` → `op.ge`, `"<"` → `op.lt`, etc. |
-| `dateRange` | `constraints[]` + lexicon | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Start/end date pair with comparators. |
-| `documentId` / `iri` | `constraints[]` (`op.eq(uriCol, v)`) | `ctsConstraints[]` (`cts.documentQuery`) | Treated identically. |
-| `keyword` | `ctsConstraints[]` | `ctsConstraints[]` | Always CTS — combines non-semantic field query OR semantic triple-range query. |
-| `geospatial` | `ctsConstraints[]` | `ctsConstraints[]` | CTS geospatial queries. |
-| `hopWithField` | `patternJoins[]` | `patternJoins[]` | Always joins — triples require own row source. |
-| `hopInverse` | `patternJoins[]` | `patternJoins[]` | Always joins. Has valuesOnly optimization for related lists. |
-| `annTopK` | `patternJoins[]` | `patternJoins[]` | Always joins — vector index requires own row source. |
+| `indexedWord` (no `_complete`) | `ctsConstraints[]` | Same as AND | Word queries always use CTS — no Optic-native stemming/wildcards. |
+| `indexedRange` | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Same as AND | Converted from Optic comparators to CTS for CTS Fold ([Opt 18](#optimization-18-cts-estimate)) and CTS Estimate ([Opt 18](#optimization-18-cts-estimate)) eligibility. |
+| `dateRange` | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Same as AND | Converted from Optic column comparisons to CTS for CTS Fold ([Opt 18](#optimization-18-cts-estimate)) and CTS Estimate ([Opt 18](#optimization-18-cts-estimate)) eligibility. |
+| `documentId` / `iri` | `ctsConstraints[]` (`cts.documentQuery`) | Same as AND | Converted from `op.eq(uriCol, v)` to CTS for CTS Fold ([Opt 18](#optimization-18-cts-estimate)) and CTS Estimate ([Opt 18](#optimization-18-cts-estimate)) eligibility. |
+| `keyword` | `ctsConstraints[]` | Same as AND | Always CTS — combines non-semantic field query OR semantic triple-range query. |
+| `geospatial` | `ctsConstraints[]` | Same as AND | CTS geospatial queries. |
+| `hopWithField` | `patternJoins[]` or `ctsConstraints[]` | Same as AND | Emits `cts.tripleRangeQuery` when inner criteria is pure CTS ([Opt 16](#optimization-16-hopwithfield-cts)); otherwise joins. |
+| `hopInverse` | `patternJoins[]` | Same as AND | Always joins. Has valuesOnly optimization for related lists. |
+| `annTopK` | `patternJoins[]` | Same as AND | Always joins — vector index requires own row source. |
 
 ## `keyword` Details
 
@@ -888,6 +900,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
 | 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
 | 7 | [Opt 17](#optimization-17-select-barrier-on-nested-sub-plans) | Select barrier: `.select([iriCol, fragCol])` on nested sub-plans prevents optimizer from fusing join trees across nesting levels (764× warm improvement on 3-level hops) | 2026-06-24 |
+| 8 | [Opt 18](#optimization-18-cts-estimate) | CTS Estimate: when CTS Fold ([Opt 15](#optimization-15-cts-fold)) is applicable, use `cts.estimate` for total count and `.offset().limit()` for the requested page's results. Avoids materializing all rows. | 2026-06-26 |
 
 ## Data Type Constraint Optimizations
 
@@ -1337,3 +1350,128 @@ All variants use the discovery query above. Each execution returned 11 results (
 - **A (minimal lexicons):** 16× cold improvement over baseline (8,594ms → 533ms). Reducing the column count shrinks the optimization scope enough to avoid the worst cross-product strategies, but without a hard projection barrier the optimizer can still see more columns than necessary. Warm runs (292ms) remain ~26× slower than the barrier approach.
 - **B (inside-out assembly):** No improvement. Confirms the problem is optimizer join fusion, not plan construction order. The optimizer freely reorders joins regardless of how the application builds them.
 - **Why the barrier dominates:** Variant A improves cold starts by reducing column count, but the optimizer can still reason across the join boundary. The select barrier (variant C) creates an opaque wall — the optimizer treats each sub-plan as a black box returning exactly two columns. This prevents cross-level fusion entirely, which explains the additional 2× cold improvement and 26× warm improvement over variant A.
+
+## Optimization 18: CTS Estimate
+
+**Status:** Implemented.
+
+This is an extension of the CTS Fold [(Opt 15)](#optimization-15-cts-fold) optimization.  When that optimization is applicable to a search request, this one can be as well.
+
+### Problem
+
+`performSearch` in `engine.mjs` materializes **all** matching rows into a JavaScript array to compute `total`:
+
+```javascript
+const rows = useThisPlan.result().toArray();
+total = rows.length;
+const page = rows.slice(offset, offset + pageLength);
+```
+
+For queries with large result sets (e.g., `item.memberOf` returning 2.5M rows), this costs 15 seconds — regardless of requested page size. The Optic plan itself (with `.offset().limit()`) takes only 3–4 seconds for the same query. The more results a search matches, the more this optimization pays off — materialization cost scales linearly with row count while `cts.estimate` is O(1).
+
+Original search that got us looking at this:
+
+```json
+{
+  "_scope": "item",
+  "memberOf": {
+    "id": "https://lux.collections.yale.edu/data/set/d1b8a867-8be7-4325-ad78-1f3abda76056"
+  }
+}
+```
+
+The above ID resolved to "Sterling Memorial Library, Yale University Library" at the time.
+
+### When CTS Estimate applies
+
+The logic of when CTS Estimate applies is defined in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs)'s `canUseEstimate`.  All of the following must be true:
+
+1. **The top-level accumulator is join-free** (`isAccumulatorJoinFree`): no `patternJoins`, no `andOrSubPlans`, no `conjunctionJoins`, at least one `ctsConstraint`, and no pattern-added Optic `constraints` beyond the initial dataType constraint.
+2. **The request includes search results** (`includeSearchResults` is true). Facet-only requests take a different path.
+3. **No `pageWith`** is requested. `pageWith` requires locating a specific document's position in the full result set.
+4. **No facet requests.** Facets require aggregation over the full result set.
+5. **`buildEstimateQuery` returns non-null.** This composes the CTS query with a scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`) so cross-scope fields like `anyAnyText` don't overcount.
+
+### Pattern CTS Conversions
+
+While implementing this optimization, patterns were reviewed to see if they could enable the CTS Fold [(Opt 15)](#optimization-15-cts-fold) and CTS Estimate [(Opt 18)](#optimization-18-cts-estimate) optimizations to apply to more searches.
+
+We were able to do so to three patterns: `DateRange`, `DocumentIdOrIri`, and `IndexedRange`.
+
+The only patterns that still produce non-CTS contributions are `hopWithField` (when inner criteria requires Optic joins or when transitive), `hopInverse`, and `annTopK` — all of which inherently require Optic joins for triple navigation or vector search.
+
+### Benchmark (MarkLogic 12.0.1)
+
+Multiple ways to get the estimate were benchmarked using the `item.memberOf` query — 2,553,512 matching rows.
+
+| # | Approach | Estimate | Cold (ms) | Warm avg (ms) | Notes |
+|---|---|---|---|---|---|
+| 1 | `.result().toArray().length` (baseline) | 2,553,512 | 15,158 | 15,049 | Full materialization |
+| 2 | `fn.count(plan.result())` | 2,553,512 | 4,376 | 4,420 | No array allocation; iterates lazily |
+| 3 | `plan.groupBy(null, op.count('total'))` | 2,553,512 | 35,744 | 35,436 | Optimizer picks catastrophic aggregation plan |
+| 4 | `plan.explain()` → `estimated-count` | 218,955 | 402 | 379 | Off by 11.6× — unusable |
+| 5 | `cts.estimate(ctsQuery)` | 2,553,512 | <1 | ~0 | **Exact match**, O(1) from indexes |
+| 6 | Two-pass: `cts.estimate` + `.offset().limit()` | 2,553,512 | 3,863 | 3,594 | **4.2× faster than baseline** |
+
+### Key findings
+
+1. **`cts.estimate` is exact for this query shape.** The 2,553,512 count matches full materialization. No dedup gap because `groupBy(['uri'])` deduplicated nothing — each matching URI appears once per field value match.
+2. **`cts.estimate` is free.** Sub-millisecond cold, effectively zero warm.
+3. **The two-pass approach is the clear winner.** `cts.estimate` for total + `.offset(n).limit(m).result()` for the page: 3.6s vs 15s.
+4. **V8 array allocation is the dominant cost.** `fn.count` (lazy iteration) is 3.4× faster than `.toArray().length` — the 2.5M-object heap allocation costs ~10s alone.
+5. **`groupBy(null, count)` is catastrophically slow.** The optimizer chooses a worse plan for the count-only aggregation than for full row retrieval.
+6. **`plan.explain()` estimates are wildly inaccurate** — 8.6% of true count for this query. Not usable.
+
+## Optimization 19: DataType-split estimate for non-CTS-foldable searches
+
+**Status:** Idea — needs investigation and benchmarking.
+
+### Problem
+
+CTS Estimate (Opt 18) only fires when the top-level accumulator is join-free — i.e., every pattern contribution is pure CTS. Searches involving `hopWithField` (when inner criteria requires Optic joins), `hopInverse`, or `annTopK` produce `patternJoins` that make the accumulator non-join-free. These searches still materialize all rows to compute `total`, which is the dominant cost for large result sets.
+
+### Observation
+
+The `dataType` column serves two purposes in the current pipeline:
+
+1. **Filtering** — `op.in(op.col('dataType'), scopeTypes)` constrains `fromLexicons` to the correct scope.
+2. **Output projection** — `collapseToResultRows` renames `dataType` → `type` in the final `select()` so the caller knows each result's record type.
+
+For the *count*, only filtering matters — we need to know *how many* URIs match, not *what type* they are. For the *page*, both matter — each result row includes `{ id, type }`.
+
+### Design sketch
+
+Split `performSearch`'s else-branch into two executions when CTS Estimate is ineligible:
+
+1. **Page results (with dataType):** Execute the full plan with `.offset().limit()` to get the requested page. This includes the `dataType` lexicon, constraint, and `groupBy` aggregation — producing `{ id, type }` rows. Cost: proportional to page size (e.g., 20 rows), not total result count.
+
+2. **Estimate (without dataType):** Build a parallel "count plan" that omits the `dataType` lexicon and `op.in` constraint entirely. Execute it with `fn.count(plan.result())` (lazy iteration, no array allocation) or `.groupBy(null, op.count('total'))`. Cost: avoids the `anyDataTypeName` lexicon scan (44M entries) and the early-join filter, at the expense of cross-scope false positives.
+
+```javascript
+// Conceptual — not production-ready
+if (canEstimate) {
+  // ... existing Opt 18 path ...
+} else if (includeSearchResults && !pageWith && !facetRequests?.length) {
+  // Page results with dataType
+  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
+  // Estimate without dataType (may overcount by including other scopes' documents)
+  total = fn.count(countOnlyPlan.result());
+} else {
+  // Full materialization (facets, pageWith, etc.)
+  const rows = useThisPlan.result().toArray();
+  // ...
+}
+```
+
+### Scope leakage
+
+Omitting the `dataType` constraint from the count plan means results from other search scopes could be included in the rows being counted for the "estimate".  This could only happen when there are no scope-specific constraints (e.g., scope-specific fields and predicates).  Optimization ideas [Opt 12 (scope-specific predicates)](#optimization-12-scope-specific-predicates-to-eliminate-datatype-constraints) could reduce or eliminate the leakage. 
+
+Scope leakage may be acceptable for estimates, especially if for a minority subset of searches.
+
+### Constraints
+
+- **Not for facets.** Facet computation requires the full row set with correct scope filtering — an overcounting estimate would silently corrupt facet totals.
+- **Not for `pageWith`.** The `pageWith` path needs to locate a specific document's position in the full result set.
+- **Plan construction cost.** Building a second plan (without dataType) doubles the `buildPlans` work. This may be mitigable by sharing the analysis pass and only diverging at `createPlanAccumulator`.
+- **Memory safety.** The Opt 3 investigation showed that removing the dataType constraint from hop sub-plans caused SVC-MEMCANCELED. The count plan would remove it only from the *top-level* accumulator — hop sub-plans would retain their constraints. This distinction needs validation.

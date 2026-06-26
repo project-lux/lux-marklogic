@@ -833,6 +833,110 @@ const scenarios = [
       stackToInclude: 'Unsupported geospatial operator',
     },
   },
+  // IndexedRange operator coverage (CTS conversion validation).
+  // All operators previously used COMPARATORS[op] in the AND path; now use cts.fieldRangeQuery.
+  {
+    name: 'item depth > 100 (IndexedRange > in AND)',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        depth: '100',
+        _comp: '>',
+      },
+    },
+    expected: {
+      error: false,
+      value: 1,
+    },
+  },
+  {
+    name: 'item width < 100 (IndexedRange < in AND)',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        width: '100',
+        _comp: '<',
+      },
+    },
+    expected: {
+      error: false,
+      value: 785,
+    },
+  },
+  {
+    name: 'item height <= 100 (IndexedRange <= in AND)',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        height: '100',
+        _comp: '<=',
+      },
+    },
+    expected: {
+      error: false,
+      value: 853,
+    },
+  },
+  {
+    name: 'item depth >= 100 standalone (IndexedRange >= in AND)',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        depth: '100',
+        _comp: '>=',
+      },
+    },
+    expected: {
+      error: false,
+      value: 1,
+    },
+  },
+  {
+    name: 'item NOT depth >= 100 (IndexedRange in NOT)',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        NOT: [{ depth: '100', _comp: '>=' }],
+      },
+    },
+    expected: {
+      error: false,
+      value: 2742,
+    },
+  },
+  {
+    name: 'item AND with IndexedRange > and < (two operators)',
+    input: {
+      searchCriteria: {
+        _scope: 'item',
+        AND: [
+          { depth: '50', _comp: '>' },
+          { depth: '200', _comp: '<' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 18,
+    },
+  },
+  {
+    name: 'agent NOT by ID (DocumentIdOrIri in NOT)',
+    input: {
+      searchCriteria: {
+        _scope: 'agent',
+        NOT: [
+          {
+            id: 'https://lux.collections.yale.edu/data/group/f49ccc7b-5d4e-4121-8210-b57bc89aad5a',
+          },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      value: 6240,
+    },
+  },
 ];
 
 // Test getEstimate scenarios

@@ -1,16 +1,13 @@
-import op from '/MarkLogic/optic.mjs';
 import { isArray } from '../../../utils/utils.mjs';
 import { convertPartialDateTimeToSeconds } from '../../../utils/dateUtils.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../../errorClasses.mjs';
-import { COMPARATORS } from '../../SearchCriteriaProcessor.mjs';
 import { SearchPatternBase, CHILD_TYPE_ATOMIC } from './SearchPatternBase.mjs';
 
 class DateRange extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
-    const id = searchTerm.getId();
     const name = searchTerm.getName();
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
@@ -27,17 +24,13 @@ class DateRange extends SearchPatternBase {
     // Determine which indexes to use based on timespanMode
     let startIndexName;
     let endIndexName;
-    let startColName = id + '_start';
-    let endColName = id + '_end';
     const timespanMode = searchTerm.getTimespanMode();
     if (timespanMode === 'begin') {
       startIndexName = termConfig.getIndexReferences()[0];
       endIndexName = termConfig.getIndexReferences()[0];
-      endColName = startColName;
     } else if (timespanMode === 'end') {
       startIndexName = termConfig.getIndexReferences()[1];
       endIndexName = termConfig.getIndexReferences()[1];
-      startColName = endColName;
     } else {
       // 'full' or default
       startIndexName = termConfig.getIndexReferences()[0];
@@ -76,41 +69,33 @@ class DateRange extends SearchPatternBase {
     const startDateLong = convertPartialDateTimeToSeconds(startDateStr, true);
     const endDateLong = convertPartialDateTimeToSeconds(endDateStr, false);
 
-    // Set up the Optic query's constraints and lexicons.
+    // All operators use cts.fieldRangeQuery for Opt 18 compatibility.
     // Operators > and >= test the document's start date (qS).
-    // Operators < and <= test the document's end date (qE).
-    // Operator = tests both (overlap). Operator != uses CTS.
-    const constraints = [];
+    // Operators < and <= test the document's start date (qS).
+    // Operator = tests both (overlap). Operator != uses OR of two ranges.
     const ctsConstraints = [];
-    const needStartCol = ['>', '>=', '<', '<=', '=', '!='].includes(operator);
-    const needEndCol = ['='].includes(operator);
-    const lexicons = {};
-    if (needStartCol) {
-      lexicons[startColName] = cts.fieldReference(startIndexName);
-    }
-    if (needEndCol) {
-      lexicons[endColName] = cts.fieldReference(endIndexName);
-    }
 
     if (['>', '>=', '<', '<='].includes(operator)) {
       // All single-sided operators test the document's start date (qS).
       // Use the start of the search date for >= and <; the end of the search date for > and <=.
-      // Example: ">= 1800" requires qS >= 1800-01-01T00:00:00.
-      // Example: "< 1800" requires qS < 1800-01-01T00:00:00.
-      const colName = startColName;
       const dateLong = ['>=', '<'].includes(operator)
         ? startDateLong
         : endDateLong;
-      constraints.push(COMPARATORS[operator](op.col(colName), dateLong));
+      ctsConstraints.push(
+        cts.fieldRangeQuery(startIndexName, operator, dateLong),
+      );
     } else if (operator === '=') {
       // Overlap: a document qualifies if its timespan [qS, qE] overlaps the search range [aS, aE].
       // Condition: qS <= aE AND qE >= aS
-      constraints.push(op.le(op.col(startColName), endDateLong));
-      constraints.push(op.ge(op.col(endColName), startDateLong));
+      ctsConstraints.push(
+        cts.fieldRangeQuery(startIndexName, '<=', endDateLong),
+      );
+      ctsConstraints.push(
+        cts.fieldRangeQuery(endIndexName, '>=', startDateLong),
+      );
     } else if (operator === '!=') {
       // Complement of overlap: a document qualifies if its timespan does NOT overlap [aS, aE].
       // Condition: qS > aE OR qE < aS
-      // Note: startIndexName and endIndexName are already adjusted by timespanMode above.
       ctsConstraints.push(
         cts.orQuery([
           cts.fieldRangeQuery(startIndexName, '>', endDateLong),
@@ -123,11 +108,7 @@ class DateRange extends SearchPatternBase {
       );
     }
 
-    return {
-      constraints,
-      ctsConstraints,
-      lexicons,
-    };
+    return { ctsConstraints };
   }
 
   mayTokenizeValue() {

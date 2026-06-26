@@ -5,9 +5,10 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 ## Optic plan AST cost dominates large CTS payloads (cold-start)
 - The Optic optimizer walks/costs/rewrites the plan AST on every cold execution. If the AST contains a CTS node with a large literal payload (e.g. `cts.tripleRangeQuery` listing 10K+ IRIs), that AST traversal becomes the cold-path bottleneck — NOT search, NOT ranking, NOT retrieval.
 - Reference: "woman greek art" keyword search. Native `cts.search` with the same query: ~1.6s cold. Standard Optic plan around it: ~4.9s cold. The ~3.3s gap is pure optimizer/AST cost.
-- Mitigation: page-slice hydration path — run `cts.search` outside Optic, hydrate only the page slice through a tiny `op.fromParam` plan. See `src/main/ml-modules/root/lib/search/keywordPageSlice.mjs` and `docs/search-cold-start-mitigation.md`.
+- Mitigation attempted: page-slice hydration path (run `cts.search` outside Optic, hydrate only the page slice). **Abandoned** for reasons listed in [Optimization 14: Page-Slice Hydration (Abandoned)](#optimization-14-page-slice-hydration-abandoned).
 - Plan caching helps warm but not cold; distinct keyword queries produce distinct ASTs that the cache can't keep all of under diverse load.
 - Lazy vs eager IRI resolution into `cts.tripleRangeQuery` is NOT the bottleneck (tested). The cost is the AST node containing the literal values, not how they got there.
+- **Support ticket planned** to ask Progress Engineering whether ML 12.1.0 can address the underlying optimizer cost — specifically: CTS query parameterization within Optic (enabling plan cache reuse), and whether `cts.tripleRangeQuery` could accept a CTS query to define object IRIs instead of requiring pre-materialized literal values.
 
 ## Code Formatting for Debug Logs  
 - `getPlanSource()` aggressively flattens whitespace with `.replace(/\s+/g, ' ')` making logged code unreadable

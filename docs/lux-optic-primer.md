@@ -81,7 +81,7 @@
   - [Optimization 10: fromTriples architecture (avoid IRIs in plan AST entirely)](#optimization-10-fromtriples-architecture-avoid-iris-in-plan-ast-entirely)
   - [Optimization 11: MarkLogic enhancement — CTS object filter in `cts.tripleRangeQuery`](#optimization-11-marklogic-enhancement--cts-object-filter-in-ctstriplerangequery)
   - [Optimization 13: Amp as Admin](#optimization-13-amp-as-admin)
-  - [Optimization 14: Page-Slice Hydration](#optimization-14-page-slice-hydration)
+  - [Optimization 14: Page-Slice Hydration (Abandoned)](#optimization-14-page-slice-hydration-abandoned)
   - [Optimization 15: CTS Fold](#optimization-15-cts-fold)
   - [Optimization 16: HopWithField CTS](#optimization-16-hopwithfield-cts)
   - [Optimization 17: Select barrier on nested sub-plans](#optimization-17-select-barrier-on-nested-sub-plans)
@@ -778,11 +778,9 @@ Disable transitive search before running functional or performance comparisons. 
 | [Performance QC Workspace](/scripts/performance/Performance%20QC%20Workspace.xml) | Query Console workspace with benchmark tabs, plan inspection, and DSL execution |
 | [/scripts/performance/](/scripts/performance/) | Maintained benchmark scripts and analysis tools |
 | [/scratch/performance/](/scratch/performance/) | Exploratory/throwaway scripts from specific investigations |
-| [getPlansFromSearchCriteria.js](/scripts/getPlansFromSearchCriteria.js) | Generates Optic plans from JSON search criteria without executing.  **Warning:** this script calls `buildPlans` which --unless since refactored-- is downstream of the [Page-slice hydration optimization](#optimization-14-page-slice-hydration) for select keyword searches. |
+| [getPlansFromSearchCriteria.js](/scripts/getPlansFromSearchCriteria.js) | Generates Optic plans from JSON search criteria without executing. |
 | [analyze-search-comparison.mjs](/scripts/performance/analyze-search-comparison.mjs) | Surface the worst performing pattern shapes from a search comparison's 200 slowest requests based on frequency and delta with CTS' performance. |
 | [5k-pattern-analysis.md](/scratch/5k-pattern-analysis.md) | Breakdown of the 5K-request performance test by search pattern |
-| [search-cold-start-mitigation.md](/docs/search-cold-start-mitigation.md) | [Page-slice hydration optimization](#optimization-14-page-slice-hydration) design and analysis |
-| [keyword-perf-investigation.md](/scratch/performance/woman-greek-art-memberOf/keyword-perf-investigation.md) | Multi-keyword search investigation findings and theory results |
 
 **Plan visualization:** The Query Plan Viewer in Query Console supports Optic plans. Set query type to "Optic DSL Query", then paste the `selectedPlan` value from `getPlansFromSearchCriteria.js` into the DSL tab. Add a `limit` before `select` if needed — the `op` import and `.result()` call are automatic (including either causes an error). The "Get Plan" and "DSL" tabs in the Performance QC Workspace are pre-configured for this workflow.  For more, see [Introduction to Query Console](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/intro.html) -> [Query Console Walkthrough](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/walkthru.html) -> [Viewing Query Plans](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/walkthru.html#id_27533).
 
@@ -895,7 +893,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 |---|---|---|---|
 | 1 | [Opt 3](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints) | Empty-groups: skip redundant dataType constraint on same-scope sub-plans. **More may be possible:** we may be able to remove additional data type constraints but, at present, when nested criteria changes the scope, we need to apply a data type constraint at that level. | 2026-05-31 |
 | 2 | [Opt 15](#optimization-15-cts-fold) | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
-| 3 | [Opt 14](#optimization-14-page-slice-hydration) | Page-Slice Hydration: CTS-based page-slice with minimal Optic hydration. **More may be possible:** see the eligibility criteria for details. | 2026-06-02 |
+| 3 | [Opt 14](#optimization-14-page-slice-hydration-abandoned) | Page-Slice Hydration: **Abandoned.** Produced incorrect total counts for many searches and did not demonstrate sufficient performance improvement to justify investigating the functional differences. | 2026-06-02 |
 | 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
 | 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
 | 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
@@ -1146,7 +1144,7 @@ The implementation configures per-endpoint eligibility via `ampAsAdmin` in `endp
 
 **Benchmark results** (woman-greek-art, item scope, MarkLogic 12.0.1):
 
-| Metric | Page-Slice only | Page-Slice and Amp as Admin | Difference |
+| Metric | Without Amp as Admin | With Amp as Admin | Difference |
 |---|---|---|---|
 | Cold avg (n=3) | 1,510 ms | 1,404 ms | −106 ms |
 | Cold stddev | 874 ms | 890 ms | — |
@@ -1155,39 +1153,40 @@ The implementation configures per-endpoint eligibility via `ampAsAdmin` in `endp
 
 The warm-path gain (~5 ms) is modest for this query but expected to compound under concurrent load where permission checks are more expensive.
 
-## Optimization 14: Page-Slice Hydration
+*Note: These benchmarks were captured while the since-abandoned [page-slice hydration optimization](#optimization-14-page-slice-hydration-abandoned) was active. The absolute values reflect that context but the relative Amp as Admin improvement is independent.*
 
-**Status:** Implemented. Behind build-time toggle (`searchPageSliceEnabled`), scoped to simple keyword-only searches. See [search-cold-start-mitigation.md](./search-cold-start-mitigation.md) for the full analysis.
+## Optimization 14: Page-Slice Hydration (Abandoned)
 
-For keyword searches, the engine builds a `cts.tripleRangeQuery` containing up to 49K IRI literals. Optic wraps this in a plan AST that the optimizer must walk, cost, and rewrite — taking ~2.4 seconds on a cold cache even though the index has already determined the matches and computed the scores. The page-slice path bypasses this overhead:
+**Status:** Abandoned on 2026-06-26 due to the following reasons.  There may potential to trying this again in the future but not at this time.
 
-1. Build the same CTS query the standard path would build.
-2. Execute it directly via `cts.search` (lazy, pre-sorted by relevance).
-3. Slice to the requested page (e.g., 20 URIs for page 1).
-4. Hand the small slice to a tiny Optic plan whose only job is to attach the `dataType` column.
-5. Use `cts.estimate` for the displayed total.
+- **Incorrect totals.** Produced incorrect total counts for ~100 searches in one of the 10K tests. Investigating and reconciling this was not justified given the other limitations.
+- **Insufficient performance gain.** The performance gain demonstrated in isolation with the reference query (4.4s → 1.6s) did not move the needle in the scripting test context.
+- **Narrow applicability.** Only eligible for keyword-only, relevance-sorted, single-scope, no-facet, no-pageWith requests. Most real searches include hops, ranges, or facets.
+- **Maintenance cost.** Two parallel execution paths that must stay semantically synchronized — every engine change required reasoning about both paths.
 
-No results are hidden, no scores are altered. The technique works because Optic's only remaining contribution for this class of query is materializing and paginating — work that `cts.search` already does natively.
+**Approach:** For keyword-only searches sorted by relevance, bypass Optic entirely: run `cts.search` directly, slice to the requested page, hydrate the slice via a tiny Optic plan (attaching `dataType` only), and use `cts.estimate` for the displayed total.
 
-**Eligibility criteria** — all must be true for the page-slice path to activate:
-- All search criteria are keyword terms (no hops, ranges, geospatial, etc.).
-- Sort is relevance (the default). `cts.search` returns results pre-sorted by relevance; other sort orders would require full materialization.
-- Search scope is not `multi`. Multi-scope searches require per-scope plan assembly.
-- The request is for search results, not a facet request. Facets require aggregation over the full result set — page slicing would omit the unsliced documents.
-- `pageWith` is not requested. `pageWith` requires locating a specific document's position in the full result set, which is incompatible with slicing.
+**The underlying problem remains.** The keyword search pattern produces a `cts.tripleRangeQuery` containing up to 49K IRI literals. The Optic optimizer walks, costs, and rewrites the plan AST containing these literals — taking ~2.4s on a cold cache. This is the dominant cold-start cost. Native `cts.search` with the same query runs in ~1.6s because it bypasses the Optic optimizer entirely.
 
-The page-slice technique is not inherently limited to keyword searches. Any query whose criteria are entirely CTS-expressible (no joins) could benefit. See [Why This Is Not Specific To Keyword Search — And Why We Aren't Applying It Globally](./search-cold-start-mitigation.md#4-why-this-is-not-specific-to-keyword-search--and-why-we-arent-applying-it-globally) for the analysis.
+**Cold-start gap breakdown** (woman-greek-art, item scope, MarkLogic 12.0.1):
 
-**Benchmark results** (woman-greek-art, item scope, MarkLogic 12.0.1):
+| Component | Cost | Source |
+|---|---|---|
+| Plan optimization (AST traversal of 49K IRI literals) | ~3,818 ms | Phase timing measurement |
+| IRI resolution (`cts.values` × 3 keywords) | ~134 ms | 49K IRIs total |
+| Plan build (Optic API calls) | ~38 ms | Negligible |
+| Execution (index scan + materialization) | ~302 ms | Cold caches |
+| **Total Optic cold** | **~3,928 ms** | |
+| **CTS cold (same query, no Optic)** | **~662 ms** | Direct `cts.search` |
 
-| Metric | Standard Optic | Page-Slice | Difference |
-|---|---|---|---|
-| Cold avg (n=3) | 4,350 ms | 1,562 ms | **−2,788 ms / 2.8× faster** |
-| Cold stddev | 302 ms | 877 ms | Higher variance (small n) |
-| Warm avg (n=10) | 217 ms | 233 ms | +16 ms (equivalent) |
-| Warm stddev | 44 ms | 14 ms | **3× more consistent** |
+Plan optimization accounts for 97% of the cold-start overhead. Each distinct keyword query produces a unique plan AST (different IRIs), so the plan cache provides minimal benefit under diverse production load.
 
-**5K search performance test:** Neither Opt 13 nor Opt 14 moved the serialized 5K-request test needle. The 5K test's emphasis is being reconsidered: its relative-change metric inflates absolute differences, and it does not mimic end-user activity (back-to-back serialized requests with no pause). The current performance targets are: under 3 seconds for simple search, under 6 seconds for advanced search, and — time permitting — closing the remaining gap to CTS.
+**What was learned:**
+- Warm-path Optic (29–37 ms) is actually 2.7× faster than CTS warm (93–98 ms). The cold-start gap is the sole problem.
+- Lazy IRI resolution (passing `cts.values` Sequence directly instead of `.toArray()`) makes no difference — `cts.tripleRangeQuery` eagerly materializes all values into the plan AST regardless.
+- Removing `tripleRangeQuery` entirely (non-semantic only) drops cold-start to 267 ms — 14× faster, actually faster than CTS. The semantic portion of the keyword query is the entire cost.
+
+**Support ticket planned.** We are preparing a support ticket for Progress Engineering to determine whether ML 12.1.0 can address the underlying optimizer cost — specifically: CTS query parameterization within Optic (enabling plan cache reuse), and whether `cts.tripleRangeQuery` could accept a CTS query to define object IRIs instead of requiring pre-materialized literal values.
 
 ## Optimization 15: CTS Fold
 

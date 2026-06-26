@@ -8,17 +8,13 @@ import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
 import { isSemanticFacet } from '../facetsLib.mjs';
 import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
-import {
-  SEARCH_PAGE_SLICE_ENABLED,
-  SEMANTIC_SORT_TIMEOUT,
-} from '../appConstants.mjs';
+import { SEMANTIC_SORT_TIMEOUT } from '../appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
 import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
-import { tryExecuteKeywordPageSlice } from './keywordPageSlice.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
 import { NODE_TYPE_GROUP } from './criteriaNodes.mjs';
 import { analyzeCriteria } from './analyzeCriteria.mjs';
@@ -80,31 +76,6 @@ function performSearch(scp) {
         planScope: searchScope,
         allowMultiScope,
       });
-
-      // Simple-keyword queries can bypass the Optic pipeline entirely
-      // (cts.search → top-K → hydrate dataType). Returns null when the
-      // request is not eligible; see lib/search/keywordPageSlice.mjs.
-      const pageSlice = SEARCH_PAGE_SLICE_ENABLED
-        ? tryExecuteKeywordPageSlice(scp, (_scp) =>
-            getLeafTermsFromAnalysis(analysis),
-          )
-        : null;
-      if (pageSlice) {
-        const paginationResult = paginateResults({
-          rows: pageSlice.rows,
-          pageWith: null, // page-slice path is ineligible when pageWith is set
-          page,
-          pageLength: pageLength ?? 20,
-        });
-        return new SearchExecutionResult({
-          searchResults: paginationResult.searchResults,
-          total: pageSlice.total,
-          resultPage: paginationResult.resultPage,
-          planAsJson: null,
-          planAsSource: '(page-slice: cts.search outside Optic)',
-          facetResponses: null,
-        });
-      }
 
       const { sortedResultsPlan, unsortedResultsPlan, estimateQuery } =
         buildPlans({
@@ -493,36 +464,6 @@ function mergeTermPlanContributions(acc, contributions) {
   }
   if (contributions.patternJoins?.length) {
     acc.patternJoins.push(...contributions.patternJoins);
-  }
-}
-
-// Page-slice eligibility check using a pre-computed analysis result.
-// Returns { terms, logicType } when eligible, null otherwise.
-function getLeafTermsFromAnalysis(analysis) {
-  const tree = analysis.criteriaTree;
-  if (tree.conjunctionType !== 'and') return null;
-  if (tree.children.some((c) => c.type === NODE_TYPE_GROUP)) return null;
-  const terms = tree.children.map((leaf) => leaf.searchTerm);
-  return terms.length > 0 ? { terms, logicType: 'and' } : null;
-}
-
-// Lightweight entry point for page-slice eligibility: runs analyzeCriteria
-// on the SCP's current criteria/scope and extracts leaf terms when eligible.
-// Side effects (criteriaCount, ignoredTerms) fire — callers should treat
-// this as the definitive analysis pass.
-function analyzeLeafCriteria(scp) {
-  const searchCriteria = scp.getSearchCriteria();
-  const scopeName = scp.getSearchScope();
-  if (!searchCriteria || typeof searchCriteria !== 'object') return null;
-  try {
-    const analysis = analyzeCriteria({
-      scp,
-      planCriteria: searchCriteria,
-      planScope: scopeName,
-    });
-    return getLeafTermsFromAnalysis(analysis);
-  } catch (_e) {
-    return null;
   }
 }
 
@@ -1276,7 +1217,6 @@ function accContainsOnly(acc, bucketName) {
 
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
-  analyzeLeafCriteria,
   buildEstimateQuery,
   buildPlans,
   buildSortedResultsPlan,

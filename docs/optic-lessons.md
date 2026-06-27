@@ -84,7 +84,7 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 
 ## Sort lexicons contaminate the base plan
 - Adding sort field references to `acc.lexicons` before `assemblePlan` means the `fromLexicons` call includes sort indexes, which constrains results to documents that have those index values and adds cost.
-- Solution (Option D): build the constraint plan from the original accumulator, then shallow-copy `acc.lexicons` with sort fields for a separate sorted plan. `processNestedCriteria` returns `{ plan, constraintPlan }` at top-level; facets use `constraintPlan`, search results use `plan`.
+- Solution: `buildPlans` first assembles an unsorted plan, then calls `buildSortedResultsPlan` which shallow-copies `acc.lexicons` with sort fields for a separate sorted variant. Facets use `unsortedResultsPlan`, search results use `sortedResultsPlan`.
 
 ## cts.estimate() returns xs.unsignedLong, not a JS number
 - `xs.unsignedLong(0)` is an object → truthy, so `|| 0` fallback doesn't trigger
@@ -152,6 +152,12 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Before this was fixed, scoring leaves inside nested ORs failed to bubble up to the top-level `fromSearch` gate. The symptom: `plan.where()` was used (no scoring) when `op.fromSearch` should have been used.
 - Root cause: the old code derived the flag by checking only immediate children, not the full subtree.
 - Fix: each `analyzeConjunction` sub-call propagates its `hasScoreContributingCriteria` upward via `||=`.
+
+## buildPlans owns strategy — performSearch is a thin executor
+- `buildPlans` constructs both sorted and unsorted plans, computes `estimateQuery`, and determines `useCtsExecution`. Returns `selectedPlan` (the plan `performSearch` should execute) alongside the individual plans for inspection.
+- `performSearch` only executes `selectedPlan` — no plan selection logic.
+- This prevents "stacked overrides" where execution functions accumulate branching logic that progressively discards plans built by the construction layer.
+- The `isCtsExecutionEligible` gate (join-free accumulator + estimate query + request context) is evaluated inside `buildPlans` — the executor never needs to reason about plan eligibility.
 
 ## Separation of concerns: analysis vs. construction
 - Validation, tokenization, stop-word detection, search-option resolution, and tree normalization belong in Pass 1 (pure data, no Optic API calls).

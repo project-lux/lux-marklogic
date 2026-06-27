@@ -1,7 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { canUseEstimate } from '/lib/search/engine.mjs';
+import { isCtsExecutionEligible } from '/lib/search/engine.mjs';
 
-const LIB = '0601 canUseEstimate.mjs';
+const LIB = '0601 isCtsExecutionEligible.mjs';
 console.log(`${LIB}: starting.`);
 
 const MOCK_ESTIMATE_QUERY = cts.andQuery([cts.trueQuery()]);
@@ -117,7 +117,7 @@ const scenarios = [
 const assertions = [];
 
 for (const scenario of scenarios) {
-  const actual = canUseEstimate(scenario.input);
+  const actual = isCtsExecutionEligible(scenario.input);
   assertions.push(
     testHelperProxy.assertEqual(
       scenario.expected,

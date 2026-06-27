@@ -77,49 +77,35 @@ function performSearch(scp) {
         allowMultiScope,
       });
 
-      const { sortedResultsPlan, unsortedResultsPlan, estimateQuery } =
-        buildPlans({
-          scp,
-          analysis,
-          groups: getResultRowGrouping(),
-          sortCriteria: scp.getSortCriteria(),
-          patternOptions,
-        });
-
-      let useThisPlan = includeSearchResults
-        ? sortedResultsPlan
-        : unsortedResultsPlan;
-
-      // pageWith's limit is imposed here; see paginateResults for the rest.
       const pageWith = scp.getPageWith();
-      useThisPlan =
-        includeSearchResults && pageWith
-          ? useThisPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
-          : useThisPlan;
 
-      planAsJson = useThisPlan.export();
-      planAsSource = getPlanSource(planAsJson);
-
-      // Opt 18: use cts.estimate + offset/limit when eligible.
-      const canEstimate = canUseEstimate({
+      // Pass 2: build plans and determine execution strategy.
+      const { selectedPlan, estimateQuery, useCtsExecution } = buildPlans({
+        scp,
+        analysis,
+        groups: getResultRowGrouping(),
+        sortCriteria: scp.getSortCriteria(),
+        patternOptions,
         includeSearchResults,
         pageWith,
         facetRequests,
-        estimateQuery,
       });
 
-      if (canEstimate) {
+      planAsJson = selectedPlan.export();
+      planAsSource = getPlanSource(planAsJson);
+
+      if (useCtsExecution) {
         const effectivePageLength = pageLength ?? 20;
         total = cts.estimate(estimateQuery);
         resultPage = Math.max(page, 1);
         const offset = (resultPage - 1) * effectivePageLength;
-        searchResults = useThisPlan
+        searchResults = selectedPlan
           .offset(offset)
           .limit(effectivePageLength)
           .result()
           .toArray();
       } else {
-        const rows = useThisPlan.result().toArray();
+        const rows = selectedPlan.result().toArray();
 
         if (includeSearchResults) {
           total = rows.length;
@@ -258,6 +244,11 @@ function getResultRowGrouping() {
 // Top-level entry point called from performSearch — returns sorted and
 // unsorted plans with finalization and optional sort applied.
 // Accepts either a pre-computed analysis result or raw criteria params.
+//
+// When request context is provided (includeSearchResults, pageWith,
+// facetRequests), buildPlans also selects the appropriate plan and determines
+// the execution strategy. This keeps plan-shape decisions in Pass 2 rather
+// than scattering them across the executor.
 function buildPlans({
   scp,
   analysis: precomputedAnalysis = null,
@@ -267,6 +258,10 @@ function buildPlans({
   allowMultiScope = false,
   groups,
   sortCriteria = null,
+  // Optional request context — when provided, enables strategy determination.
+  includeSearchResults = null,
+  pageWith = null,
+  facetRequests = null,
 }) {
   const analysis =
     precomputedAnalysis ??
@@ -299,16 +294,42 @@ function buildPlans({
     groups,
   });
 
-  // Opt 18: compute a CTS query for cts.estimate when the top-level
-  // accumulator is join-free (only base constraints + CTS queries).
-  // Returns null when the plan requires full materialization.
+  // Compute a CTS query for cts.estimate when the top-level accumulator is
+  // join-free (only base constraints + CTS queries). Null when the plan
+  // requires full materialization. This is the fundamental "is the
+  // accumulator CTS-executable?" property that gates Opt 18/20/21.
   const estimateQuery = buildEstimateQuery(
     acc,
     assemblyContext,
     analysis.scope,
   );
 
-  return { sortedResultsPlan, unsortedResultsPlan, estimateQuery };
+  // Execution strategy: when request context is provided, select the plan
+  // and determine whether the estimate-based strategy applies.
+  let selectedPlan = null;
+  let useCtsExecution = false;
+  if (includeSearchResults != null) {
+    selectedPlan = includeSearchResults
+      ? sortedResultsPlan
+      : unsortedResultsPlan;
+    if (includeSearchResults && pageWith) {
+      selectedPlan = selectedPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1);
+    }
+    useCtsExecution = isCtsExecutionEligible({
+      includeSearchResults,
+      pageWith,
+      facetRequests,
+      estimateQuery,
+    });
+  }
+
+  return {
+    selectedPlan,
+    sortedResultsPlan,
+    unsortedResultsPlan,
+    useCtsExecution,
+    estimateQuery,
+  };
 }
 //#endregion
 
@@ -835,9 +856,11 @@ function buildEstimateQuery(acc, assemblyContext, scope) {
   ]);
 }
 
-// Opt 18: returns true when the request shape and plan structure allow
-// cts.estimate to replace full materialization for counting.
-function canUseEstimate({
+// Returns true when the request shape and plan structure allow CTS-based
+// execution: cts.estimate for count, offset/limit for pagination, and
+// (with Opt 20) fromSearch instead of fromLexicons for page results.
+// Requires the accumulator to be join-free (CTS-foldable).
+function isCtsExecutionEligible({
   includeSearchResults,
   pageWith,
   facetRequests,
@@ -1220,7 +1243,7 @@ export {
   buildEstimateQuery,
   buildPlans,
   buildSortedResultsPlan,
-  canUseEstimate,
+  isCtsExecutionEligible,
   getResultRowGrouping,
   isAccumulatorJoinFree,
   paginateResults,

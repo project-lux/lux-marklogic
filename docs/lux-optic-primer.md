@@ -87,9 +87,9 @@
   - [Optimization 17: Select barrier on nested sub-plans](#optimization-17-select-barrier-on-nested-sub-plans)
     - [Benchmark (MarkLogic 12.0.1)](#benchmark-marklogic-1201)
     - [Analysis](#analysis)
-  - [Optimization 18: CTS Estimate](#optimization-18-cts-estimate)
+  - [Optimization 18: cts.estimate with offset/limit for join-free queries](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)
     - [Problem](#problem)
-    - [When CTS Estimate applies](#when-cts-estimate-applies)
+    - [When cts.estimate with offset/limit applies](#when-ctsestimate-with-offsetlimit-applies)
     - [Pattern CTS Conversions](#pattern-cts-conversions)
     - [Benchmark (MarkLogic 12.0.1)](#benchmark-marklogic-1201-1)
     - [Key findings](#key-findings-1)
@@ -184,7 +184,7 @@ The engine exports three entry points that each use the two-pass pipeline differ
 
 | Entry point | Called by | Pass 1 | Pass 2 | Plan built? | Returns |
 |---|---|---|---|---|---|
-| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan }` |
+| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan, estimateQuery, selectedPlan, useCtsExecution }` |
 | `processNestedCriteria` | Pattern classes (`HopWithField`, `HopInverse`) | Yes | Yes + `assemblePlan` + select barrier | Yes — sub-plan projected to `[iriCol, fragCol]` | Optic plan (two columns) |
 | `processNestedCriteriaAsCts` | `HopWithField` (CTS optimization path) | Yes | Yes (accumulator only) | No — returns CTS query or null | `ctsQuery \| null` |
 | `traverseCriteria` | `SCP.executeForValues()` (related lists) | Yes | Yes (accumulator only) | No — side effects only | `undefined` |
@@ -469,9 +469,9 @@ Terms composed entirely of stop words (e.g., "a the and") or punctuation-only ch
 | `indexedValue` | `constraints[]` + lexicon (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | Exact-match on `indexReferences[0]`. |
 | `indexedWord` + `_complete` | `constraints[]` + lexicon (`op.eq`) | `ctsConstraints[]` (`cts.fieldValueQuery`) | Requires range index. |
 | `indexedWord` (no `_complete`) | `ctsConstraints[]` | Same as AND | Word queries always use CTS — no Optic-native stemming/wildcards. |
-| `indexedRange` | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Same as AND | Converted from Optic comparators to CTS for CTS Fold ([Opt 18](#optimization-18-cts-estimate)) and CTS Estimate ([Opt 18](#optimization-18-cts-estimate)) eligibility. |
-| `dateRange` | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Same as AND | Converted from Optic column comparisons to CTS for CTS Fold ([Opt 18](#optimization-18-cts-estimate)) and CTS Estimate ([Opt 18](#optimization-18-cts-estimate)) eligibility. |
-| `documentId` / `iri` | `ctsConstraints[]` (`cts.documentQuery`) | Same as AND | Converted from `op.eq(uriCol, v)` to CTS for CTS Fold ([Opt 18](#optimization-18-cts-estimate)) and CTS Estimate ([Opt 18](#optimization-18-cts-estimate)) eligibility. |
+| `indexedRange` | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Same as AND | Converted from Optic comparators to CTS for CTS Fold ([Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)) and cts.estimate/offset-limit ([Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)) eligibility. |
+| `dateRange` | `ctsConstraints[]` (`cts.fieldRangeQuery`) | Same as AND | Converted from Optic column comparisons to CTS for CTS Fold ([Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)) and cts.estimate/offset-limit ([Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)) eligibility. |
+| `documentId` / `iri` | `ctsConstraints[]` (`cts.documentQuery`) | Same as AND | Converted from `op.eq(uriCol, v)` to CTS for CTS Fold ([Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)) and cts.estimate/offset-limit ([Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries)) eligibility. |
 | `keyword` | `ctsConstraints[]` | Same as AND | Always CTS — combines non-semantic field query OR semantic triple-range query. |
 | `geospatial` | `ctsConstraints[]` | Same as AND | CTS geospatial queries. |
 | `hopWithField` | `patternJoins[]` or `ctsConstraints[]` | Same as AND | Emits `cts.tripleRangeQuery` when inner criteria is pure CTS ([Opt 16](#optimization-16-hopwithfield-cts)); otherwise joins. |
@@ -923,7 +923,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
 | 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
 | 7 | [Opt 17](#optimization-17-select-barrier-on-nested-sub-plans) | Select barrier: `.select([iriCol, fragCol])` on nested sub-plans prevents optimizer from fusing join trees across nesting levels (764× warm improvement on 3-level hops) | 2026-06-24 |
-| 8 | [Opt 18](#optimization-18-cts-estimate) | CTS Estimate: when CTS Fold ([Opt 15](#optimization-15-cts-fold)) is applicable, use `cts.estimate` for total count and `.offset().limit()` for the requested page's results. Avoids materializing all rows. | 2026-06-26 |
+| 8 | [Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) | cts.estimate with offset/limit: when CTS Fold ([Opt 15](#optimization-15-cts-fold)) is applicable, use `cts.estimate` for total count and `.offset().limit()` for the requested page's results. Avoids materializing all rows. | 2026-06-26 |
 
 ## Data Type Constraint Optimizations
 
@@ -1375,7 +1375,7 @@ All variants use the discovery query above. Each execution returned 11 results (
 - **B (inside-out assembly):** No improvement. Confirms the problem is optimizer join fusion, not plan construction order. The optimizer freely reorders joins regardless of how the application builds them.
 - **Why the barrier dominates:** Variant A improves cold starts by reducing column count, but the optimizer can still reason across the join boundary. The select barrier (variant C) creates an opaque wall — the optimizer treats each sub-plan as a black box returning exactly two columns. This prevents cross-level fusion entirely, which explains the additional 2× cold improvement and 26× warm improvement over variant A.
 
-## Optimization 18: CTS Estimate
+## Optimization 18: cts.estimate with offset/limit for join-free queries
 
 **Status:** Implemented.
 
@@ -1406,9 +1406,9 @@ Original search that got us looking at this:
 
 The above ID resolved to "Sterling Memorial Library, Yale University Library" at the time.
 
-### When CTS Estimate applies
+### When cts.estimate with offset/limit applies
 
-The logic of when CTS Estimate applies is defined in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs)'s `canUseEstimate`.  All of the following must be true:
+The logic of when cts.estimate with offset/limit applies is defined in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs)'s `isCtsExecutionEligible` (called within `buildPlans` to determine the execution strategy).  All of the following must be true:
 
 1. **The top-level accumulator is join-free** (`isAccumulatorJoinFree`): no `patternJoins`, no `andOrSubPlans`, no `conjunctionJoins`, at least one `ctsConstraint`, and no pattern-added Optic `constraints` beyond the initial dataType constraint.
 2. **The request includes search results** (`includeSearchResults` is true). Facet-only requests take a different path.
@@ -1418,7 +1418,7 @@ The logic of when CTS Estimate applies is defined in [engine.mjs](/src/main/ml-m
 
 ### Pattern CTS Conversions
 
-While implementing this optimization, patterns were reviewed to see if they could enable the CTS Fold [(Opt 15)](#optimization-15-cts-fold) and CTS Estimate [(Opt 18)](#optimization-18-cts-estimate) optimizations to apply to more searches.
+While implementing this optimization, patterns were reviewed to see if they could enable the CTS Fold [(Opt 15)](#optimization-15-cts-fold) and cts.estimate with offset/limit [(Opt 18)](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) optimizations to apply to more searches.
 
 We were able to do so to three patterns: `DateRange`, `DocumentIdOrIri`, and `IndexedRange`.
 
@@ -1452,7 +1452,7 @@ Multiple ways to get the estimate were benchmarked using the `item.memberOf` que
 
 ### Problem
 
-CTS Estimate (Opt 18) only fires when the top-level accumulator is join-free — i.e., every pattern contribution is pure CTS. Searches involving `hopWithField` (when inner criteria requires Optic joins), `hopInverse`, or `annTopK` produce `patternJoins` that make the accumulator non-join-free. These searches still materialize all rows to compute `total`, which is the dominant cost for large result sets.
+cts.estimate with offset/limit (Opt 18) only fires when the top-level accumulator is join-free — i.e., every pattern contribution is pure CTS. Searches involving `hopWithField` (when inner criteria requires Optic joins), `hopInverse`, or `annTopK` produce `patternJoins` that make the accumulator non-join-free. These searches still materialize all rows to compute `total`, which is the dominant cost for large result sets.
 
 ### Observation
 
@@ -1465,7 +1465,7 @@ For the *count*, only filtering matters — we need to know *how many* URIs matc
 
 ### Design sketch
 
-Split `performSearch`'s else-branch into two executions when CTS Estimate is ineligible:
+Split `performSearch`'s else-branch into two executions when cts.estimate with offset/limit is ineligible:
 
 1. **Page results (with dataType):** Execute the full plan with `.offset().limit()` to get the requested page. This includes the `dataType` lexicon, constraint, and `groupBy` aggregation — producing `{ id, type }` rows. Cost: proportional to page size (e.g., 20 rows), not total result count.
 
@@ -1506,7 +1506,7 @@ Scope leakage may be acceptable for estimates, especially if for a minority subs
 
 ### Problem
 
-When [CTS Estimate (Opt 18)](#optimization-18-cts-estimate) is eligible, the engine already trusts `cts.estimate` for the total count and applies `.offset().limit()` to cap materialization. However, the Optic plan still begins with `op.fromLexicons` scanning three range indexes — `uri` (43.9M entries), `iri` (43.9M entries split into two sub-scans), and `dataType` (43.9M entries) — joined together via scatter-join and hash-join. For a query like `item.memberOf { id }` returning 219K matches, this plan:
+When [cts.estimate with offset/limit (Opt 18)](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) is eligible, the engine already trusts `cts.estimate` for the total count and applies `.offset().limit()` to cap materialization. However, the Optic plan still begins with `op.fromLexicons` scanning three range indexes — `uri` (43.9M entries), `iri` (43.9M entries split into two sub-scans), and `dataType` (43.9M entries) — joined together via scatter-join and hash-join. For a query like `item.memberOf { id }` returning 219K matches, this plan:
 
 1. Scans three lexicons over 43.9M entries each
 2. Hash-joins the two IRI scans by fragment
@@ -1521,9 +1521,9 @@ The `iri` column is unused (no hop patterns joined), the `groupBy` exists only t
 
 ### Approach
 
-Replace `fromLexicons` with `op.fromSearch(ctsQuery)` + `.limit(pageLength)` + `joinDocAndUri()` when the query is CTS Estimate-eligible. This eliminates all lexicon scans and lets the CTS index do filtering, ordering, and pagination directly.
+Replace `fromLexicons` with `op.fromSearch(ctsQuery)` + `.limit(pageLength)` + `joinDocAndUri()` when the query is CTS-execution-eligible. This eliminates all lexicon scans and lets the CTS index do filtering, ordering, and pagination directly.
 
-**Prototype** (`scratch/performance/memberOf/memberOf-variantA-pull-docs.js`):
+**Prototype** (`scratch/performance/memberOf/memberOf-optic-opt-20.js`):
 
 ```javascript
 op.fromSearch(q, ['fragmentId', 'score'])
@@ -1538,7 +1538,7 @@ Result: **170ms cold** vs 4,609ms baseline (27× faster). The `fromSearch` plan 
 
 ### Eligibility
 
-Same as `canUseEstimate` (Opt 18) — all of the following must be true:
+Same as `isCtsExecutionEligible` (Opt 18) — all of the following must be true:
 
 1. Top-level accumulator is join-free (`isAccumulatorJoinFree`).
 2. Request includes search results (`includeSearchResults`).
@@ -1550,39 +1550,27 @@ When these hold, no pattern needs the `iri`, `uri`, or `dataType` lexicon column
 
 ### Implementation plan
 
-The implementation should be in `performSearch` in `engine.mjs`, extending the existing `canUseEstimate` path.
+The implementation belongs in `buildPlans` in `engine.mjs`. `buildPlans` already determines the execution strategy via `isCtsExecutionEligible`; Opt 20 extends this by building a `fromSearch`-based plan when eligible, rather than always building a `fromLexicons`-based plan that gets executed with offset/limit.
 
 #### 1. Build the page results via `fromSearch`
 
-Instead of the current flow (build full `fromLexicons` plan → `.offset().limit()` → `.result()`), build a minimal plan:
+Instead of the current flow (build full `fromLexicons` plan → `.offset().limit()` → `.result()`), `buildPlans` constructs a minimal `fromSearch`-based plan when `isCtsExecutionEligible` is true:
 
 ```javascript
-const estimateQuery = buildEstimateQuery(acc, scope);
-if (canUseEstimate({ includeSearchResults, pageWith, facetRequests, estimateQuery })) {
-  // Total via cts.estimate (already implemented in Opt 18)
-  const total = Number(cts.estimate(estimateQuery));
-
-  // Page via fromSearch — no fromLexicons, no lexicon scans
-  const ctsQuery = wrapCtsByLogicType(acc.ctsConstraints, 'and');
-  const pageRows = op.fromSearch(ctsQuery, ['fragmentId', 'score'])
-    .offset(offset)
-    .limit(pageLength)
-    .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
-    .result()
-    .toArray()
-    .map(row => ({
-      id: row.uri,
-      type: String(row.doc.xpath('/json/type')),
-    }));
-
-  // Return as SearchExecutionResult
+const estimateQuery = buildEstimateQuery(acc, assemblyContext, analysis.scope);
+if (isCtsExecutionEligible({ includeSearchResults, pageWith, facetRequests, estimateQuery })) {
+  // Build fromSearch plan — no fromLexicons, no lexicon scans.
+  const ctsQuery = wrapCtsByLogicType(assemblyContext.logicType, acc.ctsConstraints);
+  plan = op.fromSearch(ctsQuery, ['fragmentId', 'score'])
+    .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'));
+  // performSearch applies .offset().limit() and extracts {id, type} from results.
 }
 ```
 
 **Key details:**
 - `fromSearch(ctsQuery, ['fragmentId', 'score'])` uses the **unwrapped CTS query** (without the scope dataType filter from `buildEstimateQuery`). The scope filter is only needed for the estimate — `fromSearch` naturally scopes via the CTS query's field-level specificity. Verify this by comparing result counts.
 - If scores are NOT required (`!areScoresRequired`), use `fromSearch(ctsQuery, ['fragmentId'])` — omit `score` to skip scoring computation.
-- `.offset(offset).limit(pageLength)` paginates at the CTS level — only the requested page is materialized.
+- `performSearch` applies `.offset(offset).limit(pageLength)` — paginates at the CTS level so only the requested page is materialized.
 - `joinDocAndUri` pulls documents from disk. For 20 docs this is negligible (~1ms per doc on warm cache). The XPath `/json/type` extracts the `dataType` value that `collapseToResultRows` currently gets from the `dataType` lexicon.
 - The `groupBy` is unnecessary — `fromSearch` returns one row per matching fragment (no `iri` multiplication).
 
@@ -1590,11 +1578,11 @@ if (canUseEstimate({ includeSearchResults, pageWith, facetRequests, estimateQuer
 
 `fromSearch` returns results ordered by relevance score by default. This is correct for relevance-sorted queries (the default). For non-relevance sort orders, this optimization cannot apply in V1 — the sort would require Optic lexicon columns that this path eliminates.
 
-For V1, add a sort check to `canUseEstimate` or add a separate gate:
+For V1, add a sort check within `buildPlans` as an additional eligibility condition:
 
 ```javascript
-const canEliminateLexicons = canUseEstimate(...) &&
-  (sortCriteria.isRelevanceSort() || !sortCriteria.hasSortCriteria());
+const canEliminateLexicons = useCtsExecution &&
+  (sortCriteria?.isRelevanceSort() || !sortCriteria?.hasSortCriteria());
 ```
 
 Non-relevance-sorted queries fall through to the existing `fromLexicons` path.
@@ -1624,36 +1612,26 @@ Stays in the index — no documents pulled from disk. But adds a second Optic pl
 
 **Recommendation:** Start with Option A (simpler, validated in prototype). If document retrieval shows measurable cost at scale or on cold cache, switch to Option B.
 
-#### 4. Wire into `performSearch`
+#### 4. Wire into `buildPlans`
 
-The change is localized to `performSearch` in `engine.mjs`. The existing structure:
+The change lives in `buildPlans` in `engine.mjs`. When `isCtsExecutionEligible` is true, `buildPlans` constructs the `fromSearch`-based plan and returns it as `selectedPlan`. `performSearch` is unchanged — it already executes `selectedPlan` with `.offset().limit()` in the `useCtsExecution` branch.
+
+The sort check (relevance vs non-relevance) is a new eligibility condition within `buildPlans`:
 
 ```javascript
-if (canUseEstimate({ ... })) {
-  total = Number(cts.estimate(estimateQuery));
-  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
-  // ...
+const canEliminateLexicons = useCtsExecution &&
+  (sortCriteria?.isRelevanceSort() || !sortCriteria?.hasSortCriteria());
+
+if (canEliminateLexicons) {
+  // Opt 20: fromSearch plan — no fromLexicons, no lexicon scans
+  plan = buildFromSearchPlan(acc, assemblyContext);
+} else if (useCtsExecution) {
+  // Opt 18: fromLexicons with offset/limit (existing)
+  plan = sortedResultsPlan;
 }
 ```
 
-Becomes:
-
-```javascript
-if (canUseEstimate({ ... }) && canEliminateLexicons) {
-  // Opt 20: fromSearch path — no fromLexicons
-  total = Number(cts.estimate(estimateQuery));
-  searchResults = buildFromSearchPage(acc, offset, pageLength, areScoresRequired);
-} else if (canUseEstimate({ ... })) {
-  // Opt 18: fromLexicons with offset/limit
-  total = Number(cts.estimate(estimateQuery));
-  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
-} else {
-  // Full materialization
-  // ...
-}
-```
-
-The `buildFromSearchPage` helper encapsulates the `fromSearch` + `joinDocAndUri` + XPath logic.
+`performSearch` remains a thin executor — no new branching needed.
 
 #### 5. Verify correctness
 
@@ -1664,10 +1642,10 @@ The `buildFromSearchPage` helper encapsulates the `fromSearch` + `joinDocAndUri`
 
 ### What this does NOT address
 
-- **Queries with hops/joins.** These have `patternJoins` and are ineligible for CTS Estimate, so they never enter this path. The `fromLexicons` + `iri` overhead remains for those queries. [Opt 5](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries) (conditionally omitting `iri`) is a separate, complementary optimization for queries that use `fromLexicons` but don't need `iri`.
+- **Queries with hops/joins.** These have `patternJoins` and are ineligible for cts.estimate with offset/limit, so they never enter this path. The `fromLexicons` + `iri` overhead remains for those queries. [Opt 5](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries) (conditionally omitting `iri`) is a separate, complementary optimization for queries that use `fromLexicons` but don't need `iri`.
 - **Keyword search cold-start.** The keyword pattern's 49K-IRI `cts.tripleRangeQuery` still produces a large CTS query object. `fromSearch` with that query still requires the optimizer to process the AST. However, the `fromSearch` plan is structurally simpler (no lexicon joins, no groupBy), so the optimizer cost may be lower — worth measuring.
 - **Non-relevance sort.** Field-based sorts require lexicon columns. V1 restricts to relevance sort.
-- **Facets, pageWith.** Excluded by `canUseEstimate` eligibility.
+- **Facets, pageWith.** Excluded by `isCtsExecutionEligible` eligibility.
 
 ### Benchmark (prototype, MarkLogic 12.0.1)
 
@@ -1681,9 +1659,9 @@ Query: `item.memberOf { id }` — 219K matching items.
 
 ### Relationship to other optimizations
 
-- **Opt 18 (CTS Estimate):** Prerequisite. Opt 20 extends Opt 18 by also eliminating the Optic plan for the page results, not just the total count.
+- **Opt 18 (cts.estimate with offset/limit):** Prerequisite. Opt 20 extends Opt 18 by also eliminating the Optic plan for the page results, not just the total count.
 - **Opt 5 (Remove `iri` from `fromLexicons`):** Complementary but subsumed for eligible queries. Opt 5 would still help queries that use `fromLexicons` but don't need `iri` (e.g., non-relevance-sorted join-free queries). If Opt 20 is implemented first, Opt 5's remaining value is limited to the non-Opt-20-eligible subset.
-- **Opt 14 (Page-Slice, abandoned):** Opt 20 is structurally similar — both bypass `fromLexicons` for page results and use CTS for pagination. The key differences: Opt 20 uses `op.fromSearch` (stays within Optic's API), has a well-defined eligibility gate (`canUseEstimate`), and does not introduce a separate `cts.search` code path. The total-count concern that killed Opt 14 does not apply — Opt 18's `cts.estimate` with scope filter is already validated.
+- **Opt 14 (Page-Slice, abandoned):** Opt 20 is structurally similar — both bypass `fromLexicons` for page results and use CTS for pagination. The key differences: Opt 20 uses `op.fromSearch` (stays within Optic's API), has a well-defined eligibility gate (`isCtsExecutionEligible`), and does not introduce a separate `cts.search` code path. The total-count concern that killed Opt 14 does not apply — Opt 18's `cts.estimate` with scope filter is already validated.
 
 ## Optimization 21: Eliminate URI-list materialization for facets
 
@@ -1714,7 +1692,7 @@ For non-foldable searches (accumulator has joins), the current materialization p
 
 This optimization applies when `buildEstimateQuery` returns non-null (the accumulator is join-free and can be expressed as a pure CTS query). This is the same `isAccumulatorJoinFree` check used by Opt 18 and Opt 20.
 
-Note the distinction from `canUseEstimate`: that function also checks `!facetRequests?.length`, which would always be false for facet requests. The CTS query eligibility is determined by the accumulator shape, not the request type. The relevant check is:
+Note the distinction from `isCtsExecutionEligible`: that function also checks `!facetRequests?.length`, which would always be false for facet requests. The CTS query eligibility is determined by the accumulator shape, not the request type. The relevant check is:
 
 ```javascript
 const estimateQuery = buildEstimateQuery(acc, assemblyContext, analysis.scope);
@@ -1790,7 +1768,7 @@ if (canEstimate) {
 }
 ```
 
-The key insight: `canUseEstimate` returns false when facets are requested (it checks `!facetRequests?.length`). But `estimateQuery` may still be non-null — the accumulator is join-free, the CTS query exists, it's just that `canUseEstimate` also gates on the absence of facets.
+The key insight: `isCtsExecutionEligible` returns false when facets are requested (it checks `!facetRequests?.length`). But `estimateQuery` may still be non-null — the accumulator is join-free, the CTS query exists, it's just that `isCtsExecutionEligible` also gates on the absence of facets.
 
 Refactored:
 
@@ -1848,7 +1826,7 @@ When called from the Opt 21 facet-only path, `rows` is `null`. The function must
 
 ### Relationship to other optimizations
 
-- **Opt 18 (CTS Estimate):** Shares the same `estimateQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for `op.fromSearch` (facet document set). The two are independent — neither is a prerequisite.
+- **Opt 18 (cts.estimate with offset/limit):** Shares the same `estimateQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for `op.fromSearch` (facet document set). The two are independent — neither is a prerequisite.
 - **Opt 20 (Eliminate fromLexicons):** Not a prerequisite. Opt 20 addresses page results; Opt 21 addresses facets. They are complementary and can be implemented in either order. When both are implemented and page + facets are consolidated into one call, the full materialization path is only needed for non-foldable queries.
 - **Opt 19 (DataType-split estimate):** Opt 19 targets the non-foldable case (queries with joins). Opt 21 targets the foldable case (join-free). They address different subsets of the query population.
 

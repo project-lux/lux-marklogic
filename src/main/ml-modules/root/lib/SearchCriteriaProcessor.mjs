@@ -254,8 +254,9 @@ const SearchCriteriaProcessor = class {
     return this.#values;
   }
 
-  // Builds sorted and unsorted Optic plans without executing them.
-  // Returns { sortedResultsPlan, unsortedResultsPlan }.
+  // Builds Optic plans and determines execution strategy.
+  // Returns { selectedPlan, sortedResultsPlan, unsortedResultsPlan,
+  //           ctsExecutionEligible, isFromSearchPlan, scopedCtsQuery }.
   buildPlans(preferFragJoins = PREFER_FRAG_JOINS) {
     // May override the default set by prepare().
     this.#patternOptions.setPreferFragJoins(preferFragJoins);
@@ -268,6 +269,9 @@ const SearchCriteriaProcessor = class {
       groups: engine.getResultRowGrouping(),
       sortCriteria: this.#sortCriteria,
       patternOptions: this.#patternOptions,
+      includeSearchResults: this.#includeSearchResults,
+      pageWith: this.#pageWith,
+      facetRequests: this.#facetRequests,
     });
   }
 

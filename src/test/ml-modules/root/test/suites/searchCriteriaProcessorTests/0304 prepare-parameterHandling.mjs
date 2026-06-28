@@ -134,6 +134,51 @@ const scenarios = [
       pageLength: 100,
     },
   },
+  {
+    name: 'pageLength exceeding maximum is capped to 100',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 500 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength at maximum is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 100 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength below maximum is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 50 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 50,
+    },
+  },
+  {
+    name: 'Negative pageLength is rejected',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: -1 }),
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'Invalid pagination parameter values. Both must be greater than zero.',
+    },
+  },
 ];
 
 for (const scenario of scenarios) {

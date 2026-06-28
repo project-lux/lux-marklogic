@@ -364,8 +364,8 @@ function buildPlans({
 
   return {
     selectedPlan,
-    sortedResultsPlan,
-    unsortedResultsPlan,
+    sortedResultsPlan, // for developer use
+    unsortedResultsPlan, // for developer use
     ctsExecutionEligible,
     isFromSearchPlan,
     scopedCtsQuery,

@@ -111,14 +111,15 @@ const scenarios = [
     },
   },
   {
-    name: 'Zero page defaults to 1',
+    name: 'Page=0 should be rejected',
     input: {
       searchCriteria: { _scope: 'agent', text: 'test' },
       ...createProcessInput({ page: 0 }),
     },
     expected: {
-      error: false,
-      page: 0, // Should preserve the provided value
+      error: true,
+      stackToInclude:
+        'Invalid pagination parameter values. Both must be greater than zero.',
     },
   },
   {

@@ -30,6 +30,7 @@ import {
 //#endregion
 
 //#region Constants
+const MAXIMUM_PAGE_LENGTH = 100;
 const PREFER_FRAG_JOINS = false;
 
 const SEARCH_STATE_NOT_REQUESTED = 'not requested';
@@ -113,6 +114,10 @@ const SearchCriteriaProcessor = class {
       sortDelimitedStr,
       facetRequests,
     });
+
+    // Validate and cap pagination parameters before any work.
+    utils.checkPaginationParameters(page, pageLength);
+    this.#pageLength = Math.min(pageLength, MAXIMUM_PAGE_LENGTH);
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
     this.#resolvedSearchCriteria =

@@ -103,20 +103,17 @@
     - [Problem](#problem-2)
     - [Approach](#approach)
     - [Eligibility](#eligibility)
-    - [Implementation plan](#implementation-plan)
-      - [1. Build the page results via `fromSearch`](#1-build-the-page-results-via-fromsearch)
-      - [2. Handle relevance sort vs other sorts](#2-handle-relevance-sort-vs-other-sorts)
-      - [3. Handle the `dataType` extraction](#3-handle-the-datatype-extraction)
-      - [4. Wire into `performSearch`](#4-wire-into-performsearch)
-      - [5. Verify correctness](#5-verify-correctness)
+    - [Implementation summary](#implementation-summary)
     - [What this does NOT address](#what-this-does-not-address)
-    - [Benchmark (prototype, MarkLogic 12.0.1)](#benchmark-prototype-marklogic-1201)
+    - [Benchmark](#benchmark)
+      - [Prototype (single query, MarkLogic 12.0.1)](#prototype-single-query-marklogic-1201)
+      - [10k-3 performance test (2026-06-28, commit 2211d13)](#10k-3-performance-test-2026-06-28-commit-2211d13)
     - [Relationship to other optimizations](#relationship-to-other-optimizations)
   - [Optimization 21: Eliminate URI-list materialization for facets](#optimization-21-eliminate-uri-list-materialization-for-facets)
     - [Problem](#problem-3)
     - [Approach](#approach-1)
     - [Eligibility](#eligibility-1)
-    - [Implementation plan](#implementation-plan-1)
+    - [Implementation plan](#implementation-plan)
       - [1. Modify `calculateFacets` to accept an optional CTS query](#1-modify-calculatefacets-to-accept-an-optional-cts-query)
       - [2. Modify `performSearch` to pass `scopedCtsQuery` to `calculateFacets`](#2-modify-performsearch-to-pass-scopedctsquery-to-calculatefacets)
       - [3. Handle `rows = null` in `calculateFacets`](#3-handle-rows--null-in-calculatefacets)
@@ -924,6 +921,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
 | 7 | [Opt 17](#optimization-17-select-barrier-on-nested-sub-plans) | Select barrier: `.select([iriCol, fragCol])` on nested sub-plans prevents optimizer from fusing join trees across nesting levels (764× warm improvement on 3-level hops) | 2026-06-24 |
 | 8 | [Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) | cts.estimate with offset/limit: when CTS Fold ([Opt 15](#optimization-15-cts-fold)) is applicable, use `cts.estimate` for total count and `.offset().limit()` for the requested page's results. Avoids materializing all rows. | 2026-06-26 |
+| 9 | [Opt 20](#optimization-20-eliminate-fromlexicons-for-join-free-queries) | avoidLexicons: replace `fromLexicons` with `op.fromSearch` + `joinDocAndUri` after pagination. For the reference query, this optimization eliminated 3 lexicon scans (43.9M entries each) and dedup groupBy. Mean dropped from 231% to 31% of CTS (3.2× faster). | 2026-06-28 |
 
 ## Data Type Constraint Optimizations
 
@@ -1506,18 +1504,18 @@ Scope leakage may be acceptable for estimates, especially if for a minority subs
 
 ### Problem
 
-When [cts.estimate with offset/limit (Opt 18)](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) is eligible, the engine already trusts `cts.estimate` for the total count and applies `.offset().limit()` to cap materialization. However, the Optic plan still begins with `op.fromLexicons` scanning three range indexes — `uri` (43.9M entries), `iri` (43.9M entries split into two sub-scans), and `dataType` (43.9M entries) — joined together via scatter-join and hash-join. For a query like `item.memberOf { id }` returning 219K matches, this plan:
+When [cts.estimate with offset/limit (Opt 18)](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) is eligible, the engine already trusts `cts.estimate` for the total count and applies `.offset().limit()` to cap materialization. However, the Optic plan still begins with `op.fromLexicons` scanning three range indexes — `uri` (43.9M entries), `iri` (43.9M entries split into two sub-scans), and `dataType` (43.9M entries) — joined together via scatter-join and hash-join. For the reference query returning 2.5M matches, this plan:
 
 1. Scans three lexicons over 43.9M entries each
 2. Hash-joins the two IRI scans by fragment
 3. Scatter-joins the result with the dataType lexicon
 4. Applies the CTS constraint filter
-5. Sorts and groups 219K rows to dedup (required because `iri` multiplies rows)
+5. Sorts and groups 2.5M rows to dedup (required because `iri` multiplies rows)
 6. **Only then** applies `limit(20)`
 
-The limit cannot be pushed below `groupBy`, so all 219K rows are materialized, sorted, and grouped before the top 20 are selected. Result: 3.8–4.6s cold vs 125ms for the equivalent CTS query.
+The limit cannot be pushed below `groupBy`, so all 2.5M rows are materialized, sorted, and grouped before the top 20 are selected. Result: 3.8–4.6s cold vs 125ms for the equivalent CTS query.
 
-The `iri` column is unused (no hop patterns joined), the `groupBy` exists only to dedup rows inflated by `iri`, and the `dataType` lexicon scan exists only to project the record type into the output — work that could be done for 20 rows instead of 219K.
+The `iri` column is unused (no hop patterns joined), the `groupBy` exists only to dedup rows inflated by `iri`, and the `dataType` lexicon scan exists only to project the record type into the output — work that could be done for 20 rows instead of 2.5M.
 
 ### Approach
 
@@ -1548,68 +1546,16 @@ Same as `isCtsExecutionEligible` (Opt 18) — all of the following must be true:
 
 When these hold, no pattern needs the `iri`, `uri`, or `dataType` lexicon columns for joins. The only purpose of `fromLexicons` is to produce `{id, type}` output rows — which `fromSearch` + `joinDocAndUri` achieves without scanning any lexicons.
 
-### Implementation
+### Implementation summary
 
-The implementation lives in `buildPlans` in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs). Two new functions and a strategy extension:
+The implementation lives in `buildPlans` and `performSearch` in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs). Key components:
 
-#### `sortRequiresLexicons(sortCriteria)`
+- **`sortRequiresLexicons(sortCriteria)`** — Returns true when the sort requires lexicon columns (random, field, semantic sorts). Relevance sort and unsorted are compatible with `fromSearch`.
+- **`buildFromSearchPlan(acc, assemblyContext, sortCriteria, scopedCtsQuery)`** — Builds an `op.fromSearch(scopedCtsQuery)` plan with `scoreMethod: 'logtfidf'` + `orderBy(desc(score))` when scores are needed, or `scoreMethod: 'zero'` when unsorted. No hydration join — only `fragmentId` (and optionally `score`) columns.
+- **Strategy block in `buildPlans`** — When `ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)`, selects the `fromSearch` plan and sets `isFromSearchPlan = true`.
+- **Execution in `performSearch`** — When `isFromSearchPlan`, applies `.offset().limit()` first, then `.joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))` so only the page slice (typically 20 rows) hits disk. Type extracted via XPath on `/type`.
 
-Returns true when the active sort strategy requires lexicon columns or plan structures that only the `fromLexicons` path can provide. Random, non-semantic field, and semantic sorts all require the full plan. Relevance sort and unsorted are compatible with `fromSearch`.
-
-#### `buildFromSearchPlan(acc, assemblyContext, sortCriteria, scopedCtsQuery)`
-
-Builds a compact `fromSearch`-based plan:
-
-```javascript
-// When scores are needed (relevance sort):
-op.fromSearch(scopedCtsQuery, ['fragmentId', 'score'], null, { scoreMethod: 'logtfidf' })
-  .orderBy(op.desc(op.col('score')))
-// When scores are not needed (unsorted):
-op.fromSearch(scopedCtsQuery, ['fragmentId'], null, { scoreMethod: 'zero' })
-```
-
-No hydration join is included — `performSearch` applies `.offset().limit()` first, then chains `.joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))` so only the page slice (typically 20 rows) hits disk. The `type` value is extracted from the document via XPath on `/type` (the field indexed as `anyDataTypeName` lives at `/json/type`; `joinDocAndUri` scopes the XPath to `/json`).
-
-#### Execution in `performSearch`
-
-When `isFromSearchPlan` is true, `performSearch` applies pagination before hydration:
-
-```javascript
-searchResults = selectedPlan
-  .offset(offset)
-  .limit(effectivePageLength)
-  .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
-  .result()
-  .toArray()
-  .map(row => ({ id: row.uri, type: String(row.doc.xpath('/type')) }));
-```
-
-When `isFromSearchPlan` is false (Opt 18 fallback — sort requires lexicons), the existing `fromLexicons`-based plan already produces `{id, type}` rows, so `performSearch` just calls `.offset().limit().result().toArray()` as before.
-
-**Key decisions:**
-- Uses `scopedCtsQuery` (which includes the scope dataType filter) as the `fromSearch` input, not the unwrapped CTS query. This ensures scope-specific fields like `anyAnyText` don't leak results from other scopes.
-- Hydration via `joinDocAndUri` after pagination (the prototype approach). Only the page slice hits disk — negligible cost for 20 documents. A pre-pagination `fromLexicons` hydration would scan ~43.9M entries across the `uri` and `dataType` indexes, defeating the optimization.
-- When scores are not required, `scoreMethod: 'zero'` is set explicitly to skip scoring computation.
-
-#### Strategy block in `buildPlans`
-
-After `isCtsExecutionEligible` determines that CTS execution is eligible, a second check gates Opt 20:
-
-```javascript
-if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
-  selectedPlan = buildFromSearchPlan(acc, assemblyContext, sortCriteria, scopedCtsQuery);
-  isFromSearchPlan = true;
-}
-```
-
-`buildPlans` returns `isFromSearchPlan` alongside `ctsExecutionEligible` so `performSearch` knows which hydration path to use. When the sort requires lexicons (random, field, semantic), `selectedPlan` remains the `fromLexicons`-based plan and the Opt 18 offset/limit path still applies.
-
-#### Verification checklist
-
-- **Result parity:** For the same query, compare `{id, type}` rows between the `fromLexicons` path and the `fromSearch` path. They must match exactly (same URIs, same types). Order may differ for tied scores — same exposure as existing tied-score behavior.
-- **Total parity:** `cts.estimate(scopedCtsQuery)` is already validated by Opt 18 tests.
-- **Scope filtering:** `scopedCtsQuery` includes `cts.fieldValueQuery('anyDataTypeName', scopeTypes)`, so cross-scope fields like `anyAnyText` are properly filtered.
-- **XPath correctness:** Verify `/type` returns the correct `dataType` string for documents in each scope (field definition: `/json/type`).
+Key decisions: `scopedCtsQuery` (includes scope dataType filter) prevents cross-scope leakage; hydration after pagination avoids scanning 43.9M lexicon entries; `buildPlans` returns `isFromSearchPlan` so `performSearch` knows which path to use.
 
 ### What this does NOT address
 
@@ -1618,15 +1564,44 @@ if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
 - **Non-relevance sort.** Field-based sorts require lexicon columns. V1 restricts to relevance sort.
 - **Facets, pageWith.** Excluded by `isCtsExecutionEligible` eligibility.
 
-### Benchmark (prototype, MarkLogic 12.0.1)
+### Benchmark
 
-Query: `item.memberOf { id }` — 219K matching items.
+#### Prototype (single query, MarkLogic 12.0.1)
+
+Same reference query as [Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries):
+
+```json
+{
+  "_scope": "item",
+  "memberOf": {
+    "id": "https://lux.collections.yale.edu/data/set/d1b8a867-8be7-4325-ad78-1f3abda76056"
+  }
+}
+```
+
+2,553,512 matching items in the 2026-05-01 dataset.
 
 | Approach | Cold (ms) | Notes |
 |---|---|---|
 | CTS baseline | 125 | `cts.andQuery([jsonPropertyValueQuery, fieldValueQuery])` |
-| Standard Optic (`fromLexicons`, Opt 18 limit) | 4,609 | 3 lexicon scans × 43.9M, sort+groupBy 219K rows, then limit 20 |
+| Standard Optic (`fromLexicons`, Opt 18 limit) | 4,609 | 3 lexicon scans × 43.9M, sort+groupBy 2.5M rows, then limit 20 |
 | **Prototype (`fromSearch` + `joinDocAndUri`)** | **170** | No lexicon scans, limit before doc retrieval, XPath for dataType |
+
+#### 10k-3 performance test (2026-06-28, commit 2211d13)
+
+Comparison 11 → 12: adding Opt 20 (`avoidLexicons`) to the Opt 1/3/15/17/18 stack. Baseline: CTS 10k-3 (6/25, cleared caches, 8 min duration). Single-threaded, cleared caches.
+
+| Metric | ID 11 (Opt 18) | ID 12 (Opt 18 + 20) | Change |
+|---|---|---|---|
+| Test duration | 25 min | 10 min | −60% |
+| Mean (% of CTS) | 231.70% | 31.10% | 2.3× slower → **3.2× faster** |
+| p99.9 (% of CTS) | 147.20% | 125.60% | −15% |
+| Fastest (ms) | 453 | 396 | −13% |
+| Slowest (ms) | 3,842 | 1,193 | −69% |
+| Requests > 1s | 6 | 1 | −83% |
+| Functional diff count | 26 | 25 | −1 |
+
+The mean result is the headline: Optic went from 2.3× slower than CTS to 3.2× faster on the eligible query population. The tail (p99.9) is still 26% above CTS — likely dominated by ineligible queries (hops/joins) or keyword cold-start.
 
 ### Relationship to other optimizations
 

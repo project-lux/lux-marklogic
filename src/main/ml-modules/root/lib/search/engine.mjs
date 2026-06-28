@@ -44,6 +44,7 @@ function performSearch(scp) {
   const allowMultiScope = scp.isAllowMultiScope();
   const page = scp.getPage();
   const pageLength = scp.getPageLength();
+  const pageWith = scp.getPageWith();
   const includeSearchResults = scp.getIncludeSearchResults();
   const facetRequests = scp.getFacetRequests();
   let patternOptions = scp.getPatternOptions();
@@ -77,49 +78,60 @@ function performSearch(scp) {
         allowMultiScope,
       });
 
-      const { sortedResultsPlan, unsortedResultsPlan, estimateQuery } =
-        buildPlans({
-          scp,
-          analysis,
-          groups: getResultRowGrouping(),
-          sortCriteria: scp.getSortCriteria(),
-          patternOptions,
-        });
-
-      let useThisPlan = includeSearchResults
-        ? sortedResultsPlan
-        : unsortedResultsPlan;
-
-      // pageWith's limit is imposed here; see paginateResults for the rest.
-      const pageWith = scp.getPageWith();
-      useThisPlan =
-        includeSearchResults && pageWith
-          ? useThisPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
-          : useThisPlan;
-
-      planAsJson = useThisPlan.export();
-      planAsSource = getPlanSource(planAsJson);
-
-      // Opt 18: use cts.estimate + offset/limit when eligible.
-      const canEstimate = canUseEstimate({
+      // Pass 2: build plans and determine execution strategy.
+      // - selectedPlan: includes or excludes sort criteria based on need.
+      // - ctsExecutionEligible: when true, avoids full row materialization;
+      //   uses scopedCtsQuery for cts.estimate (total) and offset/limit (page).
+      // - isFromSearchPlan: when also true, avoids lexicon scans entirely;
+      //   instead, we get the data directly from the documents, for one page.
+      const {
+        selectedPlan,
+        isFromSearchPlan,
+        ctsExecutionEligible,
+        scopedCtsQuery,
+      } = buildPlans({
+        scp,
+        analysis,
+        groups: getResultRowGrouping(),
+        sortCriteria: scp.getSortCriteria(),
+        patternOptions,
         includeSearchResults,
         pageWith,
         facetRequests,
-        estimateQuery,
       });
 
-      if (canEstimate) {
+      planAsJson = selectedPlan.export();
+      planAsSource = getPlanSource(planAsJson);
+
+      if (ctsExecutionEligible) {
         const effectivePageLength = pageLength ?? 20;
-        total = cts.estimate(estimateQuery);
+        total = cts.estimate(scopedCtsQuery);
         resultPage = Math.max(page, 1);
         const offset = (resultPage - 1) * effectivePageLength;
-        searchResults = useThisPlan
-          .offset(offset)
-          .limit(effectivePageLength)
-          .result()
-          .toArray();
+
+        if (isFromSearchPlan) {
+          // Opt 20: paginate first, then hydrate only the page slice.
+          // joinDocAndUri pulls documents from disk for just the page.
+          searchResults = selectedPlan
+            .offset(offset)
+            .limit(effectivePageLength)
+            .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
+            .result()
+            .toArray()
+            .map((row) => ({
+              id: row.uri,
+              type: String(row.doc.xpath('/type')),
+            }));
+        } else {
+          // Opt 18: fromLexicons plan already has {id, type} columns.
+          searchResults = selectedPlan
+            .offset(offset)
+            .limit(effectivePageLength)
+            .result()
+            .toArray();
+        }
       } else {
-        const rows = useThisPlan.result().toArray();
+        const rows = selectedPlan.result().toArray();
 
         if (includeSearchResults) {
           total = rows.length;
@@ -258,6 +270,11 @@ function getResultRowGrouping() {
 // Top-level entry point called from performSearch — returns sorted and
 // unsorted plans with finalization and optional sort applied.
 // Accepts either a pre-computed analysis result or raw criteria params.
+//
+// When request context is provided (includeSearchResults, pageWith,
+// facetRequests), buildPlans also selects the appropriate plan and determines
+// the execution strategy. This keeps plan-shape decisions in Pass 2 rather
+// than scattering them across the executor.
 function buildPlans({
   scp,
   analysis: precomputedAnalysis = null,
@@ -267,6 +284,10 @@ function buildPlans({
   allowMultiScope = false,
   groups,
   sortCriteria = null,
+  // Optional request context — when provided, enables strategy determination.
+  includeSearchResults = null,
+  pageWith = null,
+  facetRequests = null,
 }) {
   const analysis =
     precomputedAnalysis ??
@@ -299,16 +320,56 @@ function buildPlans({
     groups,
   });
 
-  // Opt 18: compute a CTS query for cts.estimate when the top-level
-  // accumulator is join-free (only base constraints + CTS queries).
-  // Returns null when the plan requires full materialization.
-  const estimateQuery = buildEstimateQuery(
+  // Compose the accumulator's CTS constraints into a single scoped CTS query
+  // when the accumulator is join-free. Null when the plan requires full
+  // materialization. Gates Opt 18 (cts.estimate), Opt 20 (fromSearch), Opt 21 (facets).
+  const scopedCtsQuery = buildScopedCtsQuery(
     acc,
     assemblyContext,
     analysis.scope,
   );
 
-  return { sortedResultsPlan, unsortedResultsPlan, estimateQuery };
+  // Execution strategy: when request context is provided, select the plan
+  // and determine whether the estimate-based strategy applies.
+  let selectedPlan = null;
+  let ctsExecutionEligible = false;
+  let isFromSearchPlan = false;
+  if (includeSearchResults != null) {
+    selectedPlan = includeSearchResults
+      ? sortedResultsPlan
+      : unsortedResultsPlan;
+    if (includeSearchResults && pageWith) {
+      selectedPlan = selectedPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1);
+    }
+    ctsExecutionEligible = isCtsExecutionEligible({
+      includeSearchResults,
+      pageWith,
+      facetRequests,
+      scopedCtsQuery,
+    });
+
+    // Opt 20: Replace the fromLexicons-based plan with a fromSearch-based
+    // plan when the sort doesn't require lexicon columns. Eliminates the
+    // iri lexicon scan, row multiplication, and blocking groupBy.
+    if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
+      selectedPlan = buildFromSearchPlan(
+        acc,
+        assemblyContext,
+        sortCriteria,
+        scopedCtsQuery,
+      );
+      isFromSearchPlan = true;
+    }
+  }
+
+  return {
+    selectedPlan,
+    sortedResultsPlan, // for developer use
+    unsortedResultsPlan, // for developer use
+    ctsExecutionEligible,
+    isFromSearchPlan,
+    scopedCtsQuery,
+  };
 }
 //#endregion
 
@@ -817,11 +878,10 @@ function isAccumulatorJoinFree(acc) {
   );
 }
 
-// Opt 18: Returns a composed CTS query suitable for cts.estimate when the
-// accumulator is join-free, or null when full materialization is required.
-// Includes the scope's dataType filter so fields spanning scopes (e.g.
-// anyAnyText) don't overcount.
-function buildEstimateQuery(acc, assemblyContext, scope) {
+// Returns the accumulator's CTS constraints composed into a single query
+// with a scope dataType filter, or null when full materialization is required.
+// Used by cts.estimate (Opt 18), op.fromSearch (Opt 20), and facets (Opt 21).
+function buildScopedCtsQuery(acc, assemblyContext, scope) {
   if (!isAccumulatorJoinFree(acc)) return null;
   const composedCts = wrapCtsByLogicType(
     assemblyContext.logicType,
@@ -835,20 +895,66 @@ function buildEstimateQuery(acc, assemblyContext, scope) {
   ]);
 }
 
-// Opt 18: returns true when the request shape and plan structure allow
-// cts.estimate to replace full materialization for counting.
-function canUseEstimate({
+// Returns true when the request shape and plan structure allow CTS-based
+// execution: cts.estimate for count, offset/limit for pagination, and
+// (with Opt 20) fromSearch instead of fromLexicons for page results.
+// Requires the accumulator to be join-free (CTS-foldable).
+function isCtsExecutionEligible({
   includeSearchResults,
   pageWith,
   facetRequests,
-  estimateQuery,
+  scopedCtsQuery,
 }) {
   return (
     includeSearchResults &&
     !pageWith &&
     !facetRequests?.length &&
-    estimateQuery != null
+    scopedCtsQuery != null
   );
+}
+
+// Returns true when the active sort strategy requires lexicon columns
+// or plan structures that only the fromLexicons path can provide.
+// Relevance sort and unsorted are compatible with fromSearch (Opt 20).
+function sortRequiresLexicons(sortCriteria) {
+  if (!sortCriteria) return false;
+  return (
+    sortCriteria.isRandomSort() ||
+    sortCriteria.hasNonSemanticSortDescriptors() ||
+    sortCriteria.hasSemanticSortOption()
+  );
+}
+
+// Opt 20: Builds a compact fromSearch-based plan. performSearch applies
+// .offset().limit() first, then chains .joinDocAndUri() so only the page
+// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans,
+// row multiplication, and blocking groupBy of the standard fromLexicons path.
+function buildFromSearchPlan(
+  acc,
+  assemblyContext,
+  sortCriteria,
+  scopedCtsQuery,
+) {
+  const wantScore =
+    sortCriteria?.areScoresRequired() &&
+    assemblyContext.hasScoreContributingCriteria &&
+    acc.ctsConstraints.length > 0;
+
+  let plan = wantScore
+    ? op.fromSearch(scopedCtsQuery, ['fragmentId', 'score'], null, {
+        scoreMethod: 'logtfidf',
+      })
+    : op.fromSearch(scopedCtsQuery, ['fragmentId'], null, {
+        scoreMethod: 'zero',
+      });
+
+  if (wantScore) {
+    plan = plan.orderBy(op.desc(op.col('score')));
+  }
+
+  // No hydration here — performSearch applies .offset().limit() first,
+  // then chains .joinDocAndUri() so only the page slice hits disk.
+  return plan;
 }
 //#endregion
 
@@ -1217,15 +1323,17 @@ function accContainsOnly(acc, bucketName) {
 
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
-  buildEstimateQuery,
+  buildScopedCtsQuery,
+  buildFromSearchPlan,
   buildPlans,
   buildSortedResultsPlan,
-  canUseEstimate,
+  isCtsExecutionEligible,
   getResultRowGrouping,
   isAccumulatorJoinFree,
   paginateResults,
   performSearch,
   processNestedCriteria,
   processNestedCriteriaAsCts,
+  sortRequiresLexicons,
   traverseCriteria,
 };

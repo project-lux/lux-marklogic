@@ -1,7 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { canUseEstimate } from '/lib/search/engine.mjs';
+import { isCtsExecutionEligible } from '/lib/search/engine.mjs';
 
-const LIB = '0601 canUseEstimate.mjs';
+const LIB = '0601 isCtsExecutionEligible.mjs';
 console.log(`${LIB}: starting.`);
 
 const MOCK_ESTIMATE_QUERY = cts.andQuery([cts.trueQuery()]);
@@ -14,7 +14,7 @@ const scenarios = [
       includeSearchResults: true,
       pageWith: null,
       facetRequests: null,
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: true,
   },
@@ -24,7 +24,7 @@ const scenarios = [
       includeSearchResults: true,
       pageWith: null,
       facetRequests: [],
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: true,
   },
@@ -34,7 +34,7 @@ const scenarios = [
       includeSearchResults: true,
       pageWith: null,
       facetRequests: undefined,
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: true,
   },
@@ -46,7 +46,7 @@ const scenarios = [
       includeSearchResults: false,
       pageWith: null,
       facetRequests: null,
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
   },
@@ -56,7 +56,7 @@ const scenarios = [
       includeSearchResults: true,
       pageWith: 'https://example.com/doc/1',
       facetRequests: null,
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
   },
@@ -66,29 +66,29 @@ const scenarios = [
       includeSearchResults: true,
       pageWith: null,
       facetRequests: [{ name: 'responsibleUnits' }],
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
   },
   {
-    name: 'estimateQuery is null (plan requires full materialization)',
+    name: 'scopedCtsQuery is null (plan requires full materialization)',
     input: {
       includeSearchResults: true,
       pageWith: null,
       facetRequests: null,
-      estimateQuery: null,
+      scopedCtsQuery: null,
     },
     expected: false,
   },
 
   // --- Multiple conditions false simultaneously ---
   {
-    name: 'pageWith set and estimateQuery null',
+    name: 'pageWith set and scopedCtsQuery null',
     input: {
       includeSearchResults: true,
       pageWith: 'https://example.com/doc/1',
       facetRequests: null,
-      estimateQuery: null,
+      scopedCtsQuery: null,
     },
     expected: false,
   },
@@ -98,7 +98,7 @@ const scenarios = [
       includeSearchResults: false,
       pageWith: null,
       facetRequests: [{ name: 'responsibleUnits' }],
-      estimateQuery: MOCK_ESTIMATE_QUERY,
+      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
   },
@@ -108,7 +108,7 @@ const scenarios = [
       includeSearchResults: false,
       pageWith: 'https://example.com/doc/1',
       facetRequests: [{ name: 'responsibleUnits' }],
-      estimateQuery: null,
+      scopedCtsQuery: null,
     },
     expected: false,
   },
@@ -117,7 +117,7 @@ const scenarios = [
 const assertions = [];
 
 for (const scenario of scenarios) {
-  const actual = canUseEstimate(scenario.input);
+  const actual = isCtsExecutionEligible(scenario.input);
   assertions.push(
     testHelperProxy.assertEqual(
       scenario.expected,

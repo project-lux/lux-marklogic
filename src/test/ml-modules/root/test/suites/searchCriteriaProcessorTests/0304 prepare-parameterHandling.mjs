@@ -111,14 +111,15 @@ const scenarios = [
     },
   },
   {
-    name: 'Zero page defaults to 1',
+    name: 'Page=0 should be rejected',
     input: {
       searchCriteria: { _scope: 'agent', text: 'test' },
       ...createProcessInput({ page: 0 }),
     },
     expected: {
-      error: false,
-      page: 0, // Should preserve the provided value
+      error: true,
+      stackToInclude:
+        'Invalid pagination parameter values. Both must be greater than zero.',
     },
   },
   {
@@ -131,6 +132,51 @@ const scenarios = [
       error: false,
       page: 999,
       pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength exceeding maximum is capped to 100',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 500 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength at maximum is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 100 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength below maximum is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 50 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 50,
+    },
+  },
+  {
+    name: 'Negative pageLength is rejected',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: -1 }),
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'Invalid pagination parameter values. Both must be greater than zero.',
     },
   },
 ];

@@ -30,6 +30,7 @@ import {
 //#endregion
 
 //#region Constants
+const MAXIMUM_PAGE_LENGTH = 100;
 const PREFER_FRAG_JOINS = false;
 
 const SEARCH_STATE_NOT_REQUESTED = 'not requested';
@@ -113,6 +114,10 @@ const SearchCriteriaProcessor = class {
       sortDelimitedStr,
       facetRequests,
     });
+
+    // Validate and cap pagination parameters before any work.
+    utils.checkPaginationParameters(page, pageLength);
+    this.#pageLength = Math.min(pageLength, MAXIMUM_PAGE_LENGTH);
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
     this.#resolvedSearchCriteria =
@@ -249,8 +254,9 @@ const SearchCriteriaProcessor = class {
     return this.#values;
   }
 
-  // Builds sorted and unsorted Optic plans without executing them.
-  // Returns { sortedResultsPlan, unsortedResultsPlan }.
+  // Builds Optic plans and determines execution strategy.
+  // Returns { selectedPlan, sortedResultsPlan, unsortedResultsPlan,
+  //           ctsExecutionEligible, isFromSearchPlan, scopedCtsQuery }.
   buildPlans(preferFragJoins = PREFER_FRAG_JOINS) {
     // May override the default set by prepare().
     this.#patternOptions.setPreferFragJoins(preferFragJoins);
@@ -263,6 +269,9 @@ const SearchCriteriaProcessor = class {
       groups: engine.getResultRowGrouping(),
       sortCriteria: this.#sortCriteria,
       patternOptions: this.#patternOptions,
+      includeSearchResults: this.#includeSearchResults,
+      pageWith: this.#pageWith,
+      facetRequests: this.#facetRequests,
     });
   }
 

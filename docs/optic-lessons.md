@@ -97,7 +97,7 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 ## cts.estimate requires explicit scope filter to match Optic totals
 - `cts.estimate(query)` counts all fragments matching the CTS query — including documents outside the requested search scope when cross-scope fields are involved (e.g., `anyAnyText` matches items, agents, works, etc.).
 - The Optic path naturally filters scope via `op.in(op.col('dataType'), scopeTypes)` on `fromLexicons`. This fires before `groupBy`, so out-of-scope documents never enter the result set.
-- To match: compose the CTS query with `cts.fieldValueQuery('anyDataTypeName', scopeTypes)` via `cts.andQuery`. This is what `buildEstimateQuery` in engine.mjs does for Opt 18.
+- To match: compose the CTS query with `cts.fieldValueQuery('anyDataTypeName', scopeTypes)` via `cts.andQuery`. This is what `buildScopedCtsQuery` in engine.mjs does for Opt 18.
 - The page-slice hydration path (Opt 14, abandoned) produced incorrect totals in part because its `cts.estimate` call did not include this scope filter for all query shapes.
 
 ## Function naming conventions
@@ -154,10 +154,12 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Fix: each `analyzeConjunction` sub-call propagates its `hasScoreContributingCriteria` upward via `||=`.
 
 ## buildPlans owns strategy — performSearch is a thin executor
-- `buildPlans` constructs both sorted and unsorted plans, computes `estimateQuery`, and determines `useCtsExecution`. Returns `selectedPlan` (the plan `performSearch` should execute) alongside the individual plans for inspection.
+- `buildPlans` constructs both sorted and unsorted plans, computes `scopedCtsQuery`, and determines `ctsExecutionEligible`. Returns `selectedPlan` (the plan `performSearch` should execute) alongside the individual plans for inspection.
 - `performSearch` only executes `selectedPlan` — no plan selection logic.
 - This prevents "stacked overrides" where execution functions accumulate branching logic that progressively discards plans built by the construction layer.
 - The `isCtsExecutionEligible` gate (join-free accumulator + estimate query + request context) is evaluated inside `buildPlans` — the executor never needs to reason about plan eligibility.
+- Opt 20 extends the strategy: when `ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)`, `selectedPlan` is replaced with `buildFromSearchPlan` (bare `fromSearch(scopedCtsQuery)` + optional score ordering). `performSearch` applies `.offset().limit()` first, then `.joinDocAndUri()` so only the page slice hits disk. A pre-pagination `fromLexicons` hydration would scan ~43.9M entries, defeating the optimization.
+- `sortRequiresLexicons` returns true for random, non-semantic field, and semantic sorts. Relevance sort and unsorted are compatible with `fromSearch`.
 
 ## Separation of concerns: analysis vs. construction
 - Validation, tokenization, stop-word detection, search-option resolution, and tree normalization belong in Pass 1 (pure data, no Optic API calls).

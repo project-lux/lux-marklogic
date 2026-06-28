@@ -118,7 +118,7 @@
     - [Eligibility](#eligibility-1)
     - [Implementation plan](#implementation-plan-1)
       - [1. Modify `calculateFacets` to accept an optional CTS query](#1-modify-calculatefacets-to-accept-an-optional-cts-query)
-      - [2. Modify `performSearch` to pass `estimateQuery` to `calculateFacets`](#2-modify-performsearch-to-pass-estimatequery-to-calculatefacets)
+      - [2. Modify `performSearch` to pass `scopedCtsQuery` to `calculateFacets`](#2-modify-performsearch-to-pass-scopedctsquery-to-calculatefacets)
       - [3. Handle `rows = null` in `calculateFacets`](#3-handle-rows--null-in-calculatefacets)
       - [4. Verify correctness](#4-verify-correctness)
     - [What this does NOT address](#what-this-does-not-address-1)
@@ -184,7 +184,7 @@ The engine exports three entry points that each use the two-pass pipeline differ
 
 | Entry point | Called by | Pass 1 | Pass 2 | Plan built? | Returns |
 |---|---|---|---|---|---|
-| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan, estimateQuery, selectedPlan, useCtsExecution }` |
+| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan, scopedCtsQuery, selectedPlan, ctsExecutionEligible, isFromSearchPlan }` |
 | `processNestedCriteria` | Pattern classes (`HopWithField`, `HopInverse`) | Yes | Yes + `assemblePlan` + select barrier | Yes — sub-plan projected to `[iriCol, fragCol]` | Optic plan (two columns) |
 | `processNestedCriteriaAsCts` | `HopWithField` (CTS optimization path) | Yes | Yes (accumulator only) | No — returns CTS query or null | `ctsQuery \| null` |
 | `traverseCriteria` | `SCP.executeForValues()` (related lists) | Yes | Yes (accumulator only) | No — side effects only | `undefined` |
@@ -1414,7 +1414,7 @@ The logic of when cts.estimate with offset/limit applies is defined in [engine.m
 2. **The request includes search results** (`includeSearchResults` is true). Facet-only requests take a different path.
 3. **No `pageWith`** is requested. `pageWith` requires locating a specific document's position in the full result set.
 4. **No facet requests.** Facets require aggregation over the full result set.
-5. **`buildEstimateQuery` returns non-null.** This composes the CTS query with a scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`) so cross-scope fields like `anyAnyText` don't overcount.
+5. **`buildScopedCtsQuery` returns non-null.** This composes the CTS query with a scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`) so cross-scope fields like `anyAnyText` don't overcount.
 
 ### Pattern CTS Conversions
 
@@ -1502,7 +1502,7 @@ Scope leakage may be acceptable for estimates, especially if for a minority subs
 
 ## Optimization 20: Eliminate fromLexicons for join-free queries
 
-**Status:** Idea — prototype validated at 170ms cold (vs 4,609ms baseline).
+**Status:** Implemented.
 
 ### Problem
 
@@ -1544,101 +1544,72 @@ Same as `isCtsExecutionEligible` (Opt 18) — all of the following must be true:
 2. Request includes search results (`includeSearchResults`).
 3. No `pageWith` requested.
 4. No facet requests.
-5. `buildEstimateQuery` returns non-null.
+5. `buildScopedCtsQuery` returns non-null.
 
 When these hold, no pattern needs the `iri`, `uri`, or `dataType` lexicon columns for joins. The only purpose of `fromLexicons` is to produce `{id, type}` output rows — which `fromSearch` + `joinDocAndUri` achieves without scanning any lexicons.
 
-### Implementation plan
+### Implementation
 
-The implementation belongs in `buildPlans` in `engine.mjs`. `buildPlans` already determines the execution strategy via `isCtsExecutionEligible`; Opt 20 extends this by building a `fromSearch`-based plan when eligible, rather than always building a `fromLexicons`-based plan that gets executed with offset/limit.
+The implementation lives in `buildPlans` in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs). Two new functions and a strategy extension:
 
-#### 1. Build the page results via `fromSearch`
+#### `sortRequiresLexicons(sortCriteria)`
 
-Instead of the current flow (build full `fromLexicons` plan → `.offset().limit()` → `.result()`), `buildPlans` constructs a minimal `fromSearch`-based plan when `isCtsExecutionEligible` is true:
+Returns true when the active sort strategy requires lexicon columns or plan structures that only the `fromLexicons` path can provide. Random, non-semantic field, and semantic sorts all require the full plan. Relevance sort and unsorted are compatible with `fromSearch`.
+
+#### `buildFromSearchPlan(acc, assemblyContext, sortCriteria, scopedCtsQuery)`
+
+Builds a compact `fromSearch`-based plan:
 
 ```javascript
-const estimateQuery = buildEstimateQuery(acc, assemblyContext, analysis.scope);
-if (isCtsExecutionEligible({ includeSearchResults, pageWith, facetRequests, estimateQuery })) {
-  // Build fromSearch plan — no fromLexicons, no lexicon scans.
-  const ctsQuery = wrapCtsByLogicType(assemblyContext.logicType, acc.ctsConstraints);
-  plan = op.fromSearch(ctsQuery, ['fragmentId', 'score'])
-    .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'));
-  // performSearch applies .offset().limit() and extracts {id, type} from results.
+// When scores are needed (relevance sort):
+op.fromSearch(scopedCtsQuery, ['fragmentId', 'score'], null, { scoreMethod: 'logtfidf' })
+  .orderBy(op.desc(op.col('score')))
+// When scores are not needed (unsorted):
+op.fromSearch(scopedCtsQuery, ['fragmentId'], null, { scoreMethod: 'zero' })
+```
+
+No hydration join is included — `performSearch` applies `.offset().limit()` first, then chains `.joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))` so only the page slice (typically 20 rows) hits disk. The `type` value is extracted from the document via XPath on `/type` (the field indexed as `anyDataTypeName` lives at `/json/type`; `joinDocAndUri` scopes the XPath to `/json`).
+
+#### Execution in `performSearch`
+
+When `isFromSearchPlan` is true, `performSearch` applies pagination before hydration:
+
+```javascript
+searchResults = selectedPlan
+  .offset(offset)
+  .limit(effectivePageLength)
+  .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
+  .result()
+  .toArray()
+  .map(row => ({ id: row.uri, type: String(row.doc.xpath('/type')) }));
+```
+
+When `isFromSearchPlan` is false (Opt 18 fallback — sort requires lexicons), the existing `fromLexicons`-based plan already produces `{id, type}` rows, so `performSearch` just calls `.offset().limit().result().toArray()` as before.
+
+**Key decisions:**
+- Uses `scopedCtsQuery` (which includes the scope dataType filter) as the `fromSearch` input, not the unwrapped CTS query. This ensures scope-specific fields like `anyAnyText` don't leak results from other scopes.
+- Hydration via `joinDocAndUri` after pagination (the prototype approach). Only the page slice hits disk — negligible cost for 20 documents. A pre-pagination `fromLexicons` hydration would scan ~43.9M entries across the `uri` and `dataType` indexes, defeating the optimization.
+- When scores are not required, `scoreMethod: 'zero'` is set explicitly to skip scoring computation.
+
+#### Strategy block in `buildPlans`
+
+After `isCtsExecutionEligible` determines that CTS execution is eligible, a second check gates Opt 20:
+
+```javascript
+if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
+  selectedPlan = buildFromSearchPlan(acc, assemblyContext, sortCriteria, scopedCtsQuery);
+  isFromSearchPlan = true;
 }
 ```
 
-**Key details:**
-- `fromSearch(ctsQuery, ['fragmentId', 'score'])` uses the **unwrapped CTS query** (without the scope dataType filter from `buildEstimateQuery`). The scope filter is only needed for the estimate — `fromSearch` naturally scopes via the CTS query's field-level specificity. Verify this by comparing result counts.
-- If scores are NOT required (`!areScoresRequired`), use `fromSearch(ctsQuery, ['fragmentId'])` — omit `score` to skip scoring computation.
-- `performSearch` applies `.offset(offset).limit(pageLength)` — paginates at the CTS level so only the requested page is materialized.
-- `joinDocAndUri` pulls documents from disk. For 20 docs this is negligible (~1ms per doc on warm cache). The XPath `/json/type` extracts the `dataType` value that `collapseToResultRows` currently gets from the `dataType` lexicon.
-- The `groupBy` is unnecessary — `fromSearch` returns one row per matching fragment (no `iri` multiplication).
+`buildPlans` returns `isFromSearchPlan` alongside `ctsExecutionEligible` so `performSearch` knows which hydration path to use. When the sort requires lexicons (random, field, semantic), `selectedPlan` remains the `fromLexicons`-based plan and the Opt 18 offset/limit path still applies.
 
-#### 2. Handle relevance sort vs other sorts
-
-`fromSearch` returns results ordered by relevance score by default. This is correct for relevance-sorted queries (the default). For non-relevance sort orders, this optimization cannot apply in V1 — the sort would require Optic lexicon columns that this path eliminates.
-
-For V1, add a sort check within `buildPlans` as an additional eligibility condition:
-
-```javascript
-const canEliminateLexicons = useCtsExecution &&
-  (sortCriteria?.isRelevanceSort() || !sortCriteria?.hasSortCriteria());
-```
-
-Non-relevance-sorted queries fall through to the existing `fromLexicons` path.
-
-#### 3. Handle the `dataType` extraction
-
-Two options for extracting `dataType` from the 20 page documents:
-
-**Option A — `joinDocAndUri` + XPath (prototype approach):**
-```javascript
-.joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
-// then map: row.doc.xpath('/json/type')
-```
-Pulls documents from disk. For 20 docs, ~negligible cost. Simple. The XPath path `/json/type` must match the actual document structure — verify against sample documents.
-
-**Option B — Tiny `fromLexicons` hydration (index-only):**
-```javascript
-const uris = pageRows.map(r => r.uri);
-const hydrated = op.fromLexicons(
-  { uri: cts.uriReference(), dataType: cts.fieldReference('anyDataTypeName') },
-  null, op.fragmentIdCol('frag')
-).where(cts.documentQuery(uris))
-  .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
-  .result().toArray();
-```
-Stays in the index — no documents pulled from disk. But adds a second Optic plan execution. For 20 URIs, the `cts.documentQuery` is tiny and the lexicon scan is essentially a point lookup.
-
-**Recommendation:** Start with Option A (simpler, validated in prototype). If document retrieval shows measurable cost at scale or on cold cache, switch to Option B.
-
-#### 4. Wire into `buildPlans`
-
-The change lives in `buildPlans` in `engine.mjs`. When `isCtsExecutionEligible` is true, `buildPlans` constructs the `fromSearch`-based plan and returns it as `selectedPlan`. `performSearch` is unchanged — it already executes `selectedPlan` with `.offset().limit()` in the `useCtsExecution` branch.
-
-The sort check (relevance vs non-relevance) is a new eligibility condition within `buildPlans`:
-
-```javascript
-const canEliminateLexicons = useCtsExecution &&
-  (sortCriteria?.isRelevanceSort() || !sortCriteria?.hasSortCriteria());
-
-if (canEliminateLexicons) {
-  // Opt 20: fromSearch plan — no fromLexicons, no lexicon scans
-  plan = buildFromSearchPlan(acc, assemblyContext);
-} else if (useCtsExecution) {
-  // Opt 18: fromLexicons with offset/limit (existing)
-  plan = sortedResultsPlan;
-}
-```
-
-`performSearch` remains a thin executor — no new branching needed.
-
-#### 5. Verify correctness
+#### Verification checklist
 
 - **Result parity:** For the same query, compare `{id, type}` rows between the `fromLexicons` path and the `fromSearch` path. They must match exactly (same URIs, same types). Order may differ for tied scores — same exposure as existing tied-score behavior.
-- **Total parity:** `cts.estimate(estimateQuery)` is already validated by Opt 18 tests.
-- **Scope filtering:** Confirm that `fromSearch(ctsQuery)` without the explicit `anyDataTypeName` scope filter returns only in-scope documents. The CTS query uses scope-specific fields (e.g., `itemMemberOfId`) which inherently limit to the correct scope. Cross-scope fields like `anyAnyText` would leak — but those fields produce `patternJoins` or `andOrSubPlans` in the accumulator, making `isAccumulatorJoinFree` false and disqualifying the query from this path.
-- **XPath correctness:** Verify `/json/type` returns the correct `dataType` string for documents in each scope.
+- **Total parity:** `cts.estimate(scopedCtsQuery)` is already validated by Opt 18 tests.
+- **Scope filtering:** `scopedCtsQuery` includes `cts.fieldValueQuery('anyDataTypeName', scopeTypes)`, so cross-scope fields like `anyAnyText` are properly filtered.
+- **XPath correctness:** Verify `/type` returns the correct `dataType` string for documents in each scope (field definition: `/json/type`).
 
 ### What this does NOT address
 
@@ -1690,13 +1661,13 @@ For non-foldable searches (accumulator has joins), the current materialization p
 
 ### Eligibility
 
-This optimization applies when `buildEstimateQuery` returns non-null (the accumulator is join-free and can be expressed as a pure CTS query). This is the same `isAccumulatorJoinFree` check used by Opt 18 and Opt 20.
+This optimization applies when `buildScopedCtsQuery` returns non-null (the accumulator is join-free and can be expressed as a pure CTS query). This is the same `isAccumulatorJoinFree` check used by Opt 18 and Opt 20.
 
 Note the distinction from `isCtsExecutionEligible`: that function also checks `!facetRequests?.length`, which would always be false for facet requests. The CTS query eligibility is determined by the accumulator shape, not the request type. The relevant check is:
 
 ```javascript
-const estimateQuery = buildEstimateQuery(acc, assemblyContext, analysis.scope);
-const hasCtsQuery = estimateQuery != null;
+const scopedCtsQuery = buildScopedCtsQuery(acc, assemblyContext, analysis.scope);
+const hasCtsQuery = scopedCtsQuery != null;
 ```
 
 When `hasCtsQuery` is true, the CTS query can be used for both facet document-set definition and (if page results are also requested) Opt 18/20.
@@ -1748,14 +1719,14 @@ The rest of `calculateFacets` is unchanged. Every facet's `facetSourcePlan` star
 
 **Empty-result guard:** When `ctsQuery` is provided, the `isNonEmptyArray(uriList)` guard is bypassed. If the CTS query matches zero documents, `op.fromSearch(ctsQuery)` produces zero rows, and each facet's `joinInner` produces zero rows — the correct behavior. But `facets[facetName].totalItems` will be 0, matching the empty-facet response. Verify this behaves identically to the `buildEmptyFacetResponses` path.
 
-#### 2. Modify `performSearch` to pass `estimateQuery` to `calculateFacets`
+#### 2. Modify `performSearch` to pass `scopedCtsQuery` to `calculateFacets`
 
 The current `performSearch` structure (simplified):
 
 ```javascript
 if (canEstimate) {
   // Opt 18 path: page results only, no facets
-  total = cts.estimate(estimateQuery);
+  total = cts.estimate(scopedCtsQuery);
   searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
 } else {
   // Full materialization path
@@ -1768,21 +1739,21 @@ if (canEstimate) {
 }
 ```
 
-The key insight: `isCtsExecutionEligible` returns false when facets are requested (it checks `!facetRequests?.length`). But `estimateQuery` may still be non-null — the accumulator is join-free, the CTS query exists, it's just that `isCtsExecutionEligible` also gates on the absence of facets.
+The key insight: `isCtsExecutionEligible` returns false when facets are requested (it checks `!facetRequests?.length`). But `scopedCtsQuery` may still be non-null — the accumulator is join-free, the CTS query exists, it's just that `isCtsExecutionEligible` also gates on the absence of facets.
 
 Refactored:
 
 ```javascript
-const hasCtsQuery = estimateQuery != null;
+const hasCtsQuery = scopedCtsQuery != null;
 
 if (canEstimate) {
   // Opt 18/20 path: page results only, no facets
-  total = cts.estimate(estimateQuery);
+  total = cts.estimate(scopedCtsQuery);
   searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
 } else if (hasCtsQuery && !includeSearchResults && facetRequests?.length > 0) {
   // Opt 21: facet-only request with join-free accumulator.
   // No need to materialize rows -- pass CTS query directly.
-  facetResponses = calculateFacets(null, facetRequests, estimateQuery);
+  facetResponses = calculateFacets(null, facetRequests, scopedCtsQuery);
 } else {
   // Full materialization path (non-foldable, or page + facets combined)
   const rows = useThisPlan.result().toArray();
@@ -1790,9 +1761,9 @@ if (canEstimate) {
     total = rows.length;
     // ... paginate ...
   }
-  // Pass estimateQuery when available to avoid URI-list AST bloat;
+  // Pass scopedCtsQuery when available to avoid URI-list AST bloat;
   // fall back to rows when not.
-  facetResponses = calculateFacets(rows, facetRequests, hasCtsQuery ? estimateQuery : null);
+  facetResponses = calculateFacets(rows, facetRequests, hasCtsQuery ? scopedCtsQuery : null);
 }
 ```
 
@@ -1815,7 +1786,7 @@ When called from the Opt 21 facet-only path, `rows` is `null`. The function must
 #### 4. Verify correctness
 
 - **Facet parity:** For the same query, compare facet results between the CTS-query path and the URI-list path. Values, counts, ordering, and pagination must match exactly.
-- **Scope filtering:** `estimateQuery` includes the scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`). This ensures `op.fromSearch(estimateQuery)` constrains to the correct scope — same guarantee as the current `cts.documentQuery(uriList)` where the URIs were already scope-filtered by the Optic plan.
+- **Scope filtering:** `scopedCtsQuery` includes the scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`). This ensures `op.fromSearch(scopedCtsQuery)` constrains to the correct scope — same guarantee as the current `cts.documentQuery(uriList)` where the URIs were already scope-filtered by the Optic plan.
 - **Semantic facets:** Semantic facets join `docsPlan` to triples via the `iri` column. When `docsPlan` is `op.fromSearch(ctsQuery)`, the plan produces `fragmentId` and (optionally) `score` columns. The semantic facet path does `facetSourcePlan.joinInner(fromLexicons({iri: cts.iriReference()}, ...), op.on('fragmentId', 'iriFragId'))` to add the `iri` column. This should work identically with the CTS-query-based `docsPlan` — the join is on `fragmentId`, which `fromSearch` provides. Verify with a semantic facet request.
 - **Empty results:** When the CTS query matches zero documents, verify that each facet returns `{ totalItems: 0, facetValues: [] }` — matching the existing `buildEmptyFacetResponses` behavior.
 
@@ -1826,7 +1797,7 @@ When called from the Opt 21 facet-only path, `rows` is `null`. The function must
 
 ### Relationship to other optimizations
 
-- **Opt 18 (cts.estimate with offset/limit):** Shares the same `estimateQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for `op.fromSearch` (facet document set). The two are independent — neither is a prerequisite.
+- **Opt 18 (cts.estimate with offset/limit):** Shares the same `scopedCtsQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for `op.fromSearch` (facet document set). The two are independent — neither is a prerequisite.
 - **Opt 20 (Eliminate fromLexicons):** Not a prerequisite. Opt 20 addresses page results; Opt 21 addresses facets. They are complementary and can be implemented in either order. When both are implemented and page + facets are consolidated into one call, the full materialization path is only needed for non-foldable queries.
 - **Opt 19 (DataType-split estimate):** Opt 19 targets the non-foldable case (queries with joins). Opt 21 targets the foldable case (join-free). They address different subsets of the query population.
 

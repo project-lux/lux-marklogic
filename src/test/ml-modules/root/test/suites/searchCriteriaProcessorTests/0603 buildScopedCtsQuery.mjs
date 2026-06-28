@@ -1,5 +1,5 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { buildEstimateQuery } from '/lib/search/engine.mjs';
+import { buildScopedCtsQuery } from '/lib/search/engine.mjs';
 
 const LIB = '0603 buildEstimateQuery.mjs';
 console.log(`${LIB}: starting.`);
@@ -82,7 +82,7 @@ const scenarios = [
 ];
 
 for (const scenario of scenarios) {
-  const result = buildEstimateQuery(
+  const result = buildScopedCtsQuery(
     scenario.acc,
     scenario.assemblyContext,
     scenario.scope,

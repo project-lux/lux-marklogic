@@ -165,7 +165,7 @@ function getRelatedList({
         filterResults,
       });
       // In the Optic implementation, the values-only optimization happens inside
-      // HopInverse's pattern during executeForValues(). It runs processCriteria
+      // HopInverse's pattern during executeForValues(). It runs processNestedCriteria
       // (triggering the two-phase SPARQL approach) then returns the populated
       // values without building or executing the full Optic plan.
       urisByRelation[searchConfig.relationKey] = scp.executeForValues();

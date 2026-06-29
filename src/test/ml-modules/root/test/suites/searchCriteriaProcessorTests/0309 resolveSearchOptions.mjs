@@ -6,7 +6,7 @@
 
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { executeScenario } from '/test/unitTestUtils.mjs';
-import { resolveSearchOptions } from '/lib/search/engine.mjs';
+import { resolveSearchOptions } from '/lib/search/analyzeCriteria.mjs';
 import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,

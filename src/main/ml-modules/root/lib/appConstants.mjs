@@ -46,12 +46,6 @@ const RELATED_LIST_PER_RELATION_MAX = parseInt(
   '%%relatedListPerRelationMax%%'.trim(),
 );
 
-// Enables the experimental page-slice hydration execution path for simple
-// keyword-only searches.  See lib/search/keywordPageSlice.mjs for the V1
-// eligibility rules.
-const SEARCH_PAGE_SLICE_ENABLED =
-  '%%searchPageSliceEnabled%%'.trim() === 'true';
-
 const DEFAULT_FILTER_SEARCH_RESULTS =
   '%%filterSearchResults%%'.trim() === 'true';
 const DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS =
@@ -245,7 +239,6 @@ export {
   SEARCH_OPTIONS_INVERSE_MAP,
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
-  SEARCH_PAGE_SLICE_ENABLED,
   SEARCH_PREFIX,
   SEMANTIC_SORT_TIMEOUT,
   SPARQL_PREFIXES,

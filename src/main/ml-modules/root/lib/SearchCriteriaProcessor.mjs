@@ -1,6 +1,12 @@
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
 import * as engine from './search/engine.mjs';
+import {
+  getChildId,
+  getFirstNonOptionPropertyName,
+  hasNonOptionPropertyName,
+  sanitizeAndValidateWildcardedStrings,
+} from './search/analyzeCriteria.mjs';
 import { PatternOptions } from './search/PatternOptions.mjs';
 import { SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC } from './SortCriteria.mjs';
 import {
@@ -24,17 +30,8 @@ import {
 //#endregion
 
 //#region Constants
+const MAXIMUM_PAGE_LENGTH = 100;
 const PREFER_FRAG_JOINS = false;
-
-// Optic comparison operators
-const COMPARATORS = {
-  '=': op.eq,
-  '!=': op.ne,
-  '<': op.lt,
-  '>': op.gt,
-  '<=': op.le,
-  '>=': op.ge,
-};
 
 const SEARCH_STATE_NOT_REQUESTED = 'not requested';
 const SEARCH_STATE_REQUESTED = 'requested';
@@ -117,6 +114,10 @@ const SearchCriteriaProcessor = class {
       sortDelimitedStr,
       facetRequests,
     });
+
+    // Validate and cap pagination parameters before any work.
+    utils.checkPaginationParameters(page, pageLength);
+    this.#pageLength = Math.min(pageLength, MAXIMUM_PAGE_LENGTH);
 
     // Resolve/validate criteria JSON; scopeName param should take precedence
     this.#resolvedSearchCriteria =
@@ -241,7 +242,8 @@ const SearchCriteriaProcessor = class {
     this.#prepareForExecution(); // does not accummulate values across multiple calls
     this.#patternOptions.setReturnValues(true);
 
-    this.processCriteria({
+    engine.traverseCriteria({
+      scp: this,
       planCriteria: this.#resolvedSearchCriteria,
       planScope: this.#scopeName,
       allowMultiScope: this.#allowMultiScope,
@@ -252,8 +254,9 @@ const SearchCriteriaProcessor = class {
     return this.#values;
   }
 
-  // Builds sorted and unsorted Optic plans without executing them.
-  // Returns { sortedResultsPlan, unsortedResultsPlan }.
+  // Builds Optic plans and determines execution strategy.
+  // Returns { selectedPlan, sortedResultsPlan, unsortedResultsPlan,
+  //           ctsExecutionEligible, isFromSearchPlan, scopedCtsQuery }.
   buildPlans(preferFragJoins = PREFER_FRAG_JOINS) {
     // May override the default set by prepare().
     this.#patternOptions.setPreferFragJoins(preferFragJoins);
@@ -266,44 +269,49 @@ const SearchCriteriaProcessor = class {
       groups: engine.getResultRowGrouping(),
       sortCriteria: this.#sortCriteria,
       patternOptions: this.#patternOptions,
+      includeSearchResults: this.#includeSearchResults,
+      pageWith: this.#pageWith,
+      facetRequests: this.#facetRequests,
     });
   }
 
-  // Delegates to engine.processCriteria. Used by executeForValues() and by
-  // search pattern classes to process nested criteria.
+  // Delegates to engine.processNestedCriteria. Used by search pattern classes
+  // to build sub-plans for nested criteria (hop patterns).
   //
   // parentScope: forwarded as-is to enable the empty-groups (same-scope
-  // dataType-filter) optimization in engine.processCriteria. Defaults to null
-  // (optimization disabled). Current pattern callers (HopInverse,
-  // HopWithField) cross scope boundaries via termConfig.getTargetScopeName()
-  // and so must leave it null; a future same-scope caller can opt in by
-  // passing the parent's scope.
-  processCriteria({
+  // dataType-filter) optimization. Defaults to null (optimization disabled).
+  // Current pattern callers (HopInverse, HopWithField) cross scope boundaries
+  // via termConfig.getTargetScopeName() and so must leave it null; a future
+  // same-scope caller can opt in by passing the parent's scope.
+  processNestedCriteria({
     planCriteria,
     planScope = 'item',
     patternOptions,
-    groups = null,
-    parentId = null,
+    parentId,
     parentScope = null,
     allowMultiScope = false,
   }) {
-    return engine.processCriteria({
+    return engine.processNestedCriteria({
       scp: this,
       planCriteria,
       planScope,
       patternOptions,
-      groups,
       parentId,
       parentScope,
       allowMultiScope,
     });
   }
 
-  // Like processCriteria but returns a bare CTS query when the inner criteria
+  // Like processNestedCriteria but returns a bare CTS query when the inner criteria
   // resolves entirely to CTS constraints. Returns null when an Optic plan is
   // required — caller should fall back to the join path.
-  processCriteriaAsCts({ planCriteria, planScope, patternOptions, parentId }) {
-    return engine.processCriteriaAsCts({
+  processNestedCriteriaAsCts({
+    planCriteria,
+    planScope,
+    patternOptions,
+    parentId,
+  }) {
+    return engine.processNestedCriteriaAsCts({
       scp: this,
       planCriteria,
       planScope,
@@ -370,7 +378,7 @@ const SearchCriteriaProcessor = class {
   }
 
   static sanitizeAndValidateWildcardedStrings(strOrArr) {
-    return engine.sanitizeAndValidateWildcardedStrings(strOrArr);
+    return sanitizeAndValidateWildcardedStrings(strOrArr);
   }
 
   static getSortTypeFromSortBinding(sortBinding) {
@@ -400,16 +408,16 @@ const SearchCriteriaProcessor = class {
   }
 
   static getFirstNonOptionPropertyName(termValue) {
-    return engine.getFirstNonOptionPropertyName(termValue);
+    return getFirstNonOptionPropertyName(termValue);
   }
 
   static hasNonOptionPropertyName(termValue) {
-    return engine.hasNonOptionPropertyName(termValue);
+    return hasNonOptionPropertyName(termValue);
   }
 
-  // Pass-through method; canonical implementation in engine.getChildId.
+  // Pass-through method; canonical implementation in analyzeCriteria.getChildId.
   static getChildId(termValue) {
-    return engine.getChildId(termValue);
+    return getChildId(termValue);
   }
 
   static requireSearchCriteriaObject(searchCriteria) {
@@ -520,4 +528,4 @@ const SearchCriteriaProcessor = class {
   //#endregion
 };
 
-export { COMPARATORS, SearchCriteriaProcessor };
+export { SearchCriteriaProcessor };

@@ -108,7 +108,7 @@ select ?${id}_s ?${id}_o where {
     // CTS query. If successful, emit cts.tripleRangeQuery with cts.values to
     // resolve object IRIs — avoiding the Optic fromTriples join entirely.
     if (!termValue) {
-      const innerCts = scp.processCriteriaAsCts({
+      const innerCts = scp.processNestedCriteriaAsCts({
         planCriteria: searchTerm.getCriteria(),
         planScope: termConfig.getTargetScopeName(),
         patternOptions: SCP.initializePatternOptions(),
@@ -175,7 +175,7 @@ select ?${id}_s ?${id}_o where {
   }
 
   // Known limitation: when the child pattern is 'hopInverse', the plan returned
-  // here is rooted in op.fromLexicons (via processCriteria), which only contains
+  // here is rooted in op.fromLexicons (via processNestedCriteria), which only contains
   // document-backed IRIs. HopInverse's outer triple _o column can legitimately
   // yield non-document object IRIs, and those are silently dropped by the
   // lexicon-rooted join before HopWithField ever sees them. Both the transitive
@@ -191,7 +191,7 @@ select ?${id}_s ?${id}_o where {
   // Potential resolution:
   //      Relax HopInverse's isTopLevel guard so #processValuesOnly fires when
   //      returnValues is true regardless of depth; HopWithField would set
-  //      returnValues(true), call processCriteria (triggering values-only),
+  //      returnValues(true), call processNestedCriteria (triggering values-only),
   //      then read IRI strings from scp.getValues() (clearing before/after to
   //      prevent contamination). Reuses HopInverse's fast cts.triples path
   //      with no plan construction or duplication; particularly natural for the
@@ -200,11 +200,10 @@ select ?${id}_s ?${id}_o where {
   //      direct-IRI child criteria (#processValuesOnly throws otherwise).
   #getFieldNestedPlan(scp, searchTerm, patternOptions) {
     const termConfig = searchTerm.getSearchTermConfig();
-    return scp.processCriteria({
+    return scp.processNestedCriteria({
       planCriteria: searchTerm.getCriteria(),
       planScope: termConfig.getTargetScopeName(),
       patternOptions: SCP.initializePatternOptions(),
-      groups: null, // groupBy here prevents grouping by at the end.
       parentId: searchTerm.getId(),
     });
   }

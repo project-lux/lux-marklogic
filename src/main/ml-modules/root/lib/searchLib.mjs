@@ -14,13 +14,10 @@ import {
   getRelatedListSearchInfo,
 } from './relatedListsLib.mjs';
 
-const MAXIMUM_PAGE_LENGTH = 100;
-
 const EMPTY_STRING = '';
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_LENGTH = 20;
 const DEFAULT_REQUEST_CONTEXT = 'unspecified';
-const DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH = false;
 const DEFAULT_FACETS_SOON = false;
 const DEFAULT_FACETS_ARE_LIKELY = DEFAULT_FACETS_SOON;
 
@@ -53,7 +50,6 @@ function search({
   pageLength = DEFAULT_PAGE_LENGTH,
   pageWith = null,
   requestContext = DEFAULT_REQUEST_CONTEXT,
-  mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
   sortDelimitedStr = EMPTY_STRING,
   filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
 }) {
@@ -65,7 +61,6 @@ function search({
       pageLength,
       pageWith,
       requestContext,
-      mayExceedMaximumPageLength,
       sortDelimitedStr,
       filterResults,
     },
@@ -82,7 +77,6 @@ function _search(
     pageLength = DEFAULT_PAGE_LENGTH,
     pageWith = null,
     requestContext = DEFAULT_REQUEST_CONTEXT,
-    mayExceedMaximumPageLength = DEFAULT_MAY_EXCEED_MAXIMUM_PAGE_LENGTH,
     sortDelimitedStr = EMPTY_STRING,
     filterResults = DEFAULT_FILTER_SEARCH_RESULTS,
   },
@@ -111,17 +105,10 @@ function _search(
           pageLength,
           pageWith,
           requestContext,
-          mayExceedMaximumPageLength,
           sortDelimitedStr,
           filterResults,
         })}`,
       );
-    }
-
-    // Validate pagination parameters, conditionally imposing a maximum page length.
-    utils.checkPaginationParameters(page, pageLength);
-    if (mayExceedMaximumPageLength !== true) {
-      pageLength = Math.min(pageLength, MAXIMUM_PAGE_LENGTH);
     }
 
     // Parse gets us all the way through query generation.
@@ -138,6 +125,7 @@ function _search(
     stopWatch.lap('process');
     resolvedSearchScope = scp.getSearchScope();
     resolvedSearchCriteria = scp.getSearchCriteria();
+    pageLength = scp.getPageLength();
 
     // Execute the search
     const searchExecutionResponse = scp.execute();

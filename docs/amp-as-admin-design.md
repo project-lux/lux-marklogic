@@ -387,7 +387,7 @@ When `buildConjunctionJoin` handles:
 - **OR-encounters-NOT**: same pattern
 - **NOT-encounters-OR**: same pattern (via `joinFullOuter`)
 
-These sub-plans are built via `processCriteria` with a `parentId` (non-top-level). They get their own `createPlanAccumulator` call. Since the collection exclusion is only injected at top level, these sub-plans don't have it.
+These sub-plans are built via `processNestedCriteria` with a `parentId` (non-top-level). They get their own `createPlanAccumulator` call. Since the collection exclusion is only injected at top level, these sub-plans don't have it.
 
 With `joinFullOuter`, the right side introduces rows that have **no corresponding left-side match**. If a My Collections document satisfies the sub-plan's criteria, it appears on the right side and bypasses the main plan's exclusion.
 

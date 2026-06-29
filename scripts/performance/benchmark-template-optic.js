@@ -160,7 +160,10 @@ function microBenchmark(label, func, coldRuns, warmRuns, userName) {
 
 const zeroArityFun = () => {
   // If inclined to set the optimization level or override the optimization seed, see header comment.
-  const results = plan.limit(resultLimit).result().toArray();
+  const results = plan
+    .limit(resultLimit)
+    .result(null, null, traceId ? [`trace=${traceId}`] : [])
+    .toArray();
   if (returnResults) {
     return {
       length: results.length,

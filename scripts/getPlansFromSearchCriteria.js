@@ -54,14 +54,22 @@ const andExecute = false;
 //   sortDelimitedStr      [buildPlans]    - sort spec influences sortedResultsPlan
 //   allowMultiScope       [buildPlans]    - must be true for scope 'multi'
 //   patternOptions        [buildPlans]    - Instance of PatternOptions
-//   includeTypeConstraint [execute-only]  - TBD whether this will be implemented in Optic.s
-//   includeSearchResults  [execute-only]  - controls whether execute() fetches result rows
+//   includeTypeConstraint [execute-only]  - TBD whether this will be implemented in Optic
+//   includeSearchResults  [both]          - buildPlans uses for strategy; execute uses for fetching
 //   page                  [execute-only]  - pagination offset
 //   pageLength            [execute-only]  - pagination limit
-//   pageWith              [execute-only]  - find page containing a specific document
-//   filterResults         [execute-only]  - TBD whether this will be implemented in Optic.
-//   facetRequests         [execute-only]  - Instance of FacetRequests
-const { sortedResultsPlan, unsortedResultsPlan } = new SCP()
+//   pageWith              [both]          - buildPlans uses for strategy; execute uses for pagination
+//   filterResults         [execute-only]  - TBD whether this will be implemented in Optic
+//   facetRequests         [both]          - buildPlans uses for strategy; execute uses for facet computation
+//
+// engine.buildPlans returns 6 properties:
+//   sortedResultsPlan    — plan with sort applied (inspection)
+//   unsortedResultsPlan  — plan without sort (inspection, facets)
+//   scopedCtsQuery       — scoped CTS query for cts.estimate/fromSearch, or null if joins required
+//   selectedPlan         — the plan performSearch would execute (may be fromSearch for Opt 20)
+//   ctsExecutionEligible — whether Opt 18/20/21 apply
+//   isFromSearchPlan     — whether Opt 20 fromSearch plan is active
+const buildPlansResult = new SCP()
   .prepare({
     searchCriteria,
     scopeName,
@@ -69,18 +77,41 @@ const { sortedResultsPlan, unsortedResultsPlan } = new SCP()
   })
   .buildPlans(preferFragJoins);
 
-const selectedPlan = useSortedPlan ? sortedResultsPlan : unsortedResultsPlan;
+const {
+  sortedResultsPlan,
+  unsortedResultsPlan,
+  scopedCtsQuery,
+  selectedPlan,
+  ctsExecutionEligible,
+  isFromSearchPlan,
+} = buildPlansResult;
+
+// The developer's chosen plan for the script template.
+const requestedPlan = useSortedPlan ? sortedResultsPlan : unsortedResultsPlan;
+
+// Which plan would performSearch actually use?
+const selectedPlanSource = selectedPlan
+  ? op
+      .toSource(selectedPlan.export())
+      .replace(/op\.fromSPARQL\('([\s\S]*?)'/g, 'op.fromSPARQL(`$1`')
+      .replace(/\)\s*\./g, ')\n  .')
+  : null;
 
 // Convert the Optic plan to readable source code with basic formatting:
 // - SPARQL strings converted to template literals for valid multi-line JS
 // - each chained method call on its own line
 const planSource = op
-  .toSource(selectedPlan.export())
+  .toSource(requestedPlan.export())
   .replace(/op\.fromSPARQL\('([\s\S]*?)'/g, 'op.fromSPARQL(`$1`')
   .replace(/\)\s*\./g, ')\n  .');
 
+// CTS execution eligibility and estimate count.
+const estimateCount = ctsExecutionEligible
+  ? Number(cts.estimate(scopedCtsQuery))
+  : null;
+
 // Assemble the executable template.
-const script = `import op from 'MarkLogic/optic.mjs';
+const renderedScript = `import op from 'MarkLogic/optic.mjs';
 
 const selectedPlan = ${planSource}
 
@@ -90,12 +121,34 @@ const results = selectedPlan.offset(offset).limit(limit).result().toArray();
 export default results;
 `;
 
+const scriptParams = {
+  searchCriteria,
+  scopeName,
+  preferFragJoins,
+  useSortedPlan,
+  sortDelimitedStr,
+  offset,
+  limit,
+  andExecute,
+};
+
+const buildPlansOutput = {
+  ctsExecutionEligible,
+  isFromSearchPlan,
+  estimateCount,
+  selectedPlanSource,
+};
+
+const outputWithoutExecution = {
+  scriptParams,
+  buildPlansOutput,
+  renderedScript,
+};
+
 const output = andExecute
   ? {
-      script,
-      results: selectedPlan.offset(offset).limit(limit).result().toArray(),
+      ...outputWithoutExecution,
+      results: requestedPlan.offset(offset).limit(limit).result().toArray(),
     }
-  : script;
-
-output;
+  : outputWithoutExecution;
 export default output;

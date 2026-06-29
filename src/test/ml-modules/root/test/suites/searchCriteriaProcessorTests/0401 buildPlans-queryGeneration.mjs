@@ -129,15 +129,11 @@ const scenarios = [
     expected: {
       error: false,
       // The all-stop-words AND branch is skipped; the fish AND branch folds into
-      // a pure-CTS constraint (cts.orQuery > cts.andQuery) rather than a joinInner.
-      planContains: ['cts.orQuery', 'cts.andQuery', 'fish'],
-      planExcludes: [
-        'joinInner',
-        'joinFullOuter',
-        'within',
-        'without',
-        'actually',
-      ],
+      // a pure-CTS constraint (cts.orQuery > cts.andQuery) rather than a
+      // conjunction join. The joinInner present is from op.fromSearch (scoring),
+      // not from sub-plan assembly.
+      planContains: ['cts.orQuery', 'cts.andQuery', 'fish', 'fromSearch'],
+      planExcludes: ['joinFullOuter', 'within', 'without', 'actually'],
     },
   },
 ];

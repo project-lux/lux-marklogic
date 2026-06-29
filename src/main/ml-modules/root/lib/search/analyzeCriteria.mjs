@@ -3,6 +3,16 @@
 // Pass 1 of the two-pass criteria pipeline.
 // Traverses raw search criteria JSON, validates, normalizes, and produces
 // an immutable criteria tree plus an analysis summary. No Optic plans are built.
+//
+// Scope boundary: this function analyzes criteria within the current scope
+// only. Hop patterns (hopWithField, hopInverse) carry nested criteria that
+// targets a different scope — that nested criteria is stored as-is on the
+// SearchTerm and analyzed in a separate analyzeCriteria call during Pass 2
+// (via processNestedCriteria / processNestedCriteriaAsCts). Consequently,
+// top-level analysis flags like hasScoreContributingCriteria reflect only
+// the outer scope. This is sufficient for current engine optimizations
+// (Opt 1/18/20). If cross-scope visibility is needed in the future, a
+// deeper pre-scan could be added here.
 
 //#region Imports
 import {
@@ -58,6 +68,12 @@ const WILDCARDS_TO_CONSOLIDATE_REGEX = new RegExp('([?*]+[*])|([*][?*]+)');
 // Analyzes raw search criteria and produces a criteria tree with an analysis summary.
 // This is Pass 1 of the two-pass pipeline: all validation, normalization,
 // tokenization, and stop-word detection happen here. No Optic API calls.
+//
+// Scope boundary: hop pattern criteria (e.g., the inner object in
+// { memberOf: { name: "blue" } }) is NOT recursively analyzed here. It is
+// stored on the leaf's SearchTerm and gets its own analyzeCriteria call
+// during Pass 2. Top-level flags (hasScoreContributingCriteria, etc.) are
+// therefore blind to what is inside nested hops.
 //
 // Returns: createAnalysisResult({ criteriaTree, scope, isMultiScope,
 //          hasScoreContributingCriteria, usableLeafCount })

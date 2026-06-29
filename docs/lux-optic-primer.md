@@ -235,6 +235,10 @@ Patterns that navigate to a nested scope (e.g., `HopWithField` processing the in
 
 `analyzeCriteria` ([analyzeCriteria.mjs](/src/main/ml-modules/root/lib/search/analyzeCriteria.mjs)) is the sole Pass 1 entry point. It accepts raw search criteria JSON and produces an immutable **criteria tree** — the intermediate representation (IR) that Pass 2 consumes. No Optic API calls are made; this is pure validation, normalization, and tree construction.
 
+**Scope boundary:** `analyzeCriteria` processes criteria within the current search scope only. When a hop pattern's criteria contains nested criteria targeting a different scope (e.g., `{ memberOf: { aboutConcept: { name: "blue" } } }` — `memberOf` is in item scope but its inner criteria targets set scope), the nested object is stored as-is on the leaf's `SearchTerm`. It is **not** recursively analyzed during this invocation. Instead, it gets its own `analyzeCriteria` call during Pass 2, when the pattern's `apply()` method invokes `processNestedCriteria` or `processNestedCriteriaAsCts`.
+
+This means top-level analysis flags — `hasScoreContributingCriteria`, `usableLeafCount` — reflect only the outer scope's criteria. A scoring leaf inside a nested hop (e.g., a keyword term inside a `memberOf` sub-criteria) will not be visible to the top-level result. This is sufficient for current engine optimizations (Opt 1/18/20), which use only top-level flags. If a future optimization requires cross-scope visibility, a deeper pre-scan could be added to `analyzeCriteria` without changing its return type.
+
 ## Criteria Tree Data Model
 
 All nodes are created via factory functions in [criteriaNodes.mjs](/src/main/ml-modules/root/lib/search/criteriaNodes.mjs) and frozen with `Object.freeze`.
@@ -246,7 +250,7 @@ All nodes are created via factory functions in [criteriaNodes.mjs](/src/main/ml-
 | `criteriaTree` | `GroupNode` | Root of the criteria tree (always a group, even for single-leaf queries) |
 | `scope` | `string` | Resolved scope name (`'item'`, `'agent'`, etc.) |
 | `isMultiScope` | `boolean` | `true` when `_scope: 'multi'` |
-| `hasScoreContributingCriteria` | `boolean` | `true` if any leaf in the tree contributes relevance scores |
+| `hasScoreContributingCriteria` | `boolean` | `true` if any leaf **in the current scope** contributes relevance scores. Leaves inside nested hop criteria (different scope) are not reflected — see scope boundary above. |
 | `usableLeafCount` | `number` | Leaves that survived stop-word/validation checks |
 
 ### `GroupNode` — conjunction (AND/OR/NOT)
@@ -382,7 +386,7 @@ After `analyzeCriteria` completes, the criteria tree satisfies these invariants:
 | No single-branch OR groups | OR with one usable branch is collapsed to AND |
 | All leaves are valid and usable | Stop words, punctuation-only, and invalid wildcards are filtered out |
 | Multi-word values are tokenized | `tokenizeTermValue` splits them into AND groups before leaf creation |
-| `hasScoreContributingCriteria` propagates upward | `||=` accumulates from children to parent; frozen on each node |
+| `hasScoreContributingCriteria` propagates upward | `||=` accumulates from children to parent; frozen on each node. Propagation is within the current scope only — nested hop criteria (different scope) is deferred to Pass 2. |
 | `idIndexReferences` rewrites are applied | Hop terms with `{ id }` children become `indexedValue` lookups |
 | Tree is immutable | All nodes frozen via `Object.freeze` |
 | Column names are unique per nesting level | UUID-based prefixes for non-top-level columns |

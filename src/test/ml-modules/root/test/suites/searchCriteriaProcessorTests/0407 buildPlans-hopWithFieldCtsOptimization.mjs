@@ -83,19 +83,39 @@ const scenarios = [
     },
   },
 
-  // --- Optimization does NOT fire ---
-  // Note: HopWithField rejects atomic values (getAllowedChildren excludes
-  // CHILD_TYPE_ATOMIC), so there is no atomic-value fallback to test.
   {
-    name: 'Inner criteria with non-CTS contributions falls back to Optic join',
+    name: 'Nested AND with id and name folds to CTS (DocumentIdOrIri is pure CTS)',
     input: {
       scopeName: 'work',
       searchCriteria: {
         _scope: 'work',
-        // DocumentIdOrIri returns Optic constraints (not ctsConstraints) for
-        // AND logic, so the inner accumulator is not pure CTS and
-        // processCriteriaAsCts returns null → Optic fallback fires.
+        // After CTS conversion, DocumentIdOrIri returns ctsConstraints for all
+        // logicTypes. Combined with name (indexedWord → ctsConstraints), the
+        // inner accumulator is pure CTS and processNestedCriteriaAsCts succeeds.
         classification: { AND: [{ id: MOCK_IRI }, { name: 'painting' }] },
+      },
+    },
+    expected: {
+      error: false,
+      planContains: ['cts.tripleRangeQuery', 'workClassifiedAs'],
+      planExcludes: ['op.fromTriples'],
+    },
+  },
+
+  // --- Optimization does NOT fire ---
+  // Note: HopWithField rejects atomic values (getAllowedChildren excludes
+  // CHILD_TYPE_ATOMIC), so there is no atomic-value fallback to test.
+  {
+    name: 'Inner criteria with HopInverse term falls back to Optic join',
+    input: {
+      scopeName: 'work',
+      searchCriteria: {
+        _scope: 'work',
+        // narrower is a HopInverse pattern in concept scope (inverse of
+        // broader). HopInverse always returns patternJoins, so the inner
+        // accumulator is not pure CTS → processNestedCriteriaAsCts returns
+        // null → Optic fallback fires.
+        classification: { narrower: { name: 'painting' } },
       },
     },
     expected: {

@@ -8,17 +8,13 @@ import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
 import { isSemanticFacet } from '../facetsLib.mjs';
 import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
-import {
-  SEARCH_PAGE_SLICE_ENABLED,
-  SEMANTIC_SORT_TIMEOUT,
-} from '../appConstants.mjs';
+import { SEMANTIC_SORT_TIMEOUT } from '../appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
 import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
-import { tryExecuteKeywordPageSlice } from './keywordPageSlice.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
 import { NODE_TYPE_GROUP } from './criteriaNodes.mjs';
 import { analyzeCriteria } from './analyzeCriteria.mjs';
@@ -48,6 +44,7 @@ function performSearch(scp) {
   const allowMultiScope = scp.isAllowMultiScope();
   const page = scp.getPage();
   const pageLength = scp.getPageLength();
+  const pageWith = scp.getPageWith();
   const includeSearchResults = scp.getIncludeSearchResults();
   const facetRequests = scp.getFacetRequests();
   let patternOptions = scp.getPatternOptions();
@@ -81,69 +78,76 @@ function performSearch(scp) {
         allowMultiScope,
       });
 
-      // Simple-keyword queries can bypass the Optic pipeline entirely
-      // (cts.search → top-K → hydrate dataType). Returns null when the
-      // request is not eligible; see lib/search/keywordPageSlice.mjs.
-      const pageSlice = SEARCH_PAGE_SLICE_ENABLED
-        ? tryExecuteKeywordPageSlice(scp, (_scp) =>
-            getLeafTermsFromAnalysis(analysis),
-          )
-        : null;
-      if (pageSlice) {
-        const paginationResult = paginateResults({
-          rows: pageSlice.rows,
-          pageWith: null, // page-slice path is ineligible when pageWith is set
-          page,
-          pageLength: pageLength ?? 20,
-        });
-        return new SearchExecutionResult({
-          searchResults: paginationResult.searchResults,
-          total: pageSlice.total,
-          resultPage: paginationResult.resultPage,
-          planAsJson: null,
-          planAsSource: '(page-slice: cts.search outside Optic)',
-          facetResponses: null,
-        });
-      }
-
-      const { sortedResultsPlan, unsortedResultsPlan } = buildPlans({
+      // Pass 2: build plans and determine execution strategy.
+      // - selectedPlan: includes or excludes sort criteria based on need.
+      // - ctsExecutionEligible: when true, avoids full row materialization;
+      //   uses scopedCtsQuery for cts.estimate (total) and offset/limit (page).
+      // - isFromSearchPlan: when also true, avoids lexicon scans entirely;
+      //   instead, we get the data directly from the documents, for one page.
+      const {
+        selectedPlan,
+        isFromSearchPlan,
+        ctsExecutionEligible,
+        scopedCtsQuery,
+      } = buildPlans({
         scp,
         analysis,
         groups: getResultRowGrouping(),
         sortCriteria: scp.getSortCriteria(),
         patternOptions,
+        includeSearchResults,
+        pageWith,
+        facetRequests,
       });
 
-      let useThisPlan = includeSearchResults
-        ? sortedResultsPlan
-        : unsortedResultsPlan;
-
-      // pageWith's limit is imposed here; see paginateResults for the rest.
-      const pageWith = scp.getPageWith();
-      useThisPlan =
-        includeSearchResults && pageWith
-          ? useThisPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1)
-          : useThisPlan;
-
-      planAsJson = useThisPlan.export();
+      planAsJson = selectedPlan.export();
       planAsSource = getPlanSource(planAsJson);
 
-      const rows = useThisPlan.result().toArray();
+      if (ctsExecutionEligible) {
+        const effectivePageLength = pageLength ?? 20;
+        total = cts.estimate(scopedCtsQuery);
+        resultPage = Math.max(page, 1);
+        const offset = (resultPage - 1) * effectivePageLength;
 
-      if (includeSearchResults) {
-        total = rows.length;
-        const paginationResult = paginateResults({
-          rows,
-          pageWith,
-          page,
-          pageLength: pageLength ?? 20,
-        });
-        resultPage = paginationResult.resultPage;
-        searchResults = paginationResult.searchResults;
+        if (isFromSearchPlan) {
+          // Opt 20: paginate first, then hydrate only the page slice.
+          // joinDocAndUri pulls documents from disk for just the page.
+          searchResults = selectedPlan
+            .offset(offset)
+            .limit(effectivePageLength)
+            .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
+            .result()
+            .toArray()
+            .map((row) => ({
+              id: row.uri,
+              type: String(row.doc.xpath('/type')),
+            }));
+        } else {
+          // Opt 18: fromLexicons plan already has {id, type} columns.
+          searchResults = selectedPlan
+            .offset(offset)
+            .limit(effectivePageLength)
+            .result()
+            .toArray();
+        }
+      } else {
+        const rows = selectedPlan.result().toArray();
+
+        if (includeSearchResults) {
+          total = rows.length;
+          const paginationResult = paginateResults({
+            rows,
+            pageWith,
+            page,
+            pageLength: pageLength ?? 20,
+          });
+          resultPage = paginationResult.resultPage;
+          searchResults = paginationResult.searchResults;
+        }
+
+        // calculateFacets returns null when facets are not requested.
+        facetResponses = calculateFacets(rows, facetRequests);
       }
-
-      // calculateFacets returns null when facets are not requested.
-      facetResponses = calculateFacets(rows, facetRequests);
     }
 
     return new SearchExecutionResult({
@@ -164,17 +168,34 @@ function performSearch(scp) {
   }
 }
 
-// For recursive calls from pattern classes — returns a single assembled plan.
-// parentScope: when set, the caller's plan already constrains results to that
-// search scope's types. Sub-plans built for the same scope can skip the
-// redundant dataType constraint ("empty-groups" optimization).
-function processCriteria({
+// Traverses criteria to fire pattern.apply() for side effects (e.g. value
+// population via appendValues) without building or executing an Optic plan.
+// Used by executeForValues in the related-list values-only path.
+function traverseCriteria({
   scp,
   planCriteria,
   planScope = 'item',
   patternOptions,
-  groups = null,
-  parentId = null,
+  allowMultiScope = false,
+}) {
+  const analysis = analyzeCriteria({
+    scp,
+    planCriteria,
+    planScope,
+    allowMultiScope,
+  });
+  buildAccumulator({ scp, analysis, patternOptions });
+}
+
+// Builds a sub-plan for nested criteria (called by pattern classes).
+// Always applies a select barrier projecting only iri + frag — the two
+// columns hop patterns join on. parentId is required.
+function processNestedCriteria({
+  scp,
+  planCriteria,
+  planScope = 'item',
+  patternOptions,
+  parentId,
   parentScope = null,
   allowMultiScope = false,
 }) {
@@ -192,16 +213,24 @@ function processCriteria({
     patternOptions,
     parentScope,
   });
-  return assemblePlan(scp, { ...acc, ...assemblyContext });
+  const plan = assemblePlan(scp, { ...acc, ...assemblyContext });
+  // CRITICAL OPTIMIZATION (Opt 17): Do not remove this select barrier.
+  // Without it, MarkLogic's optimizer sees all columns across nested join
+  // levels, flattens the join tree, and picks cross-product hash-joins that
+  // explode to millions of intermediate rows (8+ seconds, 8GB memory).
+  // With it, the optimizer is forced to plan each level independently,
+  // reducing multi-hop queries from ~8400ms to ~11ms (764x improvement).
+  const { iriCol, fragCol } = analysis.criteriaTree.columns;
+  return plan.select([iriCol, fragCol]);
 }
 
-// Like processCriteria but returns a bare CTS query when the inner criteria
+// Like processNestedCriteria but returns a bare CTS query when the inner criteria
 // resolves to pure CTS constraints (no Optic joins needed). Returns null when
 // the criteria requires an Optic plan — caller should fall back to the join path.
 // The dataType constraint is intentionally omitted: callers use cts.values to
 // resolve matching document IRIs, and the triple predicate already limits which
 // scope's documents are valid objects.
-function processCriteriaAsCts({
+function processNestedCriteriaAsCts({
   scp,
   planCriteria,
   planScope = 'item',
@@ -241,6 +270,11 @@ function getResultRowGrouping() {
 // Top-level entry point called from performSearch — returns sorted and
 // unsorted plans with finalization and optional sort applied.
 // Accepts either a pre-computed analysis result or raw criteria params.
+//
+// When request context is provided (includeSearchResults, pageWith,
+// facetRequests), buildPlans also selects the appropriate plan and determines
+// the execution strategy. This keeps plan-shape decisions in Pass 2 rather
+// than scattering them across the executor.
 function buildPlans({
   scp,
   analysis: precomputedAnalysis = null,
@@ -250,6 +284,10 @@ function buildPlans({
   allowMultiScope = false,
   groups,
   sortCriteria = null,
+  // Optional request context — when provided, enables strategy determination.
+  includeSearchResults = null,
+  pageWith = null,
+  facetRequests = null,
 }) {
   const analysis =
     precomputedAnalysis ??
@@ -282,7 +320,56 @@ function buildPlans({
     groups,
   });
 
-  return { sortedResultsPlan, unsortedResultsPlan };
+  // Compose the accumulator's CTS constraints into a single scoped CTS query
+  // when the accumulator is join-free. Null when the plan requires full
+  // materialization. Gates Opt 18 (cts.estimate), Opt 20 (fromSearch), Opt 21 (facets).
+  const scopedCtsQuery = buildScopedCtsQuery(
+    acc,
+    assemblyContext,
+    analysis.scope,
+  );
+
+  // Execution strategy: when request context is provided, select the plan
+  // and determine whether the estimate-based strategy applies.
+  let selectedPlan = null;
+  let ctsExecutionEligible = false;
+  let isFromSearchPlan = false;
+  if (includeSearchResults != null) {
+    selectedPlan = includeSearchResults
+      ? sortedResultsPlan
+      : unsortedResultsPlan;
+    if (includeSearchResults && pageWith) {
+      selectedPlan = selectedPlan.limit(MAXIMUM_PAGE_WITH_LENGTH + 1);
+    }
+    ctsExecutionEligible = isCtsExecutionEligible({
+      includeSearchResults,
+      pageWith,
+      facetRequests,
+      scopedCtsQuery,
+    });
+
+    // Opt 20: Replace the fromLexicons-based plan with a fromSearch-based
+    // plan when the sort doesn't require lexicon columns. Eliminates the
+    // iri lexicon scan, row multiplication, and blocking groupBy.
+    if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
+      selectedPlan = buildFromSearchPlan(
+        acc,
+        assemblyContext,
+        sortCriteria,
+        scopedCtsQuery,
+      );
+      isFromSearchPlan = true;
+    }
+  }
+
+  return {
+    selectedPlan,
+    sortedResultsPlan, // for developer use
+    unsortedResultsPlan, // for developer use
+    ctsExecutionEligible,
+    isFromSearchPlan,
+    scopedCtsQuery,
+  };
 }
 //#endregion
 
@@ -405,16 +492,18 @@ function createPlanAccumulator({
   dataTypeCol,
   isMultiScope,
 }) {
+  const constraints =
+    isMultiScope || scopeAlreadyConstrained
+      ? []
+      : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))];
   return {
     lexicons: {
       [uriCol]: cts.uriReference(),
       [iriCol]: cts.iriReference(),
       [dataTypeCol]: cts.fieldReference('anyDataTypeName'),
     },
-    constraints:
-      isMultiScope || scopeAlreadyConstrained
-        ? []
-        : [op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false))],
+    constraints,
+    _initialConstraintCount: constraints.length,
     ctsConstraints: [],
     conjunctionJoins: [],
     andOrSubPlans: [],
@@ -436,36 +525,6 @@ function mergeTermPlanContributions(acc, contributions) {
   }
   if (contributions.patternJoins?.length) {
     acc.patternJoins.push(...contributions.patternJoins);
-  }
-}
-
-// Page-slice eligibility check using a pre-computed analysis result.
-// Returns { terms, logicType } when eligible, null otherwise.
-function getLeafTermsFromAnalysis(analysis) {
-  const tree = analysis.criteriaTree;
-  if (tree.conjunctionType !== 'and') return null;
-  if (tree.children.some((c) => c.type === NODE_TYPE_GROUP)) return null;
-  const terms = tree.children.map((leaf) => leaf.searchTerm);
-  return terms.length > 0 ? { terms, logicType: 'and' } : null;
-}
-
-// Lightweight entry point for page-slice eligibility: runs analyzeCriteria
-// on the SCP's current criteria/scope and extracts leaf terms when eligible.
-// Side effects (criteriaCount, ignoredTerms) fire — callers should treat
-// this as the definitive analysis pass.
-function analyzeLeafCriteria(scp) {
-  const searchCriteria = scp.getSearchCriteria();
-  const scopeName = scp.getSearchScope();
-  if (!searchCriteria || typeof searchCriteria !== 'object') return null;
-  try {
-    const analysis = analyzeCriteria({
-      scp,
-      planCriteria: searchCriteria,
-      planScope: scopeName,
-    });
-    return getLeafTermsFromAnalysis(analysis);
-  } catch (_e) {
-    return null;
   }
 }
 
@@ -802,6 +861,99 @@ function collapseToResultRows(
     );
   }
 
+  return plan;
+}
+
+// True when the accumulator has no Optic joins and no pattern-contributed
+// Optic constraints — only the initial dataType constraint and CTS queries.
+// Patterns like DateRange and IndexedRange add op.ge/op.le to constraints;
+// cts.estimate can't evaluate those, so the fast path must not fire.
+function isAccumulatorJoinFree(acc) {
+  return (
+    acc.conjunctionJoins.length === 0 &&
+    acc.andOrSubPlans.length === 0 &&
+    acc.patternJoins.length === 0 &&
+    acc.ctsConstraints.length > 0 &&
+    acc.constraints.length === acc._initialConstraintCount
+  );
+}
+
+// Returns the accumulator's CTS constraints composed into a single query
+// with a scope dataType filter, or null when full materialization is required.
+// Used by cts.estimate (Opt 18), op.fromSearch (Opt 20), and facets (Opt 21).
+function buildScopedCtsQuery(acc, assemblyContext, scope) {
+  if (!isAccumulatorJoinFree(acc)) return null;
+  const composedCts = wrapCtsByLogicType(
+    assemblyContext.logicType,
+    acc.ctsConstraints,
+  );
+  const scopeTypes = getSearchScopeTypes(scope, false);
+  if (scopeTypes.length === 0) return composedCts;
+  return cts.andQuery([
+    composedCts,
+    cts.fieldValueQuery('anyDataTypeName', scopeTypes),
+  ]);
+}
+
+// Returns true when the request shape and plan structure allow CTS-based
+// execution: cts.estimate for count, offset/limit for pagination, and
+// (with Opt 20) fromSearch instead of fromLexicons for page results.
+// Requires the accumulator to be join-free (CTS-foldable).
+function isCtsExecutionEligible({
+  includeSearchResults,
+  pageWith,
+  facetRequests,
+  scopedCtsQuery,
+}) {
+  return (
+    includeSearchResults &&
+    !pageWith &&
+    !facetRequests?.length &&
+    scopedCtsQuery != null
+  );
+}
+
+// Returns true when the active sort strategy requires lexicon columns
+// or plan structures that only the fromLexicons path can provide.
+// Relevance sort and unsorted are compatible with fromSearch (Opt 20).
+function sortRequiresLexicons(sortCriteria) {
+  if (!sortCriteria) return false;
+  return (
+    sortCriteria.isRandomSort() ||
+    sortCriteria.hasNonSemanticSortDescriptors() ||
+    sortCriteria.hasSemanticSortOption()
+  );
+}
+
+// Opt 20: Builds a compact fromSearch-based plan. performSearch applies
+// .offset().limit() first, then chains .joinDocAndUri() so only the page
+// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans,
+// row multiplication, and blocking groupBy of the standard fromLexicons path.
+function buildFromSearchPlan(
+  acc,
+  assemblyContext,
+  sortCriteria,
+  scopedCtsQuery,
+) {
+  const wantScore =
+    sortCriteria?.areScoresRequired() &&
+    assemblyContext.hasScoreContributingCriteria &&
+    acc.ctsConstraints.length > 0;
+
+  let plan = wantScore
+    ? op.fromSearch(scopedCtsQuery, ['fragmentId', 'score'], null, {
+        scoreMethod: 'logtfidf',
+      })
+    : op.fromSearch(scopedCtsQuery, ['fragmentId'], null, {
+        scoreMethod: 'zero',
+      });
+
+  if (wantScore) {
+    plan = plan.orderBy(op.desc(op.col('score')));
+  }
+
+  // No hydration here — performSearch applies .offset().limit() first,
+  // then chains .joinDocAndUri() so only the page slice hits disk.
   return plan;
 }
 //#endregion
@@ -1171,12 +1323,17 @@ function accContainsOnly(acc, bucketName) {
 
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
-  analyzeLeafCriteria,
+  buildScopedCtsQuery,
+  buildFromSearchPlan,
   buildPlans,
   buildSortedResultsPlan,
+  isCtsExecutionEligible,
   getResultRowGrouping,
+  isAccumulatorJoinFree,
   paginateResults,
   performSearch,
-  processCriteria,
-  processCriteriaAsCts,
+  processNestedCriteria,
+  processNestedCriteriaAsCts,
+  sortRequiresLexicons,
+  traverseCriteria,
 };

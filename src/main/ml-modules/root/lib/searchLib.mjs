@@ -125,6 +125,7 @@ function _search(
     stopWatch.lap('process');
     resolvedSearchScope = scp.getSearchScope();
     resolvedSearchCriteria = scp.getSearchCriteria();
+    pageLength = scp.getPageLength();
 
     // Execute the search
     const searchExecutionResponse = scp.execute();

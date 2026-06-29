@@ -17,7 +17,7 @@ import { executeScenario } from '/test/unitTestUtils.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import op from '/MarkLogic/optic.mjs';
 
-const LIB = '0900 processNestedCriteria-selectBarrier.mjs';
+const LIB = '0901 processNestedCriteria-selectBarrier.mjs';
 console.log(`${LIB}: starting.`);
 
 let assertions = [];

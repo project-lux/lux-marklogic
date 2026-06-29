@@ -1,7 +1,7 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { buildScopedCtsQuery } from '/lib/search/engine.mjs';
 
-const LIB = '0603 buildEstimateQuery.mjs';
+const LIB = '0603 buildScopedCtsQuery.mjs';
 console.log(`${LIB}: starting.`);
 
 const assertions = [];

@@ -1,0 +1,1 @@
+./marklogic-flux-2.1.1/bin/flux import-files --username "${USER}" --password "${PASS}" --host "localhost" --port "8000" --auth-type "DIGEST" --compression "GZIP" --database "lux-content" --transform associateDocToDataSlice --uri-replace "file:/Users/peter.clarke/data-export,'https://lux.collections.yale.edu'" --document-type JSON --path ./data-export/data/ 

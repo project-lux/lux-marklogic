@@ -1,0 +1,1 @@
+./marklogic-flux-2.1.1/bin/flux export-files --username "${USER}" --password "${PASS}" --host "lux-ml-devb.collections.yale.edu" --port "8000" --auth-type "BASIC" --compression "GZIP" --collections "export" --database "lux-dev-data-content" --ssl-protocol "TLSv1.2" --path ./data-export

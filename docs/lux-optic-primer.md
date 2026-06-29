@@ -6,6 +6,19 @@
   - [Request Flow](#request-flow)
     - [Engine Entry Points](#engine-entry-points)
   - [Key Source Files](#key-source-files)
+- [Pass 1: `analyzeCriteria` — Analysis and the Criteria Tree IR](#pass-1-analyzecriteria--analysis-and-the-criteria-tree-ir)
+  - [Criteria Tree Data Model](#criteria-tree-data-model)
+    - [`AnalysisResult` — top-level return value](#analysisresult--top-level-return-value)
+    - [`GroupNode` — conjunction (AND/OR/NOT)](#groupnode--conjunction-andornot)
+    - [`LeafNode` — single search term](#leafnode--single-search-term)
+    - [Example tree](#example-tree)
+  - [`analyzeCriteria` Flow](#analyzecriteria-flow)
+  - [Key Helpers](#key-helpers)
+    - [`parseCriteriaAndLogicType`](#parsecriteriaandlogictype)
+    - [`analyzeConjunction`](#analyzeconjunction)
+    - [`buildLeafSearchTerm`](#buildleafsearchterm)
+    - [`tokenizeTermValue`](#tokenizetermvalue)
+  - [Normalization Guarantees](#normalization-guarantees)
 - [Pattern System](#pattern-system)
   - [Self-Registration on SearchPatternBase](#self-registration-on-searchpatternbase)
   - [Pattern Interface Contract](#pattern-interface-contract)
@@ -142,6 +155,8 @@ Search criteria processing is split into two passes with an intermediate represe
 | **Pass 2** — Construction | `engine.mjs` | Walk the criteria tree, call `pattern.apply()`, collect accumulator buckets, build Optic plan. | Executable Optic plan |
 
 **Why two passes:**
+- Engine-level optimizations become possible — the engine can inspect the full criteria tree (structure, scoring flags, join-free status) before building the plan, enabling strategy decisions like Opt 18/20 that require global knowledge unavailable during incremental construction.
+- Patterns can know more about the search criteria/request than just their own search term. The analysis result exposes scope, scoring status, and tree shape to Pass 2 callers.
 - Separation of concern — validation/normalization logic is isolated from plan construction. Optimizations can be implemented in the ideal location rather than being forced by execution order.
 - The criteria tree is an immutable, inspectable artifact: useful for testing, debugging, and future analysis (e.g., query complexity estimation).
 - Same-type nesting (AND-in-AND, OR-in-OR) is eliminated during analysis. Pass 2 never encounters it — reducing the 3×3 conjunction matrix to 7 cases and preventing a class of inlining bugs.
@@ -213,6 +228,164 @@ Patterns that navigate to a nested scope (e.g., `HopWithField` processing the in
 | `config/searchTermsConfig.mjs` | Build-time generated search term definitions per scope. |
 | `lib/relatedListsLib.mjs` | Related list execution — iterates search configs, calls `SCP.executeForValues()`. |
 | `lib/searchLib.mjs` | Search endpoint logic — resolves search options, calls `SCP.execute()`. |
+
+---
+
+# Pass 1: `analyzeCriteria` — Analysis and the Criteria Tree IR
+
+`analyzeCriteria` ([analyzeCriteria.mjs](/src/main/ml-modules/root/lib/search/analyzeCriteria.mjs)) is the sole Pass 1 entry point. It accepts raw search criteria JSON and produces an immutable **criteria tree** — the intermediate representation (IR) that Pass 2 consumes. No Optic API calls are made; this is pure validation, normalization, and tree construction.
+
+## Criteria Tree Data Model
+
+All nodes are created via factory functions in [criteriaNodes.mjs](/src/main/ml-modules/root/lib/search/criteriaNodes.mjs) and frozen with `Object.freeze`.
+
+### `AnalysisResult` — top-level return value
+
+| Property | Type | Description |
+|---|---|---|
+| `criteriaTree` | `GroupNode` | Root of the criteria tree (always a group, even for single-leaf queries) |
+| `scope` | `string` | Resolved scope name (`'item'`, `'agent'`, etc.) |
+| `isMultiScope` | `boolean` | `true` when `_scope: 'multi'` |
+| `hasScoreContributingCriteria` | `boolean` | `true` if any leaf in the tree contributes relevance scores |
+| `usableLeafCount` | `number` | Leaves that survived stop-word/validation checks |
+
+### `GroupNode` — conjunction (AND/OR/NOT)
+
+| Property | Type | Description |
+|---|---|---|
+| `type` | `'group'` | Node type discriminator (`NODE_TYPE_GROUP`) |
+| `id` | `string \| null` | UUID (dashes→underscores). `null` for the top-level group. |
+| `conjunctionType` | `'and' \| 'or' \| 'not'` | Boolean context of this group |
+| `scope` | `string` | Scope name for this group's children |
+| `children` | `(GroupNode \| LeafNode)[]` | Frozen array of child nodes |
+| `columns` | `{ uriCol, fragCol, iriCol, dataTypeCol }` | Column names for Pass 2 plan construction |
+| `isTopLevel` | `boolean` | `true` only for the root group |
+| `hasScoreContributingCriteria` | `boolean` | Propagated upward — `true` if any descendant contributes scores |
+
+### `LeafNode` — single search term
+
+| Property | Type | Description |
+|---|---|---|
+| `type` | `'leaf'` | Node type discriminator (`NODE_TYPE_LEAF`) |
+| `id` | `string` | UUID (dashes→underscores) |
+| `name` | `string` | Search term name (e.g. `'text'`, `'producedBy'`, `'classification'`) |
+| `scope` | `string` | Scope name |
+| `searchTerm` | `SearchTerm` | Carries value, config, options, parent columns, runtime properties |
+| `patternInstance` | `SearchPatternBase` | Frozen singleton from the pattern registry |
+| `contributesScore` | `boolean` | `patternInstance.contributesRelevanceScore()` |
+
+### Example tree
+
+Input:
+```json
+{ "_scope": "item", "AND": [{ "text": "Pablo" }, { "producedBy": { "id": "https://..." } }] }
+```
+
+Output (conceptual):
+```
+GroupNode { conjunctionType: 'and', isTopLevel: true, hasScoreContributingCriteria: true }
+├── LeafNode { name: 'text', contributesScore: true, patternInstance: Keyword }
+└── LeafNode { name: 'producedById', contributesScore: false, patternInstance: IndexedValue }
+```
+
+Note: `producedBy: { id }` was rewritten to `producedById` with the `indexedValue` pattern via the `idIndexReferences` shortcut (see `buildLeafSearchTerm`).
+
+## `analyzeCriteria` Flow
+
+The function uses a **dynamic loop** — new entries can be pushed into the `criteria` array during iteration (by tokenization and conjunction inlining). The loop processes each criterion through one of four branches:
+
+```
+for each criterion in criteria[]:
+  ├─ Is conjunction (AND/OR/NOT)?
+  │    └─ analyzeConjunction(...)
+  │         ├─ Same-type nesting? → { inlineCriteria } → push children, continue
+  │         ├─ Sub-group empty?   → { skip: true } → continue
+  │         └─ Otherwise          → { groupNode } → push to children[]
+  │
+  └─ Is leaf term?
+       └─ buildLeafSearchTerm(...)
+            ├─ Not usable (stop word)?   → continue
+            ├─ Tokenizable (multi-word)? → push { AND: tokens } back into criteria[], continue
+            └─ Valid leaf                 → push LeafNode to children[]
+```
+
+After the loop completes, two post-processing steps fire:
+
+1. **Single-branch OR→AND collapse:** If the group is `'or'` but has only one usable branch, it becomes `'and'`. This avoids `joinFullOuter` for degenerate single-branch ORs.
+
+2. **Post-collapse re-flattening:** After the OR→AND rewrite, a surviving child group whose `conjunctionType` matches the new parent type is inlined (children promoted). This guarantees same-type nesting never reaches Pass 2.
+
+Finally, the function creates and returns the frozen `GroupNode` wrapped in an `AnalysisResult`.
+
+## Key Helpers
+
+### `parseCriteriaAndLogicType`
+
+Extracts the criteria array and logic type from raw input JSON. Deep-copies via `xdmp.toJSON(...).toObject()` because the dynamic loop may mutate the array (tokenization/inlining push new entries).
+
+| Input shape | `logicType` | `criteria` |
+|---|---|---|
+| `{ AND: [...] }` | `'and'` | deep copy of the array |
+| `{ OR: [...] }` | `'or'` | deep copy of the array |
+| `{ NOT: [...] }` | `'not'` | deep copy of the array |
+| `{ text: "Pablo" }` (bare term) | `'and'` | `[deep copy of the object]` |
+
+### `analyzeConjunction`
+
+Handles nested conjunction criteria within the parent's loop. Three possible outcomes:
+
+| Condition | Return | Effect |
+|---|---|---|
+| Same-type nesting (AND-in-AND, OR-in-OR) | `{ inlineCriteria: [...] }` | Parent pushes raw children into its own loop — they'll be analyzed as if they were siblings |
+| Sub-group produced no usable criteria (all stop words) | `{ skip: true }` | Parent skips this child entirely |
+| Otherwise | `{ groupNode }` | Recursively calls `analyzeCriteria` with a new `parentId`, returns the frozen sub-tree |
+
+The inlining path is why `criteria` must be a mutable array — same-type children are appended and processed in subsequent loop iterations.
+
+### `buildLeafSearchTerm`
+
+Constructs a `SearchTerm` instance for a single criterion. This is the heaviest helper — it performs all leaf-level processing:
+
+1. **Config resolution.** Looks up `SearchTermConfig` for the term name in the current scope.
+2. **Runtime properties.** Extracts `_`-prefixed keys from the criterion (e.g., `_comp: '>='`) and attaches them as properties.
+3. **Pattern requirement validation.** Checks that all `getRequiredRuntimeSearchTermProperties()` are present.
+4. **Value-type validation.** Confirms the pattern accepts the structural type of the value (atomic, term, or group).
+5. **`idIndexReferences` rewrite.** If the value is `{ id: IRI }` and the term config has `idIndexReferences` (and is not transitive), rewrites the term to use the `indexedValue` pattern with `forceExactMatch`. This is a major optimization — it converts a hop pattern into a direct field lookup.
+6. **Scalar type casting.** If `termConfig.scalarType` is set (e.g., `'long'`), casts the value via `xs[scalarType](value)`.
+7. **Search options resolution.** Resolves keyword/exact options from config, request overrides, and instance overrides.
+8. **Wildcard sanitization.** For keyword-type terms with `*` or `?`, consolidates redundant wildcards and validates minimum qualifying character count (≥3 non-wildcard chars adjacent to the wildcard).
+9. **Stop-word detection.** If all words in the value are stop words or punctuation-only, marks the term as unusable and records the ignored terms on the SCP.
+
+### `tokenizeTermValue`
+
+Splits multi-word string values into individual AND'd terms. Called for patterns where `mayTokenizeValue()` returns `true` (primarily `keyword`/`indexedWord`).
+
+**Guards** (returns `null` if any are true):
+- Value is not a string
+- Term is marked `_complete` (exact phrase match)
+- Term is already `_tokenized` (prevents infinite recursion)
+- Pattern does not allow tokenization
+- Value has no spaces, or is a quoted phrase (`"..."` or `'...'`)
+- `splitHonoringPhrases` produces ≤1 token
+
+**When it fires:** Returns `{ AND: [{ termName: token1, _tokenized: true }, ...], _scope }`. The caller pushes this conjunction back into the `criteria` array — on the next loop iteration, `analyzeConjunction` will inline the AND (same-type flattening), and each token will be processed as an independent leaf.
+
+**Example:** `{ text: "woman greek art" }` → `{ AND: [{ text: "woman", _tokenized: true }, { text: "greek", _tokenized: true }, { text: "art", _tokenized: true }] }`
+
+## Normalization Guarantees
+
+After `analyzeCriteria` completes, the criteria tree satisfies these invariants:
+
+| Guarantee | Mechanism |
+|---|---|
+| No same-type nesting (AND-in-AND, OR-in-OR) | `analyzeConjunction` inlines same-type children; post-loop re-flattening catches any introduced by OR→AND collapse |
+| No single-branch OR groups | OR with one usable branch is collapsed to AND |
+| All leaves are valid and usable | Stop words, punctuation-only, and invalid wildcards are filtered out |
+| Multi-word values are tokenized | `tokenizeTermValue` splits them into AND groups before leaf creation |
+| `hasScoreContributingCriteria` propagates upward | `||=` accumulates from children to parent; frozen on each node |
+| `idIndexReferences` rewrites are applied | Hop terms with `{ id }` children become `indexedValue` lookups |
+| Tree is immutable | All nodes frozen via `Object.freeze` |
+| Column names are unique per nesting level | UUID-based prefixes for non-top-level columns |
 
 ---
 

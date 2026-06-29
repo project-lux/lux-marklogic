@@ -289,6 +289,7 @@ function buildPlans({
   pageWith = null,
   facetRequests = null,
 }) {
+  // performSearch always provides the analysis but there are other callers that do not.
   const analysis =
     precomputedAnalysis ??
     analyzeCriteria({

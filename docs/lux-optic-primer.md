@@ -134,6 +134,20 @@
     - [What this does NOT address](#what-this-does-not-address-1)
     - [Relationship to other optimizations](#relationship-to-other-optimizations-1)
     - [Estimated impact](#estimated-impact)
+  - [Optimization 22: annTopK post-filter for HNSW index usage](#optimization-22-anntopk-post-filter-for-hnsw-index-usage)
+    - [Problem](#problem-4)
+    - [Root cause](#root-cause)
+    - [Benchmark (2026-06-29)](#benchmark-2026-06-29)
+    - [Fix](#fix)
+    - [When Opt 22 applies](#when-opt-22-applies)
+    - [Limitations](#limitations)
+    - [Additional engine optimization](#additional-engine-optimization)
+  - [Optimization 23: Scope-specific QBVs for annTopK graph partitioning](#optimization-23-scope-specific-qbvs-for-anntopk-graph-partitioning)
+    - [Problem](#problem-5)
+    - [Approach](#approach-2)
+    - [Constraints](#constraints-1)
+    - [Open question](#open-question)
+    - [Next step](#next-step)
 
 # Introduction
 
@@ -717,6 +731,8 @@ Approximate nearest-neighbor vector similarity search. Term value is the **URI o
 | OR | `joinFullOuter` (duplicate lexicon pattern) | Same pattern as `hopWithField` OR. |
 | NOT | `notExistsJoin` on `fragCol ↔ vecFrag` | — |
 
+**HNSW index vs brute-force:** MarkLogic 12's `annTopK` uses the HNSW vector index only when no pre-filters are pushed inside the `plan:template-view` node. The current implementation applies `op.in(dataTypeCol, ...)` and `op.ne(uriCol, ...)` as `.where()` clauses before `annTopK` — the optimizer pushes these inside, forcing `plan:ann-result indexed="false"` (brute-force kNN). Over 20M item-scope vectors this causes 10+ minute timeouts. Moving filters to post-annTopK reduces latency to ~1s with `indexed="true"`. See [Optimization 22](#optimization-22-anntopk-post-filter-for-hnsw-index-usage).
+
 ---
 
 # Related Lists
@@ -1099,6 +1115,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 7 | [Opt 17](#optimization-17-select-barrier-on-nested-sub-plans) | Select barrier: `.select([iriCol, fragCol])` on nested sub-plans prevents optimizer from fusing join trees across nesting levels (764× warm improvement on 3-level hops) | 2026-06-24 |
 | 8 | [Opt 18](#optimization-18-ctsestimate-with-offsetlimit-for-join-free-queries) | cts.estimate with offset/limit: when CTS Fold ([Opt 15](#optimization-15-cts-fold)) is applicable, use `cts.estimate` for total count and `.offset().limit()` for the requested page's results. Avoids materializing all rows. | 2026-06-26 |
 | 9 | [Opt 20](#optimization-20-eliminate-fromlexicons-for-join-free-queries) | avoidLexicons: replace `fromLexicons` with `op.fromSearch` + `joinDocAndUri` after pagination. For the reference query, this optimization eliminated 3 lexicon scans (43.9M entries each) and dedup groupBy. Mean dropped from 231% to 31% of CTS (3.2× faster). | 2026-06-28 |
+| 10 | [Opt 22](#optimization-22-anntopk-post-filter-for-hnsw-index-usage) | annTopK post-filter: move scope/self-exclusion filters to after `annTopK` so the HNSW index is used (`indexed="true"`). Pre-filters caused brute-force kNN — 800× slower on 20M vectors. Also extends Opt 20 to skip `fromLexicons` for annTopK-only queries. | 2026-06-29 |
 
 ## Data Type Constraint Optimizations
 
@@ -1737,6 +1754,7 @@ Key decisions: `scopedCtsQuery` (includes scope dataType filter) prevents cross-
 ### What this does NOT address
 
 - **Queries with hops/joins.** These have `patternJoins` and are ineligible for cts.estimate with offset/limit, so they never enter this path. The `fromLexicons` + `iri` overhead remains for those queries. [Opt 5](#optimization-5-remove-unused-iri-column-from-fromlexicons-for-keyword-only-queries) (conditionally omitting `iri`) is a separate, complementary optimization for queries that use `fromLexicons` but don't need `iri`.
+- **annTopK queries.** The `annTopK` pattern contributes `patternJoins`, which causes `isAccumulatorJoinFree()` to return false and `buildScopedCtsQuery()` to return null. Opt 20's `fromSearch` path is therefore ineligible. However, the **Opt 20 extension** ([Opt 22 — Additional engine optimization](#additional-engine-optimization)) provides an analogous bypass specifically for annTopK-only queries: `getAnnTopKDirectPlan()` detects the single-annTopK accumulator and uses the TDE view's `{uri, dataType}` columns directly, eliminating `fromLexicons` without requiring `fromSearch`. This path is complementary — it fires when Opt 20 cannot.
 - **Keyword search cold-start.** The keyword pattern's 49K-IRI `cts.tripleRangeQuery` still produces a large CTS query object. `fromSearch` with that query still requires the optimizer to process the AST. However, the `fromSearch` plan is structurally simpler (no lexicon joins, no groupBy), so the optimizer cost may be lower — worth measuring.
 - **Non-relevance sort.** Field-based sorts require lexicon columns. V1 restricts to relevance sort.
 - **Facets, pageWith.** Excluded by `isCtsExecutionEligible` eligibility.
@@ -1783,6 +1801,7 @@ The mean result is the headline: Optic went from 2.3× slower than CTS to 3.2× 
 ### Relationship to other optimizations
 
 - **Opt 18 (cts.estimate with offset/limit):** Prerequisite. Opt 20 extends Opt 18 by also eliminating the Optic plan for the page results, not just the total count.
+- **Opt 22 (annTopK post-filter):** The Opt 20 extension for annTopK is implemented as part of Opt 22. When annTopK is the sole criterion, `getAnnTopKDirectPlan()` bypasses `fromLexicons` using the TDE view directly — analogous to Opt 20's `fromSearch` bypass for CTS-foldable queries, but for a different eligibility condition (`annTopKSelfSufficient` flag vs `isAccumulatorJoinFree`).
 - **Opt 5 (Remove `iri` from `fromLexicons`):** Complementary but subsumed for eligible queries. Opt 5 would still help queries that use `fromLexicons` but don't need `iri` (e.g., non-relevance-sorted join-free queries). If Opt 20 is implemented first, Opt 5's remaining value is limited to the non-Opt-20-eligible subset.
 - **Opt 14 (Page-Slice, abandoned):** Opt 20 is structurally similar — both bypass `fromLexicons` for page results and use CTS for pagination. The key differences: Opt 20 uses `op.fromSearch` (stays within Optic's API), has a well-defined eligibility gate (`isCtsExecutionEligible`), and does not introduce a separate `cts.search` code path. The total-count concern that killed Opt 14 does not apply — Opt 18's `cts.estimate` with scope filter is already validated.
 
@@ -1966,3 +1985,131 @@ For the `item.memberOf` reference query (219K matches):
 | Facet join + groupBy + orderBy | ~200ms (per facet) | ~200ms (unchanged) |
 
 The facet join/aggregation cost is unchanged — the optimization eliminates the materialization and AST-bloat overhead that precedes it. For the 2.5M-row case (Sterling Memorial Library), the current path spends 15s on materialization before facet computation even begins.
+
+## Optimization 22: annTopK post-filter for HNSW index usage
+
+**Status:** Implemented.
+
+### Problem
+
+Customer-reported slow vector similarity searches. The `annTopK` pattern applies scope (dataType) and self-exclusion filters as `.where()` clauses **before** `annTopK`. The optimizer pushes these inside the `plan:template-view` node, causing MarkLogic to fall back from HNSW indexed search to brute-force kNN over the filtered candidate set. For the item scope (20.16M vectors), this causes 10+ minute timeouts.
+
+The issue was not observed during initial development because the test seed document was in the event scope (187K vectors — brute-force is fast over small sets).
+
+### Root cause
+
+MarkLogic 12's `annTopK` uses the HNSW vector index (`plan:ann-result indexed="true"`) only when no pre-filters constrain the `template-view` input to `annTopK`. When `op.in(dataTypeCol, ...)` or `op.ne(uriCol, ...)` is applied before `annTopK`, the optimizer pushes the filter inside the `template-view` as a `plan:join-filter`, and `annTopK` switches to `indexed="false"` (brute-force linear scan).
+
+This is consistent with how HNSW graphs work: the graph is built over the full vector corpus. Pre-filtering removes nodes from the traversal set, breaking the graph connectivity that HNSW relies on. MarkLogic falls back to exhaustive distance computation over the surviving rows.
+
+### Benchmark (2026-06-29)
+
+Seed document: `https://lux.collections.yale.edu/data/digital/e0d19c1d-db52-4c86-95c9-dc02451a7e83` (DigitalObject, item scope). MarkLogic 12.0.1, single host, 44M total vectors, 20.16M item-scope vectors. Scripts in `scratch/performance/vectors/`.
+
+| Variant | Description | Time | `indexed` | Results |
+|---|---|---|---|---|
+| Baseline (current) | dataType + self-exclusion before `annTopK` | >10 min (timeout) | `false` | — |
+| A (unfiltered) | No filters at all | **737ms** | `true` | 50/50 |
+| B (post-filter) | `annTopK(250)` then `.where()` after | **989ms** | `true` | 249/250 |
+| C (barrier) | `.select()` between `annTopK` and post-filter | **978ms** | `true` | 249/250 |
+| D (distribution) | `annTopK(500)` — measure scope hit rate | **2.8s** | `true` | 500/500 (100% DigitalObject) |
+
+Key observations:
+- Removing pre-filters yields >800× speedup (10min+ → 737ms).
+- The optimizer does NOT push post-filter `.where()` clauses back inside `annTopK` — variant B works without a select barrier.
+- For this seed, 100% of the 500 nearest vectors are DigitalObject (item scope). Vectors cluster strongly by type, so candidateK inflation is minimal. However, this may not hold for all seed documents (e.g., a concept-scope seed whose nearest neighbors are dominated by items).
+
+### Fix
+
+Restructure `AnnTopK.mjs` to use post-filtering:
+
+**Before (current — brute-force):**
+```javascript
+let annPlan = op
+  .fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag))
+  .where(op.in(dataTypeCol, getSearchScopeTypes(scopeName)))  // ← forces indexed=false
+  .where(op.ne(op.col('uri'), termValue));                     // ← forces indexed=false
+annPlan = annPlan.annTopK(k, vectorCol, queryVector, distCol, { distance: 'cosine' });
+```
+
+**After (post-filter — indexed):**
+```javascript
+let annPlan = op
+  .fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag))
+  .annTopK(candidateK, vectorCol, queryVector, distCol, {
+    distance: 'cosine',
+    maxDistance,
+    searchFactor: 1,
+  })
+  .where(op.in(dataTypeCol, getSearchScopeTypes(scopeName)))  // post-filter: scope
+  .where(op.ne(op.col('uri'), termValue));                     // post-filter: self-exclusion
+```
+
+The `candidateK` should be `k + buffer` to account for post-filter attrition. Given that vectors cluster strongly by type, a small buffer (e.g., `k * 1.2` or `k + 10`) is likely sufficient for most seeds. A larger multiplier may be needed for cross-type seed documents. The `searchFactor` option (not currently passed in the integrated pattern) controls HNSW candidate breadth — `1` is minimum exhaustiveness, fastest.
+
+### When Opt 22 applies
+
+Opt 22 is always active — the post-filter pattern is the sole implementation in `AnnTopK.mjs`. Every `annTopK` query benefits from HNSW indexing regardless of scope or logicType.
+
+The **Opt 20 extension** (skip `fromLexicons`) applies only when:
+1. `logicType === 'and'` (the accumulator's top-level conjunction is AND).
+2. The accumulator has exactly one `patternJoin` entry, and it is the annTopK join.
+3. No `ctsConstraints`, `conjunctionJoins`, `andOrSubPlans`, or pattern-added `constraints` exist.
+
+In practice this means: a single similarity search term with no additional criteria (e.g., `{ "_scope": "item", "similar": "https://..." }`).
+
+### Limitations
+
+| Context | Can Opt 22 apply? | Can Opt 20 extension apply? | Reason |
+|---|---|---|---|
+| Single annTopK, AND | Yes | Yes | Sole criterion, direct plan used |
+| annTopK + keyword, AND | Yes | **No** | Keyword adds `ctsConstraints` → falls back to `fromLexicons` + `joinInner` |
+| annTopK + hop, AND | Yes | **No** | Hop adds `patternJoins[1]` or `ctsConstraints` |
+| annTopK under OR | Yes | **No** | `logicType !== 'and'` blocks direct plan detection |
+| annTopK under NOT | Yes | **No** | Same as OR |
+| Multiple annTopK, OR | Yes | **No** | `patternJoins.length > 1` |
+
+**CandidateK attrition risk:** If a seed document's nearest neighbors are dominated by a different dataType (cross-scope clustering), the post-filter may eliminate most candidates and return fewer than `k` results. The current `candidateK = max(k * 1.2, k + 10)` assumes same-scope dominance (benchmarked at 100% for DigitalObject seeds). Minority-scope seeds (concept, event, place) should be tested to validate this assumption. The `maxDistance` cap provides a secondary safety net — results beyond the distance threshold are excluded regardless.
+
+**No result-count guarantee:** Unlike the pre-filter approach (which guaranteed exactly `k` results within scope), the post-filter approach may return fewer than `k` results when post-filter attrition exceeds the candidateK buffer. This is acceptable for similarity search UX (showing fewer but more similar results is preferred over slow but exact counts).
+
+### Additional engine optimization
+
+**Status:** Implemented (Opt 20 extension).
+
+The `annTopK` pattern now signals `annTopKSelfSufficient: true` on its join descriptor and provides an `annTopKPlanForDirect` plan with standard `{uri, dataType}` columns from the TDE view. The engine's `getAnnTopKDirectPlan()` detects annTopK-only accumulators (single pattern join, no CTS constraints, no other contributions) and bypasses `fromLexicons` + `assemblePlan` entirely. This eliminates the 43.9M-entry IRI lexicon scan, the `joinInner` back to the base plan, and the blocking `groupBy` for queries that are pure similarity searches.
+
+## Optimization 23: Scope-specific QBVs for annTopK graph partitioning
+
+**Status:** Idea — requires investigation (physical index layout unknown). Dependent on [Opt 22](#optimization-22-anntopk-post-filter-for-hnsw-index-usage).
+
+### Problem
+
+Opt 22's post-filter approach searches the full 44M-vector HNSW graph and filters to the target scope afterward. This works well when vectors cluster by type (benchmarked at 100% same-type for DigitalObject seeds), but may not hold for minority-scope seeds. If a concept document's nearest neighbors are mostly items, the candidateK multiplier would need to grow significantly to yield enough in-scope results — and even then, the HNSW graph traversal cost scales with the full corpus, not the scope.
+
+### Approach
+
+MarkLogic 12 supports Query-Based Views (QBVs) scoped to document subsets. A QBV per dataType could partition the ANN search space so `annTopK` traverses only the scope-relevant HNSW graph:
+
+```
+lux.vectors (base TDE view — all 44M vectors)
+  ├─ QBV: vectors_item     → 20.16M vectors (DigitalObject + HumanMadeObject)
+  ├─ QBV: vectors_agent    → 6.3M vectors (Person + Group)
+  ├─ QBV: vectors_work     → 15.8M vectors (LinguisticObject + VisualItem)
+  └─ QBV: vectors_concept  → 0.5M vectors (Type + Currency + ...)
+```
+
+`AnnTopK.mjs` would select the scope-specific view name (e.g., `vectors_item` instead of `vectors`) based on `searchTerm.getScopeName()`. The post-filter scope constraint (Opt 22) would become redundant for scoped QBVs but should remain as a safety net.
+
+### Constraints
+
+- All referenced vector columns must retain identical metadata (name, type/scalar-type, collation, nullable, invalid-values settings) as the base view. Otherwise, ANN falls back to brute-force kNN. This is documented in internal MarkLogic 12 vector-search guidance.
+- QBVs may need to be backed by collections or other MarkLogic scoping mechanisms — the current data model uses a `dataType` property, not collections, to distinguish scopes.
+
+### Open question
+
+Whether MarkLogic physically materializes a separate HNSW graph per QBV (true partition — O(scope-size) traversal) or reuses the broader underlying vector index and constrains the candidate set through the view definition (functionally equivalent to post-filtering — same as current Opt 22 approach). The documentation does not explicitly state the physical index layout per QBV. If QBVs merely filter after graph traversal, they provide no benefit over the current post-filter approach.
+
+### Next step
+
+Test `annTopK` against a QBV (e.g., filtered by collection) to determine whether `plan:ann-result indexed="true"` still fires and whether timing improves versus the base view with post-filter.

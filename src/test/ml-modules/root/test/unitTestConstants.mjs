@@ -14,6 +14,9 @@ const USERNAME_FOR_DEPLOYER = '%%mlAppName%%-unit-test-deployer';
 const USERNAME_FOR_SERVICE_ACCOUNT = '%%mlAppName%%-unit-test-service-account';
 
 // Filenames are relative to a suite's test-data subdir.
+const ANN_TOP_K_SEED_FILENAME = 'annTopKSeed.json';
+const ANN_TOP_K_SEED_URI = `/${ANN_TOP_K_SEED_FILENAME}`;
+
 const FOO_FILENAME = 'foo.json';
 const FOO_URI = `/${FOO_FILENAME}`;
 
@@ -21,6 +24,8 @@ const HMO_FILENAME = 'humanMadeObject.json';
 const HMO_URI = `/${HMO_FILENAME}`;
 
 export {
+  ANN_TOP_K_SEED_FILENAME,
+  ANN_TOP_K_SEED_URI,
   FOO_FILENAME,
   FOO_URI,
   HMO_FILENAME,

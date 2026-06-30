@@ -120,7 +120,7 @@ function performSearch(scp) {
             .toArray()
             .map((row) => ({
               id: row.uri,
-              type: String(row.doc.xpath('/type')),
+              type: String(row.doc.xpath('/json/type')),
             }));
         } else {
           // Opt 18: fromLexicons plan already has {id, type} columns.
@@ -901,7 +901,10 @@ function getDirectPlan(acc, assemblyContext) {
       [op.viewCol(q, 'uri')],
       [op.sample('dataType', op.viewCol(q, 'dataType'))],
     )
-    .select([op.as('id', op.viewCol(q, 'uri')), op.as('type', op.col('dataType'))]);
+    .select([
+      op.as('id', op.viewCol(q, 'uri')),
+      op.as('type', op.col('dataType')),
+    ]);
 }
 
 // Returns the accumulator's CTS constraints composed into a single query

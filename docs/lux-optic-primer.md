@@ -2028,7 +2028,7 @@ Restructure `AnnTopK.mjs` to use post-filtering:
 let annPlan = op
   .fromView('lux', 'vectors', id, op.fragmentIdCol(vecFrag))
   .where(op.in(dataTypeCol, getSearchScopeTypes(scopeName)))  // ← forces indexed=false
-  .where(op.ne(op.col('uri'), termValue));                     // ← forces indexed=false
+  .where(op.ne(op.col('uri'), termValue));                    // ← forces indexed=false
 annPlan = annPlan.annTopK(k, vectorCol, queryVector, distCol, { distance: 'cosine' });
 ```
 
@@ -2042,7 +2042,7 @@ let annPlan = op
     searchFactor: 1,
   })
   .where(op.in(dataTypeCol, getSearchScopeTypes(scopeName)))  // post-filter: scope
-  .where(op.ne(op.col('uri'), termValue));                     // post-filter: self-exclusion
+  .where(op.ne(op.col('uri'), termValue));                    // post-filter: self-exclusion
 ```
 
 The `candidateK` should be `k + buffer` to account for post-filter attrition. Given that vectors cluster strongly by type, a small buffer (e.g., `k * 1.2` or `k + 10`) is likely sufficient for most seeds. A larger multiplier may be needed for cross-type seed documents. The `searchFactor` option (not currently passed in the integrated pattern) controls HNSW candidate breadth — `1` is minimum exhaustiveness, fastest.

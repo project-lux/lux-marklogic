@@ -1074,9 +1074,10 @@ function calculateFacets(rows, facetRequests) {
 
     const isDateFacet = facetName.endsWith('Date');
     const sort = request?.sort;
-    const rows = facetSourcePlan
+    // TODO: remove thePlan and set rows directly.
+    const thePlan = facetSourcePlan
       .joinInner(constraintPlan, joinOn)
-      .orderBy(op.col(facetValueColName))
+      .orderBy(op.col(facetValueColName)) // TODO: wasted time?
       .groupBy(op.col(facetValueColName), op.count('count', countColName))
       .orderBy(
         sort === 'desc'
@@ -1084,9 +1085,9 @@ function calculateFacets(rows, facetRequests) {
           : sort === 'asc'
             ? op.asc(facetValueColName)
             : op.desc('count'), // a.k.a. frequency-order
-      )
-      .result()
-      .toArray();
+      );
+    console.log(`Facet '${facetName}' plan: ${getPlanSource(thePlan)}`);
+    const rows = thePlan.result().toArray();
 
     facets[facetName] = {
       totalItems: rows.length,

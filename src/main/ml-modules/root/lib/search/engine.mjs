@@ -308,6 +308,11 @@ function buildPlans({
   // Opt 20 extension: when annTopK is the sole criterion, skip fromLexicons
   // entirely. The TDE view already provides uri + dataType; joining back to
   // the base lexicon plan is pure overhead (43.9M IRI scan + groupBy).
+  //
+  // Note: Opt 20's fromSearch override is intentionally still below and not
+  // in getDirectPlan as it is an execution-strategy swap (requires a coupled
+  // offset/limit/joinDocAndUri executor in performSearch) though we may find
+  // other direct-plan optimizations that below in getDirectPlan.
   const annTopKDirect = getDirectPlan(acc, assemblyContext);
 
   // Unsorted plan — used by facets.

@@ -1,14 +1,15 @@
 import { isArray } from '../../../utils/utils.mjs';
 import { convertPartialDateTimeToSeconds } from '../../../utils/dateUtils.mjs';
-import {
-  InternalServerError,
-  InvalidSearchRequestError,
-} from '../../errorClasses.mjs';
+import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchPatternBase, CHILD_TYPE_ATOMIC } from './SearchPatternBase.mjs';
 
 class DateRange extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
     const name = searchTerm.getName();
+
+    const operator = searchTerm.getComparisonOperator();
+    this.requireRangeOperator(name, operator);
+
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
     // Identify indexes and configure lexicons.
@@ -65,7 +66,6 @@ class DateRange extends SearchPatternBase {
 
     // Convert to seconds. startDateLong is the start boundary of the search range (aS);
     // endDateLong is the end boundary (aE).
-    const operator = searchTerm.getComparisonOperator();
     const startDateLong = convertPartialDateTimeToSeconds(startDateStr, true);
     const endDateLong = convertPartialDateTimeToSeconds(endDateStr, false);
 

@@ -1,3 +1,4 @@
+import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 import { SearchPatternInterface } from './SearchPatternInterface.mjs';
 
 const CHILD_TYPE_GROUP = 4;
@@ -44,6 +45,17 @@ class SearchPatternBase extends SearchPatternInterface {
 
   contributesRelevanceScore() {
     return false;
+  }
+
+  // Valid operators for cts.fieldRangeQuery, shared by IndexedRange and DateRange.
+  static RANGE_OPERATORS = Object.freeze(['<', '<=', '>', '>=', '=', '!=']);
+
+  requireRangeOperator(termName, operator) {
+    if (!SearchPatternBase.RANGE_OPERATORS.includes(operator)) {
+      throw new InvalidSearchRequestError(
+        `Unsupported comparison operator '${operator}' for the '${termName}' search term. Allowed: ${SearchPatternBase.RANGE_OPERATORS.join(', ')}.`,
+      );
+    }
   }
   //#endregion
 }

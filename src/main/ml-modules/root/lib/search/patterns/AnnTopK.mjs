@@ -2,17 +2,14 @@ import op from '/MarkLogic/optic.mjs';
 import { InvalidSearchRequestError } from '../../errorClasses.mjs';
 import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
 import { getSearchScopeTypes } from '../../searchScope.mjs';
+import {
+  ANN_CANDIDATE_K_BUFFER,
+  ANN_CANDIDATE_K_MULTIPLIER,
+} from '../../appConstants.mjs';
 
 // Match with src/main/ml-schemas/tde/vectors.json
 const SCHEMA_NAME = 'lux';
 const VIEW_NAME = 'vectors';
-
-// Inflate candidateK to compensate for post-filter attrition. Vectors cluster
-// heavily by type (benchmarked at 100% same-type for top 500 of a DigitalObject
-// seed), so a small buffer suffices for same-scope seeds. Cross-scope seeds may
-// need more, but the maxDistance cap provides a safety net.
-const CANDIDATE_K_MULTIPLIER = 1.2;
-const CANDIDATE_K_BUFFER = 10;
 
 class AnnTopK extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
@@ -48,10 +45,11 @@ class AnnTopK extends SearchPatternBase {
     // brute-force kNN (indexed="false") — 800× slower on 20M vectors.
     // Scope and self-exclusion are applied as post-filters after annTopK.
     const candidateK = Math.ceil(
-      Math.max(k * CANDIDATE_K_MULTIPLIER, k + CANDIDATE_K_BUFFER),
+      Math.max(k * ANN_CANDIDATE_K_MULTIPLIER, k + ANN_CANDIDATE_K_BUFFER),
     );
 
-    let annPlan = op
+    // Shared base plan: annTopK + post-filters (scope, self-exclusion).
+    let basePlan = op
       .fromView(SCHEMA_NAME, VIEW_NAME, id, op.fragmentIdCol(vecFrag))
       .annTopK(candidateK, op.col(vectorColumn), queryVector, op.col(distCol), {
         distance: 'cosine',
@@ -60,17 +58,26 @@ class AnnTopK extends SearchPatternBase {
       });
 
     // Post-filter: scope constraint.
-    annPlan = annPlan.where(
+    basePlan = basePlan.where(
       op.in(op.viewCol(id, 'dataType'), getSearchScopeTypes(scopeName)),
     );
 
     // Post-filter: exclude the seed document for single similarity queries.
     if (logicType !== 'or') {
-      annPlan = annPlan.where(op.ne(op.col('uri'), termValue));
+      basePlan = basePlan.where(op.ne(op.col('uri'), termValue));
     }
 
-    annPlan = annPlan.select([
+    // Join path: project to join columns.
+    const joinPlan = basePlan.select([
       op.as(id + '_vectorUri', op.col('uri')),
+      op.fragmentIdCol(vecFrag),
+      distCol,
+    ]);
+
+    // Direct path: project to result columns (uri, dataType).
+    const directPlan = basePlan.select([
+      op.as('uri', op.col('uri')),
+      op.as('dataType', op.viewCol(id, 'dataType')),
       op.fragmentIdCol(vecFrag),
       distCol,
     ]);
@@ -78,7 +85,7 @@ class AnnTopK extends SearchPatternBase {
     return {
       patternJoins: [
         {
-          right: annPlan,
+          right: joinPlan,
           on: op.on(
             op.fragmentIdCol(searchTerm.getParentFragmentColumn()),
             op.fragmentIdCol(vecFrag),
@@ -88,67 +95,10 @@ class AnnTopK extends SearchPatternBase {
           // (provides uri + dataType from the TDE view). When annTopK is the
           // sole criterion, the engine can skip fromLexicons entirely.
           annTopKSelfSufficient: true,
-          annTopKPlanForDirect: this.#buildDirectPlan({
-            id,
-            vecFrag,
-            distCol,
-            vectorColumn,
-            queryVector,
-            maxDistance,
-            k,
-            candidateK,
-            scopeName,
-            termValue,
-            logicType,
-          }),
+          annTopKPlanForDirect: directPlan,
         },
       ],
     };
-  }
-
-  // Builds a plan that produces {uri, dataType, distCol} directly — no
-  // fromLexicons join needed. Used by the engine's avoidLexicons path when
-  // annTopK is the sole criterion.
-  #buildDirectPlan({
-    id,
-    vecFrag,
-    distCol,
-    vectorColumn,
-    queryVector,
-    maxDistance,
-    k,
-    candidateK,
-    scopeName,
-    termValue,
-    logicType,
-  }) {
-    let plan = op
-      .fromView(SCHEMA_NAME, VIEW_NAME, id, op.fragmentIdCol(vecFrag))
-      .annTopK(candidateK, op.col(vectorColumn), queryVector, op.col(distCol), {
-        distance: 'cosine',
-        maxDistance,
-        searchFactor: 1,
-      });
-
-    // Post-filter: scope.
-    plan = plan.where(
-      op.in(op.viewCol(id, 'dataType'), getSearchScopeTypes(scopeName)),
-    );
-
-    // Post-filter: self-exclusion.
-    if (logicType !== 'or') {
-      plan = plan.where(op.ne(op.col('uri'), termValue));
-    }
-
-    // Project to standard result columns: uri, dataType (+ distance for sort).
-    plan = plan.select([
-      op.as('uri', op.col('uri')),
-      op.as('dataType', op.viewCol(id, 'dataType')),
-      op.fragmentIdCol(vecFrag),
-      distCol,
-    ]);
-
-    return plan;
   }
 
   mayTokenizeValue() {

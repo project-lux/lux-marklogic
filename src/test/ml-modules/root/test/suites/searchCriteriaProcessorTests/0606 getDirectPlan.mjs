@@ -1,5 +1,5 @@
 /**
- * Test suite for getAnnTopKDirectPlan (Opt 20 extension for annTopK).
+ * Test suite for getDirectPlan (Opt 20 extension for annTopK).
  *
  * Verifies:
  *   - Returns a plan when the accumulator has a single annTopK patternJoin
@@ -13,15 +13,15 @@
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { getAnnTopKDirectPlan } from '/lib/search/engine.mjs';
+import { getDirectPlan } from '/lib/search/engine.mjs';
 import op from '/MarkLogic/optic.mjs';
 
-const LIB = '0606 getAnnTopKDirectPlan.mjs';
+const LIB = '0606 getDirectPlan.mjs';
 console.log(`${LIB}: starting.`);
 
 const assertions = [];
 
-// Minimal mock plan that has the columns getAnnTopKDirectPlan expects.
+// Minimal mock plan that has the columns getDirectPlan expects.
 const mockDirectPlan = op
   .fromView('lux', 'vectors', 'mock', op.fragmentIdCol('mock_vecFrag'))
   .select([
@@ -172,7 +172,7 @@ const scenarios = [
 ];
 
 for (const scenario of scenarios) {
-  const actual = getAnnTopKDirectPlan(scenario.acc, scenario.context);
+  const actual = getDirectPlan(scenario.acc, scenario.context);
   const gotPlan = actual != null;
   assertions.push(
     testHelperProxy.assertEqual(
@@ -187,7 +187,7 @@ for (const scenario of scenarios) {
 {
   const acc = makeAcc();
   const ctx = makeContext();
-  const plan = getAnnTopKDirectPlan(acc, ctx);
+  const plan = getDirectPlan(acc, ctx);
   if (plan) {
     const planSource = op
       .toSource(plan.export())

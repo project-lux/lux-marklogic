@@ -308,7 +308,7 @@ function buildPlans({
   // Opt 20 extension: when annTopK is the sole criterion, skip fromLexicons
   // entirely. The TDE view already provides uri + dataType; joining back to
   // the base lexicon plan is pure overhead (43.9M IRI scan + groupBy).
-  const annTopKDirect = getAnnTopKDirectPlan(acc, assemblyContext);
+  const annTopKDirect = getDirectPlan(acc, assemblyContext);
 
   // Unsorted plan — used by facets.
   const unsortedResultsPlan = annTopKDirect
@@ -878,25 +878,17 @@ function collapseToResultRows(
 // cts.estimate can't evaluate those, so the fast path must not fire.
 function isAccumulatorJoinFree(acc) {
   return (
-    acc.conjunctionJoins.length === 0 &&
-    acc.andOrSubPlans.length === 0 &&
-    acc.patternJoins.length === 0 &&
-    acc.ctsConstraints.length > 0 &&
-    acc.constraints.length === acc._initialConstraintCount
+    acc.ctsConstraints.length > 0 && accHasOnlyContentIn(acc, 'ctsConstraints')
   );
 }
 
-// Opt 20 extension: returns the annTopK direct plan when the accumulator
-// contains exactly one annTopK pattern join and no other contributions.
-// The direct plan already has uri + dataType columns from the TDE view,
+// Opt 20 extension: returns a self-sufficient direct plan when the accumulator
+// contains exactly one pattern join that provides its own result columns,
 // eliminating the need for fromLexicons, joinInner, and groupBy.
-function getAnnTopKDirectPlan(acc, assemblyContext) {
+function getDirectPlan(acc, assemblyContext) {
   if (assemblyContext.logicType !== 'and') return null;
+  if (!accHasOnlyContentIn(acc, 'patternJoins')) return null;
   if (acc.patternJoins.length !== 1) return null;
-  if (acc.conjunctionJoins.length > 0) return null;
-  if (acc.andOrSubPlans.length > 0) return null;
-  if (acc.ctsConstraints.length > 0) return null;
-  if (acc.constraints.length !== acc._initialConstraintCount) return null;
 
   const pj = acc.patternJoins[0];
   if (!pj.annTopKSelfSufficient || !pj.annTopKPlanForDirect) return null;
@@ -1349,6 +1341,17 @@ function accContainsOnly(acc, bucketName) {
     (b) => b === bucketName || acc[b].length === 0,
   );
 }
+
+// True iff the named buckets are the only non-empty content buckets AND no
+// pattern-contributed Optic constraints exist beyond the initial set.
+// Consolidates the shape check used by isAccumulatorJoinFree and getDirectPlan.
+function accHasOnlyContentIn(acc, ...bucketNames) {
+  if (acc.constraints.length !== acc._initialConstraintCount) return false;
+  return ACC_CONTENT_BUCKETS.every((b) => {
+    if (bucketNames.includes(b)) return true;
+    return acc[b].length === 0;
+  });
+}
 //#endregion
 
 export {
@@ -1357,7 +1360,7 @@ export {
   buildFromSearchPlan,
   buildPlans,
   buildSortedResultsPlan,
-  getAnnTopKDirectPlan,
+  getDirectPlan,
   isCtsExecutionEligible,
   getResultRowGrouping,
   isAccumulatorJoinFree,

@@ -119,9 +119,9 @@ if (!seedExists) {
       expected: {
         error: false,
         // In OR context, seed exclusion is skipped (cross-matching).
-        // The plan should still contain annTopK but the ne() filter
-        // for self-exclusion should not be present for either branch.
+        // The ne() filter for self-exclusion should not appear.
         planContains: ['annTopK'],
+        planExcludes: ['ne('],
       },
     },
 
@@ -135,6 +135,20 @@ if (!seedExists) {
       expected: {
         error: false,
         planContains: ['annTopK', 'Person'],
+      },
+    },
+
+    // --- Opt 20 extension: direct plan (skip fromLexicons) ---
+    {
+      name: 'similarity-only query skips fromLexicons (direct path)',
+      input: {
+        scopeName: 'item',
+        searchCriteria: { _scope: 'item', similar: SEED_URI },
+      },
+      expected: {
+        error: false,
+        planContains: ['annTopK'],
+        planExcludes: ['fromLexicons'],
       },
     },
 
@@ -171,6 +185,7 @@ if (!seedExists) {
 
     if (scenarioResults.applyErrorNotExpectedAssertions) {
       const planSource = scenarioResults.actualValue;
+      console.log(`Scenario '${scenario.name}' plan source:\n${planSource}`);
       const e = scenario.expected;
       const p = scenario.name;
 

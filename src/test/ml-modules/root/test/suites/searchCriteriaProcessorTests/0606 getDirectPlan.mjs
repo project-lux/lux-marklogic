@@ -22,11 +22,12 @@ console.log(`${LIB}: starting.`);
 const assertions = [];
 
 // Minimal mock plan that has the columns getDirectPlan expects.
+const MOCK_QUALIFIER = 'mock';
 const mockDirectPlan = op
-  .fromView('lux', 'vectors', 'mock', op.fragmentIdCol('mock_vecFrag'))
+  .fromView('lux', 'vectors', MOCK_QUALIFIER, op.fragmentIdCol('mock_vecFrag'))
   .select([
     op.as('uri', op.col('uri')),
-    op.as('dataType', op.viewCol('mock', 'dataType')),
+    op.as('dataType', op.viewCol(MOCK_QUALIFIER, 'dataType')),
     op.fragmentIdCol('mock_vecFrag'),
     'mock_distance',
   ]);
@@ -45,6 +46,7 @@ function makeAcc(overrides = {}) {
         extraCols: ['mock_distance'],
         annTopKSelfSufficient: true,
         annTopKPlanForDirect: mockDirectPlan,
+        annTopKViewQualifier: MOCK_QUALIFIER,
       },
     ],
     ...overrides,

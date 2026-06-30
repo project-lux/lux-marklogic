@@ -49,8 +49,11 @@ class AnnTopK extends SearchPatternBase {
     );
 
     // Shared base plan: annTopK + post-filters (scope, self-exclusion).
+    // Use null qualifier to keep columns unqualified — avoids ambiguity
+    // between view-qualified ({id}.uri) and aliased (uri) names when the
+    // direct plan branches from the same base as the join plan.
     let basePlan = op
-      .fromView(SCHEMA_NAME, VIEW_NAME, id, op.fragmentIdCol(vecFrag))
+      .fromView(SCHEMA_NAME, VIEW_NAME, null, op.fragmentIdCol(vecFrag))
       .annTopK(candidateK, op.col(vectorColumn), queryVector, op.col(distCol), {
         distance: 'cosine',
         maxDistance,
@@ -59,7 +62,7 @@ class AnnTopK extends SearchPatternBase {
 
     // Post-filter: scope constraint.
     basePlan = basePlan.where(
-      op.in(op.viewCol(id, 'dataType'), getSearchScopeTypes(scopeName)),
+      op.in(op.col('dataType'), getSearchScopeTypes(scopeName)),
     );
 
     // Post-filter: exclude the seed document for single similarity queries.
@@ -76,8 +79,8 @@ class AnnTopK extends SearchPatternBase {
 
     // Direct path: project to result columns (uri, dataType).
     const directPlan = basePlan.select([
-      op.as('uri', op.col('uri')),
-      op.as('dataType', op.viewCol(id, 'dataType')),
+      'uri',
+      'dataType',
       op.fragmentIdCol(vecFrag),
       distCol,
     ]);

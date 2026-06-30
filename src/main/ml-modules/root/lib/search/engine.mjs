@@ -1348,6 +1348,7 @@ function accContainsOnly(acc, bucketName) {
 function accHasOnlyContentIn(acc, ...bucketNames) {
   if (acc.constraints.length !== acc._initialConstraintCount) return false;
   return ACC_CONTENT_BUCKETS.every((b) => {
+    if (b === 'constraints') return true; // handled by _initialConstraintCount above
     if (bucketNames.includes(b)) return true;
     return acc[b].length === 0;
   });

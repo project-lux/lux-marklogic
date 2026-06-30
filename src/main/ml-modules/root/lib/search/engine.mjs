@@ -893,11 +893,15 @@ function getDirectPlan(acc, assemblyContext) {
   const pj = acc.patternJoins[0];
   if (!pj.annTopKSelfSufficient || !pj.annTopKPlanForDirect) return null;
 
-  // The direct plan provides {uri, dataType} — apply standard result
-  // finalization (groupBy dedup + column rename).
+  // The direct plan carries view-qualified columns ({qualifier}.uri, etc.).
+  // Use the qualifier to reference them unambiguously through groupBy + select.
+  const q = pj.annTopKViewQualifier;
   return pj.annTopKPlanForDirect
-    .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
-    .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+    .groupBy(
+      [op.viewCol(q, 'uri')],
+      [op.sample('dataType', op.viewCol(q, 'dataType'))],
+    )
+    .select([op.as('id', op.viewCol(q, 'uri')), op.as('type', op.col('dataType'))]);
 }
 
 // Returns the accumulator's CTS constraints composed into a single query

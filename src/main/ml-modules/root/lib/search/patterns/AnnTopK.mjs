@@ -49,11 +49,8 @@ class AnnTopK extends SearchPatternBase {
     );
 
     // Shared base plan: annTopK + post-filters (scope, self-exclusion).
-    // Use null qualifier to keep columns unqualified — avoids ambiguity
-    // between view-qualified ({id}.uri) and aliased (uri) names when the
-    // direct plan branches from the same base as the join plan.
     let basePlan = op
-      .fromView(SCHEMA_NAME, VIEW_NAME, null, op.fragmentIdCol(vecFrag))
+      .fromView(SCHEMA_NAME, VIEW_NAME, id, op.fragmentIdCol(vecFrag))
       .annTopK(candidateK, op.col(vectorColumn), queryVector, op.col(distCol), {
         distance: 'cosine',
         maxDistance,
@@ -62,25 +59,17 @@ class AnnTopK extends SearchPatternBase {
 
     // Post-filter: scope constraint.
     basePlan = basePlan.where(
-      op.in(op.col('dataType'), getSearchScopeTypes(scopeName)),
+      op.in(op.viewCol(id, 'dataType'), getSearchScopeTypes(scopeName)),
     );
 
     // Post-filter: exclude the seed document for single similarity queries.
     if (logicType !== 'or') {
-      basePlan = basePlan.where(op.ne(op.col('uri'), termValue));
+      basePlan = basePlan.where(op.ne(op.viewCol(id, 'uri'), termValue));
     }
 
     // Join path: project to join columns.
     const joinPlan = basePlan.select([
-      op.as(id + '_vectorUri', op.col('uri')),
-      op.fragmentIdCol(vecFrag),
-      distCol,
-    ]);
-
-    // Direct path: project to result columns (uri, dataType).
-    const directPlan = basePlan.select([
-      'uri',
-      'dataType',
+      op.as(id + '_vectorUri', op.viewCol(id, 'uri')),
       op.fragmentIdCol(vecFrag),
       distCol,
     ]);
@@ -98,7 +87,10 @@ class AnnTopK extends SearchPatternBase {
           // (provides uri + dataType from the TDE view). When annTopK is the
           // sole criterion, the engine can skip fromLexicons entirely.
           annTopKSelfSufficient: true,
-          annTopKPlanForDirect: directPlan,
+          // Pass basePlan with view-qualified columns; getDirectPlan handles
+          // groupBy + column rename using the qualifier.
+          annTopKPlanForDirect: basePlan,
+          annTopKViewQualifier: id,
         },
       ],
     };

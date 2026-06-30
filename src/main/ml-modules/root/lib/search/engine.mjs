@@ -1077,7 +1077,6 @@ function calculateFacets(rows, facetRequests) {
     // TODO: remove thePlan and set rows directly.
     const thePlan = facetSourcePlan
       .joinInner(constraintPlan, joinOn)
-      .orderBy(op.col(facetValueColName)) // TODO: wasted time?
       .groupBy(op.col(facetValueColName), op.count('count', countColName))
       .orderBy(
         sort === 'desc'
@@ -1092,8 +1091,9 @@ function calculateFacets(rows, facetRequests) {
     facets[facetName] = {
       totalItems: rows.length,
       facetValues: rows.slice(start, end).map((row) => {
+        const rawValue = row[facetValueColName];
         return {
-          value: isDateFacet ? convertSecondsToDateStr(row.value) : row.value,
+          value: isDateFacet ? convertSecondsToDateStr(rawValue) : rawValue,
           count: row.count,
         };
       }),

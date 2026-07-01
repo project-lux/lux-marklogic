@@ -65,7 +65,7 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
   if (errorExpectedButNotThrown) {
     fn.error(
       xs.QName('ASSERT-THROWS-ERROR-FAILED'),
-      `Scenario '${scenario.name}' didn't result in an error when one was expected.`
+      `Scenario '${scenario.name}' didn't result in an error when one was expected.`,
     );
   }
 
@@ -90,8 +90,8 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
             testHelperProxy.assertEqual(
               assertion.expected,
               docNode.xpath(assertion.xpath),
-              assertion.message
-            )
+              assertion.message,
+            ),
           );
         } else if (assertion.type === 'xpath') {
           /*
@@ -106,8 +106,8 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
             testHelperProxy.assertEqual(
               assertion.expected,
               docNode.xpath(assertion.xpath),
-              assertion.message
-            )
+              assertion.message,
+            ),
           );
         } else {
           /*
@@ -131,7 +131,7 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
   };
 }
 
-function loadTestFile(uri, filename) {
+function loadTestFile(uri, filename, collections = []) {
   console.log(`Creating ${uri}`);
   try {
     // testHelperProxy.loadTestFile does not accept the return from xdmp.permission.
@@ -153,10 +153,10 @@ function loadTestFile(uri, filename) {
       <sec:permission xmlns:sec="http://marklogic.com/xdmp/security">
         <sec:capability>read</sec:capability>
         <sec:role-id>${xdmp.role(
-          ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER
+          ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
         )}</sec:role-id>
-      </sec:permission></root>`
-        )
+      </sec:permission></root>`,
+        ),
       )
       .xpath('./root/*');
 
@@ -164,7 +164,8 @@ function loadTestFile(uri, filename) {
       filename,
       xdmp.database(),
       uri,
-      permissionNodes
+      permissionNodes,
+      xdmp.arrayValues(collections),
     );
   } catch (e) {
     console.error(`Unable to create ${uri}`);
@@ -193,7 +194,7 @@ function assertPermissionArraysMatch(
   docType,
   assertions,
   expectedPermissions,
-  actualPermissions
+  actualPermissions,
 ) {
   expectedPermissions.forEach((entry) => {
     assertions.push(
@@ -201,20 +202,20 @@ function assertPermissionArraysMatch(
         permissionArrayContains(
           actualPermissions,
           entry.capability,
-          entry.roleId
+          entry.roleId,
         ),
         `The '${docType}' is missing the '${
           entry.capability
-        }' capability for the '${xdmp.roleName(entry.roleId)}' role.`
-      )
+        }' capability for the '${xdmp.roleName(entry.roleId)}' role.`,
+      ),
     );
   });
   assertions.push(
     testHelperProxy.assertEqual(
       expectedPermissions.length,
       actualPermissions.length,
-      `Unexpected number of permissions in '${docType}' document`
-    )
+      `Unexpected number of permissions in '${docType}' document`,
+    ),
   );
 }
 
@@ -225,8 +226,8 @@ function removeCollections(collections, username) {
     toArray(collections).forEach((name) => {
       console.log(
         `User ${xdmp.getCurrentUser()} is attempting to delete the '${name}' collection from the ${xdmp.databaseName(
-          xdmp.database()
-        )} database...`
+          xdmp.database(),
+        )} database...`,
       );
       xdmp.collectionDelete(name);
     });

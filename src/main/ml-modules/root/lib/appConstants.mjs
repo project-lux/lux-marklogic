@@ -35,6 +35,11 @@ const ANN_DISTANCE_DEFAULT =
   parseFloat('%%annDistanceDefault%%'.trim()) || 0.14;
 const ANN_DISTANCE_MAX = parseFloat('%%annDistanceMax%%'.trim()) || 0.5;
 
+// Inflate candidateK beyond K to compensate for post-filter attrition (Opt 22).
+const ANN_CANDIDATE_K_MULTIPLIER =
+  parseFloat('%%annCandidateKMultiplier%%'.trim()) || 1.2;
+const ANN_CANDIDATE_K_BUFFER = parseInt('%%annCandidateKBuffer%%'.trim()) || 10;
+
 const DEFAULT_VECTOR_COLUMN = 'main';
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
@@ -190,6 +195,8 @@ function getDefaultSearchOptionsByOptionsName(optionsName) {
 export {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
+  ANN_CANDIDATE_K_BUFFER,
+  ANN_CANDIDATE_K_MULTIPLIER,
   ANN_DISTANCE_DEFAULT,
   ANN_DISTANCE_MAX,
   ANN_K_DEFAULT,

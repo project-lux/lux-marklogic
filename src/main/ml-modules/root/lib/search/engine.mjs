@@ -120,7 +120,7 @@ function performSearch(scp) {
             .toArray()
             .map((row) => ({
               id: row.uri,
-              type: String(row.doc.xpath('/type')),
+              type: String(row.doc.xpath('/json/type')),
             }));
         } else {
           // Opt 18: fromLexicons plan already has {id, type} columns.
@@ -305,11 +305,23 @@ function buildPlans({
     patternOptions,
   });
 
+  // Opt 20 extension: when annTopK is the sole criterion, skip fromLexicons
+  // entirely. The TDE view already provides uri + dataType; joining back to
+  // the base lexicon plan is pure overhead (43.9M IRI scan + groupBy).
+  //
+  // Note: Opt 20's fromSearch override is intentionally still below and not
+  // in getDirectPlan as it is an execution-strategy swap (requires a coupled
+  // offset/limit/joinDocAndUri executor in performSearch) though we may find
+  // other direct-plan optimizations that below in getDirectPlan.
+  const annTopKDirect = getDirectPlan(acc, assemblyContext);
+
   // Unsorted plan — used by facets.
-  const unsortedResultsPlan = collapseToResultRows(
-    assemblePlan(scp, { ...acc, ...assemblyContext }),
-    groups,
-  );
+  const unsortedResultsPlan = annTopKDirect
+    ? annTopKDirect
+    : collapseToResultRows(
+        assemblePlan(scp, { ...acc, ...assemblyContext }),
+        groups,
+      );
 
   const sortedResultsPlan = buildSortedResultsPlan({
     unsortedResultsPlan,
@@ -871,12 +883,33 @@ function collapseToResultRows(
 // cts.estimate can't evaluate those, so the fast path must not fire.
 function isAccumulatorJoinFree(acc) {
   return (
-    acc.conjunctionJoins.length === 0 &&
-    acc.andOrSubPlans.length === 0 &&
-    acc.patternJoins.length === 0 &&
-    acc.ctsConstraints.length > 0 &&
-    acc.constraints.length === acc._initialConstraintCount
+    acc.ctsConstraints.length > 0 && accHasOnlyContentIn(acc, 'ctsConstraints')
   );
+}
+
+// Opt 20 extension: returns a self-sufficient direct plan when the accumulator
+// contains exactly one pattern join that provides its own result columns,
+// eliminating the need for fromLexicons, joinInner, and groupBy.
+function getDirectPlan(acc, assemblyContext) {
+  if (assemblyContext.logicType !== 'and') return null;
+  if (!accHasOnlyContentIn(acc, 'patternJoins')) return null;
+  if (acc.patternJoins.length !== 1) return null;
+
+  const pj = acc.patternJoins[0];
+  const q = pj.annTopKViewQualifier;
+  if (!pj.annTopKSelfSufficient || !pj.annTopKPlanForDirect || !q) return null;
+
+  // The direct plan carries view-qualified columns ({qualifier}.uri, etc.).
+  // Use the qualifier to reference them unambiguously through groupBy + select.
+  return pj.annTopKPlanForDirect
+    .groupBy(
+      [op.viewCol(q, 'uri')],
+      [op.sample('dataType', op.viewCol(q, 'dataType'))],
+    )
+    .select([
+      op.as('id', op.viewCol(q, 'uri')),
+      op.as('type', op.col('dataType')),
+    ]);
 }
 
 // Returns the accumulator's CTS constraints composed into a single query
@@ -1048,7 +1081,6 @@ function calculateFacets(rows, facetRequests) {
     const sort = request?.sort;
     const rows = facetSourcePlan
       .joinInner(constraintPlan, joinOn)
-      .orderBy(op.col(facetValueColName))
       .groupBy(op.col(facetValueColName), op.count('count', countColName))
       .orderBy(
         sort === 'desc'
@@ -1063,8 +1095,9 @@ function calculateFacets(rows, facetRequests) {
     facets[facetName] = {
       totalItems: rows.length,
       facetValues: rows.slice(start, end).map((row) => {
+        const rawValue = row[facetValueColName];
         return {
-          value: isDateFacet ? convertSecondsToDateStr(row.value) : row.value,
+          value: isDateFacet ? convertSecondsToDateStr(rawValue) : rawValue,
           count: row.count,
         };
       }),
@@ -1320,6 +1353,18 @@ function accContainsOnly(acc, bucketName) {
     (b) => b === bucketName || acc[b].length === 0,
   );
 }
+
+// True iff the named buckets are the only non-empty content buckets AND no
+// pattern-contributed Optic constraints exist beyond the initial set.
+// Consolidates the shape check used by isAccumulatorJoinFree and getDirectPlan.
+function accHasOnlyContentIn(acc, ...bucketNames) {
+  if (acc.constraints.length !== acc._initialConstraintCount) return false;
+  return ACC_CONTENT_BUCKETS.every((b) => {
+    if (b === 'constraints') return true; // handled by _initialConstraintCount above
+    if (bucketNames.includes(b)) return true;
+    return acc[b].length === 0;
+  });
+}
 //#endregion
 
 export {
@@ -1327,7 +1372,9 @@ export {
   buildScopedCtsQuery,
   buildFromSearchPlan,
   buildPlans,
+  calculateFacets,
   buildSortedResultsPlan,
+  getDirectPlan,
   isCtsExecutionEligible,
   getResultRowGrouping,
   isAccumulatorJoinFree,

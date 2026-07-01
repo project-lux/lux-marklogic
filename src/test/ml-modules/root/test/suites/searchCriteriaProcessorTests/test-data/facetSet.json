@@ -1,0 +1,18 @@
+{
+  "json": {
+    "id": "https://lux.collections.yale.edu/data/set/test-facet-set",
+    "type": "Set"
+  },
+  "indexedProperties": {
+    "dataType": "Set"
+  },
+  "triples": [
+    {
+      "triple": {
+        "subject": "https://lux.collections.yale.edu/data/set/test-facet-set",
+        "predicate": "https://lux.collections.yale.edu/ns/agentOfCuration",
+        "object": "https://lux.collections.yale.edu/data/group/test-facet-curator"
+      }
+    }
+  ]
+}

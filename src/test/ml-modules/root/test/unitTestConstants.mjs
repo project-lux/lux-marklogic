@@ -17,6 +17,16 @@ const USERNAME_FOR_SERVICE_ACCOUNT = '%%mlAppName%%-unit-test-service-account';
 const ANN_TOP_K_SEED_FILENAME = 'annTopKSeed.json';
 const ANN_TOP_K_SEED_URI = `/${ANN_TOP_K_SEED_FILENAME}`;
 
+const FACET_CURATOR_FILENAME = 'facetCurator.json';
+const FACET_CURATOR_URI =
+  'https://lux.collections.yale.edu/data/group/test-facet-curator';
+const FACET_ITEM_FILENAME = 'facetItem.json';
+const FACET_ITEM_URI =
+  'https://lux.collections.yale.edu/data/object/test-facet-item';
+const FACET_SET_FILENAME = 'facetSet.json';
+const FACET_SET_URI =
+  'https://lux.collections.yale.edu/data/set/test-facet-set';
+
 const FOO_FILENAME = 'foo.json';
 const FOO_URI = `/${FOO_FILENAME}`;
 
@@ -26,6 +36,12 @@ const HMO_URI = `/${HMO_FILENAME}`;
 export {
   ANN_TOP_K_SEED_FILENAME,
   ANN_TOP_K_SEED_URI,
+  FACET_CURATOR_FILENAME,
+  FACET_CURATOR_URI,
+  FACET_ITEM_FILENAME,
+  FACET_ITEM_URI,
+  FACET_SET_FILENAME,
+  FACET_SET_URI,
   FOO_FILENAME,
   FOO_URI,
   HMO_FILENAME,

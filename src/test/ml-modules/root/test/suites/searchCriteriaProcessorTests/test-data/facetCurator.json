@@ -1,0 +1,18 @@
+{
+  "json": {
+    "id": "https://lux.collections.yale.edu/data/group/test-facet-curator",
+    "type": "Group"
+  },
+  "indexedProperties": {
+    "dataType": "Group"
+  },
+  "triples": [
+    {
+      "triple": {
+        "subject": "https://lux.collections.yale.edu/data/group/test-facet-curator",
+        "predicate": "http://www.cidoc-crm.org/cidoc-crm/P107i_is_current_or_former_member_of",
+        "object": "https://lux.collections.yale.edu/data/group/test-facet-unit"
+      }
+    }
+  ]
+}

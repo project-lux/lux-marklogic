@@ -896,11 +896,11 @@ function getDirectPlan(acc, assemblyContext) {
   if (acc.patternJoins.length !== 1) return null;
 
   const pj = acc.patternJoins[0];
-  if (!pj.annTopKSelfSufficient || !pj.annTopKPlanForDirect) return null;
+  const q = pj.annTopKViewQualifier;
+  if (!pj.annTopKSelfSufficient || !pj.annTopKPlanForDirect || !q) return null;
 
   // The direct plan carries view-qualified columns ({qualifier}.uri, etc.).
   // Use the qualifier to reference them unambiguously through groupBy + select.
-  const q = pj.annTopKViewQualifier;
   return pj.annTopKPlanForDirect
     .groupBy(
       [op.viewCol(q, 'uri')],

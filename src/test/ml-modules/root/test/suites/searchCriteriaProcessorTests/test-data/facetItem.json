@@ -1,0 +1,18 @@
+{
+  "json": {
+    "id": "https://lux.collections.yale.edu/data/object/test-facet-item",
+    "type": "HumanMadeObject"
+  },
+  "indexedProperties": {
+    "dataType": "HumanMadeObject"
+  },
+  "triples": [
+    {
+      "triple": {
+        "subject": "https://lux.collections.yale.edu/data/object/test-facet-item",
+        "predicate": "https://linked.art/ns/terms/member_of",
+        "object": "https://lux.collections.yale.edu/data/set/test-facet-set"
+      }
+    }
+  ]
+}

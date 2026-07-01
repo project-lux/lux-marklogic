@@ -1081,7 +1081,6 @@ function calculateFacets(rows, facetRequests) {
     const sort = request?.sort;
     const rows = facetSourcePlan
       .joinInner(constraintPlan, joinOn)
-      .orderBy(op.col(facetValueColName))
       .groupBy(op.col(facetValueColName), op.count('count', countColName))
       .orderBy(
         sort === 'desc'
@@ -1096,8 +1095,9 @@ function calculateFacets(rows, facetRequests) {
     facets[facetName] = {
       totalItems: rows.length,
       facetValues: rows.slice(start, end).map((row) => {
+        const rawValue = row[facetValueColName];
         return {
-          value: isDateFacet ? convertSecondsToDateStr(row.value) : row.value,
+          value: isDateFacet ? convertSecondsToDateStr(rawValue) : rawValue,
           count: row.count,
         };
       }),
@@ -1372,6 +1372,7 @@ export {
   buildScopedCtsQuery,
   buildFromSearchPlan,
   buildPlans,
+  calculateFacets,
   buildSortedResultsPlan,
   getDirectPlan,
   isCtsExecutionEligible,

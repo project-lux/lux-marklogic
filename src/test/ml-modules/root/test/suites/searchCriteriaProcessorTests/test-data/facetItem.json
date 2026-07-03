@@ -1,7 +1,12 @@
 {
   "json": {
     "id": "https://lux.collections.yale.edu/data/object/test-facet-item",
-    "type": "HumanMadeObject"
+    "type": "HumanMadeObject",
+    "member_of": [
+      {
+        "id": "https://lux.collections.yale.edu/data/set/test-facet-set"
+      }
+    ]
   },
   "indexedProperties": {
     "dataType": "HumanMadeObject"

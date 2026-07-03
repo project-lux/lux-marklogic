@@ -1807,7 +1807,7 @@ The mean result is the headline: Optic went from 2.3× slower than CTS to 3.2× 
 
 ## Optimization 21: Eliminate URI-list materialization for facets
 
-**Status:** Idea — not yet prototyped.
+**Status:** Validated — implementation pending.
 
 ### Problem
 
@@ -1824,11 +1824,132 @@ For large result sets, this has three costs:
 2. **URI-list AST bloat.** `cts.documentQuery(uriList)` with 219K URI strings produces a massive plan AST node. This is the same class of optimizer-cost problem as the keyword pattern's 49K IRIs in `cts.tripleRangeQuery`.
 3. **Redundant work.** The Optic plan already determined which documents match. Materializing them into JS, extracting URIs, and feeding them back into a new Optic plan via `documentQuery` is a round-trip through the V8 heap that MarkLogic's indexes could skip entirely.
 
+### Validation results
+
+Benchmarked on MarkLogic 12.0.1 against the content database. Scripts in `scratch/performance/opt21-*.js`.
+
+#### Non-semantic facets (`itemTypeId`, 55K matches, `cts.fieldWordQuery('itemAnyText', 'painting')`)
+
+| Approach | Duration | Match? |
+|---|---|---|
+| A: `op.fromSearch(cts.documentQuery(uriList))` + Optic join | 3,977ms + 160ms URI collection | Yes |
+| **B: `op.fromSearch(scopedCtsQuery)` + Optic join** | **125ms** | **Yes** |
+
+**32× speedup.** Identical facet values, counts, and ordering. The URI collection step alone (160ms) exceeds the entire Approach B duration. MarkLogic pushes the CTS query down into the Optic plan optimizer, eliminating both the JS-heap round-trip and the cost of processing a 55K-element `documentQuery` AST node.
+
+#### Semantic facets (`responsibleCollections`, 2.5M matches)
+
+| Approach | Duration | Correct? | Notes |
+|---|---|---|---|
+| A: URI list + Optic triple chain | 213,479ms | Yes | 5.5s URI collection + 208s Optic joins |
+| B: `fromSearch(scopedCtsQuery)` + Optic triple chain | 340,537ms | Yes | Optimizer does *worse* with CTS query than URI list |
+| D: Optic with denormalized `itemMemberOfId` field (unfiltered) | 753ms | No | Returns 985 values (all `la:member_of` targets, not just collections) |
+| E: Optic denormalized field + collection-set join filter | 1,574ms | Yes | D + projection barrier + `fromSearch`/`fromLexicons` collection filter |
+| **C: CTS enumerate + estimate** | **326ms** | **Yes** | 66 candidates × `cts.estimate`, no Optic |
+
+**Key findings:**
+
+1. **Non-semantic facets: Opt 21 `docsPlan` swap works.** Replacing `cts.documentQuery(uriList)` with `op.fromSearch(scopedCtsQuery)` yields a 32× speedup with identical results. The Optic `joinInner` + `groupBy` + `orderBy` chain is fast (125ms for 55K matches) when the plan is simple (one `fromSearch` + one `fromLexicons`).
+
+2. **Semantic facets: the Optic triple chain is the bottleneck, not `docsPlan`.** The `fromSearch → fromLexicons(iri) → fromTriples(la:member_of) → fromSearch(Set) → fromLexicons(setIri)` chain creates a massive plan that the optimizer struggles with at 2.5M scale. Approach B (CTS query `docsPlan`) is actually *slower* than A (URI list `docsPlan`) — 340s vs 213s — because the optimizer handles a compact `documentQuery` node more efficiently than an open-ended `fromSearch` CTS query when the downstream plan is already complex.
+
+3. **Denormalized field indexes exist but don't fully solve it.** `itemMemberOfId` pre-indexes the `la:member_of` triple relationship, eliminating `fromTriples`. But (D) returns all `memberOfId` values without filtering to collection-classified sets, and adding the collection filter join (E) doubles the cost. At 1,574ms, E is 135× faster than A/B but still 4.8× slower than CTS.
+
+4. **CTS enumerate-and-estimate is structurally superior for semantic facets.** The CTS production approach (C) inverts the problem: instead of joining 2.5M item documents to triple chains, it enumerates ~66 candidate collection-classified Set documents (search-independent, sub-millisecond each), then calls `cts.estimate(cts.andQuery([fieldValueQuery('itemMemberOfId', uri), scopedCtsQuery]))` per candidate. Each `cts.estimate` is a pure index intersection — no Optic optimizer, no plan AST, no triple traversal. 326ms total.
+
+5. **Why CTS semantic wins:** The denormalized field index (`itemMemberOfId`) encodes the triple relationship at ingest time. The CTS approach leverages this via `cts.estimate` (index intersection), while Optic approaches D/E still process it through the plan optimizer + row pipeline. CTS also naturally filters candidates via `potentialFacetValuesCtsQuery` — only collection-classified Set documents are enumerated, so `cts.estimate` is never called for irrelevant values.
+
+6. **The `responsibleUnits` semantic facet has a 3-hop SPARQL chain with no single denormalized field equivalent.** Its CTS config (`semanticFacetsConfigCTS.mjs`) uses elaborate `cts.triples` + `cts.documentQuery` nesting to pre-compute candidates. This complexity is manageable in the CTS config because it runs once (search-independent), and the per-value `cts.estimate` calls use the same field-index intersection pattern.
+
+### Why a three-way fork is required
+
+Optimal facet performance requires three distinct execution paths, gated by CTS query availability and facet type:
+
+```
+if (scopedCtsQuery) {
+  if (isSemanticFacet) {
+    // Path 1: CTS enumerate + estimate (Approach C)
+    // - Enumerate candidates via cts.search(potentialFacetValuesCtsQuery)
+    // - Count per candidate via cts.estimate(getValuesCountCtsQuery(scopedCtsQuery, uri))
+    // - No Optic plan, no triple joins, no fromSearch
+  } else {
+    // Path 2: Optic with CTS query docsPlan (Approach B)
+    // - docsPlan = op.fromSearch(scopedCtsQuery)
+    // - Standard fromLexicons join + groupBy + orderBy
+    // - Same code shape as today, just swap docsPlan source
+  }
+} else {
+  // Path 3: Current materialization + URI list (unchanged)
+  // - Full row materialization, extract URIs
+  // - docsPlan = op.fromSearch(cts.documentQuery(uriList))
+  // - Used for non-foldable queries (hopInverse, transitive hopWithField, annTopK)
+}
+```
+
+**Why not a uniform Optic path?** The Optic approach works well for non-semantic facets (Path 2: 125ms) because the plan is simple: `fromSearch → joinInner(fromLexicons) → groupBy`. For semantic facets, the plan grows to 4-5 joins with `fromTriples`/`fromSPARQL`, and the optimizer cannot efficiently process the resulting plan at 2.5M scale (210-340s). Even replacing the triple chain with a denormalized field index (Approach E: 1,574ms) is 4.8× slower than CTS (326ms) because Optic still routes through the plan optimizer and row pipeline.
+
+**Why not a uniform CTS path?** CTS `cts.fieldValues(indexRef, null, opts, scopedCtsQuery)` could replace Path 2 for non-semantic facets — it's what CTS production uses. But Path 2 (Optic) is already fast (125ms) and requires only swapping the `docsPlan` source, which is a minimal code change that preserves the existing `calculateFacets` structure. A full CTS migration for non-semantic facets would mean duplicating pagination, sort-order, and date-facet handling already implemented in the Optic path. The marginal performance gain (if any) doesn't justify the code duplication. If a future benchmark shows CTS `fieldValues` is materially faster, it can be revisited.
+
+**Why CTS is required for semantic facets specifically:**
+
+| Factor | Optic semantic (A/B/E) | CTS semantic (C) |
+|---|---|---|
+| Triple traversal | Runtime via `fromTriples`/`fromSPARQL` | Pre-indexed field (`itemMemberOfId`) via `cts.estimate` |
+| Plan complexity | 4-5 joins, complex AST | No Optic plan — `cts.search` + N × `cts.estimate` |
+| Candidate filtering | Join-based (adds cost) | Structural — `potentialFacetValuesCtsQuery` enumerates only valid candidates |
+| Scale sensitivity | O(matches × join chain) — 340s at 2.5M | O(candidates × cts.estimate) — 326ms for 66 candidates at 2.5M |
+| Config requirements | `plan`, `sourceJoinColName`, `constraintJoinColName`, `facetValueColName` | `potentialFacetValuesCtsQuery`, `getValuesCountCtsQuery` |
+
+**Engineering escalation items:**
+
+1. **`op.fromSearch(ctsQuery)` + `fromTriples` performance at scale.** The optimizer produces a worse plan with `fromSearch(ctsQuery)` (340s) than with `fromSearch(documentQuery(uriList))` (213s) for the same 2.5M-match semantic facet. This suggests the optimizer may be choosing different join orders or strategies when the document set is defined by a CTS query vs. an explicit URI list. This is unexpected — the CTS query should allow the optimizer more freedom, not less.
+
+2. **CTS query parameterization within Optic.** The non-semantic `fromSearch(scopedCtsQuery)` result (125ms) demonstrates that the optimizer handles CTS queries well in simple plans. But plan caching cannot help because each distinct `scopedCtsQuery` produces a distinct plan AST. If MarkLogic supported parameterized CTS queries within `fromSearch` (where the query structure is fixed but literal values are parameters), plan cache reuse would improve cold-start performance.
+
+3. **Semantic facet Optic plan cost.** The `responsibleCollections` plan involves `fromSearch → fromLexicons(iri) → fromTriples → fromSearch(Set) → fromLexicons(setIri)` — 5 plan nodes chained via `joinInner`. At 2.5M matches, this takes 210-340s. Is there an optimizer hint or plan shape that could reduce this? The denormalized field approach (E: 1,574ms) helps 135× but is still 4.8× slower than bypassing Optic entirely.
+
 ### Approach
 
-When the search criteria produce a CTS query (join-free accumulator), pass the CTS query directly to `calculateFacets` instead of materializing rows. `calculateFacets` uses it as `docsPlan = op.fromSearch(ctsQuery)` — a compact CTS query reference instead of a 219K-URI literal list.
+The implementation now has two dimensions: the `docsPlan` swap for non-semantic facets, and the CTS path for semantic facets.
 
-For non-foldable searches (accumulator has joins), the current materialization path remains unchanged.
+#### Non-semantic facets (Path 2): `docsPlan` swap
+
+When `scopedCtsQuery` is available, replace:
+
+```javascript
+const docsPlan = op.fromSearch(cts.documentQuery(uriList));
+```
+
+With:
+
+```javascript
+const docsPlan = op.fromSearch(scopedCtsQuery);
+```
+
+The rest of the non-semantic facet code (`joinInner(fromLexicons)` → `groupBy` → `orderBy`) is unchanged.
+
+#### Semantic facets (Path 1): CTS enumerate-and-estimate
+
+When `scopedCtsQuery` is available, bypass the Optic join chain entirely:
+
+```javascript
+// 1. Enumerate candidates (search-independent)
+const candidates = fn.subsequence(
+  cts.search(semanticConfig.potentialFacetValuesCtsQuery, ['unfiltered', 'unfaceted', 'score-zero']),
+  1, SEMANTIC_VALUE_LIMIT + 1
+).toArray();
+
+// 2. Count per candidate via index intersection
+const facetValues = candidates
+  .map(doc => ({
+    value: doc.baseURI,
+    count: cts.estimate(semanticConfig.getValuesCountCtsQuery(scopedCtsQuery, doc.baseURI))
+  }))
+  .filter(fv => fv.count > 0)
+  .sort((a, b) => b.count - a.count);
+```
+
+This requires adding `potentialFacetValuesCtsQuery` and `getValuesCountCtsQuery` to the Optic engine's `semanticFacetsConfig.mjs`. These properties already exist in the CTS production's `semanticFacetsConfigCTS.mjs` and can be ported directly.
 
 ### Eligibility
 
@@ -1841,150 +1962,74 @@ const scopedCtsQuery = buildScopedCtsQuery(acc, assemblyContext, analysis.scope)
 const hasCtsQuery = scopedCtsQuery != null;
 ```
 
-When `hasCtsQuery` is true, the CTS query can be used for both facet document-set definition and (if page results are also requested) Opt 18/20.
+When `hasCtsQuery` is true, the CTS query can be used for both facet computation and (if page results are also requested) Opt 18/20.
 
 ### Implementation plan
 
-The change spans two functions in `engine.mjs`: `performSearch` (the call site) and `calculateFacets` (the consumer).
+#### 1. Add CTS config properties to `semanticFacetsConfig.mjs`
 
-#### 1. Modify `calculateFacets` to accept an optional CTS query
+Port `potentialFacetValuesCtsQuery` and `getValuesCountCtsQuery` from `semanticFacetsConfigCTS.mjs` into the Optic engine's config. The existing Optic-specific properties (`plan`, `sourceJoinColName`, etc.) remain for the non-CTS-eligible path (Path 3).
 
-Change the signature from:
+#### 2. Modify `calculateFacets` signature
 
 ```javascript
-function calculateFacets(rows, facetRequests)
+function calculateFacets(rows, facetRequests, scopedCtsQuery = null)
 ```
 
-To:
+#### 3. Three-path dispatch inside `calculateFacets`
 
 ```javascript
-function calculateFacets(rows, facetRequests, ctsQuery = null)
-```
+requests.forEach((request) => {
+  const facetName = request?.name;
 
-Replace the `docsPlan` construction:
-
-```javascript
-// Current:
-const uriList = rows.map((row) => row.id);
-if (!utils.isNonEmptyArray(uriList)) {
-  return buildEmptyFacetResponses(requests);
-}
-// ...
-const docsPlan = op.fromSearch(cts.documentQuery(uriList));
-
-// New:
-let docsPlan;
-if (ctsQuery) {
-  // Opt 21: use CTS query directly -- no URI materialization, no AST bloat.
-  docsPlan = op.fromSearch(ctsQuery);
-} else {
-  const uriList = rows.map((row) => row.id);
-  if (!utils.isNonEmptyArray(uriList)) {
-    return buildEmptyFacetResponses(requests);
+  if (isSemanticFacet(facetName) && scopedCtsQuery) {
+    // Path 1: CTS enumerate + estimate
+    facets[facetName] = calculateSemanticFacetViaCts(facetName, scopedCtsQuery, start, end);
+  } else {
+    // Path 2 or 3: Optic join (either CTS query or URI-list docsPlan)
+    // ... existing Optic code, with docsPlan = scopedCtsQuery
+    //     ? op.fromSearch(scopedCtsQuery) : op.fromSearch(cts.documentQuery(uriList))
   }
-  docsPlan = op.fromSearch(cts.documentQuery(uriList));
-}
+});
 ```
 
-The rest of `calculateFacets` is unchanged. Every facet's `facetSourcePlan` starts from `docsPlan` and joins to its constraint plan — the `docsPlan` construction is the only difference.
-
-**Empty-result guard:** When `ctsQuery` is provided, the `isNonEmptyArray(uriList)` guard is bypassed. If the CTS query matches zero documents, `op.fromSearch(ctsQuery)` produces zero rows, and each facet's `joinInner` produces zero rows — the correct behavior. But `facets[facetName].totalItems` will be 0, matching the empty-facet response. Verify this behaves identically to the `buildEmptyFacetResponses` path.
-
-#### 2. Modify `performSearch` to pass `scopedCtsQuery` to `calculateFacets`
-
-The current `performSearch` structure (simplified):
+#### 4. Modify `performSearch` to pass `scopedCtsQuery`
 
 ```javascript
-if (canEstimate) {
-  // Opt 18 path: page results only, no facets
-  total = cts.estimate(scopedCtsQuery);
-  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
-} else {
-  // Full materialization path
-  const rows = useThisPlan.result().toArray();
-  if (includeSearchResults) {
-    total = rows.length;
-    // ... paginate ...
-  }
-  facetResponses = calculateFacets(rows, facetRequests);
-}
+facetResponses = calculateFacets(rows, facetRequests, hasCtsQuery ? scopedCtsQuery : null);
 ```
 
-The key insight: `isCtsExecutionEligible` returns false when facets are requested (it checks `!facetRequests?.length`). But `scopedCtsQuery` may still be non-null — the accumulator is join-free, the CTS query exists, it's just that `isCtsExecutionEligible` also gates on the absence of facets.
+When `hasCtsQuery && !includeSearchResults`, `rows` can be `null` — the CTS paths don't access it.
 
-Refactored:
+#### 5. Verify correctness
 
-```javascript
-const hasCtsQuery = scopedCtsQuery != null;
-
-if (canEstimate) {
-  // Opt 18/20 path: page results only, no facets
-  total = cts.estimate(scopedCtsQuery);
-  searchResults = useThisPlan.offset(offset).limit(pageLength).result().toArray();
-} else if (hasCtsQuery && !includeSearchResults && facetRequests?.length > 0) {
-  // Opt 21: facet-only request with join-free accumulator.
-  // No need to materialize rows -- pass CTS query directly.
-  facetResponses = calculateFacets(null, facetRequests, scopedCtsQuery);
-} else {
-  // Full materialization path (non-foldable, or page + facets combined)
-  const rows = useThisPlan.result().toArray();
-  if (includeSearchResults) {
-    total = rows.length;
-    // ... paginate ...
-  }
-  // Pass scopedCtsQuery when available to avoid URI-list AST bloat;
-  // fall back to rows when not.
-  facetResponses = calculateFacets(rows, facetRequests, hasCtsQuery ? scopedCtsQuery : null);
-}
-```
-
-**Five cases:**
-
-| Case | `hasCtsQuery` | `includeSearchResults` | `facetRequests` | What happens |
-|---|---|---|---|---|
-| Page only, no facets | true | true | empty | Opt 18/20 path (unchanged) |
-| Facet only, join-free | true | false | non-empty | **Opt 21: no materialization** — CTS query passed directly |
-| Facet only, non-foldable | false | false | non-empty | Full materialization (unchanged) |
-| Page + facets, join-free | true | true | non-empty | Full materialization BUT `calculateFacets` uses CTS query instead of URI list |
-| Page + facets, non-foldable | false | true | non-empty | Full materialization, URI list (unchanged) |
-
-The fourth case (page + facets, join-free) still materializes for the page — but `calculateFacets` benefits from the CTS query path, avoiding the URI-list AST bloat. If Opt 20 is implemented first, this case could avoid materialization entirely: Opt 20 for the page, Opt 21 for the facets.
-
-#### 3. Handle `rows = null` in `calculateFacets`
-
-When called from the Opt 21 facet-only path, `rows` is `null`. The function must not call `rows.map(...)` in that case. The guard from step 1 handles this — when `ctsQuery` is provided, `rows` is never accessed.
-
-#### 4. Verify correctness
-
-- **Facet parity:** For the same query, compare facet results between the CTS-query path and the URI-list path. Values, counts, ordering, and pagination must match exactly.
-- **Scope filtering:** `scopedCtsQuery` includes the scope dataType filter (`cts.fieldValueQuery('anyDataTypeName', scopeTypes)`). This ensures `op.fromSearch(scopedCtsQuery)` constrains to the correct scope — same guarantee as the current `cts.documentQuery(uriList)` where the URIs were already scope-filtered by the Optic plan.
-- **Semantic facets:** Semantic facets join `docsPlan` to triples via the `iri` column. When `docsPlan` is `op.fromSearch(ctsQuery)`, the plan produces `fragmentId` and (optionally) `score` columns. The semantic facet path does `facetSourcePlan.joinInner(fromLexicons({iri: cts.iriReference()}, ...), op.on('fragmentId', 'iriFragId'))` to add the `iri` column. This should work identically with the CTS-query-based `docsPlan` — the join is on `fragmentId`, which `fromSearch` provides. Verify with a semantic facet request.
-- **Empty results:** When the CTS query matches zero documents, verify that each facet returns `{ totalItems: 0, facetValues: [] }` — matching the existing `buildEmptyFacetResponses` behavior.
+- **Non-semantic parity:** Validated. Approach B produces identical values, counts, and ordering as Approach A for `itemTypeId` facet over 55K matches.
+- **Semantic parity:** Compare Approach C output against Approach A output for `responsibleCollections` and `responsibleUnits`. The CTS approach may return slightly different counts than Optic due to `cts.estimate` vs. exact `groupBy` — `cts.estimate` is an approximation. Document any discrepancy.
+- **Empty results:** When the CTS query matches zero documents, each `cts.estimate` returns 0, all candidates are filtered out, and `totalItems` is 0 — matching `buildEmptyFacetResponses`.
 
 ### What this does NOT address
 
-- **Non-foldable queries.** When the accumulator has joins (`hopInverse`, transitive `hopWithField`, `annTopK`), there is no CTS query to pass. The current materialization + URI-list path remains. [Opt 19](#optimization-19-datatype-split-estimate-for-non-cts-foldable-searches) is a separate idea for those cases.
+- **Non-foldable queries.** When the accumulator has joins (`hopInverse`, transitive `hopWithField`, `annTopK`), there is no CTS query to pass. The current materialization + URI-list path remains (Path 3). [Opt 19](#optimization-19-datatype-split-estimate-for-non-cts-foldable-searches) is a separate idea for those cases.
 - **Consolidation (page + facets in one call).** This optimization works when page + facets are consolidated: the page uses Opt 18/20 while facets use Opt 21. No materialization needed for either. However, this consolidated call path is not currently exercised — `performSearch` is called for page OR facet, never both.
+- **Semantic facets with >100 values.** The CTS enumerate-and-estimate approach is capped at `SEMANTIC_VALUE_LIMIT` (100). If a semantic facet exceeds this, the CTS approach underreports. The current two semantic facets (`responsibleCollections`: 66 values, `responsibleUnits`: fewer) are well within the limit. If a high-cardinality semantic facet is added, this limit would need to be revisited — but the Optic approach is not viable at that scale either (210-340s for 2.5M matches).
 
 ### Relationship to other optimizations
 
-- **Opt 18 (cts.estimate with offset/limit):** Shares the same `scopedCtsQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for `op.fromSearch` (facet document set). The two are independent — neither is a prerequisite.
+- **Opt 18 (cts.estimate with offset/limit):** Shares the same `scopedCtsQuery` computation. Opt 18 uses it for `cts.estimate` (total count); Opt 21 uses it for both `op.fromSearch` (non-semantic facets) and `cts.estimate` (semantic facet per-value counts). The two are independent — neither is a prerequisite.
 - **Opt 20 (Eliminate fromLexicons):** Not a prerequisite. Opt 20 addresses page results; Opt 21 addresses facets. They are complementary and can be implemented in either order. When both are implemented and page + facets are consolidated into one call, the full materialization path is only needed for non-foldable queries.
 - **Opt 19 (DataType-split estimate):** Opt 19 targets the non-foldable case (queries with joins). Opt 21 targets the foldable case (join-free). They address different subsets of the query population.
 
 ### Estimated impact
 
-For the `item.memberOf` reference query (219K matches):
+For the `item.memberOf` reference query (2.5M matches):
 
 | Step | Current cost | With Opt 21 |
 |---|---|---|
-| Materialize all rows | 3-4s (219K rows) | **Eliminated** |
-| Extract URIs | ~50ms | **Eliminated** |
-| Build `cts.documentQuery(219K URIs)` | Plan AST bloat | **Eliminated** |
-| `op.fromSearch(ctsQuery)` | N/A | ~0 (compact CTS reference) |
-| Facet join + groupBy + orderBy | ~200ms (per facet) | ~200ms (unchanged) |
-
-The facet join/aggregation cost is unchanged — the optimization eliminates the materialization and AST-bloat overhead that precedes it. For the 2.5M-row case (Sterling Memorial Library), the current path spends 15s on materialization before facet computation even begins.
+| Materialize all rows | 15s+ (2.5M rows) | **Eliminated** |
+| Extract URIs | ~500ms | **Eliminated** |
+| Build `cts.documentQuery(2.5M URIs)` | Massive plan AST | **Eliminated** |
+| Non-semantic facet (per facet) | ~200ms (join + groupBy) | ~125ms (`fromSearch(ctsQuery)`) |
+| Semantic facet (per facet) | 210-340s (Optic triple chain) | **326ms** (CTS enumerate + estimate) |
 
 ## Optimization 22: annTopK post-filter for HNSW index usage
 

@@ -13,27 +13,16 @@ const scenarios = [
     input: {
       includeSearchResults: true,
       pageWith: null,
-      facetRequests: null,
       scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: true,
   },
   {
-    name: 'facetRequests is empty array',
+    name: 'facets co-requested (Opt 21 removed facet guard)',
     input: {
       includeSearchResults: true,
       pageWith: null,
-      facetRequests: [],
-      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
-    },
-    expected: true,
-  },
-  {
-    name: 'facetRequests is undefined',
-    input: {
-      includeSearchResults: true,
-      pageWith: null,
-      facetRequests: undefined,
+      facetRequests: [{ name: 'responsibleUnits' }],
       scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: true,
@@ -45,7 +34,6 @@ const scenarios = [
     input: {
       includeSearchResults: false,
       pageWith: null,
-      facetRequests: null,
       scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
@@ -55,17 +43,6 @@ const scenarios = [
     input: {
       includeSearchResults: true,
       pageWith: 'https://example.com/doc/1',
-      facetRequests: null,
-      scopedCtsQuery: MOCK_ESTIMATE_QUERY,
-    },
-    expected: false,
-  },
-  {
-    name: 'facetRequests has entries',
-    input: {
-      includeSearchResults: true,
-      pageWith: null,
-      facetRequests: [{ name: 'responsibleUnits' }],
       scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
@@ -75,7 +52,6 @@ const scenarios = [
     input: {
       includeSearchResults: true,
       pageWith: null,
-      facetRequests: null,
       scopedCtsQuery: null,
     },
     expected: false,
@@ -87,17 +63,15 @@ const scenarios = [
     input: {
       includeSearchResults: true,
       pageWith: 'https://example.com/doc/1',
-      facetRequests: null,
       scopedCtsQuery: null,
     },
     expected: false,
   },
   {
-    name: 'no search results and facets requested',
+    name: 'no search results and scopedCtsQuery present',
     input: {
       includeSearchResults: false,
       pageWith: null,
-      facetRequests: [{ name: 'responsibleUnits' }],
       scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: false,
@@ -107,7 +81,6 @@ const scenarios = [
     input: {
       includeSearchResults: false,
       pageWith: 'https://example.com/doc/1',
-      facetRequests: [{ name: 'responsibleUnits' }],
       scopedCtsQuery: null,
     },
     expected: false,

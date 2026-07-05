@@ -147,6 +147,13 @@
     - [Constraints](#constraints-1)
     - [Open question](#open-question)
     - [Next step](#next-step)
+  - [Optimization 24: HopInverse CTS fast path](#optimization-24-hopinverse-cts-fast-path)
+    - [Problem](#problem-6)
+    - [Why HopInverse cannot use cts.tripleRangeQuery](#why-hopinverse-cannot-use-ctstriplerangequery)
+    - [Approach](#approach-2)
+    - [Implementation](#implementation-1)
+    - [Benchmark](#benchmark-1)
+    - [Scope and limitations](#scope-and-limitations)
 
 # Introduction
 
@@ -1116,6 +1123,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 9 | [Opt 20](#optimization-20-eliminate-fromlexicons-for-join-free-queries) | avoidLexicons: replace `fromLexicons` with `op.fromSearch` + `joinDocAndUri` after pagination. For the reference query, this optimization eliminated 3 lexicon scans (43.9M entries each) and dedup groupBy. Mean dropped from 231% to 31% of CTS (3.2× faster). | 2026-06-28 |
 | 10 | [Opt 22](#optimization-22-anntopk-post-filter-for-hnsw-index-usage) | annTopK post-filter: move scope/self-exclusion filters to after `annTopK` so the HNSW index is used (`indexed="true"`). Pre-filters caused brute-force kNN — 800× slower on 20M vectors. Also extends Opt 20 to skip `fromLexicons` for annTopK-only queries. | 2026-06-29 |
 | 11 | [Opt 21](#optimization-21-cts-native-facet-computation) | CTS-native facet computation: three-way dispatch in `calculateFacets`. Semantic facets use CTS enumerate + estimate (1,044× faster than Optic triple joins at 2.5M scale). Non-semantic facets use `op.fromSearch(scopedCtsQuery)` (32× faster than URI-list approach). Removes facet guard from `isCtsExecutionEligible`, enabling Opt 18/20 when facets are co-requested. Depends on [Opt 15](#optimization-15-cts-fold). | 2026-07-02 |
+| 12 | [Opt 24](#optimization-24-hopinverse-cts-fast-path) | HopInverse CTS fast path: when inner criteria resolves to pure CTS, apply `.where(innerCts)` directly on `fromTriples` instead of building a `fromLexicons` plan and fragment-joining. Eliminates per-hop IRI lexicon scans (~43.9M rows). Representative query: 2,649ms → 121ms (22×). | 2026-07-05 |
 
 ## Data Type Constraint Optimizations
 
@@ -2056,3 +2064,117 @@ Whether MarkLogic physically materializes a separate HNSW graph per QBV (true pa
 ### Next step
 
 Test `annTopK` against a QBV (e.g., filtered by collection) to determine whether `plan:ann-result indexed="true"` still fires and whether timing improves versus the base view with post-filter.
+
+## Optimization 24: HopInverse CTS fast path
+
+**Status:** Implemented.
+
+**Prerequisite:** [Opt 15 (CTS Fold)](#optimization-15-cts-fold) must be in place — the fold mechanism is what makes inner criteria produce pure-CTS accumulators. [Opt 16 (HopWithField CTS)](#optimization-16-hopwithfield-cts) provides the analogous optimization for `hopWithField` terms; Opt 24 extends the same principle to `hopInverse`.
+
+### Problem
+
+Multi-hop `hopInverse` queries are dominated by intermediate `fromLexicons` scans. Each hop level builds a nested plan via `processNestedCriteria`, which always creates a `fromLexicons({uri, iri, dataType})` plan as the row source. For a 2-hop query like `curated.containingItem.id`, this produces two intermediate `fromLexicons` scans in addition to the top-level scan — each scanning up to 43.9M IRI entries from the lexicon index.
+
+Representative query (`searchWillMatch` for `lux:itemDepartment`):
+```json
+{"curated": {"containingItem": {"id": "https://lux.collections.yale.edu/data/object/..."}}}
+```
+
+Before Opt 24, the plan for this query:
+```javascript
+// Top-level: agent scope
+op.fromLexicons({uri, iri, dataType}).where(dataType in ['Person','Group'])
+  .joinInner(
+    // Outer triple (agentOfCuration)
+    op.fromTriples([pattern(s, agentOfCuration, o, triFrag)])
+      .joinInner(
+        // INTERMEDIATE: set scope — 316K-row lexicon scan
+        op.fromLexicons({set_uri, set_iri, set_dataType}).where(dataType='Set')
+          .joinInner(
+            // Inner triple (member_of)
+            op.fromTriples([pattern(s, member_of, o, triFrag)])
+              .joinInner(
+                // INTERMEDIATE: item scope — 10M+ row lexicon scan
+                op.fromLexicons({item_uri, item_iri, item_dataType})
+                  .where(dataType in ['DigitalObject','HumanMadeObject'])
+                  .where(cts.documentQuery(targetId))
+                  .select([item_iri, item_frag]),     // Opt 17 barrier
+                on(triFrag, item_frag)),              // fragment join
+            on(set_iri, inner_o))
+          .select([set_iri, set_frag]),               // Opt 17 barrier
+        on(triFrag, set_frag)),                       // fragment join
+    on(iri, outer_o))
+```
+
+The two intermediate `fromLexicons` calls — scanning 10M+ and 316K rows respectively — are pure overhead. Their only purpose is to provide an `iri` column and `frag` column for the hop pattern joins, but the `fromTriples` pattern already provides equivalent columns via its subject/object and fragmentIdCol.
+
+### Why HopInverse cannot use cts.tripleRangeQuery
+
+[Opt 16](#optimization-16-hopwithfield-cts) resolves `hopWithField` terms as `cts.tripleRangeQuery` CTS constraints. This works because `hopWithField`'s triple `(parent, predicate, child)` lives on the **parent** document — the one being constrained. `cts.tripleRangeQuery` matches documents containing the specified triple, so the constraint correctly filters the parent scope.
+
+`hopInverse` has the opposite triple direction: `(child, predicate, parent)` where the triple lives on the **child** (referenced) document, not the parent. `cts.tripleRangeQuery` would constrain child documents, not the parent scope the search needs to filter. This means HopInverse cannot fully collapse to a CTS constraint and must retain an Optic `fromTriples` row source to bridge the document boundary.
+
+### Approach
+
+When HopInverse's inner criteria resolves to pure CTS (detected via `processNestedCriteriaAsCts`), apply the CTS query as `.where(innerCts)` directly on the `fromTriples` plan instead of building a separate `fromLexicons` plan and fragment-joining.
+
+After Opt 24, the innermost hop in the example above becomes:
+```javascript
+// Inner triple — no fromLexicons, no fragment join
+op.fromTriples([pattern(s, member_of, o, triFrag)])
+  .where(cts.documentQuery(targetId))       // CTS applied directly
+```
+
+The `.where()` on `fromTriples` constrains which document fragments the triples come from — functionally equivalent to the fragment join against `fromLexicons.where(ctsQuery)`, but without the lexicon scan.
+
+### Implementation
+
+Single change in `HopInverse.mjs` — `apply()` method. Before building the Optic fallback path (`fromTriples.joinInner(processNestedCriteria(...))`), attempt `processNestedCriteriaAsCts`:
+
+```javascript
+const innerCts = scp.processNestedCriteriaAsCts({
+  planCriteria: searchTerm.getCriteria(),
+  planScope: termConfig.getTargetScopeName(),
+  patternOptions: SCP.initializePatternOptions(),
+  parentId: id,
+});
+if (innerCts) {
+  return {
+    patternJoins: [{
+      right: tri.where(innerCts),
+      on: op.on(op.col(parentIriCol), op.col(id + '_o')),
+      extraCols: [],
+    }],
+  };
+}
+```
+
+When `processNestedCriteriaAsCts` returns non-null:
+- The `fromTriples` plan gets a `.where(innerCts)` constraint — no `fromLexicons` needed.
+- The fragment join (`on(triFrag, refFrag)`) is eliminated — the `.where()` directly constrains the triple's source fragments.
+- The outer join key remains `on(parentIriCol, _o)` — unchanged from the original path.
+
+When `processNestedCriteriaAsCts` returns null (inner criteria requires Optic joins), the existing `processNestedCriteria` fallback path fires unchanged.
+
+**Source file:** `src/main/ml-modules/root/lib/search/patterns/HopInverse.mjs`
+
+### Benchmark
+
+Representative query: `{"curated":{"containingItem":{"id":"..."}}}` via `searchWillMatch`.
+
+| Metric | Before Opt 24 | After Opt 24 | Improvement |
+|---|---|---|---|
+| `lux:itemDepartment` latency | 2,649ms | 121ms | 22× |
+| Total batch (6 searches) | 3,127ms | 603ms | 5.2× |
+
+### Scope and limitations
+
+**What Opt 24 covers:**
+- Any `hopInverse` term whose inner criteria resolves to pure CTS via `processNestedCriteriaAsCts`. This includes direct IRI lookups (`{id: "..."}`, `{iri: "..."}`), field constraints (`{name: "..."}`, `{identifier: "..."}`), and nested criteria composed entirely of CTS-foldable terms.
+
+**What Opt 24 does not cover:**
+- Inner criteria requiring Optic joins (e.g., nested hops that themselves don't resolve to CTS). These fall back to the original `processNestedCriteria` + `fromLexicons` path.
+
+**Cascade behavior:** Opt 24 returns `patternJoins` (not `ctsConstraints`), so it does not cascade through `processNestedCriteriaAsCts` at the parent scope level. For a 2-hop chain like `curated.containingItem.id`, the innermost `fromLexicons` (item scope, ~10M rows) is eliminated, but the middle `fromLexicons` (set scope, ~316K rows) is retained. Despite this single-level limitation, the benchmark shows the optimization is sufficient for the target query shape.
+
+**Relationship to Opt 16:** Opt 16 handles `hopWithField` by emitting `cts.tripleRangeQuery` as a `ctsConstraint`, which DOES cascade — each outer hop also sees only CTS and can resolve without Optic. Opt 24 handles `hopInverse` via a different mechanism (`.where()` on `fromTriples`) because the triple's document location prevents full CTS resolution. The two optimizations are complementary and cover the two hop pattern types.

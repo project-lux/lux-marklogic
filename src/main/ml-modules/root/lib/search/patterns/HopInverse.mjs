@@ -26,13 +26,6 @@ class HopInverse extends SearchPatternBase {
       return this.#processValuesOnly(scp, searchTerm, patternOptions);
     }
 
-    // TODO, PERF: Potential optimization.  When the child criteria is a literal IRI
-    // (same condition #processValuesOnly checks), both hops could be resolved via
-    // cts.triples and injected as op.fromLiterals, avoiding the inner
-    // processNestedCriteria call.  This path only compiles one plan, but it could
-    // still matter for latency-sensitive queries.  Consider prototyping if
-    // profiling shows the inner plan construction is a bottleneck.
-
     const tri = op.fromTriples([
       op.pattern(
         op.col(id + '_s'),
@@ -42,6 +35,29 @@ class HopInverse extends SearchPatternBase {
       ),
     ]);
 
+    // Opt 24: when inner criteria resolves to pure CTS, apply it as .where()
+    // directly on fromTriples instead of building a fromLexicons plan and
+    // joining on fragment. Eliminates the intermediate IRI lexicon scan
+    // (~43.9M rows) that dominates multi-hop query cost.
+    const innerCts = scp.processNestedCriteriaAsCts({
+      planCriteria: searchTerm.getCriteria(),
+      planScope: termConfig.getTargetScopeName(),
+      patternOptions: SCP.initializePatternOptions(),
+      parentId: id,
+    });
+    if (innerCts) {
+      return {
+        patternJoins: [
+          {
+            right: tri.where(innerCts),
+            on: op.on(op.col(parentIriCol), op.col(id + '_o')),
+            extraCols: [],
+          },
+        ],
+      };
+    }
+
+    // Fallback: Optic join path (when inner criteria requires joins).
     const right = tri.joinInner(
       scp.processNestedCriteria({
         planCriteria: searchTerm.getCriteria(),

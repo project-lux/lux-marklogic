@@ -195,6 +195,8 @@ function _calculateFacetViaOptic(facetName, docsPlan, request, start, end) {
   const sort = request?.sort;
   const rows = facetSourcePlan
     .joinInner(constraintPlan, joinOn)
+    // The first groupBy ensures each facet value is only counted once per doc.
+    .groupBy([op.col(countColName), op.col(facetValueColName)])
     .groupBy(op.col(facetValueColName), op.count('count', countColName))
     .orderBy(
       sort === 'desc'

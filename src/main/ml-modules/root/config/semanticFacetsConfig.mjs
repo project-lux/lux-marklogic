@@ -65,10 +65,11 @@ const SEMANTIC_FACETS_CONFIG = {
       return criteria;
     },
     // Opt 21: CTS-native semantic facet properties.
-    potentialFacetValuesCtsQuery: cts.andQuery([
-      cts.jsonPropertyValueQuery('dataType', 'Set', ['exact']),
-      cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection, ['exact'], 1),
-    ]),
+    potentialFacetValuesCtsQuery: () =>
+      cts.andQuery([
+        cts.jsonPropertyValueQuery('dataType', 'Set', ['exact']),
+        cts.jsonPropertyValueQuery('id', IDENTIFIERS.collection, ['exact'], 1),
+      ]),
     getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
       return cts.andQuery([
         cts.fieldValueQuery(['itemMemberOfId'], facetValueId, ['exact'], 1),
@@ -115,85 +116,22 @@ const SEMANTIC_FACETS_CONFIG = {
       return criteria;
     },
     // Opt 21: CTS-native semantic facet properties.
-    potentialFacetValuesCtsQuery: cts.andQuery([
-      cts.jsonPropertyValueQuery('dataType', ['Group'], ['exact']),
-      cts.orQuery([
-        cts.andQuery([
-          cts.documentQuery(
-            cts
-              .triples(
-                [],
-                [lux('agentOfCuration')],
-                [],
-                '=',
-                ['eager', 'concurrent'],
-                cts.tripleRangeQuery(
+    potentialFacetValuesCtsQuery: () =>
+      cts.andQuery([
+        cts.jsonPropertyValueQuery('dataType', ['Group'], ['exact']),
+        cts.orQuery([
+          cts.andQuery([
+            cts.documentQuery(
+              cts
+                .triples(
                   [],
-                  [lux('setClassifiedAs')],
-                  fn.insertBefore(
-                    cts.values(
-                      cts.iriReference(),
-                      '',
-                      ['eager', 'concurrent'],
-                      cts.fieldValueQuery(
-                        ['conceptIdentifier'],
-                        [IDENTIFIERS.collection],
-                        ['exact'],
-                        1,
-                      ),
-                    ),
-                    0,
-                    sem.iri('/does/not/exist'),
-                  ),
+                  [lux('agentOfCuration')],
+                  [],
                   '=',
-                  [],
-                  1,
-                ),
-              )
-              .toArray()
-              .map((x) => sem.tripleObject(x))
-              .concat(sem.iri('/does/not/exist')),
-          ),
-          cts.notQuery(
-            cts.andQuery([
-              cts.tripleRangeQuery(
-                [],
-                [lux('agentClassifiedAs')],
-                fn.insertBefore(
-                  cts.values(
-                    cts.iriReference(),
-                    '',
-                    ['eager', 'concurrent'],
-                    cts.fieldValueQuery(
-                      ['conceptIdentifier'],
-                      [IDENTIFIERS.department],
-                      ['exact'],
-                      1,
-                    ),
-                  ),
-                  0,
-                  sem.iri('/does/not/exist'),
-                ),
-                '=',
-                [],
-                1,
-              ),
-            ]),
-          ),
-        ]),
-        cts.andQuery([
-          cts.documentQuery(
-            cts
-              .triples(
-                [],
-                [crm('P107i_is_current_or_former_member_of')],
-                [],
-                '=',
-                ['eager', 'concurrent'],
-                cts.andQuery([
+                  ['eager', 'concurrent'],
                   cts.tripleRangeQuery(
                     [],
-                    [lux('agentClassifiedAs')],
+                    [lux('setClassifiedAs')],
                     fn.insertBefore(
                       cts.values(
                         cts.iriReference(),
@@ -201,7 +139,7 @@ const SEMANTIC_FACETS_CONFIG = {
                         ['eager', 'concurrent'],
                         cts.fieldValueQuery(
                           ['conceptIdentifier'],
-                          [IDENTIFIERS.department],
+                          [IDENTIFIERS.collection],
                           ['exact'],
                           1,
                         ),
@@ -213,50 +151,114 @@ const SEMANTIC_FACETS_CONFIG = {
                     [],
                     1,
                   ),
-                  cts.documentQuery(
-                    cts
-                      .triples(
-                        [],
-                        [lux('agentOfCuration')],
-                        [],
-                        '=',
-                        ['eager', 'concurrent'],
-                        cts.tripleRangeQuery(
-                          [],
-                          [lux('setClassifiedAs')],
-                          fn.insertBefore(
-                            cts.values(
-                              cts.iriReference(),
-                              '',
-                              ['eager', 'concurrent'],
-                              cts.fieldValueQuery(
-                                ['conceptIdentifier'],
-                                [IDENTIFIERS.collection],
-                                ['exact'],
-                                1,
-                              ),
-                            ),
-                            0,
-                            sem.iri('/does/not/exist'),
-                          ),
-                          '=',
-                          [],
-                          1,
-                        ),
-                      )
-                      .toArray()
-                      .map((x) => sem.tripleObject(x))
-                      .concat(sem.iri('/does/not/exist')),
+                )
+                .toArray()
+                .map((x) => sem.tripleObject(x))
+                .concat(sem.iri('/does/not/exist')),
+            ),
+            cts.notQuery(
+              cts.andQuery([
+                cts.tripleRangeQuery(
+                  [],
+                  [lux('agentClassifiedAs')],
+                  fn.insertBefore(
+                    cts.values(
+                      cts.iriReference(),
+                      '',
+                      ['eager', 'concurrent'],
+                      cts.fieldValueQuery(
+                        ['conceptIdentifier'],
+                        [IDENTIFIERS.department],
+                        ['exact'],
+                        1,
+                      ),
+                    ),
+                    0,
+                    sem.iri('/does/not/exist'),
                   ),
-                ]),
-              )
-              .toArray()
-              .map((x) => sem.tripleObject(x))
-              .concat(sem.iri('/does/not/exist')),
-          ),
+                  '=',
+                  [],
+                  1,
+                ),
+              ]),
+            ),
+          ]),
+          cts.andQuery([
+            cts.documentQuery(
+              cts
+                .triples(
+                  [],
+                  [crm('P107i_is_current_or_former_member_of')],
+                  [],
+                  '=',
+                  ['eager', 'concurrent'],
+                  cts.andQuery([
+                    cts.tripleRangeQuery(
+                      [],
+                      [lux('agentClassifiedAs')],
+                      fn.insertBefore(
+                        cts.values(
+                          cts.iriReference(),
+                          '',
+                          ['eager', 'concurrent'],
+                          cts.fieldValueQuery(
+                            ['conceptIdentifier'],
+                            [IDENTIFIERS.department],
+                            ['exact'],
+                            1,
+                          ),
+                        ),
+                        0,
+                        sem.iri('/does/not/exist'),
+                      ),
+                      '=',
+                      [],
+                      1,
+                    ),
+                    cts.documentQuery(
+                      cts
+                        .triples(
+                          [],
+                          [lux('agentOfCuration')],
+                          [],
+                          '=',
+                          ['eager', 'concurrent'],
+                          cts.tripleRangeQuery(
+                            [],
+                            [lux('setClassifiedAs')],
+                            fn.insertBefore(
+                              cts.values(
+                                cts.iriReference(),
+                                '',
+                                ['eager', 'concurrent'],
+                                cts.fieldValueQuery(
+                                  ['conceptIdentifier'],
+                                  [IDENTIFIERS.collection],
+                                  ['exact'],
+                                  1,
+                                ),
+                              ),
+                              0,
+                              sem.iri('/does/not/exist'),
+                            ),
+                            '=',
+                            [],
+                            1,
+                          ),
+                        )
+                        .toArray()
+                        .map((x) => sem.tripleObject(x))
+                        .concat(sem.iri('/does/not/exist')),
+                    ),
+                  ]),
+                )
+                .toArray()
+                .map((x) => sem.tripleObject(x))
+                .concat(sem.iri('/does/not/exist')),
+            ),
+          ]),
         ]),
       ]),
-    ]),
     getValuesCountCtsQuery: (baseSearchCtsQuery, facetValueId) => {
       return cts.andQuery([
         cts.andQuery([

@@ -91,9 +91,9 @@ function calculateFacets(rows, facetRequests, scopedCtsQuery = null) {
 function _calculateSemanticFacetViaCts(facetName, scopedCtsQuery, start, end) {
   const semanticConfig = _getValidatedSemanticFacetConfig(facetName);
 
-  if (!semanticConfig.potentialFacetValuesCtsQuery) {
+  if (typeof semanticConfig.potentialFacetValuesCtsQuery !== 'function') {
     throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing 'potentialFacetValuesCtsQuery' (required for CTS path).`,
+      `Semantic facet '${facetName}' is misconfigured: missing 'potentialFacetValuesCtsQuery' function (required for CTS path).`,
     );
   }
   if (typeof semanticConfig.getValuesCountCtsQuery !== 'function') {
@@ -104,7 +104,7 @@ function _calculateSemanticFacetViaCts(facetName, scopedCtsQuery, start, end) {
 
   const potentialFacetValues = fn
     .subsequence(
-      cts.search(semanticConfig.potentialFacetValuesCtsQuery, [
+      cts.search(semanticConfig.potentialFacetValuesCtsQuery(), [
         'unfiltered',
         'unfaceted',
         'score-zero',

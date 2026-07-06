@@ -4,20 +4,16 @@
 import op from '/MarkLogic/optic.mjs';
 import { getSearchScopeTypes } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
-import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
-import { isSemanticFacet } from '../facetsLib.mjs';
-import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import { SEMANTIC_SORT_TIMEOUT } from '../appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
-import { FacetResponses } from './FacetResponses.mjs';
 import { SearchExecutionResult } from './SearchExecutionResult.mjs';
 import { expandPredicate } from './prefixUtils.mjs';
 import { NODE_TYPE_GROUP } from './criteriaNodes.mjs';
 import { analyzeCriteria } from './analyzeCriteria.mjs';
+import { calculateFacets } from './calculateFacets.mjs';
 //#endregion
 
 //#region Constants
@@ -97,12 +93,12 @@ function performSearch(scp) {
         patternOptions,
         includeSearchResults,
         pageWith,
-        facetRequests,
       });
 
       planAsJson = selectedPlan.export();
       planAsSource = getPlanSource(planAsJson);
 
+      let rows = null;
       if (ctsExecutionEligible) {
         const effectivePageLength = pageLength ?? 20;
         total = cts.estimate(scopedCtsQuery);
@@ -130,8 +126,10 @@ function performSearch(scp) {
             .result()
             .toArray();
         }
+      } else if (!includeSearchResults && scopedCtsQuery) {
+        // Opt 21: facet-only request with CTS query — skip materialization.
       } else {
-        const rows = selectedPlan.result().toArray();
+        rows = selectedPlan.result().toArray();
 
         if (includeSearchResults) {
           total = rows.length;
@@ -144,10 +142,10 @@ function performSearch(scp) {
           resultPage = paginationResult.resultPage;
           searchResults = paginationResult.searchResults;
         }
-
-        // calculateFacets returns null when facets are not requested.
-        facetResponses = calculateFacets(rows, facetRequests);
       }
+
+      // Opt 21: calculateFacets dispatches internally based on rows/scopedCtsQuery.
+      facetResponses = calculateFacets(rows, facetRequests, scopedCtsQuery);
     }
 
     return new SearchExecutionResult({
@@ -271,8 +269,8 @@ function getResultRowGrouping() {
 // unsorted plans with finalization and optional sort applied.
 // Accepts either a pre-computed analysis result or raw criteria params.
 //
-// When request context is provided (includeSearchResults, pageWith,
-// facetRequests), buildPlans also selects the appropriate plan and determines
+// When request context is provided (includeSearchResults, pageWith),
+// buildPlans also selects the appropriate plan and determines
 // the execution strategy. This keeps plan-shape decisions in Pass 2 rather
 // than scattering them across the executor.
 function buildPlans({
@@ -287,7 +285,6 @@ function buildPlans({
   // Optional request context — when provided, enables strategy determination.
   includeSearchResults = null,
   pageWith = null,
-  facetRequests = null,
 }) {
   // performSearch always provides the analysis but there are other callers that do not.
   const analysis =
@@ -357,7 +354,6 @@ function buildPlans({
     ctsExecutionEligible = isCtsExecutionEligible({
       includeSearchResults,
       pageWith,
-      facetRequests,
       scopedCtsQuery,
     });
 
@@ -933,18 +929,13 @@ function buildScopedCtsQuery(acc, assemblyContext, scope) {
 // execution: cts.estimate for count, offset/limit for pagination, and
 // (with Opt 20) fromSearch instead of fromLexicons for page results.
 // Requires the accumulator to be join-free (CTS-foldable).
+// Facets are compatible: calculateFacets works directly with scopedCtsQuery.
 function isCtsExecutionEligible({
   includeSearchResults,
   pageWith,
-  facetRequests,
   scopedCtsQuery,
 }) {
-  return (
-    includeSearchResults &&
-    !pageWith &&
-    !facetRequests?.length &&
-    scopedCtsQuery != null
-  );
+  return includeSearchResults && !pageWith && scopedCtsQuery != null;
 }
 
 // Returns true when the active sort strategy requires lexicon columns
@@ -989,169 +980,6 @@ function buildFromSearchPlan(
   // No hydration here — performSearch applies .offset().limit() first,
   // then chains .joinDocAndUri() so only the page slice hits disk.
   return plan;
-}
-//#endregion
-
-//#region Facets
-function calculateFacets(rows, facetRequests) {
-  if (facetRequests == null || facetRequests.length === 0) {
-    return null;
-  }
-
-  const requests = facetRequests.getFacetRequests();
-  if (!utils.isNonEmptyArray(requests)) {
-    return new FacetResponses({});
-  }
-
-  const uriList = rows.map((row) => row.id);
-  if (!utils.isNonEmptyArray(uriList)) {
-    return buildEmptyFacetResponses(requests);
-  }
-
-  const page = facetRequests.getPage() ?? 1;
-  const pageLength = facetRequests.getPageLength() ?? 20;
-  const start = (page - 1) * pageLength;
-  const end = page * pageLength;
-  const docsPlan = op.fromSearch(cts.documentQuery(uriList));
-
-  const semanticConfigsByFacetName = {};
-  requests.forEach((request) => {
-    const facetName = request?.name;
-    if (isSemanticFacet(facetName)) {
-      semanticConfigsByFacetName[facetName] =
-        getValidatedSemanticFacetConfig(facetName);
-    }
-  });
-
-  // Optimization idea: try [plan].facetBy, which is a convenience wrapper for groupToArrays.
-  const facets = {};
-  requests.forEach((request) => {
-    const facetName = request?.name;
-    let facetSourcePlan = docsPlan;
-
-    let constraintPlan;
-    let joinOn;
-    let facetValueColName = 'value';
-    let countColName = 'uri';
-    // isSemanticFacet throws if neither semantic nor non-semantic facet
-    if (isSemanticFacet(facetName)) {
-      const semanticConfig = semanticConfigsByFacetName[facetName];
-      facetValueColName = semanticConfig.facetValueColName;
-      countColName = semanticConfig.constraintJoinColName;
-      const sourceJoinColName = semanticConfig.sourceJoinColName;
-
-      if (sourceJoinColName === 'iri') {
-        facetSourcePlan = facetSourcePlan.joinInner(
-          op.fromLexicons(
-            { iri: cts.iriReference() },
-            null,
-            op.fragmentIdCol('iriFragId'),
-          ),
-          op.on('fragmentId', 'iriFragId'),
-        );
-      }
-
-      // Projection barrier helps avoid optimizer paths that can collapse
-      // certain semantic joins to zero rows.
-      facetSourcePlan = facetSourcePlan.select([sourceJoinColName]);
-
-      constraintPlan = semanticConfig.plan;
-
-      joinOn = op.on(sourceJoinColName, countColName);
-    } else {
-      const indexReference = FACETS_CONFIG[facetName].indexReference;
-      if (!utils.isNonEmptyString(indexReference)) {
-        throw new InvalidSearchRequestError(
-          `The '${facetName}' facet is not currently supported for this operation.`,
-        );
-      }
-
-      constraintPlan = op.fromLexicons(
-        {
-          [facetValueColName]: cts.fieldReference(indexReference),
-          [countColName]: cts.uriReference(),
-        },
-        null,
-        op.fragmentIdCol('lexFragId'),
-      );
-      joinOn = op.on('fragmentId', 'lexFragId');
-    }
-
-    const isDateFacet = facetName.endsWith('Date');
-    const sort = request?.sort;
-    const rows = facetSourcePlan
-      .joinInner(constraintPlan, joinOn)
-      .groupBy(op.col(facetValueColName), op.count('count', countColName))
-      .orderBy(
-        sort === 'desc'
-          ? op.desc(facetValueColName)
-          : sort === 'asc'
-            ? op.asc(facetValueColName)
-            : op.desc('count'), // a.k.a. frequency-order
-      )
-      .result()
-      .toArray();
-
-    facets[facetName] = {
-      totalItems: rows.length,
-      facetValues: rows.slice(start, end).map((row) => {
-        const rawValue = row[facetValueColName];
-        return {
-          value: isDateFacet ? convertSecondsToDateStr(rawValue) : rawValue,
-          count: row.count,
-        };
-      }),
-    };
-  });
-
-  return new FacetResponses(facets);
-}
-
-function getValidatedSemanticFacetConfig(facetName) {
-  const semanticConfig = SEMANTIC_FACETS_CONFIG[facetName];
-  const sourceJoinColName = semanticConfig?.sourceJoinColName;
-  const constraintJoinColName = semanticConfig?.constraintJoinColName;
-
-  if (!utils.isNonEmptyString(sourceJoinColName)) {
-    throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing required 'sourceJoinColName'.`,
-    );
-  }
-  if (!utils.isNonEmptyString(constraintJoinColName)) {
-    throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: missing required 'constraintJoinColName'.`,
-    );
-  }
-
-  const planValue = semanticConfig?.plan;
-  const validPlanType =
-    typeof planValue?.result === 'function' &&
-    typeof planValue?.export === 'function';
-  if (!validPlanType) {
-    throw new InternalServerError(
-      `Semantic facet '${facetName}' is misconfigured: 'plan' is required and must be an Optic plan.`,
-    );
-  }
-
-  return {
-    ...semanticConfig,
-    sourceJoinColName,
-    constraintJoinColName,
-  };
-}
-
-function buildEmptyFacetResponses(requests) {
-  const facets = {};
-
-  requests.forEach((request) => {
-    const facetName = request?.name;
-    facets[facetName] = {
-      totalItems: 0,
-      facetValues: [],
-    };
-  });
-
-  return new FacetResponses(facets);
 }
 //#endregion
 

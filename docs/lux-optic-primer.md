@@ -127,7 +127,7 @@
     - [Validation results](#validation-results)
       - [Non-semantic facets (`itemTypeId`, 55K matches, `cts.fieldWordQuery('itemAnyText', 'painting')`)](#non-semantic-facets-itemtypeid-55k-matches-ctsfieldwordqueryitemanytext-painting)
       - [Semantic facets (`responsibleCollections`, 2.5M matches)](#semantic-facets-responsiblecollections-25m-matches)
-      - [Performance test results](#performance-test-results)
+      - [Performance test results (2026-07-03)](#performance-test-results-2026-07-03)
     - [Implementation](#implementation)
       - [`performSearch` execution paths (engine.mjs)](#performsearch-execution-paths-enginemjs)
       - [`calculateFacets` dispatch (calculateFacets.mjs)](#calculatefacets-dispatch-calculatefacetsmjs)
@@ -153,6 +153,8 @@
     - [Approach](#approach-2)
     - [Implementation](#implementation-1)
     - [Benchmark](#benchmark-1)
+      - [Single query](#single-query)
+      - [10k performance test (2026-07-05)](#10k-performance-test-2026-07-05)
     - [Scope and limitations](#scope-and-limitations)
 
 # Introduction
@@ -1874,9 +1876,22 @@ Benchmarked on MarkLogic 12.0.1 against the content database. Scripts in `scratc
 
 5. **`responsibleUnits`** has a 3-hop chain with no single denormalized field equivalent. Its CTS config uses `cts.triples` + `cts.documentQuery` nesting to pre-compute candidates — manageable because the enumeration runs once (search-independent) and per-value `cts.estimate` calls use the same field-index intersection pattern.
 
-#### Performance test results
+#### Performance test results (2026-07-03)
 
-TODO: Add 10k performance test results comparing pre-Opt-21 baselines (IDs 22, 26, 30) against Opt 21 enabled.
+Results are of the 19,626 derived facet requests from the 10k-1 search requests.  CTS baseline: 7/2 CTS New 10k-1 with warm caches (14 min). Optic stack: 1, 3, 15, 17, 18, 20, 22 (ID 22, w/o Opt 21) and + 21 (IDs 31/32, w/ Opt 21).
+
+Comparison 22 → 31: adding Opt 21 (Optic-to-Optic).
+
+| Metric | ID 22 (w/o Opt 21) | ID 31 (w/ Opt 21) | Change |
+|---|---|---|---|
+| Test duration | 59 min | 42 min | −29% |
+| Mean (% of CTS) | 290.90% | 203.90% | −22.3% (Optic-to-Optic) |
+| p99.9 (% of CTS) | 71.70% | 2.10% | 1.7× slower → **near parity** |
+| Slowest 20 range (ms) | 7,401–20,158 | 2,319–10,228 | |
+| Requests > 1s | 20 | 20 | unchanged |
+| Functional diff vs CTS | 4,701 | 4,680 | −21 |
+
+Opt 21 substantially improved tail latency: p99.9 dropped from 71.7% above CTS to 2.1% — near parity. The slowest 20 range narrowed from 7.4–20.2s to 2.3–10.2s. However, mean latency remained 2× above CTS (203.9%), and both Optic and CTS had 20 requests over 1s (CTS range: 1,286–3,319ms). The mean gap reflects searches where Opt 21 does not fire (hop/join queries that fall back to Path 3 URI-list facets).
 
 ### Implementation
 
@@ -2160,12 +2175,31 @@ When `processNestedCriteriaAsCts` returns null (inner criteria requires Optic jo
 
 ### Benchmark
 
+#### Single query
+
 Representative query: `{"curated":{"containingItem":{"id":"..."}}}` via `searchWillMatch`.
 
 | Metric | Before Opt 24 | After Opt 24 | Improvement |
 |---|---|---|---|
 | `lux:itemDepartment` latency | 2,649ms | 121ms | 22× |
 | Total batch (6 searches) | 3,127ms | 603ms | 5.2× |
+
+#### 10k performance test (2026-07-05)
+
+10K-document `get-data-no-profile` requests, cleared caches. CTS baseline: 7/4 CTS 10k-docs-no-pro (20 min). Optic stack: 1, 3, 15, 17, 18, 20, 21, 22 (ID 35) + 24 (ID 36).
+
+Before Opt 24 (ID 35), `lux:itemDepartment` (a 2-hop `hopInverse` chain) was the slowest search at 2.9–3.1s (CTS: 522–780ms). All but one of the 20 slowest were item-scope.
+
+Comparison 35 → 36: adding Opt 24.
+
+| Metric | ID 35 (w/o Opt 24) | ID 36 (w/ Opt 24) | Change |
+|---|---|---|---|
+| Test duration | 300 min | 66 min | −78% |
+| Mean (% of CTS) | 1,409.90% | 232.50% | 14× slower → **2.3× slower** |
+| p99.9 (% of CTS) | 662.90% | 46.10% | 6.6× slower → **2.2× faster** |
+| Slowest 20 range (ms) | 4,313–18,403 | 817–1,064 | |
+| Requests > 1s | 20 | 1 | −95% |
+| Functional diff vs CTS | 39 | 38 | −1 |
 
 ### Scope and limitations
 

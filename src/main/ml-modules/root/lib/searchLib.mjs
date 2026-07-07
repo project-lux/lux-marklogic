@@ -228,7 +228,8 @@ function _search(
           ? resolvedSearchCriteria
           : searchCriteria,
         ignoredTerms: scp ? scp.getIgnoredTerms() : null,
-        query: scp ? scp.getQueryStr() : null,
+        // Heavy for plans containing materialized data.  Use getPlansFromSearchCriteria.js
+        // query: scp ? scp.getQueryStr() : null,
       };
       xdmp.trace(traceName, searchInfo);
 

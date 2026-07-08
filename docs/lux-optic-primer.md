@@ -1016,8 +1016,8 @@ Disable transitive search before running functional or performance comparisons. 
 
 Use this flow to start a performance investigation with an LLM.
 
-1. Create an investigation directory under [/scratch/performance/](/scratch/performance/).  This is where you will save files created by the following steps, as well as where the LLM can generate variants scripts for you to test.
-2. Saved the search's criteria as `criteria.json`.
+1. Create an investigation directory under [/scratch/performance/](/scratch/performance/).  This is where you will save files created by the following steps, as well as where the LLM can generate variant scripts.
+2. Save the search's criteria as `criteria.json`.
 3. Create `optic.js` and `cts.js` using Get Plan and Get CTS found in the [Performance QC Workspace](/scripts/performance/Performance%20QC%20Workspace.xml).  *Get Plan is a copy of [getPlansFromSearchCriteria.js](/scripts/getPlansFromSearchCriteria.js).*
 4. Copy [benchmark-template-optic.js](/scripts/performance/benchmark-template-optic.js) as `optic-benchmark.js`, then copy the plan from `optic.js` as the value of this script's `plan` variable.
 5. Copy `optic-benchmark.js` into QC.
@@ -1041,7 +1041,7 @@ Use this flow to start a performance investigation with an LLM.
 
 #### Example Performance Investigation Prompt
 
-*If you LLM session isn't already orientated to the project and initiative, consider adding the [Example Project Context Prompt](#example-project-context-prompt) prompt to the beginning of your performance investigation prompt.*
+*If your LLM session isn't already orientated to the project and initiative, consider adding the [Example Project Context Prompt](#example-project-context-prompt) prompt to the beginning of your performance investigation prompt.*
 
 > We just ran the performance test against the searchWillMatch endpoint and identified a query that consistently takes 2.9s - 3.1s. It is executed frequently. We need to find a way to speed this query up.
 > 

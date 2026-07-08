@@ -69,6 +69,9 @@
   - [Performance Context \& Targets](#performance-context--targets)
   - [CTS vs Optic Comparisons](#cts-vs-optic-comparisons)
   - [Investigation Tooling](#investigation-tooling)
+    - [LLM Kickoff](#llm-kickoff)
+      - [Example Performance Investigation Prompt](#example-performance-investigation-prompt)
+      - [Example Project Context Prompt](#example-project-context-prompt)
   - [Theory Index](#theory-index)
   - [Isolated Benchmark Reference (MarkLogic 12.0.1)](#isolated-benchmark-reference-marklogic-1201)
     - [Key findings](#key-findings)
@@ -1008,6 +1011,53 @@ Disable transitive search before running functional or performance comparisons. 
 **Plan visualization:** The Query Plan Viewer in Query Console supports Optic plans. Set query type to "Optic DSL Query", then paste the `selectedPlan` value from `getPlansFromSearchCriteria.js` into the DSL tab. Add a `limit` before `select` if needed — the `op` import and `.result()` call are automatic (including either causes an error). The "Get Plan" and "DSL" tabs in the Performance QC Workspace are pre-configured for this workflow.  For more, see [Introduction to Query Console](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/intro.html) -> [Query Console Walkthrough](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/walkthru.html) -> [Viewing Query Plans](https://docs.progress.com/bundle/marklogic-server-use-query-console-12/page/topics/walkthru.html#id_27533).
 
 **XML plan extraction:** Benchmark scripts with a `traceId` write detailed plans to `8000_ErrorLog.txt`. Find the plan that has your trace ID and includes cost attributes. To produce valid XML, strip timestamps with regex. Some LLM sessions request JSON. W3 Schools has an online [XML to JSON transformer](https://www.w3schools.com/tools/tool_xml_json.php) that preserves attributes.
+
+### LLM Kickoff
+
+Use this flow to start a performance investigation with an LLM.
+
+1. Create an investigation directory under [/scratch/performance/](/scratch/performance/).  This is where you will save files created by the following steps, as well as where the LLM can generate variants scripts for you to test.
+2. Saved the search's criteria as `criteria.json`.
+3. Create `optic.js` and `cts.js` using Get Plan and Get CTS found in the [Performance QC Workspace](/scripts/performance/Performance%20QC%20Workspace.xml).  *Get Plan is a copy of [getPlansFromSearchCriteria.js](/scripts/getPlansFromSearchCriteria.js).*
+4. Copy [benchmark-template-optic.js](/scripts/performance/benchmark-template-optic.js) as `optic-benchmark.js`, then copy the plan from `optic.js` as the value of this script's `plan` variable.
+5. Copy `optic-benchmark.js` into QC.
+6. Run once with the default settings: 3 cold runs + 10 warm runs.  Copy the output for inclusion in the prompt.
+7. Obtain Optic's optimized plan:
+    - Still in QC, change the `traceId` variable from null to a unique string, and run again.
+    - Download and save `8000_ErrorLog.txt` into the investigation folder.
+    - Search for your unique string then "cost".
+    - Starting with that plan's `<plan:plan>` start tag, copy from there to the end tag.
+    - Create `actual-plan.xml` and paste therein.
+    - Replace all instances of `.*Info:\+` with an empty string.  Save.
+8.  Create / finalize your prompt.
+    - See the [Example Performance Investigation Prompt](#example-performance-investigation-prompt) below, as well as [Example Project Context Prompt](#example-project-context-prompt) for brand new LLM sessions.
+    - Ask for variant scripts first that can be tested in QC; do not modify engine code or search patterns yet.
+    - Require each variant to include its own metrics output.
+    - Include the [variant-template.js](/scripts/performance/variant-template.js).
+9.  Run variants, share results, then shortlist candidates for template benchmarking.  This is where a lot of discussion and discovery can happen.  Review the variants, apply your knowledge, and provide any additional insights that could help the collaboration.
+10. Only after a variant proves out:
+    - Implement in main code base and measure its impact using a performance test.
+    - If the optimization is to be adopted, add unit tests and document herein.
+
+#### Example Performance Investigation Prompt
+
+*If you LLM session isn't already orientated to the project and initiative, consider adding the [Example Project Context Prompt](#example-project-context-prompt) prompt to the beginning of your performance investigation prompt.*
+
+> We just ran the performance test against the searchWillMatch endpoint and identified a query that consistently takes 2.9s - 3.1s. It is executed frequently. We need to find a way to speed this query up.
+> 
+> The query's criteria is in criteria.json. It includes one of many different `id` property values used during the test. The generated Optic plan may be found in optic.js. The CTS equivalent may be found in cts.js --it takes 29ms. Overall, this is contributing to the searchWillMatch performance test taking 15x longer than CTS (300 minutes vs 20 minutes, for 10K requests). actual-plan.xml is what Optic's optimizer served up. Identify the slowest part(s) and suggest how we might be able to speed this up. I want to try all ideas in variant scripts. Use variant-template.js as the template. It includes standard metrics, but add any others that will help us determine a variant's potential. I will run them and provide the results. Once we get some that have potential, I can put them in the project's benchmark template and provide those results as well. Here are the benchmark results for the current Optic plan:
+> 
+> 12.0.1-optic-curated-containingItem-id coldRuns=3 coldMin=2894 coldMax=3201 coldAvg=3026 coldStddev=129 warmRuns=10 warmMin=2618 warmMax=3200 warmAvg=2812 warmStddev=158 totalItemsRead=13
+> 
+> What else can I provide that would help? Do you have any questions for me?
+
+I haven't tried to see if the LLM can execute the scripts directly (e.g., [MarkLogic Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=mlxprs.mlxprs)).  That could enable the LLM to work more autonomously.
+
+#### Example Project Context Prompt
+
+When starting a new LLM session, consider including the following at the beginning of your opening prompt.  Present both referenced Markdown files.
+
+> Review lux-optic-primer.md and optic-lessons.md.  They will give you background on the application's Optic-based search implementation.  We are migrating from cts.search but, as you will see, are still using CTS queries in some search patterns.
 
 ## Theory Index
 

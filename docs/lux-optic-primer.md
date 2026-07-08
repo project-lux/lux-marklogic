@@ -1043,13 +1043,29 @@ Use this flow to start a performance investigation with an LLM.
 
 *If your LLM session isn't already orientated to the project and initiative, consider adding the [Example Project Context Prompt](#example-project-context-prompt) prompt to the beginning of your performance investigation prompt.*
 
-> We just ran the performance test against the searchWillMatch endpoint and identified a query that consistently takes 2.9s - 3.1s. It is executed frequently. We need to find a way to speed this query up.
-> 
-> The query's criteria is in criteria.json. It includes one of many different `id` property values used during the test. The generated Optic plan may be found in optic.js. The CTS equivalent may be found in cts.js --it takes 29ms. Overall, this is contributing to the searchWillMatch performance test taking 15x longer than CTS (300 minutes vs 20 minutes, for 10K requests). actual-plan.xml is what Optic's optimizer served up. Identify the slowest part(s) and suggest how we might be able to speed this up. I want to try all ideas in variant scripts. Use variant-template.js as the template. It includes standard metrics, but add any others that will help us determine a variant's potential. I will run them and provide the results. Once we get some that have potential, I can put them in the project's benchmark template and provide those results as well. Here are the benchmark results for the current Optic plan:
-> 
-> 12.0.1-optic-curated-containingItem-id coldRuns=3 coldMin=2894 coldMax=3201 coldAvg=3026 coldStddev=129 warmRuns=10 warmMin=2618 warmMax=3200 warmAvg=2812 warmStddev=158 totalItemsRead=13
-> 
-> What else can I provide that would help? Do you have any questions for me?
+> I am investigating a frequent query from the `searchWillMatch` performance test that consistently takes 2.9s-3.1s in Optic.
+>
+> Artifacts:
+> - `criteria.json`: the exact search criteria for one representative failing case (contains one of many `id` values seen in the test).
+> - `optic.js`: generated Optic plan.
+> - `cts.js`: CTS equivalent (about 29ms).
+> - `actual-plan.xml`: optimizer output captured from the server trace.
+>
+> Context:
+> - This shape is contributing to a large overall gap in `searchWillMatch` (about 300 minutes Optic vs 20 minutes CTS for 10K requests).
+> - I want to evaluate optimization ideas as standalone variant scripts first, before changing engine code.
+>
+> Request:
+> 1. Identify the likely slowest stage(s) in the current Optic path using these artifacts.
+> 2. Propose concrete variant hypotheses, prioritized by expected impact and implementation risk.
+> 3. Generate variant scripts using `variant-template.js` and preserve per-variant metrics output.
+> 4. Add any additional metrics that help explain where time is spent (build vs optimize vs execute, if available).
+>
+> Baseline benchmark for current Optic variant:
+>
+> `12.0.1-optic-curated-containingItem-id coldRuns=3 coldMin=2894 coldMax=3201 coldAvg=3026 coldStddev=129 warmRuns=10 warmMin=2618 warmMax=3200 warmAvg=2812 warmStddev=158 totalItemsRead=13`
+>
+> Please list any assumptions, then tell me what additional data would most improve your recommendations.
 
 I haven't tried to see if the LLM can execute the scripts directly (e.g., [MarkLogic Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=mlxprs.mlxprs)).  That could enable the LLM to work more autonomously.
 

@@ -126,7 +126,7 @@ const SortCriteria = class {
       return true;
     }, this);
 
-    // Do not calculate scores when we're only to support by a lexicon(s).
+    // Do not calculate scores when we're only asked to sort by one or more lexicons.
     if (!hasExplicitRelevance && this.#nonSemanticSortDescriptors.length > 0) {
       this.#relevanceSort = false;
     }

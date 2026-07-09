@@ -122,6 +122,34 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
         }
       });
     }
+
+    const applyOpticCallContainsAssertions = (opticFunName, expectedKey) => {
+      if (
+        typeof actualValue !== 'string' ||
+        !isArray(scenario.expected[expectedKey])
+      ) {
+        return;
+      }
+
+      const callArgs = [
+        ...actualValue.matchAll(
+          new RegExp(`\\.${opticFunName}\\(\\[([^\\]]+)\\]\\)`, 'g'),
+        ),
+      ].map((m) => m[1]);
+
+      scenario.expected[expectedKey].forEach((col) => {
+        const found = callArgs.some((args) => args.includes(col));
+        assertions.push(
+          testHelperProxy.assertTrue(
+            found,
+            `Scenario '${scenario.name}': .${opticFunName}() should contain a column matching '${col}'`,
+          ),
+        );
+      });
+    };
+
+    applyOpticCallContainsAssertions('select', 'selectContains');
+    applyOpticCallContainsAssertions('orderBy', 'orderByContains');
   }
 
   return {

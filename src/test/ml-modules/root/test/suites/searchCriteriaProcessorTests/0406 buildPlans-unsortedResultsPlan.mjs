@@ -54,20 +54,8 @@ const scenarios = [
     consistencyGroup: 'A',
   },
   {
-    name: 'Single non-semantic sort',
-    input: { sortDelimitedStr: 'agentActiveDate' },
-    expected: { error: false },
-    consistencyGroup: 'A',
-  },
-  {
-    name: 'Multiple non-semantic sorts',
-    input: { sortDelimitedStr: 'agentActiveDate,agentEndDate' },
-    expected: { error: false },
-    consistencyGroup: 'A',
-  },
-  {
-    name: 'Non-semantic descending',
-    input: { sortDelimitedStr: 'agentActiveDate:desc' },
+    name: 'Explicit relevance and non-semantic',
+    input: { sortDelimitedStr: 'relevance,agentActiveDate' },
     expected: { error: false },
     consistencyGroup: 'A',
   },
@@ -96,6 +84,24 @@ const scenarios = [
     input: {
       sortDelimitedStr: 'agentActiveDate,agentClassificationConceptName',
     },
+    expected: { error: false },
+    consistencyGroup: 'B',
+  },
+  {
+    name: 'Single non-semantic sort',
+    input: { sortDelimitedStr: 'agentActiveDate' },
+    expected: { error: false },
+    consistencyGroup: 'B',
+  },
+  {
+    name: 'Multiple non-semantic sorts',
+    input: { sortDelimitedStr: 'agentActiveDate,agentEndDate' },
+    expected: { error: false },
+    consistencyGroup: 'B',
+  },
+  {
+    name: 'Non-semantic descending',
+    input: { sortDelimitedStr: 'agentActiveDate:desc' },
     expected: { error: false },
     consistencyGroup: 'B',
   },

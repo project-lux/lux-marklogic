@@ -70,6 +70,7 @@ const SortCriteria = class {
   #parse() {
     let sortByName = '';
     let specifiedOrder = '';
+    let hasExplicitRelevance = false;
     const sortList = utils.split(this.#sortCriteriaStr);
     sortList.every(function (item) {
       if (item != '') {
@@ -84,6 +85,7 @@ const SortCriteria = class {
         // exclude 'random' and semantic sort given their return statements.
         else if (sortByName?.toLowerCase() == 'relevance') {
           this.#relevanceSort = true;
+          hasExplicitRelevance = true;
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
           // Protect from sorting by a different scope's binding.
@@ -123,6 +125,11 @@ const SortCriteria = class {
       }
       return true;
     }, this);
+
+    // Do not calculate scores when we're only asked to sort by one or more lexicons.
+    if (!hasExplicitRelevance && this.#nonSemanticSortDescriptors.length > 0) {
+      this.#relevanceSort = false;
+    }
   }
 
   #getOrder(specifiedOrder, bindingOrder = null) {

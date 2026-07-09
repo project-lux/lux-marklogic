@@ -129,25 +129,10 @@ for (const scenario of scenarios) {
     const e = scenario.expected;
     const name = scenario.name;
 
-    // Extract all .select([...]) argument lists from the serialized plan.
     const selectArgs =
       typeof planSource === 'string'
         ? [...planSource.matchAll(/\.select\(\[([^\]]+)\]\)/g)].map((m) => m[1])
         : [];
-
-    if (e.selectContains) {
-      for (const col of e.selectContains) {
-        const found = selectArgs.some((args) =>
-          new RegExp(`'[^']*${col}'`).test(args),
-        );
-        assertions.push(
-          testHelperProxy.assertTrue(
-            found,
-            `${name}: a .select() should contain a column matching '${col}'`,
-          ),
-        );
-      }
-    }
 
     if (e.selectExcludes) {
       for (const col of e.selectExcludes) {

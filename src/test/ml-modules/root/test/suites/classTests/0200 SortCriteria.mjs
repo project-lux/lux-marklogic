@@ -142,9 +142,9 @@ const scenarios = [
     input: { scopeName: 'agent', sortCriteriaStr: 'agentActiveDate' },
     expected: {
       error: false,
-      isRelevanceSort: true,
+      isRelevanceSort: false,
       isRandomSort: false,
-      areScoresRequired: true,
+      areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
       getNonSemanticSortDescriptors: [
         { indexReference: 'agentActiveStartDateLong', order: 'ascending' },
@@ -158,9 +158,9 @@ const scenarios = [
     input: { scopeName: 'agent', sortCriteriaStr: 'agentActiveDate:desc' },
     expected: {
       error: false,
-      isRelevanceSort: true,
+      isRelevanceSort: false,
       isRandomSort: false,
-      areScoresRequired: true,
+      areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
       getNonSemanticSortDescriptors: [
         { indexReference: 'agentActiveStartDateLong', order: 'descending' },
@@ -174,9 +174,9 @@ const scenarios = [
     input: { scopeName: 'agent', sortCriteriaStr: 'agentHasDigitalImage' },
     expected: {
       error: false,
-      isRelevanceSort: true,
+      isRelevanceSort: false,
       isRandomSort: false,
-      areScoresRequired: true,
+      areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
       getNonSemanticSortDescriptors: [
         { indexReference: 'agentHasDigitalImageBoolean', order: 'descending' },
@@ -193,9 +193,9 @@ const scenarios = [
     },
     expected: {
       error: false,
-      isRelevanceSort: true,
+      isRelevanceSort: false,
       isRandomSort: false,
-      areScoresRequired: true,
+      areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
       getNonSemanticSortDescriptors: [
         { indexReference: 'agentActiveStartDateLong', order: 'ascending' },
@@ -252,7 +252,7 @@ const scenarios = [
 
   // --- Mixed relevance + non-semantic ---
   {
-    name: 'Relevance combined with non-semantic — both active, scores required',
+    name: 'Relevance then non-semantic — both active, scores required',
     input: {
       scopeName: 'agent',
       sortCriteriaStr: 'relevance,agentActiveDate',
@@ -270,7 +270,25 @@ const scenarios = [
       getSemanticSortOption: null,
     },
   },
-
+  {
+    name: 'Non-semantic then relevance — both active, scores required',
+    input: {
+      scopeName: 'agent',
+      sortCriteriaStr: 'agentActiveDate,relevance',
+    },
+    expected: {
+      error: false,
+      isRelevanceSort: true,
+      isRandomSort: false,
+      areScoresRequired: true,
+      hasNonSemanticSortDescriptors: true,
+      getNonSemanticSortDescriptors: [
+        { indexReference: 'agentActiveStartDateLong', order: 'ascending' },
+      ],
+      hasSemanticSortOption: false,
+      getSemanticSortOption: null,
+    },
+  },
   // --- Invalid / ignored bindings ---
   {
     name: 'Wrong scope binding is ignored — defaults to relevance',

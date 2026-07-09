@@ -56,7 +56,8 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: ['fromSearch', 'score'],
+      orderByContains: ['score'],
+      sortedPlanContains: ['fromSearch'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
     },
   },
@@ -69,7 +70,8 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: ['fromSearch', 'score'],
+      orderByContains: ['score'],
+      sortedPlanContains: ['fromSearch'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
     },
   },
@@ -166,7 +168,7 @@ const scenarios = [
     },
   },
   {
-    name: 'Non-semantic sort adds sort lexicon column alongside fromSearch',
+    name: 'Non-semantic sort adds sort lexicon column',
     input: {
       scopeName: 'agent',
       searchCriteria: TEXT_CRITERIA,
@@ -174,8 +176,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      // Non-semantic sort coexists with fromSearch (relevance is still true).
-      sortedPlanContains: ['agentActiveStartDateLong', 'fromSearch'],
+      orderByContains: ['agentActiveStartDateLong'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
     },
   },
@@ -188,7 +189,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: ['agentActiveStartDateLong'],
+      orderByContains: ['agentActiveStartDateLong'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples', 'fromSearch'],
     },
   },
@@ -235,7 +236,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: ['agentActiveStartDateLong', 'desc'],
+      orderByContains: ['agentActiveStartDateLong', 'desc'],
     },
   },
   {
@@ -247,10 +248,7 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: [
-        'agentActiveStartDateLong',
-        'agentDiedStartDateLong',
-      ],
+      orderByContains: ['agentActiveStartDateLong', 'agentDiedStartDateLong'],
     },
   },
   {
@@ -383,7 +381,8 @@ const scenarios = [
     expected: {
       error: false,
       // keyword contributes score → hasScoreContributingCriteria is true
-      sortedPlanContains: ['fromSearch', 'score'],
+      orderByContains: ['score'],
+      sortedPlanContains: ['fromSearch'],
     },
   },
   {
@@ -395,7 +394,8 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: ['fromSearch', 'score', 'agentName'],
+      orderByContains: ['score'],
+      sortedPlanContains: ['fromSearch', 'agentName'],
     },
   },
   {
@@ -413,7 +413,8 @@ const scenarios = [
     },
     expected: {
       error: false,
-      sortedPlanContains: ['fromSearch', 'score'],
+      orderByContains: ['score'],
+      sortedPlanContains: ['fromSearch'],
     },
   },
   {

@@ -347,7 +347,7 @@ const SearchTerm = class {
     this.props.weight = weight;
   }
   getWeight() {
-    return this.props.weight;
+    return this.props.weight ?? 1;
   }
   hasNumericWeight() {
     return !isNaN(this.props.weight);

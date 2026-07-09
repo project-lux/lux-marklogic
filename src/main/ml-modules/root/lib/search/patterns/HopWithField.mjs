@@ -74,6 +74,8 @@ select ?${id}_s ?${id}_o where {
     const hopIriCol = searchTerm.getParentIriColumn();
     const fieldIriCol = searchTerm.getIriColumn();
     const hopFragCol = searchTerm.getParentFragmentColumn();
+    const termSearchOptions = []; // only use search options in fieldWordQuery.
+    const termWeight = searchTerm.getWeight();
     const hopTripleFragCol = id + '_hopFrag';
 
     // When criteria is a direct IRI ({ iri: value } or { id: value }) and no
@@ -97,8 +99,8 @@ select ?${id}_s ?${id}_o where {
               sem.iri('/does/not/exist'),
             ),
             '=',
-            [],
-            1,
+            termSearchOptions,
+            termWeight,
           ),
         ],
       };
@@ -131,8 +133,8 @@ select ?${id}_s ?${id}_o where {
                 sem.iri('/does/not/exist'),
               ),
               '=',
-              [],
-              1,
+              termSearchOptions,
+              termWeight,
             ),
           ],
         };
@@ -212,6 +214,7 @@ select ?${id}_s ?${id}_o where {
     const id = searchTerm.getId();
     const termValue = searchTerm.getValue();
     const termSearchOptions = searchTerm.getSearchOptions();
+    const termWeight = searchTerm.getWeight();
     const termConfig = searchTerm.getSearchTermConfig();
     const fieldIriCol = searchTerm.getIriColumn();
     const indexReferences = termConfig.getIndexReferences();
@@ -229,7 +232,12 @@ select ?${id}_s ?${id}_o where {
             [fieldIriCol]: cts.iriReference(),
           })
           .where(
-            cts.fieldWordQuery(indexReferences, termValue, termSearchOptions),
+            cts.fieldWordQuery(
+              indexReferences,
+              termValue,
+              termSearchOptions,
+              termWeight,
+            ),
           );
   }
 

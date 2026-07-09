@@ -117,13 +117,12 @@ class HopInverse extends SearchPatternBase {
       termConfig.getTargetScopeName(),
       false,
     );
+    // Using default options and weight for values-only request.
     const childQuery = cts.tripleRangeQuery(
       [],
       childPredicates,
       targetIRI,
       '=',
-      [],
-      1.0,
     );
     const fragmentConstraint =
       targetScopeTypes.length > 0

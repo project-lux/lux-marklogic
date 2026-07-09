@@ -23,6 +23,7 @@ function mockSearchTerm(operator) {
     getSearchTermConfig: () => ({
       getIndexReferences: () => ['itemDepthDimensionValue'],
     }),
+    getWeight: () => 5,
   };
 }
 

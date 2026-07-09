@@ -17,7 +17,7 @@ class Keyword extends SearchPatternBase {
       termValues: utils.toArray(searchTerm.getValue()),
       termScopeName: searchTerm.getScopeName(),
       isCompleteMatch: searchTerm.isCompleteMatch(),
-      searchOptions: searchTerm.getSearchOptions(),
+      termSearchOptions: searchTerm.getSearchOptions(),
       termWeight: searchTerm.getWeight() ?? 1.0,
     });
     return { ctsConstraints: [ctsQuery] };
@@ -56,21 +56,21 @@ function buildKeywordCtsQuery({
   termValues,
   termScopeName,
   isCompleteMatch = false,
-  searchOptions,
+  termSearchOptions,
   termWeight = 1.0,
 }) {
   const nonSemanticWordQuery = buildWordQueries(
     getSearchScopeFields(termScopeName),
     termValues,
     isCompleteMatch,
-    searchOptions,
+    termSearchOptions,
     termWeight,
   );
   const semanticWordQuery = buildWordQueries(
     [FULL_TEXT_SEARCH_RELATED_FIELD_NAME],
     termValues,
     isCompleteMatch,
-    searchOptions,
+    termSearchOptions,
     termWeight,
   );
   const refIris = cts
@@ -90,7 +90,7 @@ function buildKeywordCtsQuery({
     expandPredicates(getSearchScopePredicates(termScopeName)),
     refIris,
     '=',
-    [],
+    [], // do not use keyword's search options here (e.g., case-sensitive)
     termWeight,
   );
 
@@ -100,9 +100,17 @@ function buildKeywordCtsQuery({
 // Builds a single CTS field query, or an AND of them when multiple values
 // are supplied. fieldWordQuery / fieldValueQuery accept an array of field
 // names natively, so multiple fields are passed through as-is.
-function buildWordQueries(fields, values, isCompleteMatch, options, weight) {
+function buildWordQueries(
+  fields,
+  values,
+  isCompleteMatch,
+  termSearchOptions,
+  termWeight,
+) {
   const queryFn = isCompleteMatch ? cts.fieldValueQuery : cts.fieldWordQuery;
-  const queries = values.map((v) => queryFn(fields, v, options, weight));
+  const queries = values.map((v) =>
+    queryFn(fields, v, termSearchOptions, termWeight),
+  );
   return queries.length === 1 ? queries[0] : cts.andQuery(queries);
 }
 

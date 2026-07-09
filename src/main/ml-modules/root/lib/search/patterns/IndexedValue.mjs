@@ -6,6 +6,7 @@ class IndexedValue extends SearchPatternBase {
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
     const termSearchOptions = searchTerm.getSearchOptions();
+    const termWeight = searchTerm.getWeight();
 
     // CTS constraint rather than op.eq on a range lexicon: simple column value
     // comparisons do not support wildcarding, stemming, or sensitivity options
@@ -21,6 +22,7 @@ class IndexedValue extends SearchPatternBase {
           termConfig.getIndexReferences(),
           termValue,
           termSearchOptions,
+          termWeight,
         ),
       ],
     };

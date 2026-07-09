@@ -5,6 +5,27 @@
  * Generated timestamp: <%= timestamp %>
  */
 
+import * as errorClasses from '/lib/errorClasses.mjs';
+
+// if an error is thrown inside xdmp.invokeFunction, it gets wrapped in a generic error object.
+// this function attempts to extract the original error name and message from the wrapped error object.
+function extractCustomErrorNameAndMessage(e) {
+  if (e.data && e.data.length === 1) {
+    const errorDataObj = e.data[0];
+    const matches = errorDataObj.match(/^\\w*/);
+    const errorName = matches ? matches[0] : null;
+    const errorMessage = errorDataObj.replace(errorName + ':', '').trim();
+    return { errorName, errorMessage };
+  }
+  return { errorName: null, errorMessage: null };
+}
+
+// create a custom error with the given name and message, if the error class exists in errorClasses.mjs
+function createCustomError(name, message) {
+  const errorObj = errorClasses[name] ? new errorClasses[name](message) : null;
+  return errorObj;
+}
+
 // <%= functionLines %>
 
 // <%= exportLines %>

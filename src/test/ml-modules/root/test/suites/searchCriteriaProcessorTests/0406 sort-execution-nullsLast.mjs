@@ -18,7 +18,6 @@ import {
   buildFromSearchPlan,
   buildScopedCtsQuery,
   getResultRowGrouping,
-  sortRequiresLexicons,
 } from '/lib/search/engine.mjs';
 import { SortCriteria } from '/lib/SortCriteria.mjs';
 import op from '/MarkLogic/optic.mjs';

@@ -357,10 +357,14 @@ function buildPlans({
       scopedCtsQuery,
     });
 
-    // Opt 20: Replace the fromLexicons-based plan with a fromSearch-based
-    // plan when the sort doesn't require lexicon columns. Eliminates the
-    // iri lexicon scan, row multiplication, and blocking groupBy.
-    if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
+    // Opt 20: fromSearch fast path — eligible when criteria are CTS-only
+    // and the sort doesn't require the fromLexicons base plan (random needs
+    // .bind on the unsorted plan; semantic needs triple joins + groupBy).
+    if (
+      ctsExecutionEligible &&
+      !sortCriteria?.isRandomSort() &&
+      !sortCriteria?.hasSemanticSortOption()
+    ) {
       selectedPlan = buildFromSearchPlan(
         acc,
         assemblyContext,
@@ -938,14 +942,6 @@ function isCtsExecutionEligible({
   return includeSearchResults && !pageWith && scopedCtsQuery != null;
 }
 
-// Returns true when the active sort strategy requires lexicon columns
-// or plan structures that only the fromLexicons path can provide.
-// Relevance sort and unsorted are compatible with fromSearch (Opt 20).
-function sortRequiresLexicons(sortCriteria) {
-  if (!sortCriteria) return false;
-  return sortCriteria.isRandomSort() || sortCriteria.hasSemanticSortOption();
-}
-
 // Opt 20: Builds a compact fromSearch-based plan. performSearch applies
 // .offset().limit() first, then chains .joinDocAndUri() so only the page
 // slice hits disk. This eliminates the 43.9M-entry iri lexicon scans,
@@ -1250,6 +1246,5 @@ export {
   performSearch,
   processNestedCriteria,
   processNestedCriteriaAsCts,
-  sortRequiresLexicons,
   traverseCriteria,
 };

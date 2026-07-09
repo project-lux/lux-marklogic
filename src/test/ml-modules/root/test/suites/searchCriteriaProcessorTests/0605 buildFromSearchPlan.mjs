@@ -107,6 +107,60 @@ const scenarios = [
       planExcludes: ['joinDocAndUri'],
     },
   },
+
+  // --- Non-semantic sort (joinLeftOuter path) ---
+  {
+    name: 'non-semantic sort joins sort lexicon via joinLeftOuter',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['fromSearch', 'joinLeftOuter', 'itemArchiveSortId'],
+      planExcludes: ['joinDocAndUri', 'logtfidf'],
+    },
+  },
+  {
+    name: 'non-semantic sort ascending produces asc orderBy',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['op.asc', 'itemArchiveSortId'],
+      planExcludes: ['joinDocAndUri'],
+    },
+  },
+  {
+    name: 'non-semantic sort descending produces desc orderBy',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId:desc'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['op.desc', 'itemArchiveSortId'],
+      planExcludes: ['joinDocAndUri'],
+    },
+  },
+  {
+    name: 'non-semantic sort takes precedence over relevance',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['joinLeftOuter', 'itemArchiveSortId'],
+      planExcludes: ['logtfidf', 'joinDocAndUri'],
+    },
+  },
 ];
 
 let assertions = [];

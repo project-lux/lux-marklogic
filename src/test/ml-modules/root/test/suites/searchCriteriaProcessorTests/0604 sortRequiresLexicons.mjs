@@ -12,7 +12,7 @@ const LIB = '0604 sortRequiresLexicons.mjs';
 console.log(`${LIB}: starting.`);
 
 const scenarios = [
-  // --- False cases (no lexicons needed) ---
+  // --- False cases ---
   {
     name: 'null sortCriteria returns false',
     input: null,
@@ -33,16 +33,16 @@ const scenarios = [
     input: new SortCriteria('agent', 'relevance'),
     expected: false,
   },
+  {
+    name: 'non-semantic sort returns false',
+    input: new SortCriteria('agent', 'agentStartDate'),
+    expected: false,
+  },
 
-  // --- True cases (lexicons needed) ---
+  // --- True cases ---
   {
     name: 'random sort returns true',
     input: new SortCriteria('agent', 'random'),
-    expected: true,
-  },
-  {
-    name: 'non-semantic field sort returns true',
-    input: new SortCriteria('agent', 'agentStartDate'),
     expected: true,
   },
   {

@@ -7,6 +7,8 @@ class IndexedRange extends SearchPatternBase {
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
     const operator = searchTerm.getComparisonOperator();
+    const termSearchOptions = []; // Electing not to use searchTerm's options.
+    const termWeight = searchTerm.getWeight();
 
     this.requireRangeOperator(searchTerm.getName(), operator);
 
@@ -16,6 +18,8 @@ class IndexedRange extends SearchPatternBase {
           termConfig.getIndexReferences(),
           operator,
           termValue,
+          termSearchOptions,
+          termWeight,
         ),
       ],
     };

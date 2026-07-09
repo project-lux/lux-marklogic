@@ -28,6 +28,7 @@ function mockSearchTerm(operator, value = '1800;1900') {
         'agentBornEndDateLong',
       ],
     }),
+    getWeight: () => 2,
   };
 }
 

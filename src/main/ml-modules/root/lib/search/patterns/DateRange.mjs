@@ -75,6 +75,8 @@ class DateRange extends SearchPatternBase {
     // Operator = tests both (overlap). Operator != uses OR of two ranges.
     const ctsConstraints = [];
 
+    const termSearchOptions = []; // Electing not to use searchTerm's options.
+    const termWeight = searchTerm.getWeight();
     if (['>', '>=', '<', '<='].includes(operator)) {
       // All single-sided operators test the document's start date (qS).
       // Use the start of the search date for >= and <; the end of the search date for > and <=.
@@ -82,24 +84,54 @@ class DateRange extends SearchPatternBase {
         ? startDateLong
         : endDateLong;
       ctsConstraints.push(
-        cts.fieldRangeQuery(startIndexName, operator, dateLong),
+        cts.fieldRangeQuery(
+          startIndexName,
+          operator,
+          dateLong,
+          termSearchOptions,
+          termWeight,
+        ),
       );
     } else if (operator === '=') {
       // Overlap: a document qualifies if its timespan [qS, qE] overlaps the search range [aS, aE].
       // Condition: qS <= aE AND qE >= aS
       ctsConstraints.push(
-        cts.fieldRangeQuery(startIndexName, '<=', endDateLong),
+        cts.fieldRangeQuery(
+          startIndexName,
+          '<=',
+          endDateLong,
+          termSearchOptions,
+          termWeight,
+        ),
       );
       ctsConstraints.push(
-        cts.fieldRangeQuery(endIndexName, '>=', startDateLong),
+        cts.fieldRangeQuery(
+          endIndexName,
+          '>=',
+          startDateLong,
+          termSearchOptions,
+          termWeight,
+        ),
       );
     } else if (operator === '!=') {
       // Complement of overlap: a document qualifies if its timespan does NOT overlap [aS, aE].
       // Condition: qS > aE OR qE < aS
       ctsConstraints.push(
         cts.orQuery([
-          cts.fieldRangeQuery(startIndexName, '>', endDateLong),
-          cts.fieldRangeQuery(endIndexName, '<', startDateLong),
+          cts.fieldRangeQuery(
+            startIndexName,
+            '>',
+            endDateLong,
+            termSearchOptions,
+            termWeight,
+          ),
+          cts.fieldRangeQuery(
+            endIndexName,
+            '<',
+            startDateLong,
+            termSearchOptions,
+            termWeight,
+          ),
         ]),
       );
     } else {

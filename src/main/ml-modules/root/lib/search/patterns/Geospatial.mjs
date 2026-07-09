@@ -63,7 +63,15 @@ class Geospatial extends SearchPatternBase {
       REGION_INVALID_VALUES,
     );
     return {
-      ctsConstraints: [cts.geospatialRegionQuery(ref, operator, region)],
+      ctsConstraints: [
+        cts.geospatialRegionQuery(
+          ref,
+          operator,
+          region,
+          [], // Electing not to use searchTerm's options
+          searchTerm.getWeight(),
+        ),
+      ],
     };
   }
 
@@ -74,7 +82,12 @@ class Geospatial extends SearchPatternBase {
     const path = this.#getIndexReference(searchTerm);
     return {
       ctsConstraints: [
-        cts.pathGeospatialQuery(path, region, POINT_INDEX_OPTIONS),
+        cts.pathGeospatialQuery(
+          path,
+          region,
+          POINT_INDEX_OPTIONS, // Electing not to include searchTerm's options
+          searchTerm.getWeight(),
+        ),
       ],
     };
   }

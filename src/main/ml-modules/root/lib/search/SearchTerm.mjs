@@ -344,10 +344,11 @@ const SearchTerm = class {
     return this;
   }
   setWeight(weight) {
-    this.props.weight = weight;
+    // MarkLogic uses -16 through 64.
+    this.props.weight = Number.isFinite(Number(weight)) ? Number(weight) : 1;
   }
   getWeight() {
-    return this.props.weight;
+    return this.props.weight ?? 1;
   }
   hasNumericWeight() {
     return !isNaN(this.props.weight);

@@ -6,6 +6,7 @@ class IndexedWord extends SearchPatternBase {
     const termValue = searchTerm.getValue();
     const termConfig = searchTerm.getSearchTermConfig();
     const termSearchOptions = searchTerm.getSearchOptions();
+    const termWeight = searchTerm.getWeight();
 
     // CTS constraint for same reason as indexedValue pattern.
     return {
@@ -15,11 +16,13 @@ class IndexedWord extends SearchPatternBase {
               termConfig.getIndexReferences(),
               termValue,
               termSearchOptions,
+              termWeight,
             )
           : cts.fieldWordQuery(
               termConfig.getIndexReferences(),
               termValue,
               termSearchOptions,
+              termWeight,
             ),
       ],
     };

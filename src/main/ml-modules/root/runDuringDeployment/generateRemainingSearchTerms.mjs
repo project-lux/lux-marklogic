@@ -214,7 +214,7 @@ const searchTermsConfig = {};
         }
         unitConfig[newScopeName][newTermName] = {
           patternName: PATTERN_NAME_HOP_INVERSE,
-          transitive: unitConfig[scopeName][termName].transitive,
+          allowsTransitive: unitConfig[scopeName][termName].allowsTransitive,
           predicates: unitConfig[scopeName][termName].predicates,
           targetScope: scopeName,
           hopInverseName: termName, // added for getInverseSearchTermInfo

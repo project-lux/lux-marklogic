@@ -135,7 +135,7 @@ const SEARCH_TERMS_CONFIG = {
   concept: {
     broader: {
       patternName: 'hopWithField',
-      transitive: true,
+      allowsTransitive: true,
       predicates: ['skos:broader'],
       targetScope: 'concept',
       hopInverseName: 'narrower',
@@ -369,7 +369,7 @@ const SEARCH_TERMS_CONFIG = {
     },
     partOf: {
       patternName: 'hopWithField',
-      transitive: true,
+      allowsTransitive: true,
       predicates: ['crm:P89_falls_within'],
       targetScope: 'place',
       indexReferences: ['placePrimaryName'],

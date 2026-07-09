@@ -362,7 +362,8 @@ function buildLeafSearchTerm(
     if (
       childId &&
       termConfig.hasIdIndexReferences() &&
-      !termConfig.isTransitive()
+      // TODO: why do we check for transitive here?
+      !termConfig.allowsTransitive()
     ) {
       termConfig = new SearchTermConfig({
         indexReferences: termConfig.getIdIndexReferences(),

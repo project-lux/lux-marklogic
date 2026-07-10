@@ -2,10 +2,11 @@
  * Test suite for non-semantic sort execution — verifies that results without
  * sort values appear at the end regardless of sort direction.
  *
- * Uses 4 test documents loaded by suiteSetup:
- *   - 2 HumanMadeObject with itemArchiveSortId values ("Alpha-001", "Bravo-002")
+ * Uses 5 test documents loaded by suiteSetup:
+ *   - 3 HumanMadeObject with itemArchiveSortId values
+ *     ("Aardvark-000" + "Zulu-999" on one doc, plus "Alpha-001", "Bravo-002")
  *   - 2 HumanMadeObject without itemArchiveSortId values
- * All 4 are members of the test-sort-set, filtered via memberOf { id }.
+ * All 5 are members of the test-sort-set, filtered via memberOf { id }.
  *
  * Tests both execution paths:
  *   - buildSortedResultsPlan (fromLexicons base, non-CTS-eligible)
@@ -14,14 +15,9 @@
 
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
-import {
-  buildFromSearchPlan,
-  buildScopedCtsQuery,
-  getResultRowGrouping,
-} from '/lib/search/engine.mjs';
-import { SortCriteria } from '/lib/SortCriteria.mjs';
 import op from '/MarkLogic/optic.mjs';
 import {
+  SORT_ITEM_MULTI_VALUE_URI,
   SORT_ITEM_NO_VALUE_1_URI,
   SORT_ITEM_NO_VALUE_2_URI,
   SORT_ITEM_WITH_VALUE_1_URI,
@@ -35,6 +31,7 @@ const assertions = [];
 
 const SORT_SET_URI = 'https://lux.collections.yale.edu/data/set/test-sort-set';
 const WITH_VALUE_URIS = new Set([
+  SORT_ITEM_MULTI_VALUE_URI,
   SORT_ITEM_WITH_VALUE_1_URI,
   SORT_ITEM_WITH_VALUE_2_URI,
 ]);
@@ -43,7 +40,7 @@ const NO_VALUE_URIS = new Set([
   SORT_ITEM_NO_VALUE_2_URI,
 ]);
 
-// Search criteria that matches exactly the 4 test documents via memberOf.
+// Search criteria that matches exactly the 5 test documents via memberOf.
 const SEARCH_CRITERIA = {
   _scope: 'item',
   memberOf: { id: SORT_SET_URI },
@@ -99,28 +96,50 @@ function executeFromSearchPlan(sortDelimitedStr) {
 function assertNullsLast(rows, direction, pathLabel) {
   const prefix = `${pathLabel} ${direction}`;
 
-  // All 4 test documents should be present.
+  // All 5 test documents should be present.
   assertions.push(
     testHelperProxy.assertEqual(
-      4,
+      5,
       rows.length,
-      `${prefix}: expected 4 rows, got ${rows.length}`,
+      `${prefix}: expected 5 rows, got ${rows.length}`,
     ),
   );
 
-  if (rows.length !== 4) return;
+  if (rows.length !== 5) return;
 
-  // First 2 rows should have sort values (documents with itemArchiveSortId).
-  const firstTwoIds = new Set(rows.slice(0, 2).map((r) => r.id));
+  // Row-multiplication regression guard: IDs should be unique.
+  const ids = rows.map((r) => r.id);
+  assertions.push(
+    testHelperProxy.assertEqual(
+      ids.length,
+      new Set(ids).size,
+      `${prefix}: expected unique IDs (no duplicates from multi-value sort joins).`,
+    ),
+  );
+
+  // Multi-value document should appear exactly once.
+  const multiValueCount = rows.filter(
+    (r) => r.id === SORT_ITEM_MULTI_VALUE_URI,
+  ).length;
+  assertions.push(
+    testHelperProxy.assertEqual(
+      1,
+      multiValueCount,
+      `${prefix}: multi-value sort document should appear exactly once.`,
+    ),
+  );
+
+  // First 3 rows should have sort values (documents with itemArchiveSortId).
+  const firstThreeIds = new Set(rows.slice(0, 3).map((r) => r.id));
   assertions.push(
     testHelperProxy.assertTrue(
-      [...firstTwoIds].every((id) => WITH_VALUE_URIS.has(id)),
-      `${prefix}: first 2 rows should be documents with sort values. Got: ${[...firstTwoIds].join(', ')}`,
+      [...firstThreeIds].every((id) => WITH_VALUE_URIS.has(id)),
+      `${prefix}: first 3 rows should be documents with sort values. Got: ${[...firstThreeIds].join(', ')}`,
     ),
   );
 
   // Last 2 rows should lack sort values.
-  const lastTwoIds = new Set(rows.slice(2, 4).map((r) => r.id));
+  const lastTwoIds = new Set(rows.slice(3, 5).map((r) => r.id));
   assertions.push(
     testHelperProxy.assertTrue(
       [...lastTwoIds].every((id) => NO_VALUE_URIS.has(id)),
@@ -128,14 +147,37 @@ function assertNullsLast(rows, direction, pathLabel) {
     ),
   );
 
-  // For ascending: Alpha-001 before Bravo-002.
-  // For descending: Bravo-002 before Alpha-001.
+  // Direction-aware aggregate behavior with multi-value sort doc:
+  // - ascending uses min -> Aardvark-000 (multi-value doc) should lead.
+  // - descending uses max -> Zulu-999 (same doc) should lead.
   if (direction === 'ascending') {
     assertions.push(
       testHelperProxy.assertEqual(
-        SORT_ITEM_WITH_VALUE_2_URI,
+        SORT_ITEM_MULTI_VALUE_URI,
         rows[0].id,
-        `${prefix}: first row should be Alpha-001 (value-2 doc)`,
+        `${prefix}: first row should be the multi-value sort doc (Aardvark-000 min).`,
+      ),
+    );
+    assertions.push(
+      testHelperProxy.assertEqual(
+        SORT_ITEM_WITH_VALUE_2_URI,
+        rows[1].id,
+        `${prefix}: second row should be Alpha-001 (value-2 doc)`,
+      ),
+    );
+    assertions.push(
+      testHelperProxy.assertEqual(
+        SORT_ITEM_WITH_VALUE_1_URI,
+        rows[2].id,
+        `${prefix}: third row should be Bravo-002 (value-1 doc)`,
+      ),
+    );
+  } else {
+    assertions.push(
+      testHelperProxy.assertEqual(
+        SORT_ITEM_MULTI_VALUE_URI,
+        rows[0].id,
+        `${prefix}: first row should be the multi-value sort doc (Zulu-999 max).`,
       ),
     );
     assertions.push(
@@ -145,19 +187,11 @@ function assertNullsLast(rows, direction, pathLabel) {
         `${prefix}: second row should be Bravo-002 (value-1 doc)`,
       ),
     );
-  } else {
-    assertions.push(
-      testHelperProxy.assertEqual(
-        SORT_ITEM_WITH_VALUE_1_URI,
-        rows[0].id,
-        `${prefix}: first row should be Bravo-002 (value-1 doc)`,
-      ),
-    );
     assertions.push(
       testHelperProxy.assertEqual(
         SORT_ITEM_WITH_VALUE_2_URI,
-        rows[1].id,
-        `${prefix}: second row should be Alpha-001 (value-2 doc)`,
+        rows[2].id,
+        `${prefix}: third row should be Alpha-001 (value-2 doc)`,
       ),
     );
   }

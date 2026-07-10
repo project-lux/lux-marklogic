@@ -33,6 +33,9 @@ const SORT_ITEM_WITH_VALUE_1_URI =
 const SORT_ITEM_WITH_VALUE_2_FILENAME = 'sortItemWithValue2.json';
 const SORT_ITEM_WITH_VALUE_2_URI =
   'https://lux.collections.yale.edu/data/object/test-sort-with-value-2';
+const SORT_ITEM_MULTI_VALUE_FILENAME = 'sortItemMultiValue.json';
+const SORT_ITEM_MULTI_VALUE_URI =
+  'https://lux.collections.yale.edu/data/object/test-sort-multi-value';
 const SORT_ITEM_NO_VALUE_1_FILENAME = 'sortItemNoValue1.json';
 const SORT_ITEM_NO_VALUE_1_URI =
   'https://lux.collections.yale.edu/data/object/test-sort-no-value-1';
@@ -67,6 +70,8 @@ export {
   SORT_ITEM_NO_VALUE_1_URI,
   SORT_ITEM_NO_VALUE_2_FILENAME,
   SORT_ITEM_NO_VALUE_2_URI,
+  SORT_ITEM_MULTI_VALUE_FILENAME,
+  SORT_ITEM_MULTI_VALUE_URI,
   SORT_ITEM_WITH_VALUE_1_FILENAME,
   SORT_ITEM_WITH_VALUE_1_URI,
   SORT_ITEM_WITH_VALUE_2_FILENAME,

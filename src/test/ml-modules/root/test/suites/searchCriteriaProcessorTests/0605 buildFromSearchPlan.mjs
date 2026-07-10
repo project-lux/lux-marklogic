@@ -110,7 +110,7 @@ const scenarios = [
 
   // --- Non-semantic sort (joinLeftOuter path) ---
   {
-    name: 'non-semantic sort joins sort lexicon via joinLeftOuter',
+    name: 'non-semantic sort joins sort lexicon via joinLeftOuter and collapses by fragmentId',
     input: {
       acc: ACC_WITH_CTS,
       assemblyContext: CTX_WITH_SCORES,
@@ -118,7 +118,14 @@ const scenarios = [
       scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
     },
     expected: {
-      planContains: ['fromSearch', 'joinLeftOuter', 'itemArchiveSortId'],
+      planContains: [
+        'fromSearch',
+        'joinLeftOuter',
+        'itemArchiveSortId',
+        'groupBy',
+        'fragmentId',
+        'op.min',
+      ],
       planExcludes: ['joinDocAndUri', 'logtfidf'],
     },
   },
@@ -131,7 +138,7 @@ const scenarios = [
       scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
     },
     expected: {
-      planContains: ['op.asc', 'itemArchiveSortId'],
+      planContains: ['op.asc', 'itemArchiveSortId', 'fragmentId'],
       planExcludes: ['joinDocAndUri'],
     },
   },
@@ -144,7 +151,7 @@ const scenarios = [
       scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
     },
     expected: {
-      planContains: ['op.desc', 'itemArchiveSortId'],
+      planContains: ['op.desc', 'itemArchiveSortId', 'op.max', 'fragmentId'],
       planExcludes: ['joinDocAndUri'],
     },
   },

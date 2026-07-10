@@ -970,15 +970,11 @@ function buildFromSearchPlan(
   if (sortCriteria?.hasNonSemanticSortDescriptors()) {
     const descriptors = sortCriteria.getNonSemanticSortDescriptors();
     plan = applyNonSemanticSort(plan, descriptors, 'fragmentId');
-    const sortOrderBy = [];
-    for (const sd of descriptors) {
-      sortOrderBy.push(
-        sd.order === 'descending'
-          ? op.desc(`sort_${sd.indexReference}`)
-          : op.asc(`sort_${sd.indexReference}`),
-      );
-    }
-    plan = plan.orderBy(sortOrderBy);
+    const { sortAggregates, sortOrderBy } =
+      buildNonSemanticSortArtifacts(descriptors);
+    // joinLeftOuter may multiply rows when a lexicon yields multiple values
+    // per fragment. Collapse back to one row before paging/hydration.
+    plan = plan.groupBy(['fragmentId'], sortAggregates).orderBy(sortOrderBy);
   } else if (wantScore) {
     plan = plan.orderBy(op.desc(op.col('score')));
   }
@@ -1019,17 +1015,8 @@ function buildSortedResultsPlan({
 
   if (sortCriteria?.hasNonSemanticSortDescriptors()) {
     const descriptors = sortCriteria.getNonSemanticSortDescriptors();
-    const sortAggregates = [];
-    const sortOrderBy = [];
-    for (const sortDescriptor of descriptors) {
-      const sortColName = `sort_${sortDescriptor.indexReference}`;
-      sortAggregates.push(sortColName);
-      sortOrderBy.push(
-        sortDescriptor.order === 'descending'
-          ? op.desc(sortColName)
-          : op.asc(sortColName),
-      );
-    }
+    const { sortAggregates, sortOrderBy, sortSelectCols } =
+      buildNonSemanticSortArtifacts(descriptors);
     return collapseToResultRows(
       applyNonSemanticSort(
         assemblePlan(scp, { ...acc, ...assemblyContext }),
@@ -1039,6 +1026,7 @@ function buildSortedResultsPlan({
       groups,
       sortAggregates,
       sortOrderBy,
+      sortSelectCols,
     );
   }
 
@@ -1145,11 +1133,9 @@ function applySemanticSort(plan, sortOption, sortByColName) {
 // lack sort values (they receive null and sort last). Each field is joined
 // independently so a document missing one sort field keeps values from others.
 //
-// TODO: multi-value lexicons — if a document has multiple values in a sort
-// lexicon, the joinLeftOuter produces multiple rows per fragment. The
-// downstream groupBy (via collapseToResultRows) collapses them with
-// op.sample, picking one value arbitrarily. Address after requirements
-// are clarified.
+// If a document has multiple values in a sort lexicon, joinLeftOuter can
+// multiply rows. Callers collapse with direction-aware aggregates
+// (ascending -> min, descending -> max) before ordering/pagination.
 function applyNonSemanticSort(plan, sortDescriptors, fragCol) {
   for (let i = 0; i < sortDescriptors.length; i++) {
     const sortDescriptor = sortDescriptors[i];
@@ -1168,6 +1154,33 @@ function applyNonSemanticSort(plan, sortDescriptors, fragCol) {
     );
   }
   return plan;
+}
+
+// Builds common descriptor-derived artifacts used by both non-semantic sort
+// call paths: aggregates for dedupe, orderBy expressions, and select columns.
+function buildNonSemanticSortArtifacts(sortDescriptors) {
+  const sortAggregates = [];
+  const sortOrderBy = [];
+  const sortSelectCols = [];
+  for (const sortDescriptor of sortDescriptors) {
+    const sortColName = `sort_${sortDescriptor.indexReference}`;
+    sortAggregates.push(
+      sortDescriptor.order === 'descending'
+        ? op.max(sortColName, op.col(sortColName))
+        : op.min(sortColName, op.col(sortColName)),
+    );
+    sortOrderBy.push(
+      sortDescriptor.order === 'descending'
+        ? op.desc(sortColName)
+        : op.asc(sortColName),
+    );
+    sortSelectCols.push(sortColName);
+  }
+  return {
+    sortAggregates,
+    sortOrderBy,
+    sortSelectCols,
+  };
 }
 //#endregion
 

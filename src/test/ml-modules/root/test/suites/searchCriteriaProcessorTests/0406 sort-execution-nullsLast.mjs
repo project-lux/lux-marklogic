@@ -69,11 +69,8 @@ function executeFromSearchPlan(sortDelimitedStr) {
     scopeName: 'item',
     sortDelimitedStr,
   });
-  const { sortedResultsPlan } = scp.buildPlans();
-  // Build the accumulator to get scopedCtsQuery for the fromSearch path.
-  const sortCriteria = new SortCriteria('item', sortDelimitedStr);
-  // Use the SCP's buildPlans to get scopedCtsQuery, then build the fromSearch plan.
   const result = scp.buildPlans();
+  const { sortedResultsPlan } = result;
   if (!result.scopedCtsQuery) {
     // Fallback: this search shape may not be CTS-eligible.
     // Return sortedResultsPlan rows instead.

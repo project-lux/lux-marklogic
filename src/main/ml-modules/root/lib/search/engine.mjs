@@ -972,7 +972,7 @@ function buildFromSearchPlan(
     const descriptors = sortCriteria.getNonSemanticSortDescriptors();
     plan = applyNonSemanticSort(plan, descriptors, 'fragmentId');
     const includeScoreAsSecondarySort = wantScore;
-    const { sortAggregates, sortOrderBy } = buildNonSemanticSortArtifacts(
+    const { sortAggregates, sortOrderBy } = buildNonSemanticSortSpec(
       descriptors,
       {
         includeScoreAsSecondarySort,
@@ -1026,7 +1026,7 @@ function buildSortedResultsPlan({
       hasScoreContributingCriteria &&
       acc.ctsConstraints.length > 0;
     const { sortAggregates, sortOrderBy, sortSelectCols } =
-      buildNonSemanticSortArtifacts(descriptors, {
+      buildNonSemanticSortSpec(descriptors, {
         includeScoreAsSecondarySort,
       });
     return collapseToResultRows(
@@ -1168,9 +1168,13 @@ function applyNonSemanticSort(plan, sortDescriptors, fragCol) {
   return plan;
 }
 
-// Builds common descriptor-derived artifacts used by both non-semantic sort
+// Builds common descriptor-derived components used by both non-semantic sort
 // call paths: aggregates for dedupe, orderBy expressions, and select columns.
-function buildNonSemanticSortArtifacts(
+//
+// Note: when results do not have the values being sorted on, the order is not
+// consistent.  We can make them consistent by also sorting on fragment ID.  The
+// groupBy preceding the orderBy would have to allow the fragment ID through.
+function buildNonSemanticSortSpec(
   sortDescriptors,
   { includeScoreAsSecondarySort = false } = {},
 ) {

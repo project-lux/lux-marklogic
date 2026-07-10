@@ -42,6 +42,8 @@ const SORT_ITEM_NO_VALUE_1_URI =
 const SORT_ITEM_NO_VALUE_2_FILENAME = 'sortItemNoValue2.json';
 const SORT_ITEM_NO_VALUE_2_URI =
   'https://lux.collections.yale.edu/data/object/test-sort-no-value-2';
+const SORT_SET_FILENAME = 'sortSet.json';
+const SORT_SET_URI = 'https://lux.collections.yale.edu/data/set/test-sort-set';
 
 const FOO_FILENAME = 'foo.json';
 const FOO_URI = `/${FOO_FILENAME}`;
@@ -72,6 +74,8 @@ export {
   SORT_ITEM_NO_VALUE_2_URI,
   SORT_ITEM_MULTI_VALUE_FILENAME,
   SORT_ITEM_MULTI_VALUE_URI,
+  SORT_SET_FILENAME,
+  SORT_SET_URI,
   SORT_ITEM_WITH_VALUE_1_FILENAME,
   SORT_ITEM_WITH_VALUE_1_URI,
   SORT_ITEM_WITH_VALUE_2_FILENAME,

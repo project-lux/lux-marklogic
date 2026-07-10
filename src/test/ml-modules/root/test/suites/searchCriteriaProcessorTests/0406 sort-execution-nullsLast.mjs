@@ -22,6 +22,7 @@ import {
   SORT_ITEM_NO_VALUE_2_URI,
   SORT_ITEM_WITH_VALUE_1_URI,
   SORT_ITEM_WITH_VALUE_2_URI,
+  SORT_SET_URI,
 } from '/test/unitTestConstants.mjs';
 
 const LIB = '0406 sort-execution-nullsLast.mjs';
@@ -29,7 +30,6 @@ console.log(`${LIB}: starting.`);
 
 const assertions = [];
 
-const SORT_SET_URI = 'https://lux.collections.yale.edu/data/set/test-sort-set';
 const WITH_VALUE_URIS = new Set([
   SORT_ITEM_MULTI_VALUE_URI,
   SORT_ITEM_WITH_VALUE_1_URI,

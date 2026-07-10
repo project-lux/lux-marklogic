@@ -8,6 +8,7 @@ import {
   SORT_ITEM_NO_VALUE_2_URI,
   SORT_ITEM_WITH_VALUE_1_URI,
   SORT_ITEM_WITH_VALUE_2_URI,
+  SORT_SET_URI,
 } from '/test/unitTestConstants.mjs';
 
 const seedUris = [
@@ -15,6 +16,7 @@ const seedUris = [
   FACET_ITEM_URI,
   FACET_SET_URI,
   FACET_CURATOR_URI,
+  SORT_SET_URI,
   SORT_ITEM_MULTI_VALUE_URI,
   SORT_ITEM_WITH_VALUE_1_URI,
   SORT_ITEM_WITH_VALUE_2_URI,

@@ -944,8 +944,9 @@ function isCtsExecutionEligible({
 
 // Opt 20: Builds a compact fromSearch-based plan. performSearch applies
 // .offset().limit() first, then chains .joinDocAndUri() so only the page
-// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans,
-// row multiplication, and blocking groupBy of the standard fromLexicons path.
+// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans of the
+// standard fromLexicons path. For non-semantic lexicon sorts, this path still
+// uses joinLeftOuter + groupBy to collapse multi-valued sort rows.
 function buildFromSearchPlan(
   acc,
   assemblyContext,

@@ -1033,7 +1033,7 @@ Use this flow to start a performance investigation with an LLM.
     - See the [Example Performance Investigation Prompt](#example-performance-investigation-prompt) below, as well as [Example Project Context Prompt](#example-project-context-prompt) for brand new LLM sessions.
     - Ask for variant scripts first that can be tested in QC; do not modify engine code or search patterns yet.
     - Require each variant to include its own metrics output.
-    - Include the [variant-template.js](/scripts/performance/variant-template.js).
+    - Include the [variant-template.js](/scripts/performance/variant-template.js).  *It includes additional instructions directed to the LLM.*
 9.  Run variants, share results, then shortlist candidates for template benchmarking.  This is where a lot of discussion and discovery can happen.  Review the variants, apply your knowledge, and provide any additional insights that could help the collaboration.
 10. Only after a variant proves out:
     - Implement in main code base and measure its impact using a performance test.

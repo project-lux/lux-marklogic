@@ -182,6 +182,20 @@ const scenarios = [
     },
   },
   {
+    name: 'Non-semantic plus explicit relevance uses score as secondary order',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: TEXT_CRITERIA,
+      sortDelimitedStr: 'agentActiveDate,relevance',
+    },
+    expected: {
+      error: false,
+      orderByContains: ['agentActiveStartDateLong', 'score'],
+      sortedPlanContains: ['joinLeftOuter', 'fromSearch'],
+      sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
+    },
+  },
+  {
     name: 'Non-semantic sort with non-scoring CTS constraints skips fromSearch',
     input: {
       scopeName: 'agent',

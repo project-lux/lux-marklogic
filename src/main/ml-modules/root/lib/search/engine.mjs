@@ -970,8 +970,13 @@ function buildFromSearchPlan(
   if (sortCriteria?.hasNonSemanticSortDescriptors()) {
     const descriptors = sortCriteria.getNonSemanticSortDescriptors();
     plan = applyNonSemanticSort(plan, descriptors, 'fragmentId');
-    const { sortAggregates, sortOrderBy } =
-      buildNonSemanticSortArtifacts(descriptors);
+    const includeScoreAsSecondarySort = wantScore;
+    const { sortAggregates, sortOrderBy } = buildNonSemanticSortArtifacts(
+      descriptors,
+      {
+        includeScoreAsSecondarySort,
+      },
+    );
     // joinLeftOuter may multiply rows when a lexicon yields multiple values
     // per fragment. Collapse back to one row before paging/hydration.
     plan = plan.groupBy(['fragmentId'], sortAggregates).orderBy(sortOrderBy);
@@ -1015,8 +1020,14 @@ function buildSortedResultsPlan({
 
   if (sortCriteria?.hasNonSemanticSortDescriptors()) {
     const descriptors = sortCriteria.getNonSemanticSortDescriptors();
+    const includeScoreAsSecondarySort =
+      sortCriteria.areScoresRequired() &&
+      hasScoreContributingCriteria &&
+      acc.ctsConstraints.length > 0;
     const { sortAggregates, sortOrderBy, sortSelectCols } =
-      buildNonSemanticSortArtifacts(descriptors);
+      buildNonSemanticSortArtifacts(descriptors, {
+        includeScoreAsSecondarySort,
+      });
     return collapseToResultRows(
       applyNonSemanticSort(
         assemblePlan(scp, { ...acc, ...assemblyContext }),
@@ -1158,7 +1169,10 @@ function applyNonSemanticSort(plan, sortDescriptors, fragCol) {
 
 // Builds common descriptor-derived artifacts used by both non-semantic sort
 // call paths: aggregates for dedupe, orderBy expressions, and select columns.
-function buildNonSemanticSortArtifacts(sortDescriptors) {
+function buildNonSemanticSortArtifacts(
+  sortDescriptors,
+  { includeScoreAsSecondarySort = false } = {},
+) {
   const sortAggregates = [];
   const sortOrderBy = [];
   const sortSelectCols = [];
@@ -1176,6 +1190,15 @@ function buildNonSemanticSortArtifacts(sortDescriptors) {
     );
     sortSelectCols.push(sortColName);
   }
+
+  // When relevance is explicitly requested alongside non-semantic sorts,
+  // apply score as a secondary order key so logtfidf work is used.
+  if (includeScoreAsSecondarySort) {
+    sortAggregates.push(op.max('score', op.col('score')));
+    sortOrderBy.push(op.desc(op.col('score')));
+    sortSelectCols.push('score');
+  }
+
   return {
     sortAggregates,
     sortOrderBy,

@@ -168,6 +168,28 @@ const scenarios = [
       planExcludes: ['logtfidf', 'joinDocAndUri'],
     },
   },
+  {
+    name: 'non-semantic plus explicit relevance uses score as secondary order key',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId,relevance'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: [
+        'fromSearch',
+        'logtfidf',
+        'joinLeftOuter',
+        'itemArchiveSortId',
+        'groupBy',
+        'score',
+        'op.asc',
+        'op.desc',
+      ],
+      planExcludes: ['joinDocAndUri'],
+    },
+  },
 ];
 
 let assertions = [];

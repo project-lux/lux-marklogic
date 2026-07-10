@@ -46,7 +46,7 @@ const MULTI_HOP_CRITERIA = {
 };
 
 const scenarios = [
-  // --- Opt 20: fromSearch plan (eligible, no lexicon sort) ---
+  // --- Opt 20: fromSearch plan (eligible with and without lexicon sort) ---
   {
     name: 'text search, default relevance sort → Opt 20',
     input: {
@@ -91,10 +91,8 @@ const scenarios = [
       selectedPlanExcludes: ['fromLexicons'],
     },
   },
-
-  // --- Opt 18: eligible but sort requires lexicons ---
   {
-    name: 'text search, non-semantic field sort → Opt 18 (not fromSearch)',
+    name: 'text search, lexicon sort → Opt 20',
     input: {
       searchCriteria: TEXT_CRITERIA,
       sortDelimitedStr: 'agentStartDate',
@@ -102,11 +100,13 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: false,
+      isFromSearchPlan: true,
       scopedCtsQueryNonNull: true,
-      selectedPlanContains: ['fromLexicons'],
+      selectedPlanContains: ['fromSearch', 'fromLexicons'],
     },
   },
+
+  // --- Opt 18: eligible but sort requires lexicons ---
   {
     name: 'text search, random sort → Opt 18 (not fromSearch)',
     input: {

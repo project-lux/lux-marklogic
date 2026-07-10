@@ -107,6 +107,89 @@ const scenarios = [
       planExcludes: ['joinDocAndUri'],
     },
   },
+
+  // --- Non-semantic sort (joinLeftOuter path) ---
+  {
+    name: 'non-semantic sort joins sort lexicon via joinLeftOuter and collapses by fragmentId',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: [
+        'fromSearch',
+        'joinLeftOuter',
+        'itemArchiveSortId',
+        'groupBy',
+        'fragmentId',
+        'op.min',
+      ],
+      planExcludes: ['joinDocAndUri', 'logtfidf'],
+    },
+  },
+  {
+    name: 'non-semantic sort ascending produces asc orderBy',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['op.asc', 'itemArchiveSortId', 'fragmentId'],
+      planExcludes: ['joinDocAndUri'],
+    },
+  },
+  {
+    name: 'non-semantic sort descending produces desc orderBy',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId:desc'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['op.desc', 'itemArchiveSortId', 'op.max', 'fragmentId'],
+      planExcludes: ['joinDocAndUri'],
+    },
+  },
+  {
+    name: 'non-semantic sort takes precedence over relevance',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: ['joinLeftOuter', 'itemArchiveSortId'],
+      planExcludes: ['logtfidf', 'joinDocAndUri'],
+    },
+  },
+  {
+    name: 'non-semantic plus explicit relevance uses score as secondary order key',
+    input: {
+      acc: ACC_WITH_CTS,
+      assemblyContext: CTX_WITH_SCORES,
+      sortCriteria: new SortCriteria('item', 'itemArchiveSortId,relevance'),
+      scopedCtsQuery: MOCK_SCOPED_CTS_QUERY,
+    },
+    expected: {
+      planContains: [
+        'fromSearch',
+        'logtfidf',
+        'joinLeftOuter',
+        'itemArchiveSortId',
+        'groupBy',
+        'score',
+        'op.asc',
+        'op.desc',
+      ],
+      planExcludes: ['joinDocAndUri'],
+    },
+  },
 ];
 
 let assertions = [];

@@ -9,6 +9,18 @@ import {
   FACET_ITEM_URI,
   FACET_SET_FILENAME,
   FACET_SET_URI,
+  SORT_ITEM_NO_VALUE_1_FILENAME,
+  SORT_ITEM_NO_VALUE_1_URI,
+  SORT_ITEM_NO_VALUE_2_FILENAME,
+  SORT_ITEM_NO_VALUE_2_URI,
+  SORT_ITEM_MULTI_VALUE_FILENAME,
+  SORT_ITEM_MULTI_VALUE_URI,
+  SORT_ITEM_WITH_VALUE_1_FILENAME,
+  SORT_ITEM_WITH_VALUE_1_URI,
+  SORT_ITEM_WITH_VALUE_2_FILENAME,
+  SORT_ITEM_WITH_VALUE_2_URI,
+  SORT_SET_FILENAME,
+  SORT_SET_URI,
 } from '/test/unitTestConstants.mjs';
 import { ML_APP_NAME } from '/lib/appConstants.mjs';
 import { loadTestFile } from '/test/unitTestUtils.mjs';
@@ -18,6 +30,22 @@ try {
   loadTestFile(FACET_ITEM_URI, FACET_ITEM_FILENAME, [ML_APP_NAME]);
   loadTestFile(FACET_SET_URI, FACET_SET_FILENAME, [ML_APP_NAME]);
   loadTestFile(FACET_CURATOR_URI, FACET_CURATOR_FILENAME, [ML_APP_NAME]);
+  loadTestFile(SORT_SET_URI, SORT_SET_FILENAME, [ML_APP_NAME]);
+  loadTestFile(SORT_ITEM_WITH_VALUE_1_URI, SORT_ITEM_WITH_VALUE_1_FILENAME, [
+    ML_APP_NAME,
+  ]);
+  loadTestFile(SORT_ITEM_WITH_VALUE_2_URI, SORT_ITEM_WITH_VALUE_2_FILENAME, [
+    ML_APP_NAME,
+  ]);
+  loadTestFile(SORT_ITEM_MULTI_VALUE_URI, SORT_ITEM_MULTI_VALUE_FILENAME, [
+    ML_APP_NAME,
+  ]);
+  loadTestFile(SORT_ITEM_NO_VALUE_1_URI, SORT_ITEM_NO_VALUE_1_FILENAME, [
+    ML_APP_NAME,
+  ]);
+  loadTestFile(SORT_ITEM_NO_VALUE_2_URI, SORT_ITEM_NO_VALUE_2_FILENAME, [
+    ML_APP_NAME,
+  ]);
 } catch (e) {
   console.error(
     `searchCriteriaProcessorTests/suiteSetup.mjs encountered an error: ${e.message}`,

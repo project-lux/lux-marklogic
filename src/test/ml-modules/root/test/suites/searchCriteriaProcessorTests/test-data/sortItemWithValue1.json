@@ -1,0 +1,40 @@
+{
+  "json": {
+    "id": "https://lux.collections.yale.edu/data/object/test-sort-with-value-1",
+    "type": "HumanMadeObject",
+    "member_of": [
+      {
+        "id": "https://lux.collections.yale.edu/data/set/test-sort-set"
+      }
+    ],
+    "identified_by": [
+      {
+        "content": "Bravo-002",
+        "classified_as": [
+          {
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300456575"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "content": "Object With Sort Value 1",
+        "classified_as": [
+          {
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "indexedProperties": {
+    "dataType": "HumanMadeObject"
+  }
+}

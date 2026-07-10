@@ -168,7 +168,7 @@ const scenarios = [
     },
   },
   {
-    name: 'Non-semantic sort adds sort lexicon column',
+    name: 'Non-semantic sort adds sort lexicon column via joinLeftOuter',
     input: {
       scopeName: 'agent',
       searchCriteria: TEXT_CRITERIA,
@@ -177,6 +177,21 @@ const scenarios = [
     expected: {
       error: false,
       orderByContains: ['agentActiveStartDateLong'],
+      sortedPlanContains: ['joinLeftOuter'],
+      sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
+    },
+  },
+  {
+    name: 'Non-semantic plus explicit relevance uses score as secondary order',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: TEXT_CRITERIA,
+      sortDelimitedStr: 'agentActiveDate,relevance',
+    },
+    expected: {
+      error: false,
+      orderByContains: ['agentActiveStartDateLong', 'score'],
+      sortedPlanContains: ['joinLeftOuter', 'fromSearch'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
     },
   },
@@ -190,6 +205,7 @@ const scenarios = [
     expected: {
       error: false,
       orderByContains: ['agentActiveStartDateLong'],
+      sortedPlanContains: ['joinLeftOuter'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples', 'fromSearch'],
     },
   },
@@ -237,10 +253,11 @@ const scenarios = [
     expected: {
       error: false,
       orderByContains: ['agentActiveStartDateLong', 'desc'],
+      sortedPlanContains: ['joinLeftOuter'],
     },
   },
   {
-    name: 'Multiple non-semantic sorts produce multiple sort columns',
+    name: 'Multiple non-semantic sorts produce multiple joinLeftOuter joins',
     input: {
       scopeName: 'agent',
       searchCriteria: TEXT_CRITERIA,
@@ -249,6 +266,9 @@ const scenarios = [
     expected: {
       error: false,
       orderByContains: ['agentActiveStartDateLong', 'agentDiedStartDateLong'],
+      sortedPlanCounts: {
+        joinLeftOuter: 2,
+      },
     },
   },
   {

@@ -357,10 +357,14 @@ function buildPlans({
       scopedCtsQuery,
     });
 
-    // Opt 20: Replace the fromLexicons-based plan with a fromSearch-based
-    // plan when the sort doesn't require lexicon columns. Eliminates the
-    // iri lexicon scan, row multiplication, and blocking groupBy.
-    if (ctsExecutionEligible && !sortRequiresLexicons(sortCriteria)) {
+    // Opt 20: fromSearch fast path — eligible when criteria are CTS-only
+    // and the sort doesn't require the fromLexicons base plan (random needs
+    // .bind on the unsorted plan; semantic needs triple joins + groupBy).
+    if (
+      ctsExecutionEligible &&
+      !sortCriteria?.isRandomSort() &&
+      !sortCriteria?.hasSemanticSortOption()
+    ) {
       selectedPlan = buildFromSearchPlan(
         acc,
         assemblyContext,
@@ -938,22 +942,11 @@ function isCtsExecutionEligible({
   return includeSearchResults && !pageWith && scopedCtsQuery != null;
 }
 
-// Returns true when the active sort strategy requires lexicon columns
-// or plan structures that only the fromLexicons path can provide.
-// Relevance sort and unsorted are compatible with fromSearch (Opt 20).
-function sortRequiresLexicons(sortCriteria) {
-  if (!sortCriteria) return false;
-  return (
-    sortCriteria.isRandomSort() ||
-    sortCriteria.hasNonSemanticSortDescriptors() ||
-    sortCriteria.hasSemanticSortOption()
-  );
-}
-
 // Opt 20: Builds a compact fromSearch-based plan. performSearch applies
 // .offset().limit() first, then chains .joinDocAndUri() so only the page
-// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans,
-// row multiplication, and blocking groupBy of the standard fromLexicons path.
+// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans of the
+// standard fromLexicons path. For non-semantic lexicon sorts, this path still
+// uses joinLeftOuter + groupBy to collapse multi-valued sort rows.
 function buildFromSearchPlan(
   acc,
   assemblyContext,
@@ -973,7 +966,22 @@ function buildFromSearchPlan(
         scoreMethod: 'zero',
       });
 
-  if (wantScore) {
+  // Non-semantic sort: LEFT OUTER join sort lexicon(s), then orderBy.
+  // Precedence matches buildSortedResultsPlan: non-semantic > relevance.
+  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
+    const descriptors = sortCriteria.getNonSemanticSortDescriptors();
+    plan = applyNonSemanticSort(plan, descriptors, 'fragmentId');
+    const includeScoreAsSecondarySort = wantScore;
+    const { sortAggregates, sortOrderBy } = buildNonSemanticSortArtifacts(
+      descriptors,
+      {
+        includeScoreAsSecondarySort,
+      },
+    );
+    // joinLeftOuter may multiply rows when a lexicon yields multiple values
+    // per fragment. Collapse back to one row before paging/hydration.
+    plan = plan.groupBy(['fragmentId'], sortAggregates).orderBy(sortOrderBy);
+  } else if (wantScore) {
     plan = plan.orderBy(op.desc(op.col('score')));
   }
 
@@ -1012,27 +1020,25 @@ function buildSortedResultsPlan({
   }
 
   if (sortCriteria?.hasNonSemanticSortDescriptors()) {
-    const sortAggregates = [];
-    const sortOrderBy = [];
-    const sortLexicons = {};
-    for (const sortDescriptor of sortCriteria.getNonSemanticSortDescriptors()) {
-      const sortColName = `sort_${sortDescriptor.indexReference}`;
-      sortLexicons[sortColName] = cts.fieldReference(
-        sortDescriptor.indexReference,
-      );
-      sortAggregates.push(sortColName);
-      sortOrderBy.push(
-        sortDescriptor.order === 'descending'
-          ? op.desc(sortColName)
-          : op.asc(sortColName),
-      );
-    }
-    const sortAcc = { ...acc, lexicons: { ...acc.lexicons, ...sortLexicons } };
+    const descriptors = sortCriteria.getNonSemanticSortDescriptors();
+    const includeScoreAsSecondarySort =
+      sortCriteria.areScoresRequired() &&
+      hasScoreContributingCriteria &&
+      acc.ctsConstraints.length > 0;
+    const { sortAggregates, sortOrderBy, sortSelectCols } =
+      buildNonSemanticSortArtifacts(descriptors, {
+        includeScoreAsSecondarySort,
+      });
     return collapseToResultRows(
-      assemblePlan(scp, { ...sortAcc, ...assemblyContext }),
+      applyNonSemanticSort(
+        assemblePlan(scp, { ...acc, ...assemblyContext }),
+        descriptors,
+        assemblyContext.fragCol,
+      ),
       groups,
       sortAggregates,
       sortOrderBy,
+      sortSelectCols,
     );
   }
 
@@ -1133,6 +1139,73 @@ function applySemanticSort(plan, sortOption, sortByColName) {
 
   return plan;
 }
+
+// Applies a non-semantic (lexicon-based) sort to a plan. LEFT OUTER joins a
+// separate fromLexicons per sort field on fragment ID, preserving results that
+// lack sort values (they receive null and sort last). Each field is joined
+// independently so a document missing one sort field keeps values from others.
+//
+// If a document has multiple values in a sort lexicon, joinLeftOuter can
+// multiply rows. Callers collapse with direction-aware aggregates
+// (ascending -> min, descending -> max) before ordering/pagination.
+function applyNonSemanticSort(plan, sortDescriptors, fragCol) {
+  for (let i = 0; i < sortDescriptors.length; i++) {
+    const sortDescriptor = sortDescriptors[i];
+    const sortColName = `sort_${sortDescriptor.indexReference}`;
+    const sortFragCol = `sortFrag${i}`;
+    const sortPlan = op.fromLexicons(
+      {
+        [sortColName]: cts.fieldReference(sortDescriptor.indexReference),
+      },
+      null,
+      op.fragmentIdCol(sortFragCol),
+    );
+    plan = plan.joinLeftOuter(
+      sortPlan,
+      op.on(op.fragmentIdCol(fragCol), op.fragmentIdCol(sortFragCol)),
+    );
+  }
+  return plan;
+}
+
+// Builds common descriptor-derived artifacts used by both non-semantic sort
+// call paths: aggregates for dedupe, orderBy expressions, and select columns.
+function buildNonSemanticSortArtifacts(
+  sortDescriptors,
+  { includeScoreAsSecondarySort = false } = {},
+) {
+  const sortAggregates = [];
+  const sortOrderBy = [];
+  const sortSelectCols = [];
+  for (const sortDescriptor of sortDescriptors) {
+    const sortColName = `sort_${sortDescriptor.indexReference}`;
+    sortAggregates.push(
+      sortDescriptor.order === 'descending'
+        ? op.max(sortColName, op.col(sortColName))
+        : op.min(sortColName, op.col(sortColName)),
+    );
+    sortOrderBy.push(
+      sortDescriptor.order === 'descending'
+        ? op.desc(sortColName)
+        : op.asc(sortColName),
+    );
+    sortSelectCols.push(sortColName);
+  }
+
+  // When relevance is explicitly requested alongside non-semantic sorts,
+  // apply score as a secondary order key so logtfidf work is used.
+  if (includeScoreAsSecondarySort) {
+    sortAggregates.push(op.max('score', op.col('score')));
+    sortOrderBy.push(op.desc(op.col('score')));
+    sortSelectCols.push('score');
+  }
+
+  return {
+    sortAggregates,
+    sortOrderBy,
+    sortSelectCols,
+  };
+}
 //#endregion
 
 //#region Pagination
@@ -1210,6 +1283,5 @@ export {
   performSearch,
   processNestedCriteria,
   processNestedCriteriaAsCts,
-  sortRequiresLexicons,
   traverseCriteria,
 };

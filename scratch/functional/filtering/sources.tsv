@@ -1,0 +1,8 @@
+Source	Key points used
+"Bob Starbird / Windows User, Unfiltered Searches.docx"	"Two-phase search; unfiltered vs filtered; false positives from punctuation, whitespace, case, wildcards, diacritics, positions, stemming; NOT false-negative rule; index options."
+MarkLogic cts:search documentation	"Filtered is default; filtered eliminates false-positive matches; unfiltered selects candidate fragments and can include false positives, missed matches, or incorrect matches."
+MarkLogic op.fromSearch documentation	op.fromSearch fragments are not filtered and are selected in the same manner as unfiltered cts:search operations.
+MarkLogic op.fromSearchDocs documentation	op.fromSearchDocs takes a CTS query and is a convenience around op.fromSearch plus doc/URI join.
+MarkLogic Optic search capabilities documentation	Optic supports CTS queries as filters; Optic searches are unfiltered.
+Teams discussion: Parameterizing a CTS query inside Optic / related thread	cts.contains needed for filtered-like behavior in Optic; op.call workaround; constrain fromSearchDocs as much as safely possible; 12.1 parameterization/fromDocs expectation not promised.
+MarkLogic 12 release notes	Current public 12 release notes show 12.0.2 and 12.0.1; no public 12.1 release note found in this pass.

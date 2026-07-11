@@ -1,0 +1,607 @@
+{
+  "docs": [
+    {
+      "uri": "/test/filtering/item-001.json",
+      "comment": "Item with 'Georgia' in one content node and 'Keeffe' in a separate content node (different subtrees). Tests cross-instance phrase matching.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-001",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 001 - Cross Instance",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Georgia Landscape",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "referred_to_by": [
+            {
+              "type": "LinguisticObject",
+              "content": "Painted by Keeffe in 1920",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+                  "type": "Type",
+                  "_label": "Description",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300435416",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-002.json",
+      "comment": "Item with 'Georgia Keeffe' as a complete phrase in a single content node. Should match phrase query.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-002",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 002 - Same Instance Phrase",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Portrait of Georgia Keeffe",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-003.json",
+      "comment": "Item with O'Keeffe (apostrophe). Tests punctuation sensitivity.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-003",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 003 - Punctuation O'Keeffe",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "O'Keeffe Exhibition Catalog",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-004.json",
+      "comment": "Item with 'O Keeffe' (space instead of apostrophe). Tests whether punctuation-insensitive conflates these.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-004",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 004 - No Punctuation O Keeffe",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "O Keeffe Collection Guide",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-005.json",
+      "comment": "Item with 'OKeeffe' (no separator). Tests punctuation-sensitive distinction.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-005",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 005 - No Separator OKeeffe",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "OKeeffe Digital Archive",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-006.json",
+      "comment": "Item with 'Stieglitz' and 'library' in different content nodes. Tests NOT exclusion.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-006",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 006 - Stieglitz with Library",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Stieglitz Photograph",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "referred_to_by": [
+            {
+              "type": "LinguisticObject",
+              "content": "Held in the Beinecke Rare Book and Manuscript Library",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+                  "type": "Type",
+                  "_label": "Description",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300435416",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-007.json",
+      "comment": "Item with 'Stieglitz' but NO 'library'. Should survive NOT exclusion.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-007",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 007 - Stieglitz without Library",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Stieglitz Cloud Study",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "referred_to_by": [
+            {
+              "type": "LinguisticObject",
+              "content": "A gelatin silver print from the museum collection",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+                  "type": "Type",
+                  "_label": "Description",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300435416",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-008.json",
+      "comment": "Item with 'PAINTING' (all caps). Tests case-sensitive search.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-008",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 008 - All Caps PAINTING",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "PAINTING BY UNKNOWN ARTIST",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-009.json",
+      "comment": "Item with 'painting' (lower case). Tests case-sensitive lower-case query (Bob's known issue).",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-009",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 009 - Lower case painting",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "A painting of the seaside",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-010.json",
+      "comment": "Item with 'Painting' (title case). Tests case-sensitive distinction.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-010",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 010 - Title case Painting",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Painting of Flowers",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-011.json",
+      "comment": "Item with 'paintings' (stemmed form). Tests stemming behavior.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-011",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 011 - Stemmed paintings",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Collection of watercolor paintings",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-012.json",
+      "comment": "Item with 'self-portrait' (hyphenated). Tests punctuation with hyphens per UAT.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-012",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 012 - Hyphenated self-portrait",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Self-portrait in Blue",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-013.json",
+      "comment": "Item with 'self portrait' (no hyphen). Tests whether hyphenated vs non-hyphenated are conflated.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-013",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 013 - No hyphen self portrait",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Self portrait in Red",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    },
+    {
+      "uri": "/test/filtering/item-014.json",
+      "comment": "Item with 'selfportrait' (joined). Tests whether joined form is distinguished.",
+      "content": {
+        "json": {
+          "id": "https://lux.collections.yale.edu/data/test/item-014",
+          "type": "HumanMadeObject",
+          "_label": "Test Item 014 - Joined selfportrait",
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Selfportrait with Hat",
+              "classified_as": [
+                {
+                  "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                  "type": "Type",
+                  "_label": "Primary Name",
+                  "equivalent": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300404670",
+                      "type": "Type"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "classified_as": [
+            {
+              "id": "https://lux.collections.yale.edu/data/concept/test-type-1",
+              "type": "Type"
+            }
+          ]
+        },
+        "triples": [],
+        "admin": {},
+        "indexedProperties": { "dataType": "HumanMadeObject" }
+      }
+    }
+  ]
+}

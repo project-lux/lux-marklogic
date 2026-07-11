@@ -1,0 +1,3558 @@
+{
+  "language": "en",
+  "database-name": "lux-dev-data-content",
+  "forest": ["lux-dev-data-content-1", "lux-dev-data-content-2"],
+  "security-database": "Security",
+  "schema-database": "lux-dev-data-schemas",
+  "enabled": true,
+  "data-encryption": "off",
+  "backup-encryption-key": "cluster-key",
+  "encryption-key-id": "",
+  "retired-forest-count": 0,
+  "stemmed-searches": "off",
+  "word-searches": false,
+  "word-positions": true,
+  "fast-phrase-searches": false,
+  "fast-reverse-searches": false,
+  "triple-index": true,
+  "triple-positions": false,
+  "fast-case-sensitive-searches": false,
+  "fast-diacritic-sensitive-searches": false,
+  "fast-element-word-searches": true,
+  "element-word-positions": false,
+  "fast-element-phrase-searches": true,
+  "element-value-positions": false,
+  "attribute-value-positions": false,
+  "field-value-searches": false,
+  "field-value-positions": false,
+  "three-character-searches": false,
+  "three-character-word-positions": false,
+  "fast-element-character-searches": false,
+  "trailing-wildcard-searches": false,
+  "trailing-wildcard-word-positions": false,
+  "fast-element-trailing-wildcard-searches": false,
+  "two-character-searches": false,
+  "one-character-searches": false,
+  "uri-lexicon": true,
+  "collection-lexicon": true,
+  "reindexer-enable": true,
+  "reindexer-throttle": 5,
+  "reindexer-timestamp": 0,
+  "directory-creation": "manual",
+  "maintain-last-modified": false,
+  "maintain-directory-last-modified": false,
+  "inherit-permissions": false,
+  "inherit-collections": false,
+  "inherit-quality": false,
+  "in-memory-limit": 131072,
+  "in-memory-list-size": 256,
+  "in-memory-tree-size": 64,
+  "in-memory-range-index-size": 8,
+  "in-memory-reverse-index-size": 8,
+  "in-memory-triple-index-size": 63,
+  "in-memory-geospatial-region-index-size": 32,
+  "in-memory-vector-index-size": 32,
+  "triple-index-geohash-precision": 5,
+  "large-size-threshold": 1024,
+  "locking": "fast",
+  "journaling": "fast",
+  "journal-size": 2047,
+  "journal-count": 2,
+  "preallocate-journals": false,
+  "preload-mapped-data": true,
+  "preload-replica-mapped-data": false,
+  "range-index-optimize": "facet-time",
+  "positions-list-max-size": 256,
+  "format-compatibility": "automatic",
+  "index-detection": "none",
+  "expunge-locks": "none",
+  "tf-normalization": "scaled-log",
+  "merge-priority": "lower",
+  "merge-max-size": 49152,
+  "merge-min-size": 1024,
+  "merge-vector-index-size": 128,
+  "merge-min-ratio": 3,
+  "merge-timestamp": 0,
+  "element-word-query-through": [
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/wordml",
+      "localname": "p"
+    },
+    {
+      "namespace-uri": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+      "localname": "p"
+    }
+  ],
+  "phrase-through": [
+    {
+      "namespace-uri": "http://marklogic.com/entity",
+      "localname": [
+        "coordinate",
+        "credit-card-number",
+        "date",
+        "email",
+        "facility",
+        "gpe",
+        "id",
+        "location",
+        "money",
+        "nationality",
+        "organization",
+        "percent",
+        "person",
+        "phone-number",
+        "religion",
+        "time",
+        "url",
+        "utm"
+      ]
+    },
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/auxHint",
+      "localname": "t"
+    },
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/wordml",
+      "localname": [
+        "br",
+        "cr",
+        "fldChar",
+        "fldData",
+        "fldSimple",
+        "hlink",
+        "noBreakHyphen",
+        "permEnd",
+        "permStart",
+        "pgNum",
+        "proofErr",
+        "r",
+        "softHyphen",
+        "sym",
+        "t",
+        "tab"
+      ]
+    },
+    {
+      "namespace-uri": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+      "localname": [
+        "bookmarkEnd",
+        "bookmarkStart",
+        "commentRangeEnd",
+        "commentRangeStart",
+        "customXml",
+        "endnoteReference",
+        "fldSimple",
+        "footnoteReference",
+        "hyperlink",
+        "ins",
+        "instrText",
+        "proofErr",
+        "r",
+        "sdt",
+        "sdtContent",
+        "smartTag",
+        "t"
+      ]
+    },
+    {
+      "namespace-uri": "http://www.w3.org/1999/xhtml",
+      "localname": [
+        "a",
+        "abbr",
+        "acronym",
+        "b",
+        "big",
+        "br",
+        "center",
+        "cite",
+        "code",
+        "dfn",
+        "em",
+        "font",
+        "i",
+        "kbd",
+        "q",
+        "samp",
+        "small",
+        "span",
+        "strong",
+        "sub",
+        "sup",
+        "tt",
+        "var"
+      ]
+    }
+  ],
+  "phrase-around": [
+    {
+      "namespace-uri": "http://schemas.microsoft.com/office/word/2003/wordml",
+      "localname": [
+        "delInstrText",
+        "delText",
+        "endnote",
+        "footnote",
+        "instrText",
+        "pict",
+        "rPr"
+      ]
+    },
+    {
+      "namespace-uri": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+      "localname": [
+        "commentReference",
+        "customXmlPr",
+        "del",
+        "pPr",
+        "rPr",
+        "sdtPr"
+      ]
+    }
+  ],
+  "field": [
+    {
+      "field-name": "itemAndSetArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventUsedSetId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/used_specific_object/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventAgentId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventTypeId",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type= ('Activity', 'Period')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "eventPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "eventName",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "eventDataTypeName",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('Activity', 'Period')]/dataType",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "eventAnyText",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "languageIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type='Language']/identified_by[./type='Identifier']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Place')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByEventId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByConceptId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptInfluencedByAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Person', 'Group')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptPartOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/broader/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "conceptPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptDataTypeName",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/dataType",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "conceptHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placePartOfId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/part_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placeTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placeIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'Place']/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "placePrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "placeName",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "placeAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "placeHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Place']/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workCreationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workCreationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPublicationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPublicationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPartOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/part_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutSetId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = 'Set']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutEventId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutItemId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutWorkId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutConceptId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = ('Person','Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workAboutPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'VisualItem']/represents/created_by/influenced_by[./type = 'Place']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workLanguageId",
+      "field-path": [
+        {
+          "path": "/json[type = 'LinguisticObject']/language/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "workName",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "workAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "workIsPublicDomainBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isPublicDomain",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workIsOnlineBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/isOnline",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "workDataTypeName",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('VisualItem', 'LinguisticObject')]/dataType",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setLastModifiedByAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setPublicationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setPublicationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setPartOfId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setIsPublicDomainBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Set']/isPublicDomain",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setIsOnlineBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Set']/isOnline",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = 'Set']/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setCurationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for[./classified_as/equivalent/id = 'http://vocab.getty.edu/aat/300054277']/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setCreationPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setCreationAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/created_by/part/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutSetId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = 'Set']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = 'Set']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutEventId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('Activity', 'Period')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutItemId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('HumanMadeObject', 'DigitalObject')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutWorkId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('LinguisticObject', 'VisualItem')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutConceptId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutAgentId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = ('Person', 'Group')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAboutPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/about[./type = 'Place']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/about/created_by/influenced_by[./type = 'Place']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Set')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setUsedForId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/used_for/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "setAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "setName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Set')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "isCollectionItemBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemMemberOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemShownById",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/shows/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/digitally_shows/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemCarriedById",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/carries/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/digitally_carries/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemProductionTechniqueId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/technique/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/part/technique/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemProductionAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/part/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/carried_out_by/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/part/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemEncounteredAgentId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemProductionPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/part/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/part/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemEncounteredPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemMaterialId",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/made_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemName",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemIsOnlineBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/isOnline",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "itemDataTypeName",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject')]/dataType",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "itemArchiveSortId",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentUserName",
+      "field-path": [
+        {
+          "path": "/json[type = 'Person']/identified_by[type='Identifier'][classified_as/id = 'http://www.wikidata.org/entity/Q15901043']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentUserId",
+      "field-path": [
+        {
+          "path": "/json[type = 'Person'][identified_by[type='Identifier'][classified_as/id = 'http://www.wikidata.org/entity/Q15901043']]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentProfessionalActivityId",
+      "field-path": [
+        {
+          "path": "/json/carried_out/classified_as[not(./equivalent/id='http://vocab.getty.edu/aat/300393177')]/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentHasDigitalImageBoolean",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType = ('Group', 'Person')]/hasDigitalImage",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentMemberOfId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/member_of/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentGenderId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055147']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentOccupationId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300263369']/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300435108']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentNationalityId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300379842']/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentFounderId",
+      "field-path": [
+        {
+          "path": "/json[type='Group']/formed_by/carried_out_by/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentEndPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/died/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/dissolved_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentDataTypeName",
+      "field-path": [
+        {
+          "path": "/indexedProperties[dataType=('Person', 'Group')]/dataType",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentStartPlaceId",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/born/took_place_at/id",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/formed_by/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentActivePlaceId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/carried_out/took_place_at/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Group', 'Person')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "agentPrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "agentAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "referenceIdentifier",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Identifier']/content",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/equivalent/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "referenceTypeId",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/classified_as/id",
+          "weight": 1
+        }
+      ],
+      "field-value-searches": true
+    },
+    {
+      "field-name": "referenceAnyText",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]//content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "referencePrimaryName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "referenceName",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "anyDataTypeName",
+      "field-path": [
+        {
+          "path": "/json/type",
+          "weight": 1
+        }
+      ],
+      "stemmed-searches": "basic",
+      "word-searches": true,
+      "field-value-searches": true,
+      "field-value-positions": true,
+      "fast-phrase-searches": true,
+      "fast-case-sensitive-searches": true,
+      "fast-diacritic-sensitive-searches": true,
+      "trailing-wildcard-searches": true,
+      "trailing-wildcard-word-positions": true,
+      "three-character-searches": true,
+      "three-character-word-positions": true
+    },
+    {
+      "field-name": "",
+      "include-root": true,
+      "excluded-element": [
+        {
+          "namespace-uri": "",
+          "localname": "_label",
+          "attribute-namespace-uri": "",
+          "attribute-localname": "",
+          "attribute-value": ""
+        },
+        {
+          "namespace-uri": "",
+          "localname": "id",
+          "attribute-namespace-uri": "",
+          "attribute-localname": "",
+          "attribute-value": ""
+        }
+      ]
+    },
+    {
+      "field-name": "anySortName",
+      "field-path": [
+        {
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544']/content",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "anySortNameEn",
+      "field-path": [
+        {
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388277']/content",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "anySortNameFr",
+      "field-path": [
+        {
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388306']/content",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "anySortNameZh",
+      "field-path": [
+        {
+          "path": "/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentActiveStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/carried_out/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentActiveStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/carried_out/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentActiveEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('Group', 'Person')]/carried_out/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentBornStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/born/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/formed_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentBornStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/born/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/formed_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentBornEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/born/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/formed_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentDiedStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/died/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/dissolved_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentDiedStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/died/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/dissolved_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "agentDiedEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Person']/died/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Group']/dissolved_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemDimensionValue",
+      "field-path": [
+        {
+          "path": "/json[type = ('HumanMadeObject', 'DigitalObject')]/dimension/value",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemHeightDimensionValue",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055644']/value",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemWidthDimensionValue",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300055647']/value",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemDepthDimensionValue",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300072633']/value",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemEncounteredStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemEncounteredEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemEncounteredStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/encountered_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemProductionStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemProductionStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "itemProductionEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = 'HumanMadeObject']/produced_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = 'DigitalObject']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setPublicationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setLastModifiedStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setLastModifiedStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setLastModifiedEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workPublicationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "placeSpatial",
+      "field-path": [
+        {
+          "path": "/json[type = 'Place']/defined_by",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "eventInitiatedStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "eventInitiatedStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "eventInitiatedEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "eventCompletedStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/timespan/begin_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "eventCompletedStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_begin_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "eventCompletedEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationOrPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationOrPublicationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "setCreationOrPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationOrPublicationStartDateStr",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationOrPublicationStartDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "field-name": "workCreationOrPublicationEndDateLong",
+      "field-path": [
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        },
+        {
+          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end",
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "range-field-index": [
+    {
+      "scalar-type": "string",
+      "field-name": "anySortName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "anySortNameEn",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "anySortNameFr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "anySortNameZh",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "referenceName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "referencePrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "referenceTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "referenceIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentActiveStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "agentActiveStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "agentActiveEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentActivePlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentBornStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "agentBornStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "agentBornEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentStartPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentDiedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "agentDiedStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "agentDiedEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentEndPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentFounderId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentNationalityId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentOccupationId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentGenderId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentMemberOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "agentHasDigitalImageBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentProfessionalActivityId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "agentUserId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemArchiveSortId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "itemHasDigitalImageBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "itemIsOnlineBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemMaterialId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "itemDimensionValue",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "itemHeightDimensionValue",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "itemWidthDimensionValue",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "itemDepthDimensionValue",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "itemEncounteredStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "itemEncounteredEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemEncounteredStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemProductionStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "itemProductionStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "itemProductionEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemEncounteredPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemProductionPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemEncounteredAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemProductionAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemProductionTechniqueId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemCarriedById",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemShownById",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemMemberOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "isCollectionItemBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setUsedForId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setArchiveSortId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setCreationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setCreationStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setCreationEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutConceptId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutWorkId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutItemId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutEventId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setAboutSetId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setCreationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setCreationPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setCurationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "setHasDigitalImageBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "setIsOnlineBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "setIsPublicDomainBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setPartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setPublicationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setPublicationStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setPublicationEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setPublicationPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setPublicationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setLastModifiedByAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setLastModifiedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setLastModifiedStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setLastModifiedEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "workHasDigitalImageBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "workIsOnlineBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "workIsPublicDomainBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workLanguageId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutConceptId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutWorkId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutItemId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutEventId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workAboutSetId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workPartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workPublicationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "workPublicationStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "workPublicationEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workPublicationPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workPublicationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workCreationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "workCreationStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "workCreationEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workCreationPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workCreationAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "placeHasDigitalImageBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "placeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "placePrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "placeIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "placeTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "placePartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "float",
+      "field-name": "conceptHasDigitalImageBoolean",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptPartOfId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptInfluencedByAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptInfluencedByConceptId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptInfluencedByEventId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "conceptInfluencedByPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "languageIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventPrimaryName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventIdentifier",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventTypeId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventInitiatedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "eventInitiatedStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "eventInitiatedEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventCompletedStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "eventCompletedStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "eventCompletedEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventAgentId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventPlaceId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "eventUsedSetId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "anyDataTypeName",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "setCreationOrPublicationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setCreationOrPublicationStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "setCreationOrPublicationEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "workCreationOrPublicationStartDateStr",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "workCreationOrPublicationStartDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "long",
+      "field-name": "workCreationOrPublicationEndDateLong",
+      "collation": "",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    },
+    {
+      "scalar-type": "string",
+      "field-name": "itemAndSetArchiveSortId",
+      "collation": "http://marklogic.com/collation/codepoint",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    }
+  ],
+  "database-replication": null,
+  "rebalancer-enable": true,
+  "rebalancer-throttle": 5,
+  "assignment-policy": {
+    "assignment-policy-name": "bucket"
+  },
+  "shutdown-on-storage-failure": false,
+  "storage-failure-timeout": 60
+}

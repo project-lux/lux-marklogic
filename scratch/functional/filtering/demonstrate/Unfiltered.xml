@@ -1,0 +1,267 @@
+<export><workspace name="Unfiltered"><query name="Insert" focus="true" listorder="1" taborder="1" active="true" database="5546188702007092779" server="15659857627003810784" database-name="Documents" server-name="App-Services" mode="javascript" optimize="1">'use strict';
+// Load all synthetic filtering test documents.
+// Run in Query Console against the TEST CONTENT database.
+// Documents are defined inline so no filesystem access is needed.
+declareUpdate();
+
+const COLLECTION = 'filtering-validation';
+const PERMISSIONS = [
+  xdmp.permission('rest-reader', 'read'),
+  xdmp.permission('rest-writer', 'update'),
+];
+
+// Minimal item document factory. All docs are HumanMadeObject with itemAnyText-eligible content.
+function makeDoc(id, names, descriptions) {
+  const identified_by = names.map((n) =&gt; ({
+    type: 'Name',
+    content: n,
+    classified_as: [
+      {
+        id: 'https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec',
+        type: 'Type',
+        _label: 'Primary Name',
+        equivalent: [
+          { id: 'http://vocab.getty.edu/aat/300404670', type: 'Type' },
+        ],
+      },
+    ],
+  }));
+  const referred_to_by = (descriptions || []).map((d) =&gt; ({
+    type: 'LinguisticObject',
+    content: d,
+    classified_as: [
+      {
+        id: 'https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337',
+        type: 'Type',
+        _label: 'Description',
+        equivalent: [
+          { id: 'http://vocab.getty.edu/aat/300435416', type: 'Type' },
+        ],
+      },
+    ],
+  }));
+  return {
+    json: {
+      id: `https://lux.collections.yale.edu/data/test/${id}`,
+      type: 'HumanMadeObject',
+      _label: `Test ${id}`,
+      identified_by,
+      referred_to_by,
+      classified_as: [
+        {
+          id: 'https://lux.collections.yale.edu/data/concept/test-type-1',
+          type: 'Type',
+        },
+      ],
+    },
+    triples: [],
+    admin: {},
+    indexedProperties: { dataType: 'HumanMadeObject' },
+  };
+}
+
+const docs = [
+  {
+    uri: '/test/filtering/item-001.json',
+    content: makeDoc(
+      'item-001',
+      ['Georgia Landscape'],
+      ['Painted by Keeffe in 1920'],
+    ),
+  },
+  {
+    uri: '/test/filtering/item-002.json',
+    content: makeDoc('item-002', ['Portrait of Georgia Keeffe'], []),
+  },
+  {
+    uri: '/test/filtering/item-003.json',
+    content: makeDoc('item-003', ["O'Keeffe Exhibition Catalog"], []),
+  },
+  {
+    uri: '/test/filtering/item-004.json',
+    content: makeDoc('item-004', ['O Keeffe Collection Guide'], []),
+  },
+  {
+    uri: '/test/filtering/item-005.json',
+    content: makeDoc('item-005', ['OKeeffe Digital Archive'], []),
+  },
+  {
+    uri: '/test/filtering/item-006.json',
+    content: makeDoc(
+      'item-006',
+      ['Stieglitz Photograph'],
+      ['Held in the Beinecke Rare Book and Manuscript Library'],
+    ),
+  },
+  {
+    uri: '/test/filtering/item-007.json',
+    content: makeDoc(
+      'item-007',
+      ['Stieglitz Cloud Study'],
+      ['A gelatin silver print from the museum collection'],
+    ),
+  },
+  {
+    uri: '/test/filtering/item-008.json',
+    content: makeDoc('item-008', ['PAINTING BY UNKNOWN ARTIST'], []),
+  },
+  {
+    uri: '/test/filtering/item-009.json',
+    content: makeDoc('item-009', ['A painting of the seaside'], []),
+  },
+  {
+    uri: '/test/filtering/item-010.json',
+    content: makeDoc('item-010', ['Painting of Flowers'], []),
+  },
+  {
+    uri: '/test/filtering/item-011.json',
+    content: makeDoc('item-011', ['Collection of watercolor paintings'], []),
+  },
+  {
+    uri: '/test/filtering/item-012.json',
+    content: makeDoc('item-012', ['Self-portrait in Blue'], []),
+  },
+  {
+    uri: '/test/filtering/item-013.json',
+    content: makeDoc('item-013', ['Self portrait in Red'], []),
+  },
+  {
+    uri: '/test/filtering/item-014.json',
+    content: makeDoc('item-014', ['Selfportrait with Hat'], []),
+  },
+];
+
+let loaded = 0;
+let skipped = 0;
+
+for (const doc of docs) {
+  if (fn.docAvailable(doc.uri)) {
+    skipped++;
+    continue;
+  }
+  xdmp.documentInsert(doc.uri, doc.content, {
+    collections: [COLLECTION],
+    permissions: PERMISSIONS,
+  });
+  loaded++;
+}
+
+const results = {
+  loaded,
+  skipped,
+  total: docs.length,
+  collection: COLLECTION,
+  message: `Loaded ${loaded} documents, skipped ${skipped} (already exist). Collection: ${COLLECTION}`,
+};
+export default results;
+</query><query name="V1" focus="false" listorder="2" taborder="2" active="true" database="5546188702007092779" server="15659857627003810784" database-name="Documents" server-name="App-Services" mode="javascript" optimize="1">'use strict';
+// V1: Cross-instance phrase matching
+// Tests whether a phrase query for "Georgia Keeffe" matches a document where
+// "Georgia" and "Keeffe" appear in SEPARATE content nodes (different field instances).
+//
+// Expected: item-002 matches (phrase exists in single content node).
+//           item-001 should NOT match (words are in different content nodes).
+//           If item-001 matches unfiltered, that is a false positive.
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+
+// The phrase query: "Georgia Keeffe" as a phrase (complete match = fieldValueQuery)
+// and as adjacent words (fieldWordQuery with the phrase as a single string).
+const phraseWordQuery = cts.fieldWordQuery(
+  'itemAnyText',
+  'Georgia Keeffe',
+  [
+    'case-insensitive',
+    'diacritic-insensitive',
+    'punctuation-insensitive',
+    'whitespace-insensitive',
+    'stemmed',
+    'wildcarded',
+  ],
+  1,
+);
+
+const scopedPhraseQuery = cts.andQuery([SCOPE_CONSTRAINT, phraseWordQuery]);
+
+// 1. Unfiltered (cts.uris)
+const unfilteredUris = cts
+  .uris(null, [], scopedPhraseQuery)
+  .toArray()
+  .map(String);
+
+// 2. Filtered (cts.search)
+const filteredUris = [];
+for (const doc of cts.search(scopedPhraseQuery)) {
+  filteredUris.push(String(fn.documentUri(doc)));
+}
+
+// 3. Optic plan (non-semantic keyword path)
+const opticPlan = op
+  .fromLexicons(
+    {
+      uri: cts.uriReference(),
+      iri: cts.iriReference(),
+      dataType: cts.fieldReference('anyDataTypeName', [
+        'type=string',
+        'collation=http://marklogic.com/collation/codepoint',
+      ]),
+    },
+    null,
+    op.fragmentIdCol('frag'),
+  )
+  .where(cts.collectionQuery(COLLECTION))
+  .where(op.in(op.col('dataType'), ['DigitalObject', 'HumanMadeObject']))
+  .joinInner(
+    op.fromSearch(phraseWordQuery, null, null, { scoreMethod: 'logtfidf' }),
+    op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+  )
+  .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+  .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+
+const opticUris = opticPlan
+  .result()
+  .toArray()
+  .map((r) =&gt; r.id);
+
+const results = {
+  scenario: 'V1: Cross-instance phrase matching',
+  query: 'fieldWordQuery("itemAnyText", "Georgia Keeffe", [default options])',
+  description:
+    'Tests whether words in separate //content nodes produce a false-positive phrase match.',
+  expectedMatch: ['/test/filtering/item-002.json'],
+  expectedNoMatch: ['/test/filtering/item-001.json'],
+  unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+  filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+  optic: { count: opticUris.length, uris: opticUris.sort() },
+  falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+  opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+  analysis: {
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+    hasFalsePositives: unfilteredUris.length &gt; filteredUris.length,
+  },
+};
+export default results;
+</query><query name="Delete" focus="false" listorder="3" taborder="3" active="true" database="5546188702007092779" server="15659857627003810784" database-name="Documents" server-name="App-Services" mode="javascript" optimize="1">'use strict';
+// Delete all synthetic filtering test documents.
+// Run in Query Console against the TEST CONTENT database.
+declareUpdate();
+
+const COLLECTION = 'filtering-validation';
+
+const uris = cts.uris(null, [], cts.collectionQuery(COLLECTION)).toArray();
+
+for (const uri of uris) {
+  xdmp.documentDelete(uri);
+}
+
+const results = {
+  deleted: uris.length,
+  collection: COLLECTION,
+  message: `Deleted ${uris.length} documents from collection '${COLLECTION}'.`,
+};
+export default results;
+</query></workspace></export>

@@ -1,0 +1,259 @@
+Unfiltered Searches
+Information Sharing & Analysis
+
+Unfiltered Searches
+
+There are several options and tradeoffs to mitigate the change from filtered to unfiltered searches. The information below has been culled from various sources into one reference document.
+
+When you do a search in MarkLogic, there are two phases involved: selecting fragments using available indices, and then filtering those fragments to return only those that actually match.  When a search is executed with filtering, the query is executed using the available indexes and the results are read from disk and filtered by the parsed query (via cts:contains). An unfiltered search uses the available indexes and returns results without a filter. If desired, you can apply the filter step to any unfiltered result. You can execute an unfiltered search and write a custom XQuery that checks each result before providing it to the end-user, by applying cts:contains() in the where clause. Fundamentally, a filtered cts:search is an unfiltered cts:search followed by cts:contains and an unfiltered search is only a cts:query. The results total is always an estimate from the indexes. An fn:count() can be used for exact counts at a cost to performance.
+
+When you implement a fast pagination application, you will need to jump into a position in an unfiltered search. To maximize the efficiency of this search, you must immediately follow the unfiltered cts:search expression with the position predicate, with no XPath steps in between. For example, to jump into the 1,000,001st hit of an unfiltered search for the phrase 'one two three', the search might look like the following:
+cts:search(fn:doc(), "one two three", "unfiltered")[1000001 to 1000010]  (http://docs.marklogic.com/guide/performance/unfiltered#id_74746)
+
+In general, for the English language, for some accurate unfiltered searches, set the following index options to ON:
+1.	stemmed searches
+2.	word searches
+3.	trailing wildcard searches (vs. three character searches for leading and trailing)
+4.	word positions
+5.	element word positions
+6.	trailing wildcard word positions
+7.	word lexicon with codepoint collation
+In general these options provided good results, but additional indexes handle other specific cases.
+
+With these index settings and search expression restrictions, unfiltered search (and xdmp:estimate()) will be accurate in the following cases: 	
+•	cts:word-query(): search for words and phrases.
+•	cts:near-query(): search for a word or phrase near another word or phrase.
+•	trailing wildcard queries: search for a word with a trailing multi-character wildcard (e.g. "exp*"). You must have at least 3 non-* characters before the trailing wildcard.
+•	single-character wildcards: search for a word that has any number of single-character wildcards in any position (e.g. "?nexp???e?"). You must have at least 1 non-wildcard character in some position.
+•	case-insensitive, diacritic-insensitive, punctuation-insensitive queries. 
+•	stemmed or unstemmed queries.
+•	element-query(): restrict the search to a sub-tree (some element plus all its descendants).
+•	element-value-query(): search for a word or phrase that matches the whole contents of some element.
+
+Every index choice has trade offs between accuracy, performance and storage.
+
+Be aware that MarkLogic cannot perform accurate unfiltered arbitrary wildcard searches in the general case. The documentation's recommendations are quite good in most real-world use cases, but odd requirements may require different indexes (http://docs.marklogic.com/guide/search-dev/wildcard#id_14163). False hits occur because indexes do not have all punctuation, whitespace, case-sensitivity, wildcards, diacritics, position, or stemming.  Depending on the query and the available indices, the index resolution part may return false positives, which a filter will then reject to ensure that the results of the query are correct. If a query produces false positives in index resolution (ie. index says it is a match, but it turns out it isn't), then a "not" query will produce false negatives (ie. index says it is not a match, but it turns out it is).
+
+If you want to do exact queries you can either: 
+1. Enable fast-case-sensitive-searches and fast-diacritic-sensitive-searches on your database and run them as value queries.
+OR
+2. Create a field with custom overrides for the significant punctuation or whitespace and run them as field word or field value queries.
+OR
+3. Create a string range index with the appropriate collation (codepoint, most likely) and run them as string-range equality queries.
+
+Punctuation and space tokens are not indexed as words in the universal index. Therefore, word-queries involving whitespace or punctuation will not make use of whitespace or punctuation in index resolution, regardless of space or punctuation sensitivity. We do not index word positions of punctuation, so near-query or element-query constraints don't work on punctuation. Use of punctuation in the query will allow false positives. Punctuation and space tokens are also not generally indexed as words in the universal index in value queries either. However, as a special exception there are terms in the universal index for "exact" value queries (unstemmed, case-sensitive, whitespace-sensitive, punctuation-sensitive), so "exact" value queries should be resolvable properly from the index, but only if you have fast-case-sensitive-searches and fast-diacritic-sensitive-searches enabled in the database.
+
+Case-insensitive queries can always be resolved from the index. Unfiltered case-sensitive searches of lower-case queries cannot eliminate false positives. Case-sensitive queries can only be resolved from the index if the index option "fast case sensitive searches" is ON, unless the word is all-lowercase. If the word is all-lowercase, then false positives are possible with a case-sensitive search. When the input term is all lower case it will match on any occurrence of the term (upper or lower). If you are querying for lower-case word, then case-sensitive search requires filtering. The same is applicable for cts:word-query and cts:element-value-query.
+
+MarkLogic does not index word positions of punctuation, so near-query or element-query constraints don't work on punctuation.
+
+An empty value is not a valid value, and we treat invalid values as true in searches, hence false positives are possible. Invalid values also happen with index values like a string for an int index or empty for a date. Invalid values can happen when you set invalid-values to 'ignore' when you setup and index. Unfiltered element-range-query() results will include all invalid elements, and particularly all empty elements for scalar values.
+
+MarkLogic supports wildcard search with three types of indexes: three-character indexes, trailing wildcard indexes, lexicons. It is still possible to find problem wildcard queries with any combination of indexes.
+
+Parent-child relationships are automatically maintained by MarkLogic. There is no specific option for the parent-child index. Note that, even with the parent-child index, there's still the potential for documents to be in the candidate set that aren't an actual match. A cts:element query does not identify a specific element instance. Knowing that somewhere inside a document there's a <book> parent of <metadata> and a <metadata> parent of <title> doesn't mean it's the same <metadata> between them. That's where filtering comes in.
+
+Range, field, lexicon, and geospatial indexes provide additional opportunities to constrain queries for structured and unstructured data.
+
+To resolve word queries, either stemmed searches or word searches is required or both can be used. To resolve word phrase queries, position indexes are required.
+
+'stemmed searches' (ss)
+When you use basic stemming we will only index and only query with the first (shortest) stem, so a search for "placing" will match something with the stem of "place" (verb). However, the document has "placings" which unambiguously stems to "placing" (noun). So there will be no match. This will be the same for either a word query or a value query.
+Stemming is handled differently between a word-query and value-query. A value-query only indexes using basic stemming.
+Wildcard queries always use unstemmed words.
+Use decompounding for German and Dutch, advanced for most other languages (although some Euro languages you can get away with basic most of the time, e.g. English, Italian, Spanish, French)
+Stemming should only increase the hit ratio, not decrease it.
+When a search is case-sensitive, the stems are different depending on the case of the word. In English, case sensitive searches with stemming specified are not considered as stemmed searches because, in English, words with upper case letters stem to themselves. You would not expect proper names or acronyms to be stemmed to something else. For example, "Mr. Mark Cutting" should not match "marks cuts."
+
+'word searches' (ws)
+Turn this index on if you want to do exact word-only matches. Either a stem index or a word search index is needed to resolve word queries. With the word searches enabled, the exact word query can be resolved from the index rather than just the stemmed word.
+
+In order to perform both stemmed and unstemmed searches, you will want both 'stemmed searches' and 'word searches' enabled for the database.
+cts queries allow you to specify the "unstemmed" option:
+    - cts:element-value-query()
+    - cts:element-word-query()
+    - cts:field-value-query()
+    - cts:field-word-query()
+    - cts:word-query()
+search:search(), you can use the "unstemmed" <term-option> as a child of the <term> element and as a child of the <constraint> element
+
+'word lexicon' (wl)
+You can make leading and embedded wildcards accurate in your application by having your application using the word lexicon and expand the wildcarded query with matches from cts:word-match, cts:element-word-match, or cts:field-word-match. The word lexicon speeds up wildcard searches where the search pattern contains the single-character wildcard (for example, abc?). The codepoint collation word lexicon is particularly vital for arbitrary wildcards. Whether you use three-character, two-character, or single-character wildcard indexes depends on the use cases and the accuracy requirements. Sometimes a wildcard string will return thousands of matching terms from the lexicon, way too many to construct an effective OR query. If the lexicon expansion is  too large, we fall back to using three character keys, but if that expansion is also too large, we short circuit.  What this means is that we first see if we can just use the lexicon matches as word searches.  If there are too many of them, we compress to the set of unique leading and trailing three character terms.  Example, if the lexicon matches are 'being', 'beast', 'beer', and 'bedazzling', the leading three character terms would be 'bei', 'bea', 'bee', and 'bed' and the trailing ones would be 'ing', 'ast', and 'eer'.  Given the regularities of English, you tend to get a much smaller set of terms this way (not in this example, but I started with a too small set of words).  But maybe you don't, or maybe your initial set was truly vast, and you still end up with a zillion terms.  At this point we short circuit and revert to non-lexicon-based processing.
+
+'word positions' (wp)
+To include position information for each term in the term list to resolve phrase queries.
+
+'fast phrase searches' (fps)
+includes two-word phrases as terms to the term list to resolve phrases. The query results produced are the same regardless of whether 'fast phrase searches' are enabled; it's just a matter of index choices and performance tradeoffs.
+Some overlap with word position indexes.
+
+'fast case sensitive searches' (fcss)
+This means that the full-text indexes maintain direct lookups for words dependent of their case. Accelerates case sensitive searches by building both case sensitive and case insensitive indexes at load time. Without this index, MarkLogic Server will still perform case sensitive searches, just more slowly.
+Turn this index off if only a small percentage of your text searches will be case sensitive, and if conserving disk space and enhancing load speed is more important than the performance of those queries.
+Use it for languages like German that care about case.
+
+'fast diacritic sensitive searches' (fdss)
+Speeds up diacritic-sensitive searches by eliminating some false positive results. Turn this option off if you do not want to do diacritic-sensitive searches. By turning on the diacritic sensitive index you
+tell MarkLogic to maintain both diacritic-insensitive and diacritic-sensitive term list entries, so you can resolve diacritic-sensitive matches out of indexes.
+Use it for languages (e.g.  most European languages) that care about accents.
+
+'fast element word searches' (fews)
+index that maintains a term list for tracking element names along with the individual words within the element. The 'fast element word searches' index alone does not know if the words 'Good Will' are together in a phrase. To configure indexing to resolve at that level of granularity, MarkLogic allows you to enable the 'fast element phrase searches' and 'element word positions' index options. 
+If you do not have fast element word searches enabled in the database configuration, it is possible for a cts:element-word-query to match a fragment because both the word and the element exist in the fragment, but not in the same element.
+
+'element word positions' (ewp)
+This option maintains a term list for every element and its contained words, and tracks the positions of all the contained words. Either or both of these indexes ('fast element phrase searches', 'element word positions') can be used to ensure the words are together in a phrase under the <title> element. The 'fast element phrase searches' and 'element word positions' indexes are most beneficial should the phrase 'Good Will' frequently appear in elements other than <title>.
+Boosts performance of cts:elment-query().
+Near queries, ordered-and queries, element queries, and phrase queries are all position-based queries.  
+
+'fast element phrase searches' (feps)
+This option, when enabled, maintains a term list for every element and pair of words within the element.
+
+'element value positions' (evp)
+Boosts performance of proximity queries using cts:element-value-query()
+Element/attribute value positions are good for some XPaths, as XPaths map to value queries.
+
+'three character searches' (tcs) or (3cs)
+When you turn on a three-character index for your database, MarkLogic will map every unique three-letter sequence in a term to its corresponding documents. MarkLogic also includes contextual information about whether each sequence was at the start or end of a word. MarkLogic can leverage the three-character index for longer wildcard terms. However, this strategy can result in false positives. Typically, three-character indexes give you the most bang for the buck by efficiently supporting leading and trailing wildcards and search in general.
+
+'trailing wildcard searches' (tws)
+This will store entries for all the possible prefix combinations for each word greater than or equal to three characters. For quickly handling wildcard searches that have more than three characters and end in *, the trailing wildcard index can be turned on. A trailing wildcard index isn't helpful for terms with a leading *. Three character searches can be used for leading globs.
+
+If tws is enabled, and any wildcard terms are in a tws form ("foo*"), then tws can resolve those terms. If you start mixing in other forms ("*foo*", "foo?bar"), tws can't help. Adding twwp won't help either: you need 3cs, or possibly a query rewriter based on a lexicon.
+
+'trailing wildcard word positions' (twwp)
+If you want guaranteed accurate unfiltered results for a trailing-wildcard in a phrase, you need trailing-wildcard positions . Near queries, ordered-and queries, element queries, and phrase queries are all position-based queries.  
+
+'word query'
+Database word query controls the behavior of the cts:word-query, cts:words, and cts:word-match APIs. These added index options will not affect other queries (for example, cts:element-word-query, cts:element-attribute-word-query). You can include and/or exclude named elements from word queries. However, defining word query excludes disables the use of word positions for some queries and can lead to false positives.
+
+MarkLogic also gives you the option to turn on one- and two-character indexes for databases. You might think that these would be helpful for getting wildcard results for shorter terms (e.g., b* and ba*), but turning these indexes on results in much, much larger indexes, and it also impacts the time it takes to load, index, and merge documents. For these reasons, activating these indexes is discouraged.
+
+Always use element-range-query when searching for a value you obtained from a range index (such as a facet value). The matching rules for element-value-query are not the same as the matching rules for element-range-query. Use an "=" element-range-query instead of an element-value-query when doing the estimates and your estimates will be faster too. The element-value-query has to load term lists while the element-range-query will use the range indexes."
+
+Value queries (only those with the option "exact" or the equivalent list of case-sensitive,  diacritic-sensitive, punctuation-sensitive, and whitespace-sensitive) are capable resolving embedded punctuation. Value queries can distinguish  between a value of "Personality & Individ. Diff" and "Personality Individ. Diff" directly from the indexes.
+
+For field word queries or value queries you can modify what counts as punctuation or whitespace via tokenizer overrides. This can turn what would have been a phrase into a single word.
+
+Developers have control over how MarkLogic uses lexicons to resolve wildcard searches with the lexicon-expand option of API calls. This option can have the following values:
+Heuristic: Resolve wildcard queries using MarkLogic's set of internal rules (e.g., if a lexicon scan is estimated to return a large number of terms, use alternative strategies). This is the default.
+Full: Always expand a wildcard query into a set of ORed terms, even if this results in a large number of terms and, potentially, a slow query.
+Prefix-postfix: Always resolve wildcard queries with prefix and postfix sequences based on matching lexicon terms.
+Off: Do not use lexicon expansion for wildcard searches. Use indexes instead.
+
+If you set “word searches” OFF then “unstemmed searches” cannot be accurately resolved from the indexes
+If you set “word lexicon” OFF then “single-character wildcards” cannot be accurately resolved from the indexes
+If you set “fast element word searches” ON then element-word-query() with no wildcards can be accurately resolved from the indexes
+If you set “fast element trailing wildcard searches” ON then element-word-query() with trailing wildcards can be accurately resolved from the indexes
+If you set “trailing wildcard searches” and “trailing wildcard word positions” OFF then trailing wildcard queries cannot be accurately resolved from the indexes
+If create a “range element (or attribute) index” for some element (or attribute) then range predicates over that element (or attribute) and fast order by (but not fast pagination over) that element (or attribute) can be accurately resolved from the indexes
+If you create an element word lexicon for some element then faster resolution of element-word-query() with single-character wildcards (resolved from element word lexicon instead of word lexicon).
+
+Index sizes is a difficult topic to cover without specific data profiles. Trade offs for precision and recall apply.
+Generally:
+The stemmed searches index is smaller than the word searches index.
+The three character searches are smaller than trailing wildcard searches.
+Word positions are significant
+Word lexicons are large
+Field lexicons are smaller for specific uses
+Database word query indexes are smaller than word searches
+One and two character trailing wildcards are huge
+
+
+Available Index Options
+stemmed searches
+word searches 
+word positions 
+fast phrase searches 
+fast case sensitive searches 
+fast diacritic sensitive searches 
+fast element word searches 
+element word positions
+fast element phrase searches 
+element value positions
+three character searches 
+three character word positions
+fast element character searches 
+trailing wildcard searches 
+trailing wildcard word positions 
+fast element trailing wildcard searches
+two character searches 
+one character searches
+Database word query
+Range, field, lexicon, and geospatial indexes
+
+
+Index OptionDefault
+SettingWildcard
+SearchesProximity
+SearchesPhrase
+SearchesElement
+BasedNotesSizing
+EstimateFalse
+PositivesDIFFColumn10Column11Column12Column13Column14Column15Column16stemmed searchesbasicStemmingbasicword searches falseX*trueword searchesTRUEword positions falseX*Xword positions to include position information for each term in the term listtrueword positionsTRUEfast phrase searches trueXfast phrase searches includes two-word phrases as terms to the term list to resolve phrasesfalsefast phrase searchesFALSE?fast reverse searches falseXfast case sensitive searches truexfalsefast case sensitive searchesFALSEfast diacritic sensitive searches truexfalsefast diacritic sensitive searchesFALSEfast element word searches trueX'fast element word searches' index that maintains a term list for tracking element names along with the individual words within the element. fast element word searchesTRUEelement word positionsfalseXXXThe 'element word positions' maintains a term list for every element and its contained words, and tracks the positions of all the contained words.trueelement word positionsTRUEfast element phrase searches trueXXThe 'fast element phrase searches' option, when enabled, maintains a term list for every element and pair of words within the elementfalsefast element phrase searchesFALSEelement value positionsfalseXXtrueelement value positionsTRUEattribute value positions falseXXthree character searches falseX*truethree character searchesTRUEthree character word positionsfalseX*Xtruethree character word positionsTRUEfast element character searches falseXXtruefast element character searchesTRUEtrailing wildcard searches falseX*truetrailing wildcard searchesTRUEtrailing wildcard word positions falseXXtruetrailing wildcard word positionsTRUEfast element trailing wildcard searchesfalseXtruefast element trailing wildcare searchesTRUEtwo character searches falseXone character searchesfalseXword lexiconsNoneNote that, even with the parent-child index, there's still the potential for documents to be in the candidate set that aren't an actual match. Knowing that somewhere inside a document there's a <book> parent of <metadata> and a <metadata> parent of <title> doesn't mean it's the same <metadata> between them. That's where filtering comes inText In -> Text OutText in, Bytes encoding, codepoints normalization, codepoints tokenization, word tokens, stored tokens, output options, text outIndex in and outText in, Bytes encoding, codepoints normalization, codepoints tokenization, word tokens, lowercase diacryticless, stem dictionary, inflectional stemming, stored tokens, output options, text out
+
+
+unfiltered case-sensitive searches of lower-case queries are not accurate
+
+If both the word search and stemmed search indexes are disabled, the configuration of the remaining indexes is irrelevant, as they all depend on the existence of the word and/or stemmed-search index.
+Termlist will discard positions at 256MB
+Punctuation and space tokens are not indexed as words in the universal index. Therefore, word-queries involving whitespace or punctuation will not make use of whitespace or punctuation in index resolution, regardless of space or punctuation sensitivity.
+
+Stemming is handled differently between a word-query and value-query; a value-query only indexes using basic stemming.
+
+we do not index word positions of punctuation, so near-query or element-query constraints don't work on punctuation.
+
+Use of punctuation in the query will allow false posititves
+
+False Positives and False Negatives
+If "A" produces false positives in
+index resolution (index says it is a match, but it turns out it isn't),
+then "not A" will produce false negatives (index says it is not
+a match, but it turns out it is).
+
+exact (or the equivalent list of case-sensitive,  diacritic-sensitive, punctuation-sensitive, and whitespace-sensitive) 
+ o, the issue here is that when it comes to value queries only those with
+ the option "exact" (or the equivalent list of case-sensitive,  
+ diacritic-sensitive,
+ punctuation-sensitive, and whitespace-sensitive) are capable of  
+ distinguishing
+ between a value of "Personality & Individ. Diff" and "Personality Individ.  
+ Diff"
+directly from the indexes.
+
+When you use basic stemming we will only index and only query with the  
+first (shortest) stem, so a search for "placing" will match something with  
+the stem of "place" (verb). However, the document has "placings" which  
+unambiguously stems to "placing" (noun).
+So there will be no match. This will be the same for either a word query  
+or a value query.
+
+I read in:
+http://lists.marklogic.com/message/d5jarhhbevplgwy7
+that these are the recommendations for fast, accurate wildcards:
+ three-character-searches
+ word-positions
+ three-character-word-positions
+ word-searches
+ word-lexicon (codepoint collation)
+
+wildcard expansion is defeated by the whitespace-sensitive option.
+
+an empty value is not a valid value, and we treat invalid values as true, hence the false positive.
+it also happens with values like a string for an int index.
+It can happen when you set invalid-values to 'ignore'
+Unfiltered element-range-query() results will include all invalid elements, and particularly all empty elements for scalar values.
+Bob Starbird Senior Consultant
+MarkLogic Corporation
+
+Phone +1 781 639 2737  |  Cell +1 781 548 9427  |  Skype starbird.robert
+email  Bob.Starbird@marklogic.com
+web    www.marklogic.com
+
+
+ 
+
+
+
+UNFILTERED SEARCHES	MARKLOGIC SALES
+

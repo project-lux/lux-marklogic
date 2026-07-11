@@ -1,0 +1,2056 @@
+{
+  "json": {
+    "id": "https://lux.collections.yale.edu/data/person/66049111-383e-4526-9632-2e9b6b6302dd",
+    "born": {
+      "type": "Birth",
+      "timespan": {
+        "type": "TimeSpan",
+        "identified_by": [
+          {
+            "type": "Name",
+            "content": "1928-08-06",
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/5088ec29-065b-4c66-b49e-e61d3c8f3717",
+                "type": "Type",
+                "_label": "Display Title",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300404669",
+                    "type": "Type",
+                    "_label": "Display Title"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "end_of_the_end": "1928-08-06T23:59:59",
+        "begin_of_the_begin": "1928-08-06T00:00:00",
+        "_seconds_since_epoch_begin_of_the_begin": -1306627200,
+        "_seconds_since_epoch_end_of_the_end": -1306540801
+      },
+      "took_place_at": [
+        {
+          "id": "https://lux.collections.yale.edu/data/place/02cff2e2-4285-4f82-bc5a-8d3b33596c9c",
+          "type": "Place",
+          "_label": "Pittsburgh"
+        }
+      ]
+    },
+    "died": {
+      "type": "Death",
+      "timespan": {
+        "type": "TimeSpan",
+        "identified_by": [
+          {
+            "type": "Name",
+            "content": "1987-02-22",
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/5088ec29-065b-4c66-b49e-e61d3c8f3717",
+                "type": "Type",
+                "_label": "Display Title",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300404669",
+                    "type": "Type",
+                    "_label": "Display Title"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "end_of_the_end": "1987-02-22T23:59:59",
+        "begin_of_the_begin": "1987-02-22T00:00:00",
+        "_seconds_since_epoch_begin_of_the_begin": 540950400,
+        "_seconds_since_epoch_end_of_the_end": 541036799
+      },
+      "classified_as": [
+        {
+          "id": "https://lux.collections.yale.edu/data/concept/e96042af-f0d8-46b3-b6aa-206a059be941",
+          "type": "Type"
+        }
+      ],
+      "took_place_at": [
+        {
+          "id": "https://lux.collections.yale.edu/data/place/d58c3785-2582-45b1-b467-1c31fc8b9187",
+          "type": "Place",
+          "_label": "New York"
+        },
+        {
+          "id": "https://lux.collections.yale.edu/data/place/f23964ce-4599-4029-afa3-c6df68871ddc",
+          "type": "Place",
+          "_label": "New York"
+        }
+      ]
+    },
+    "type": "Person",
+    "_label": "Warhol, Andy, 1928-1987",
+    "@context": "https://linked.art/ns/v1/linked-art.json",
+    "member_of": [
+      {
+        "id": "https://lux.collections.yale.edu/data/group/3f59b658-798a-49bb-80bf-e31daf56d33a",
+        "type": "Group",
+        "_label": "Carnegie Institute of Technology"
+      }
+    ],
+    "equivalent": [
+      {
+        "id": "https://linked-art.library.yale.edu/node/105426f8-1f1b-4f84-81e7-bc96130b4d94",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://data.bnf.fr/ark:/12148/cb11928892w",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://media.art.yale.edu/content/lux/agt/2851.json",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://d-nb.info/gnd/118629220",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "http://vocab.getty.edu/ulan/500006031",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://datos.bne.es/resource/XX966004",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://linked-art.library.yale.edu/node/785f455a-3847-4838-9f7b-74ebba897f9a",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "http://www.wikidata.org/entity/Q5603",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://linked-art.library.yale.edu/node/5ffed5e7-0443-42c9-8c45-62b383d9ad0e",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://data.paul-mellon-centre.ac.uk/person/wgsp3p9a",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "https://linked-art.library.yale.edu/node/c05887be-644f-4339-88f7-09f71ca2dba3",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-1987"
+      },
+      {
+        "id": "http://id.loc.gov/authorities/names/n79122680",
+        "type": "Person",
+        "_label": "Warhol, Andy, 1928-"
+      }
+    ],
+    "subject_of": [
+      {
+        "type": "LinguisticObject",
+        "_label": "Website Text",
+        "digitally_carried_by": [
+          {
+            "type": "DigitalObject",
+            "_label": "Home Page",
+            "access_point": [
+              { "id": "http://www.warhol.org", "type": "DigitalObject" }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/2eca07bd-be42-4ef5-9ec5-87c1bbfe639d",
+                "type": "Type",
+                "_label": "Web Page",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300264578",
+                    "type": "Type",
+                    "_label": "Web Page"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "carried_out": [
+      {
+        "type": "Activity",
+        "timespan": {
+          "type": "TimeSpan",
+          "end_of_the_end": "1987-02-22T00:00:00Z",
+          "begin_of_the_begin": "1928-08-06T00:00:00Z",
+          "_seconds_since_epoch_begin_of_the_begin": -1306627200,
+          "_seconds_since_epoch_end_of_the_end": 540950400
+        },
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/11c48705-1114-49aa-8896-c7490678b608",
+            "type": "Type",
+            "_label": "Professional Activities",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300393177",
+                "type": "Type",
+                "_label": "Professional Activities"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "classified_as": [
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/1c55fa7d-6f27-481e-98c5-50ea4fad0a6e",
+        "type": "Type",
+        "_label": "American",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300107956",
+            "type": "Type",
+            "_label": "American"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/05344568-bdd1-4289-90d6-b9fdcdbaaa4c",
+            "type": "Type",
+            "_label": "Nationality",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300379842",
+                "type": "Type",
+                "_label": "Nationality"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/6f652917-4c07-4d51-8209-fcdd4f285343",
+        "type": "Type",
+        "_label": "male",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300189559",
+            "type": "Type",
+            "_label": "male"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/84ed0c0e-2aa8-49b3-ae02-ed84552f570d",
+            "type": "Type",
+            "_label": "Gender/Sex/Pronoun",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300055147",
+                "type": "Type",
+                "_label": "Gender/Sex/Pronoun"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/c7ce577a-859d-41d7-a45f-5d71289f46b8",
+        "type": "Type",
+        "_label": "cinematographers",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025650",
+            "type": "Type",
+            "_label": "cinematographers"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/c96d0969-5ada-49da-8450-a697e95c201d",
+        "type": "Type",
+        "_label": "artists (visual artists)",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025103",
+            "type": "Type",
+            "_label": "artists (visual artists)"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/28c42417-8e17-4507-8902-2eb50ff56cd8",
+        "type": "Type",
+        "_label": "writers (clerical workers)",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300386629",
+            "type": "Type",
+            "_label": "writers (clerical workers)"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/c8a65354-832d-4188-b742-87fe88d782dc",
+        "type": "Type",
+        "_label": "publishers",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025574",
+            "type": "Type",
+            "_label": "publishers"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/c9c47788-dda1-4c40-8092-8c2ba229a043",
+        "type": "Type",
+        "_label": "commercial artists",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300049111",
+            "type": "Type",
+            "_label": "commercial artists"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/02f8444e-0217-4f27-a04e-dd430d461007",
+        "type": "Type",
+        "_label": "collectors",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025234",
+            "type": "Type",
+            "_label": "collectors"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/b49608c0-68fd-43e7-8e79-0dcdb8e657f8",
+        "type": "Type",
+        "_label": "draftsmen (artists)",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300112172",
+            "type": "Type",
+            "_label": "draftsmen (artists)"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/3de8612c-2746-433b-9ef0-8d9543d646be",
+        "type": "Type",
+        "_label": "installation artists",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300265517",
+            "type": "Type",
+            "_label": "installation artists"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/a7a11bba-fd6b-4c35-97d7-3c3e421e95d9",
+        "type": "Type",
+        "_label": "painters (artists)",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025136",
+            "type": "Type",
+            "_label": "painters (artists)"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/b7164c4b-487c-4781-8d74-7998bece6cb2",
+        "type": "Type",
+        "_label": "performance artists",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025678",
+            "type": "Type",
+            "_label": "performance artists"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/7212b37d-b8c5-4a82-9500-1b588e11e643",
+        "type": "Type",
+        "_label": "photographers",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025687",
+            "type": "Type",
+            "_label": "photographers"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/efd52bb8-ac8e-412a-bbfa-2e10611424d7",
+        "type": "Type",
+        "_label": "sculptors",
+        "equivalent": [
+          {
+            "id": "http://vocab.getty.edu/aat/300025181",
+            "type": "Type",
+            "_label": "sculptors"
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/7be6ddc2-3fd0-46a8-8f78-9df7e532d11d",
+        "type": "Type",
+        "_label": "Drehbuchautor",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/4e95eae3-4929-49c9-a583-a1d4df3b0a36",
+        "type": "Type",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/13c8afe1-7e72-4375-aa1d-1f7f77a422fb",
+        "type": "Type",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/8a7660f9-61e9-4128-8f38-d79b0db633d0",
+        "type": "Type",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/concept/fdd5787d-5c19-44d5-b674-0e14a9e372ad",
+        "type": "Type",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/69f2fe1a-3950-46ae-ae3b-70e390a4395d",
+            "type": "Type",
+            "_label": "Occupation",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300263369",
+                "type": "Type",
+                "_label": "Occupation"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "identified_by": [
+      {
+        "type": "Name",
+        "content": "Andy Warhol",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Andy Warhol",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/4839f816-732d-4d43-935d-297c4696ec09",
+            "type": "Language",
+            "_label": "Spanish",
+            "notation": "es",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300389311",
+                "type": "Language",
+                "_label": "Spanish"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/ae981401-8fb9-46ba-ad96-f0552135efb9",
+            "type": "Language",
+            "_label": "French",
+            "notation": "fr",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388306",
+                "type": "Language",
+                "_label": "French"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/5abd8c6e-52ca-462f-8d7e-21f73068410c",
+            "type": "Language",
+            "_label": "Portuguese",
+            "notation": "pt",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300389115",
+                "type": "Language",
+                "_label": "Portuguese"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/436c4c60-3478-440d-bb51-c67512ecff66",
+            "type": "Language",
+            "_label": "German",
+            "notation": "de",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388344",
+                "type": "Language",
+                "_label": "German"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/5e2c762c-bd95-4fe8-affc-5d61e5ce2159",
+            "type": "Language",
+            "_label": "Dutch",
+            "notation": "nl",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388256",
+                "type": "Language",
+                "_label": "Dutch"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Warhol, Andy",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/ab99d278-9323-4d84-8e97-1846058fc587",
+            "type": "Type",
+            "_label": "Sort Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300451544",
+                "type": "Type",
+                "_label": "Final: Sort Title"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Warhol Andy",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          }
+        ],
+        "classified_as": []
+      },
+      {
+        "type": "Name",
+        "content": "Warhol, Andy",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "notation": "en",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          },
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/5e2c762c-bd95-4fe8-affc-5d61e5ce2159",
+            "type": "Language",
+            "_label": "Dutch",
+            "notation": "nl",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388256",
+                "type": "Language",
+                "_label": "Dutch"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Andrew Warhola (1928-1987)",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/ae981401-8fb9-46ba-ad96-f0552135efb9",
+            "type": "Language",
+            "_label": "French",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388306",
+                "type": "Language",
+                "_label": "French"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Alternate Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Andy Warhol (1928-1987)",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/ae981401-8fb9-46ba-ad96-f0552135efb9",
+            "type": "Language",
+            "_label": "French",
+            "notation": "fr",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388306",
+                "type": "Language",
+                "_label": "French"
+              }
+            ]
+          }
+        ],
+        "classified_as": []
+      },
+      {
+        "type": "Name",
+        "content": "安迪·沃荷",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/6af4c153-46f3-4ee3-8c3a-36bc210f5a2e",
+            "type": "Language",
+            "_label": "Chinese",
+            "notation": "zh",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388113",
+                "type": "Language",
+                "_label": "Chinese"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "וורהול, אנדי",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c9204606-c7c4-4c46-9390-092597ec73f7",
+            "type": "Language",
+            "_label": "Hebrew",
+            "notation": "he",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388401",
+                "type": "Language",
+                "_label": "Hebrew"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "アンディ・ウォーホル",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/7a1eb4fd-029e-4f0e-87eb-b7f402deaa17",
+            "type": "Language",
+            "_label": "Japanese",
+            "notation": "ja",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388486",
+                "type": "Language",
+                "_label": "Japanese"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "آندي وارهول",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/571751a1-f12b-4418-8774-bbf30b7b663c",
+            "type": "Language",
+            "_label": "Arabic",
+            "notation": "ar",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300387843",
+                "type": "Language",
+                "_label": "Arabic"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "एंडी वारहोल",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/a995fc45-9c9b-424d-80ae-d9e645b822e7",
+            "type": "Language",
+            "_label": "Hindi",
+            "notation": "hi",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388412",
+                "type": "Language",
+                "_label": "Hindi"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Final: Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Warhol, Andy, 1928-1987",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+            "type": "Type",
+            "_label": "Primary Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300404670",
+                "type": "Type",
+                "_label": "Primary Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Warhola, Andrew, 1928-1987",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Sort Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Merge: Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Warhol, Andrew, 1928-1987",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Sort Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Merge: Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Varchola, Andrej, 1928-1987",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Sort Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Merge: Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "וורהול, אנדי, 1928-",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Sort Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Merge: Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Warhola, Andrew",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Sort Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Merge: Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Andrew Warhol",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Alternate Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Name",
+        "content": "Andrej Varchola",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/c99c4343-b769-4a81-9f28-6aec5d281251",
+            "type": "Type",
+            "_label": "Alternate Name",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300264273",
+                "type": "Type",
+                "_label": "Alternate Name"
+              }
+            ]
+          }
+        ]
+      },
+      { "type": "Name", "content": "Warhol, Andy, 1928-" },
+      { "type": "Name", "content": "Warhol, Andrew" },
+      { "type": "Name", "content": "Varchola, Andrej" },
+      { "type": "Name", "content": "Warhola, Andrej" }
+    ],
+    "referred_to_by": [
+      {
+        "type": "LinguisticObject",
+        "content": "American, 1928–1987",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/54e35d81-9548-4b4e-8973-de02b09bf9da",
+            "type": "Type",
+            "_label": "Display Biography",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435422",
+                "type": "Type",
+                "_label": "Display Biography"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "American painter, printmaker, and filmmaker, 1928-1987",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/54e35d81-9548-4b4e-8973-de02b09bf9da",
+            "type": "Type",
+            "_label": "Biography Statement",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435422",
+                "type": "Type",
+                "_label": "Biography Statement"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "Andy Warhol earned his BFA from the Carnegie Institute of Technology in 1949. Early in his career, he was a successful commercial artist and illustrator, and his work was published in magazines and a variety of print media. In the 1960s, he helped launch the Pop movement with his silkscreened paintings of soup cans, Coca-Cola bottles, celebrities, and comic strips, as well as his prints and sculptures of common objects and household products. His studio, known as the Factory, became a magnet for extreme personalities, and he began shooting films there ca. 1963. In 1965 he announced that he would give up painting for filmmaking, though he continued to produce paintings and prints. His films tested the notion of endurance, 'Sleep' and 'Empire' lasting 5 and 8 hours, respectively. His filmed portraits were often static images of a single subject prolonged over the length of a single reel of film. Warhol embraced media of all kinds, producing experimental books, video works, and multiples. In 1966 and 1967 together with the Velvet Underground he produced the Exploding Plastic Inevitable, a series of multimedia events, as well as an album. He survived an assassination attempt in 1968. During the 1970s he focussed on commissioned portraits, and also founded the magazine 'Interview,' which continues to be published. He is considered by many to be one of the most influential artists of the late 20th century.",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "Peintre, graphiste, cinéaste",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/ae981401-8fb9-46ba-ad96-f0552135efb9",
+            "type": "Language",
+            "_label": "French",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388306",
+                "type": "Language",
+                "_label": "French"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "Sohn von Einwanderern aus der Ostslowakei",
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "American artist, film director, and producer (1928–1987)",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/dfa53b96-4eda-4c9a-b091-10008a726c38",
+            "type": "Language",
+            "_label": "English",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388277",
+                "type": "Language",
+                "_label": "English"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "pintor, director cinematográfico y publicista estadounidense",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/4839f816-732d-4d43-935d-297c4696ec09",
+            "type": "Language",
+            "_label": "Spanish",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300389311",
+                "type": "Language",
+                "_label": "Spanish"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "artiste américain",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/ae981401-8fb9-46ba-ad96-f0552135efb9",
+            "type": "Language",
+            "_label": "French",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388306",
+                "type": "Language",
+                "_label": "French"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "artista, diretor de cinema e produtor americano (1928-1987)",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/5abd8c6e-52ca-462f-8d7e-21f73068410c",
+            "type": "Language",
+            "_label": "Portuguese",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300389115",
+                "type": "Language",
+                "_label": "Portuguese"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "amerikanischer Grafiker, Künstler, Filmemacher und Verleger (1928–1987)",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/436c4c60-3478-440d-bb51-c67512ecff66",
+            "type": "Language",
+            "_label": "German",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388344",
+                "type": "Language",
+                "_label": "German"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "Amerikaans kunstenaar (1928–1987)",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/5e2c762c-bd95-4fe8-affc-5d61e5ce2159",
+            "type": "Language",
+            "_label": "Dutch",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388256",
+                "type": "Language",
+                "_label": "Dutch"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "美國藝術家",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/6af4c153-46f3-4ee3-8c3a-36bc210f5a2e",
+            "type": "Language",
+            "_label": "Chinese",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388113",
+                "type": "Language",
+                "_label": "Chinese"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "1928-1987, アメリカの画家、版画家",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/7a1eb4fd-029e-4f0e-87eb-b7f402deaa17",
+            "type": "Language",
+            "_label": "Japanese",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300388486",
+                "type": "Language",
+                "_label": "Japanese"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "فناناً أمريكياً",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/571751a1-f12b-4418-8774-bbf30b7b663c",
+            "type": "Language",
+            "_label": "Arabic",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300387843",
+                "type": "Language",
+                "_label": "Arabic"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+            "type": "Type",
+            "_label": "Description",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435416",
+                "type": "Type",
+                "_label": "Description"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "LinguisticObject",
+        "content": "Andrew Warhola (Pittsburgh, 6 de agosto de 1928-Nueva York, 22 de febrero de 1987), comúnmente conocido como Andy Warhol, fue un artista plástico y actor estadounidense que desempeñó un papel crucial en el nacimiento y desarrollo del pop art. Tras una exitosa carrera como ilustrador profesional, Warhol adquirió fama mundial por su trabajo en pintura, cine de vanguardia y literatura, notoriedad que vino respaldada por una hábil relación con los medios y por su rol como gurú de la modernidad. Warhol actuó como enlace entre artistas e intelectuales, pero también entre aristócratas, homosexuales, celebridades de Hollywood, modelos, bohemios y pintorescos personajes urbanos. Warhol utilizó medios diferentes para crear sus obras, como el dibujo a mano, la pintura, el grabado, la fotografía, la serigrafía, la escultura, el cine y la música. El Museo Andy Warhol en su ciudad natal, Pittsburgh, Pensilvania, contiene una amplia colección permanente de arte. Resulta ser el museo más grande de Estados Unidos dedicado a un solo artista. Uno de los aportes más populares de Warhol fue su declaración: «En el futuro todo el mundo será famoso durante 15 minutos». Esta frase de cierta manera vaticinó el actual poder de los medios de comunicación y el apogeo de la prensa amarilla, los reality shows y las redes sociales. Fue un personaje polémico durante su vida —algunos críticos calificaban sus obras como pretenciosas o bromas pesadas— y desde su muerte en 1987 es objeto de numerosas exposiciones retrospectivas, análisis, libros y documentales, además de ser recreado en obras de ficción como la película I Shot Andy Warhol (Mary Harron, 1996). Al margen de la fama y de la polémica, está considerado como uno de los artistas más influyentes del siglo XX debido a sus revolucionarias obras.@es",
+        "language": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/4839f816-732d-4d43-935d-297c4696ec09",
+            "type": "Language",
+            "_label": "Spanish",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300389311",
+                "type": "Language",
+                "_label": "Spanish"
+              }
+            ]
+          }
+        ],
+        "classified_as": [
+          {
+            "id": "https://lux.collections.yale.edu/data/concept/54e35d81-9548-4b4e-8973-de02b09bf9da",
+            "type": "Type",
+            "_label": "Biography Statement",
+            "equivalent": [
+              {
+                "id": "http://vocab.getty.edu/aat/300435422",
+                "type": "Type",
+                "_label": "Biography Statement"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                "type": "Type",
+                "_label": "Brief Text",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300418049",
+                    "type": "Type",
+                    "_label": "Brief Text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "representation": [
+      {
+        "type": "VisualItem",
+        "_label": "Appearance of Andy Warhol",
+        "digitally_shown_by": [
+          {
+            "type": "DigitalObject",
+            "@context": "https://linked.art/ns/v1/linked-art.json",
+            "subject_to": [
+              {
+                "type": "Right",
+                "classified_as": [
+                  {
+                    "id": "https://creativecommons.org/licenses/by-sa/4.0",
+                    "type": "Type"
+                  }
+                ],
+                "identified_by": [
+                  {
+                    "type": "Name",
+                    "content": "Creative Commons Attribution-Share Alike 4.0"
+                  }
+                ]
+              }
+            ],
+            "access_point": [
+              {
+                "id": "https://commons.wikimedia.org/wiki/Special:Filepath/Andy Warhol by Jack Mitchell.jpg",
+                "type": "DigitalObject"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b28a48ef-4d40-44d1-81c9-27f0411b030b",
+                "type": "Type",
+                "_label": "Digital Image",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300215302",
+                    "type": "Type",
+                    "_label": "Digital Image"
+                  }
+                ]
+              }
+            ],
+            "identified_by": [
+              {
+                "type": "Name",
+                "content": "Andy Warhol by Jack Mitchell",
+                "classified_as": [
+                  {
+                    "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                    "type": "Type",
+                    "_label": "Primary Name",
+                    "equivalent": [
+                      {
+                        "id": "http://vocab.getty.edu/aat/300404670",
+                        "type": "Type",
+                        "_label": "Primary Name"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "referred_to_by": [
+              {
+                "type": "LinguisticObject",
+                "content": "Andy Warhol with Archie, his pet Dachshund",
+                "classified_as": [
+                  {
+                    "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+                    "type": "Type",
+                    "_label": "Description",
+                    "equivalent": [
+                      {
+                        "id": "http://vocab.getty.edu/aat/300435416",
+                        "type": "Type",
+                        "_label": "Description"
+                      }
+                    ],
+                    "classified_as": [
+                      {
+                        "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                        "type": "Type",
+                        "_label": "Brief Text",
+                        "equivalent": [
+                          {
+                            "id": "http://vocab.getty.edu/aat/300418049",
+                            "type": "Type",
+                            "_label": "Brief Text"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "LinguisticObject",
+                "content": "Andy Warhol by Jack Mitchell by Jack Mitchell\n https://jackmitchell.com/store/warhol_and_his_circle/F0747420DB~Andy+Warhol+and+Archie%2C+1973.htm, CC BY-SA 4.0",
+                "classified_as": [
+                  {
+                    "id": "https://lux.collections.yale.edu/data/concept/4030679e-c6e0-4e5e-b3c0-48ee1b8cfe60",
+                    "type": "Type",
+                    "_label": "Copyright/License Statement",
+                    "equivalent": [
+                      {
+                        "id": "http://vocab.getty.edu/aat/300435434",
+                        "type": "Type",
+                        "_label": "Copyright/License Statement"
+                      }
+                    ],
+                    "classified_as": [
+                      {
+                        "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                        "type": "Type",
+                        "_label": "Brief Text",
+                        "equivalent": [
+                          {
+                            "id": "http://vocab.getty.edu/aat/300418049",
+                            "type": "Type",
+                            "_label": "Brief Text"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "_content_html": "<span>Andy Warhol by Jack Mitchell by <bdi><a href=\"https://en.wikipedia.org/wiki/en:Jack_Mitchell_(photographer)\" class=\"extiw\" title=\"w:en:Jack Mitchell (photographer)\"><span title=\"American photographer and author\">Jack Mitchell</span></a>\n</bdi> <a rel=\"nofollow\" class=\"external free\" href=\"https://jackmitchell.com/store/warhol_and_his_circle/F0747420DB~Andy+Warhol+and+Archie%2C+1973.htm\">https://jackmitchell.com/store/warhol_and_his_circle/F0747420DB~Andy+Warhol+and+Archie%2C+1973.htm</a>, <a href=\"https://creativecommons.org/licenses/by-sa/4.0\">CC BY-SA 4.0</a></span>"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "VisualItem",
+        "digitally_shown_by": [
+          {
+            "type": "DigitalObject",
+            "@context": "https://linked.art/ns/v1/linked-art.json",
+            "access_point": [
+              {
+                "id": "https://commons.wikimedia.org/wiki/Special:Filepath/Andy Warhol 1975.jpg",
+                "type": "DigitalObject"
+              }
+            ],
+            "classified_as": [
+              {
+                "id": "https://lux.collections.yale.edu/data/concept/b28a48ef-4d40-44d1-81c9-27f0411b030b",
+                "type": "Type",
+                "_label": "Digital Image",
+                "equivalent": [
+                  {
+                    "id": "http://vocab.getty.edu/aat/300215302",
+                    "type": "Type",
+                    "_label": "Digital Image"
+                  }
+                ]
+              }
+            ],
+            "identified_by": [
+              {
+                "type": "Name",
+                "content": "Andy Warhol 1975",
+                "classified_as": [
+                  {
+                    "id": "https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
+                    "type": "Type",
+                    "_label": "Primary Name",
+                    "equivalent": [
+                      {
+                        "id": "http://vocab.getty.edu/aat/300404670",
+                        "type": "Type",
+                        "_label": "Primary Name"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "referred_to_by": [
+              {
+                "type": "LinguisticObject",
+                "content": "Portrait of the American artist Andy Warhol at his exhibition dedicated to Black transvestites in the US. Ferrara, November 1975",
+                "classified_as": [
+                  {
+                    "id": "https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337",
+                    "type": "Type",
+                    "_label": "Description",
+                    "equivalent": [
+                      {
+                        "id": "http://vocab.getty.edu/aat/300435416",
+                        "type": "Type",
+                        "_label": "Description"
+                      }
+                    ],
+                    "classified_as": [
+                      {
+                        "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                        "type": "Type",
+                        "_label": "Brief Text",
+                        "equivalent": [
+                          {
+                            "id": "http://vocab.getty.edu/aat/300418049",
+                            "type": "Type",
+                            "_label": "Brief Text"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "LinguisticObject",
+                "content": "Andy Warhol 1975 by Unknown authorUnknown author gettyimages.co.uk, Public domain",
+                "classified_as": [
+                  {
+                    "id": "https://lux.collections.yale.edu/data/concept/4030679e-c6e0-4e5e-b3c0-48ee1b8cfe60",
+                    "type": "Type",
+                    "_label": "Copyright/License Statement",
+                    "equivalent": [
+                      {
+                        "id": "http://vocab.getty.edu/aat/300435434",
+                        "type": "Type",
+                        "_label": "Copyright/License Statement"
+                      }
+                    ],
+                    "classified_as": [
+                      {
+                        "id": "https://lux.collections.yale.edu/data/concept/b079998d-bb47-470a-ad7d-d938bd091f8a",
+                        "type": "Type",
+                        "_label": "Brief Text",
+                        "equivalent": [
+                          {
+                            "id": "http://vocab.getty.edu/aat/300418049",
+                            "type": "Type",
+                            "_label": "Brief Text"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "_content_html": "<span>Andy Warhol 1975 by Unknown author<span style=\"display: none;\">Unknown author</span> <a rel=\"nofollow\" class=\"external text\" href=\"http://www.gettyimages.co.uk/detail/news-photo/portrait-of-the-american-artist-andy-warhol-at-his-news-photo/141553292\">gettyimages.co.uk</a>, Public domain</span>"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "participated_in": [
+      {
+        "id": "https://lux.collections.yale.edu/data/activity/cd36efab-9381-4427-832c-9c5cfb81048e",
+        "type": "Activity"
+      },
+      {
+        "id": "https://lux.collections.yale.edu/data/activity/dd3c0170-3e47-4b56-adaa-43f9721334ab",
+        "type": "Activity"
+      }
+    ]
+  },
+  "triples": [],
+  "admin": {},
+  "indexedProperties": {}
+}

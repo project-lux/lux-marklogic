@@ -1,0 +1,8 @@
+UI Checkbox Labels	Criteria when checked	Criteria when not checked	Function		
+Boost	"""_weight"":2"	(No criteria added)	Only changes the search term's weight.  It is not the quivalent of cts.boostQuery.		
+Exact	"""_complete"":true"	(No criteria added)	"Only prevents tokenization.  It is not the equilvalent of the exact search option offered by several CTS query functions (""case-sensitive"", ""diacritic-sensitive"", ""punctuation-sensitive"", ""whitespace-sensitive"", ""unstemmed"", and ""unwildcarded"")"		
+Case sensitive	"""_options"":[""case-sensitive""]"	(No criteria added)	Self explainatory		
+Diacritic sensitive	"""_options"":[""diacritic-sensitive""]"	(No criteria added)	Self explainatory		
+Punctuation sensitive	"""_options"":[""punctuation-sensitive""]"	(No criteria added)	Self explainatory		
+Stemmed	(No criteria added)	"""_options"":[""unstemmed""]"	Self explainatory		
+Wildcarded	(No criteria added)	"""_options"":[""unwildcarded""]"	Self explainatory		

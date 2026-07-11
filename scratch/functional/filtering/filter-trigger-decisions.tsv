@@ -1,0 +1,8 @@
+Trigger	Filter?	Why
+Quoted phrase or proximity search	Usually yes unless phrase/position support is known sufficient	Phrase/proximity needs position evidence; otherwise candidate docs can contain terms separately.
+Punctuation-sensitive or whitespace-sensitive exact search	Usually yes for Keyword fields	Universal word indexes typically do not prove punctuation/space token relationships.
+Case-sensitive or diacritic-sensitive exact search	Conditional	Can be index-resolvable with proper fast case/diacritic options or exact range/value strategy; otherwise filter.
+Wildcard search	Conditional/high-risk	Some wildcard patterns are index-friendly; arbitrary wildcarding can over-select.
+NOT around any approximate text criterion	Strongly yes / redesign candidate query	False positives in A become false negatives in NOT A; avoid unsafe negative criteria in candidate selection.
+Exact structured equality/range via field range index	Usually no	Range indexes are designed for comparison/equality semantics if type/collation/invalid-values are correct.
+Broad Keyword recall search	Usually no unless exactness promised	"False positives may be accepted as recall/relevance tradeoff, but not for exact-match promises."

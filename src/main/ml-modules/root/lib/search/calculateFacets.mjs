@@ -30,7 +30,12 @@ const SEMANTIC_VALUE_LIMIT = 100;
 // When scopedCtsQuery is null (non-foldable query):
 //   - All facets use op.fromSearch(cts.documentQuery(uriList)) (Path 3).
 //   - rows must be non-null.
-function calculateFacets(rows, facetRequests, scopedCtsQuery = null) {
+function calculateFacets(
+  rows,
+  facetRequests,
+  scopedCtsQuery = null,
+  scopedCtsQueryEstimate = null,
+) {
   if (facetRequests == null || facetRequests.length === 0) {
     return null;
   }
@@ -38,6 +43,13 @@ function calculateFacets(rows, facetRequests, scopedCtsQuery = null) {
   const requests = facetRequests.getFacetRequests();
   if (!utils.isNonEmptyArray(requests)) {
     return new FacetResponses({});
+  }
+
+  // Use the estimate when provided, but do not call cts.estimate here when
+  // absent; forcing an estimate in this layer can impose a performance
+  // penalty for some query shapes.
+  if (scopedCtsQuery && scopedCtsQueryEstimate === 0) {
+    return _buildEmptyFacetResponses(requests);
   }
 
   // Path 3 setup: extract URIs from materialized rows.

@@ -18,7 +18,7 @@ LUX's CTS-based search used `cts.search`, which filters by default. The Optic AP
 
 # Key Takeaway & Question
 
-The key takeaway: **the default search path needs no filtering.** Filtering is only needed for two user-selectable options (case-sensitive with lowercase terms, punctuation-sensitive), both of which are opt-in checkboxes in the frontend.
+The key takeaway: **the default search path needs no filtering.** Filtering is only needed for two user-selectable options (case-sensitive when every letter is lower-cased, punctuation-sensitive), both of which are opt-in checkboxes in the frontend.
 
 The question becomes: are those two features worth implementing filtering and the additional time it would require to execute the search?
 
@@ -60,7 +60,7 @@ Seven validation scripts (V1–V7) each test a specific false-positive scenario 
 
 When unfiltered and filtered counts diverge, the difference is false positives. When Optic diverges from filtered, the Optic path has the same false positives (expected — Optic is unfiltered by design).
 
-Scripts and synthetic documents are in demonstrate. The Query Console workspace `Unfiltered.xml` contains all scripts, inclusive of "Insert" and "Delete" which insert and delete the synthetic documents.
+Scripts and synthetic documents are in `demonstrate`. The Query Console workspace `Unfiltered.xml` contains all scripts, inclusive of "Insert" and "Delete" which insert and delete the synthetic documents.
 
 | Script | Tests |
 |---|---|

@@ -99,13 +99,17 @@ function performSearch(scp) {
       planAsSource = getPlanSource(planAsJson);
 
       let rows = null;
+      let scopedCtsQueryEstimate = null;
       if (ctsExecutionEligible) {
         const effectivePageLength = pageLength ?? 20;
-        total = cts.estimate(scopedCtsQuery);
+        scopedCtsQueryEstimate = cts.estimate(scopedCtsQuery);
+        total = scopedCtsQueryEstimate;
         resultPage = Math.max(page, 1);
         const offset = (resultPage - 1) * effectivePageLength;
 
-        if (isFromSearchPlan) {
+        if (total === 0) {
+          searchResults = [];
+        } else if (isFromSearchPlan) {
           // Opt 20: paginate first, then hydrate only the page slice.
           // joinDocAndUri pulls documents from disk for just the page.
           searchResults = selectedPlan
@@ -145,7 +149,12 @@ function performSearch(scp) {
       }
 
       // Opt 21: calculateFacets dispatches internally based on rows/scopedCtsQuery.
-      facetResponses = calculateFacets(rows, facetRequests, scopedCtsQuery);
+      facetResponses = calculateFacets(
+        rows,
+        facetRequests,
+        scopedCtsQuery,
+        scopedCtsQueryEstimate,
+      );
     }
 
     return new SearchExecutionResult({

@@ -80,11 +80,11 @@ Everything in Bob Starbird's document remained true in MarkLogic 12.0.1 with fie
 |---|---|---|---|
 | **V1** Cross-instance phrase | Yes (1=1=1) | None | Phrase queries are index-accurate. `field-value-positions` works. |
 | **V2A** Case-sensitive "PAINTING" (upper) | Yes (1=1=1) | None | Non-lowercase case-sensitive is index-resolvable. |
-| **V2B** Case-sensitive "painting" (lower) | **No (4 vs 1)** | **3 false positives** | Bob is correct; verified by V2B. Lower-case = case-insensitive to the index. |
+| **V2B** Case-sensitive "painting" (lower) | **No (4 vs 1)** | **3 false positives** | Lower-case = case-insensitive to the index. |
 | **V2C** Case-insensitive "painting" | Yes (4=4=4) | None | Baseline correct. |
 | **V3A** Punctuation-insensitive "o'keeffe" | Yes (2=2=2) | None | Insensitive path is index-accurate. |
-| **V3B** Punctuation-sensitive "o'keeffe" | **No (2 vs 1)** | **1 false positive** | Bob is correct; verified by V3B. Punctuation not in index. |
-| **V3C** Punctuation-sensitive "self-portrait" | **No (2 vs 1)** | **1 false positive** | Bob is correct; verified by V3C. Hyphen treated same as space. |
+| **V3B** Punctuation-sensitive "o'keeffe" | **No (2 vs 1)** | **1 false positive** | Punctuation not in index. |
+| **V3C** Punctuation-sensitive "self-portrait" | **No (2 vs 1)** | **1 false positive** | Hyphen treated same as space. |
 | **V3D** Punctuation-insensitive "self-portrait" | Yes (2=2=2) | None | Insensitive path is index-accurate. |
 | **V4** NOT (stieglitz OR o'keeffe) -library | Yes (3=3=3=3) | None | NOT works correctly when sub-queries are index-accurate. |
 | **V5A** Stemmed "painting" | Yes (4=4=4) | None | Stemming is index-accurate. |
@@ -92,7 +92,7 @@ Everything in Bob Starbird's document remained true in MarkLogic 12.0.1 with fie
 | **V6A** Tokenized cross-instance | Yes (2=2=2) | None | Tokenized AND across //content instances is correct behavior. |
 | **V6B** Exact value cross-instance † | Yes (0=0=0) | None | `fieldValueQuery` enforces single-instance containment. |
 | **V6C** Exact value single instance † | Yes (1=1=1) | None | Exact match works. |
-| **V7A** Case-sensitive "stieglitz" (lower) | **No (2 vs 0)** | **2 false positives** | Bob is correct; verified by V7A. All results are false positives. |
+| **V7A** Case-sensitive "stieglitz" (lower) | **No (2 vs 0)** | **2 false positives** | All results are false positives. |
 | **V7B** Case-sensitive "Stieglitz" (title) | Yes (2=2=2) | None | Non-lowercase is accurate. |
 
 Result counts in the second column are unfiltered = filtered = Optic. V4 has four values because it tested two Optic variants (`where` and `fromSearch`).

@@ -1,6 +1,7 @@
 'use strict';
 // Delete all synthetic filtering test documents.
 // Run in Query Console against the TEST CONTENT database.
+declareUpdate();
 
 const COLLECTION = 'filtering-validation';
 

@@ -60,7 +60,7 @@ Seven validation scripts (V1–V7) each test a specific false-positive scenario 
 
 When unfiltered and filtered counts diverge, the difference is false positives. When Optic diverges from filtered, the Optic path has the same false positives (expected — Optic is unfiltered by design).
 
-Scripts and synthetic documents are in `demonstrate`. The Query Console workspace `Unfiltered.xml` contains all scripts, inclusive of "Insert" and "Delete" which insert and delete the synthetic documents.
+Scripts and synthetic documents are in `demonstrate`. They require the `anyDataTypeName` and `itemAnyText` fields, which may be found in [/config/contentDatabaseConfGenerated.json](/config/contentDatabaseConfGenerated.json).  The Query Console workspace `Unfiltered.xml` contains all scripts, inclusive of "Insert" and "Delete" which insert and delete the synthetic documents.
 
 | Script | Tests |
 |---|---|

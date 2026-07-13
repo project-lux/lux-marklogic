@@ -84,8 +84,8 @@ const SearchTermConfig = class {
     return this._getProperty('region', false);
   }
 
-  allowsTransitive() {
-    return this._getProperty('allowsTransitive', false);
+  isTransitive() {
+    return this._getProperty('transitive', false);
   }
 
   getVectorColumn() {

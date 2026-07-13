@@ -198,9 +198,18 @@ const searchTermsConfig = {};
     }
   });
 
-  // Generate the hop inverse search terms.
+  // Generate the hop inverse and transitive search terms.
   Object.keys(unitConfig).forEach((scopeName) => {
     Object.keys(unitConfig[scopeName]).forEach((termName) => {
+      // make a copy of the term if it is to be transitive, and add a '+' to the name.
+      const makeTransitive = unitConfig[scopeName][termName].makeTransitive;
+      if (makeTransitive) {
+        unitConfig[scopeName][termName + '+'] = {
+          ...unitConfig[scopeName][termName],
+        };
+        unitConfig[scopeName][termName + '+'].transitive = true;
+        delete unitConfig[scopeName][termName + '+'].makeTransitive;
+      }
       if (hasHopInverseInfo(unitConfig[scopeName][termName])) {
         const newScopeName = unitConfig[scopeName][termName].targetScope;
         const newTermName = unitConfig[scopeName][termName].hopInverseName;
@@ -214,12 +223,19 @@ const searchTermsConfig = {};
         }
         unitConfig[newScopeName][newTermName] = {
           patternName: PATTERN_NAME_HOP_INVERSE,
-          allowsTransitive: unitConfig[scopeName][termName].allowsTransitive,
           predicates: unitConfig[scopeName][termName].predicates,
           targetScope: scopeName,
           hopInverseName: termName, // added for getInverseSearchTermInfo
           generated: true,
         };
+        // make a copy of the hop inverse term if it is to be transitive, and add a '+' to the name.
+        if (makeTransitive) {
+          unitConfig[newScopeName][newTermName + '+'] = {
+            ...unitConfig[newScopeName][newTermName],
+          };
+          unitConfig[newScopeName][newTermName + '+'].transitive = true;
+          delete unitConfig[newScopeName][newTermName + '+'].makeTransitive;
+        }
       }
     });
   });

@@ -1,7 +1,5 @@
 import * as utils from '../../utils/utils.mjs';
 import { SearchTermConfig } from './SearchTermConfig.mjs';
-import { InvalidSearchRequestError } from '../errorClasses.mjs';
-
 import {
   ANN_DISTANCE_DEFAULT,
   ANN_DISTANCE_MAX,
@@ -135,9 +133,6 @@ const SearchTerm = class {
   }
   getProperty(name) {
     return this.props[name];
-  }
-  hasProperty(name) {
-    return name in this.props && utils.isDefined(this.props[name]);
   }
   getProperties() {
     return this.props;
@@ -303,23 +298,6 @@ const SearchTerm = class {
   }
   isCompleteMatch() {
     return this.props.complete === true;
-  }
-
-  isTransitive() {
-    if (this.hasProperty('transitive')) {
-      const transitiveValue = this.getProperty('transitive');
-      this.requireBooleanProperty('transitive', transitiveValue);
-      return transitiveValue;
-    }
-    return this.searchTermConfig?.allowsTransitive() ?? false;
-  }
-
-  requireBooleanProperty(name, value) {
-    if (typeof value !== 'boolean') {
-      throw new InvalidSearchRequestError(
-        `Unsupported property value '${value}' for '_${name}'. Must be boolean (true or false)`,
-      );
-    }
   }
 
   addTokenized(tokenized) {

@@ -17,7 +17,7 @@ import { getSearchScopeTypes } from '../../searchScope.mjs';
 
 class HopInverse extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {
-    if (searchTerm.isTransitive()) {
+    if (searchTerm.getSearchTermConfig().isTransitive()) {
       return this.#processTransitiveHopInverseTerm(
         scp,
         searchTerm,

@@ -15,7 +15,7 @@ import {
 class HopWithField extends SearchPatternBase {
   //#region Pattern implementation methods.
   apply(scp, searchTerm, logicType, patternOptions) {
-    if (searchTerm.isTransitive()) {
+    if (searchTerm.getSearchTermConfig().isTransitive()) {
       return this.#processTransitiveHopWithFieldTerm(
         scp,
         searchTerm,

@@ -165,10 +165,6 @@ function _calculateNonSemanticFacetViaCts(
   pageLength,
   sort,
 ) {
-  console.log(
-    `Calculating non-semantic facet '${facetName}' via CTS fieldValues.`,
-  );
-
   // Require search criteria.
   if (!scopedCtsQuery) {
     throw new BadRequestError(`The facet request requires search criteria.`);

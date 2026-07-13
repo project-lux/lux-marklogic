@@ -2289,7 +2289,7 @@ Comparison 35 → 36: adding Opt 24.
 
 ## Optimization 25: Facet page-window return shaping (low priority)
 
-**Status:** Tested — likely of trivial savings.
+**Status:** Tested — likely to only offer trivial savings.
 
 ### Theory
 

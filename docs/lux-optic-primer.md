@@ -159,6 +159,14 @@
       - [Single query](#single-query)
       - [10k performance test (2026-07-05)](#10k-performance-test-2026-07-05)
     - [Scope and limitations](#scope-and-limitations)
+  - [Optimization 25: Facet page-window return shaping (low priority)](#optimization-25-facet-page-window-return-shaping-low-priority)
+    - [Theory](#theory)
+    - [Reference Request](#reference-request)
+    - [Plan analysis (ORIG vs PAGE)](#plan-analysis-orig-vs-page)
+    - [What this would help](#what-this-would-help)
+    - [What this would not help](#what-this-would-not-help)
+    - [API contract change required](#api-contract-change-required)
+    - [Priority](#priority)
 
 # Introduction
 
@@ -2278,3 +2286,66 @@ Comparison 35 → 36: adding Opt 24.
 **Cascade behavior:** Opt 24 returns `patternJoins` (not `ctsConstraints`), so it does not cascade through `processNestedCriteriaAsCts` at the parent scope level. For a 2-hop chain like `curated.containingItem.id`, the innermost `fromLexicons` (item scope, ~10M rows) is eliminated, but the middle `fromLexicons` (set scope, ~316K rows) is retained. Despite this single-level limitation, the benchmark shows the optimization is sufficient for the target query shape.
 
 **Relationship to Opt 16:** Opt 16 handles `hopWithField` by emitting `cts.tripleRangeQuery` as a `ctsConstraint`, which DOES cascade — each outer hop also sees only CTS and can resolve without Optic. Opt 24 handles `hopInverse` via a different mechanism (`.where()` on `fromTriples`) because the triple's document location prevents full CTS resolution. The two optimizations are complementary and cover the two hop pattern types.
+
+## Optimization 25: Facet page-window return shaping (low priority)
+
+**Status:** Tested — likely of trivial savings.
+
+### Theory
+
+We could speed up facet requests by having Optic perform the pagination.
+
+`_calculateFacetViaOptic` (`calculateFacets.mjs`) materializes all grouped facet rows with `.result().toArray()` and then applies JS paging via `rows.slice(start, end)`.
+
+Proposal is to push paging into Optic (`.offset(start).limit(pageLength)`) and return only one page of facet rows.
+
+We would lose the abilty to return the total number of facet values.  Counter approach discussed below.
+
+### Reference Request
+
+The `itemTypeId` facet for a two AND'd keyword search that returns 2.6 million results.  The facet request timed out in Optic during a replay test.
+
+```json
+{
+  "_scope": "item",
+  "AND": [{ "text": "Works" }, { "text": "page" }]
+}
+```
+
+### Plan analysis (ORIG vs PAGE)
+
+Actual plan comparison for `itemTypeId` shows PAGE inserts a top `limit/offset` wrapper, but the expensive subtree is unchanged:
+
+- Root `cost` is unchanged (`8.36854e+08`) in both plans.
+- `order-by`, `group`, `join`, and `sort` costs/cardinalities are unchanged.
+- `query-hash` is unchanged, confirming the same CTS payload and join shape.
+- The large sort remains disk-based with the same memory profile.
+- Main difference: top estimated output count changes from `545774` (ORIG) to `20` (PAGE).
+
+Interpretation: this is mostly output shaping, not a reduction of core Optic work.
+
+### What this would help
+
+- Reduce SSJS row materialization and post-processing overhead.
+- Reduce response payload assembly cost for facet values.
+- Potentially lower peak JS memory pressure when facet cardinality is high.
+
+### What this would not help
+
+- Does not materially reduce the heavy join/group/sort portion shown in the actual plans.
+- Does not change large CTS AST/query payload effects (including the many `cts:object` values).
+- Will not be a primary fix for engine-side timeout risk driven by pre-page aggregation/sort work.
+
+### API contract change required
+
+To realize the most value, replace `totalItems` with a `hasMore` indicator:
+
+- Request `pageLength + 1` rows via Optic.
+- Set `hasMore = rows.length > pageLength`.
+- Return only the first `pageLength` rows.
+
+Keeping exact `totalItems` would still require full cardinality work (or a second counting plan), which erodes the benefit of this optimization.
+
+### Priority
+
+Low priority. This is primarily a JS/output-layer optimization and does not change the dominant Optic execution costs observed in ORIG vs PAGE actual plans.

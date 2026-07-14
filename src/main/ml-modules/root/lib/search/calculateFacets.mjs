@@ -36,6 +36,7 @@ function calculateFacets(
   facetRequests,
   scopedCtsQuery = null,
   scopedCtsQueryEstimate = null,
+  testDispatchLogic = false,
 ) {
   if (facetRequests == null || facetRequests.length === 0) {
     return null;
@@ -43,7 +44,7 @@ function calculateFacets(
 
   const requests = facetRequests.getFacetRequests();
   if (!utils.isNonEmptyArray(requests)) {
-    return new FacetResponses({});
+    return _buildEmptyFacetResponses([]);
   }
 
   // Use the estimate when provided, but do not call cts.estimate here when
@@ -58,44 +59,44 @@ function calculateFacets(
   const start = (page - 1) * pageLength;
   const end = page * pageLength;
 
+  let docsPlan = null;
+  if (!scopedCtsQuery) {
+    const uriList = Array.isArray(rows) ? rows.map((row) => row.id) : [];
+    if (uriList.length === 0) {
+      return _buildEmptyFacetResponses(requests);
+    }
+    if (!testDispatchLogic) {
+      docsPlan = op.fromSearch(cts.documentQuery(uriList));
+    }
+  }
+
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
     const isSemantic = isSemanticFacet(facetName);
+    let dispatchPath;
 
     if (isSemantic && scopedCtsQuery) {
       // Path 1: CTS enumerate + estimate.
-      facets[facetName] = _calculateSemanticFacetViaCts(
-        facetName,
-        scopedCtsQuery,
-        start,
-        end,
-      );
+      facets[facetName] = testDispatchLogic
+        ? 'semanticFacetViaCts'
+        : _calculateSemanticFacetViaCts(facetName, scopedCtsQuery, start, end);
     } else if (!isSemantic && scopedCtsQuery) {
       // Path 2: cts.fieldValues
-      facets[facetName] = _calculateNonSemanticFacetViaCts(
-        facetName,
-        scopedCtsQuery,
-        page,
-        pageLength,
-        request?.sort,
-      );
+      facets[facetName] = testDispatchLogic
+        ? 'nonSemanticFacetViaCts'
+        : _calculateNonSemanticFacetViaCts(
+            facetName,
+            scopedCtsQuery,
+            page,
+            pageLength,
+            request?.sort,
+          );
     } else {
       // Path 3: Full materialization of search results given to Optic.
-
-      // Extract URIs from materialized rows.
-      let uriList = rows.map((row) => row.id);
-      if (uriList.length === 0) {
-        return _buildEmptyFacetResponses(requests);
-      }
-
-      facets[facetName] = _calculateFacetViaOptic(
-        facetName,
-        op.fromSearch(cts.documentQuery(uriList)),
-        request,
-        start,
-        end,
-      );
+      facets[facetName] = testDispatchLogic
+        ? 'facetViaOptic'
+        : _calculateFacetViaOptic(facetName, docsPlan, request, start, end);
     }
   });
 

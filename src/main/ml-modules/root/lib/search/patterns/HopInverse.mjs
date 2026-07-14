@@ -10,9 +10,23 @@ import { InternalServerError } from '../../errorClasses.mjs';
 import { SearchTermConfig } from '../SearchTermConfig.mjs';
 import { getSearchTermConfig } from '../../../config/searchTermsConfig.mjs';
 import { getSearchScopeTypes } from '../../searchScope.mjs';
+import { HopBase } from './HopBase.mjs';
 
-class HopInverse extends SearchPatternBase {
+class HopInverse extends HopBase {
   apply(scp, searchTerm, logicType, patternOptions) {
+    if (searchTerm.getSearchTermConfig().isTransitive()) {
+      return this.processTransitiveHopTerm(
+        scp,
+        searchTerm,
+        patternOptions,
+        true,
+      );
+    } else {
+      return this.#processHopInverseTerm(scp, searchTerm, patternOptions);
+    }
+  }
+
+  #processHopInverseTerm(scp, searchTerm, patternOptions) {
     const id = searchTerm.getId();
     const termConfig = searchTerm.getSearchTermConfig();
     const parentIriCol = searchTerm.getParentIriColumn();

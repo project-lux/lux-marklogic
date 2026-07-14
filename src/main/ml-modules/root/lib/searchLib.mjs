@@ -8,7 +8,7 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
-import { isInvalidSearchRequestError } from './errorClasses.mjs';
+import { InvalidSearchRequestError } from './errorClasses.mjs';
 import {
   getRelatedList,
   getRelatedListSearchInfo,
@@ -311,7 +311,7 @@ function getSearchEstimate(searchCriteria, scope) {
     };
   } catch (e) {
     if (xdmp.traceEnabled(traceName)) {
-      if (isInvalidSearchRequestError(e)) {
+      if (e instanceof InvalidSearchRequestError) {
         // Not associated to a monitoring test or the log mining script.
         xdmp.trace(
           traceName,
@@ -392,7 +392,7 @@ function determineIfSearchWillMatch(multipleSearchCriteria) {
         };
 
         if (xdmp.traceEnabled(traceName)) {
-          if (isInvalidSearchRequestError(e)) {
+          if (e instanceof InvalidSearchRequestError) {
             // Not associated to a monitoring test or the log mining script.
             xdmp.trace(
               traceName,

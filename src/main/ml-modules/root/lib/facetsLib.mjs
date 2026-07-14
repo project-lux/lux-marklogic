@@ -14,7 +14,7 @@ import * as utils from '../utils/utils.mjs';
 import {
   BadRequestError,
   InternalServerError,
-  isInvalidSearchRequestError,
+  InvalidSearchRequestError,
 } from './errorClasses.mjs';
 
 //#region Exported functions
@@ -28,7 +28,7 @@ function getFacet({
 }) {
   const start = new Date();
   let requestCompleted = false;
-  let InvalidSearchRequestError = false;
+  let isInvalidSearchRequestError = false;
 
   try {
     const facetRequests = new FacetRequests(page, pageLength);
@@ -61,8 +61,8 @@ function getFacet({
     requestCompleted = true;
     return facetValuesAS;
   } catch (e) {
-    if (isInvalidSearchRequestError(e)) {
-      InvalidSearchRequestError = true;
+    if (e instanceof InvalidSearchRequestError) {
+      isInvalidSearchRequestError = true;
     }
     throw e;
   } finally {
@@ -73,7 +73,7 @@ function getFacet({
         traceName,
         `Calculated the following facet in ${duration} milliseconds: ${facetName} (page: ${page}; pageLength: ${pageLength})`,
       );
-    } else if (InvalidSearchRequestError) {
+    } else if (isInvalidSearchRequestError) {
       // Not associated to a monitoring test or the log mining script.
       xdmp.trace(
         traceName,

@@ -353,7 +353,7 @@ task addSupportForExecutingWithServiceAccounts() {
     def functionLines = []
     def exportLines = ["export {"]
     functionNames.each{ functionName ->
-      functionLines.push("const _${functionName} = (f) => { return xdmp.invokeFunction(f) };")
+      functionLines.push("const _${functionName} = (f) => { try { return xdmp.invokeFunction(f) } catch (e) { const {errorName, errorMessage} = extractCustomErrorNameAndMessage(e); if (errorName && errorMessage) { throw createCustomError(errorName, errorMessage); } throw e; } };")
       functionLines.push("const  ${functionName} = import.meta.amp(_${functionName});")
       exportLines.push("  ${functionName},")
     }

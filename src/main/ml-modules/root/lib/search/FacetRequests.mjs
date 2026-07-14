@@ -48,6 +48,8 @@ const FacetRequests = class {
     } else {
       throw new BadRequestError(`'${facetName}' is not a configured facet.`);
     }
+
+    return this;
   }
 
   getFacetRequests() {

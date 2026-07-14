@@ -15,6 +15,7 @@ import { isSemanticFacet } from '../facetsLib.mjs';
 import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
 import * as utils from '../../utils/utils.mjs';
 import {
+  BadRequestError,
   InternalServerError,
   InvalidSearchRequestError,
 } from '../errorClasses.mjs';
@@ -29,12 +30,13 @@ const SEMANTIC_VALUE_LIMIT = 100;
 //   - Non-semantic facets use op.fromSearch(scopedCtsQuery) (Path 2).
 // When scopedCtsQuery is null (non-foldable query):
 //   - All facets use op.fromSearch(cts.documentQuery(uriList)) (Path 3).
-//   - rows must be non-null.
+//   - The only path that uses rows.
 function calculateFacets(
   rows,
   facetRequests,
   scopedCtsQuery = null,
   scopedCtsQueryEstimate = null,
+  testDispatchLogic = false,
 ) {
   if (facetRequests == null || facetRequests.length === 0) {
     return null;
@@ -42,7 +44,7 @@ function calculateFacets(
 
   const requests = facetRequests.getFacetRequests();
   if (!utils.isNonEmptyArray(requests)) {
-    return new FacetResponses({});
+    return _buildEmptyFacetResponses([]);
   }
 
   // Use the estimate when provided, but do not call cts.estimate here when
@@ -52,45 +54,46 @@ function calculateFacets(
     return _buildEmptyFacetResponses(requests);
   }
 
-  // Path 3 setup: extract URIs from materialized rows.
-  let uriList = null;
-  if (!scopedCtsQuery) {
-    uriList = rows.map((row) => row.id);
-    if (!utils.isNonEmptyArray(uriList)) {
-      return _buildEmptyFacetResponses(requests);
-    }
-  }
-
   const page = facetRequests.getPage() ?? 1;
   const pageLength = facetRequests.getPageLength() ?? 20;
   const start = (page - 1) * pageLength;
   const end = page * pageLength;
 
+  let docsPlan = null;
+  if (!scopedCtsQuery) {
+    const uriList = Array.isArray(rows) ? rows.map((row) => row.id) : [];
+    if (uriList.length === 0) {
+      return _buildEmptyFacetResponses(requests);
+    }
+    docsPlan = op.fromSearch(cts.documentQuery(uriList));
+  }
+
   const facets = {};
   requests.forEach((request) => {
     const facetName = request?.name;
+    const isSemantic = isSemanticFacet(facetName);
 
-    if (isSemanticFacet(facetName) && scopedCtsQuery) {
+    if (isSemantic && scopedCtsQuery) {
       // Path 1: CTS enumerate + estimate.
-      facets[facetName] = _calculateSemanticFacetViaCts(
-        facetName,
-        scopedCtsQuery,
-        start,
-        end,
-      );
+      facets[facetName] = testDispatchLogic
+        ? 'semanticFacetViaCts'
+        : _calculateSemanticFacetViaCts(facetName, scopedCtsQuery, start, end);
+    } else if (!isSemantic && scopedCtsQuery) {
+      // Path 2: cts.fieldValues
+      facets[facetName] = testDispatchLogic
+        ? 'nonSemanticFacetViaCts'
+        : _calculateNonSemanticFacetViaCts(
+            facetName,
+            scopedCtsQuery,
+            page,
+            pageLength,
+            request?.sort,
+          );
     } else {
-      // Path 2 or 3: Optic join.
-      const docsPlan = scopedCtsQuery
-        ? op.fromSearch(scopedCtsQuery)
-        : op.fromSearch(cts.documentQuery(uriList));
-
-      facets[facetName] = _calculateFacetViaOptic(
-        facetName,
-        docsPlan,
-        request,
-        start,
-        end,
-      );
+      // Path 3: Full materialization of search results given to Optic.
+      facets[facetName] = testDispatchLogic
+        ? 'facetViaOptic'
+        : _calculateFacetViaOptic(facetName, docsPlan, request, start, end);
     }
   });
 
@@ -152,7 +155,57 @@ function _calculateSemanticFacetViaCts(facetName, scopedCtsQuery, start, end) {
   };
 }
 
-// Path 2 and 3: Optic-based facet computation (semantic and non-semantic).
+// Path 2: CTS-native non-semantic facet computation.
+function _calculateNonSemanticFacetViaCts(
+  facetName,
+  scopedCtsQuery,
+  page,
+  pageLength,
+  sort,
+) {
+  // Require search criteria.
+  if (!scopedCtsQuery) {
+    throw new BadRequestError(`The facet request requires search criteria.`);
+  }
+
+  const fieldValuesOptions = ['lazy', 'score-zero'];
+  switch (sort) {
+    case 'asc':
+      fieldValuesOptions.push('ascending');
+      break;
+    case 'desc':
+      fieldValuesOptions.push('descending');
+      break;
+    default:
+      fieldValuesOptions.push('frequency-order');
+  }
+
+  const facetConfig = FACETS_CONFIG[facetName];
+  const sequence = cts.fieldValues(
+    facetConfig.indexReference,
+    null,
+    fieldValuesOptions,
+    scopedCtsQuery,
+  );
+
+  const isDateFacet = facetName.endsWith('Date');
+  return {
+    totalItems: fn.count(sequence),
+    facetValues: fn
+      .subsequence(
+        sequence,
+        utils.getStartingPaginationIndexForSubsequence(page, pageLength),
+        pageLength,
+      )
+      .toArray()
+      .map((value) => ({
+        value: isDateFacet ? convertSecondsToDateStr(value) : value,
+        count: cts.frequency(value),
+      })),
+  };
+}
+
+// Path 3: Optic-based facet computation (semantic and non-semantic).
 function _calculateFacetViaOptic(facetName, docsPlan, request, start, end) {
   let facetSourcePlan = docsPlan;
 

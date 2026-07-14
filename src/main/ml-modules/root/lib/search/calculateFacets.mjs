@@ -72,7 +72,6 @@ function calculateFacets(
   requests.forEach((request) => {
     const facetName = request?.name;
     const isSemantic = isSemanticFacet(facetName);
-    let dispatchPath;
 
     if (isSemantic && scopedCtsQuery) {
       // Path 1: CTS enumerate + estimate.

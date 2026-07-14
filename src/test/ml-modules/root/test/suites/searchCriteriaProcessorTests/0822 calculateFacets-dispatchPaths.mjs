@@ -9,41 +9,25 @@ console.log(`${LIB}: starting.`);
 let assertions = [];
 
 function extractDispatchResult(result, facetName) {
-  const isFacetResponses =
-    result &&
-    typeof result.getFacet === 'function' &&
-    typeof result.getFacets === 'function';
-
-  if (isFacetResponses) {
-    const facets = result.getFacets() ?? {};
-    const dispatchCounts = {
-      semanticFacetViaCts: 0,
-      nonSemanticFacetViaCts: 0,
-      facetViaOptic: 0,
-    };
-    Object.values(facets).forEach((value) => {
-      if (value === 'semanticFacetViaCts') {
-        dispatchCounts.semanticFacetViaCts += 1;
-      } else if (value === 'nonSemanticFacetViaCts') {
-        dispatchCounts.nonSemanticFacetViaCts += 1;
-      } else if (value === 'facetViaOptic') {
-        dispatchCounts.facetViaOptic += 1;
-      }
-    });
-
-    return {
-      isFacetResponses: true,
-      dispatchCounts,
-    };
-  }
+  const facets = result.getFacets() ?? {};
+  const dispatchCounts = {
+    semanticFacetViaCts: 0,
+    nonSemanticFacetViaCts: 0,
+    facetViaOptic: 0,
+  };
+  Object.values(facets).forEach((value) => {
+    if (value === 'semanticFacetViaCts') {
+      dispatchCounts.semanticFacetViaCts += 1;
+    } else if (value === 'nonSemanticFacetViaCts') {
+      dispatchCounts.nonSemanticFacetViaCts += 1;
+    } else if (value === 'facetViaOptic') {
+      dispatchCounts.facetViaOptic += 1;
+    }
+  });
 
   return {
-    isFacetResponses: false,
-    dispatchCounts: {
-      semanticFacetViaCts: 0,
-      nonSemanticFacetViaCts: 0,
-      facetViaOptic: 0,
-    },
+    isFacetResponses: true,
+    dispatchCounts,
   };
 }
 

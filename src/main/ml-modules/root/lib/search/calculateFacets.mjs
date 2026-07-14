@@ -30,7 +30,7 @@ const SEMANTIC_VALUE_LIMIT = 100;
 //   - Non-semantic facets use op.fromSearch(scopedCtsQuery) (Path 2).
 // When scopedCtsQuery is null (non-foldable query):
 //   - All facets use op.fromSearch(cts.documentQuery(uriList)) (Path 3).
-//   - rows must be non-null.
+//   - The only path that uses rows.
 function calculateFacets(
   rows,
   facetRequests,

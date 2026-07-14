@@ -9,7 +9,8 @@ console.log(`${LIB}: starting.`);
 let assertions = [];
 
 function extractDispatchResult(result, facetName) {
-  const facets = result.getFacets() ?? {};
+  const isFacetResponses = typeof result.getFacets === 'function';
+  const facets = isFacetResponses ? result.getFacets() : {};
   const dispatchCounts = {
     semanticFacetViaCts: 0,
     nonSemanticFacetViaCts: 0,
@@ -26,7 +27,7 @@ function extractDispatchResult(result, facetName) {
   });
 
   return {
-    isFacetResponses: true,
+    isFacetResponses,
     dispatchCounts,
   };
 }

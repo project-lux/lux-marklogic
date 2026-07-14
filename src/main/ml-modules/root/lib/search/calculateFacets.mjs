@@ -65,9 +65,7 @@ function calculateFacets(
     if (uriList.length === 0) {
       return _buildEmptyFacetResponses(requests);
     }
-    if (!testDispatchLogic) {
-      docsPlan = op.fromSearch(cts.documentQuery(uriList));
-    }
+    docsPlan = op.fromSearch(cts.documentQuery(uriList));
   }
 
   const facets = {};

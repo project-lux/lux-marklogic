@@ -19,7 +19,7 @@ import {
   getSearchTermNames,
   getSearchTermConfig,
 } from '../../config/searchTermsConfig.mjs';
-import { isSearchScopeName } from '../searchScope.mjs';
+import { getSearchScopeTypes, isSearchScopeName } from '../searchScope.mjs';
 import * as utils from '../../utils/utils.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
@@ -97,11 +97,20 @@ function analyzeCriteria({
   }
 
   let scope = isTopLevel ? (planCriteria._scope ?? planScope) : planScope;
+  // Captured before the loop below reassigns `scope` per OR-branch when
+  // isMultiScope. Represents the scope this invocation of analyzeCriteria
+  // started with — not necessarily the scope of the entire criteria tree,
+  // since this function recurses for nested groups and hop criteria.
+  const initialScope = scope;
 
   const isMultiScope = scope === 'multi';
   if (isMultiScope) {
     validateMultiScopeCriteria(planCriteria, isTopLevel, allowMultiScope);
   }
+
+  // Union of each branch's own scope types, used downstream (buildScopedCtsQuery,
+  // assemblePlan) in place of getSearchScopeTypes('multi'), which is always empty.
+  const multiScopeNames = new Set();
 
   let searchTermNames = isMultiScope ? null : getSearchTermNames(scope);
 
@@ -119,6 +128,7 @@ function analyzeCriteria({
     if (isMultiScope) {
       scope = criterion._scope;
       searchTermNames = getSearchTermNames(scope);
+      multiScopeNames.add(scope);
     }
 
     const id = sem.uuidString().replace(/-/g, '_');
@@ -239,17 +249,28 @@ function analyzeCriteria({
   const criteriaTree = createGroupNode({
     id: parentId,
     conjunctionType: logicType,
-    scope,
+    scope: initialScope,
     children: finalChildren,
     columns,
     isTopLevel,
     hasScoreContributingCriteria,
   });
 
+  const scopeTypes = isMultiScope
+    ? Array.from(
+        new Set(
+          Array.from(multiScopeNames).flatMap((name) =>
+            getSearchScopeTypes(name, false),
+          ),
+        ),
+      )
+    : null;
+
   return createAnalysisResult({
     criteriaTree,
-    scope,
+    scope: initialScope,
     isMultiScope,
+    scopeTypes,
     hasScoreContributingCriteria,
     usableLeafCount,
   });

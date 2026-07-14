@@ -55,6 +55,7 @@ function createAnalysisResult({
   criteriaTree,
   scope,
   isMultiScope,
+  scopeTypes = null,
   hasScoreContributingCriteria,
   usableLeafCount,
 }) {
@@ -62,6 +63,7 @@ function createAnalysisResult({
     criteriaTree,
     scope,
     isMultiScope,
+    scopeTypes,
     hasScoreContributingCriteria,
     usableLeafCount,
   });

@@ -406,12 +406,13 @@ function buildAccumulator({
   patternOptions,
   parentScope = null,
 }) {
-  const { criteriaTree, scope, isMultiScope } = analysis;
+  const { criteriaTree, scope, isMultiScope, scopeTypes } = analysis;
   return buildAccumulatorFromGroup({
     scp,
     groupNode: criteriaTree,
     scope,
     isMultiScope,
+    scopeTypes,
     patternOptions,
     parentScope,
   });
@@ -425,6 +426,7 @@ function buildAccumulatorFromGroup({
   groupNode,
   scope,
   isMultiScope = false,
+  scopeTypes = null,
   patternOptions,
   parentScope = null,
 }) {
@@ -450,7 +452,7 @@ function buildAccumulatorFromGroup({
       const result = buildConjunction({
         groupNode: child,
         logicType,
-        scope,
+        scope: child.scope,
         patternOptions,
         uriCol,
         fragCol,
@@ -496,6 +498,7 @@ function buildAccumulatorFromGroup({
     uriCol,
     dataTypeCol,
     scope,
+    scopeTypes,
     logicType,
     isTopLevel,
     hasScoreContributingCriteria: groupNode.hasScoreContributingCriteria,
@@ -721,6 +724,7 @@ function assemblePlan(
     uriCol,
     dataTypeCol,
     scope,
+    scopeTypes = null,
     logicType,
     isTopLevel,
     hasScoreContributingCriteria = false,
@@ -813,7 +817,7 @@ function assemblePlan(
             .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
             .where(
-              op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
+              op.in(op.col(dataTypeCol), resolveScopeTypes(scope, scopeTypes)),
             )
             .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
           plan = plan.joinFullOuter(wrapped, null);
@@ -921,6 +925,15 @@ function getDirectPlan(acc, assemblyContext) {
     ]);
 }
 
+// Resolves the dataType values a scope's documents may have. For 'multi',
+// getSearchScopeTypes returns [] (it has no fixed types of its own), so the
+// caller must supply the union of the actual branch scopes' types instead.
+function resolveScopeTypes(scope, explicitScopeTypes) {
+  return scope === 'multi'
+    ? (explicitScopeTypes ?? [])
+    : getSearchScopeTypes(scope, false);
+}
+
 // Returns the accumulator's CTS constraints composed into a single query
 // with a scope dataType filter, or null when full materialization is required.
 // Used by cts.estimate (Opt 18), op.fromSearch (Opt 20), and facets (Opt 21).
@@ -930,7 +943,7 @@ function buildScopedCtsQuery(acc, assemblyContext, scope) {
     assemblyContext.logicType,
     acc.ctsConstraints,
   );
-  const scopeTypes = getSearchScopeTypes(scope, false);
+  const scopeTypes = resolveScopeTypes(scope, assemblyContext.scopeTypes);
   if (scopeTypes.length === 0) return composedCts;
   return cts.andQuery([
     composedCts,

@@ -110,18 +110,41 @@ function performSearch(scp) {
         if (total === 0) {
           searchResults = [];
         } else if (isFromSearchPlan) {
-          // Opt 20: paginate first, then hydrate only the page slice.
-          // joinDocAndUri pulls documents from disk for just the page.
-          searchResults = selectedPlan
-            .offset(offset)
-            .limit(effectivePageLength)
-            .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
-            .result()
-            .toArray()
-            .map((row) => ({
-              id: row.uri,
-              type: String(row.doc.xpath('/json/type')),
-            }));
+          // Opt 26: cts.search for all CTS-eligible queries. Bypasses Optic
+          // entirely — cts.search walks indexes in the requested order and
+          // stops after the page. Handles field sort, relevance, and
+          // field+relevance combinations via cts.indexOrder/cts.scoreOrder.
+          // With 'unfiltered', only the 20 page-slice documents hit disk.
+          const sortCriteria = scp.getSortCriteria();
+          const searchOptions = ['unfiltered'];
+          if (sortCriteria?.hasNonSemanticSortDescriptors()) {
+            const descriptors = sortCriteria.getNonSemanticSortDescriptors();
+            for (const d of descriptors) {
+              searchOptions.push(
+                cts.indexOrder(
+                  cts.fieldReference(d.indexReference),
+                  d.order === 'descending' ? 'descending' : 'ascending',
+                ),
+              );
+            }
+          }
+          if (sortCriteria?.areScoresRequired()) {
+            searchOptions.push(cts.scoreOrder('descending'));
+          }
+          const pageSlice = fn.subsequence(
+            cts.search(scopedCtsQuery, searchOptions),
+            utils.getStartingPaginationIndexForSubsequence(
+              resultPage,
+              effectivePageLength,
+            ),
+            effectivePageLength,
+          );
+          for (const doc of pageSlice) {
+            searchResults.push({
+              id: String(fn.baseUri(doc)),
+              type: String(doc.xpath('/json/type')),
+            });
+          }
         } else {
           // Opt 18: fromLexicons plan already has {id, type} columns.
           searchResults = selectedPlan

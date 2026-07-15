@@ -92,7 +92,8 @@ const SortCriteria = class {
           if (
             sortBinding &&
             (this.#scopeName === 'multi' || // for archiveSortId
-              sortByName.startsWith(this.#scopeName))
+              sortByName.startsWith(this.#scopeName) ||
+              sortByName.startsWith('any'))
           ) {
             // As soon as we encounter a semantic sort binding, clear any preceding criteria and go with it.
             if (sortBinding.predicate) {
@@ -126,7 +127,8 @@ const SortCriteria = class {
       return true;
     }, this);
 
-    // Do not calculate scores when we're only asked to sort by one or more lexicons.
+    // Do not calculate scores when we're only asked to sort by one or more lexicons.
+
     if (!hasExplicitRelevance && this.#nonSemanticSortDescriptors.length > 0) {
       this.#relevanceSort = false;
     }

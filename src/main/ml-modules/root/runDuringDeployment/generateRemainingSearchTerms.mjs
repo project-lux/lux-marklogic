@@ -204,11 +204,17 @@ const searchTermsConfig = {};
       // make a copy of the term if it is to be transitive, and add a '+' to the name.
       const makeTransitive = unitConfig[scopeName][termName].makeTransitive;
       if (makeTransitive) {
+        if (unitConfig[scopeName][termName + '+']) {
+          const msg = `Search term '${termName}+' in the '${scopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
+          console.error(msg);
+          throw new Error(msg);
+        }
         unitConfig[scopeName][termName + '+'] = {
           ...unitConfig[scopeName][termName],
         };
         unitConfig[scopeName][termName + '+'].transitive = true;
         delete unitConfig[scopeName][termName + '+'].makeTransitive;
+        unitConfig[scopeName][termName + '+'].hopInverseName += '+';
       }
       if (hasHopInverseInfo(unitConfig[scopeName][termName])) {
         const newScopeName = unitConfig[scopeName][termName].targetScope;
@@ -230,11 +236,17 @@ const searchTermsConfig = {};
         };
         // make a copy of the hop inverse term if it is to be transitive, and add a '+' to the name.
         if (makeTransitive) {
+          if (unitConfig[newScopeName][newTermName + '+']) {
+            const msg = `Search term '${newTermName}+' in the '${newScopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
+            console.error(msg);
+            throw new Error(msg);
+          }
           unitConfig[newScopeName][newTermName + '+'] = {
             ...unitConfig[newScopeName][newTermName],
           };
           unitConfig[newScopeName][newTermName + '+'].transitive = true;
           delete unitConfig[newScopeName][newTermName + '+'].makeTransitive;
+          unitConfig[newScopeName][newTermName + '+'].hopInverseName += '+';
         }
       }
     });

@@ -145,7 +145,9 @@ function getRelatedList({
     const urisByRelation = {};
     const relationToScope = {}; // And the scopes
     const relationToCriteria = {}; // And the resolved search criteria
-    const searchConfigs = sortByPriority(relatedListConfig.searchConfigs);
+    const searchConfigs = sortByPriority(
+      utils.getDeepCopy(relatedListConfig.searchConfigs),
+    );
     // Old school loop to give this boomer confidence the order is honored.
     for (let i = 0; i < searchConfigs.length; i++) {
       const searchConfig = searchConfigs[i];

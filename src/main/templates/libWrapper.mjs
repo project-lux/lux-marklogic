@@ -10,11 +10,12 @@ import * as errorClasses from '/lib/errorClasses.mjs';
 // if an error is thrown inside xdmp.invokeFunction, it gets wrapped in a generic error object.
 // this function attempts to extract the original error name and message from the wrapped error object.
 function extractCustomErrorNameAndMessage(e) {
-  if (e.data && e.data.length === 1) {
-    const errorDataObj = e.data[0];
-    const matches = errorDataObj.match(/^\\w*/);
-    const errorName = matches ? matches[0] : null;
-    const errorMessage = errorDataObj.replace(errorName + ':', '').trim();
+  if (e.data && e.data.length === 1 && typeof e.data[0] === 'string') {
+    const errorString = e.data[0];
+    // the double backslash is needed because gradle template makes it into a single backslash in the generated code
+    const matches = errorString.match(/^\\w*/);
+    const errorName = matches[0];
+    const errorMessage = errorString.replace(errorName + ':', '').trim();
     return { errorName, errorMessage };
   }
   return { errorName: null, errorMessage: null };

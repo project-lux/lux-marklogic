@@ -304,8 +304,9 @@ function constructModuleNode(relatedListsConfig) {
  */
 import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
 import { BadRequestError } from '../lib/errorClasses.mjs';
-  
-const RELATED_LISTS_CONFIG = ${JSON.stringify(relatedListsConfig)};
+import { deepFreeze } from '../utils/utils.mjs';
+
+const RELATED_LISTS_CONFIG = deepFreeze(${JSON.stringify(relatedListsConfig)});
 
 function getRelatedListKeys() {
   const relatedListsConfig = _getRelatedListsConfig(true);

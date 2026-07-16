@@ -15,6 +15,7 @@
   - [Second](#second)
 - [Solution Overview](#solution-overview)
 - [Targeted Endpoints](#targeted-endpoints)
+- [Excluded Endpoints](#excluded-endpoints)
 - [The Collection Exclusion Constraint](#the-collection-exclusion-constraint)
   - [Why `cts.notQuery` (Denylist) over `cts.collectionQuery` (Allowlist)](#why-ctsnotquery-denylist-over-ctscollectionquery-allowlist)
   - [The Constraint](#the-constraint)
@@ -96,6 +97,8 @@ const _executeAsAdmin = import.meta.amp(__executeAsAdmin);
 
 If My Collections must be supported — even as a future possibility that ships concurrently — continue reading. The remainder of this document addresses the collection exclusion constraint, OR-path security hardening, and all associated complexity.
 
+**Before implementing the full My Collections-support path, run the existing scripted performance tests to confirm this optimization still provides sufficient value. When this optimization was first implemented, we were further from CTS-based search performance parity; since then, significant progress has reduced that gap. Given the added implementation complexity and the identified security risk surface for My Collections support, require measured evidence that the document-permission bypass still delivers meaningful benefit before proceeding.**
+
 ---
 
 # LLM Prompts
@@ -139,6 +142,23 @@ These are read-only, performance-sensitive, and all route through `SearchCriteri
 5. `/ds/lux/relatedList.mjs`
 
 All five have `features: { myCollections: false }` in `endpointsConfig.mjs`, meaning they are not My Collections endpoints and should never return My Collections documents.
+
+---
+
+# Excluded Endpoints
+
+Excluded from amp-as-admin scope (fast enough, write-op, not in use, or otherwise not applicable):
+
+1. `/ds/lux/advancedSearchConfig`
+2. `/ds/lux/autoComplete`
+3. `/ds/lux/document/*`
+4. `/ds/lux/tenantStatus/*`
+5. `/ds/lux/scaleOut`
+6. `/ds/lux/searchInfo`
+7. `/ds/lux/stats`
+8. `/ds/lux/storageInfo`
+9. `/ds/lux/translate`
+10. `/ds/lux/versionInfo`
 
 ---
 
@@ -479,6 +499,7 @@ if (shouldAmpAsAdmin) {
 
 ## Phase 0: Validation & Prep
 
+- [ ] **Run existing scripted performance tests first**: Compare current non-admin vs admin behavior on representative queries/endpoints (including `q07-optic-pattern-d-non-con` or equivalent) and document delta. Proceed with full My Collections-support design only if measured benefit remains materially meaningful after recent CTS-parity gains.
 - [ ] **Validate CTS-in-constraints[]**: Write a standalone test confirming `plan.where(cts.notQuery(...))` alongside `plan.where(op.in(...))` produces correct results. This is technically sound per MarkLogic docs but unprecedented in this codebase.
 - [ ] **Rename buckets** (can be a separate PR): `constraints` → `invariants`, `ctsConstraints` → `criteriaQueries` throughout `engine.mjs`, `createPlanAccumulator`, `assemblePlan`, and any callers. Update primer accordingly.
 

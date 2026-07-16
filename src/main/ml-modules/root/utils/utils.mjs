@@ -452,6 +452,16 @@ function getDeepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+function deepFreeze(obj) {
+  Object.freeze(obj);
+  Object.keys(obj).forEach((key) => {
+    if (typeof obj[key] === 'object' && obj[key] !== null && !Object.isFrozen(obj[key])) {
+      deepFreeze(obj[key]);
+    }
+  });
+  return obj;
+}
+
 // Splits the string by comma.
 // Odd entries are role names.
 // Even entries are capability names.
@@ -649,6 +659,7 @@ export {
   formatString,
   getArrayDiff,
   getArrayOverlap,
+  deepFreeze,
   getDeepCopy,
   getDocFromModulesDatabase,
   getDocPermissionsFromString,

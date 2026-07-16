@@ -21,6 +21,10 @@ const sec = require('/MarkLogic/security.xqy');
  *       applicable when the function being tested returns an object, which this function then creates a
  *       node out of and applies the assertions to.  There are three types of assertions: equality, xpath,
  *       and function.  See the implementation for examples and utilized properties of each.
+ *    expected.selectContains: Optional array of column name strings.  When the actual return value is a
+ *       string (e.g., plan source), asserts that at least one .select() call contains each column name.
+ *    expected.orderByContains: Optional array of column name strings.  When the actual return value is a
+ *       string, asserts that at least one .orderBy() call contains each column name.
  * @param {Function} zeroArityFun is the function to be tested.  It must be zero arity.
  * @param {Object} invokeFunOptions is the options to be passed to the xdmp.invokeFunction call.
  * @returns object with the following top-level properties: actualValue, applyErrorNotExpectedAssertions,

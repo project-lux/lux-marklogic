@@ -191,12 +191,15 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 - Each file exports `assertions` (`export default assertions;`) — an array of assertion results.
 - Use the **scenarios array pattern**: define a `scenarios` array where each element has `{ name, input, expected }`. Iterate scenarios calling `executeScenario(scenario, zeroArityFun)` for each.
 - **`input`**: shape is catered to the function under test. Contains whatever arguments/state the function needs. Keep it direct — mirror the function's parameters rather than inventing a dispatch mechanism.
+- **Do NOT branch on `scenario.name`** (e.g., `scenario.name.includes('frozen')`). Use boolean or enum properties on `scenario.input` to control behavior (e.g., `scenario.input.makeDeepCopy = true`). The scenario name is for human readability only.
 - **`expected`**: standard properties handled by `executeScenario`:
   - `expected.error` (boolean): whether the function should throw.
-  - `expected.errorMessage` (string): if `error: true`, the thrown message must include this substring.
-  - `expected.stackToInclude` (string): if `error: true`, the stack trace must include this substring.
+  - `expected.stackToInclude` (string): if `error: true`, the stack trace must include this substring. This is checked by `executeScenario` — there is no `expected.errorMessage` property.
   - `expected.value`: the exact return value to assert against via `assertEqual`. Used for direct value comparison — not derived booleans.
+  - `expected.selectContains` (string[]): when the actual return value is a string, asserts that at least one `.select()` call contains each column name.
+  - `expected.orderByContains` (string[]): when the actual return value is a string, asserts that at least one `.orderBy()` call contains each column name.
 - Beyond these standard properties, `expected` can include any custom fields for function-specific assertions applied after `executeScenario` returns.
 - `executeScenario` wraps the zero-arity function call, catches errors, and returns `{ actualValue, applyErrorNotExpectedAssertions, applyErrorExpectedAssertions }` — use these flags to gate subsequent assertions.
+- **Use `executeScenario` by default**, even when the function under test is not the direct return value. Call the function inside `zeroArityFun`, then return a value to assert against. This ensures unexpected exceptions are caught and reported properly instead of blowing up the test file. If you believe a test warrants skipping `executeScenario`, ask for permission first and state why.
 - Integration tests (e.g., 0600) hit the deployed engine with real search criteria. Unit tests (e.g., 0601–0603) import functions directly and test with synthetic inputs.
 - Assertions use `testHelperProxy.assertEqual(expected, actual, message)`, `assertTrue`, `assertFalse`.

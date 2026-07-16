@@ -1,6 +1,7 @@
 ## **LUX Optic Search Engine Primer**
 
 - [Introduction](#introduction)
+- [Key Proven Lessons](#key-proven-lessons)
 - [System Architecture](#system-architecture)
   - [Two-Pass Criteria Pipeline](#two-pass-criteria-pipeline)
   - [Request Flow](#request-flow)
@@ -173,6 +174,19 @@
 The LUX backend uses MarkLogic's Optic API to build relational-style query plans (lexicon scans, triple joins, CTS filters) from a JSON search criteria grammar. This document covers the architecture, pattern system, engine internals, and operational lessons needed to work in this codebase.
 
 It is for developers and LLMs working on or extending the LUX Optic search engine.
+
+---
+
+# Key Proven Lessons
+
+Use this section as the fast path to durable lessons that consistently affect correctness, security, and performance.
+
+- Optimizer cold-start cost from large CTS payloads in Optic plans: [Optic plan AST cost dominates large CTS payloads (cold-start)](./lux-search-engine-lessons.md#optic-plan-ast-cost-dominates-large-cts-payloads-cold-start)
+- Plan execution strategy ownership and CTS eligibility routing: [buildPlans owns strategy — performSearch is a thin executor](./lux-search-engine-lessons.md#buildplans-owns-strategy--performsearch-is-a-thin-executor)
+- Scope-correct counting with `cts.estimate`: [cts.estimate requires explicit scope filter to match Optic totals](./lux-search-engine-lessons.md#ctsestimate-requires-explicit-scope-filter-to-match-optic-totals)
+- Nested sub-plan projection barriers to prevent catastrophic join fusion: [Extraneous columns in sub-plans cause optimizer join fusion](./lux-search-engine-lessons.md#extraneous-columns-in-sub-plans-cause-optimizer-join-fusion)
+- Benchmark discipline to avoid false regressions: [Do NOT call prepare() in benchmark scripts](./lux-search-engine-lessons.md#do-not-call-prepare-in-benchmark-scripts)
+- Security and endpoint-level amp constraints: [Optimization 13: Amp as Admin](./lux-search-engine-lessons.md#optimization-13-amp-as-admin)
 
 ---
 
@@ -1081,7 +1095,7 @@ I haven't tried to see if the LLM can execute the scripts directly (e.g., [MarkL
 
 When starting a new LLM session, consider including the following at the beginning of your opening prompt.  Present both referenced Markdown files.
 
-> Review lux-optic-primer.md and optic-lessons.md.  They will give you background on the application's Optic-based search implementation.  We are migrating from cts.search but, as you will see, are still using CTS queries in some search patterns.
+> Review /docs/lux-optic-primer.md and /docs/lux-search-engine-lessons.md.  They will give you background on the application's Optic-based search implementation.  We are migrating from cts.search but, as you will see, are still using CTS queries in some search patterns.
 
 ## Theory Index
 

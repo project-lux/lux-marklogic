@@ -476,7 +476,16 @@ function buildAccumulatorFromGroup({
         logicType,
         patternOptions,
       );
-      mergeTermPlanContributions(acc, contributions);
+      // Multi-scope groups skip the shared dataType constraint entirely
+      // (see createPlanAccumulator) since branches may target different
+      // scopes. Each leaf's own contribution must carry its own dataType
+      // filter instead — child.scope is this leaf's own correct scope.
+      mergeTermPlanContributions(
+        acc,
+        isMultiScope
+          ? applyChildScopeFilter(contributions, child.scope)
+          : contributions,
+      );
     }
   }
 
@@ -554,6 +563,29 @@ function mergeTermPlanContributions(acc, contributions) {
   }
 }
 
+// Wraps a multi-scope leaf's own contribution with a dataType filter scoped
+// to that leaf's own branch (childScope), before it gets merged into the
+// group's shared accumulator buckets and OR'd together with other branches.
+// ctsConstraints are AND'd with the branch's dataType query; patternJoins are
+// tagged with `scope` so assemblePlan's OR/AND join handling (see the
+// patternJoins loop) can apply the correct per-branch op.in(dataType, ...)
+// filter instead of relying on a shared/aggregate one.
+function applyChildScopeFilter(contributions, childScope) {
+  if (!contributions) return contributions;
+  const dataTypeCtsQuery = buildDataTypeCtsQuery(childScope);
+  if (!dataTypeCtsQuery) return contributions;
+  return {
+    ...contributions,
+    ctsConstraints: (contributions.ctsConstraints ?? []).map((q) =>
+      cts.andQuery([q, dataTypeCtsQuery]),
+    ),
+    patternJoins: (contributions.patternJoins ?? []).map((pj) => ({
+      ...pj,
+      scope: childScope,
+    })),
+  };
+}
+
 // Resolves a group node into either a join descriptor, a pure-CTS
 // contribution to be folded into the parent's ctsConstraints, or a
 // deferred andOrSubPlan.
@@ -628,7 +660,10 @@ function buildConjunction({
     const { acc, assemblyContext } = buildAccumulatorFromGroup({
       scp,
       groupNode,
-      scope,
+      // Use the sub-group's own scope (it may carry its own _scope under a
+      // multi-scope OR), not the parent's — parentScope below still refers
+      // to the parent's scope, for the scopeAlreadyConstrained comparison.
+      scope: groupNode.scope,
       patternOptions,
       parentScope: parentIsScopeConstrained ? scope : null,
     });
@@ -805,19 +840,27 @@ function assemblePlan(
     if (logicType === 'or') {
       for (let i = 0; i < patternJoins.length; i++) {
         const pj = patternJoins[i];
-        if (!hasNonJoinConstraints && i === 0) {
+        if (!hasNonJoinConstraints && i === 0 && pj.scope == null) {
           // No other constraints exist: inner join constrains the base plan
           // instead of outer joining to an unconstrained lexicon scan.
+          // Only safe when pj is not multi-scope-tagged — a multi-scope
+          // base plan has no shared dataType constraint to rely on (see
+          // createPlanAccumulator).
           plan = plan.joinInner(pj.right, pj.on);
         } else {
           // Duplicate lexicon → inner join with right → align columns → full outer join.
           // Select uriCol (not fragCol) so the natural join key matches conjunction
           // joins and the final groupBy(['uri']) sees every matched document.
+          // pj.scope (set for multi-scope branches — see applyChildScopeFilter)
+          // takes precedence over the group's own shared scope.
           const wrapped = op
             .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
             .joinInner(pj.right, pj.on)
             .where(
-              op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
+              op.in(
+                op.col(dataTypeCol),
+                getSearchScopeTypes(pj.scope ?? scope, false),
+              ),
             )
             .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
           plan = plan.joinFullOuter(wrapped, null);
@@ -832,6 +875,15 @@ function assemblePlan(
       // AND
       for (const pj of patternJoins) {
         plan = plan.joinInner(pj.right, pj.on);
+        // Defensive parity for a degenerate single-branch multi-scope OR
+        // that collapsed to 'and' (Pass 1's OR→AND collapse is independent
+        // of isMultiScope): the shared dataType constraint is skipped for
+        // multi-scope groups, so a tagged join must filter for itself.
+        if (pj.scope != null) {
+          plan = plan.where(
+            op.in(op.col(dataTypeCol), getSearchScopeTypes(pj.scope, false)),
+          );
+        }
       }
     }
   }
@@ -925,21 +977,31 @@ function getDirectPlan(acc, assemblyContext) {
     ]);
 }
 
+// Returns a CTS dataType filter for the given scope, or null when the scope
+// has no associated dataTypes (e.g. 'multi', or an unrecognized scope name).
+function buildDataTypeCtsQuery(scope) {
+  const scopeTypes = getSearchScopeTypes(scope, false);
+  return scopeTypes.length
+    ? cts.fieldValueQuery('anyDataTypeName', scopeTypes)
+    : null;
+}
+
 // Returns the accumulator's CTS constraints composed into a single query
 // with a scope dataType filter, or null when full materialization is required.
 // Used by cts.estimate (Opt 18), op.fromSearch (Opt 20), and facets (Opt 21).
+// For multi-scope groups, `scope` is 'multi' and buildDataTypeCtsQuery returns
+// null — each branch already carries its own dataType filter (see
+// applyChildScopeFilter), so no additional wrap is needed here.
 function buildScopedCtsQuery(acc, assemblyContext, scope) {
   if (!isAccumulatorJoinFree(acc)) return null;
   const composedCts = wrapCtsByLogicType(
     assemblyContext.logicType,
     acc.ctsConstraints,
   );
-  const scopeTypes = getSearchScopeTypes(scope, false);
-  if (scopeTypes.length === 0) return composedCts;
-  return cts.andQuery([
-    composedCts,
-    cts.fieldValueQuery('anyDataTypeName', scopeTypes),
-  ]);
+  const dataTypeCtsQuery = buildDataTypeCtsQuery(scope);
+  return dataTypeCtsQuery
+    ? cts.andQuery([composedCts, dataTypeCtsQuery])
+    : composedCts;
 }
 
 // Returns true when the request shape and plan structure allow CTS-based

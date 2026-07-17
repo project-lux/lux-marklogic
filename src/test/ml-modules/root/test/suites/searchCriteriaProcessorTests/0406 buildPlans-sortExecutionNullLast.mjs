@@ -24,7 +24,7 @@ import {
   SORT_SET_URI,
 } from '/test/unitTestConstants.mjs';
 
-const LIB = '0406 sort-execution-nullsLast.mjs';
+const LIB = '0406 buildPlans-sortExecutionNullLast.mjs';
 console.log(`${LIB}: starting.`);
 
 const assertions = [];

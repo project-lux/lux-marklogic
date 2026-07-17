@@ -45,12 +45,10 @@ function performSearch(scp) {
   const facetRequests = scp.getFacetRequests();
   let patternOptions = scp.getPatternOptions();
 
-  let planAsSource;
   try {
     let searchResults = [];
     let total = -1;
     let resultPage = -1;
-    let planAsJson = null;
     let facetResponses = null;
 
     // Require the caller want search results or at least one facet before
@@ -94,9 +92,6 @@ function performSearch(scp) {
         includeSearchResults,
         pageWith,
       });
-
-      planAsJson = selectedPlan.export();
-      planAsSource = getPlanSource(planAsJson);
 
       let rows = null;
       let scopedCtsQueryEstimate = null;
@@ -167,15 +162,13 @@ function performSearch(scp) {
       searchResults,
       total,
       resultPage,
-      planAsJson,
-      planAsSource,
       facetResponses,
     });
   } catch (ex) {
     console.warn({
       'Error during search execution': ex.message,
+      requestId: scp.getRequestId(),
       stack: ex.stack,
-      plan: planAsSource,
     });
     throw ex;
   }
@@ -1258,13 +1251,6 @@ function paginateResults({ rows, pageWith, page, pageLength }) {
 //#endregion
 
 //#region Helper functions
-function getPlanSource(plan) {
-  return op
-    .toSource(plan.export ? plan.export() : plan)
-    .replace(/\n\s*/g, ' ')
-    .replace(/"/g, "'");
-}
-
 // True iff `bucketName` is non-empty and every other content bucket is empty.
 // Throws (via undefined.length) on a typo, which surfaces immediately.
 function accContainsOnly(acc, bucketName) {

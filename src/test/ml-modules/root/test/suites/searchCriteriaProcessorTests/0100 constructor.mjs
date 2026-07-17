@@ -32,7 +32,6 @@ for (const scenario of scenarios) {
       resolvedSearchCriteria: scp.getSearchCriteria(),
       criteriaCnt: scp.getCriteriaCount(),
       ignoredTerms: scp.getIgnoredTerms(),
-      ctsQueryStr: scp.getQueryStr(),
       values: scp.getValues(),
     };
   };
@@ -71,12 +70,6 @@ for (const scenario of scenarios) {
       testHelperProxy.assertTrue(
         Array.isArray(actual.ignoredTerms) && actual.ignoredTerms.length === 0,
         'ignoredTerms should be empty array before prepare() is called',
-      ),
-    );
-    assertions.push(
-      testHelperProxy.assertTrue(
-        actual.ctsQueryStr != null,
-        'getQueryStr() should return a value before prepare() is called',
       ),
     );
     assertions.push(

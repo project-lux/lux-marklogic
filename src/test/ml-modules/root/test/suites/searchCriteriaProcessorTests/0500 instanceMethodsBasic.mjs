@@ -33,17 +33,6 @@ const scenarios = [
     },
   },
   {
-    name: 'getQueryStr after successful process',
-    input: {
-      searchCriteria: { _scope: 'agent', name: 'Pablo' },
-      callPrepare: true,
-    },
-    expected: {
-      error: false,
-      hasCtsQuery: true,
-    },
-  },
-  {
     name: 'getIgnoredTerms with stop words',
     input: {
       searchCriteria: { _scope: 'agent', text: 'a about actually almost' },
@@ -95,7 +84,6 @@ for (const scenario of scenarios) {
     return {
       searchCriteria: scp.getSearchCriteria(),
       searchScope: scp.getSearchScope(),
-      ctsQueryStr: scp.getQueryStr(),
       ignoredTerms: scp.getIgnoredTerms(),
       values: scp.getValues(),
       hasSearchScope: scp.hasSearchScope(),
@@ -142,16 +130,6 @@ for (const scenario of scenarios) {
         testHelperProxy.assertTrue(
           actual.hasSearchScope,
           `hasSearchScope should return true when scope is set for scenario: ${scenario.name}`,
-        ),
-      );
-    }
-
-    if (scenario.expected.hasCtsQuery) {
-      assertions.push(
-        testHelperProxy.assertTrue(
-          typeof actual.ctsQueryStr === 'string' &&
-            actual.ctsQueryStr.length > 0,
-          `getQueryStr should return non-empty query string for scenario: ${scenario.name}`,
         ),
       );
     }

@@ -23,10 +23,6 @@ import {
 import { isSearchScopeName } from './searchScope.mjs';
 import { SortCriteria } from './SortCriteria.mjs';
 import { getSearchTermConfig } from '../config/searchTermsConfig.mjs';
-import {
-  PLAN_FORMAT_JSON,
-  PLAN_FORMAT_SOURCE,
-} from './search/SearchExecutionResult.mjs';
 //#endregion
 
 //#region Constants
@@ -48,6 +44,7 @@ const SearchCriteriaProcessor = class {
   #page;
   #pageLength;
   #pageWith;
+  #requestId;
   #scopeName;
   #patternOptions;
   #resolvedSearchCriteria = null;
@@ -88,6 +85,7 @@ const SearchCriteriaProcessor = class {
    * @throws {InternalServerError} When configuration issues detected
    */
   prepare({
+    requestId = null,
     searchCriteria,
     scopeName = null,
     includeSearchResults = true,
@@ -102,6 +100,7 @@ const SearchCriteriaProcessor = class {
     facetRequests = null,
   }) {
     this.#initProcessState({
+      requestId,
       scopeName,
       includeSearchResults,
       includeTypeConstraint,
@@ -200,21 +199,8 @@ const SearchCriteriaProcessor = class {
     return this.#searchState;
   }
 
-  getQueryStr() {
-    if (this.getSearchState() === 'completed') {
-      return this.#searchExecutionResult.getPlan(PLAN_FORMAT_SOURCE);
-    }
-    return `Search not completed - current state: ${this.getSearchState()}`;
-  }
-
-  getQueryJson() {
-    if (this.getSearchState() === 'completed') {
-      return this.#searchExecutionResult.getPlan(PLAN_FORMAT_JSON);
-    }
-    return {
-      message: 'Search not completed',
-      currentState: this.getSearchState(),
-    };
+  getRequestId() {
+    return this.#requestId;
   }
 
   getEstimate() {
@@ -468,6 +454,7 @@ const SearchCriteriaProcessor = class {
   //#region Private instance methods
 
   #initProcessState({
+    requestId,
     scopeName,
     includeSearchResults,
     includeTypeConstraint,
@@ -489,6 +476,7 @@ const SearchCriteriaProcessor = class {
     this.#page = page;
     this.#pageLength = pageLength;
     this.#pageWith = pageWith;
+    this.#requestId = requestId;
     this.#sortDelimitedStr = sortDelimitedStr;
     this.#facetRequests = facetRequests;
     this.#filterResults = filterResults;

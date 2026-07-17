@@ -96,13 +96,7 @@ function analyzeCriteria({
     throw new InvalidSearchRequestError('search criteria must be defined.');
   }
 
-  // groupScope is this group's own overall scope ('multi' for a multi-scope
-  // OR) and is what gets stamped on the returned GroupNode/AnalysisResult.
-  // `scope` is reassigned per-branch below for multi-scope groups (each
-  // branch may declare its own concrete _scope) and is used to build that
-  // branch's children — it must not overwrite groupScope.
-  const groupScope = isTopLevel ? (planCriteria._scope ?? planScope) : planScope;
-  let scope = groupScope;
+  let scope = isTopLevel ? (planCriteria._scope ?? planScope) : planScope;
 
   const isMultiScope = scope === 'multi';
   if (isMultiScope) {
@@ -245,7 +239,7 @@ function analyzeCriteria({
   const criteriaTree = createGroupNode({
     id: parentId,
     conjunctionType: logicType,
-    scope: groupScope,
+    scope,
     children: finalChildren,
     columns,
     isTopLevel,
@@ -254,7 +248,7 @@ function analyzeCriteria({
 
   return createAnalysisResult({
     criteriaTree,
-    scope: groupScope,
+    scope,
     isMultiScope,
     hasScoreContributingCriteria,
     usableLeafCount,

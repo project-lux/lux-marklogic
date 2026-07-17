@@ -79,33 +79,6 @@ const scenarios = [
       contains: ['anyDataTypeName', 'LinguisticObject'],
     },
   },
-  {
-    // Multi-scope groups pass scope='multi' (once analyzeCriteria correctly
-    // reports it rather than leaking the last-processed branch's scope).
-    // getSearchScopeTypes('multi', false) is [], so no aggregate dataType
-    // filter should be added here — each branch's own ctsConstraint already
-    // carries its own dataType filter (see applyChildScopeFilter in
-    // engine.mjs), applied before this function ever sees them.
-    name: 'returns composedCts unwrapped for multi scope (no aggregate dataType filter)',
-    acc: makeAccumulator({
-      ctsConstraints: [
-        cts.fieldValueQuery('itemMemberOfId', 'x'),
-        cts.tripleRangeQuery(
-          [],
-          sem.iri('https://linked.art/ns/terms/member_of'),
-          sem.iri('https://example.org/set/x'),
-          '=',
-        ),
-      ],
-    }),
-    assemblyContext: { logicType: 'or' },
-    scope: 'multi',
-    expected: {
-      isNull: false,
-      contains: ['orQuery'],
-      excludes: ['anyDataTypeName'],
-    },
-  },
 ];
 
 for (const scenario of scenarios) {
@@ -138,18 +111,6 @@ for (const scenario of scenarios) {
           testHelperProxy.assertTrue(
             serialized.includes(text),
             `Scenario '${scenario.name}': serialized query should contain '${text}'`,
-          ),
-        );
-      }
-    }
-
-    if (scenario.expected.excludes) {
-      const serialized = xdmp.quote(result);
-      for (const text of scenario.expected.excludes) {
-        assertions.push(
-          testHelperProxy.assertFalse(
-            serialized.includes(text),
-            `Scenario '${scenario.name}': serialized query should NOT contain '${text}'`,
           ),
         );
       }

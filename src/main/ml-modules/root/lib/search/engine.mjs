@@ -78,11 +78,11 @@ function performSearch(scp) {
       // - selectedPlan: includes or excludes sort criteria based on need.
       // - ctsExecutionEligible: when true, avoids full row materialization;
       //   uses scopedCtsQuery for cts.estimate (total) and offset/limit (page).
-      // - isFromSearchPlan: when also true, avoids lexicon scans entirely;
-      //   instead, we get the data directly from the documents, for one page.
+      // - ctsSearchOptions: when non-null, cts.search replaces Optic execution
+      //   entirely — walks indexes in the requested order and stops after the page.
       const {
         selectedPlan,
-        isFromSearchPlan,
+        ctsSearchOptions,
         ctsExecutionEligible,
         scopedCtsQuery,
       } = buildPlans({
@@ -109,30 +109,13 @@ function performSearch(scp) {
 
         if (total === 0) {
           searchResults = [];
-        } else if (isFromSearchPlan) {
-          // Opt 26: cts.search for all CTS-eligible queries. Bypasses Optic
-          // entirely — cts.search walks indexes in the requested order and
-          // stops after the page. Handles field sort, relevance, and
-          // field+relevance combinations via cts.indexOrder/cts.scoreOrder.
-          // With 'unfiltered', only the 20 page-slice documents hit disk.
-          const sortCriteria = scp.getSortCriteria();
-          const searchOptions = ['unfiltered'];
-          if (sortCriteria?.hasNonSemanticSortDescriptors()) {
-            const descriptors = sortCriteria.getNonSemanticSortDescriptors();
-            for (const d of descriptors) {
-              searchOptions.push(
-                cts.indexOrder(
-                  cts.fieldReference(d.indexReference),
-                  d.order === 'descending' ? 'descending' : 'ascending',
-                ),
-              );
-            }
-          }
-          if (sortCriteria?.areScoresRequired()) {
-            searchOptions.push(cts.scoreOrder('descending'));
-          }
+        } else if (ctsSearchOptions) {
+          // Opt 26: cts.search for all CTS-eligible queries (except semantic
+          // sort). Bypasses Optic entirely — cts.search walks indexes in the
+          // requested order and stops after the page. Sort options were
+          // pre-computed by buildCtsSearchOptions via buildPlans.
           const pageSlice = fn.subsequence(
-            cts.search(scopedCtsQuery, searchOptions),
+            cts.search(scopedCtsQuery, ctsSearchOptions),
             utils.getStartingPaginationIndexForSubsequence(
               resultPage,
               effectivePageLength,
@@ -352,11 +335,18 @@ function buildPlans({
         groups,
       );
 
+  // Resolve sort strategy once — used by both Optic plan construction and
+  // cts.search options (Opt 26).
+  const sortStrategy = resolveSortStrategy({
+    sortCriteria,
+    hasScoreContributingCriteria: analysis.hasScoreContributingCriteria,
+    hasCtsConstraints: acc.ctsConstraints.length > 0,
+  });
+
   const sortedResultsPlan = buildSortedResultsPlan({
     unsortedResultsPlan,
-    sortCriteria,
+    sortStrategy,
     acc,
-    hasScoreContributingCriteria: analysis.hasScoreContributingCriteria,
     assemblyContext,
     scp,
     groups,
@@ -364,7 +354,8 @@ function buildPlans({
 
   // Compose the accumulator's CTS constraints into a single scoped CTS query
   // when the accumulator is join-free. Null when the plan requires full
-  // materialization. Gates Opt 18 (cts.estimate), Opt 20 (fromSearch), Opt 21 (facets).
+  // materialization. Gates Opt 18 (cts.estimate), Opt 21 (facets),
+  // Opt 26 (cts.search <-- overtook Opt 20, fromSearch),
   const scopedCtsQuery = buildScopedCtsQuery(
     acc,
     assemblyContext,
@@ -375,7 +366,7 @@ function buildPlans({
   // and determine whether the estimate-based strategy applies.
   let selectedPlan = null;
   let ctsExecutionEligible = false;
-  let isFromSearchPlan = false;
+  let ctsSearchOptions = null;
   if (includeSearchResults != null) {
     selectedPlan = includeSearchResults
       ? sortedResultsPlan
@@ -389,21 +380,11 @@ function buildPlans({
       scopedCtsQuery,
     });
 
-    // Opt 20: fromSearch fast path — eligible when criteria are CTS-only
-    // and the sort doesn't require the fromLexicons base plan (random needs
-    // .bind on the unsorted plan; semantic needs triple joins + groupBy).
-    if (
-      ctsExecutionEligible &&
-      !sortCriteria?.isRandomSort() &&
-      !sortCriteria?.hasSemanticSortOption()
-    ) {
-      selectedPlan = buildFromSearchPlan(
-        acc,
-        assemblyContext,
-        sortCriteria,
-        scopedCtsQuery,
-      );
-      isFromSearchPlan = true;
+    // Opt 26: cts.search fast path — eligible when criteria are CTS-only
+    // and the sort can be expressed as cts.search options. Semantic sort
+    // requires Optic (triple hops) and falls back to Opt 18.
+    if (ctsExecutionEligible) {
+      ctsSearchOptions = buildCtsSearchOptions(sortStrategy);
     }
   }
 
@@ -412,7 +393,7 @@ function buildPlans({
     sortedResultsPlan, // for developer use
     unsortedResultsPlan, // for developer use
     ctsExecutionEligible,
-    isFromSearchPlan,
+    ctsSearchOptions,
     scopedCtsQuery,
   };
 }
@@ -973,150 +954,149 @@ function isCtsExecutionEligible({
 }) {
   return includeSearchResults && !pageWith && scopedCtsQuery != null;
 }
-
-// Opt 20: Builds a compact fromSearch-based plan. performSearch applies
-// .offset().limit() first, then chains .joinDocAndUri() so only the page
-// slice hits disk. This eliminates the 43.9M-entry iri lexicon scans of the
-// standard fromLexicons path. For non-semantic lexicon sorts, this path still
-// uses joinLeftOuter + groupBy to collapse multi-valued sort rows.
-function buildFromSearchPlan(
-  acc,
-  assemblyContext,
-  sortCriteria,
-  scopedCtsQuery,
-) {
-  const wantScore =
-    sortCriteria?.areScoresRequired() &&
-    assemblyContext.hasScoreContributingCriteria &&
-    acc.ctsConstraints.length > 0;
-
-  let plan = wantScore
-    ? op.fromSearch(scopedCtsQuery, ['fragmentId', 'score'], null, {
-        scoreMethod: 'logtfidf',
-      })
-    : op.fromSearch(scopedCtsQuery, ['fragmentId'], null, {
-        scoreMethod: 'zero',
-      });
-
-  // Non-semantic sort: LEFT OUTER join sort lexicon(s), then orderBy.
-  // Precedence matches buildSortedResultsPlan: non-semantic > relevance.
-  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
-    const descriptors = sortCriteria.getNonSemanticSortDescriptors();
-    plan = applyNonSemanticSort(plan, descriptors, 'fragmentId');
-    const includeScoreAsSecondarySort = wantScore;
-    const { sortAggregates, sortOrderBy } = buildNonSemanticSortSpec(
-      descriptors,
-      {
-        includeScoreAsSecondarySort,
-      },
-    );
-    // joinLeftOuter may multiply rows when a lexicon yields multiple values
-    // per fragment. Collapse back to one row before paging/hydration.
-    plan = plan.groupBy(['fragmentId'], sortAggregates).orderBy(sortOrderBy);
-  } else if (wantScore) {
-    plan = plan.orderBy(op.desc(op.col('score')));
-  }
-
-  // No hydration here — performSearch applies .offset().limit() first,
-  // then chains .joinDocAndUri() so only the page slice hits disk.
-  return plan;
-}
 //#endregion
 
 //#region Sort
-// Resolves which sort strategy to apply based on sort criteria precedence,
-// then builds and returns the sorted plan.
+// Resolves sort precedence into a strategy descriptor. Determines WHAT to
+// sort by without determining HOW (Optic plan vs cts.search). Consumed by
+// both buildSortedResultsPlan (Optic path) and buildCtsSearchOptions
+// (cts.search path).
 //
 // Precedence (first match wins):
-//   1. Random — bind a random column to the unsorted plan and order by it.
-//   2. Non-semantic — add sort field lexicons, rebuild the plan, order by field values.
-//   3. Semantic — hop to related documents via predicate, order by related field value.
-//   4. Relevance — join op.fromSearch for scores (requires CTS constraints), order by score.
-//   5. Unsorted — return the unsorted plan as-is.
+//   1. Random
+//   2. Non-semantic (field lexicon sort)
+//   3. Semantic (triple hop sort)
+//   4. Relevance (score-based)
+//   5. Unsorted
+function resolveSortStrategy({
+  sortCriteria,
+  hasScoreContributingCriteria,
+  hasCtsConstraints,
+}) {
+  if (sortCriteria?.isRandomSort()) {
+    return { type: 'random' };
+  }
+  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
+    return {
+      type: 'nonSemantic',
+      descriptors: sortCriteria.getNonSemanticSortDescriptors(),
+      includeRelevance:
+        sortCriteria.areScoresRequired() &&
+        hasScoreContributingCriteria &&
+        hasCtsConstraints,
+    };
+  }
+  if (sortCriteria?.hasSemanticSortOption()) {
+    return { type: 'semantic', option: sortCriteria.getSemanticSortOption() };
+  }
+  if (
+    sortCriteria?.areScoresRequired() &&
+    hasScoreContributingCriteria &&
+    hasCtsConstraints
+  ) {
+    return { type: 'relevance' };
+  }
+  return { type: 'unsorted' };
+}
+
+// Converts a sort strategy into a cts.search options array for Opt 26.
+// Returns null when the strategy requires Optic (semantic sort).
+function buildCtsSearchOptions(sortStrategy) {
+  if (sortStrategy.type === 'semantic') return null;
+
+  const options = ['unfiltered'];
+  if (sortStrategy.type === 'random') {
+    options.push('score-random');
+  } else if (sortStrategy.type === 'nonSemantic') {
+    for (const d of sortStrategy.descriptors) {
+      options.push(
+        cts.indexOrder(
+          cts.fieldReference(d.indexReference),
+          d.order === 'descending' ? 'descending' : 'ascending',
+        ),
+      );
+    }
+    if (sortStrategy.includeRelevance) {
+      options.push(cts.scoreOrder('descending'));
+    }
+  } else if (sortStrategy.type === 'relevance') {
+    options.push(cts.scoreOrder('descending'));
+  }
+  // 'unsorted' gets only 'unfiltered'
+  return options;
+}
+
+// Builds and returns the sorted Optic plan for the given sort strategy.
+// Uses resolveSortStrategy output to select the plan construction path.
 function buildSortedResultsPlan({
   unsortedResultsPlan,
-  sortCriteria,
+  sortStrategy,
   acc,
-  hasScoreContributingCriteria = false,
   assemblyContext,
   scp,
   groups,
 }) {
-  if (sortCriteria?.isRandomSort()) {
-    // Add a random column to the unsorted plan using .bind, then sort by it descending.
-    const randomColName = 'randomSortCol';
-    const planWithRandom = unsortedResultsPlan.bind(
-      op.as(randomColName, op.xdmp.random()),
-    );
-    return planWithRandom.orderBy(op.desc(op.col(randomColName)));
-  }
-
-  if (sortCriteria?.hasNonSemanticSortDescriptors()) {
-    const descriptors = sortCriteria.getNonSemanticSortDescriptors();
-    const includeScoreAsSecondarySort =
-      sortCriteria.areScoresRequired() &&
-      hasScoreContributingCriteria &&
-      acc.ctsConstraints.length > 0;
-    const { sortAggregates, sortOrderBy, sortSelectCols } =
-      buildNonSemanticSortSpec(descriptors, {
-        includeScoreAsSecondarySort,
-      });
-    return collapseToResultRows(
-      applyNonSemanticSort(
+  switch (sortStrategy.type) {
+    case 'random': {
+      const randomColName = 'randomSortCol';
+      const planWithRandom = unsortedResultsPlan.bind(
+        op.as(randomColName, op.xdmp.random()),
+      );
+      return planWithRandom.orderBy(op.desc(op.col(randomColName)));
+    }
+    case 'nonSemantic': {
+      const { sortAggregates, sortOrderBy, sortSelectCols } =
+        buildNonSemanticSortSpec(sortStrategy.descriptors, {
+          includeScoreAsSecondarySort: sortStrategy.includeRelevance,
+        });
+      return collapseToResultRows(
+        applyNonSemanticSort(
+          assemblePlan(scp, { ...acc, ...assemblyContext }),
+          sortStrategy.descriptors,
+          assemblyContext.fragCol,
+        ),
+        groups,
+        sortAggregates,
+        sortOrderBy,
+        sortSelectCols,
+      );
+    }
+    case 'semantic': {
+      xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
+      const sortByColName = 'sortByMe';
+      const sortByCol = op.col(sortByColName);
+      return collapseToResultRows(
+        applySemanticSort(
+          assemblePlan(scp, { ...acc, ...assemblyContext }),
+          sortStrategy.option,
+          sortByColName,
+        ),
+        groups,
+        [sortByCol],
+        [
+          sortStrategy.option.order === 'descending'
+            ? op.desc(sortByCol)
+            : op.asc(sortByCol),
+        ],
+      );
+    }
+    case 'relevance': {
+      const scoreColName = 'score';
+      // TODO, FUNC: Using op.max to aggregate scores across fragments. Should
+      // we use op.sum (rewards matching across multiple fragments) or keep
+      // op.max (uses the best-matching fragment's score)?
+      const scoreAgg = op.max(scoreColName, op.col(scoreColName));
+      return collapseToResultRows(
         assemblePlan(scp, { ...acc, ...assemblyContext }),
-        descriptors,
-        assemblyContext.fragCol,
-      ),
-      groups,
-      sortAggregates,
-      sortOrderBy,
-      sortSelectCols,
-    );
+        groups,
+        [scoreAgg],
+        [op.desc(op.col(scoreColName))],
+        [scoreColName],
+      );
+    }
+    default:
+      return unsortedResultsPlan;
   }
-
-  if (sortCriteria?.hasSemanticSortOption()) {
-    xdmp.setRequestTimeLimit(SEMANTIC_SORT_TIMEOUT);
-
-    const semanticSortOption = sortCriteria.getSemanticSortOption();
-    const sortByColName = 'sortByMe';
-    const sortByCol = op.col(sortByColName);
-    return collapseToResultRows(
-      applySemanticSort(
-        assemblePlan(scp, { ...acc, ...assemblyContext }),
-        semanticSortOption,
-        sortByColName,
-      ),
-      groups,
-      [sortByCol],
-      [
-        semanticSortOption.order === 'descending'
-          ? op.desc(sortByCol)
-          : op.asc(sortByCol),
-      ],
-    );
-  }
-
-  if (
-    sortCriteria?.areScoresRequired() &&
-    hasScoreContributingCriteria &&
-    acc.ctsConstraints.length > 0
-  ) {
-    // Relevance sort — use the score column produced by op.fromSearch.
-    const scoreColName = 'score';
-    // TODO, FUNC: Using op.max to aggregate scores across fragments. Should
-    // we use op.sum (rewards matching across multiple fragments) or keep
-    // op.max (uses the best-matching fragment's score)?
-    const scoreAgg = op.max(scoreColName, op.col(scoreColName));
-    return collapseToResultRows(
-      assemblePlan(scp, { ...acc, ...assemblyContext }),
-      groups,
-      [scoreAgg],
-      [op.desc(op.col(scoreColName))],
-      [scoreColName],
-    );
-  }
-
-  return unsortedResultsPlan;
 }
 
 // Applies a semantic sort to the raw assembled plan. Takes one hop from each search result
@@ -1306,18 +1286,19 @@ function accHasOnlyContentIn(acc, ...bucketNames) {
 
 export {
   MAXIMUM_PAGE_WITH_LENGTH,
-  buildScopedCtsQuery,
-  buildFromSearchPlan,
+  buildCtsSearchOptions,
   buildPlans,
-  calculateFacets,
+  buildScopedCtsQuery,
   buildSortedResultsPlan,
+  calculateFacets,
   getDirectPlan,
-  isCtsExecutionEligible,
   getResultRowGrouping,
   isAccumulatorJoinFree,
+  isCtsExecutionEligible,
   paginateResults,
   performSearch,
   processNestedCriteria,
   processNestedCriteriaAsCts,
+  resolveSortStrategy,
   traverseCriteria,
 };

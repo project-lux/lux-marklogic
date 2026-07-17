@@ -65,10 +65,10 @@ const andExecute = false;
 // engine.buildPlans returns 6 properties:
 //   sortedResultsPlan    — plan with sort applied (inspection)
 //   unsortedResultsPlan  — plan without sort (inspection, facets)
-//   scopedCtsQuery       — scoped CTS query for cts.estimate/fromSearch, or null if joins required
-//   selectedPlan         — the plan performSearch would execute (may be fromSearch for Opt 20)
-//   ctsExecutionEligible — whether Opt 18/20/21 apply
-//   isFromSearchPlan     — whether Opt 20 fromSearch plan is active
+//   scopedCtsQuery       — scoped CTS query for cts.estimate/cts.search, or null if joins required
+//   selectedPlan         — the Optic plan (for inspection; may not execute when ctsSearchOptions is set)
+//   ctsExecutionEligible — whether Opt 18/26/21 apply
+//   ctsSearchOptions     — when non-null, cts.search executes with these options instead of the Optic plan
 const buildPlansResult = new SCP()
   .prepare({
     searchCriteria,
@@ -83,7 +83,7 @@ const {
   scopedCtsQuery,
   selectedPlan,
   ctsExecutionEligible,
-  isFromSearchPlan,
+  ctsSearchOptions,
 } = buildPlansResult;
 
 // The developer's chosen plan for the script template.
@@ -134,7 +134,9 @@ const scriptParams = {
 
 const buildPlansOutput = {
   ctsExecutionEligible,
-  isFromSearchPlan,
+  ctsSearchOptions: ctsSearchOptions
+    ? ctsSearchOptions.map((o) => (typeof o === 'string' ? o : xdmp.quote(o)))
+    : null,
   estimateCount,
   selectedPlanSource,
 };

@@ -4,9 +4,9 @@
  * Tests the strategy block that determines:
  * - ctsExecutionEligible: whether cts.estimate + offset/limit can replace
  *   full materialization
- * - isFromSearchPlan: whether the selectedPlan is a fromSearch-based plan
- *   (Opt 20) vs the standard fromLexicons plan (Opt 18)
- * - scopedCtsQuery: the composed CTS query used for cts.estimate
+ * - ctsSearchOptions: when non-null, cts.search executes with these options
+ *   instead of the Optic plan (Opt 26). Null only for semantic sort.
+ * - scopedCtsQuery: the composed CTS query used for cts.estimate/cts.search
  *
  * Now that SCP.buildPlans() forwards includeSearchResults, pageWith, and
  * facetRequests to engine.buildPlans(), the strategy block activates and
@@ -46,9 +46,9 @@ const MULTI_HOP_CRITERIA = {
 };
 
 const scenarios = [
-  // --- Opt 20: fromSearch plan (eligible with and without lexicon sort) ---
+  // --- Opt 26: cts.search path (CTS-eligible, non-semantic sort) ---
   {
-    name: 'text search, default relevance sort → Opt 20',
+    name: 'text search, default relevance sort → Opt 26 cts.search',
     input: {
       searchCriteria: TEXT_CRITERIA,
       sortDelimitedStr: '',
@@ -56,14 +56,12 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: true,
+      ctsSearchOptionsNonNull: true,
       scopedCtsQueryNonNull: true,
-      selectedPlanContains: ['fromSearch'],
-      selectedPlanExcludes: ['fromLexicons'],
     },
   },
   {
-    name: 'text search, explicit relevance sort → Opt 20',
+    name: 'text search, explicit relevance sort → Opt 26 cts.search',
     input: {
       searchCriteria: TEXT_CRITERIA,
       sortDelimitedStr: 'relevance',
@@ -71,13 +69,12 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: true,
+      ctsSearchOptionsNonNull: true,
       scopedCtsQueryNonNull: true,
-      selectedPlanContains: ['fromSearch'],
     },
   },
   {
-    name: 'CTS-optimized single-level hop → Opt 20',
+    name: 'CTS-optimized single-level hop → Opt 26 cts.search',
     input: {
       searchCriteria: CTS_OPTIMIZED_HOP_CRITERIA,
       sortDelimitedStr: '',
@@ -85,14 +82,12 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: true,
+      ctsSearchOptionsNonNull: true,
       scopedCtsQueryNonNull: true,
-      selectedPlanContains: ['fromSearch'],
-      selectedPlanExcludes: ['fromLexicons'],
     },
   },
   {
-    name: 'text search, lexicon sort → Opt 20',
+    name: 'text search, lexicon sort → Opt 26 cts.search',
     input: {
       searchCriteria: TEXT_CRITERIA,
       sortDelimitedStr: 'agentStartDate',
@@ -100,15 +95,12 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: true,
+      ctsSearchOptionsNonNull: true,
       scopedCtsQueryNonNull: true,
-      selectedPlanContains: ['fromSearch', 'fromLexicons'],
     },
   },
-
-  // --- Opt 18: eligible but sort requires lexicons ---
   {
-    name: 'text search, random sort → Opt 18 (not fromSearch)',
+    name: 'text search, random sort → Opt 26 cts.search',
     input: {
       searchCriteria: TEXT_CRITERIA,
       sortDelimitedStr: 'random',
@@ -116,13 +108,14 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: false,
+      ctsSearchOptionsNonNull: true,
       scopedCtsQueryNonNull: true,
-      selectedPlanContains: ['fromLexicons', 'randomSortCol'],
     },
   },
+
+  // --- Opt 18: eligible but semantic sort requires Optic ---
   {
-    name: 'text search, semantic sort → Opt 18 (not fromSearch)',
+    name: 'text search, semantic sort → Opt 18 (ctsSearchOptions null)',
     input: {
       searchCriteria: TEXT_CRITERIA,
       sortDelimitedStr: 'agentClassificationConceptName',
@@ -130,7 +123,7 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: true,
-      isFromSearchPlan: false,
+      ctsSearchOptionsNonNull: false,
       scopedCtsQueryNonNull: true,
       selectedPlanContains: ['fromLexicons'],
     },
@@ -146,7 +139,7 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: false,
-      isFromSearchPlan: false,
+      ctsSearchOptionsNonNull: false,
       scopedCtsQueryNonNull: false,
     },
   },
@@ -160,7 +153,7 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: false,
-      isFromSearchPlan: false,
+      ctsSearchOptionsNonNull: false,
       scopedCtsQueryNonNull: true,
     },
   },
@@ -176,7 +169,7 @@ const scenarios = [
     expected: {
       error: false,
       ctsExecutionEligible: false,
-      isFromSearchPlan: false,
+      ctsSearchOptionsNonNull: false,
     },
   },
 
@@ -212,7 +205,7 @@ for (const scenario of scenarios) {
     const result = scp.buildPlans();
     return {
       ctsExecutionEligible: result.ctsExecutionEligible,
-      isFromSearchPlan: result.isFromSearchPlan,
+      ctsSearchOptions: result.ctsSearchOptions,
       scopedCtsQuery: result.scopedCtsQuery,
       selectedPlanSource: result.selectedPlan
         ? op.toSource(result.selectedPlan.export())
@@ -238,12 +231,13 @@ for (const scenario of scenarios) {
       );
     }
 
-    if (scenario.expected.isFromSearchPlan !== undefined) {
+    if (scenario.expected.ctsSearchOptionsNonNull !== undefined) {
+      const optionsNonNull = actual.ctsSearchOptions != null;
       assertions.push(
         testHelperProxy.assertEqual(
-          scenario.expected.isFromSearchPlan,
-          actual.isFromSearchPlan,
-          `Scenario '${scenario.name}' - isFromSearchPlan should be ${scenario.expected.isFromSearchPlan}`,
+          scenario.expected.ctsSearchOptionsNonNull,
+          optionsNonNull,
+          `Scenario '${scenario.name}' - ctsSearchOptions ${scenario.expected.ctsSearchOptionsNonNull ? 'should' : 'should not'} be non-null`,
         ),
       );
     }

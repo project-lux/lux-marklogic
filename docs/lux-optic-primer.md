@@ -168,6 +168,18 @@
     - [What this would not help](#what-this-would-not-help)
     - [API contract change required](#api-contract-change-required)
     - [Priority](#priority)
+  - [Optimization 26: cts.search execution for CTS-eligible queries](#optimization-26-ctssearch-execution-for-cts-eligible-queries)
+    - [Problem](#problem-7)
+    - [Approach](#approach-3)
+    - [Eligibility](#eligibility-1)
+    - [Implementation summary](#implementation-summary-1)
+    - [Sort support matrix](#sort-support-matrix)
+    - [Reference request](#reference-request-1)
+    - [Benchmark](#benchmark-2)
+      - [Isolated (single query, MarkLogic 12.0.1)](#isolated-single-query-marklogic-1201)
+      - [UI validation](#ui-validation)
+      - [10k-1 performance test (2026-07-16)](#10k-1-performance-test-2026-07-16)
+    - [Relationship to other optimizations](#relationship-to-other-optimizations-1)
 
 # Introduction
 
@@ -243,7 +255,7 @@ The engine exports three entry points that each use the two-pass pipeline differ
 
 | Entry point | Called by | Pass 1 | Pass 2 | Plan built? | Returns |
 |---|---|---|---|---|---|
-| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan, scopedCtsQuery, selectedPlan, ctsExecutionEligible, isFromSearchPlan }` |
+| `buildPlans` | `performSearch` (top-level) | Yes | Yes + `assemblePlan` + `collapseToResultRows` | Yes — full plan with finalization | `{ sortedResultsPlan, unsortedResultsPlan, scopedCtsQuery, selectedPlan, ctsExecutionEligible, ctsSearchOptions }` |
 | `processNestedCriteria` | Pattern classes (`HopWithField`, `HopInverse`) | Yes | Yes + `assemblePlan` + select barrier | Yes — sub-plan projected to `[iriCol, fragCol]` | Optic plan (two columns) |
 | `processNestedCriteriaAsCts` | `HopWithField` (CTS optimization path) | Yes | Yes (accumulator only) | No — returns CTS query or null | `ctsQuery \| null` |
 | `traverseCriteria` | `SCP.executeForValues()` (related lists) | Yes | Yes (accumulator only) | No — side effects only | `undefined` |
@@ -1214,6 +1226,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 10 | [Opt 22](#optimization-22-anntopk-post-filter-for-hnsw-index-usage) | annTopK post-filter: move scope/self-exclusion filters to after `annTopK` so the HNSW index is used (`indexed="true"`). Pre-filters caused brute-force kNN — 800× slower on 20M vectors. Also extends Opt 20 to skip `fromLexicons` for annTopK-only queries. | 2026-06-29 |
 | 11 | [Opt 21](#optimization-21-cts-native-facet-computation) | CTS-native facet computation: three-way dispatch in `calculateFacets`. Semantic facets use CTS enumerate + estimate (1,044× faster than Optic triple joins at 2.5M scale). Non-semantic facets use `op.fromSearch(scopedCtsQuery)` (32× faster than URI-list approach). Removes facet guard from `isCtsExecutionEligible`, enabling Opt 18/20 when facets are co-requested. Depends on [Opt 15](#optimization-15-cts-fold). | 2026-07-02 |
 | 12 | [Opt 24](#optimization-24-hopinverse-cts-fast-path) | HopInverse CTS fast path: when inner criteria resolves to pure CTS, apply `.where(innerCts)` directly on `fromTriples` instead of building a `fromLexicons` plan and fragment-joining. Eliminates per-hop IRI lexicon scans (~43.9M rows). Representative query: 2,649ms → 121ms (22×). | 2026-07-05 |
+| 13 | [Opt 26](#optimization-26-ctssearch-execution-for-cts-eligible-queries) | cts.search execution: for CTS-eligible queries, bypass Optic execution entirely — `cts.search` walks indexes in the requested sort order and stops after the page. Supersedes Opt 20's `fromSearch` + `joinDocAndUri` execution path. Enables field sort on 20M+ result sets (previously timed out at 20s+). Adds random sort support via `score-random`. | 2026-07-16 |
 
 ## Data Type Constraint Optimizations
 
@@ -1793,7 +1806,7 @@ Scope leakage may be acceptable for estimates, especially if for a minority subs
 
 ## Optimization 20: Eliminate fromLexicons for join-free queries
 
-**Status:** Implemented.
+**Status:** Superseded by [Opt 26](#optimization-26-ctssearch-execution-for-cts-eligible-queries) for execution. Opt 20's eligibility gate (`isCtsExecutionEligible`) and `scopedCtsQuery` composition remain in use — Opt 26 builds on them. The `buildFromSearchPlan` function and `isFromSearchPlan` flag were removed; `buildPlans` now returns `ctsSearchOptions` (a `cts.search` options array) instead.
 
 ### Problem
 
@@ -1840,7 +1853,9 @@ When these hold, no pattern needs the `iri`, `uri`, or `dataType` lexicon column
 
 ### Implementation summary
 
-The implementation lives in `buildPlans` and `performSearch` in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs). Key components:
+> **Note:** The components below describe Opt 20's original implementation. With [Opt 26](#optimization-26-ctssearch-execution-for-cts-eligible-queries), `buildFromSearchPlan`, `sortRequiresLexicons`, and `isFromSearchPlan` were removed. `buildPlans` now returns `ctsSearchOptions` (a `cts.search` options array) and `performSearch` executes via `cts.search` instead of the Optic `fromSearch` plan. The eligibility gate and `scopedCtsQuery` composition remain unchanged.
+
+The original implementation lived in `buildPlans` and `performSearch` in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs). Key components:
 
 - **`sortRequiresLexicons(sortCriteria)`** — Returns true when the sort requires lexicon columns (random, field, semantic sorts). Relevance sort and unsorted are compatible with `fromSearch`.
 - **`buildFromSearchPlan(acc, assemblyContext, sortCriteria, scopedCtsQuery)`** — Builds an `op.fromSearch(scopedCtsQuery)` plan with `scoreMethod: 'logtfidf'` + `orderBy(desc(score))` when scores are needed, or `scoreMethod: 'zero'` when unsorted. No hydration join — only `fragmentId` (and optionally `score`) columns.
@@ -1903,6 +1918,7 @@ The mean result is the headline: Optic went from 2.3× slower than CTS to 3.2× 
 - **Opt 22 (annTopK post-filter):** The Opt 20 extension for annTopK is implemented as part of Opt 22. When annTopK is the sole criterion, `getDirectPlan()` bypasses `fromLexicons` using the TDE view directly — analogous to Opt 20's `fromSearch` bypass for CTS-foldable queries, but for a different eligibility condition (`annTopKSelfSufficient` flag vs `isAccumulatorJoinFree`).
 - **Opt 5 (Remove `iri` from `fromLexicons`):** Complementary but subsumed for eligible queries. Opt 5 would still help queries that use `fromLexicons` but don't need `iri` (e.g., non-relevance-sorted join-free queries). If Opt 20 is implemented first, Opt 5's remaining value is limited to the non-Opt-20-eligible subset.
 - **Opt 14 (Page-Slice, abandoned):** Opt 20 is structurally similar — both bypass `fromLexicons` for page results and use CTS for pagination. The key differences: Opt 20 uses `op.fromSearch` (stays within Optic's API), has a well-defined eligibility gate (`isCtsExecutionEligible`), and does not introduce a separate `cts.search` code path. The total-count concern that killed Opt 14 does not apply — Opt 18's `cts.estimate` with scope filter is already validated.
+- **Opt 26 (cts.search execution):** Supersedes Opt 20 for execution. Opt 26 uses `cts.search` directly instead of the Optic `fromSearch` plan, extending coverage to field sorts and random sort. Opt 20's eligibility gate and `scopedCtsQuery` remain the foundation.
 
 ## Optimization 21: CTS-native facet computation
 
@@ -2363,3 +2379,105 @@ Keeping exact `totalItems` would still require full cardinality work (or a secon
 ### Priority
 
 Low priority. This is primarily a JS/output-layer optimization and does not change the dominant Optic execution costs observed in ORIG vs PAGE actual plans.
+
+## Optimization 26: cts.search execution for CTS-eligible queries
+
+**Status:** Implemented.
+
+### Problem
+
+Opt 20 replaced `fromLexicons` with `op.fromSearch` + `joinDocAndUri` for CTS-eligible queries, but the execution still routed through Optic — the optimizer processed the plan AST, `joinDocAndUri` pulled documents for the page slice, and sort required additional Optic work (`joinLeftOuter` on sort lexicons + `groupBy` + `orderBy`). For queries with non-semantic field sorts (e.g., `anySortName:desc`) against large result sets (~20M items), the Optic `fromSearch` path timed out at 20s+ because the sort lexicon join and groupBy materialized millions of rows before limiting.
+
+Additionally, `performSearch` was overriding `buildPlans`' strategy by constructing `cts.search` options and executing `cts.search` directly — violating the principle that `buildPlans` owns strategy and `performSearch` is a thin executor.
+
+### Approach
+
+Bypass Optic execution entirely for CTS-eligible queries. `cts.search` walks indexes in the requested sort order and stops after the page — no plan compilation, no lexicon scans, no `joinDocAndUri`. Sort is expressed as `cts.search` options: `cts.indexOrder` for field sorts, `cts.scoreOrder` for relevance, `score-random` for random sort. The `unfiltered` option is always included (the CTS query already constrains the result set). `score-zero` is used when scores are not needed, avoiding unnecessary score computation.
+
+Two new functions extract the sort decision from `SortCriteria` and the engine's scoring context:
+
+- **`resolveSortStrategy({ sortCriteria, hasScoreContributingCriteria, hasCtsConstraints })`** — Resolves sort precedence (random > nonSemantic > semantic > relevance > unsorted) into a strategy descriptor. Determines WHAT to sort by without determining HOW. Consumed by both `buildSortedResultsPlan` (Optic path) and `buildCtsSearchOptions` (cts.search path). This DRY design replaces the duplicated precedence logic that was previously in both `buildSortedResultsPlan` and `performSearch`.
+
+- **`buildCtsSearchOptions(sortStrategy)`** — Converts the strategy descriptor into a `cts.search` options array. Returns `null` for semantic sort (the only case that requires Optic — triple hops cannot be expressed as `cts.search` options).
+
+### Eligibility
+
+Same gate as Opt 18/20 (`isCtsExecutionEligible`) plus sort compatibility:
+
+1. Top-level accumulator is join-free (`isAccumulatorJoinFree`).
+2. Request includes search results (`includeSearchResults`).
+3. No `pageWith` requested.
+4. `buildScopedCtsQuery` returns non-null.
+5. Sort strategy is not semantic (`buildCtsSearchOptions` returns non-null).
+
+Semantic sort requires Optic triple joins and falls back to Opt 18's `selectedPlan.offset().limit().result()` path.
+
+### Implementation summary
+
+The implementation refactored `buildPlans` and `performSearch` in [engine.mjs](/src/main/ml-modules/root/lib/search/engine.mjs):
+
+- **`resolveSortStrategy`** — New function in the Sort region. Extracts sort precedence logic into a single source of truth. Returns `{ type, descriptors?, includeRelevance?, option? }`. Both `buildSortedResultsPlan` and `buildCtsSearchOptions` consume it.
+- **`buildCtsSearchOptions`** — New function in the Sort region. Converts strategy to options array: `['unfiltered', ...]` with `cts.indexOrder`, `cts.scoreOrder`, `score-random`, or `score-zero` as appropriate.
+- **`buildSortedResultsPlan`** — Refactored to accept a `sortStrategy` object instead of `sortCriteria` + individual flags. Uses a `switch` on `sortStrategy.type`.
+- **`buildPlans`** — Calls `resolveSortStrategy` once, passes the result to both `buildSortedResultsPlan` and `buildCtsSearchOptions`. Returns `ctsSearchOptions` (replaces `isFromSearchPlan`).
+- **`performSearch`** — No sort logic. When `ctsSearchOptions` is non-null: `cts.search(scopedCtsQuery, ctsSearchOptions)` + `fn.subsequence` for pagination. Page-slice documents are hydrated inline (`fn.baseUri` for id, XPath `/json/type` for type).
+- **`buildFromSearchPlan`** — Removed (dead code). The Optic `fromSearch` plan is no longer constructed or executed.
+- **`getPlansFromSearchCriteria.js`** — Updated to show `ctsSearchOptions` and `scopedCtsQuerySource` in output. `selectedPlanSource` renamed to `opticPlanSource` to clarify it is the Optic plan for inspection, not what actually executes.
+
+### Sort support matrix
+
+| Sort type | cts.search option | Score method |
+|---|---|---|
+| Relevance | `cts.scoreOrder('descending')` | logtfidf (implicit) |
+| Field asc | `cts.indexOrder(fieldRef, 'ascending')` | `score-zero` |
+| Field desc | `cts.indexOrder(fieldRef, 'descending')` | `score-zero` |
+| Field + relevance | `cts.indexOrder(...)` + `cts.scoreOrder('descending')` | logtfidf |
+| Random | `score-random` | random |
+| Unsorted | (none) | `score-zero` |
+| Semantic | **Not supported** — falls back to Opt 18 Optic path | N/A |
+
+### Reference request
+
+```json
+{ "_scope": "item", "text": "yale", "_lang": "en" }
+```
+
+Sorted by `anySortName:desc` — a field sort against a lexicon larger than the ~20M result set. Previously timed out at 20s+ in the Optic `fromSearch` + `joinLeftOuter(sortLexicon)` + `groupBy` path.
+
+### Benchmark
+
+#### Isolated (single query, MarkLogic 12.0.1)
+
+```
+12.0.1-cts-opt-26 coldRuns=3 coldMin=1367 coldMax=1425 coldAvg=1390 coldStddev=25 warmRuns=10 warmMin=1114 warmMax=1466 warmAvg=1211 warmStddev=111 totalItemsRead=260
+```
+
+| Metric | Value |
+|---|---|
+| Cold avg | 1,390ms |
+| Warm avg | 1,211ms |
+| Previous (Optic fromSearch + sort lexicon) | Timeout at 20s+ |
+
+#### UI validation
+
+- Sort by title:desc (anySortName): **2.65s** end-to-end
+- Sort by title:asc (anySortName): **1.26s** end-to-end
+
+#### 10k-1 performance test (2026-07-16)
+
+Comparison: 7/2 CTS vs 7/16 Optic with Opt 26. Baseline: CTS 10k-1 (7/2, cleared caches). Single-threaded, cleared caches.
+
+| Metric | CTS baseline | Optic + Opt 26 | Change |
+|---|---|---|---|
+| Related lists mean (% of CTS) | 12.5 | 12.5 | 0.00% |
+| Search est. mean (% of CTS) | 16 | 16 | −6.40% |
+| Search mean (% of CTS) | 8 | 8 | −12.60% → 1.10% |
+| Facets mean (% of CTS) | 16.5 | 16.5 | −37.20% → 5.80% |
+
+### Relationship to other optimizations
+
+- **Opt 20 (fromSearch + joinDocAndUri):** Superseded for execution. Opt 26 uses `cts.search` instead of the Optic `fromSearch` plan. Opt 20's eligibility infrastructure (`isCtsExecutionEligible`, `scopedCtsQuery`) remains the foundation. `buildFromSearchPlan` and `isFromSearchPlan` were removed.
+- **Opt 18 (cts.estimate):** Still used for total count. `cts.estimate(scopedCtsQuery)` provides the total; Opt 26 provides the page.
+- **Opt 21 (CTS-native facets):** Complementary. Opt 26 handles the page; Opt 21 handles facets. Both use `scopedCtsQuery`.
+- **Opt 14 (Page-Slice Hydration, abandoned):** Opt 26 achieves what Opt 14 attempted — bypass Optic for page results using `cts.search` — but through `buildPlans`' strategy mechanism rather than a separate code path. The total-count concern is handled by Opt 18.
+- **Opt 1 (Score gate):** Still relevant for the Optic plan path (semantic sort fallback). When Opt 26 fires, the Optic plan's score gate is moot — `cts.search` handles scoring via `cts.scoreOrder`.

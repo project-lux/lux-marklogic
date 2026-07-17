@@ -8,14 +8,13 @@
  *   - 2 HumanMadeObject without itemArchiveSortId values
  * All 5 are members of the test-sort-set, filtered via memberOf { id }.
  *
- * Tests both execution paths:
- *   - buildSortedResultsPlan (fromLexicons base, non-CTS-eligible)
- *   - buildFromSearchPlan (fromSearch base, CTS-eligible via Opt 20)
+ * Tests the Optic path (buildSortedResultsPlan / fromLexicons base).
+ * The cts.search path (Opt 26) handles sort via cts.indexOrder and is
+ * validated by the scripted integration test.
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
-import op from '/MarkLogic/optic.mjs';
 import {
   SORT_ITEM_MULTI_VALUE_URI,
   SORT_ITEM_NO_VALUE_1_URI,
@@ -25,7 +24,7 @@ import {
   SORT_SET_URI,
 } from '/test/unitTestConstants.mjs';
 
-const LIB = '0406 sort-execution-nullsLast.mjs';
+const LIB = '0406 buildPlans-sortExecutionNullLast.mjs';
 console.log(`${LIB}: starting.`);
 
 const assertions = [];
@@ -56,39 +55,6 @@ function executeSortedPlan(sortDelimitedStr) {
   });
   const { sortedResultsPlan } = scp.buildPlans();
   return sortedResultsPlan.result().toArray();
-}
-
-// Executes via buildFromSearchPlan (fromSearch/Opt 20 path) and returns rows.
-function executeFromSearchPlan(sortDelimitedStr) {
-  const scp = new SCP();
-  scp.prepare({
-    searchCriteria: SEARCH_CRITERIA,
-    scopeName: 'item',
-    sortDelimitedStr,
-  });
-  const result = scp.buildPlans();
-  const { sortedResultsPlan } = result;
-  if (!result.scopedCtsQuery) {
-    // Fallback: this search shape may not be CTS-eligible.
-    // Return sortedResultsPlan rows instead.
-    return sortedResultsPlan.result().toArray();
-  }
-  const plan = result.selectedPlan;
-  // If the fromSearch path fired (isFromSearchPlan), execute with hydration.
-  if (result.isFromSearchPlan) {
-    return plan
-      .offset(0)
-      .limit(20)
-      .joinDocAndUri('doc', 'uri', op.fragmentIdCol('fragmentId'))
-      .result()
-      .toArray()
-      .map((row) => ({
-        id: row.uri,
-        type: String(row.doc.xpath('/json/type')),
-        sort_itemArchiveSortId: row.sort_itemArchiveSortId ?? null,
-      }));
-  }
-  return plan.result().toArray();
 }
 
 // Asserts that the first N rows (with sort values) come before the remaining
@@ -203,13 +169,6 @@ assertNullsLast(ascRows, 'ascending', 'sortedResultsPlan');
 
 const descRows = executeSortedPlan('itemArchiveSortId:desc');
 assertNullsLast(descRows, 'descending', 'sortedResultsPlan');
-
-// --- buildFromSearchPlan (fromSearch/Opt 20 path) ---
-const ascFromSearch = executeFromSearchPlan('itemArchiveSortId');
-assertNullsLast(ascFromSearch, 'ascending', 'fromSearchPlan');
-
-const descFromSearch = executeFromSearchPlan('itemArchiveSortId:desc');
-assertNullsLast(descFromSearch, 'descending', 'fromSearchPlan');
 
 console.log(`${LIB}: completed ${assertions.length} assertions.`);
 

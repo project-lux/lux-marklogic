@@ -187,7 +187,7 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 
 ## Test suite conventions
 - Test files live under `src/test/ml-modules/root/test/suites/` in subdirectories by module (e.g., `searchCriteriaProcessorTests/`).
-- Files are numbered for ordering (0601, 0602, etc.). One function per test file.
+- Files are numbered for ordering (0601, 0602, etc.). **One function per test file** — 1:1:1 ratio between test module, function under test, and `scenarios` array.
 - Each file exports `assertions` (`export default assertions;`) — an array of assertion results.
 - Use the **scenarios array pattern**: define a `scenarios` array where each element has `{ name, input, expected }`. Iterate scenarios calling `executeScenario(scenario, zeroArityFun)` for each.
 - **`input`**: shape is catered to the function under test. Contains whatever arguments/state the function needs. Keep it direct — mirror the function's parameters rather than inventing a dispatch mechanism.

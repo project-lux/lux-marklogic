@@ -256,7 +256,7 @@ const SearchCriteriaProcessor = class {
 
   // Builds Optic plans and determines execution strategy.
   // Returns { selectedPlan, sortedResultsPlan, unsortedResultsPlan,
-  //           ctsExecutionEligible, isFromSearchPlan, scopedCtsQuery }.
+  //           ctsExecutionEligible, ctsSearchOptions, scopedCtsQuery }.
   buildPlans(preferFragJoins = PREFER_FRAG_JOINS) {
     // May override the default set by prepare().
     this.#patternOptions.setPreferFragJoins(preferFragJoins);

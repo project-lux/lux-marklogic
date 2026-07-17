@@ -168,4 +168,4 @@ const result = microBenchmark(
   warmRuns,
   username,
 );
-result;
+export default result;

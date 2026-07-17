@@ -89,8 +89,8 @@ const {
 // The developer's chosen plan for the script template.
 const requestedPlan = useSortedPlan ? sortedResultsPlan : unsortedResultsPlan;
 
-// Which plan would performSearch actually use?
-const selectedPlanSource = selectedPlan
+// Which Optic plan would performSearch use when cts.search is not active?
+const opticPlanSource = selectedPlan
   ? op
       .toSource(selectedPlan.export())
       .replace(/op\.fromSPARQL\('([\s\S]*?)'/g, 'op.fromSPARQL(`$1`')
@@ -137,8 +137,9 @@ const buildPlansOutput = {
   ctsSearchOptions: ctsSearchOptions
     ? ctsSearchOptions.map((o) => (typeof o === 'string' ? o : xdmp.quote(o)))
     : null,
+  scopedCtsQuerySource: scopedCtsQuery ? xdmp.quote(scopedCtsQuery) : null,
   estimateCount,
-  selectedPlanSource,
+  opticPlanSource,
 };
 
 const outputWithoutExecution = {

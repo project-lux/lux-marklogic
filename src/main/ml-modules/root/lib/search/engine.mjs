@@ -1018,11 +1018,14 @@ function buildCtsSearchOptions(sortStrategy) {
     }
     if (sortStrategy.includeRelevance) {
       options.push(cts.scoreOrder('descending'));
+    } else {
+      options.push('score-zero');
     }
   } else if (sortStrategy.type === 'relevance') {
     options.push(cts.scoreOrder('descending'));
+  } else {
+    options.push('score-zero');
   }
-  // 'unsorted' gets only 'unfiltered'
   return options;
 }
 

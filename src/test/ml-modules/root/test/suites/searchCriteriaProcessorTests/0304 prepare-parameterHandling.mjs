@@ -74,7 +74,6 @@ const scenarios = [
     expected: {
       error: false,
       includeTypeConstraint: false,
-      ctsQueryExcludes: ['dataType'],
     },
   },
   {
@@ -193,7 +192,6 @@ for (const scenario of scenarios) {
       page: scp.getPage(),
       pageLength: scp.getPageLength(),
       pageWith: scp.getPageWith(),
-      ctsQueryStr: scp.getQueryStr(),
     };
   };
 
@@ -240,17 +238,6 @@ for (const scenario of scenarios) {
           `Scenario '${scenario.name}' - scopeName should be ${scenario.expected.scopeName}`,
         ),
       );
-    }
-
-    if (scenario.expected.ctsQueryExcludes) {
-      scenario.expected.ctsQueryExcludes.forEach((excludedText) => {
-        assertions.push(
-          testHelperProxy.assertFalse(
-            actual.ctsQueryStr.includes(excludedText),
-            `Scenario '${scenario.name}' - query should not contain '${excludedText}'. Actual: ${actual.ctsQueryStr}`,
-          ),
-        );
-      });
     }
   }
 

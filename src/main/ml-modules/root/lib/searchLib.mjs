@@ -114,6 +114,7 @@ function _search(
     // Parse gets us all the way through query generation.
     scp = new SCP();
     scp.prepare({
+      requestId,
       searchCriteria,
       scopeName: resolvedSearchScope,
       page,
@@ -228,8 +229,6 @@ function _search(
           ? resolvedSearchCriteria
           : searchCriteria,
         ignoredTerms: scp ? scp.getIgnoredTerms() : null,
-        // Heavy for plans containing materialized data.  Use getPlansFromSearchCriteria.js
-        // query: scp ? scp.getQueryStr() : null,
       };
       xdmp.trace(traceName, searchInfo);
 

@@ -833,12 +833,22 @@ function assemblePlan(
     if (logicType === 'or') {
       for (let i = 0; i < patternJoins.length; i++) {
         const pj = patternJoins[i];
-        if (!hasNonJoinConstraints && i === 0 && pj.scope == null) {
-          // No other constraints exist: inner join constrains the base plan
-          // instead of outer joining to an unconstrained lexicon scan.
-          // Only safe when pj is not multi-scope-tagged — a multi-scope
-          // base plan has no shared dataType constraint to rely on (see
-          // createPlanAccumulator).
+        if (!hasNonJoinConstraints && i === 0) {
+          // No other constraints exist: extend the base plan directly
+          // instead of outer joining to a duplicate lexicon scan — the
+          // cheap path (avoids a second ~44M-row fromLexicons scan and
+          // joinFullOuter). The shared base plan carries no dataType
+          // constraint of its own for multi-scope groups (see
+          // createPlanAccumulator), so a multi-scope-tagged join (pj.scope
+          // set) applies its own filter here first via a plain .where() —
+          // cheap, since it reuses the existing scan rather than starting a
+          // new one. Later branches each still get their own independent
+          // fromLexicons scan below (required to combine via joinFullOuter).
+          if (pj.scope != null) {
+            plan = plan.where(
+              op.in(op.col(dataTypeCol), getSearchScopeTypes(pj.scope, false)),
+            );
+          }
           plan = plan.joinInner(pj.right, pj.on);
         } else {
           // Duplicate lexicon → inner join with right → align columns → full outer join.

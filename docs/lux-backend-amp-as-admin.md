@@ -97,7 +97,7 @@ const _executeAsAdmin = import.meta.amp(__executeAsAdmin);
 
 If My Collections must be supported — even as a future possibility that ships concurrently — continue reading. The remainder of this document addresses the collection exclusion constraint, OR-path security hardening, and all associated complexity.
 
-**Before implementing the full My Collections-support path, run the existing scripted performance tests to confirm this optimization still provides sufficient value. When this optimization was first implemented, we were further from CTS-based search performance parity; since then, significant progress has reduced that gap. Given the added implementation complexity and the identified security risk surface for My Collections support, require measured evidence that the document-permission bypass still delivers meaningful benefit before proceeding.**
+**Before implementing the full My Collections-support path, run the existing scripted performance tests to confirm this optimization still provides sufficient value. When this optimization was first implemented, we were further from CTS-based search performance parity; since then, significant progress has reduced that gap. Given the added implementation complexity and the identified security risk surface for My Collections support, require measured evidence that the document-permission bypass still delivers meaningful benefit before proceeding. To measure, the implementation can be disabled. That may be equivalent of running the performance test as YPM.**
 
 ---
 

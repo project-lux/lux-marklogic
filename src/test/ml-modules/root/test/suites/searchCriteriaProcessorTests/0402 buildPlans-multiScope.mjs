@@ -124,6 +124,43 @@ const scenarios = [
       ignoredTermsLength: 1,
     },
   },
+  // Each OR branch must be filtered by its OWN scope's dataType(s), not just
+  // whichever branch happened to be processed last. Before the fix, only one
+  // branch's dataTypes ended up in the plan (and which one depended on
+  // branch order); after the fix, both branches' dataTypes are present
+  // regardless of order.
+  {
+    name: 'Multi-scope dataType filter is per-branch (agent, then work)',
+    input: {
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [
+          { _scope: 'agent', name: 'Pablo' },
+          { _scope: 'work', text: 'painting' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      planContains: ['Person', 'Group', 'LinguisticObject', 'VisualItem'],
+    },
+  },
+  {
+    name: 'Multi-scope dataType filter is per-branch (work, then agent — reversed order)',
+    input: {
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [
+          { _scope: 'work', text: 'painting' },
+          { _scope: 'agent', name: 'Pablo' },
+        ],
+      },
+    },
+    expected: {
+      error: false,
+      planContains: ['Person', 'Group', 'LinguisticObject', 'VisualItem'],
+    },
+  },
 ];
 
 for (const scenario of scenarios) {

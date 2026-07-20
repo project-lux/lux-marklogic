@@ -469,6 +469,36 @@ function buildAccumulatorFromGroup({
         logicType,
         patternOptions,
       );
+
+      // Multi-scope: each leaf carries its own scope. Wrap its CTS
+      // contributions with the leaf's dataType constraint so the OR
+      // composition filters each branch independently.
+      if (isMultiScope && contributions) {
+        const leafScopeTypes = getSearchScopeTypes(
+          child.searchTerm.getScopeName(),
+          false,
+        );
+        if (leafScopeTypes.length > 0) {
+          if (contributions.ctsConstraints?.length) {
+            const leafDataTypeCts = cts.fieldValueQuery(
+              'anyDataTypeName',
+              leafScopeTypes,
+            );
+            contributions.ctsConstraints = [
+              cts.andQuery([
+                ...contributions.ctsConstraints,
+                leafDataTypeCts,
+              ]),
+            ];
+          }
+          if (contributions.patternJoins?.length) {
+            for (const pj of contributions.patternJoins) {
+              pj.scopeTypes = leafScopeTypes;
+            }
+          }
+        }
+      }
+
       mergeTermPlanContributions(acc, contributions);
     }
   }
@@ -801,18 +831,30 @@ function assemblePlan(
         if (!hasNonJoinConstraints && i === 0) {
           // No other constraints exist: inner join constrains the base plan
           // instead of outer joining to an unconstrained lexicon scan.
+          if (pj.scopeTypes?.length) {
+            plan = plan.where(op.in(op.col(dataTypeCol), pj.scopeTypes));
+          }
           plan = plan.joinInner(pj.right, pj.on);
         } else {
           // Duplicate lexicon → inner join with right → align columns → full outer join.
           // Select uriCol (not fragCol) so the natural join key matches conjunction
           // joins and the final groupBy(['uri']) sees every matched document.
-          const wrapped = op
+          const branchScopeTypes =
+            pj.scopeTypes ?? getSearchScopeTypes(scope, false);
+          let wrapped = op
             .fromLexicons(lexicons, null, op.fragmentIdCol(fragCol))
-            .joinInner(pj.right, pj.on)
-            .where(
-              op.in(op.col(dataTypeCol), getSearchScopeTypes(scope, false)),
-            )
-            .select([uriCol, fragCol, dataTypeCol, ...pj.extraCols]);
+            .joinInner(pj.right, pj.on);
+          if (branchScopeTypes.length > 0) {
+            wrapped = wrapped.where(
+              op.in(op.col(dataTypeCol), branchScopeTypes),
+            );
+          }
+          wrapped = wrapped.select([
+            uriCol,
+            fragCol,
+            dataTypeCol,
+            ...pj.extraCols,
+          ]);
           plan = plan.joinFullOuter(wrapped, null);
         }
       }
@@ -928,6 +970,9 @@ function buildScopedCtsQuery(acc, assemblyContext, scope) {
     acc.ctsConstraints,
   );
   const scopeTypes = getSearchScopeTypes(scope, false);
+  // Multi-scope: per-branch dataType constraints are already embedded in
+  // each leaf's ctsConstraints (injected in buildAccumulatorFromGroup).
+  // Adding a top-level constraint here would filter to only one scope.
   if (scopeTypes.length === 0) return composedCts;
   return cts.andQuery([
     composedCts,

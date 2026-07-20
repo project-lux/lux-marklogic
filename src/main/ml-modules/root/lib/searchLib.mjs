@@ -257,6 +257,7 @@ function calculateEstimate(searchCriteria, scope) {
   scp.prepare({
     searchCriteria,
     scopeName: scope,
+    includeSearchResults: false,
     filterResults: false,
   });
   const searchScope = scp.getSearchScope();

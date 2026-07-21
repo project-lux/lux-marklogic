@@ -13,6 +13,7 @@ import {
   InternalServerError,
   InvalidSearchRequestError,
 } from './errorClasses.mjs';
+import { SearchExecutionResult } from './search/SearchExecutionResult.mjs';
 import * as utils from '../utils/utils.mjs';
 
 import {
@@ -204,10 +205,42 @@ const SearchCriteriaProcessor = class {
   }
 
   getEstimate() {
-    const searchExecutionResult =
-      this.getSearchState() === 'completed'
-        ? this.#searchExecutionResult
-        : this.execute();
+    if (this.getSearchState() === 'completed') {
+      return this.#searchExecutionResult.getTotal();
+    }
+
+    // Estimate-only path: avoid full result materialization when search
+    // results are not requested. Uses cts.estimate (O(1) from indexes)
+    // when the accumulator is join-free, otherwise falls through to plan
+    // execution for the count.
+    if (!this.#includeSearchResults) {
+      this.#prepareForExecution();
+      const { scopedCtsQuery, selectedPlan } = engine.buildPlans({
+        scp: this,
+        planCriteria: this.#resolvedSearchCriteria,
+        planScope: this.#scopeName,
+        allowMultiScope: this.#allowMultiScope,
+        groups: engine.getResultRowGrouping(),
+        sortCriteria: null,
+        patternOptions: this.#patternOptions,
+        includeSearchResults: true,
+        pageWith: null,
+      });
+      const total = scopedCtsQuery
+        ? Number(cts.estimate(scopedCtsQuery))
+        : selectedPlan.groupBy(null, op.count('cnt')).result().toArray()[0].cnt;
+      this.#searchExecutionResult = new SearchExecutionResult({
+        searchResults: [],
+        total,
+        resultPage: -1,
+        facetResponses: null,
+      });
+      this.#searchState = SEARCH_STATE_COMPLETED;
+      return total;
+    }
+
+    // Legacy path: full execution when search results are included.
+    const searchExecutionResult = this.execute();
     return searchExecutionResult.getTotal();
   }
 

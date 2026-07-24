@@ -40,6 +40,7 @@ function mockSearchTerm() {
     getSearchTermConfig: () => ({
       getPredicates: () => MOCK_PREDICATES,
       getTargetScopeName: () => MOCK_TARGET_SCOPE,
+      isTransitive: () => false,
     }),
   };
 }

@@ -15,6 +15,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: false,
@@ -29,6 +30,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: false,
@@ -43,6 +45,37 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
+      isRandomSort: false,
+      areScoresRequired: true,
+      hasNonSemanticSortDescriptors: false,
+      getNonSemanticSortDescriptors: [],
+      hasSemanticSortOption: false,
+      getSemanticSortOption: null,
+    },
+  },
+  {
+    name: 'Relevance with explicit descending order',
+    input: { scopeName: 'agent', sortCriteriaStr: 'relevance:desc' },
+    expected: {
+      error: false,
+      isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
+      isRandomSort: false,
+      areScoresRequired: true,
+      hasNonSemanticSortDescriptors: false,
+      getNonSemanticSortDescriptors: [],
+      hasSemanticSortOption: false,
+      getSemanticSortOption: null,
+    },
+  },
+  {
+    name: 'Relevance with explicit ascending order',
+    input: { scopeName: 'agent', sortCriteriaStr: 'relevance:asc' },
+    expected: {
+      error: false,
+      isRelevanceSort: true,
+      getRelevanceOrder: 'ascending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: false,
@@ -59,6 +92,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: true,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -73,6 +107,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: true,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -87,6 +122,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: true,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -106,6 +142,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: true,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -123,6 +160,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -143,6 +181,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
@@ -159,6 +198,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
@@ -175,6 +215,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
@@ -194,6 +235,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: true,
@@ -216,6 +258,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -237,6 +280,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: false,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: false,
       hasNonSemanticSortDescriptors: false,
@@ -260,6 +304,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: true,
@@ -279,6 +324,27 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
+      isRandomSort: false,
+      areScoresRequired: true,
+      hasNonSemanticSortDescriptors: true,
+      getNonSemanticSortDescriptors: [
+        { indexReference: 'agentActiveStartDateLong', order: 'ascending' },
+      ],
+      hasSemanticSortOption: false,
+      getSemanticSortOption: null,
+    },
+  },
+  {
+    name: 'Non-semantic then relevance:asc — relevance order captured alongside non-semantic descriptors',
+    input: {
+      scopeName: 'agent',
+      sortCriteriaStr: 'agentActiveDate,relevance:asc',
+    },
+    expected: {
+      error: false,
+      isRelevanceSort: true,
+      getRelevanceOrder: 'ascending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: true,
@@ -296,6 +362,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: false,
@@ -310,6 +377,7 @@ const scenarios = [
     expected: {
       error: false,
       isRelevanceSort: true,
+      getRelevanceOrder: 'descending',
       isRandomSort: false,
       areScoresRequired: true,
       hasNonSemanticSortDescriptors: false,
@@ -328,6 +396,7 @@ for (const scenario of scenarios) {
     );
     return JSON.stringify({
       isRelevanceSort: sc.isRelevanceSort(),
+      getRelevanceOrder: sc.getRelevanceOrder(),
       isRandomSort: sc.isRandomSort(),
       areScoresRequired: sc.areScoresRequired(),
       hasNonSemanticSortDescriptors: sc.hasNonSemanticSortDescriptors(),
@@ -349,6 +418,11 @@ for (const scenario of scenarios) {
         e.isRelevanceSort,
         actual.isRelevanceSort,
         `${p}: isRelevanceSort`,
+      ),
+      testHelperProxy.assertEqual(
+        e.getRelevanceOrder,
+        actual.getRelevanceOrder,
+        `${p}: getRelevanceOrder`,
       ),
       testHelperProxy.assertEqual(
         e.isRandomSort,

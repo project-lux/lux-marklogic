@@ -101,7 +101,9 @@ function analyzeCriteria({
   // `scope` is reassigned per-branch below for multi-scope groups (each
   // branch may declare its own concrete _scope) and is used to build that
   // branch's children — it must not overwrite groupScope.
-  const groupScope = isTopLevel ? (planCriteria._scope ?? planScope) : planScope;
+  const groupScope = isTopLevel
+    ? (planCriteria._scope ?? planScope)
+    : planScope;
   let scope = groupScope;
 
   const isMultiScope = scope === 'multi';
@@ -153,12 +155,15 @@ function analyzeCriteria({
     }
 
     // Leaf term.
-    const name = Object.keys(criterion).find(
-      (k) => k[0] !== '_' && searchTermNames.includes(k),
-    );
+    const name = Object.keys(criterion).find((k) => k[0] !== '_');
     if (!name) {
       throw new InvalidSearchRequestError(
-        `search term does not specify a term name in criteria ${JSON.stringify(criterion)}.`,
+        `no search term specified in criteria ${JSON.stringify(criterion)}.`,
+      );
+    }
+    if (!searchTermNames.includes(name)) {
+      throw new InvalidSearchRequestError(
+        `search term '${name}' is not valid for scope '${scope}'.`,
       );
     }
 

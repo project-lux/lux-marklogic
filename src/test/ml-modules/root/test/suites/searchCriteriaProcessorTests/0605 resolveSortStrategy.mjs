@@ -33,7 +33,25 @@ const scenarios = [
       hasScoreContributingCriteria: true,
       hasCtsConstraints: true,
     },
-    expected: { type: 'relevance' },
+    expected: { type: 'relevance', order: 'descending' },
+  },
+  {
+    name: 'explicit relevance:desc sort → relevance, descending',
+    input: {
+      sortCriteria: new SortCriteria('agent', 'relevance:desc'),
+      hasScoreContributingCriteria: true,
+      hasCtsConstraints: true,
+    },
+    expected: { type: 'relevance', order: 'descending' },
+  },
+  {
+    name: 'explicit relevance:asc sort → relevance, ascending',
+    input: {
+      sortCriteria: new SortCriteria('agent', 'relevance:asc'),
+      hasScoreContributingCriteria: true,
+      hasCtsConstraints: true,
+    },
+    expected: { type: 'relevance', order: 'ascending' },
   },
   {
     name: 'relevance without score-contributing criteria → unsorted',
@@ -90,6 +108,22 @@ const scenarios = [
     expected: { type: 'nonSemantic', includeRelevance: false },
   },
   {
+    name: 'non-semantic with explicit relevance:asc → nonSemantic carries ascending relevanceOrder',
+    input: {
+      sortCriteria: new SortCriteria(
+        'item',
+        'itemArchiveSortId,relevance:asc',
+      ),
+      hasScoreContributingCriteria: true,
+      hasCtsConstraints: true,
+    },
+    expected: {
+      type: 'nonSemantic',
+      includeRelevance: true,
+      relevanceOrder: 'ascending',
+    },
+  },
+  {
     name: 'semantic sort → semantic',
     input: {
       sortCriteria: new SortCriteria('agent', 'agentClassificationConceptName'),
@@ -126,6 +160,26 @@ for (const scenario of scenarios) {
         scenario.expected.includeRelevance,
         result.includeRelevance,
         `resolveSortStrategy '${scenario.name}': includeRelevance should be ${scenario.expected.includeRelevance}`,
+      ),
+    );
+  }
+
+  if (scenario.expected.order !== undefined) {
+    assertions.push(
+      testHelperProxy.assertEqual(
+        scenario.expected.order,
+        result.order,
+        `resolveSortStrategy '${scenario.name}': order should be ${scenario.expected.order}`,
+      ),
+    );
+  }
+
+  if (scenario.expected.relevanceOrder !== undefined) {
+    assertions.push(
+      testHelperProxy.assertEqual(
+        scenario.expected.relevanceOrder,
+        result.relevanceOrder,
+        `resolveSortStrategy '${scenario.name}': relevanceOrder should be ${scenario.expected.relevanceOrder}`,
       ),
     );
   }

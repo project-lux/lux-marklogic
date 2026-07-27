@@ -40,6 +40,26 @@ const scenarios = [
     },
   },
   {
+    name: 'relevance descending (explicit) → scoreOrder descending',
+    input: { type: 'relevance', order: 'descending' },
+    expected: {
+      nonNull: true,
+      contains: ['unfiltered', 'descending'],
+      excludes: ['score-zero', 'score-random', 'ascending'],
+      length: 2,
+    },
+  },
+  {
+    name: 'relevance ascending → scoreOrder ascending',
+    input: { type: 'relevance', order: 'ascending' },
+    expected: {
+      nonNull: true,
+      contains: ['unfiltered', 'ascending'],
+      excludes: ['score-zero', 'score-random', 'descending'],
+      length: 2,
+    },
+  },
+  {
     name: 'random → [unfiltered, score-random]',
     input: { type: 'random' },
     expected: {
@@ -77,6 +97,23 @@ const scenarios = [
     expected: {
       nonNull: true,
       contains: ['unfiltered'],
+      excludes: ['score-zero', 'score-random'],
+      length: 3,
+    },
+  },
+  {
+    name: 'nonSemantic with ascending relevanceOrder (descriptor descending) → scoreOrder ascending',
+    input: {
+      type: 'nonSemantic',
+      descriptors: [
+        { indexReference: 'itemArchiveSortId', order: 'descending' },
+      ],
+      includeRelevance: true,
+      relevanceOrder: 'ascending',
+    },
+    expected: {
+      nonNull: true,
+      contains: ['unfiltered', 'ascending', 'descending'],
       excludes: ['score-zero', 'score-random'],
       length: 3,
     },

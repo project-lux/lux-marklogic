@@ -76,6 +76,34 @@ const scenarios = [
     },
   },
   {
+    name: 'Explicit relevance:desc orders descending (matches default)',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: TEXT_CRITERIA,
+      sortDelimitedStr: 'relevance:desc',
+    },
+    expected: {
+      error: false,
+      orderByContains: ['score', 'desc'],
+      sortedPlanContains: ['fromSearch'],
+      sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
+    },
+  },
+  {
+    name: 'Explicit relevance:asc orders ascending instead of descending',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: TEXT_CRITERIA,
+      sortDelimitedStr: 'relevance:asc',
+    },
+    expected: {
+      error: false,
+      orderByContains: ['score', 'asc'],
+      sortedPlanContains: ['fromSearch'],
+      sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
+    },
+  },
+  {
     name: 'Relevance without CTS constraints falls through to unsorted',
     input: {
       scopeName: 'agent',
@@ -191,6 +219,20 @@ const scenarios = [
     expected: {
       error: false,
       orderByContains: ['agentActiveStartDateLong', 'score'],
+      sortedPlanContains: ['joinLeftOuter', 'fromSearch'],
+      sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
+    },
+  },
+  {
+    name: 'Non-semantic desc plus explicit relevance:asc uses ascending score as secondary order',
+    input: {
+      scopeName: 'agent',
+      searchCriteria: TEXT_CRITERIA,
+      sortDelimitedStr: 'agentActiveDate:desc,relevance:asc',
+    },
+    expected: {
+      error: false,
+      orderByContains: ['agentActiveStartDateLong', 'desc', 'score', 'asc'],
       sortedPlanContains: ['joinLeftOuter', 'fromSearch'],
       sortedPlanExcludes: ['randomSortCol', 'fromTriples'],
     },

@@ -1049,6 +1049,7 @@ function resolveSortStrategy({
         sortCriteria.areScoresRequired() &&
         hasScoreContributingCriteria &&
         hasCtsConstraints,
+      relevanceOrder: sortCriteria.getRelevanceOrder(),
     };
   }
   if (sortCriteria?.hasSemanticSortOption()) {
@@ -1059,7 +1060,7 @@ function resolveSortStrategy({
     hasScoreContributingCriteria &&
     hasCtsConstraints
   ) {
-    return { type: 'relevance' };
+    return { type: 'relevance', order: sortCriteria.getRelevanceOrder() };
   }
   return { type: 'unsorted' };
 }
@@ -1082,12 +1083,22 @@ function buildCtsSearchOptions(sortStrategy) {
       );
     }
     if (sortStrategy.includeRelevance) {
-      options.push(cts.scoreOrder('descending'));
+      options.push(
+        cts.scoreOrder(
+          sortStrategy.relevanceOrder === 'ascending'
+            ? 'ascending'
+            : 'descending',
+        ),
+      );
     } else {
       options.push('score-zero');
     }
   } else if (sortStrategy.type === 'relevance') {
-    options.push(cts.scoreOrder('descending'));
+    options.push(
+      cts.scoreOrder(
+        sortStrategy.order === 'ascending' ? 'ascending' : 'descending',
+      ),
+    );
   } else {
     options.push('score-zero');
   }
@@ -1116,6 +1127,7 @@ function buildSortedResultsPlan({
       const { sortAggregates, sortOrderBy, sortSelectCols } =
         buildNonSemanticSortSpec(sortStrategy.descriptors, {
           includeScoreAsSecondarySort: sortStrategy.includeRelevance,
+          relevanceOrder: sortStrategy.relevanceOrder,
         });
       return collapseToResultRows(
         applyNonSemanticSort(
@@ -1158,7 +1170,11 @@ function buildSortedResultsPlan({
         assemblePlan(scp, { ...acc, ...assemblyContext }),
         groups,
         [scoreAgg],
-        [op.desc(op.col(scoreColName))],
+        [
+          sortStrategy.order === 'ascending'
+            ? op.asc(op.col(scoreColName))
+            : op.desc(op.col(scoreColName)),
+        ],
         [scoreColName],
       );
     }
@@ -1256,7 +1272,7 @@ function applyNonSemanticSort(plan, sortDescriptors, fragCol) {
 // groupBy preceding the orderBy would have to allow the fragment ID through.
 function buildNonSemanticSortSpec(
   sortDescriptors,
-  { includeScoreAsSecondarySort = false } = {},
+  { includeScoreAsSecondarySort = false, relevanceOrder = 'descending' } = {},
 ) {
   const sortAggregates = [];
   const sortOrderBy = [];
@@ -1279,8 +1295,16 @@ function buildNonSemanticSortSpec(
   // When relevance is explicitly requested alongside non-semantic sorts,
   // apply score as a secondary order key so logtfidf work is used.
   if (includeScoreAsSecondarySort) {
-    sortAggregates.push(op.max('score', op.col('score')));
-    sortOrderBy.push(op.desc(op.col('score')));
+    sortAggregates.push(
+      relevanceOrder === 'ascending'
+        ? op.min('score', op.col('score'))
+        : op.max('score', op.col('score')),
+    );
+    sortOrderBy.push(
+      relevanceOrder === 'ascending'
+        ? op.asc(op.col('score'))
+        : op.desc(op.col('score')),
+    );
     sortSelectCols.push('score');
   }
 

@@ -9,13 +9,6 @@ import {
 } from './SearchPatternBase.mjs';
 import { HopBase } from './HopBase.mjs';
 
-// When processNestedCriteriaAsCts resolves to more IRIs than this threshold,
-// the Optic join fallback is used instead of materializing IRIs into the plan
-// AST. Benchmarked with encounteredBy.startDate (122K agents): CTS path cold
-// avg 3,745ms vs join fallback cold avg 2,984ms (20% faster, 4× less variance).
-// Low-cardinality hops (e.g., { id: IRI } → 1 match) remain on the CTS path.
-const CTS_PATH_IRI_THRESHOLD = 50000;
-
 class HopWithField extends HopBase {
   //#region Pattern implementation methods.
   apply(scp, searchTerm, logicType, patternOptions) {
@@ -85,31 +78,27 @@ class HopWithField extends HopBase {
         parentId: searchTerm.getId(),
       });
       if (innerCts) {
-        const innerEstimate = Number(cts.estimate(innerCts));
-        if (innerEstimate <= CTS_PATH_IRI_THRESHOLD) {
-          return {
-            ctsConstraints: [
-              cts.tripleRangeQuery(
-                [],
-                expandPredicates(termConfig.getPredicates()),
-                fn.insertBefore(
-                  cts.values(
-                    cts.iriReference(),
-                    '',
-                    ['eager', 'concurrent'],
-                    innerCts,
-                  ),
-                  0,
-                  sem.iri('/does/not/exist'),
+        return {
+          ctsConstraints: [
+            cts.tripleRangeQuery(
+              [],
+              expandPredicates(termConfig.getPredicates()),
+              fn.insertBefore(
+                cts.values(
+                  cts.iriReference(),
+                  '',
+                  ['eager', 'concurrent'],
+                  innerCts,
                 ),
-                '=',
-                termSearchOptions,
-                termWeight,
+                0,
+                sem.iri('/does/not/exist'),
               ),
-            ],
-          };
-        }
-        // High cardinality: fall through to Optic join path.
+              '=',
+              termSearchOptions,
+              termWeight,
+            ),
+          ],
+        };
       }
     }
 

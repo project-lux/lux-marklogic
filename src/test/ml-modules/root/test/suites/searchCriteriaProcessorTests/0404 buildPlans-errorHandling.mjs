@@ -48,7 +48,19 @@ const scenarios = [
     },
     expected: {
       error: true,
-      stackToInclude: 'search term does not specify a term name in criteria',
+      stackToInclude: 'no search term specified in criteria',
+    },
+  },
+  {
+    name: 'Invalid search term',
+    input: {
+      searchCriteria: { _scope: 'agent', invalidTerm: 'value' },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        "search term 'invalidTerm' is not valid for scope 'agent'",
     },
   },
   {

@@ -10,6 +10,7 @@ const SortCriteria = class {
   #semanticSortOption = null;
   #nonSemanticSortDescriptors = [];
   #relevanceSort = false;
+  #relevanceOrder = 'descending';
   #randomSort = false;
   #warnings = [];
 
@@ -28,6 +29,10 @@ const SortCriteria = class {
 
   isRelevanceSort() {
     return this.#relevanceSort;
+  }
+
+  getRelevanceOrder() {
+    return this.#relevanceOrder;
   }
 
   isRandomSort() {
@@ -86,6 +91,7 @@ const SortCriteria = class {
         else if (sortByName?.toLowerCase() == 'relevance') {
           this.#relevanceSort = true;
           hasExplicitRelevance = true;
+          this.#relevanceOrder = this.#getOrder(specifiedOrder, 'desc');
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
           // Protect from sorting by a different scope's binding.

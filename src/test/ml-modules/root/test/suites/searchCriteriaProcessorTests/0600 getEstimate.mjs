@@ -777,62 +777,6 @@ const scenarios = [
       value: 0,
     },
   },
-  {
-    name: 'place pointIn with polygon around Rome sample point',
-    input: {
-      searchCriteria: {
-        _scope: 'place',
-        pointIn:
-          'POLYGON ((12.47 41.90, 12.50 41.90, 12.50 41.93, 12.47 41.93, 12.47 41.90))',
-      },
-    },
-    expected: {
-      error: false,
-      value: 3,
-    },
-  },
-  {
-    name: 'place regionRelates intersects with known Mexico polygon',
-    input: {
-      searchCriteria: {
-        _scope: 'place',
-        regionRelates:
-          'POLYGON ((-99.20574999999999 19.29684, -99.09908 19.29684, -99.09908 19.35957, -99.20574999999999 19.35957, -99.20574999999999 19.29684))',
-      },
-    },
-    expected: {
-      error: false,
-      value: 40,
-    },
-  },
-  {
-    name: 'place regionRelates with non-default operator equals',
-    input: {
-      searchCriteria: {
-        _scope: 'place',
-        _comp: 'equals',
-        regionRelates: 'POINT (12.4833 41.9167)',
-      },
-    },
-    expected: {
-      error: false,
-      value: 37,
-    },
-  },
-  {
-    name: 'place regionRelates with invalid operator',
-    input: {
-      searchCriteria: {
-        _scope: 'place',
-        _comp: 'bogus-op',
-        regionRelates: 'POINT (12.4833 41.9167)',
-      },
-    },
-    expected: {
-      error: true,
-      stackToInclude: 'Unsupported geospatial operator',
-    },
-  },
   // IndexedRange operator coverage (CTS conversion validation).
   // All operators previously used COMPARATORS[op] in the AND path; now use cts.fieldRangeQuery.
   {

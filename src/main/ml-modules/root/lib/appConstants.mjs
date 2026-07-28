@@ -98,11 +98,11 @@ const ALLOWED_SEARCH_OPTIONS_EXACT = ['exact'];
 // Text search options align with word and value queries, but not range queries.
 // we do not allow keyword searches to be whitespace-sensitive or exact, as this creates incorrect estimates
 const ALLOWED_SEARCH_OPTIONS_KEYWORD = [
-  'case-sensitive',
+  //'case-sensitive', // not allowed while Optic filtering is not implemented
   'case-insensitive',
-  'diacritic-sensitive',
+  //'diacritic-sensitive', // not allowed while Optic filtering is not implemented
   'diacritic-insensitive',
-  'punctuation-sensitive',
+  //'punctuation-sensitive', // not allowed while Optic filtering is not implemented
   'punctuation-insensitive',
   'whitespace-insensitive',
   'stemmed',

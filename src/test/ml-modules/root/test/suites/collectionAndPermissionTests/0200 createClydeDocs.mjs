@@ -6,7 +6,7 @@ declareUpdate();
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { USERNAME_FOR_CLYDE } from '/test/unitTestConstants.mjs';
 import { createDocument } from '/lib/crudLib.mjs';
-import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
+import { handleRequestForUnitTesting } from '/lib/securityLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { getNodeFromObject } from '/utils/utils.mjs';
 
@@ -20,6 +20,7 @@ let assertions = [];
 // result in the documents being created, which subsequent tests can verify the collections
 // and permissions of.
 const endpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
@@ -30,10 +31,12 @@ const zeroArityFun = () => {
     return createDocument(getNodeFromObject({ foo: 'bar' }), newUserMode);
   };
   const unitName = null;
-  return handleRequestV2ForUnitTesting(
+  const featureMyCollectionsEnabled = true;
+  return handleRequestForUnitTesting(
     innerZeroArityFun,
     unitName,
-    endpointConfig
+    endpointConfig,
+    featureMyCollectionsEnabled,
   );
 };
 try {
@@ -43,15 +46,16 @@ try {
   assertions.push(
     testHelperProxy.assertTrue(
       false,
-      "Expected the ServerConfigurationChangedError to be thrown, but it wasn't"
-    )
+      "Expected the ServerConfigurationChangedError to be thrown, but it wasn't",
+    ),
   );
 } catch (e) {
+  console.dir(e);
   assertions.push(
     testHelperProxy.assertTrue(
       e.stack.includes('security profile changed'),
-      'Expected ServerConfigurationChangedError error'
-    )
+      `Expected ServerConfigurationChangedError error, but got: ${e}`,
+    ),
   );
 
   // Try again, this time expecting a different error (as we're giving a bogus doc).
@@ -62,15 +66,15 @@ try {
     assertions.push(
       testHelperProxy.assertTrue(
         false,
-        "Expected the BadRequestError to be thrown, but it wasn't"
-      )
+        "Expected the BadRequestError to be thrown, but it wasn't",
+      ),
     );
   } catch (e) {
     assertions.push(
       testHelperProxy.assertTrue(
         e.stack.includes('The document type is not supported'),
-        'Expected BadRequestError error'
-      )
+        'Expected BadRequestError error',
+      ),
     );
   }
 }

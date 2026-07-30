@@ -5,7 +5,7 @@ import {
 import { getDefaultCollection } from '/lib/model.mjs';
 import { deleteDocument } from '/lib/crudLib.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
-import { handleRequestV2ForUnitTesting } from '/lib/securityLib.mjs';
+import { handleRequestForUnitTesting } from '/lib/securityLib.mjs';
 import { testHelperProxy } from '/test/test-helper.mjs';
 import {
   HMO_URI,
@@ -31,7 +31,7 @@ xdmp.invokeFunction(
     const sec = require('/MarkLogic/security.xqy');
     sec.userAddRoles(USERNAME_FOR_BONNIE, ROLE_NAME_TENANT_ENDPOINT_CONSUMER);
   },
-  { database: xdmp.securityDatabase() }
+  { database: xdmp.securityDatabase() },
 );
 
 // Get the URIs of documents required by these tests.
@@ -45,14 +45,14 @@ const {
     () => {
       const hmoDoc = cts.doc(HMO_URI);
       const userProfileDoc = fn.head(
-        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE))
+        cts.search(cts.collectionQuery(COLLECTION_NAME_USER_PROFILE)),
       );
       const defaultMyCollectionUri = getDefaultCollection(userProfileDoc);
       const nonDefaultMyCollection = fn
         .subsequence(
           cts.search(cts.collectionQuery(COLLECTION_NAME_MY_COLLECTION)),
           1,
-          2
+          2,
         )
         .toArray()
         .filter((doc) => {
@@ -72,32 +72,32 @@ const {
     },
     {
       userId: xdmp.user(USERNAME_FOR_BONNIE),
-    }
-  )
+    },
+  ),
 );
 assertions.push(
   testHelperProxy.assertExists(
     hmoUri,
-    `The deleteDocument tests are dependent on finding a document with a type that the function should not accept.`
-  )
+    `The deleteDocument tests are dependent on finding a document with a type that the function should not accept.`,
+  ),
 );
 assertions.push(
   testHelperProxy.assertExists(
     userProfileUri,
-    `The deleteDocument tests are dependent on the create/updateDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`
-  )
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a user profile for '${USERNAME_FOR_BONNIE}'`,
+  ),
 );
 assertions.push(
   testHelperProxy.assertExists(
     defaultMyCollectionUri,
-    `The deleteDocument tests are dependent on the create/updateDocument tests creating a default My Collection document '${USERNAME_FOR_BONNIE}' can access`
-  )
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a default My Collection document '${USERNAME_FOR_BONNIE}' can access`,
+  ),
 );
 assertions.push(
   testHelperProxy.assertExists(
     nonDefaultMyCollectionUri,
-    `The deleteDocument tests are dependent on the create/updateDocument tests creating a non-default My Collection document '${USERNAME_FOR_BONNIE}' can access`
-  )
+    `The deleteDocument tests are dependent on the create/updateDocument tests creating a non-default My Collection document '${USERNAME_FOR_BONNIE}' can access`,
+  ),
 );
 
 xdmp.invokeFunction(
@@ -106,16 +106,17 @@ xdmp.invokeFunction(
     const sec = require('/MarkLogic/security.xqy');
     sec.userRemoveRoles(
       USERNAME_FOR_BONNIE,
-      ROLE_NAME_TENANT_ENDPOINT_CONSUMER
+      ROLE_NAME_TENANT_ENDPOINT_CONSUMER,
     );
   },
-  { database: xdmp.securityDatabase() }
+  { database: xdmp.securityDatabase() },
 );
 //
 // END: OK, let's get on with the tests.
 //
 
 const endpointConfig = new EndpointConfig({
+  ampAsAdmin: false,
   allowInReadOnlyMode: false,
   features: { myCollections: true },
 });
@@ -221,11 +222,13 @@ for (const scenario of scenarios) {
       return deleteDocument(scenario.input.uri);
     };
     const unitName = null;
+    const featureMyCollectionsEnabled = true;
     // These tests are dependent on handleRequest creating the user's exclusive roles.
-    return handleRequestV2ForUnitTesting(
+    return handleRequestForUnitTesting(
       innerZeroArityFun,
       unitName,
-      endpointConfig
+      endpointConfig,
+      featureMyCollectionsEnabled,
     );
   };
   const scenarioResults = executeScenario(scenario, zeroArityFun, {
@@ -245,13 +248,13 @@ for (const scenario of scenarios) {
         xdmp.invokeFunction(docAvailable, {
           userId: xdmp.user(scenario.input.username),
         }),
-        `Scenario '${scenario.name}' did not delete ${scenario.input.uri}.`
-      )
+        `Scenario '${scenario.name}' did not delete ${scenario.input.uri}.`,
+      ),
     );
   }
 }
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
 );
 
 assertions;

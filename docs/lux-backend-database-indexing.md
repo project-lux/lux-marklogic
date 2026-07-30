@@ -115,7 +115,7 @@ The keyword index pattern is used by semantic search tags, non-semantic search t
 
 This index pattern's settings are nearly opposite of the database defaults.
 
-These search tags should set their `optionsReference` to `keyword`.  The associated search options are served up by the [search library's](/src/main/ml-modules/root/lib/searchLib.mjs) `getSearchOptions` via `getSearchOptionsByReference`.  The options include basic stemming and --conditionally-- synonyms.
+These search tags should set their `optionsReference` to `keyword`.  The associated search options are served up by the [search library's](/src/main/ml-modules/root/lib/searchLib.mjs) `getSearchOptions` via `getSearchOptionsByReference`.  The options include basic stemming.
 
 ```
   "stemmed-searches": "basic",

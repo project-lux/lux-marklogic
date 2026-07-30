@@ -3,7 +3,7 @@ import {
   getConfigurationByContext,
   getContextParameterValues,
 } from '../config/autoCompleteConfig.mjs';
-import { sanitizeAndValidateWildcardedStrings } from './searchLib.mjs';
+import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
 import { BadRequestError } from './errorClasses.mjs';
 
 const MAXIMUM_RESULT_COUNT = 10;
@@ -50,7 +50,7 @@ function getMatches(
   // auto complete's configuration therein?
   const fieldForId = autoCompleteConfig.idsIndexReferences;
 
-  const matchOn = sanitizeAndValidateWildcardedStrings(text + '*');
+  const matchOn = SCP.sanitizeAndValidateWildcardedStrings(text + '*');
   const params = {
     matchOn,
     onlyMatchOnPrimaryNames,

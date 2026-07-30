@@ -1,0 +1,254 @@
+/**
+ * Test suite for SCP.prepare() - Parameter Handling
+ * Tests pagination, options, and parameter propagation
+ */
+
+import { testHelperProxy } from '/test/test-helper.mjs';
+import { executeScenario } from '/test/unitTestUtils.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+
+const LIB = '0304-process-parameterHandling.mjs';
+console.log(`${LIB}: starting.`);
+
+let assertions = [];
+
+// Helper function to create default process parameters
+function createProcessInput(overrides = {}) {
+  return {
+    scopeName: 'agent',
+    allowMultiScope: false,
+    patternOptions: new PatternOptions(),
+    includeTypeConstraint: true,
+    page: 1,
+    pageLength: 20,
+    pageWith: null,
+    sortCriteria: null,
+    ...overrides,
+  };
+}
+
+const scenarios = [
+  {
+    name: 'Default pagination parameters are set correctly',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'Pablo' },
+      ...createProcessInput(),
+    },
+    expected: {
+      error: false,
+      page: 1,
+      pageLength: 20,
+      pageWith: null,
+    },
+  },
+  {
+    name: 'Custom page and pageLength are preserved',
+    input: {
+      searchCriteria: { _scope: 'work', text: 'painting' },
+      ...createProcessInput({ page: 3, pageLength: 50 }),
+    },
+    expected: {
+      error: false,
+      page: 3,
+      pageLength: 50,
+    },
+  },
+  {
+    name: 'pageWith parameter is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', name: 'Pablo' },
+      ...createProcessInput({ pageWith: '/documents/agent/123.json' }),
+    },
+    expected: {
+      error: false,
+      pageWith: '/documents/agent/123.json',
+    },
+  },
+  {
+    name: 'includeTypeConstraint false excludes type queries',
+    input: {
+      searchCriteria: { _scope: 'agent', name: 'Pablo Picasso' },
+      ...createProcessInput({ includeTypeConstraint: false }),
+    },
+    expected: {
+      error: false,
+      includeTypeConstraint: false,
+    },
+  },
+  {
+    name: 'Multi-scope allowed param enables multi-scope searches',
+    input: {
+      searchCriteria: {
+        _scope: 'multi',
+        OR: [
+          { _scope: 'agent', name: 'Pablo' },
+          { _scope: 'work', text: 'painting' },
+        ],
+      },
+      ...createProcessInput({ scopeName: 'multi', allowMultiScope: true }),
+    },
+    expected: {
+      error: false,
+      scopeName: 'multi',
+    },
+  },
+  {
+    name: 'PatternOptions are used for processing',
+    input: {
+      searchCriteria: { _scope: 'work', text: 'painting' },
+      ...createProcessInput({
+        scopeName: 'work',
+        patternOptions: new PatternOptions({
+          stemming: false,
+        }),
+      }),
+    },
+    expected: {
+      error: false,
+      scopeName: 'work',
+    },
+  },
+  {
+    name: 'Page=0 should be rejected',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ page: 0 }),
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'Invalid pagination parameter values. Both must be greater than zero.',
+    },
+  },
+  {
+    name: 'Large page numbers are preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ page: 999, pageLength: 100 }),
+    },
+    expected: {
+      error: false,
+      page: 999,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength exceeding maximum is capped to 100',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 500 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength at maximum is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 100 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 100,
+    },
+  },
+  {
+    name: 'pageLength below maximum is preserved',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: 50 }),
+    },
+    expected: {
+      error: false,
+      pageLength: 50,
+    },
+  },
+  {
+    name: 'Negative pageLength is rejected',
+    input: {
+      searchCriteria: { _scope: 'agent', text: 'test' },
+      ...createProcessInput({ pageLength: -1 }),
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        'Invalid pagination parameter values. Both must be greater than zero.',
+    },
+  },
+];
+
+for (const scenario of scenarios) {
+  const zeroArityFun = () => {
+    const scp = new SCP();
+    const input = scenario.input;
+
+    scp.prepare({ ...input });
+
+    return {
+      scopeName: scp.getSearchScope(),
+      page: scp.getPage(),
+      pageLength: scp.getPageLength(),
+      pageWith: scp.getPageWith(),
+    };
+  };
+
+  const scenarioResults = executeScenario(scenario, zeroArityFun);
+
+  if (scenarioResults.applyErrorNotExpectedAssertions) {
+    const actual = scenarioResults.actualValue;
+
+    if (scenario.expected.page !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.page,
+          actual.page,
+          `Scenario '${scenario.name}' - page should be ${scenario.expected.page}`,
+        ),
+      );
+    }
+
+    if (scenario.expected.pageLength !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.pageLength,
+          actual.pageLength,
+          `Scenario '${scenario.name}' - pageLength should be ${scenario.expected.pageLength}`,
+        ),
+      );
+    }
+
+    if (scenario.expected.pageWith !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.pageWith,
+          actual.pageWith,
+          `Scenario '${scenario.name}' - pageWith should be ${scenario.expected.pageWith}`,
+        ),
+      );
+    }
+
+    if (scenario.expected.scopeName !== undefined) {
+      assertions.push(
+        testHelperProxy.assertEqual(
+          scenario.expected.scopeName,
+          actual.scopeName,
+          `Scenario '${scenario.name}' - scopeName should be ${scenario.expected.scopeName}`,
+        ),
+      );
+    }
+  }
+
+  if (scenarioResults.assertions.length > 0) {
+    assertions = assertions.concat(scenarioResults.assertions);
+  }
+}
+
+console.log(
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
+);
+
+assertions;
+export default assertions;

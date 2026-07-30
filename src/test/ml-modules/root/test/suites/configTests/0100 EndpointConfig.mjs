@@ -11,22 +11,49 @@ const scenarios = [
   {
     name: 'Allowed in read only mode; not part of My Collections',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: true,
       features: { myCollections: false },
     },
-    expected: { error: false, readOnly: true, myCollections: false },
+    expected: {
+      error: false,
+      readOnly: true,
+      myCollections: false,
+      ampAsAdmin: false,
+    },
   },
   {
     name: 'Not allowed in read only mode; part of My Collections',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: false,
       features: { myCollections: true },
     },
-    expected: { error: false, readOnly: false, myCollections: true },
+    expected: {
+      error: false,
+      readOnly: false,
+      myCollections: true,
+      ampAsAdmin: false,
+    },
+  },
+  {
+    name: 'Allowed in read only mode; part of My Collections; amp as admin',
+    input: {
+      ampAsAdmin: true,
+      allowInReadOnlyMode: true,
+      features: { myCollections: true },
+    },
+    expected: {
+      error: false,
+      readOnly: true,
+      myCollections: true,
+      ampAsAdmin: true,
+    },
   },
   {
     name: 'Missing the allowInReadOnlyMode property',
     input: {
+      ampAsAdmin: false,
       features: { myCollections: true },
     },
     expected: {
@@ -38,6 +65,7 @@ const scenarios = [
   {
     name: 'Invalid allowInReadOnlyMode property value',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: 'I should be a boolean',
       features: { myCollections: true },
     },
@@ -50,6 +78,7 @@ const scenarios = [
   {
     name: 'Missing the features property',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: false,
     },
     expected: {
@@ -60,6 +89,7 @@ const scenarios = [
   {
     name: 'Invalid features property value',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: false,
       features: 'I should be an object',
     },
@@ -71,6 +101,7 @@ const scenarios = [
   {
     name: 'Missing the myCollections property',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: false,
       features: {},
     },
@@ -82,6 +113,7 @@ const scenarios = [
   {
     name: 'Invalid myCollections property value',
     input: {
+      ampAsAdmin: false,
       allowInReadOnlyMode: false,
       features: { myCollections: 'I should be a boolean' },
     },
@@ -89,6 +121,30 @@ const scenarios = [
       error: true,
       stackToInclude:
         "the 'myCollections' property value is not one of the allowed values",
+    },
+  },
+  {
+    name: 'Missing the ampAsAdmin property',
+    input: {
+      allowInReadOnlyMode: false,
+      features: { myCollections: false },
+    },
+    expected: {
+      error: true,
+      stackToInclude: "is missing the 'ampAsAdmin' configuration property",
+    },
+  },
+  {
+    name: 'Invalid ampAsAdmin property value',
+    input: {
+      ampAsAdmin: 'I should be a boolean',
+      allowInReadOnlyMode: false,
+      features: { myCollections: false },
+    },
+    expected: {
+      error: true,
+      stackToInclude:
+        "the 'ampAsAdmin' property value is not one of the allowed values",
     },
   },
 ];
@@ -110,28 +166,35 @@ for (const scenario of scenarios) {
       testHelperProxy.assertEqual(
         scenario.expected.readOnly,
         endpointConfig.mayExecuteInReadOnlyMode(),
-        `Scenario '${scenario.name}' expected ${scenario.expected.readOnly} from mayExecuteInReadOnlyMode but didn't get it.`
-      )
+        `Scenario '${scenario.name}' expected ${scenario.expected.readOnly} from mayExecuteInReadOnlyMode but didn't get it.`,
+      ),
     );
     assertions.push(
       testHelperProxy.assertEqual(
         !scenario.expected.readOnly,
         endpointConfig.mayNotExecuteInReadOnlyMode(),
         `Scenario '${scenario.name}' expected ${!scenario.expected
-          .readOnly} from mayNotExecuteInReadOnlyMode but didn't get it.`
-      )
+          .readOnly} from mayNotExecuteInReadOnlyMode but didn't get it.`,
+      ),
     );
     assertions.push(
       testHelperProxy.assertEqual(
         scenario.expected.myCollections,
         endpointConfig.isPartOfMyCollectionsFeature(),
-        `Scenario '${scenario.name}' expected ${scenario.expected.isPartOfMyCollectionsFeature} from isPartOfMyCollectionsFeature but didn't get it.`
-      )
+        `Scenario '${scenario.name}' expected ${scenario.expected.isPartOfMyCollectionsFeature} from isPartOfMyCollectionsFeature but didn't get it.`,
+      ),
+    );
+    assertions.push(
+      testHelperProxy.assertEqual(
+        scenario.expected.ampAsAdmin,
+        endpointConfig.mayAmpAsAdmin(),
+        `Scenario '${scenario.name}' expected ${scenario.expected.ampAsAdmin} from mayAmpAsAdmin but didn't get it.`,
+      ),
     );
   }
 }
 console.log(
-  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`
+  `${LIB}: completed ${assertions.length} assertions from ${scenarios.length} scenarios.`,
 );
 
 assertions;

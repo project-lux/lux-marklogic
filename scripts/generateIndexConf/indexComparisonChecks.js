@@ -7,9 +7,6 @@
  * Known limitations:
  *
  *   1. Excludes value of the fullTextSearchRelatedFieldName property (for keyword search).
- *   2. Excludes references in the configuration of Similar search terms.  Technically, Similar does
- *      not use the indexes but instead snags XPath expressions from the index configuration; thus,
- *      unless/until Similar can get the XPaths elsewhere, the associated indexes are required.
  *
  * Individual field and field range index settings are not checked.
  *
@@ -99,12 +96,6 @@ if (includeAutoComplete) {
     }
   });
 }
-
-Object.keys(FACETS_CONFIG).forEach((key) => {
-  if (isUndefined(FACETS_CONFIG[key].subFacets)) {
-    recordReference(FACETS_CONFIG[key].indexReference, true, 'facet');
-  }
-});
 
 Object.keys(SORT_BINDINGS).forEach((key) => {
   if (SORT_BINDINGS[key].indexReference) {

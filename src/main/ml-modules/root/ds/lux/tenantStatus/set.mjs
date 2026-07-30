@@ -16,7 +16,7 @@ const response = handleRequest(
     return setTenantStatus(prod, readOnly);
   },
   unitName,
-  forceInvoke
+  forceInvoke,
 );
 
 response;

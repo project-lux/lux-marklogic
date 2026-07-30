@@ -2,8 +2,8 @@ import { handleRequest } from '../../lib/securityLib.mjs';
 import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
 import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
 import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
-import { SearchCriteriaProcessor } from '../../lib/SearchCriteriaProcessor.mjs';
-import { SearchTermConfig } from '../../lib/SearchTermConfig.mjs';
+import { SearchCriteriaProcessor as SCP } from '../../lib/SearchCriteriaProcessor.mjs';
+import { SearchTermConfig } from '../../lib/search/SearchTermConfig.mjs';
 
 const unitName = external.unitName;
 const response = handleRequest(function () {
@@ -13,9 +13,18 @@ const response = handleRequest(function () {
     searchBy[searchScope] = Object.keys(searchTermsConfig[searchScope])
       .sort()
       .map((termName) => {
-        const termConfig = new SearchTermConfig(
-          searchTermsConfig[searchScope][termName]
+        console.log(
+          `Processing search term ${termName} in scope ${searchScope}`,
         );
+        return {
+          termName,
+          termConfig: new SearchTermConfig(
+            searchTermsConfig[searchScope][termName],
+          ),
+        };
+      })
+      .filter(({ termConfig }) => termConfig.exposedViaSearch())
+      .map(({ termName, termConfig }) => {
         return {
           name: termName,
           targetScope: termConfig.getTargetScopeName() || searchScope,
@@ -49,9 +58,7 @@ const response = handleRequest(function () {
     .map((name) => {
       return {
         name,
-        type: SearchCriteriaProcessor.getSortTypeFromSortBinding(
-          SORT_BINDINGS[name]
-        ),
+        type: SCP.getSortTypeFromSortBinding(SORT_BINDINGS[name]),
       };
     });
 

@@ -16,11 +16,6 @@
       "nullable": true
     },
     {
-      "name": "mayChangeScope",
-      "datatype": "boolean",
-      "nullable": true
-    },
-    {
       "name": "page",
       "datatype": "int",
       "nullable": true
@@ -42,16 +37,6 @@
     },
     {
       "name": "filterResults",
-      "datatype": "boolean",
-      "nullable": true
-    },
-    {
-      "name": "facetsSoon",
-      "datatype": "boolean",
-      "nullable": true
-    },
-    {
-      "name": "synonymsEnabled",
       "datatype": "boolean",
       "nullable": true
     }

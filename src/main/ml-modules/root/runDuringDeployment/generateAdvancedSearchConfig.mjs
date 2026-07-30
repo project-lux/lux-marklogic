@@ -1,23 +1,22 @@
 import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
 import {
-  PATTERN_NAME_RELATED_LIST,
-  PATTERN_NAME_SIMILAR,
-  PATTERN_NAME_TEXT,
+  PATTERN_NAME_KEYWORD,
+  SearchPatternBase,
+} from '../lib/search/patterns/loadPatterns.mjs';
+import {
+  FEATURE_MY_COLLECTIONS_ENABLED,
   getAllowedSearchOptionsByOptionsName,
-  getAllowedSearchOptionsNameByPatternName,
   getDefaultSearchOptionsByOptionsName,
-  getDefaultSearchOptionsNameByPatternName,
-} from '../lib/searchPatternsLib.mjs';
+} from '../lib/appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
-import { SearchTermConfig } from '../lib/SearchTermConfig.mjs';
+import { SearchTermConfig } from '../lib/search/SearchTermConfig.mjs';
 import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
 import {
   TENANT_OWNER,
   getEndpointAccessUnitNames,
 } from '../lib/securityLib.mjs';
 import { STOP_WORDS } from '../data/stopWords.mjs';
-import { FEATURE_MY_COLLECTIONS_ENABLED } from '../lib/appConstants.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -67,10 +66,8 @@ function createEntry(scopeName, termName, termConfig, report) {
     entry.relation = 'text';
   } else if (termName == 'id') {
     entry.relation = 'text';
-  } else if (PATTERN_NAME_TEXT == patternName) {
+  } else if (PATTERN_NAME_KEYWORD == patternName) {
     entry.relation = 'text';
-  } else if (PATTERN_NAME_SIMILAR == patternName) {
-    entry.relation = 'id';
   } else if (scalarTypeIsBoolean) {
     entry.relation = 'boolean';
   } else {
@@ -85,11 +82,16 @@ function createEntry(scopeName, termName, termConfig, report) {
   let allowedOptionsName = null;
   let defaultOptionsName = null;
   if (patternName) {
-    allowedOptionsName = getAllowedSearchOptionsNameByPatternName(patternName);
+    const pattern = SearchPatternBase.get(patternName);
+    if (!pattern) {
+      throw new Error(
+        `The '${patternName}' search pattern for ${scopeName}.${termName} is not registered. Ensure the pattern file is imported.`,
+      );
+    }
+    allowedOptionsName = pattern.getAllowedSearchOptionsName();
     if (allowedOptionsName) {
       entry.allowedOptionsName = allowedOptionsName;
-      defaultOptionsName =
-        getDefaultSearchOptionsNameByPatternName(patternName);
+      defaultOptionsName = pattern.getDefaultSearchOptionsName();
       if (defaultOptionsName) {
         entry.defaultOptionsName = defaultOptionsName;
       } else if (report) {
@@ -135,7 +137,6 @@ const advancedSearchConfigs = {};
           const hasHelpText = termConfig.hasHelpText();
           if (
             [
-              'any', // Term may no longer exist.
               'classificationOfReference',
               'iri',
               'recordType',
@@ -156,13 +157,7 @@ const advancedSearchConfigs = {};
             }
           } else if (termName.endsWith('Id')) {
             add = false;
-          }
-          // 20230420, bhartwig: asked to suppress Similar terms.
-          else if (
-            [PATTERN_NAME_RELATED_LIST, PATTERN_NAME_SIMILAR].includes(
-              patternName,
-            )
-          ) {
+          } else if (patternName === 'relatedList') {
             add = false;
           } else if (
             termConfig.isMyCollectionTerm() &&

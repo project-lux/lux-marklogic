@@ -702,19 +702,6 @@
 									"type": "text"
 								},
 								{
-									"key": "mayChangeScope",
-									"value": "true",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "facetsSoon",
-									"value": "true",
-									"description": "Set to true if a seperate call for facets using same criteria will be made soon.",
-									"type": "text",
-									"disabled": true
-								},
-								{
 									"key": "page",
 									"value": "1",
 									"type": "text"
@@ -740,12 +727,6 @@
 									"key": "filterResults",
 									"value": "false",
 									"type": "text"
-								},
-								{
-									"key": "synonymsEnabled",
-									"value": "true",
-									"type": "text",
-									"disabled": true
 								}
 							]
 						},
@@ -949,6 +930,88 @@
 					},
 					"response": []
 				},
+        {
+          "name": "Validate Dataset",
+          "request": {
+            "auth": {
+              "type": "digest",
+              "digest": [
+                {
+                  "key": "password",
+                  "value": "{{mlDeployerPassword}}",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "{{mlDeployerUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "algorithm",
+                  "value": "MD5",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "unitNames",
+                  "value": "ypm2",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "categories",
+                  "value": "relational",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "format",
+                  "value": "json",
+                  "type": "text",
+                  "uuid": "4a1aa564-6e2c-48e8-9cf9-92a31b05869e"
+                },
+                {
+                  "key": "testConfig",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "baselineId",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "baseline",
+                  "type": "file",
+                  "uuid": "d0b62678-3c4d-4b08-8dc6-651f11ad8ee3",
+                  "src": "/C:/workspaces/yale/clones/lux-marklogic-optic/scratch/response-step-2-take-2.json"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/validateDataset.mjs",
+              "protocol": "{{mlProtocol}}",
+              "host": [
+                "{{mlHost}}"
+              ],
+              "port": "{{mlAppPort}}",
+              "path": [
+                "ds",
+                "lux",
+                "validateDataset.mjs"
+              ]
+            }
+          },
+          "response": []
+        },
 				{
 					"name": "Version Info",
 					"request": {
@@ -1742,11 +1805,6 @@
 									"value": "ma??ingly"
 								},
 								{
-									"key": "mayChangeScope",
-									"value": "false",
-									"disabled": true
-								},
-								{
 									"key": "page",
 									"value": "2",
 									"disabled": true
@@ -1769,16 +1827,6 @@
 								{
 									"key": "filterResults",
 									"value": "true"
-								},
-								{
-									"key": "facetsSoon",
-									"value": "false",
-									"disabled": true
-								},
-								{
-									"key": "synonymsEnabled",
-									"value": "false",
-									"disabled": true
 								}
 							]
 						}

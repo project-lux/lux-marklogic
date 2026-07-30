@@ -5,6 +5,7 @@ const TENANT_NAME = '%%environmentName%%';
 const ML_ADMIN_PORT = parseInt('%%mlAdminPort%%'.trim());
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
+const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 
 const FEATURE_MY_COLLECTIONS_ENABLED =
   '%%featureMyCollectionsEnabled%%'.trim() === 'true';
@@ -23,6 +24,23 @@ const ROLE_NAME_MAY_RUN_UNIT_TESTS = '%%mlAppName%%-may-run-unit-tests';
 const SCALE_OUT_TIMEOUT = parseInt('%%scaleOutTimeout%%'.trim());
 const RELATED_LIST_TIMEOUT = parseInt('%%relatedListTimeout%%'.trim());
 const SEMANTIC_SORT_TIMEOUT = parseInt('%%semanticSortTimeout%%'.trim());
+const VALIDATE_DATASET_TIMEOUT = parseInt('%%validateDatasetTimeout%%'.trim());
+
+// Default and maximum values for approximate nearest neighbor search (annTopK).
+const ANN_K_DEFAULT = parseInt('%%annKDefault%%'.trim()) || 50;
+const ANN_K_MAX = parseInt('%%annKMax%%'.trim()) || 1000;
+
+// Default and maximum cosine distance for annTopK.
+const ANN_DISTANCE_DEFAULT =
+  parseFloat('%%annDistanceDefault%%'.trim()) || 0.14;
+const ANN_DISTANCE_MAX = parseFloat('%%annDistanceMax%%'.trim()) || 0.5;
+
+// Inflate candidateK beyond K to compensate for post-filter attrition (Opt 22).
+const ANN_CANDIDATE_K_MULTIPLIER =
+  parseFloat('%%annCandidateKMultiplier%%'.trim()) || 1.2;
+const ANN_CANDIDATE_K_BUFFER = parseInt('%%annCandidateKBuffer%%'.trim()) || 10;
+
+const DEFAULT_VECTOR_COLUMN = 'main';
 
 const RELATED_LIST_PAGE_LENGTH_DEFAULT = 25;
 
@@ -80,11 +98,11 @@ const ALLOWED_SEARCH_OPTIONS_EXACT = ['exact'];
 // Text search options align with word and value queries, but not range queries.
 // we do not allow keyword searches to be whitespace-sensitive or exact, as this creates incorrect estimates
 const ALLOWED_SEARCH_OPTIONS_KEYWORD = [
-  'case-sensitive',
+  //'case-sensitive', // not allowed while Optic filtering is not implemented
   'case-insensitive',
-  'diacritic-sensitive',
+  //'diacritic-sensitive', // not allowed while Optic filtering is not implemented
   'diacritic-insensitive',
-  'punctuation-sensitive',
+  //'punctuation-sensitive', // not allowed while Optic filtering is not implemented
   'punctuation-insensitive',
   'whitespace-insensitive',
   'stemmed',
@@ -123,7 +141,7 @@ const SEARCH_GRAMMAR_OPERATORS = [
   'AND',
   'OR',
   'NOT_IN',
-  'BOOST',
+  // 'BOOST', // Dropped during CTS to Optic migration
   // 'NEAR', // Until we know what "near" means in the semantic world, let's not auto-capitalize 'near'.
   // 'EQ', // Not presently supporting comparison operators in the LUX String Search Grammar.
   // 'NE',
@@ -147,10 +165,6 @@ prefix skos: <http://www.w3.org/2004/02/skos/core#>
 prefix sci: <http://www.ics.forth.gr/isl/CRMsci/>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>`;
 
-const SYNONYM_WEIGHT = -0.5; // Could make this configurable via property or endpoint param.
-const SYNONYMS_ENABLED = '%%synonymsEnabled%%'.trim() === 'true';
-const THESAURUS_URIS = ['/thesauri/sample-thesaurus.xml'];
-
 const TRACE_NAME_ERROR = 'LuxError';
 const TRACE_NAME_FACETS = 'LuxFacets';
 const TRACE_NAME_RELATED_LIST = 'LuxRelatedList';
@@ -160,9 +174,33 @@ const TRACE_NAME_SEARCH = 'LuxSearch';
 // A portion of an error message used in a couple places.
 const MESSAGE_ALREADY_HAS_A_PROFILE = 'already has a profile';
 
+function getAllowedSearchOptionsByOptionsName(optionsName) {
+  if (optionsName == SEARCH_OPTIONS_NAME_EXACT) {
+    return ALLOWED_SEARCH_OPTIONS_EXACT;
+  } else if (optionsName == SEARCH_OPTIONS_NAME_KEYWORD) {
+    return ALLOWED_SEARCH_OPTIONS_KEYWORD;
+  }
+  return null;
+}
+
+function getDefaultSearchOptionsByOptionsName(optionsName) {
+  if (optionsName == SEARCH_OPTIONS_NAME_EXACT) {
+    return DEFAULT_SEARCH_OPTIONS_EXACT;
+  } else if (optionsName == SEARCH_OPTIONS_NAME_KEYWORD) {
+    return DEFAULT_SEARCH_OPTIONS_KEYWORD;
+  }
+  return null;
+}
+
 export {
   ALLOWED_SEARCH_OPTIONS_EXACT,
   ALLOWED_SEARCH_OPTIONS_KEYWORD,
+  ANN_CANDIDATE_K_BUFFER,
+  ANN_CANDIDATE_K_MULTIPLIER,
+  ANN_DISTANCE_DEFAULT,
+  ANN_DISTANCE_MAX,
+  ANN_K_DEFAULT,
+  ANN_K_MAX,
   AS_TYPE_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
@@ -177,10 +215,14 @@ export {
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
+  DEFAULT_VECTOR_COLUMN,
   ENDPOINT_ACCESS_UNIT_NAMES,
+  ENDPOINT_CONSUMER_ROLES_END_WITH,
   FACETS_PREFIX,
   FEATURE_MY_COLLECTIONS_ENABLED,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
+  getAllowedSearchOptionsByOptionsName,
+  getDefaultSearchOptionsByOptionsName,
   HIGH_STORAGE_WARNING_THRESHOLD,
   IRI_DOES_NOT_EXIST,
   IRI_PREFIX,
@@ -207,9 +249,7 @@ export {
   SEARCH_PREFIX,
   SEMANTIC_SORT_TIMEOUT,
   SPARQL_PREFIXES,
-  SYNONYM_WEIGHT,
-  SYNONYMS_ENABLED,
-  THESAURUS_URIS,
+  VALIDATE_DATASET_TIMEOUT,
   TOKEN_RUNTIME_PARAM,
   TRACE_NAME_ERROR,
   TRACE_NAME_FACETS,

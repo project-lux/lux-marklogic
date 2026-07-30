@@ -147,6 +147,8 @@ const FACETS_CONFIG = {
     searchTermName: 'createdDate',
   },
   setCreationOrPublicationDate: {
+    // a facet can have "subfacets", where the search criteria in the response will be composed of the two subfacets
+    indexReference: 'setCreationOrPublicationStartDateLong',
     subFacets: ['setCreationDate', 'setPublicationDate'],
   },
   setCreationPlaceId: {
@@ -192,6 +194,8 @@ const FACETS_CONFIG = {
     searchTermName: 'createdDate',
   },
   workCreationOrPublicationDate: {
+    indexReference: 'workCreationOrPublicationStartDateLong',
+    // a facet can have "subfacets", where the search criteria in the response will be composed of the two subfacets
     subFacets: ['workCreationDate', 'workPublicationDate'],
   },
   workCreationPlaceId: {

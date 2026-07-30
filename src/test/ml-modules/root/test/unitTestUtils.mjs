@@ -21,6 +21,10 @@ const sec = require('/MarkLogic/security.xqy');
  *       applicable when the function being tested returns an object, which this function then creates a
  *       node out of and applies the assertions to.  There are three types of assertions: equality, xpath,
  *       and function.  See the implementation for examples and utilized properties of each.
+ *    expected.selectContains: Optional array of column name strings.  When the actual return value is a
+ *       string (e.g., plan source), asserts that at least one .select() call contains each column name.
+ *    expected.orderByContains: Optional array of column name strings.  When the actual return value is a
+ *       string, asserts that at least one .orderBy() call contains each column name.
  * @param {Function} zeroArityFun is the function to be tested.  It must be zero arity.
  * @param {Object} invokeFunOptions is the options to be passed to the xdmp.invokeFunction call.
  * @returns object with the following top-level properties: actualValue, applyErrorNotExpectedAssertions,
@@ -65,7 +69,7 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
   if (errorExpectedButNotThrown) {
     fn.error(
       xs.QName('ASSERT-THROWS-ERROR-FAILED'),
-      `Scenario '${scenario.name}' didn't result in an error when one was expected.`
+      `Scenario '${scenario.name}' didn't result in an error when one was expected.`,
     );
   }
 
@@ -90,8 +94,8 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
             testHelperProxy.assertEqual(
               assertion.expected,
               docNode.xpath(assertion.xpath),
-              assertion.message
-            )
+              assertion.message,
+            ),
           );
         } else if (assertion.type === 'xpath') {
           /*
@@ -106,8 +110,8 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
             testHelperProxy.assertEqual(
               assertion.expected,
               docNode.xpath(assertion.xpath),
-              assertion.message
-            )
+              assertion.message,
+            ),
           );
         } else {
           /*
@@ -122,6 +126,34 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
         }
       });
     }
+
+    const applyOpticCallContainsAssertions = (opticFunName, expectedKey) => {
+      if (
+        typeof actualValue !== 'string' ||
+        !isArray(scenario.expected[expectedKey])
+      ) {
+        return;
+      }
+
+      const callArgs = [
+        ...actualValue.matchAll(
+          new RegExp(`\\.${opticFunName}\\(\\[([^\\]]+)\\]\\)`, 'g'),
+        ),
+      ].map((m) => m[1]);
+
+      scenario.expected[expectedKey].forEach((col) => {
+        const found = callArgs.some((args) => args.includes(col));
+        assertions.push(
+          testHelperProxy.assertTrue(
+            found,
+            `Scenario '${scenario.name}': .${opticFunName}() should contain a column matching '${col}'`,
+          ),
+        );
+      });
+    };
+
+    applyOpticCallContainsAssertions('select', 'selectContains');
+    applyOpticCallContainsAssertions('orderBy', 'orderByContains');
   }
 
   return {
@@ -131,7 +163,7 @@ function executeScenario(scenario, zeroArityFun, invokeFunOptions = {}) {
   };
 }
 
-function loadTestFile(uri, filename) {
+function loadTestFile(uri, filename, collections = []) {
   console.log(`Creating ${uri}`);
   try {
     // testHelperProxy.loadTestFile does not accept the return from xdmp.permission.
@@ -153,10 +185,10 @@ function loadTestFile(uri, filename) {
       <sec:permission xmlns:sec="http://marklogic.com/xdmp/security">
         <sec:capability>read</sec:capability>
         <sec:role-id>${xdmp.role(
-          ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER
+          ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
         )}</sec:role-id>
-      </sec:permission></root>`
-        )
+      </sec:permission></root>`,
+        ),
       )
       .xpath('./root/*');
 
@@ -164,7 +196,8 @@ function loadTestFile(uri, filename) {
       filename,
       xdmp.database(),
       uri,
-      permissionNodes
+      permissionNodes,
+      xdmp.arrayValues(collections),
     );
   } catch (e) {
     console.error(`Unable to create ${uri}`);
@@ -193,7 +226,7 @@ function assertPermissionArraysMatch(
   docType,
   assertions,
   expectedPermissions,
-  actualPermissions
+  actualPermissions,
 ) {
   expectedPermissions.forEach((entry) => {
     assertions.push(
@@ -201,20 +234,20 @@ function assertPermissionArraysMatch(
         permissionArrayContains(
           actualPermissions,
           entry.capability,
-          entry.roleId
+          entry.roleId,
         ),
         `The '${docType}' is missing the '${
           entry.capability
-        }' capability for the '${xdmp.roleName(entry.roleId)}' role.`
-      )
+        }' capability for the '${xdmp.roleName(entry.roleId)}' role.`,
+      ),
     );
   });
   assertions.push(
     testHelperProxy.assertEqual(
       expectedPermissions.length,
       actualPermissions.length,
-      `Unexpected number of permissions in '${docType}' document`
-    )
+      `Unexpected number of permissions in '${docType}' document`,
+    ),
   );
 }
 
@@ -225,8 +258,8 @@ function removeCollections(collections, username) {
     toArray(collections).forEach((name) => {
       console.log(
         `User ${xdmp.getCurrentUser()} is attempting to delete the '${name}' collection from the ${xdmp.databaseName(
-          xdmp.database()
-        )} database...`
+          xdmp.database(),
+        )} database...`,
       );
       xdmp.collectionDelete(name);
     });

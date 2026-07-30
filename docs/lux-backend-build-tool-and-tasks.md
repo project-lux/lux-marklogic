@@ -18,7 +18,6 @@ This document describes Gradle tasks written for this project, which may be foun
 | `addSupportForExecutingWithServiceAccounts` | **Deployment task** that generates amps and libWrapper.mjs in support of enabling logged in users to have access to the same documents a service account has access to. This is part of the ability enabling users to log in yet be restricted to a unit portal's data. The `endpointAccessUnitNames` build property determines which units this support is added for.  For unit test-enabled environments, the amps are also generated for the test modules database. |  |
 | `deleteTestModulesFromMain` | **Deployment task** that automatically runs after `resetTestModulesDatabase` in order to delete test modules from the main modules database. This allows us not to break from the ML Gradle convention (`mlModulesPaths`) but not leave test modules in the main modules database. This task runs for production environments too as the marklogic-unit-test-modules bundle adds files. |  |
 | `determineCodeVersion` | Executes a script to derive the code version from `git`. |  |
-| `disableDeprecatedSSLProtocols` | Disable deprecated SSL protocols. (this task is deprecated and will be replaced by `setSslMinAllowTls` in MarkLogic 12)|  |
 | `disableSSL` | Manual **deployment task** that disables SSL which then requires non-SSL connections on app serves. |  |
 | `enableSSL` | Manual **deployment task** that enables SSL which then requires SSL connections on app serves. |  |
 | `ensureTenantStatusDocumentExists` | **Deployment task** responsible for creating the tenant status document _if and only if_ the tenant status document does not already exist.  Of the build properties used, `environmentProd` and `environmentReadOnly` may be considered the most important. In a blue/green deployment, only one should ever have the 'prod' role. During a blue/green switch, both environments should be in read-only mode. |  |
@@ -35,7 +34,6 @@ This document describes Gradle tasks written for this project, which may be foun
 | `setBanner` | **Deployment task** that sets the banner within the MarkLogic admin, query, and monitoring consoles. We use this to clearly identify an environment. There are three associated build properties: `bannerLabel`, `bannerHeaderColor`, and `bannerHeaderTextColor`.  This task is configured to automatically run after `mlDeploySecurity` (since `setBanner` also requires an admin). This task may also be called directly. |  |
 | `setSslMinAllowTls` | Set the minimum allowed TLS version | |
 | `showAppServerCiphers` | Display ciphers enabled on the application server. Use to ensure those that should not be enabled are not enabled. |  |
-| `showDeprecatedSSLProtocols` | Display deprecated SSL protocols. (this task is deprecated and will be replaced by `getSslMinAllowTls` in MarkLogic 12) |  |
 | `updateSSLCiphers` | Sets hard-coded ciphers on app servers. |  |
 
 # Gradle Tips & Tricks

@@ -1,4 +1,5 @@
 import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
+import { InternalServerError } from '../lib/errorClasses.mjs';
 
 function facetToScopeAndTermName(facetName) {
   const matchArr = facetName.match('([a-z]+)([^a-z])(.*)');
@@ -17,7 +18,7 @@ function facetToScopeAndTermName(facetName) {
   } else {
     const msg = `Unable to derive search scope and term name from facet name: ${facetName}`;
     console.error(msg);
-    throw new Error(msg);
+    throw new InternalServerError(msg);
   }
 }
 

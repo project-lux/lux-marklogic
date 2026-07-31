@@ -245,7 +245,7 @@ const SEARCH_TERMS_CONFIG = {
       patternName: 'relatedList',
       targetScope: 'agent',
       inBetweenScopes: ['item', 'work', 'set'],
-      maxLevel: 1,
+      maxLevel: 2,
     },
     text: {
       patternName: 'keyword',

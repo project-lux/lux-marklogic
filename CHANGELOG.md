@@ -2,10 +2,13 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v4.0.0 - Unreleased
+## v4.0.0 - 2026-08-03
 
 ### Added
 - Added support for related events on agents ([#93](https://github.com/project-lux/lux-marklogic/issues/93))
+
+### Changed
+- Update the backend search engine to be primarily driven by the Optic API. This opens up greater possibilities for searching and exploring LUX data. Including similar documents via vector cosine similarity, geospatial searching, and transitive predicate searches.
 
 ## v3.3.0 - 2026-05-11
 

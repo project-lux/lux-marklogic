@@ -47,13 +47,20 @@ const RELATION_NAMES = {
   'classificationOfWork-publishedBy': 'Is the Category of Works Published By',
   'causedCreationOf-aboutAgent': 'Is the Cause of Creation of Works About',
   'causedCreationOf-createdBy': 'Is the Cause of Creation of Works Created By',
-  'causedCreationOf-creationInfluencedBy': 'Is the Cause of Creation of Works Influenced By',
-  'causedCreationOf-publishedBy': 'Is the Cause of Creation of Works Published By',
-  'causedCreationOfSet-aboutAgent': 'Is the Cause of Creation of Collections About',
-  'causedCreationOfSet-createdBy': 'Is the Cause of Creation of Collections Created By',
-  'causedCreationOfSet-creationInfluencedBy': 'Is the Cause of Creation of Collections Influenced By',
-  'causedCreationOfSet-curatedBy': 'Is the Cause of Creation of Collections Curated By',
-  'causedCreationOfSet-publishedBy': 'Is the Cause of Creation of Collections Published By',
+  'causedCreationOf-creationInfluencedBy':
+    'Is the Cause of Creation of Works Influenced By',
+  'causedCreationOf-publishedBy':
+    'Is the Cause of Creation of Works Published By',
+  'causedCreationOfSet-aboutAgent':
+    'Is the Cause of Creation of Collections About',
+  'causedCreationOfSet-createdBy':
+    'Is the Cause of Creation of Collections Created By',
+  'causedCreationOfSet-creationInfluencedBy':
+    'Is the Cause of Creation of Collections Influenced By',
+  'causedCreationOfSet-curatedBy':
+    'Is the Cause of Creation of Collections Curated By',
+  'causedCreationOfSet-publishedBy':
+    'Is the Cause of Creation of Collections Published By',
   'created-aboutAgent': 'Created Works About',
   'created-aboutConcept': 'Created Works About',
   'created-aboutEvent': 'Created Works About',
@@ -328,10 +335,10 @@ const RELATION_NAMES = {
   'subjectOfWork-language': 'Is the Subject of Works In',
   'subjectOfWork-publishedAt': 'Is the Subject of Works Published At',
   'subjectOfWork-publishedBy': 'Is the Subject of Works Published By',
-  'used-aboutAgent': 'Is Used by Works About',
-  'used-createdBy': 'Is Used by Works Created By',
-  'used-creationInfluencedBy': 'Is Used by Works Influenced By',
-  'used-publishedBy': 'Is Used by Works Published By',
+  'used-aboutAgent': 'Used Collections About',
+  'used-createdBy': 'Used Collections Created By',
+  'used-creationInfluencedBy': 'Used Collections Influenced By',
+  'used-publishedBy': 'Used Collections Published By',
   'usedToProduce-classification': 'Is the Technique of Objects Categorized As',
   'usedToProduce-encounteredAt': 'Is the Technique of Objects Encountered At',
   'usedToProduce-encounteredBy': 'Is the Technique of Objects Encountered By',

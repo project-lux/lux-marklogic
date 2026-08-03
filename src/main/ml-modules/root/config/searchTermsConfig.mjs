@@ -241,6 +241,12 @@ const SEARCH_TERMS_CONFIG = {
       indexReferences: ['eventName'],
       scalarType: 'string',
     },
+    relatedToAgent: {
+      patternName: 'relatedList',
+      targetScope: 'agent',
+      inBetweenScopes: ['item', 'work', 'set'],
+      maxLevel: 1,
+    },
     text: {
       patternName: 'keyword',
       indexReferences: ['eventAnyText'],

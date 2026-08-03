@@ -4,10 +4,7 @@ import {
   SEARCH_TERMS_CONFIG,
   getInverseSearchTermInfo,
 } from '../config/searchTermsConfig.mjs';
-import {
-  PATTERN_NAME_HOP_WITH_FIELD,
-  PATTERN_NAME_RELATED_LIST,
-} from '../lib/searchPatternsLib.mjs';
+import { PATTERN_NAME_HOP_WITH_FIELD } from '../lib/search/patterns/loadPatterns.mjs';
 import { RELATION_NAMES } from '../config/relationNames.mjs';
 import {
   TENANT_OWNER,
@@ -103,7 +100,7 @@ function _getSearchConfigEntries(
       (matchesEndingScope || inBetweenScopes.includes(targetScope))
     ) {
       if (
-        termConfig.patternName === PATTERN_NAME_RELATED_LIST ||
+        termConfig.patternName === 'relatedList' ||
         _inverseIsDisqualifiedHopWithField(startingScope, termName) ||
         (currentLevel === 1 && matchesEndingScope)
       ) {
@@ -159,17 +156,11 @@ function _convertToRuntimeFormat(
   let currentSpot = criteria;
   let relationKey = '';
   let relationScope = searchConfigEntry.targetScope;
-  let mode = null;
 
   let isLast = searchConfigEntry == null;
   while (!isLast) {
     const scopeName = searchConfigEntry.scopeName;
     const termName = searchConfigEntry.termName;
-
-    // First term dictates whether the runtime should perform a search or request values.
-    if (mode === null) {
-      mode = _isHopWithField(scopeName, termName) ? 'search' : 'values';
-    }
 
     isLast = searchConfigEntry.subEntry == null;
     if (isLast) {
@@ -203,7 +194,6 @@ function _convertToRuntimeFormat(
     return {
       relationKey,
       relationScope,
-      mode,
       criteria,
     };
   }
@@ -314,8 +304,9 @@ function constructModuleNode(relatedListsConfig) {
  */
 import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
 import { BadRequestError } from '../lib/errorClasses.mjs';
-  
-const RELATED_LISTS_CONFIG = ${JSON.stringify(relatedListsConfig)};
+import { deepFreeze } from '../utils/utils.mjs';
+
+const RELATED_LISTS_CONFIG = deepFreeze(${JSON.stringify(relatedListsConfig)});
 
 function getRelatedListKeys() {
   const relatedListsConfig = _getRelatedListsConfig(true);

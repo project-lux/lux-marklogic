@@ -2,10 +2,21 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v4.0.0 - 2026-08-03
+
+### Added
+- Added support for related events on agents ([#93](https://github.com/project-lux/lux-marklogic/issues/93))
+- Update the backend search engine to be primarily driven by the Optic API. This opens up greater possibilities for searching and exploring LUX data. Including similar documents via vector cosine similarity, geospatial searching, and transitive predicate searches.
+
+### Changed
+- Update the backend search engine to be primarily driven by the Optic API. This opens up greater possibilities for searching and exploring LUX data. Including similar documents via vector cosine similarity, geospatial searching, and transitive predicate searches.
+
 ## v3.3.0 - 2026-05-11
 
 ### Added
 - 'contains' search term for Places ([#530](https://github.com/project-lux/lux-marklogic/issues/530))
+
+- TDE to index `/vectors/main` ([#678](https://github.com/project-lux/lux-marklogic/issues/678)).
 
 ### Changed
 - handle errors and status codes in securityLib's `handleRequest`, this gives us control over HTTP status codes and messages while still using the default error handler. ([#665](https://github.com/project-lux/lux-marklogic/issues/665))
@@ -27,8 +38,17 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 
 ### Changed
 
+- Refactored the [search criteria processor](/src/main/ml-modules/root/lib/SearchCriteriaProcessor.mjs). Requires MarkLogic 12 or later. ([#662](https://github.com/project-lux/lux-marklogic/issues/662))
+- Consolidated the `/src/main/ml-config/dynamic-host/` MarkLogic Gradle configuration directory into [/src/main/ml-config/base/](/src/main/ml-config/base/) since MarkLogic 12 is required (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+- Changed the `filterResults` parameter of the [Search endpoint](/docs/lux-backend-api-usage.md#search) and [Related List endpoint](/docs/lux-backend-api-usage.md#related-list) from implemented to reserved for future use (part of Optic migration).
+
 ### Removed
-  
+
+- Removed the `facetsSoon` and `synonymsEnabled` parameters of the [Search endpoint](/docs/lux-backend-api-usage.md#search) (part of Optic migration).
+- Removed the `mayChangeScope` parameter of the [Search endpoint](/docs/lux-backend-api-usage.md#search) (part of [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+- Removed the Similar search terms, pattern, and library, which were not exposed in the advanced search configuration (part of [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+- Removed the disableDeprecatedSSLProtocols and showDeprecatedSslProtocols Gradle build tasks as they only apply to MarkLogic 11 and earlier (associated to [#662](https://github.com/project-lux/lux-marklogic/issues/662)).
+
 ### Fixed
 - Remove Disconnected Hosts While Deploying Databases ([#674](https://github.com/project-lux/lux-marklogic/issues/674))
 

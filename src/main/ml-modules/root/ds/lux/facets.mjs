@@ -13,7 +13,7 @@ const response = handleRequest(function () {
   return getFacet({
     facetName: name,
     searchCriteria,
-    searchScope,
+    scopeName: searchScope,
     page,
     pageLength,
     sort,

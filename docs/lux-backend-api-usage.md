@@ -65,9 +65,14 @@
   - [Translate](#translate)
     - [Successful Request / Response Example](#successful-request--response-example-15)
     - [Failed Request / Response Example](#failed-request--response-example-17)
+  - [Validate Dataset](#validate-dataset)
+    - [Successful Default Parameters Request / Response Example](#successful-default-parameters-request--response-example)
+    - [Successful With Baseline Request / Response Example](#successful-with-baseline-request--response-example)
+    - [Successful With Test Config Request / Response Example](#successful-with-test-config-request--response-example)
+    - [Failed Request / Response Example](#failed-request--response-example-18)
   - [Version Info](#version-info)
     - [Successful Request / Response Example](#successful-request--response-example-16)
-    - [Failed Request / Response Example](#failed-request--response-example-18)
+    - [Failed Request / Response Example](#failed-request--response-example-19)
 
 # Introduction
 
@@ -864,7 +869,7 @@ To retrieve the full list of related documents, switch to the [Search endpoint](
 | `uri` | `https://lux.collections.yale.edu/...` | **REQUIRED** - The URI of the document to get the related documents of. For the concepts-from-agent example, this should be the agent's URI. The URI is one in the same as the document's IRI and ID. |
 | `page` | `1` | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1. |
 | `pageLength` | `100` | **OPTIONAL** - The number of related items per page. Default is 25. Maximum is 1,000. An error will be thrown if this value is less than 1. |
-| `filterResults` | `false` | **OPTIONAL** - Submit `true` to instruct the system to filter the results to ensure there are no false positives.  Filtering is the process of pulling candidate search result documents from disk in order to verify they meet all search criteria.  The process can significantly slow the request and often yields the same results.  Unfiltered search results are calculated using indexes alone --the same as non-semantic facets and estimates.  This endpoint parameter's default is specified by the `filterRelatedListSearchResults` build property.  Initially, the default will be `true` (filtered) but it is expected to switch to `false` (unfiltered). |
+| `filterResults` | `false` | **OPTIONAL** - Reserved for future use. |
 | `relationshipsPerRelation` | `100000` | **OPTIONAL** - The maximum number of relationships to process per relation.  A related list's definition is comprised of multiple relations.  Each may resolve to zero or more relationships.  Some resolve to more than a million, potentially impacting performance to the extent the request times out.  To avoid timeouts, a maximum number of relationships is applied _per relation_, meaning the maximum number of relationships processed _per request_ is the maximum multiplied by the related list's number of relations.  The per relation default is likely 250,000 but set by the `relatedListPerRelationDefault` build property.  The maximum that cannot be exceeded is likely 500,000 but set by the `relatedListPerRelationMax` build property.  If a value larger than the allowed maximum is specified, the request proceeds but the allowed maximum is applied. |
 
 ### Successful Request / Response Example
@@ -1057,31 +1062,26 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 | Parameter | Example | Description |
 |-----------|---------|-------------|
 | `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
-| `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The `BOOST` property may be used to provide an array containing two search terms. The first term is used for matching results and the second term will boost the score of results that match the first term.  The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
+| `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a near complete list of available search scopes, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example).
-| `mayChangeScope` | `true` | **OPTIONAL** - Submit `true` if the endpoint is allowed to change the search scope when the requested search's results estimate is zero yet another search scope's estimate is greater than zero.  Only applicable to search scopes associated with the user interface.  When the search scope is changed, the `metadata.changedScope` response body property value will be `true`.  Regardless, the `metadata.scope` parameter value will always align with the search *performed*.  The selected search scope is based on a user interface order specified in the endpoint.  No other part of the search is adjusted, specifically including the values of the `sort` and `facetNames` parameters.  Endpoint consumers are encouraged to submit `true` for search requests that do not require a specific user interface scope.  Subsequent requests that need to stick to a specific search should submit `false`.  Defaults to `false`. |
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
 | `pageLength` | 10 | **OPTIONAL** - The number of results per page. The default is 20. The maximum is 100. An error will be thrown if this value is less than 1. |
 | `pageWith` | https://lux.collections.yale.edu/data/set/6ec47e23-211d-414d-a6ef-7127031dffa4 | **OPTIONAL** - Return a page with the specified document ID. Submitting this parameter causes the `page` parameter to be ignored. Not available for related lists. |
 | `sort` | `itemProductionDate:asc` | **OPTIONAL** - A comma-delimited list of sort specifications. Multi-scope and semantic sorts will only use a single sort specification. Multi-scope takes prority over semantic which takes priority over non-semantic. If multiple multi-scope or semantic sorts are specified, the final sort specified with highest priority will be used. Each specification must include the sort binding name and may optionally include the sort's direction.  Use `asc` for ascending and `desc` for descending.  The [Search Info endpoint's](#search-info) `sortBy` response body property lists most of this parameter's accepted values. There are two additional ones: `random` and `relevance`.  When either is used, all other sort options are ignored. Use `random` to apply random scores to the search results; sort direction does not apply to this option. Use `relevance` to sort the search results by their score. For each sort binding name specified in this parameter, the default sort direction is ascending; however, when the parameter is not provided, search results are sorted by `relevance`, from highest score to lowest score (descending). Invalid sort options are ignored. |
-| `filterResults` | `false` | **OPTIONAL** - Submit `true` to instruct the system to filter the results to ensure there are no false positives.  Filtering is the process of pulling candidate search result documents from disk in order to verify they meet all search criteria.  The process can significantly slow the request and often yields the same results.  Unfiltered search results are calculated using indexes alone --the same as non-semantic facets and estimates.  Unfiltered search results cannot be punctuation- or whitespace-sensitive.  Unfiltered search results cannot be case-sensitive _when_ the criteria is all lowercase (but can be case-sensitive for upper or mixed case).  This endpoint parameter's default is specified by the `filterSearchResults` build property.  Initially, the default will be `true` (filtered) but it is expected to switch to `false` (unfiltered). |
-| `facetsSoon` | `true` | **OPTIONAL** - Submit `true` to indicate one or more facets may be requested in a subsequent request, relatively soon, using the same criteria.  When `true` and the search is performed, search will be asked to do a little more work to speed up the subsequent request to calculate facets.  Use the [Facets endpoint](#facets) for the facet request.  Defaults to `false`. |
-| `synonymsEnabled` | `true` | **OPTIONAL** - Indicate if synonyms are to be included in the search criteria. The default is controlled by the `synonymsEnabled` Gradle property, during deployment. |
+| `filterResults` | `false` | **OPTIONAL** - Reserved for future use. |
 
 ### Successful Single Scope Request / Response Example
 
-Scenario: Search for the first three agents matching "ben" and boosted by "franklin". Sort the results by name. Allow the system to change the search scope should there be no results in the requested search scope.
+Scenario: Search for events similiar to a specified one.
 
 Parameters:
 
 | Parameter | Value |
 |-----------|-------|
-| `q` | `{"BOOST":[{"text":"ben","_lang":"en"},{"text":"franklin","_lang":"en"}]}` |
-| `scope` | `item` |
-| `mayChangeScope` | `true` |
+| `q` | `{"similar":"https://lux.collections.yale.edu/data/activity/0102514a-03d8-4467-a84d-6b901cfae7c8"}` |
+| `scope` | `event` |
 | `page` | `1` |
 | `pageLength` | `20` |
-| `sort` | `itemProductionDate:desc` |
 
 Response Status Code: 200
 
@@ -1093,41 +1093,37 @@ Response Body:
 
 ```
 {
-   "@context":"https://linked.art/ns/v1/search.json",
-   "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&mayChangeScope=true&page=1&pageLength=20&sort=itemProductionDate%3Adesc",
-   "type":"OrderedCollectionPage",
-   "partOf":[
-      {
-         "id":"https://lux.collections.yale.edu/api/search-estimate/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22",
-         "type":"OrderedCollection",
-         "label":{
-            "en":[
-               "Objects"
-            ]
-         },
-         "summary":{
-            "en":[
-               "Records representing physical and digital objects that match your search."
-            ]
-         },
-         "totalItems":16189
-      }
-   ],
-   "orderedItems":[
-      {
-         "id":"https://lux.collections.yale.edu/data/object/83c202de-a642-4fc9-9549-1c2ba5619ea7",
-         "type":"HumanMadeObject"
+  "@context":"https://linked.art/ns/v1/search.json",
+  "id":"https://lux.collections.yale.edu/api/search/event?q=%7B%22similar%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Factivity%2F0102514a-03d8-4467-a84d-6b901cfae7c8%22%7D&page=1&pageLength=20&sort=archiveSortId%3Aasc%2Crelevance%3Adesc",
+  "type":"OrderedCollectionPage",
+  "partOf":[
+    {
+      "id":"https://lux.collections.yale.edu/api/search-estimate/event?q=%7B%22similar%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Factivity%2F0102514a-03d8-4467-a84d-6b901cfae7c8%22%7D",
+      "type":"OrderedCollection",
+      "label":{
+        "en":[
+          "Events"
+        ]
       },
-      {
-         "id":"https://lux.collections.yale.edu/data/object/d947f539-559b-41c8-870f-b1f196cb85ec",
-         "type":"HumanMadeObject"
+      "summary":{
+        "en":[
+          "Records representing events that match your search."
+        ]
       },
-      ...more search results
-   ],
-   "next":{
-      "id":"https://lux.collections.yale.edu/api/search/item?q=%22%7B%5C%22BOOST%5C%22%3A%5B%7B%5C%22text%5C%22%3A%5C%22ben%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%2C%7B%5C%22text%5C%22%3A%5C%22franklin%5C%22%2C%5C%22_lang%5C%22%3A%5C%22en%5C%22%7D%5D%7D%22&mayChangeScope=true&page=2&pageLength=20&sort=itemProductionDate%3Adesc",
-      "type":"OrderedCollectionPage"
-   }
+      "totalItems":20
+    }
+  ],
+  "orderedItems":[
+    {
+      "id":"https://lux.collections.yale.edu/data/activity/035a6059-5438-4802-b335-00c9bb987ba0",
+      "type":"Activity"
+    },
+    {
+      "id":"https://lux.collections.yale.edu/data/activity/0dbc29dc-59b4-4cf4-8ccc-a1ad7ee27021",
+      "type":"Activity"
+    },
+    ...more search results
+  ]
 }
 ```
 
@@ -1156,7 +1152,7 @@ Response Body:
 ```
 {
   "@context":"https://linked.art/ns/v1/search.json",
-  "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&mayChangeScope=true&page=1&pageLength=20&sort=archiveSortId",
+  "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=1&pageLength=20&sort=archiveSortId",
   "type":"OrderedCollectionPage",
   "partOf":[
     {
@@ -1191,7 +1187,7 @@ Response Body:
     ...more search results
   ],
   "next":{
-    "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&mayChangeScope=true&page=2&pageLength=20&sort=archiveSortId",
+    "id":"https://lux.collections.yale.edu/api/search/multi?q=%7B%22OR%22%3A%5B%7B%22partOfSet%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%2C%7B%22memberOf%22%3A%7B%22id%22%3A%22https%3A%2F%2Flux.collections.yale.edu%2Fdata%2Fset%2Fe58ae36f-1ef5-41ab-a36c-5abb5d063f5e%22%7D%7D%5D%7D&page=2&pageLength=20&sort=archiveSortId",
     "type":"OrderedCollectionPage"
   }
 }
@@ -1228,7 +1224,7 @@ Response Body:
         "statusCode": 400,
         "status": "Bad Request",
         "messageCode": "BadRequestError",
-        "message": "Invalid search request: the 'producedFor' term is invalid for the 'item' search scope. Valid choices: carries, classification, depth, dimension, encounteredAt, encounteredBy, encounteredDate, hasDigitalImage, height, id, identifier, iri, isOnline, material, memberOf, name, producedAt, producedBy, producedDate, producedUsing, productionInfluencedBy, recordType, similar, subjectOfItem, text, width"
+        "message": "Invalid search request: the 'producedFor' term is invalid for the 'item' search scope. Valid choices: carries, classification, depth, dimension, encounteredAt, encounteredBy, encounteredDate, hasDigitalImage, height, id, identifier, iri, isOnline, material, memberOf, name, producedAt, producedBy, producedDate, producedUsing, productionInfluencedBy, recordType, subjectOfItem, text, width"
     }
 }
 ```
@@ -1766,7 +1762,7 @@ Response Body:
 
 ### Get
 
-The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.  Users with the `https://lux.collections.yale.edu/%%mlAppName%%-update-tenant-status` execute privilege will also receive estimates for the numbers of My Collection and user profile documents.
+The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.  Users with the [`%%mlAppName%%-update-tenant-status`](/src/main/ml-config/base/security/privileges/app-update-tenant-status.json) execute privilege will also receive estimates for the numbers of My Collection and user profile documents.
 
 **URL** : `/ds/lux/tenantStatus/get.mjs`
 
@@ -1943,6 +1939,397 @@ Response Body:
         "messageCode": "BadRequestError",
         "message": "Invalid search request: unable to parse criteria {\"\"}"
     }
+}
+```
+
+## Validate Dataset
+
+The `validateDataset` endpoint runs pluggable validation tests against the dataset and produces a structured report with scores.  Use it to verify dataset integrity before and after data imports, and to compare against a baseline for go/no-go decisions.  The complete design may be found in [LUX Dataset Test Framework](/docs/lux-dataset-test-framework.md).
+
+To consume, the user must have the `admin` role or the [`%%mlAppName%%-validate-dataset`](/src/main/ml-config/base/security/privileges/app-validate-dataset.json) execute privilege.  This execute privilege is granted to the [`%%mlAppName%%-deployer`](/src/main/ml-config/base/security/roles/5-tenant-deployer-role.json) role.
+
+The endpoint is available on multiple ports.  The `mlDeployPort` is recommended as some tests (e.g. predicate alignment) may take several seconds.
+
+**URL** : `/ds/lux/validateDataset.mjs`
+
+**Method(s)** : `GET`, `POST`
+
+**Endpoint Parameters**
+
+| Parameter | Example | Description |
+|-----------|---------|-------------|
+| `unitNames` | `ipch,ypm` | **OPTIONAL** - Comma-separated list of unit names to include for per-unit validation.  Supported values are the tenant's name (e.g. `lux`) and unit names configured in the environment, which may include the likes of `ypm`.  When omitted, defaults to the tenant's name only. Invalid unit names cause a 400 Bad Request. |
+| `categories` | `relational,indexing,content,infrastructure` | **OPTIONAL** - Comma-separated list of test categories to run. Implemented categories: `relational`, `indexing`, `content`, `infrastructure`.  When omitted, all tests run. |
+| `testConfig` | _(JSON document)_ | **OPTIONAL** - Per-test configuration overrides and framework-level settings.  Submit as a multipart form-data text field containing the JSON string. |
+| `baseline` | _(JSON document)_ | **OPTIONAL** - A previous `validateDataset` response to compare against.  When provided, tests that support baseline comparison include baseline and delta fields in their `result` payloads.  Submit as a multipart form-data text field containing the JSON string. |
+| `baselineId` | `lux-content-2024-01-15...` | **OPTIONAL** - An identifier for the baseline.  Stored in the response metadata for traceability; no functional impact. |
+| `format` | `json` | **OPTIONAL** - Reserved for future use. Only implemented format is JSON. |
+
+**Test Config Structure**
+
+The `testConfig` parameter accepts a JSON object with per-test overrides (keyed by test ID) and framework-level settings:
+
+```json
+{
+  "overallPassThreshold": 0.9,
+  "predicate-coverage": {
+    "skip": true
+  },
+  "predicate-alignment": {
+    "threshold": 0.9,
+    "deltaThresholdPercent": 5
+  }
+}
+```
+
+| Property | Scope | Description |
+|----------|-------|-------------|
+| `overallPassThreshold` | Framework | The minimum `aggregateScore` required for `overallPass` to be `true`.  Default: `0.8`. |
+| *`<testId>`*`.skip` | Per-test | Set to `true` to exclude the test from the run.  `<testId>` is the test's `id` value (e.g. `predicate-coverage`). |
+| *`<testId>`*`.threshold` | Per-test | Overrides the test's default pass/fail threshold. |
+| *`<testId>`*`.deltaThresholdPercent` | Per-test (where supported) | The percentage change from baseline that flags a large delta.  Supported by tests that implement baseline delta scoring (e.g. `predicate-coverage`, `range-index-coverage`, `scope-estimates`). Default: `10`. |
+
+**Current response shape notes**
+
+- `tests[]` entries include `findings` (array of `{ severity, message }`).
+- `tests[].severity` is derived from findings by default (`critical` > `warning` > `informational`).
+- `summary` includes `failedTestIds`.
+- Informational tests are visible in scoring output but have zero aggregate weight.
+
+**Note**: The successful response examples below are abbreviated and will be refreshed to match the latest response bodies.
+
+### Successful Default Parameters Request / Response Example
+
+Scenario: Run all tests with default parameters.
+
+Parameters: None
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body (abbreviated):
+
+```json
+{
+  "metadata": {
+    "id": "lux-dev-data-content-2026-05-26T19:03:09.156Z",
+    "timestamp": "2026-05-26T19:03:09.156Z",
+    "durationMs": 171186,
+    "codeVersion": "v3.3.0-431-gd2d71a9",
+    "parameters": {
+      "unitNames": ["lux-dev-data"],
+      "categories": null,
+      "testConfig": null,
+      "baselineProvided": false,
+      "baselineTestsMatched": 0,
+      "baselineId": null,
+      "format": "json"
+    }
+  },
+  "summary": {
+    "overallPass": false,
+    "overallPassThreshold": 0.8,
+    "aggregateScore": 0,
+    "criticalPass": false,
+    "testsRun": 7,
+    "testsPassed": 4,
+    "testsWarning": 1,
+    "testsFailed": 2,
+    "failedTestIds": ["index-comparison", "storage-info"]
+  },
+  "tests": [
+    {
+      "id": "predicate-coverage",
+      "name": "Predicate Coverage",
+      "category": "relational",
+      "severity": "informational",
+      "score": 1,
+      "pass": true,
+      "threshold": 1,
+      "durationMs": 885,
+      "message": "All configured predicates have matching documents.",
+      "findings": [
+        {
+          "severity": "informational",
+          "message": "All configured predicates have matching documents."
+        }
+      ],
+      "result": {
+        "predicates": {
+          "crm:P106i_forms_part_of": {
+            "estimate": 861188,
+            "terms": ["work.containsWork", "work.partOfWork"]
+          },
+          "crm:P107i_is_current_or_former_member_of": {
+            "estimate": 693500,
+            "terms": ["agent.memberOf", "agent.memberOfInverse"]
+          },
+          ...more predicates
+        },
+        "zeroCountPredicates": [],
+        "unitResults": {}
+      }
+    },
+    {
+      "id": "predicate-alignment",
+      "name": "Predicate Alignment",
+      "category": "relational",
+      "severity": "informational",
+      "score": 1,
+      "pass": true,
+      "threshold": 1,
+      "durationMs": 15601,
+      "message": "All 57 configured predicates exist in the dataset.",
+      "findings": [
+        {
+          "severity": "informational",
+          "message": "All 57 configured predicates exist in the dataset."
+        },
+        {
+          "severity": "informational",
+          "message": "27 dataset predicate(s) are not referenced by configuration."
+        }
+      ],
+      "result": {
+        "referencedButDoesNotExist": [],
+        "existsButNotReferenced": [
+          "crm:P128_carries",
+          "crm:P129_is_about",
+          "crm:P138_represents",
+          "crm:P2_has_type",
+          "crm:P65_shows_visual_item",
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "la:digitally_carries",
+          "la:digitally_shows",
+          "la:equivalent",
+          "lux:about_agent",
+          "lux:about_concept",
+          "lux:about_event",
+          "lux:about_item",
+          "lux:about_or_depicts",
+          "lux:about_or_depicts_set",
+          "lux:about_place",
+          "lux:about_set",
+          "lux:about_work",
+          "lux:agentInfluencedBeginning",
+          "lux:any",
+          "lux:depicts_agent",
+          "lux:depicts_concept",
+          "lux:depicts_item",
+          "lux:depicts_place",
+          "lux:depicts_work",
+          "lux:refCtr",
+          "lux:workLanguage"
+        ],
+        "totalPredicatesInDataset": 84,
+        "totalPredicatesInConfig": 57
+      }
+    },
+    ...more test results
+  ]
+}
+```
+
+### Successful With Baseline Request / Response Example
+
+Scenario: Run all tests and compare to a provided baseline.
+
+Parameters: 
+
+| Parameter | Value |
+|-----------|-------|
+| `baseline` | _Response from this endpoint for the baseline dataset._ |
+| `baselineId` | `2026-05-01` |
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body (abbreviated):
+
+```json
+{
+  "metadata": {
+    "id": "lux-dev-data-content-2026-05-26T19:52:13.871Z",
+    "timestamp": "2026-05-26T19:52:13.871Z",
+    "durationMs": 173376,
+    "codeVersion": "v3.3.0-431-gd2d71a9",
+    "parameters": {
+      "unitNames": ["lux-dev-data"],
+      "categories": null,
+      "testConfig": null,
+      "baselineProvided": true,
+      "baselineTestsMatched": 7,  <-- found same tests in baseline
+      "baselineId": "2026-05-01",
+      "format": "json"
+    }
+  },
+  "summary": {
+    "overallPass": false,
+    "overallPassThreshold": 0.8,
+    "aggregateScore": 0.2322,
+    "criticalPass": false,
+    "testsRun": 7,
+    "testsPassed": 1,
+    "testsWarning": 3,
+    "testsFailed": 3,
+    "failedTestIds": [
+      "record-types-by-predicates",  <-- failed comparison
+      "index-comparison",
+      "storage-info"
+    ]
+  },
+  "tests": [
+    ...some test results
+    {
+      "id": "record-types-by-predicates",
+      "name": "Record Types by Predicates",
+      "category": "relational",
+      "severity": "critical",
+      "score": 0,
+      "pass": false,
+      "threshold": 1,
+      "durationMs": 3478,
+      "message": "1 predicate/type association(s) were removed relative to baseline.",
+      "findings": [
+        {
+          "severity": "critical",
+          "message": "Predicate 'crm:P72_has_language' lost record type 'VisualItem' relative to baseline."
+        }
+      ],
+      "result": {
+        "types": [
+          "Activity",
+          "Currency",
+          "DigitalObject",
+          "Group",
+          "HumanMadeObject",
+          "Language",
+          "LinguisticObject",
+          "Material",
+          "MeasurementUnit",
+          "Period",
+          "Person",
+          "Place",
+          "Set",
+          "Type",
+          "VisualItem"
+        ],
+        "predicates": {
+          "crm:P106i_forms_part_of": {
+            "types": ["LinguisticObject"],
+            "baselineTypes": ["LinguisticObject"]
+          },
+          "crm:P107i_is_current_or_former_member_of": {
+            "types": ["Group", "Person"],
+            "baselineTypes": ["Group", "Person"]
+          },
+          ...more predicates
+        },
+        "emptyPredicates": []
+      }
+    },
+    ...more test results
+  ]
+}
+```
+
+### Successful With Test Config Request / Response Example
+
+Scenario: Skip the `predicate-coverage` test, lower the overall pass threshold, and override `predicate-alignment`'s threshold.
+
+Parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| `testConfig` | See below |
+
+```json
+{
+  "overallPassThreshold": 0.5,
+  "predicate-coverage": {
+    "skip": true
+  },
+  "predicate-alignment": {
+    "threshold": 0.7
+  }
+}
+```
+
+Response Status Code: 200
+
+Response Status Message: OK
+
+Response Body (abbreviated):
+
+```json
+{
+  "metadata": {
+    "id": "lux-content-2026-05-25T19:02:11.123Z",
+    "timestamp": "2026-05-25T19:02:11.123Z",
+    "durationMs": 812,
+    "codeVersion": "v3.3.0-418-g886698a",
+    "parameters": {
+      "unitNames": ["lux"],
+      "categories": null,
+      "testConfig": {
+        "overallPassThreshold": 0.5,
+        "predicate-coverage": { "skip": true },
+        "predicate-alignment": { "threshold": 0.7 }
+      },
+      "baselineProvided": false,
+      "baselineTestsMatched": 0,
+      "baselineId": null,
+      "format": "json"
+    }
+  },
+  "summary": {
+    "overallPass": true,
+    "overallPassThreshold": 0.5,
+    "aggregateScore": 0.7193,
+    "criticalPass": true,
+    "testsRun": 1,
+    "testsPassed": 1,
+    "testsWarning": 0,
+    "testsFailed": 0
+  },
+  "tests": [
+    {
+      "id": "predicate-alignment",
+      "name": "Predicate Alignment",
+      "category": "relational",
+      "severity": "critical",
+      "score": 0.7193,
+      "pass": true,
+      "threshold": 0.7,
+      "durationMs": 784,
+      "message": "16 configured predicate(s) not found in dataset.",
+      "result": { "..." : "..." }
+    },
+    ...more test results
+  ]
+}
+```
+
+### Failed Request / Response Example
+
+Scenario: User does not have the required privilege.
+
+Response Status Code: 403
+
+Response Status Message: Forbidden
+
+Response Body:
+
+```json
+{
+  "errorResponse": {
+    "statusCode": 403,
+    "status": "AccessDeniedError",
+    "messageCode": "AccessDeniedError",
+    "message": "User 'lux-endpoint-consumer' is not authorized to validate the dataset"
+  }
 }
 ```
 

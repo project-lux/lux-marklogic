@@ -1,0 +1,1134 @@
+<export><workspace name="Unfiltered"><query name="Insert" focus="false" listorder="1" taborder="1" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="">'use strict';
+// Load all synthetic filtering test documents.
+// Run in Query Console against the TEST CONTENT database.
+// Documents are defined inline so no filesystem access is needed.
+declareUpdate();
+
+const COLLECTION = 'filtering-validation';
+const PERMISSIONS = [
+  xdmp.permission('rest-reader', 'read'),
+  xdmp.permission('rest-writer', 'update'),
+];
+
+// Minimal item document factory. All docs are HumanMadeObject with itemAnyText-eligible content.
+function makeDoc(id, names, descriptions) {
+  const identified_by = names.map((n) =&gt; ({
+    type: 'Name',
+    content: n,
+    classified_as: [
+      {
+        id: 'https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec',
+        type: 'Type',
+        _label: 'Primary Name',
+        equivalent: [
+          { id: 'http://vocab.getty.edu/aat/300404670', type: 'Type' },
+        ],
+      },
+    ],
+  }));
+  const referred_to_by = (descriptions || []).map((d) =&gt; ({
+    type: 'LinguisticObject',
+    content: d,
+    classified_as: [
+      {
+        id: 'https://lux.collections.yale.edu/data/concept/b9d84f17-662e-46ef-ab8b-7499717f8337',
+        type: 'Type',
+        _label: 'Description',
+        equivalent: [
+          { id: 'http://vocab.getty.edu/aat/300435416', type: 'Type' },
+        ],
+      },
+    ],
+  }));
+  return {
+    json: {
+      id: `https://lux.collections.yale.edu/data/test/${id}`,
+      type: 'HumanMadeObject',
+      _label: `Test ${id}`,
+      identified_by,
+      referred_to_by,
+      classified_as: [
+        {
+          id: 'https://lux.collections.yale.edu/data/concept/test-type-1',
+          type: 'Type',
+        },
+      ],
+    },
+    triples: [],
+    admin: {},
+    indexedProperties: { dataType: 'HumanMadeObject' },
+  };
+}
+
+const docs = [
+  {
+    uri: '/test/filtering/item-001.json',
+    content: makeDoc(
+      'item-001',
+      ['Georgia Landscape'],
+      ['Painted by Keeffe in 1920'],
+    ),
+  },
+  {
+    uri: '/test/filtering/item-002.json',
+    content: makeDoc('item-002', ['Portrait of Georgia Keeffe'], []),
+  },
+  {
+    uri: '/test/filtering/item-003.json',
+    content: makeDoc('item-003', ["O'Keeffe Exhibition Catalog"], []),
+  },
+  {
+    uri: '/test/filtering/item-004.json',
+    content: makeDoc('item-004', ['O Keeffe Collection Guide'], []),
+  },
+  {
+    uri: '/test/filtering/item-005.json',
+    content: makeDoc('item-005', ['OKeeffe Digital Archive'], []),
+  },
+  {
+    uri: '/test/filtering/item-006.json',
+    content: makeDoc(
+      'item-006',
+      ['Stieglitz Photograph'],
+      ['Held in the Beinecke Rare Book and Manuscript Library'],
+    ),
+  },
+  {
+    uri: '/test/filtering/item-007.json',
+    content: makeDoc(
+      'item-007',
+      ['Stieglitz Cloud Study'],
+      ['A gelatin silver print from the museum collection'],
+    ),
+  },
+  {
+    uri: '/test/filtering/item-008.json',
+    content: makeDoc('item-008', ['PAINTING BY UNKNOWN ARTIST'], []),
+  },
+  {
+    uri: '/test/filtering/item-009.json',
+    content: makeDoc('item-009', ['A painting of the seaside'], []),
+  },
+  {
+    uri: '/test/filtering/item-010.json',
+    content: makeDoc('item-010', ['Painting of Flowers'], []),
+  },
+  {
+    uri: '/test/filtering/item-011.json',
+    content: makeDoc('item-011', ['Collection of watercolor paintings'], []),
+  },
+  {
+    uri: '/test/filtering/item-012.json',
+    content: makeDoc('item-012', ['Self-portrait in Blue'], []),
+  },
+  {
+    uri: '/test/filtering/item-013.json',
+    content: makeDoc('item-013', ['Self portrait in Red'], []),
+  },
+  {
+    uri: '/test/filtering/item-014.json',
+    content: makeDoc('item-014', ['Selfportrait with Hat'], []),
+  },
+];
+
+let loaded = 0;
+let skipped = 0;
+
+for (const doc of docs) {
+  if (fn.docAvailable(doc.uri)) {
+    skipped++;
+    continue;
+  }
+  xdmp.documentInsert(doc.uri, doc.content, {
+    collections: [COLLECTION],
+    permissions: PERMISSIONS,
+  });
+  loaded++;
+}
+
+const results = {
+  loaded,
+  skipped,
+  total: docs.length,
+  collection: COLLECTION,
+  message: `Loaded ${loaded} documents, skipped ${skipped} (already exist). Collection: ${COLLECTION}`,
+};
+export default results;
+</query><query name="V1" focus="false" listorder="2" taborder="2" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="">'use strict';
+// V1: Cross-instance phrase matching
+// Tests whether a phrase query for "Georgia Keeffe" matches a document where
+// "Georgia" and "Keeffe" appear in SEPARATE content nodes (different field instances).
+//
+// Expected: item-002 matches (phrase exists in single content node).
+//           item-001 should NOT match (words are in different content nodes).
+//           If item-001 matches unfiltered, that is a false positive.
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+
+// The phrase query: "Georgia Keeffe" as a phrase (complete match = fieldValueQuery)
+// and as adjacent words (fieldWordQuery with the phrase as a single string).
+const phraseWordQuery = cts.fieldWordQuery(
+  'itemAnyText',
+  'Georgia Keeffe',
+  [
+    'case-insensitive',
+    'diacritic-insensitive',
+    'punctuation-insensitive',
+    'whitespace-insensitive',
+    'stemmed',
+    'wildcarded',
+  ],
+  1,
+);
+
+const scopedPhraseQuery = cts.andQuery([SCOPE_CONSTRAINT, phraseWordQuery]);
+
+// 1. Unfiltered (cts.uris)
+const unfilteredUris = cts
+  .uris(null, [], scopedPhraseQuery)
+  .toArray()
+  .map(String);
+
+// 2. Filtered (cts.search)
+const filteredUris = [];
+for (const doc of cts.search(scopedPhraseQuery)) {
+  filteredUris.push(String(fn.documentUri(doc)));
+}
+
+// 3. Optic plan (non-semantic keyword path)
+const opticPlan = op
+  .fromLexicons(
+    {
+      uri: cts.uriReference(),
+      iri: cts.iriReference(),
+      dataType: cts.fieldReference('anyDataTypeName', [
+        'type=string',
+        'collation=http://marklogic.com/collation/codepoint',
+      ]),
+    },
+    null,
+    op.fragmentIdCol('frag'),
+  )
+  .where(cts.collectionQuery(COLLECTION))
+  .where(op.in(op.col('dataType'), ['DigitalObject', 'HumanMadeObject']))
+  .joinInner(
+    op.fromSearch(phraseWordQuery, null, null, { scoreMethod: 'logtfidf' }),
+    op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+  )
+  .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+  .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+
+const opticUris = opticPlan
+  .result()
+  .toArray()
+  .map((r) =&gt; r.id);
+
+const results = {
+  scenario: 'V1: Cross-instance phrase matching',
+  query: 'fieldWordQuery("itemAnyText", "Georgia Keeffe", [default options])',
+  description:
+    'Tests whether words in separate //content nodes produce a false-positive phrase match.',
+  expectedMatch: ['/test/filtering/item-002.json'],
+  expectedNoMatch: ['/test/filtering/item-001.json'],
+  unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+  filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+  optic: { count: opticUris.length, uris: opticUris.sort() },
+  falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+  opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+  analysis: {
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+    hasFalsePositives: unfilteredUris.length &gt; filteredUris.length,
+  },
+};
+export default results;
+</query><query name="Delete" focus="true" listorder="9" taborder="9" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="">'use strict';
+// Delete all synthetic filtering test documents.
+// Run in Query Console against the TEST CONTENT database.
+declareUpdate();
+
+const COLLECTION = 'filtering-validation';
+
+const uris = cts.uris(null, [], cts.collectionQuery(COLLECTION)).toArray();
+
+for (const uri of uris) {
+  xdmp.documentDelete(uri);
+}
+
+const results = {
+  deleted: uris.length,
+  collection: COLLECTION,
+  message: `Deleted ${uris.length} documents from collection '${COLLECTION}'.`,
+};
+export default results;
+</query><query name="V2" focus="false" listorder="3" taborder="3" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="1">'use strict';
+// V2: Case sensitivity
+// Tests whether case-sensitive search correctly distinguishes case variants.
+// Bob Starbird: "unfiltered case-sensitive searches of lower-case queries
+// cannot eliminate false positives" — even WITH fast-case-sensitive-searches.
+//
+// Test A: case-sensitive search for "PAINTING" (upper) — should match item-008 only.
+// Test B: case-sensitive search for "painting" (lower) — Bob says this MAY
+//         produce false positives (matches upper-case too) unfiltered.
+// Test C: case-insensitive search for "painting" — should match all three (008, 009, 010).
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+const SCOPE_TYPES = ['DigitalObject', 'HumanMadeObject'];
+
+function buildOpticPlan(ctsQuery) {
+  return op
+    .fromLexicons(
+      {
+        uri: cts.uriReference(),
+        iri: cts.iriReference(),
+        dataType: cts.fieldReference('anyDataTypeName', [
+          'type=string',
+          'collation=http://marklogic.com/collation/codepoint',
+        ]),
+      },
+      null,
+      op.fragmentIdCol('frag'),
+    )
+    .where(cts.collectionQuery(COLLECTION))
+    .where(op.in(op.col('dataType'), SCOPE_TYPES))
+    .joinInner(
+      op.fromSearch(ctsQuery, null, null, { scoreMethod: 'logtfidf' }),
+      op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+    )
+    .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+    .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+}
+
+function runScenario(label, ctsQuery) {
+  const scopedQuery = cts.andQuery([SCOPE_CONSTRAINT, ctsQuery]);
+  const unfilteredUris = cts.uris(null, [], scopedQuery).toArray().map(String);
+  const filteredUris = [];
+  for (const doc of cts.search(scopedQuery)) {
+    filteredUris.push(String(fn.documentUri(doc)));
+  }
+  const opticUris = buildOpticPlan(ctsQuery)
+    .result()
+    .toArray()
+    .map((r) =&gt; r.id);
+
+  return {
+    label,
+    unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+    filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+    optic: { count: opticUris.length, uris: opticUris.sort() },
+    falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+    opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+  };
+}
+
+// Test A: case-sensitive "PAINTING"
+const testA = runScenario(
+  'A: case-sensitive "PAINTING" (upper)',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'PAINTING',
+    [
+      'case-sensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test B: case-sensitive "painting" (lower) — Bob's known false-positive trigger
+const testB = runScenario(
+  'B: case-sensitive "painting" (lower)',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'painting',
+    [
+      'case-sensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test C: case-insensitive "painting" (baseline)
+const testC = runScenario(
+  'C: case-insensitive "painting" (baseline)',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'painting',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+const results = {
+  scenario: 'V2: Case sensitivity',
+  description:
+    'Tests case-sensitive search accuracy. Bob Starbird notes lower-case case-sensitive queries cannot eliminate false positives even with fast-case-sensitive-searches.',
+  expectedBehavior: {
+    testA: 'Only item-008 (PAINTING) should match',
+    testB:
+      'Only item-009 (painting) should match — but Bob says false positives from item-008/010 are possible',
+    testC:
+      'All three (008, 009, 010) plus item-011 (paintings via stemming) should match',
+  },
+  testA,
+  testB,
+  testC,
+};
+export default results;
+</query><query name="V3" focus="false" listorder="4" taborder="4" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="1">'use strict';
+// V3: Punctuation sensitivity
+// Tests whether punctuation-sensitive search distinguishes O'Keeffe variants.
+// Bob Starbird: "Punctuation and space tokens are not indexed as words in the
+// universal index. Use of punctuation in the query will allow false positives."
+//
+// Test A: punctuation-insensitive "o'keeffe" — should match item-003, item-004, possibly item-005.
+// Test B: punctuation-sensitive "o'keeffe" — should match ONLY item-003.
+// Test C: punctuation-sensitive "self-portrait" — should match ONLY item-012.
+// Test D: punctuation-insensitive "self-portrait" — should match item-012, item-013, possibly item-014.
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+const SCOPE_TYPES = ['DigitalObject', 'HumanMadeObject'];
+
+function buildOpticPlan(ctsQuery) {
+  return op
+    .fromLexicons(
+      {
+        uri: cts.uriReference(),
+        iri: cts.iriReference(),
+        dataType: cts.fieldReference('anyDataTypeName', [
+          'type=string',
+          'collation=http://marklogic.com/collation/codepoint',
+        ]),
+      },
+      null,
+      op.fragmentIdCol('frag'),
+    )
+    .where(cts.collectionQuery(COLLECTION))
+    .where(op.in(op.col('dataType'), SCOPE_TYPES))
+    .joinInner(
+      op.fromSearch(ctsQuery, null, null, { scoreMethod: 'logtfidf' }),
+      op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+    )
+    .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+    .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+}
+
+function runScenario(label, ctsQuery) {
+  const scopedQuery = cts.andQuery([SCOPE_CONSTRAINT, ctsQuery]);
+  const unfilteredUris = cts.uris(null, [], scopedQuery).toArray().map(String);
+  const filteredUris = [];
+  for (const doc of cts.search(scopedQuery)) {
+    filteredUris.push(String(fn.documentUri(doc)));
+  }
+  const opticUris = buildOpticPlan(ctsQuery)
+    .result()
+    .toArray()
+    .map((r) =&gt; r.id);
+
+  return {
+    label,
+    unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+    filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+    optic: { count: opticUris.length, uris: opticUris.sort() },
+    falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+    opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+  };
+}
+
+// Test A: punctuation-insensitive "o'keeffe"
+const testA = runScenario(
+  'A: punctuation-insensitive "o\'keeffe"',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    "o'keeffe",
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test B: punctuation-sensitive "o'keeffe"
+const testB = runScenario(
+  'B: punctuation-sensitive "o\'keeffe"',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    "o'keeffe",
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-sensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test C: punctuation-sensitive "self-portrait"
+const testC = runScenario(
+  'C: punctuation-sensitive "self-portrait"',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'self-portrait',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-sensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test D: punctuation-insensitive "self-portrait"
+const testD = runScenario(
+  'D: punctuation-insensitive "self-portrait"',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'self-portrait',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+const results = {
+  scenario: 'V3: Punctuation sensitivity',
+  description:
+    'Tests punctuation-sensitive search accuracy. Bob: punctuation tokens are not indexed; punctuation in queries allows false positives.',
+  expectedBehavior: {
+    testA:
+      "Broad match: item-003 (O'Keeffe), item-004 (O Keeffe), possibly item-005 (OKeeffe)",
+    testB:
+      "Strict: only item-003 (O'Keeffe) should match after filtering. Unfiltered may include false positives.",
+    testC:
+      'Strict: only item-012 (Self-portrait) after filtering. Unfiltered may include item-013 (self portrait).',
+    testD:
+      'Broad: item-012 (Self-portrait) and item-013 (self portrait), possibly item-014 (Selfportrait)',
+  },
+  testA,
+  testB,
+  testC,
+  testD,
+};
+export default results;
+</query><query name="v4" focus="false" listorder="5" taborder="5" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="1">'use strict';
+// V4: NOT with approximate sub-query
+// Mirrors the UAT finding: (stieglitz OR o'keeffe) AND NOT library
+// If "library" word query has false positives (unlikely for a simple word),
+// NOT would produce false negatives. More importantly, this tests whether
+// Optic's notExistsJoin / CTS fold correctly excludes documents.
+//
+// Expected: item-007 matches (has stieglitz, no library).
+//           item-006 should NOT match (has stieglitz AND library).
+//           item-003 matches (has o'keeffe, no library).
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+const SCOPE_TYPES = ['DigitalObject', 'HumanMadeObject'];
+
+const DEFAULT_OPTIONS = [
+  'case-insensitive',
+  'diacritic-insensitive',
+  'punctuation-insensitive',
+  'whitespace-insensitive',
+  'stemmed',
+  'wildcarded',
+];
+
+// The full query: (stieglitz OR o'keeffe) AND NOT library
+const stieglitzQuery = cts.fieldWordQuery(
+  'itemAnyText',
+  'stieglitz',
+  DEFAULT_OPTIONS,
+  1,
+);
+const okeeffeQuery = cts.fieldWordQuery(
+  'itemAnyText',
+  "o'keeffe",
+  DEFAULT_OPTIONS,
+  1,
+);
+const libraryQuery = cts.fieldWordQuery(
+  'itemAnyText',
+  'library',
+  DEFAULT_OPTIONS,
+  1,
+);
+
+const combinedQuery = cts.andNotQuery(
+  cts.orQuery([stieglitzQuery, okeeffeQuery]),
+  libraryQuery,
+);
+
+const scopedQuery = cts.andQuery([SCOPE_CONSTRAINT, combinedQuery]);
+
+// 1. Unfiltered
+const unfilteredUris = cts.uris(null, [], scopedQuery).toArray().map(String);
+
+// 2. Filtered
+const filteredUris = [];
+for (const doc of cts.search(scopedQuery)) {
+  filteredUris.push(String(fn.documentUri(doc)));
+}
+
+// 3. Optic — using the CTS query in a where clause (non-scoring path, like Opt 1)
+const opticPlanWhere = op
+  .fromLexicons(
+    {
+      uri: cts.uriReference(),
+      iri: cts.iriReference(),
+      dataType: cts.fieldReference('anyDataTypeName', [
+        'type=string',
+        'collation=http://marklogic.com/collation/codepoint',
+      ]),
+    },
+    null,
+    op.fragmentIdCol('frag'),
+  )
+  .where(cts.collectionQuery(COLLECTION))
+  .where(op.in(op.col('dataType'), SCOPE_TYPES))
+  .where(combinedQuery)
+  .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+  .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+
+const opticWhereUris = opticPlanWhere
+  .result()
+  .toArray()
+  .map((r) =&gt; r.id);
+
+// 4. Optic — using fromSearch (scoring path)
+const opticPlanFromSearch = op
+  .fromLexicons(
+    {
+      uri: cts.uriReference(),
+      iri: cts.iriReference(),
+      dataType: cts.fieldReference('anyDataTypeName', [
+        'type=string',
+        'collation=http://marklogic.com/collation/codepoint',
+      ]),
+    },
+    null,
+    op.fragmentIdCol('frag'),
+  )
+  .where(cts.collectionQuery(COLLECTION))
+  .where(op.in(op.col('dataType'), SCOPE_TYPES))
+  .joinInner(
+    op.fromSearch(combinedQuery, null, null, { scoreMethod: 'logtfidf' }),
+    op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+  )
+  .groupBy(
+    ['uri'],
+    [
+      op.sample('dataType', op.col('dataType')),
+      op.max('score', op.col('score')),
+    ],
+  )
+  .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+
+const opticFromSearchUris = opticPlanFromSearch
+  .result()
+  .toArray()
+  .map((r) =&gt; r.id);
+
+const results = {
+  scenario: 'V4: NOT with approximate sub-query',
+  description:
+    "Tests (stieglitz OR o'keeffe) AND NOT library. Mirrors UAT finding where Optic returned 158 vs CTS 3.",
+  expectedBehavior: {
+    shouldMatch: [
+      "item-003 (o'keeffe)",
+      'item-004 (O Keeffe)',
+      'item-005 (OKeeffe)',
+      'item-007 (stieglitz, no library)',
+    ],
+    shouldNotMatch: ['item-006 (stieglitz WITH library)'],
+  },
+  unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+  filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+  opticWhere: { count: opticWhereUris.length, uris: opticWhereUris.sort() },
+  opticFromSearch: {
+    count: opticFromSearchUris.length,
+    uris: opticFromSearchUris.sort(),
+  },
+  falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+  falseNegatives: filteredUris.filter((u) =&gt; !unfilteredUris.includes(u)),
+  opticWhereVsFiltered: opticWhereUris.filter((u) =&gt; !filteredUris.includes(u)),
+  opticFromSearchVsFiltered: opticFromSearchUris.filter(
+    (u) =&gt; !filteredUris.includes(u),
+  ),
+  analysis: {
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticWhereMatchesFiltered: opticWhereUris.length === filteredUris.length,
+    opticFromSearchMatchesFiltered:
+      opticFromSearchUris.length === filteredUris.length,
+    note: 'If unfiltered &gt; filtered, NOT is producing false negatives (documents incorrectly excluded). If unfiltered &lt; filtered for the positive part, the OR has false positives that NOT amplified.',
+  },
+};
+export default results;
+</query><query name="V5" focus="false" listorder="6" taborder="6" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="1">'use strict';
+// V5: Stemming correctness
+// Tests that stemmed search matches morphological variants and that
+// unstemmed search correctly excludes them.
+//
+// Test A: stemmed "painting" — should match item-009 (painting), item-010 (Painting),
+//         item-011 (paintings). May also match item-008 (PAINTING).
+// Test B: unstemmed "painting" — should match exact word only (009, 010, 008),
+//         NOT item-011 (paintings).
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+const SCOPE_TYPES = ['DigitalObject', 'HumanMadeObject'];
+
+function buildOpticPlan(ctsQuery) {
+  return op
+    .fromLexicons(
+      {
+        uri: cts.uriReference(),
+        iri: cts.iriReference(),
+        dataType: cts.fieldReference('anyDataTypeName', [
+          'type=string',
+          'collation=http://marklogic.com/collation/codepoint',
+        ]),
+      },
+      null,
+      op.fragmentIdCol('frag'),
+    )
+    .where(cts.collectionQuery(COLLECTION))
+    .where(op.in(op.col('dataType'), SCOPE_TYPES))
+    .joinInner(
+      op.fromSearch(ctsQuery, null, null, { scoreMethod: 'logtfidf' }),
+      op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+    )
+    .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+    .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+}
+
+function runScenario(label, ctsQuery) {
+  const scopedQuery = cts.andQuery([SCOPE_CONSTRAINT, ctsQuery]);
+  const unfilteredUris = cts.uris(null, [], scopedQuery).toArray().map(String);
+  const filteredUris = [];
+  for (const doc of cts.search(scopedQuery)) {
+    filteredUris.push(String(fn.documentUri(doc)));
+  }
+  const opticUris = buildOpticPlan(ctsQuery)
+    .result()
+    .toArray()
+    .map((r) =&gt; r.id);
+
+  return {
+    label,
+    unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+    filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+    optic: { count: opticUris.length, uris: opticUris.sort() },
+    falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+    opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+  };
+}
+
+// Test A: stemmed "painting"
+const testA = runScenario(
+  'A: stemmed "painting"',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'painting',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test B: unstemmed "painting"
+const testB = runScenario(
+  'B: unstemmed "painting"',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'painting',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'unstemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+const results = {
+  scenario: 'V5: Stemming correctness',
+  description: 'Tests stemmed vs unstemmed search behavior.',
+  expectedBehavior: {
+    testA:
+      'Stemmed should match: 008 (PAINTING), 009 (painting), 010 (Painting), 011 (paintings)',
+    testB:
+      'Unstemmed should match: 008 (PAINTING), 009 (painting), 010 (Painting) — NOT 011 (paintings)',
+  },
+  testA,
+  testB,
+};
+export default results;
+</query><query name="V6" focus="false" listorder="7" taborder="7" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="1">'use strict';
+// V6: Field containment with //content paths
+// Tests whether cts.fieldWordQuery against itemAnyText (path: //content)
+// correctly scopes to field instances or conflates across them.
+//
+// This tests multi-word (tokenized) keyword searches where each word exists
+// in the document but in DIFFERENT content nodes.
+//
+// item-001 has "Georgia Landscape" in one content and "Painted by Keeffe in 1920" in another.
+// A tokenized search for "Georgia Keeffe" becomes AND(fieldWordQuery("Georgia"), fieldWordQuery("Keeffe")).
+// Both words exist in the document's itemAnyText field — the question is whether
+// the index correctly proves both words exist (it should, this is expected behavior
+// for tokenized multi-word searches — each word is independently matched).
+//
+// This scenario validates that tokenized keyword search (the default for multi-word)
+// correctly returns documents where individual tokens appear across field instances.
+// This is NOT a false positive — it is the intended behavior of tokenized search.
+// The false-positive risk is only for PHRASE queries (V1).
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+const SCOPE_TYPES = ['DigitalObject', 'HumanMadeObject'];
+
+function buildOpticPlan(ctsQuery) {
+  return op
+    .fromLexicons(
+      {
+        uri: cts.uriReference(),
+        iri: cts.iriReference(),
+        dataType: cts.fieldReference('anyDataTypeName', [
+          'type=string',
+          'collation=http://marklogic.com/collation/codepoint',
+        ]),
+      },
+      null,
+      op.fragmentIdCol('frag'),
+    )
+    .where(cts.collectionQuery(COLLECTION))
+    .where(op.in(op.col('dataType'), SCOPE_TYPES))
+    .joinInner(
+      op.fromSearch(ctsQuery, null, null, { scoreMethod: 'logtfidf' }),
+      op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+    )
+    .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+    .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+}
+
+function runScenario(label, ctsQuery) {
+  const scopedQuery = cts.andQuery([SCOPE_CONSTRAINT, ctsQuery]);
+  const unfilteredUris = cts.uris(null, [], scopedQuery).toArray().map(String);
+  const filteredUris = [];
+  for (const doc of cts.search(scopedQuery)) {
+    filteredUris.push(String(fn.documentUri(doc)));
+  }
+  const opticUris = buildOpticPlan(ctsQuery)
+    .result()
+    .toArray()
+    .map((r) =&gt; r.id);
+
+  return {
+    label,
+    unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+    filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+    optic: { count: opticUris.length, uris: opticUris.sort() },
+    falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+    opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+  };
+}
+
+// Test A: Tokenized multi-word (AND of word queries) — LUX's default behavior
+// Simulates what the engine does: tokenize "Georgia Keeffe" into AND(word("Georgia"), word("Keeffe"))
+const tokenizedQuery = cts.andQuery([
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'Georgia',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'Keeffe',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'stemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+]);
+
+const testA = runScenario(
+  'A: Tokenized AND(word("Georgia"), word("Keeffe")) — cross-instance',
+  tokenizedQuery,
+);
+
+// Test B: fieldValueQuery (exact match / _complete) — tests whether exact value
+// correctly requires the ENTIRE value in a single field instance
+const exactQuery = cts.fieldValueQuery(
+  'itemAnyText',
+  'Georgia Keeffe',
+  [
+    'case-insensitive',
+    'diacritic-insensitive',
+    'punctuation-insensitive',
+    'whitespace-insensitive',
+  ],
+  1,
+);
+
+const testB = runScenario(
+  'B: fieldValueQuery("Georgia Keeffe") — exact match',
+  exactQuery,
+);
+
+// Test C: fieldValueQuery for a value that exists in a single node
+const exactExistsQuery = cts.fieldValueQuery(
+  'itemAnyText',
+  'Georgia Landscape',
+  [
+    'case-insensitive',
+    'diacritic-insensitive',
+    'punctuation-insensitive',
+    'whitespace-insensitive',
+  ],
+  1,
+);
+
+const testC = runScenario(
+  'C: fieldValueQuery("Georgia Landscape") — exists in single node',
+  exactExistsQuery,
+);
+
+const results = {
+  scenario: 'V6: Field containment with //content paths',
+  description:
+    'Tests cross-field-instance behavior for tokenized vs exact searches.',
+  expectedBehavior: {
+    testA:
+      'Both item-001 AND item-002 should match (tokenized words found independently across field — this is correct behavior, NOT a false positive)',
+    testB:
+      'Neither item-001 nor item-002 should match (no single content node contains the exact value "Georgia Keeffe")',
+    testC:
+      'Only item-001 should match (contains "Georgia Landscape" in a single content node)',
+  },
+  testA,
+  testB,
+  testC,
+  insight:
+    'If testA unfiltered !== filtered, the field-level containment has false positives even for individual word queries (unlikely). If testB returns results, fieldValueQuery does not enforce single-instance containment.',
+};
+export default results;
+</query><query name="V7" focus="false" listorder="8" taborder="8" active="true" database="16296972423960182001" server="11224455887718979492" database-name="lux-dev-data-content" server-name="lux-dev-data-deploy" mode="javascript" optimize="1">'use strict';
+// V7: Lower-case case-sensitive search (Bob's specific callout)
+// Bob Starbird: "If the word is all-lowercase, then case-sensitive search
+// requires filtering. When the input term is all lower case it will match
+// on any occurrence of the term (upper or lower)."
+//
+// This directly contradicts the expectation that fast-case-sensitive-searches
+// resolves all case-sensitive queries from the index. The Bob document says
+// this is a known MarkLogic behavior.
+//
+// Test A: case-sensitive "stieglitz" (lower) — item-006, item-007 have "Stieglitz" (title case).
+//         If Bob is correct, this will match those docs unfiltered (false positive)
+//         but filtering will exclude them.
+// Test B: case-sensitive "Stieglitz" (title case) — should correctly match item-006, item-007.
+
+const op = require('/MarkLogic/optic');
+
+const COLLECTION = 'filtering-validation';
+const SCOPE_CONSTRAINT = cts.collectionQuery(COLLECTION);
+const SCOPE_TYPES = ['DigitalObject', 'HumanMadeObject'];
+
+function buildOpticPlan(ctsQuery) {
+  return op
+    .fromLexicons(
+      {
+        uri: cts.uriReference(),
+        iri: cts.iriReference(),
+        dataType: cts.fieldReference('anyDataTypeName', [
+          'type=string',
+          'collation=http://marklogic.com/collation/codepoint',
+        ]),
+      },
+      null,
+      op.fragmentIdCol('frag'),
+    )
+    .where(cts.collectionQuery(COLLECTION))
+    .where(op.in(op.col('dataType'), SCOPE_TYPES))
+    .joinInner(
+      op.fromSearch(ctsQuery, null, null, { scoreMethod: 'logtfidf' }),
+      op.on(op.fragmentIdCol('frag'), op.fragmentIdCol('fragmentId')),
+    )
+    .groupBy(['uri'], [op.sample('dataType', op.col('dataType'))])
+    .select([op.as('id', op.col('uri')), op.as('type', op.col('dataType'))]);
+}
+
+function runScenario(label, ctsQuery) {
+  const scopedQuery = cts.andQuery([SCOPE_CONSTRAINT, ctsQuery]);
+  const unfilteredUris = cts.uris(null, [], scopedQuery).toArray().map(String);
+  const filteredUris = [];
+  for (const doc of cts.search(scopedQuery)) {
+    filteredUris.push(String(fn.documentUri(doc)));
+  }
+  const opticUris = buildOpticPlan(ctsQuery)
+    .result()
+    .toArray()
+    .map((r) =&gt; r.id);
+
+  return {
+    label,
+    unfiltered: { count: unfilteredUris.length, uris: unfilteredUris.sort() },
+    filtered: { count: filteredUris.length, uris: filteredUris.sort() },
+    optic: { count: opticUris.length, uris: opticUris.sort() },
+    falsePositives: unfilteredUris.filter((u) =&gt; !filteredUris.includes(u)),
+    opticVsFiltered: opticUris.filter((u) =&gt; !filteredUris.includes(u)),
+    unfilteredMatchesFiltered: unfilteredUris.length === filteredUris.length,
+    opticMatchesFiltered: opticUris.length === filteredUris.length,
+  };
+}
+
+// Test A: case-sensitive "stieglitz" (all lowercase query)
+const testA = runScenario(
+  'A: case-sensitive "stieglitz" (lower-case query)',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'stieglitz',
+    [
+      'case-sensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'unstemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test B: case-sensitive "Stieglitz" (title-case query)
+const testB = runScenario(
+  'B: case-sensitive "Stieglitz" (title-case query)',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'Stieglitz',
+    [
+      'case-sensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'unstemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+// Test C: case-insensitive "stieglitz" (baseline — should match both)
+const testC = runScenario(
+  'C: case-insensitive "stieglitz" (baseline)',
+  cts.fieldWordQuery(
+    'itemAnyText',
+    'stieglitz',
+    [
+      'case-insensitive',
+      'diacritic-insensitive',
+      'punctuation-insensitive',
+      'whitespace-insensitive',
+      'unstemmed',
+      'wildcarded',
+    ],
+    1,
+  ),
+);
+
+const results = {
+  scenario: "V7: Lower-case case-sensitive search (Bob's callout)",
+  description:
+    'Bob Starbird: lower-case case-sensitive queries cannot eliminate false positives even with fast-case-sensitive-searches. The index resolves all-lowercase terms case-insensitively.',
+  expectedBehavior: {
+    testA:
+      'Data has "Stieglitz" (title case). A case-sensitive search for "stieglitz" (lower) should find NO matches if filtering. Bob says unfiltered will match anyway (false positive).',
+    testB:
+      'Case-sensitive "Stieglitz" should correctly match item-006 and item-007.',
+    testC: 'Case-insensitive baseline should match item-006 and item-007.',
+  },
+  testA,
+  testB,
+  testC,
+  criticalInsight:
+    'If testA.unfiltered &gt; testA.filtered, Bob is confirmed: lower-case case-sensitive queries produce false positives that only filtering can remove. This would explain the UAT finding where Optic returned same count with and without case sensitivity.',
+};
+export default results;
+</query></workspace></export>

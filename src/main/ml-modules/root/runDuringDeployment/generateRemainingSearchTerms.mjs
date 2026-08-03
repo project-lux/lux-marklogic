@@ -5,9 +5,8 @@ import {
   PATTERN_NAME_HOP_INVERSE,
   PATTERN_NAME_INDEXED_RANGE,
   PATTERN_NAME_INDEXED_VALUE,
-  PATTERN_NAME_PROPERTY_VALUE,
-} from '../lib/searchPatternsLib.mjs';
-import { getSearchScopeTypes } from '../lib/searchScope.mjs';
+  PATTERN_NAME_IRI,
+} from '../lib/search/patterns/loadPatterns.mjs';
 import { searchTermText } from '../config/userFacingConfig.mjs';
 import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
 import * as utils from '../utils/utils.mjs';
@@ -22,7 +21,6 @@ const uri = '/config/searchTermsConfig.mjs';
 console.log(`Adding remaining search terms within ${uri}`);
 
 // Arrays for consolidating logging.
-const skippedTypeTermMsgs = [];
 const matchedIdIndexConfigMsgs = [];
 const mergedTermMsgs = [];
 const droppedScopeMsgs = [];
@@ -108,9 +106,6 @@ const searchTermsConfig = {};
 
   // Generate facet search terms.
   Object.keys(FACETS_CONFIG).forEach((facetName) => {
-    if (FACETS_CONFIG[facetName].subFacets) {
-      return; // do not generate search terms for facets that have sub-facets.
-    }
     let { scopeName, termName } = facetToScopeAndTermName(facetName);
     if (isDroppedSearchScope(droppedScopes, scopeName)) {
       return;
@@ -136,7 +131,7 @@ const searchTermsConfig = {};
     } else if (isDimension) {
       scalarType = 'float';
     } else if (isZeroOrOne) {
-      scalarType = 'number';
+      scalarType = 'integer';
     }
 
     // Get ready to add
@@ -200,17 +195,27 @@ const searchTermsConfig = {};
         scalarType,
         generated: true,
       };
-
-      if (isDate) {
-        unitConfig[scopeName][termName].isStartDate =
-          termName.indexOf('Start') > -1 ? true : false;
-      }
     }
   });
 
-  // Generate the hop inverse search terms.
+  // Generate the hop inverse and transitive search terms.
   Object.keys(unitConfig).forEach((scopeName) => {
     Object.keys(unitConfig[scopeName]).forEach((termName) => {
+      // make a copy of the term if it is to be transitive, and add a '+' to the name.
+      const makeTransitive = unitConfig[scopeName][termName].makeTransitive;
+      if (makeTransitive) {
+        if (unitConfig[scopeName][termName + '+']) {
+          const msg = `Search term '${termName}+' in the '${scopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
+          console.error(msg);
+          throw new Error(msg);
+        }
+        unitConfig[scopeName][termName + '+'] = {
+          ...unitConfig[scopeName][termName],
+        };
+        unitConfig[scopeName][termName + '+'].transitive = true;
+        delete unitConfig[scopeName][termName + '+'].makeTransitive;
+        unitConfig[scopeName][termName + '+'].hopInverseName += '+';
+      }
       if (hasHopInverseInfo(unitConfig[scopeName][termName])) {
         const newScopeName = unitConfig[scopeName][termName].targetScope;
         const newTermName = unitConfig[scopeName][termName].hopInverseName;
@@ -229,6 +234,20 @@ const searchTermsConfig = {};
           hopInverseName: termName, // added for getInverseSearchTermInfo
           generated: true,
         };
+        // make a copy of the hop inverse term if it is to be transitive, and add a '+' to the name.
+        if (makeTransitive) {
+          if (unitConfig[newScopeName][newTermName + '+']) {
+            const msg = `Search term '${newTermName}+' in the '${newScopeName}' scope already exists yet search term '${termName}' in the '${scopeName}' scope is configured to create it. Please address and try again.`;
+            console.error(msg);
+            throw new Error(msg);
+          }
+          unitConfig[newScopeName][newTermName + '+'] = {
+            ...unitConfig[newScopeName][newTermName],
+          };
+          unitConfig[newScopeName][newTermName + '+'].transitive = true;
+          delete unitConfig[newScopeName][newTermName + '+'].makeTransitive;
+          unitConfig[newScopeName][newTermName + '+'].hopInverseName += '+';
+        }
       }
     });
   });
@@ -248,8 +267,8 @@ const searchTermsConfig = {};
       unitConfig[scopeName] = {};
     }
     unitConfig[scopeName][termName] = {
-      patternName: PATTERN_NAME_PROPERTY_VALUE,
-      propertyNames: ['dataType'],
+      patternName: PATTERN_NAME_INDEXED_VALUE,
+      indexReferences: ['anyDataTypeName'],
       scalarType: 'string',
       forceExactMatch: true,
       generated: true,
@@ -263,33 +282,9 @@ const searchTermsConfig = {};
       overrodeTermMgs.push(`${scopeName}.${termName}`);
     }
     unitConfig[scopeName][termName] = {
-      patternName: 'iri',
+      patternName: PATTERN_NAME_IRI,
       generated: true,
     };
-  });
-
-  // Add one ID search term per type per scope that has the associated property.
-  Object.keys(unitConfig).forEach((scopeName) => {
-    getSearchScopeTypes(scopeName).forEach((type) => {
-      // Require data backing this search term be in the dataset.
-      const termName = `${utils.lowercaseFirstCharacter(type)}Id`;
-      if (
-        cts.estimate(cts.jsonPropertyScopeQuery(termName, cts.trueQuery())) > 0
-      ) {
-        if (isUnrestrictedUnit && unitConfig[scopeName][termName]) {
-          overrodeTermMgs.push(`${scopeName}.${termName}`);
-        }
-        unitConfig[scopeName][termName] = {
-          patternName: PATTERN_NAME_PROPERTY_VALUE,
-          propertyNames: [termName],
-          scalarType: 'string',
-          forceExactMatch: true,
-          generated: true,
-        };
-      } else if (isUnrestrictedUnit) {
-        skippedTypeTermMsgs.push(`${scopeName}.${termName}`);
-      }
-    });
   });
 
   // Add labels and help text.
@@ -312,10 +307,6 @@ const searchTermsConfig = {};
 });
 
 // Consolidated log entries
-utils.logValues(
-  `Did not define the following terms due to the dataset not containing the associated data.`,
-  skippedTypeTermMsgs,
-);
 utils.logValues(
   'ID index reference matches the facet configuration and could be omitted from the search criteria configuration',
   matchedIdIndexConfigMsgs,

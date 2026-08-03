@@ -1,6 +1,7 @@
 import {
   CODE_VERSION,
   COLLECTION_NAME_MY_COLLECTION,
+  COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
   COLLECTION_NAME_NON_PRODUCTION,
   COLLECTION_NAME_PRODUCTION,
   COLLECTION_NAME_USER_PROFILE,
@@ -24,6 +25,7 @@ import {
   InternalConfigurationError,
 } from './errorClasses.mjs';
 import { User } from './User.mjs';
+import { getSearchScope, getSearchScopeNames } from './searchScope.mjs';
 
 const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
@@ -232,6 +234,11 @@ function __getForestInfoByHost() {
             'forestReserve',
             'deviceSpace',
           ]);
+          // Skip forests missing essential properties (e.g. system databases).
+          if (!forestInfo.stands || !forestInfo.dataDir) {
+            return;
+          }
+
           // Add up the stand sizes.  Convert the stands object to an array first.
           const standsArr = utils.toArrayFallback(forestInfo.stands);
           forestInfo.forestSize = standsArr.reduce(
@@ -411,6 +418,25 @@ function getStorageInfo() {
   );
 }
 
+// Return document count estimates for each search scope.
+function getScopeEstimates() {
+  const estimates = {};
+  const statsOnly = true;
+  getSearchScopeNames(statsOnly).forEach((name) => {
+    estimates[name] = Number(
+      cts.estimate(
+        cts.andNotQuery(
+          cts.jsonPropertyValueQuery('dataType', getSearchScope(name).types, [
+            'exact',
+          ]),
+          cts.collectionQuery(COLLECTION_NAME_MY_COLLECTIONS_FEATURE),
+        ),
+      ),
+    );
+  });
+  return estimates;
+}
+
 function _getDataConversionDate() {
   try {
     return fn
@@ -438,6 +464,7 @@ function getVersionInfo() {
 export {
   TENANT_STATUS_URI, // for unit tests
   getMyCollectionDocumentCount,
+  getScopeEstimates,
   getStorageInfo,
   getTenantStatus,
   getUserProfileDocumentCount,

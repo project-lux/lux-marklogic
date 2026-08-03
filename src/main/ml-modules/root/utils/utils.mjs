@@ -1,6 +1,7 @@
 import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
 import { BadRequestError, NotImplementedError } from '../lib/errorClasses.mjs';
 import {
+  ENDPOINT_CONSUMER_ROLES_END_WITH,
   FACETS_PREFIX,
   IRI_PREFIX,
   RELATED_LIST_PREFIX,
@@ -451,6 +452,16 @@ function getDeepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+function deepFreeze(obj) {
+  Object.freeze(obj);
+  Object.keys(obj).forEach((key) => {
+    if (typeof obj[key] === 'object' && obj[key] !== null && !Object.isFrozen(obj[key])) {
+      deepFreeze(obj[key]);
+    }
+  });
+  return obj;
+}
+
 // Splits the string by comma.
 // Odd entries are role names.
 // Even entries are capability names.
@@ -539,19 +550,13 @@ function getExceptionObjectElseMessage(e) {
 function buildSearchUri({
   searchCriteria = null,
   scope = null,
-  mayChangeScope = null,
   page = null,
   pageLength = null,
   sortDelimitedStr = null,
-  facetsSoon = null,
-  synonymsEnabled,
 }) {
   const prefixAndQParam = `${SEARCH_PREFIX}/${scope}?q=${encodeURIComponent(
     JSON.stringify(searchCriteria),
   )}`;
-  const mayChangeScopeParam = mayChangeScope
-    ? `&mayChangeScope=${encodeURIComponent(mayChangeScope)}`
-    : '';
 
   const pageParam = page ? `&page=${encodeURIComponent(page)}` : '';
   const pageLengthParam = pageLength
@@ -560,21 +565,7 @@ function buildSearchUri({
   const sortDelimitedStrParam = sortDelimitedStr
     ? `&sort=${encodeURIComponent(sortDelimitedStr)}`
     : '';
-  const facetsSoonParam = facetsSoon
-    ? `&facetsSoon=${encodeURIComponent(facetsSoon)}`
-    : '';
-  const synonymsEnabledParam = synonymsEnabled
-    ? `&synonymsEnabled=${encodeURIComponent(synonymsEnabled)}`
-    : '';
-  return (
-    prefixAndQParam +
-    mayChangeScopeParam +
-    pageParam +
-    pageLengthParam +
-    sortDelimitedStrParam +
-    facetsSoonParam +
-    synonymsEnabledParam
-  );
+  return prefixAndQParam + pageParam + pageLengthParam + sortDelimitedStrParam;
 }
 
 function buildSearchEstimateUri(searchCriteria, scope) {
@@ -642,6 +633,16 @@ function formatString(str, args) {
   return str.replace(/%(\w+)/g, (_, key) => args[key]);
 }
 
+// Invoke a function as a unit's endpoint consumer service account.
+// Requires the calling user to have the xdmp-invoke-in privilege.
+function invokeAsUnit(unitName, f) {
+  const userId = xdmp.user(
+    `%%mlAppName%%-${unitName}${ENDPOINT_CONSUMER_ROLES_END_WITH}`,
+  );
+  const result = fn.head(xdmp.invokeFunction(f, { userId: userId }));
+  return result && result.toObject ? result.toObject() : result;
+}
+
 export {
   areArraysEqual,
   arrayToString,
@@ -658,6 +659,7 @@ export {
   formatString,
   getArrayDiff,
   getArrayOverlap,
+  deepFreeze,
   getDeepCopy,
   getDocFromModulesDatabase,
   getDocPermissionsFromString,
@@ -669,6 +671,7 @@ export {
   getStartingPaginationIndexForSplice,
   getStartingPaginationIndexForSubsequence,
   includesOrEquals,
+  invokeAsUnit,
   isArray,
   toArrayFallback, // for a scenario toArray doesn't handle
   isDefined,

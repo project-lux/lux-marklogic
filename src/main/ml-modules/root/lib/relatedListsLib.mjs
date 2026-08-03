@@ -13,21 +13,14 @@ import {
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
 import { BadRequestError } from './errorClasses.mjs';
-import { processSearchCriteria } from './searchLib.mjs';
-import { SearchPatternOptions } from './SearchPatternOptions.mjs';
-import {
-  OPTION_NAME_EAGER_EVALUATION,
-  OPTION_NAME_MAXIMUM_VALUES,
-  OPTION_NAME_RETURN_VALUES,
-} from './searchPatternsLib.mjs';
+import { PatternOptions } from './search/PatternOptions.mjs';
 import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
 import { getRelationName } from '../config/relationNames.mjs';
 import {
   getInverseSearchTermInfo,
   getSearchTermConfig,
 } from '../config/searchTermsConfig.mjs';
-import { SearchCriteriaProcessor } from './SearchCriteriaProcessor.mjs';
-import { PATTERN_NAME_RELATED_LIST } from './searchPatternsLib.mjs';
+import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
 
 // Testing of a highly reference concept revealed page lengths between 25 and 15,000 returned within one second
 // of each and that secondary page requests take just as long as primary page requests.  Thus, this maximum is
@@ -122,24 +115,25 @@ function getRelatedList({
       relatedListName,
     );
 
-    // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to return calls to cts.triples.
+    // In this aggregate context, exclude type criteria and force the Hop Inverse pattern to
+    // return calls to cts.triples.
     const includeTypeConstraint = false;
-    const searchPatternOptions = new SearchPatternOptions();
-    searchPatternOptions.set(OPTION_NAME_RETURN_VALUES, true);
+    const patternOptions = new PatternOptions();
+    patternOptions.setExcludeSelfIri(uri);
 
-    // Set the maximum number of values to process per relation. Do not let requester exceed the maximum imposed by the backend.
+    // TODO, PERF: The Optic impl does not impose this data cap. Performance test results may
+    // inform whether we need to. If not, this option can be deleted.
+    //
+    // Set the maximum number of values to process per relation. Do not let requester exceed the
+    // maximum imposed by the backend.
     relationshipsPerRelation = Math.min(
       relationshipsPerRelation,
       RELATED_LIST_PER_RELATION_MAX,
     );
-    searchPatternOptions.set(
-      OPTION_NAME_MAXIMUM_VALUES,
-      relationshipsPerRelation,
-    );
+    patternOptions.setMaximumValues(relationshipsPerRelation);
 
     // When we only need a handful of triples, switch to lazy evaluation.
-    searchPatternOptions.set(
-      OPTION_NAME_EAGER_EVALUATION,
+    patternOptions.setEagerEvaluation(
       relationshipsPerRelation < 20 ? false : true,
     );
 
@@ -151,35 +145,32 @@ function getRelatedList({
     const urisByRelation = {};
     const relationToScope = {}; // And the scopes
     const relationToCriteria = {}; // And the resolved search criteria
-    const searchConfigs = sortByPriority(relatedListConfig.searchConfigs);
+    const searchConfigs = sortByPriority(
+      utils.getDeepCopy(relatedListConfig.searchConfigs),
+    );
     // Old school loop to give this boomer confidence the order is honored.
     for (let i = 0; i < searchConfigs.length; i++) {
       const searchConfig = searchConfigs[i];
-      const valuesOnly = searchConfig.mode == 'values';
-      const searchCriteriaProcessor = processSearchCriteria({
+      const scp = new SCP();
+      scp.prepare({
         searchCriteria: utils.replaceMatchingPropertyValues(
           searchConfig.criteria,
           TOKEN_RUNTIME_PARAM,
           uri,
         ),
-        searchScope: relatedListConfig.targetScope,
+        scopeName: relatedListConfig.targetScope,
         allowMultiScope: false,
-        searchPatternOptions,
+        patternOptions,
         includeTypeConstraint,
-        valuesOnly,
         page: 1,
         pageLength: relationshipsPerRelation, // Applies when not in values mode.
         filterResults,
       });
-      if (valuesOnly) {
-        urisByRelation[searchConfig.relationKey] =
-          searchCriteriaProcessor.getValues();
-      } else {
-        const { results } = searchCriteriaProcessor.getSearchResults();
-        urisByRelation[searchConfig.relationKey] = results.map(
-          (result) => result.id,
-        );
-      }
+      // In the Optic implementation, the values-only optimization happens inside
+      // HopInverse's pattern during executeForValues(). It runs processNestedCriteria
+      // (triggering the two-phase SPARQL approach) then returns the populated
+      // values without building or executing the full Optic plan.
+      urisByRelation[searchConfig.relationKey] = scp.executeForValues();
       // No need to log that we hit the max in the Search Will Match context; it sets this threshold very low.
       if (
         relationshipsPerRelation > 10 &&
@@ -193,8 +184,7 @@ function getRelatedList({
         );
       }
       relationToScope[searchConfig.relationKey] = searchConfig.relationScope;
-      relationToCriteria[searchConfig.relationKey] =
-        searchCriteriaProcessor.getSearchCriteria();
+      relationToCriteria[searchConfig.relationKey] = scp.getSearchCriteria();
 
       relationsChecked++;
 
@@ -487,9 +477,8 @@ function _convertToObjectsOrWorksSearch(
   };
 
   // Need to identify the top-level search term name.
-  if (SearchCriteriaProcessor.hasNonOptionPropertyName(fromCriteria)) {
-    const termName =
-      SearchCriteriaProcessor.getFirstNonOptionPropertyName(fromCriteria);
+  if (SCP.hasNonOptionPropertyName(fromCriteria)) {
+    const termName = SCP.getFirstNonOptionPropertyName(fromCriteria);
 
     // Need the inverse of the top-level search term.
     const inverseTermInfo = getInverseSearchTermInfo(fromScope, termName);
@@ -524,56 +513,10 @@ function _convertToObjectsOrWorksSearch(
   return objectsOrWorksCriteria;
 }
 
-// Responsible for returning the query that terms configured to the related list search pattern.
-function getRelatedListQuery(
-  searchTerm,
-  resolvedSearchOptions,
-  searchPatternOptions,
-  requestOptions,
-) {
-  const searchScopeName = searchTerm.getScopeName();
-  const relatedListName = searchTerm.getName();
-
-  // In this non-aggregate context, exclude type criteria and have the patterns return queries.
-  const includeTypeConstraint = false;
-  const relatedListSearchPatternOptions = new SearchPatternOptions();
-  relatedListSearchPatternOptions.set(OPTION_NAME_RETURN_VALUES, false);
-
-  // Create a flat OR query out of all the individual relationship queries.  Should a hierarchial query be
-  // more performant and we need that improvement, the related list configuration generator could be modified
-  // to create flat and hierarchial versions.
-  const relatedListConfig = getRelatedListConfig(
-    searchScopeName,
-    relatedListName,
-  );
-  const query = {
-    OR: relatedListConfig.searchConfigs.map((searchConfig) => {
-      return searchConfig.criteria;
-    }),
-  };
-
-  const searchCriteriaProcessor = processSearchCriteria({
-    searchCriteria: utils.replaceMatchingPropertyValues(
-      query,
-      TOKEN_RUNTIME_PARAM,
-      searchTerm.getValue(),
-    ),
-    searchScope: relatedListConfig.targetScope,
-    allowMultiScope: false,
-    searchPatternOptions: relatedListSearchPatternOptions,
-    includeTypeConstraint,
-    filterResults: requestOptions.filterResults,
-    valuesOnly: false,
-  });
-
-  return searchCriteriaProcessor.getCtsQueryStr();
-}
-
 function getRelatedListSearchInfo(criteria) {
   const searchTermConfig = _getFirstSearchTermConfig(criteria);
   const isRelatedList =
-    searchTermConfig != null &&
-    searchTermConfig.patternName == PATTERN_NAME_RELATED_LIST;
+    searchTermConfig != null && searchTermConfig.patternName == 'relatedList';
   return {
     isRelatedList,
     scopeName: isRelatedList ? searchTermConfig.scopeName : null,
@@ -584,8 +527,7 @@ function getRelatedListSearchInfo(criteria) {
 
 function _getFirstSearchTermConfig(criteria) {
   const scopeName = criteria._scope;
-  const termName =
-    SearchCriteriaProcessor.getFirstNonOptionPropertyName(criteria);
+  const termName = SCP.getFirstNonOptionPropertyName(criteria);
   return {
     scopeName,
     termName,
@@ -593,4 +535,4 @@ function _getFirstSearchTermConfig(criteria) {
   };
 }
 
-export { getRelatedList, getRelatedListQuery, getRelatedListSearchInfo };
+export { getRelatedList, getRelatedListSearchInfo };

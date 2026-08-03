@@ -75,6 +75,11 @@ ext.getUnitTestingDeploymentStatus = {
 
 def codeVersion = project.getProperty('defaultCodeVersion') // Overridden in determineCodeVersion.
 
+def buildTasks = gradle.startParameter.taskNames
+gradle.buildFinished {
+    println "\u001B[1;35m\nBuild completed at: ${new Date()} (tasks: ${buildTasks.join(', ')})\u001B[0m"
+}
+
 // This task is intended to execute before any that interact with MarkLogic Server.  It switches
 // from the default default REST port (8003) to the app services port.  This port is used by the
 // majority of the tasks, and has been proven necessary for setBanner (tenant app server may not
@@ -307,6 +312,7 @@ task addSupportForExecutingWithServiceAccounts() {
     def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
       .replaceAll("\\s", "")
       .tokenize(",")
+    endpointAccessUnitNames.add('admin') // in support of amp-as-admin
     endpointAccessUnitNames.add(tenantName)
     endpointAccessUnitNames.each{ unit -> 
       count += 1
@@ -319,9 +325,13 @@ task addSupportForExecutingWithServiceAccounts() {
       // 1. The modules database name provides multi-tenancy support.
       // 2. When the unit is the tenant owner, we only need one represented.
       def includeUnit = unit != tenantName
+      def roleName = unit == 'admin'
+        ? 'admin'
+        : "${tenantName}${includeUnit ? "-${unit}" : ""}-endpoint-consumer"
+     
       // Generate amp for main modules database
       def templateBindings = [
-          roleNamePrefix: "${tenantName}${includeUnit ? "-${unit}" : ""}",
+          roleName: roleName, 
           functionName: "_${functionName}", // underscore needed
           moduleFilename: moduleFilename,
           modulesDatabase: project.getProperty("tenantModulesDatabase")
@@ -343,7 +353,7 @@ task addSupportForExecutingWithServiceAccounts() {
     def functionLines = []
     def exportLines = ["export {"]
     functionNames.each{ functionName ->
-      functionLines.push("const _${functionName} = (f) => { return xdmp.invokeFunction(f) };")
+      functionLines.push("const _${functionName} = (f) => { try { return xdmp.invokeFunction(f) } catch (e) { const {errorName, errorMessage} = extractCustomErrorNameAndMessage(e); if (errorName && errorMessage) {  const customError = createCustomError(errorName, errorMessage); const errorToThrow = customError || e; throw errorToThrow; } throw e; } };")
       functionLines.push("const  ${functionName} = import.meta.amp(_${functionName});")
       exportLines.push("  ${functionName},")
     }
@@ -601,16 +611,6 @@ mlDeploySecurity.finalizedBy setBanner
 task showAppServerCiphers(type: com.marklogic.gradle.task.ServerEvalTask) {
   xquery = new File('./build/buildSupport/showAppServerCiphers.xqy').getText('UTF-8')
 }
-
-//TODO: remove <show/disable>DeprecatedSSLProtocols tasks and scripts after LUX no longer uses ML 11
-task showDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
-  javascript = new File('./build/buildSupport/showDeprecatedSSLProtocols.sjs').getText('UTF-8')
-}
-
-task disableDeprecatedSSLProtocols(type: com.marklogic.gradle.task.ServerEvalTask) {
-  javascript = new File('./build/buildSupport/disableDeprecatedSSLProtocols.sjs').getText('UTF-8')
-}
-mlDeployServers.finalizedBy disableDeprecatedSSLProtocols
 
 task getSslMinAllowTls(type: com.marklogic.gradle.task.ServerEvalTask) {
   javascript = new File('./build/buildSupport/getSslMinAllowTls.sjs').getText('UTF-8')

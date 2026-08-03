@@ -2,9 +2,6 @@
  * Error class extensions defined herein are intended to be thrown by code needing to halt the request.
  */
 
-// Helps non-search endpoints decide whether to log they failed.
-const INVALID_SEARCH_REQUEST_LABEL = 'Invalid search request';
-
 class LuxBaseError extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -51,7 +48,7 @@ class InvalidHostError extends LuxBaseError {
 
 class InvalidSearchRequestError extends LuxBaseError {
   constructor(message) {
-    super(`${INVALID_SEARCH_REQUEST_LABEL}: ${message}`, 400);
+    super(message, 400);
   }
 }
 
@@ -89,11 +86,6 @@ class ServerConfigurationChangedError extends LuxBaseError {
   }
 }
 
-// Because e.name isn't InvalidSearchRequestError within a catch block :(
-function isInvalidSearchRequestError(e) {
-  return e.message && e.message.includes(INVALID_SEARCH_REQUEST_LABEL);
-}
-
 export {
   LuxBaseError,
   AccessDeniedError,
@@ -109,5 +101,4 @@ export {
   NotImplementedError,
   ScaleEnvironmentError,
   ServerConfigurationChangedError,
-  isInvalidSearchRequestError,
 };

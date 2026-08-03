@@ -1,134 +1,130 @@
 import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
 import * as utils from '../utils/utils.mjs';
-import { NotImplementedError } from './errorClasses.mjs';
 
-const DEFAULT = 'default';
-
-const SORT_TYPE_MULTI_SCOPE = 'multi';
 const SORT_TYPE_SEMANTIC = 'semantic';
 const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';
 
 const SortCriteria = class {
+  #scopeName;
+  #sortCriteriaStr;
+  #semanticSortOption = null;
+  #nonSemanticSortDescriptors = [];
+  #relevanceSort = false;
+  #relevanceOrder = 'descending';
+  #randomSort = false;
+  #warnings = [];
+
   // Accepts comma-delimited name:direction pairings where name is a defined sort binding and direction is optional.
   // When direction is specified, it needs to be 'asc' or 'desc'.  The default is 'asc'.
-  // When name is 'random', we are to use a random score for each search result.
-  // When name is 'relevance', we are to sort by score (highest to lowest, depending on direction).
-  constructor(sortCriteriaStr) {
-    this.sortCriteriaStr = sortCriteriaStr;
-    this.scoresRequired = DEFAULT; // can switch to a boolean value.
-    this.multiScopeSortOption = null;
-    this.semanticSortOption = null;
-    this.nonSemanticSortOptions = [];
-    this.warnings = [];
-    this._parse();
+  constructor(scopeName, sortCriteriaStr) {
+    this.#scopeName = scopeName;
+    this.#sortCriteriaStr = sortCriteriaStr;
+    this.#relevanceSort = true; // default
+    this.#parse();
   }
 
   getSortCriteriaStr() {
-    return this.sortCriteriaStr;
+    return this.#sortCriteriaStr;
   }
 
+  isRelevanceSort() {
+    return this.#relevanceSort;
+  }
+
+  getRelevanceOrder() {
+    return this.#relevanceOrder;
+  }
+
+  isRandomSort() {
+    return this.#randomSort;
+  }
+
+  // Random and semantic sort take precedence and do not require relevancy scores from MarkLogic.
   areScoresRequired() {
-    return this.scoresRequired === DEFAULT || this.scoresRequired;
+    return (
+      !this.isRandomSort() &&
+      !this.hasSemanticSortOption() &&
+      this.#relevanceSort
+    );
   }
 
-  conditionallySetScoresRequired(bool) {
-    if (this.scoresRequired !== true) {
-      this.scoresRequired = bool;
-    }
+  hasNonSemanticSortDescriptors() {
+    return this.#nonSemanticSortDescriptors.length > 0;
   }
 
-  getNonSemanticSortOptions() {
-    return this.nonSemanticSortOptions;
-  }
-
-  hasNonSemanticSortOptions() {
-    return this.nonSemanticSortOptions.length > 0;
-  }
-
-  getMultiScopeSortOption() {
-    return this.multiScopeSortOption;
-  }
-
-  hasMultiScopeSortOption() {
-    return this.multiScopeSortOption !== null;
+  getNonSemanticSortDescriptors() {
+    return this.#nonSemanticSortDescriptors;
   }
 
   getSemanticSortOption() {
-    return this.semanticSortOption;
+    return this.#semanticSortOption;
   }
 
   hasSemanticSortOption() {
-    return this.semanticSortOption !== null;
+    return this.#semanticSortOption !== null;
   }
 
   getWarnings() {
-    return this.warnings;
+    return this.#warnings;
   }
 
   hasWarnings() {
-    return this.warnings.length > 0;
+    return this.#warnings.length > 0;
   }
 
-  _parse() {
+  #parse() {
     let sortByName = '';
     let specifiedOrder = '';
-    const sortList = utils.split(this.sortCriteriaStr);
+    let hasExplicitRelevance = false;
+    const sortList = utils.split(this.#sortCriteriaStr);
     sortList.every(function (item) {
       if (item != '') {
         [sortByName, specifiedOrder] = item.split(':');
-        if (
-          utils.isNonEmptyString(sortByName) &&
-          sortByName.toLowerCase() == 'random'
-        ) {
-          this.conditionallySetScoresRequired(true);
-          this.nonSemanticSortOptions = ['score-random'];
+        // As soon as we encounter 'random', clear any preceding criteria and go with it.
+        if (sortByName?.toLowerCase() == 'random') {
+          this.#clearSortState();
+          this.#randomSort = true;
           return false;
-        } else if (
-          utils.isNonEmptyString(sortByName) &&
-          sortByName.toLowerCase() == 'relevance'
-        ) {
-          this.conditionallySetScoresRequired(true);
-          this.nonSemanticSortOptions = [
-            cts.scoreOrder(
-              this._getOrder(
-                specifiedOrder,
-                'desc', // Matches when there is no sort parameter.
-              ),
-            ),
-          ];
-          return false;
+        }
+        // When 'relevance' is present, allow it to be used with others.  That should
+        // exclude 'random' and semantic sort given their return statements.
+        else if (sortByName?.toLowerCase() == 'relevance') {
+          this.#relevanceSort = true;
+          hasExplicitRelevance = true;
+          this.#relevanceOrder = this.#getOrder(specifiedOrder, 'desc');
         } else {
           const sortBinding = SORT_BINDINGS[sortByName];
-          if (sortBinding) {
-            if (sortBinding.subSorts) {
-              this.multiScopeSortOption = {
-                order: this._getOrder(specifiedOrder, 'asc'),
-                subSortConfigs: sortBinding.subSorts.map(
-                  (sortName) => SORT_BINDINGS[sortName],
-                ),
-              };
-            } else if (sortBinding.predicate) {
-              this.semanticSortOption = {
+          // Protect from sorting by a different scope's binding.
+          if (
+            sortBinding &&
+            (this.#scopeName === 'multi' || // for archiveSortId
+              sortByName.startsWith(this.#scopeName) ||
+              sortByName.startsWith('any'))
+          ) {
+            // As soon as we encounter a semantic sort binding, clear any preceding criteria and go with it.
+            if (sortBinding.predicate) {
+              this.#clearSortState();
+              this.#semanticSortOption = {
                 predicate: sortBinding.predicate,
                 indexReference: sortBinding.indexReference,
-                order: this._getOrder(specifiedOrder, sortBinding.defaultOrder),
+                order: this.#getOrder(specifiedOrder, sortBinding.defaultOrder),
               };
+              return false;
             } else {
-              this.conditionallySetScoresRequired(false);
-              this.nonSemanticSortOptions.push(
-                cts.indexOrder(
-                  this._getIndexReference(
-                    sortBinding.indexType,
-                    sortBinding.indexReference,
-                  ),
-                  this._getOrder(specifiedOrder, sortBinding.defaultOrder),
-                ),
-              );
+              // Support multiple, inclusive of 'relevance' (above).
+              this.#nonSemanticSortDescriptors.push({
+                indexReference: sortBinding.indexReference,
+                order: this.#getOrder(specifiedOrder, sortBinding.defaultOrder),
+              });
             }
+          } else if (sortBinding) {
+            this.#warnings.push(
+              `Unable to sort by '${sortByName}' as it is not a valid sort binding for the '${this.#scopeName}' search scope.`,
+            );
           } else {
-            this.warnings.push(
+            this.#warnings.push(
               `Unable to sort by '${
-                sortByName === '' ? this.sortCriteriaStr : sortByName
+                sortByName === '' ? this.#sortCriteriaStr : sortByName
               }' as it is not a defined sort binding.`,
             );
           }
@@ -136,28 +132,25 @@ const SortCriteria = class {
       }
       return true;
     }, this);
-  }
 
-  _getIndexReference(indexType, indexReference) {
-    if (indexType === 'field') {
-      return cts.fieldReference(indexReference);
+    // Do not calculate scores when we're only asked to sort by one or more lexicons.
+
+    if (!hasExplicitRelevance && this.#nonSemanticSortDescriptors.length > 0) {
+      this.#relevanceSort = false;
     }
-    throw new NotImplementedError(
-      `_getIndexReference does not support an indexType value of '${indexType}'.`,
-    );
   }
 
-  _getOrder(specifiedOrder, bindingOrder = null) {
+  #getOrder(specifiedOrder, bindingOrder = null) {
     let order = 'asc';
     let orderFinalized = false;
 
     [specifiedOrder, bindingOrder].forEach((candidateOrder) => {
       if (!orderFinalized && candidateOrder) {
-        if (this._isValidOrder(candidateOrder)) {
+        if (this.#isValidOrder(candidateOrder)) {
           order = candidateOrder;
           orderFinalized = true;
         } else {
-          this.warnings.push(
+          this.#warnings.push(
             `'${candidateOrder}' is not a supported sort order; a default will be applied.`,
           );
         }
@@ -168,14 +161,16 @@ const SortCriteria = class {
     return `${order}ending`;
   }
 
-  _isValidOrder(order) {
+  #isValidOrder(order) {
     return order === 'desc' || order === 'asc';
+  }
+
+  #clearSortState() {
+    this.#randomSort = false;
+    this.#relevanceSort = false;
+    this.#semanticSortOption = null;
+    this.#nonSemanticSortDescriptors = [];
   }
 };
 
-export {
-  SortCriteria,
-  SORT_TYPE_MULTI_SCOPE,
-  SORT_TYPE_NON_SEMANTIC,
-  SORT_TYPE_SEMANTIC,
-};
+export { SortCriteria, SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC };

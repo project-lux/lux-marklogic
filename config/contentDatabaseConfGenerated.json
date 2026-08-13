@@ -119,26 +119,6 @@
       "three-character-word-positions": true
     },
     {
-      "field-name": "referencePrimaryName",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content",
-          "weight": 1
-        }
-      ],
-      "stemmed-searches": "basic",
-      "word-searches": true,
-      "field-value-searches": true,
-      "field-value-positions": true,
-      "fast-phrase-searches": true,
-      "fast-case-sensitive-searches": true,
-      "fast-diacritic-sensitive-searches": true,
-      "trailing-wildcard-searches": true,
-      "trailing-wildcard-word-positions": true,
-      "three-character-searches": true,
-      "three-character-word-positions": true
-    },
-    {
       "field-name": "referenceAnyText",
       "field-path": [
         {
@@ -257,15 +237,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "agentActiveStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type = ('Group', 'Person')]/carried_out/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
       "field-name": "agentActiveStartDateLong",
       "field-path": [
         {
@@ -292,19 +263,6 @@
         }
       ],
       "field-value-searches": true
-    },
-    {
-      "field-name": "agentBornStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type='Person']/born/timespan/begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Group']/formed_by/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "agentBornStartDateLong",
@@ -365,19 +323,6 @@
       "trailing-wildcard-word-positions": true,
       "three-character-searches": true,
       "three-character-word-positions": true
-    },
-    {
-      "field-name": "agentDiedStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type='Person']/died/timespan/begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Group']/dissolved_by/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "agentDiedStartDateLong",
@@ -732,28 +677,6 @@
       ]
     },
     {
-      "field-name": "itemEncounteredStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/encountered_by/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
-      "field-name": "itemProductionStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type = 'HumanMadeObject']/produced_by/timespan/begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = 'DigitalObject']/created_by/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
       "field-name": "itemProductionStartDateLong",
       "field-path": [
         {
@@ -896,16 +819,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "isCollectionItemBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "setName",
       "field-path": [
         {
@@ -976,16 +889,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "setUsedForId",
-      "field-path": [
-        {
-          "path": "/json[type = ('Set')]/used_for/id",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "setIdentifier",
       "field-path": [
         {
@@ -1008,15 +911,6 @@
         }
       ],
       "field-value-searches": true
-    },
-    {
-      "field-name": "setCreationStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "setCreationStartDateLong",
@@ -1189,16 +1083,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "setIsPublicDomainBoolean",
-      "field-path": [
-        {
-          "path": "/indexedProperties[dataType = 'Set']/isPublicDomain",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "setPartOfId",
       "field-path": [
         {
@@ -1207,15 +1091,6 @@
         }
       ],
       "field-value-searches": true
-    },
-    {
-      "field-name": "setPublicationStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "setPublicationStartDateLong",
@@ -1266,15 +1141,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "setLastModifiedStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
       "field-name": "setLastModifiedStartDateLong",
       "field-path": [
         {
@@ -1288,19 +1154,6 @@
       "field-path": [
         {
           "path": "/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_end_of_the_end",
-          "weight": 1
-        }
-      ]
-    },
-    {
-      "field-name": "setCreationOrPublicationStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type='Set']/created_by/timespan/begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type='Set']/used_for/timespan/begin_of_the_begin",
           "weight": 1
         }
       ]
@@ -1640,15 +1493,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "workPublicationStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
       "field-name": "workPublicationStartDateLong",
       "field-path": [
         {
@@ -1685,15 +1529,6 @@
         }
       ],
       "field-value-searches": true
-    },
-    {
-      "field-name": "workCreationStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "workCreationStartDateLong",
@@ -1736,19 +1571,6 @@
         }
       ],
       "field-value-searches": true
-    },
-    {
-      "field-name": "workCreationOrPublicationStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin",
-          "weight": 1
-        },
-        {
-          "path": "/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "workCreationOrPublicationStartDateLong",
@@ -1879,15 +1701,6 @@
         }
       ],
       "field-value-searches": true
-    },
-    {
-      "field-name": "placeSpatial",
-      "field-path": [
-        {
-          "path": "/json[type = 'Place']/defined_by",
-          "weight": 1
-        }
-      ]
     },
     {
       "field-name": "conceptHasDigitalImageBoolean",
@@ -2054,16 +1867,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "languageIdentifier",
-      "field-path": [
-        {
-          "path": "/json[type='Language']/identified_by[./type='Identifier']/content",
-          "weight": 1
-        }
-      ],
-      "field-value-searches": true
-    },
-    {
       "field-name": "eventAnyText",
       "field-path": [
         {
@@ -2168,15 +1971,6 @@
       "field-value-searches": true
     },
     {
-      "field-name": "eventInitiatedStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/timespan/begin_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
       "field-name": "eventInitiatedStartDateLong",
       "field-path": [
         {
@@ -2190,15 +1984,6 @@
       "field-path": [
         {
           "path": "/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_begin",
-          "weight": 1
-        }
-      ]
-    },
-    {
-      "field-name": "eventCompletedStartDateStr",
-      "field-path": [
-        {
-          "path": "/json[type= ('Activity', 'Period')]/timespan/begin_of_the_end",
           "weight": 1
         }
       ]
@@ -2304,20 +2089,6 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "referenceName",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "referencePrimaryName",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "referenceTypeId",
       "range-value-positions": false,
       "invalid-values": "ignore",
@@ -2352,13 +2123,6 @@
       "scalar-type": "string"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "agentActiveStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "",
       "field-name": "agentActiveStartDateLong",
       "range-value-positions": false,
@@ -2375,13 +2139,6 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "agentActivePlaceId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "agentBornStartDateStr",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
@@ -2410,13 +2167,6 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "agentDataTypeName",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "agentDiedStartDateStr",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
@@ -2597,20 +2347,6 @@
       "scalar-type": "long"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "itemEncounteredStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "itemProductionStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "",
       "field-name": "itemProductionStartDateLong",
       "range-value-positions": false,
@@ -2681,36 +2417,8 @@
       "scalar-type": "string"
     },
     {
-      "collation": "",
-      "field-name": "isCollectionItemBoolean",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setName",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setPrimaryName",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "setTypeId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setUsedForId",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
@@ -2725,13 +2433,6 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "setArchiveSortId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setCreationStartDateStr",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
@@ -2835,22 +2536,8 @@
       "scalar-type": "float"
     },
     {
-      "collation": "",
-      "field-name": "setIsPublicDomainBoolean",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "float"
-    },
-    {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "setPartOfId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setPublicationStartDateStr",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
@@ -2891,13 +2578,6 @@
       "scalar-type": "string"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setLastModifiedStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "",
       "field-name": "setLastModifiedStartDateLong",
       "range-value-positions": false,
@@ -2910,13 +2590,6 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "long"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "setCreationOrPublicationStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
     },
     {
       "collation": "",
@@ -3038,13 +2711,6 @@
       "scalar-type": "string"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "workPublicationStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "",
       "field-name": "workPublicationStartDateLong",
       "range-value-positions": false,
@@ -3073,13 +2739,6 @@
       "scalar-type": "string"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "workCreationStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "",
       "field-name": "workCreationStartDateLong",
       "range-value-positions": false,
@@ -3103,13 +2762,6 @@
     {
       "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "workCreationAgentId",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "workCreationOrPublicationStartDateStr",
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "string"
@@ -3249,13 +2901,6 @@
     },
     {
       "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "languageIdentifier",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
       "field-name": "eventDataTypeName",
       "range-value-positions": false,
       "invalid-values": "ignore",
@@ -3290,13 +2935,6 @@
       "scalar-type": "string"
     },
     {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "eventInitiatedStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
-    },
-    {
       "collation": "",
       "field-name": "eventInitiatedStartDateLong",
       "range-value-positions": false,
@@ -3309,13 +2947,6 @@
       "range-value-positions": false,
       "invalid-values": "ignore",
       "scalar-type": "long"
-    },
-    {
-      "collation": "http://marklogic.com/collation/codepoint",
-      "field-name": "eventCompletedStartDateStr",
-      "range-value-positions": false,
-      "invalid-values": "ignore",
-      "scalar-type": "string"
     },
     {
       "collation": "",

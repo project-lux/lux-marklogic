@@ -5,8 +5,7 @@ any	Sort	NameFr	string	anySortNameFr		Non	N		/json/identified_by[./classified_as
 any	Sort	NameZh	string	anySortNameZh		Non	N		/json/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300451544'][./language/equivalent/id='http://vocab.getty.edu/aat/300388113']/content	
 any	DataType	Name	keyword	anyDataTypeName	Search	Non	Y		/json/type	
 										
-reference		Name	keyword	referenceName	Search	Non	Y	Auto complete endpoint may attempt to use.	/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content	
-reference	Primary	Name	keyword	referencePrimaryName		Non	Y		/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
+reference		Name	keyword	referenceName	Search	Non	N	Auto complete endpoint may attempt to use.	/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Name']/content	
 reference	Any	Text	keyword	referenceAnyText	Search	Non	N		/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]//content	
 reference	Type	Id	uri	referenceTypeId	Search	Non	N		/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/classified_as/id	
 reference		Identifier	string	referenceIdentifier	Search	Non	N		/json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/identified_by[./type='Identifier']/content ,  /json[type = ('Group', 'Person', 'Place', 'Activity', 'Period', 'Type', 'Language', 'MeasurementUnit')]/equivalent/id	
@@ -16,18 +15,15 @@ agent	Any	Text	keyword	agentAnyText	Search	Non	N		/json[type = ('Group', 'Person
 agent		Name	keyword	agentName	Search	Non	Y	Search for agents by keyword in name	/json[type = ('Group', 'Person')]/identified_by[./type='Name']/content	
 agent	Primary	Name	keyword	agentPrimaryName	Search	Non	Y	Search for agents by keyword in primary name	/json[type = ('Group', 'Person')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
 agent		Identifier	string	agentIdentifier	Search	Non	N	Search for agents by identifier, including equivalent URIs	/json[type = ('Group', 'Person')]/identified_by[./type='Identifier']/content ,  /json[type = ('Group', 'Person')]/equivalent/id	
-agent	ActiveStart	Date	datesAsString	agentActiveStartDateStr	Search	Non	N		/json[type = ('Group', 'Person')]/carried_out/timespan/begin_of_the_begin	
 agent	ActiveStart	Date	datesAsLong	agentActiveStartDateLong	Search	Non	N		/json[type = ('Group', 'Person')]/carried_out/timespan/_seconds_since_epoch_begin_of_the_begin	
 agent	ActiveEnd	Date	datesAsLong	agentActiveEndDateLong	Search	Non	N		/json[type = ('Group', 'Person')]/carried_out/timespan/_seconds_since_epoch_end_of_the_end	
 agent	ActivePlace	Id	uri	agentActivePlaceId	RecordLink	Non	N	Retrieve agents by URI of their active place	/json[type = ('Group', 'Person')]/carried_out/took_place_at/id	
 agent	ActivePlace	Name	keyword	agentActivePlaceName	Search	Semantic	N	Search for agents by keyword in name of active place		lux:placeOfActivity
-agent	BornStart	Date	datesAsString	agentBornStartDateStr	Search	Non	N		/json[type='Person']/born/timespan/begin_of_the_begin ,  /json[type='Group']/formed_by/timespan/begin_of_the_begin	
 agent	BornStart	Date	datesAsLong	agentBornStartDateLong	Search	Non	N		/json[type='Person']/born/timespan/_seconds_since_epoch_begin_of_the_begin ,  /json[type='Group']/formed_by/timespan/_seconds_since_epoch_begin_of_the_begin	
 agent	BornEnd	Date	datesAsLong	agentBornEndDateLong	Search	Non	N		/json[type='Person']/born/timespan/_seconds_since_epoch_end_of_the_end ,  /json[type='Group']/formed_by/timespan/_seconds_since_epoch_end_of_the_end	
 agent	StartPlace	Id	uri	agentStartPlaceId	RecordLink	Non	N		/json[type='Person']/born/took_place_at/id ,  /json[type='Group']/formed_by/took_place_at/id	
 agent	StartPlace	Name	keyword	agentStartPlaceName	Search	Semantic	N			lux:placeOfBeginning
 agent	DataType	Name	keyword	agentDataTypeName	Search	Non	Y		/indexedProperties[dataType=('Person', 'Group')]/dataType	
-agent	DiedStart	Date	datesAsString	agentDiedStartDateStr	Search	Non	N		/json[type='Person']/died/timespan/begin_of_the_begin ,  /json[type='Group']/dissolved_by/timespan/begin_of_the_begin	
 agent	DiedStart	Date	datesAsLong	agentDiedStartDateLong	Search	Non	N		/json[type='Person']/died/timespan/_seconds_since_epoch_begin_of_the_begin ,  /json[type='Group']/dissolved_by/timespan/_seconds_since_epoch_begin_of_the_begin	
 agent	DiedEnd	Date	datesAsLong	agentDiedEndDateLong	Search	Non	N		/json[type='Person']/died/timespan/_seconds_since_epoch_end_of_the_end ,  /json[type='Group']/dissolved_by/timespan/_seconds_since_epoch_end_of_the_end	
 agent	EndPlace	Id	uri	agentEndPlaceId	RecordLink	Non	N		/json[type='Person']/died/took_place_at/id ,  /json[type='Group']/dissolved_by/took_place_at/id	
@@ -68,8 +64,6 @@ item	WidthDimension	Value	numbers	itemWidthDimensionValue	Search	Non	N	search sp
 item	DepthDimension	Value	numbers	itemDepthDimensionValue	Search	Non	N		/json[type = 'HumanMadeObject']/dimension[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300072633']/value	
 item	EncounteredStart	Date	datesAsLong	itemEncounteredStartDateLong	Search	Non	N		/json[type = 'HumanMadeObject']/encountered_by/timespan/_seconds_since_epoch_begin_of_the_begin	
 item	EncounteredEnd	Date	datesAsLong	itemEncounteredEndDateLong	Search	Non	N		/json[type = 'HumanMadeObject']/encountered_by/timespan/_seconds_since_epoch_end_of_the_end	
-item	EncounteredStart	Date	datesAsString	itemEncounteredStartDateStr	Search	Non	N		/json[type = 'HumanMadeObject']/encountered_by/timespan/begin_of_the_begin	
-item	ProductionStart	Date	datesAsString	itemProductionStartDateStr	Search	Non	N		/json[type = 'HumanMadeObject']/produced_by/timespan/begin_of_the_begin ,  /json[type = 'DigitalObject']/created_by/timespan/begin_of_the_begin	
 item	ProductionStart	Date	datesAsLong	itemProductionStartDateLong	Search	Non	N		/json[type = 'HumanMadeObject']/produced_by/timespan/_seconds_since_epoch_begin_of_the_begin ,  /json[type = 'DigitalObject']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin	
 item	ProductionEnd	Date	datesAsLong	itemProductionEndDateLong	Search	Non	N		/json[type = 'HumanMadeObject']/produced_by/timespan/_seconds_since_epoch_end_of_the_end ,  /json[type = 'DigitalObject']/created_by/timespan/_seconds_since_epoch_end_of_the_end	
 item	EncounteredPlace	Id	uri	itemEncounteredPlaceId	RecordLink	Non	N		/json[type = 'HumanMadeObject']/encountered_by/took_place_at/id	
@@ -89,17 +83,14 @@ item	ShownBy	Name	keyword	itemShownByName	Search	Semantic	N	Search for items by 
 item	MemberOf	Id	uri	itemMemberOfId	RecordLink	Non	N		/json[type = ('HumanMadeObject', 'DigitalObject')]/member_of/id	
 item	MemberOf	Name	keyword	itemMemberOfName	Search	Semantic	N			la:member_of
 										
-	isCollectionItem	Boolean	numbers	isCollectionItemBoolean	Search	Non	N		/indexedProperties[dataType = ('HumanMadeObject', 'DigitalObject', 'VisualItem', 'LinguisticObject')]/isCollectionItem	
 										
-set		Name	keyword	setName	Search	Non	Y		/json[type = ('Set')]/identified_by[./type='Name']/content	
-set	Primary	Name	keyword	setPrimaryName	Search	Non	Y		/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
+set		Name	keyword	setName	Search	Non	N		/json[type = ('Set')]/identified_by[./type='Name']/content	
+set	Primary	Name	keyword	setPrimaryName	Search	Non	N		/json[type = ('Set')]/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300404670']/content	
 set	Any	Text	keyword	setAnyText	Search	Non	N		/json[type = ('Set')]//content	
 set	Type	Id	uri	setTypeId	Search	Non	N		/json[type = ('Set')]/classified_as/id	
-set	UsedFor	Id	uri	setUsedForId	RecordLink	Non	N		/json[type = ('Set')]/used_for/id	
 set		Identifier	string	setIdentifier	Search	Non	N		/json[type = ('Set')]/identified_by[./type='Identifier']/content ,  /json[type = ('Set')]/equivalent/id	
 set	ArchiveSort	Id	string	setArchiveSortId	Search	Non	N		/json[type = 'Set']/identified_by[./classified_as/equivalent/id='http://vocab.getty.edu/aat/300456575']/content	
 set	CreationAgent	Name	keyword	setCreationAgentName	Search	Semantic	N			lux:agentOfCreation
-set	CreationStart	Date	datesAsString	setCreationStartDateStr	Search	Non	N		/json[type='Set']/created_by/timespan/begin_of_the_begin	
 set	CreationStart	Date	datesAsLong	setCreationStartDateLong	Search	Non	N		/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin	
 set	CreationEnd	Date	datesAsLong	setCreationEndDateLong	Search	Non	N		/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end	
 set	AboutPlace	Id	uri	setAboutPlaceId	RecordLink	Non	N		/json[type='Set']/about[./type = 'Place']/id , /json[type='Set']/about/created_by/influenced_by[./type = 'Place']/id 	
@@ -115,9 +106,7 @@ set	CreationPlace	Name	keyword	setCreationPlaceName	Search	Semantic	N			lux:plac
 set	CurationAgent	Id	uri	setCurationAgentId	RecordLink	Non	N		/json[type='Set']/used_for[./classified_as/equivalent/id = 'http://vocab.getty.edu/aat/300054277']/carried_out_by/id	
 set	HasDigitalImage	Boolean	numbers	setHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/hasDigitalImage	
 set	IsOnline	Boolean	numbers	setIsOnlineBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/isOnline	
-set	IsPublicDomain	Boolean	numbers	setIsPublicDomainBoolean	Search	Non	N		/indexedProperties[dataType = 'Set']/isPublicDomain	
 set	PartOf	Id	uri	setPartOfId	RecordLink	Non	N	sets that are part of some other set, by id of parent	/json[type='Set']/member_of/id	
-set	PublicationStart	Date	datesAsString	setPublicationStartDateStr	Search	Non	N		/json[type='Set']/used_for/timespan/begin_of_the_begin	
 set	PublicationStart	Date	datesAsLong	setPublicationStartDateLong	Search	Non	N		/json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
 set	PublicationEnd	Date	datesAsLong	setPublicationEndDateLong	Search	Non	N		/json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end	
 set	PublicationPlace	Id	uri	setPublicationPlaceId	RecordLink	Non	N		/json[type='Set']/used_for/took_place_at/id	
@@ -125,10 +114,8 @@ set	PublicationPlace	Name	keyword	setPublicationPlaceName	Search	Semantic	N			lu
 set	PublicationAgent	Id	uri	setPublicationAgentId	RecordLink	Non	N		/json[type='Set']/used_for/carried_out_by/id	
 set	PublicationAgent	Name	keyword	setPublicationAgentName	Search	Semantic	N			lux:agentOfPublication
 set	LastModifiedByAgent	Id	uri	setLastModifiedByAgentId	RecordLink	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/carried_out_by/id	
-set	LastModifiedStart	Date	datesAsString	setLastModifiedStartDateStr	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/begin_of_the_begin	
 set	LastModifiedStart	Date	datesAsLong	setLastModifiedStartDateLong	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_begin_of_the_begin	
 set	LastModifiedEnd	Date	datesAsLong	setLastModifiedEndDateLong	Search	Non	N		/json[type='Set']/added_to_by[type='Addition' and last()]/timespan/_seconds_since_epoch_end_of_the_end	
-set	CreationOrPublicationStart	Date	datesAsString	setCreationOrPublicationStartDateStr	Search	Non	N	Combo of setCreationStartDateLong and setPublicationStartDateLong for the setCreationOrPublicationDate facet	/json[type='Set']/created_by/timespan/begin_of_the_begin , /json[type='Set']/used_for/timespan/begin_of_the_begin	
 set	CreationOrPublicationStart	Date	datesAsLong	setCreationOrPublicationStartDateLong	Search	Non	N		/json[type='Set']/created_by/timespan/_seconds_since_epoch_begin_of_the_begin , /json[type='Set']/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
 set	CreationOrPublicationEnd	Date	datesAsLong	setCreationOrPublicationEndDateLong	Search	Non	N		/json[type='Set']/created_by/timespan/_seconds_since_epoch_end_of_the_end , /json[type='Set']/used_for/timespan/_seconds_since_epoch_end_of_the_end	
 										
@@ -155,14 +142,12 @@ work	AboutEvent	Id	uri	workAboutEventId	RecordLink	Non	N		/json[type = ('VisualI
 work	AboutSet	Id	uri	workAboutSetId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/about[./type = 'Set']/id ,  /json[type = 'VisualItem']/represents[./type = 'Set']/id , /json[type = ('VisualItem', 'LinguisticObject')]/about/created_by/influenced_by[./type = 'Set']/id , /json[type = 'VisualItem']/represents/created_by/influenced_by[./type = 'Set']/id	
 work	PartOf	Id	uri	workPartOfId	RecordLink	Non	N	works that are part of some other work, by id of parent	/json[type = ('VisualItem', 'LinguisticObject')]/part_of/id	
 work	PartOf	Name	keyword	workPartOfName	Search	Semantic	N			crm:P106i_forms_part_of
-work	PublicationStart	Date	datesAsString	workPublicationStartDateStr	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin	
 work	PublicationStart	Date	datesAsLong	workPublicationStartDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
 work	PublicationEnd	Date	datesAsLong	workPublicationEndDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end	
 work	PublicationPlace	Id	uri	workPublicationPlaceId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/used_for/took_place_at/id	
 work	PublicationPlace	Name	keyword	workPublicationPlaceName	Search	Semantic	N			lux:placeOfPublication
 work	PublicationAgent	Id	uri	workPublicationAgentId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/used_for/carried_out_by/id	
 work	PublicationAgent	Name	keyword	workPublicationAgentName	Search	Semantic	N			lux:agentOfPublication
-work	CreationStart	Date	datesAsString	workCreationStartDateStr	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin	
 work	CreationStart	Date	datesAsLong	workCreationStartDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin	
 work	CreationEnd	Date	datesAsLong	workCreationEndDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end	
 work	CreationPlace	Id	uri	workCreationPlaceId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/took_place_at/id	
@@ -170,7 +155,6 @@ work	CreationPlace	Name	keyword	workCreationPlaceName	Search	Semantic	N			lux:pl
 work	CreationAgent	Id	uri	workCreationAgentId	RecordLink	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/carried_out_by/id ,  /json[type = ('VisualItem', 'LinguisticObject')]/created_by/part/carried_out_by/id	
 work	CreationAgent	Name	keyword	workCreationAgentName	Search	Semantic	N			lux:agentOfCreation
 work	MemberOf	Name	keyword	workMemberOfName	Search	Semantic	N	This should probably be merged into workPartOfName like workPartOfId		la:member_of
-work	CreationOrPublicationStart	Date	datesAsString	workCreationOrPublicationStartDateStr	Search	Non	N	Combo of workCreationStartDateLong and workPublicationStartDateLong for the workCreationOrPublicationDate facet	/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/begin_of_the_begin , /json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/begin_of_the_begin	
 work	CreationOrPublicationStart	Date	datesAsLong	workCreationOrPublicationStartDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_begin_of_the_begin , /json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_begin_of_the_begin	
 work	CreationOrPublicationEnd	Date	datesAsLong	workCreationOrPublicationEndDateLong	Search	Non	N		/json[type = ('VisualItem', 'LinguisticObject')]/created_by/timespan/_seconds_since_epoch_end_of_the_end , /json[type = ('VisualItem', 'LinguisticObject')]/used_for/timespan/_seconds_since_epoch_end_of_the_end	
 										
@@ -184,7 +168,6 @@ place	Type	Id 	uri	placeTypeId 	RecordLink	Non	N		/json[type = 'Place']/classifi
 place	Type	Name	keyword	placeTypeName	Search	Semantic	N			lux:placeClassifiedAs
 place	PartOf	Id	uri	placePartOfId	RecordLink	Non	N		/json[type = 'Place']/part_of/id	
 place	PartOf	Name	keyword	placePartOfName	Search	Semantic	N			crm:P89_falls_within
-place		Spatial	bounds	placeSpatial	Search	Non	N		/json[type = 'Place']/defined_by	
 										
 										
 concept	HasDigitalImage	Boolean	numbers	conceptHasDigitalImageBoolean	Search	Non	N		/indexedProperties[dataType = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/hasDigitalImage	
@@ -201,7 +184,6 @@ concept	InfluencedByAgent	Id	uri	conceptInfluencedByAgentId	RecordLink	Non	N		/j
 concept	InfluencedByConcept	Id	uri	conceptInfluencedByConceptId	RecordLink	Non	N		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/id	
 concept	InfluencedByEvent	Id	uri	conceptInfluencedByEventId	RecordLink	Non	N		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Activity', 'Period')]/id	
 concept	InfluencedByPlace	Id	uri	conceptInfluencedByPlaceId	RecordLink	Non	N		/json[type = ('Type', 'MeasurementUnit', 'Language', 'Currency', 'Material')]/created_by/influenced_by[type = ('Place')]/id	
-language		Identifier	string	languageIdentifier	Search	Non	N		/json[type='Language']/identified_by[./type='Identifier']/content	
 										
 event	Any	Text	keyword	eventAnyText			N		/json[type= ('Activity', 'Period')]//content	
 event	DataType	Name	keyword	eventDataTypeName	Search	Non	Y		/indexedProperties[dataType = ('Activity', 'Period')]/dataType	
@@ -210,10 +192,8 @@ event	Primary	Name	keyword	eventPrimaryName	Search	Non	Y		/json[type= ('Activity
 event		Identifier	string	eventIdentifier	Search	Non	N		/json[type= ('Activity', 'Period')]/identified_by[./type='Identifier']/content , /json[type= ('Activity', 'Period')]/equivalent/id	
 event	Type	Id 	uri	eventTypeId 	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/classified_as/id	
 event	Type	Name	keyword	eventTypeName	Search	Semantic	N			lux:eventClassifiedAs
-event	InitiatedStart	Date	datesAsString	eventInitiatedStartDateStr	Search	Non	N		/json[type= ('Activity', 'Period')]/timespan/begin_of_the_begin	
 event	InitiatedStart	Date	datesAsLong	eventInitiatedStartDateLong	Search	Non	N		/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_begin_of_the_begin	
 event	InitiatedEnd	Date	datesAsLong	eventInitiatedEndDateLong	Search	Non	N		/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_begin	
-event	CompletedStart	Date	datesAsString	eventCompletedStartDateStr	Search	Non	N		/json[type= ('Activity', 'Period')]/timespan/begin_of_the_end	
 event	CompletedStart	Date	datesAsLong	eventCompletedStartDateLong	Search	Non	N		/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_begin_of_the_end	
 event	CompletedEnd	Date	datesAsLong	eventCompletedEndDateLong	Search	Non	N		/json[type= ('Activity', 'Period')]/timespan/_seconds_since_epoch_end_of_the_end	
 event	Agent	Id	uri	eventAgentId	RecordLink	Non	N		/json[type= ('Activity', 'Period')]/carried_out_by/id	

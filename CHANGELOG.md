@@ -2,7 +2,7 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v4.1.0 - Unreleased
+## v4.1.0 - 2026-08-17
 ### Removed
 - Removed unused indexes, this frees up some memory and disk space ([#652](https://github.com/project-lux/lux-marklogic/issues/652))
 

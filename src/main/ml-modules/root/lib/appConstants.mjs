@@ -1,20 +1,10 @@
 const CODE_VERSION = '@@codeVersion@@';
 
 const ML_APP_NAME = '%%mlAppName%%';
-const TENANT_NAME = '%%environmentName%%';
 const ML_ADMIN_PORT = parseInt('%%mlAdminPort%%'.trim());
 
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
-
-const FEATURE_MY_COLLECTIONS_ENABLED =
-  '%%featureMyCollectionsEnabled%%'.trim() === 'true';
-
-const COLLECTION_NAME_MY_COLLECTIONS_FEATURE = 'myCollectionsFeature';
-const COLLECTION_NAME_MY_COLLECTION = 'myCollection';
-const COLLECTION_NAME_USER_PROFILE = 'userProfile';
-const COLLECTION_NAME_PRODUCTION = 'prod';
-const COLLECTION_NAME_NON_PRODUCTION = 'nonProd';
 
 // Unit test-related constants are primarily used to prevent use of a function
 // that allows the caller to specify the endpoint configuration to apply.
@@ -76,9 +66,6 @@ const RELATED_LIST_PREFIX = `${BASE_URL}/api/related-list`;
 const SEARCH_PREFIX = `${BASE_URL}/api/search`;
 const SEARCH_ESTIMATE_PREFIX = `${BASE_URL}/api/search-estimate`;
 const PRIVILEGES_PREFIX = `${BASE_URL}/privileges`;
-
-const URI_TYPE_PERSON = 'person';
-const URI_TYPE_SET = 'set';
 
 const AS_TYPE_COLLECTION = 'Collection';
 const AS_TYPE_ORDERED_COLLECTION = 'OrderedCollection';
@@ -171,9 +158,6 @@ const TRACE_NAME_RELATED_LIST = 'LuxRelatedList';
 const TRACE_NAME_PROFILES = 'LuxNamedProfiles';
 const TRACE_NAME_SEARCH = 'LuxSearch';
 
-// A portion of an error message used in a couple places.
-const MESSAGE_ALREADY_HAS_A_PROFILE = 'already has a profile';
-
 function getAllowedSearchOptionsByOptionsName(optionsName) {
   if (optionsName == SEARCH_OPTIONS_NAME_EXACT) {
     return ALLOWED_SEARCH_OPTIONS_EXACT;
@@ -206,11 +190,6 @@ export {
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   BASE_URL,
   CODE_VERSION,
-  COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
-  COLLECTION_NAME_MY_COLLECTION,
-  COLLECTION_NAME_NON_PRODUCTION,
-  COLLECTION_NAME_PRODUCTION,
-  COLLECTION_NAME_USER_PROFILE,
   DEFAULT_FILTER_SEARCH_RESULTS,
   DEFAULT_FILTER_RELATED_LIST_SEARCH_RESULTS,
   DEFAULT_SEARCH_OPTIONS_EXACT,
@@ -219,7 +198,6 @@ export {
   ENDPOINT_ACCESS_UNIT_NAMES,
   ENDPOINT_CONSUMER_ROLES_END_WITH,
   FACETS_PREFIX,
-  FEATURE_MY_COLLECTIONS_ENABLED,
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
   getAllowedSearchOptionsByOptionsName,
   getDefaultSearchOptionsByOptionsName,
@@ -229,7 +207,6 @@ export {
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
-  MESSAGE_ALREADY_HAS_A_PROFILE,
   ML_ADMIN_PORT,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
@@ -256,8 +233,5 @@ export {
   TRACE_NAME_PROFILES,
   TRACE_NAME_RELATED_LIST,
   TRACE_NAME_SEARCH,
-  TENANT_NAME,
   UNIT_TEST_ENDPOINT,
-  URI_TYPE_PERSON,
-  URI_TYPE_SET,
 };

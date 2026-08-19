@@ -1,15 +1,11 @@
 import {
   getCurrentEndpointPath,
   PROP_NAME_AMP_AS_ADMIN,
-  PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
-  PROP_NAME_FEATURES,
-  PROP_NAME_MY_COLLECTIONS,
 } from '../config/endpointsConfig.mjs';
 import { InternalConfigurationError } from './errorClasses.mjs';
 import { isDefined, isUndefined } from '../utils/utils.mjs';
 
 const propertyIsRequired = true;
-// const propertyIsNotRequired = false;
 const trueOrFalse = [true, false];
 
 /*
@@ -28,44 +24,14 @@ const EndpointConfig = class {
     return this.endpointPath;
   }
 
-  mayExecuteInReadOnlyMode() {
-    return this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE] === true;
-  }
-
-  mayNotExecuteInReadOnlyMode() {
-    return !this.mayExecuteInReadOnlyMode();
-  }
-
   mayAmpAsAdmin() {
     return this[PROP_NAME_AMP_AS_ADMIN] === true;
-  }
-
-  isPartOfMyCollectionsFeature() {
-    return this[PROP_NAME_FEATURES][PROP_NAME_MY_COLLECTIONS] === true;
   }
 
   assertValidConfiguration() {
     this.assertValidPropertyValue(
       PROP_NAME_AMP_AS_ADMIN,
       this[PROP_NAME_AMP_AS_ADMIN],
-      propertyIsRequired,
-      trueOrFalse,
-    );
-    this.assertValidPropertyValue(
-      PROP_NAME_ALLOW_IN_READ_ONLY_MODE,
-      this[PROP_NAME_ALLOW_IN_READ_ONLY_MODE],
-      propertyIsRequired,
-      trueOrFalse,
-    );
-    this.assertValidPropertyValueType(
-      PROP_NAME_FEATURES,
-      this[PROP_NAME_FEATURES],
-      propertyIsRequired,
-      'object',
-    );
-    this.assertValidPropertyValue(
-      PROP_NAME_MY_COLLECTIONS,
-      this[PROP_NAME_FEATURES][PROP_NAME_MY_COLLECTIONS],
       propertyIsRequired,
       trueOrFalse,
     );
@@ -87,27 +53,6 @@ const EndpointConfig = class {
       if (!allowedValues.includes(propertyValue)) {
         throw new InternalConfigurationError(
           `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value is not one of the allowed values`,
-        );
-      }
-    }
-  }
-
-  assertValidPropertyValueType(
-    propertyName,
-    propertyValue,
-    isPropertyRequired,
-    valueType,
-  ) {
-    if (isPropertyRequired) {
-      this.assertPropertyDefined(propertyName, propertyValue);
-    }
-    if (
-      isPropertyRequired ||
-      (!isPropertyRequired && isDefined(propertyValue))
-    ) {
-      if (typeof propertyValue !== valueType) {
-        throw new InternalConfigurationError(
-          `The ${this.getEndpointPath()} endpoint's configuration for the '${propertyName}' property value has the wrong value type`,
         );
       }
     }

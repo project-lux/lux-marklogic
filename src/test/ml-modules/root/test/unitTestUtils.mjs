@@ -1,13 +1,10 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
-import { getExclusiveRoleNamesByUsername } from '/lib/securityLib.mjs';
-import { getNodeFromObject, isArray, toArray } from '/utils/utils.mjs';
+import { getNodeFromObject, isArray } from '/utils/utils.mjs';
 import {
   ROLE_NAME_TENANT_READER,
   ROLE_NAME_UNIT_TEST_SERVICE_ACCOUNT_READER,
   ROLE_NAME_UNIT_TESTER,
 } from '/test/unitTestConstants.mjs';
-
-const sec = require('/MarkLogic/security.xqy');
 
 /**
  * Invoke a zero arity function configured by the provided scenario.
@@ -251,40 +248,9 @@ function assertPermissionArraysMatch(
   );
 }
 
-// Call this before deleting the user's roles that could be on the documents in the specified collections.
-function removeCollections(collections, username) {
-  const zeroArityFun = () => {
-    declareUpdate();
-    toArray(collections).forEach((name) => {
-      console.log(
-        `User ${xdmp.getCurrentUser()} is attempting to delete the '${name}' collection from the ${xdmp.databaseName(
-          xdmp.database(),
-        )} database...`,
-      );
-      xdmp.collectionDelete(name);
-    });
-  };
-  xdmp.invokeFunction(zeroArityFun, { userId: xdmp.user(username) });
-}
-
-function removeExclusiveRolesByUsername(username) {
-  const zeroArityFun = () => {
-    declareUpdate();
-    getExclusiveRoleNamesByUsername(username).forEach((roleName) => {
-      if (sec.roleExists(roleName)) {
-        console.log(`Deleting the ${roleName} role...`);
-        sec.removeRole(roleName);
-      }
-    });
-  };
-  xdmp.invokeFunction(zeroArityFun, { database: xdmp.securityDatabase() });
-}
-
 export {
   assertPermissionArraysMatch,
   executeScenario,
   loadTestFile,
   permissionArrayContains,
-  removeCollections,
-  removeExclusiveRolesByUsername,
 };

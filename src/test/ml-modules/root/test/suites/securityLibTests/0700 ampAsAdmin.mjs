@@ -1,7 +1,6 @@
 import { testHelperProxy } from '/test/test-helper.mjs';
 import { EndpointConfig } from '/lib/EndpointConfig.mjs';
 import { ENDPOINTS_CONFIG } from '/config/endpointsConfig.mjs';
-import { USERNAME_FOR_BONNIE } from '/test/unitTestConstants.mjs';
 import {
   handleRequestForUnitTesting,
   getEndpointAccessUnitNames,
@@ -19,13 +18,6 @@ const f = () => {
     .getCurrentRoles()
     .toArray()
     .map((roleId) => xdmp.roleName(roleId));
-};
-
-const invokeAsUser = (username, f) => {
-  const result = fn.head(
-    xdmp.invokeFunction(f, { userId: xdmp.user(username) }),
-  );
-  return result && result.toObject ? result.toObject() : result;
 };
 
 const toRoleNamesArray = (roleNames) => {
@@ -60,22 +52,13 @@ for (const key of Object.keys(ENDPOINTS_CONFIG)) {
   console.log(`Processing endpoint '${key}'...`);
   const endpointConfig = new EndpointConfig(ENDPOINTS_CONFIG[key]);
 
-  // b & c: with the tenant owner (null), the admin role must be
-  //        present iff the endpoint declares ampAsAdmin: true.
-  // For My Collections endpoints, run as Bonnie (non-service account); for others, run as current user.
-  let tenantOwnerRoleNames;
-  if (endpointConfig.features.myCollections) {
-    tenantOwnerRoleNames = invokeAsUser(USERNAME_FOR_BONNIE, () =>
-      handleRequestForUnitTesting(f, null, endpointConfig, true),
-    );
-  } else {
-    tenantOwnerRoleNames = handleRequestForUnitTesting(
-      f,
-      null,
-      endpointConfig,
-      false,
-    );
-  }
+  // With the tenant owner (null), the admin role must be present iff the endpoint
+  // declares ampAsAdmin: true.
+  const tenantOwnerRoleNames = handleRequestForUnitTesting(
+    f,
+    null,
+    endpointConfig,
+  );
   const tenantOwnerRoleNamesArr = toRoleNamesArray(tenantOwnerRoleNames);
   const tenantOwnerHasAdmin = hasAdminRole(tenantOwnerRoleNamesArr);
 
@@ -95,16 +78,13 @@ for (const key of Object.keys(ENDPOINTS_CONFIG)) {
     );
   }
 
-  // d: a specific unit's service account must never receive the admin role, even
-  //    when the endpoint declares ampAsAdmin: true.
-  // NOTE: only test non-My Collections endpoints for service accounts, since service accounts
-  //       are blocked at the My Collections validation layer before amp-as-admin logic runs.
-  if (firstUnitName && !endpointConfig.features.myCollections) {
+  // A specific unit's service account must never receive the admin role, even when the
+  // endpoint declares ampAsAdmin: true.
+  if (firstUnitName) {
     const unitRoleNames = handleRequestForUnitTesting(
       f,
       firstUnitName,
       endpointConfig,
-      false,
     );
     const unitRoleNamesArr = toRoleNamesArray(unitRoleNames);
     const unitHasAdmin = hasAdminRole(unitRoleNamesArr);

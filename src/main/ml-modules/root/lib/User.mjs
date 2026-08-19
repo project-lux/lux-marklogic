@@ -1,11 +1,5 @@
-import { isDefined, isUndefined } from '../utils/utils.mjs';
-import { InternalServerError } from './errorClasses.mjs';
-import { COLLECTION_NAME_USER_PROFILE } from './appConstants.mjs';
-
 const User = class {
   constructor() {
-    this.userIri = null;
-
     // TBD if a good idea to cache the role names.
     this.roleNames = xdmp
       .getCurrentRoles()
@@ -19,53 +13,8 @@ const User = class {
     return xdmp.getCurrentUser();
   }
 
-  // Electing to use "user IRI" instead of "user ID" to avoid confusion with the user ID in the
-  // security database. User IRI should match the document's URI and /json/id.
-  getUserIri() {
-    // Given we may not be in the same transaction we started in, be willing to check again.
-    if (isUndefined(this.userIri)) {
-      this.userIri = User.determineUserIri(this.getUsername());
-    }
-    return this.userIri;
-  }
-
-  hasUserProfile() {
-    return isDefined(this.getUserIri());
-  }
-
   hasRole(roleName) {
     return this.roleNames.includes(roleName);
-  }
-
-  // Given document permissions, neither a service account nor a user should be able to access another user's profile.
-  static determineUserIri(username) {
-    const results = cts
-      .uris(
-        '',
-        ['limit=2', 'score-zero'],
-        cts.collectionQuery(COLLECTION_NAME_USER_PROFILE),
-      )
-      .toArray();
-    if (results.length > 1) {
-      throw new InternalServerError(
-        `Multiple user profiles found for username '${username}'.`,
-      );
-    } else if (results.length === 1) {
-      return results[0] + '';
-    } else {
-      return null;
-    }
-  }
-
-  // Return false for temporary / OAuth users.
-  static isLocalUser(username) {
-    // Elected for try/catch over executing sec.userExists in the security database and an additional execute privilege.
-    try {
-      xdmp.user(username);
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 };
 

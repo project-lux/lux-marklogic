@@ -1,21 +1,3 @@
-import org.apache.hc.client5.http.auth.AuthScope
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
-import org.apache.hc.client5.http.classic.methods.HttpGet
-import org.apache.hc.client5.http.classic.methods.HttpPost
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
-import org.apache.hc.client5.http.impl.classic.HttpClients
-import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory
-import org.apache.hc.client5.http.ssl.TrustAllStrategy
-import org.apache.hc.core5.http.config.Registry
-import org.apache.hc.core5.http.config.RegistryBuilder
-import org.apache.hc.core5.http.io.entity.EntityUtils
-import org.apache.hc.core5.http.io.entity.StringEntity
-import org.apache.hc.core5.ssl.SSLContexts
-
 buildscript {
   repositories {
     mavenCentral()
@@ -24,7 +6,6 @@ buildscript {
     classpath "com.marklogic:ml-gradle:${mlGradleVersion}"
     classpath "com.marklogic:marklogic-unit-test-client:${mlUnitTestVersion}"
     classpath "org.json:json:${orgJsonVersion}"
-    classpath "org.apache.httpcomponents.client5:httpclient5:${httpClientVersion}"
   }
 }
 
@@ -49,11 +30,9 @@ tasks.withType(JavaExec) {
 }
 
 ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
-ext.publicKeysPath = "${project.projectDir}/src/main/public-keys"
 ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
 ext.buildAmpTestPath = "${project.projectDir}/build/test/ml-config/security/amps"
 ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
-ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oauth/security/external-security"
 
 ext.lineSep = System.getProperty("line.separator")
 
@@ -187,29 +166,6 @@ ext.createTokenFilter = { names, texts ->
   }
 }
 
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-task addOAuthPublicKeys() {
-  doLast {
-    if (project.getProperty("mlConfigPaths").contains("oauth")) {
-      def environmentName = project.getProperty("environmentName").toLowerCase()
-      def publicKeysFilePath = "${publicKeysPath}/oauth-${environmentName}.xml"
-      if (!file(publicKeysFilePath).exists()) {
-        throw new GradleException("OAuth is enabled yet the public keys file '${publicKeysFilePath}' does not exist.")
-      }
-
-      def externalSecurityFilename = "lux-cognito-external-security.xml"
-      def templateBindings = [
-          oauthPublicKeys: file(publicKeysFilePath).text
-      ]
-      def content = applyTemplate("${sourceTemplatePath}/${externalSecurityFilename}", templateBindings)
-      writeToFile("${buildExternalSecurityPath}/${externalSecurityFilename}", content)
-      println "Added OAuth public keys to a copy of '${externalSecurityFilename}', within the build directory."
-    } else {
-      println "Skipping OAuth public keys addition as mlConfigPaths does not include 'oauth'."
-    }
-  }
-}
-
 // This project's implementation of its custom token feature.
 //
 // This task needs to run before any ML Gradle task that references ML Gradle configuration files does.  Rather than
@@ -275,8 +231,6 @@ task preprocessRuntimeConfigAndModules() {
     filter createTokenFilter(names, texts)
   }
 }
-preprocessRuntimeConfigAndModules.finalizedBy addOAuthPublicKeys
-
 // Code herein automatically executes.
 task preprocessBuildSupportScripts() {
   // Resolve property references while copying into the build dir.
@@ -369,119 +323,8 @@ task addSupportForExecutingWithServiceAccounts() {
     println "Generated ${moduleFilename}"
   }
 }
-mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
+mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts
 mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
-
-// Implementation supports both the basic and digest auth schemes.
-task ensureTenantStatusDocumentExists() {
-  doFirst {
-    println ""
-    println "Ensuring tenant status document exists..."
-    println ""
-
-    // Only used if the tenant status document does not exist.
-    def isProd = project.getProperty("environmentProd").toBoolean()
-    def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
-
-    def protocol = project.getProperty("mlAppServicesScheme")
-    def host = project.getProperty("mlHost") 
-    def port = project.getProperty("mlDeployPort")
-    def username = project.getProperty("mlUsername")
-    def password = credentials.forKey('mlPassword')
-    def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
-    def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
-
-    try {
-      def httpClientBuilder = HttpClients.custom()
-        .disableConnectionState()  // Force new connections
-        .disableAutomaticRetries() // Prevent connection reuse issues
-      
-      def credentialsProvider = new BasicCredentialsProvider()
-      credentialsProvider.setCredentials(
-        new AuthScope(null, -1),
-        new UsernamePasswordCredentials(username, password.toCharArray())
-      )
-      httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-      
-      // Configure SSL if needed
-      if (protocol == "https") {
-        def sslContext = SSLContexts.custom()
-          .loadTrustMaterial(new TrustAllStrategy())
-          .build()
-        
-        // Create socket factory registry for HttpClient 5.x
-        def socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-          .register("http", PlainConnectionSocketFactory.getSocketFactory())
-          .register("https", new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
-          .build()
-        
-        // Use a completely fresh connection manager that doesn't pool
-        def connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry)
-        httpClientBuilder.setConnectionManager(connectionManager)
-      }
-      
-      def httpClient = httpClientBuilder.build()
-      
-      try {
-        // Check if tenant status document exists
-        def getRequest = new HttpGet(getUrl)
-        def getResponse = httpClient.execute(getRequest)
-        
-        try {
-          // Consume entity to ensure connection is released
-          if (getResponse.getEntity()) {
-            EntityUtils.consume(getResponse.getEntity())
-          }
-          
-          if (getResponse.getCode() >= 200 && getResponse.getCode() < 300) {
-            println "Tenant status document was found; no action taken."
-          } else {
-            println "The tenant status document was not found; creating..."
-            
-            // Create the tenant status document
-            def postRequest = new HttpPost(postUrl)
-            postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded")
-            
-            def formData = "prod=${isProd}&readOnly=${isReadOnly}"
-            postRequest.setEntity(new StringEntity(formData))
-            
-            def postResponse = httpClient.execute(postRequest)
-            
-            try {
-              def postStatusCode = postResponse.getCode()
-
-              if (postStatusCode >= 200 && postStatusCode < 300) {
-                println "Tenant status document created successfully"
-                // Consume entity to ensure connection is released
-                if (postResponse.getEntity()) {
-                  EntityUtils.consume(postResponse.getEntity())
-                }
-              } else {
-                def errorContent = EntityUtils.toString(postResponse.getEntity())
-                throw new GradleException("Failed to create tenant status document with response code ${postStatusCode}: ${errorContent}")
-              }
-            } finally {
-              postResponse.close()
-            }
-          }
-        } finally {
-          getResponse.close()
-        }
-      } finally {
-        httpClient.close()
-      }
-      
-    } catch (Exception e) {
-      println "DEBUG: Exception occurred: ${e.getClass().getName()} - ${e.message}"
-      if (e.getCause()) {
-        println "DEBUG: Caused by: ${e.getCause()}"
-      }
-      throw new GradleException("Failed to ensure tenant status document exists: ${e.message}", e)
-    }
-  }
-}
-mlDeploy.finalizedBy ensureTenantStatusDocumentExists
-mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
 
 // Resets the test modules database with all documents from the main modules database,
 // maintaining permissions.  This should be run after all other changes have been made
@@ -504,7 +347,8 @@ task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
     println ""
   }
 }
-ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
+mlDeploy.finalizedBy resetTestModulesDatabase
+mlLoadModules.finalizedBy resetTestModulesDatabase
 
 // Delete test modules from main modules database after they've been copied to test
 // This one should run regardless of whether unit testing deployment is allowed, 

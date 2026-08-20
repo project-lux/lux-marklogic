@@ -599,7 +599,7 @@ task removeOfflineDynamicHosts (type: com.marklogic.gradle.task.MarkLogicTask) {
     println ""
   }
 }
-mlDeployDatabases.dependsOn removeOfflineDynamicHosts
+// mlDeployDatabases.dependsOn removeOfflineDynamicHosts
 
 // Admin required to run this; thus piggybacking mlDeploySecurity.
 // More info in /docs/lux-backend-build-tool-and-tasks.md

@@ -1,5 +1,4 @@
-import { getCurrentEndpointConfig, getCurrentEndpointPath } from '../config/endpointsConfig.mjs';
-import * as libWrapper from './libWrapper.mjs';
+import { getCurrentEndpointPath } from '../config/endpointsConfig.mjs';
 import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
@@ -13,7 +12,6 @@ import {
 import {
   includesOrEquals,
   isObject,
-  isUndefined,
   removeItemByValueFromArray,
   split,
 } from '../utils/utils.mjs';
@@ -39,17 +37,12 @@ const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
  * All endpoint requests are to go through this function.
  *
  * @param {function} f The function to run on behalf of the endpoint.
- * @param {String} unitName The name of the unit to execute with their endpoint consumer role.
- *    This is optional and intended to enable requests to be restricted to what the specified
- *    (unit portal's) service account can see.
- * @throws {InternalConfigurationError} bubbles up when the endpoint is not property configured.
  * @throws Any other possible error the provided function can throw.
  * @returns Whatever the given function returns.
  */
-function handleRequest(f, unitName = TENANT_OWNER) {
+function handleRequest(f) {
   try {
-    const endpointConfig = getCurrentEndpointConfig();
-    return _handleRequest(f, unitName, endpointConfig);
+    return _handleRequest(f);
   } catch (e) {
     if (xdmp.traceEnabled(TRACE_NAME_ERROR)) {
       xdmp.trace(
@@ -81,25 +74,13 @@ function handleRequest(f, unitName = TENANT_OWNER) {
   }
 }
 
-function __handleRequest(f, unitName = TENANT_OWNER, endpointConfig) {
-  if (isUndefined(unitName)) {
-    unitName = TENANT_OWNER;
-  }
-
-  // If the unit is the tenant owner and allowed by the endpoint, amp the request as an admin
-  // for improved performance.
-  if (unitName === TENANT_OWNER && endpointConfig.mayAmpAsAdmin()) {
-    return libWrapper['execute_with_admin'](f);
-  }
+function __handleRequest(f) {
   return f();
 }
 const _handleRequest = import.meta.amp(__handleRequest);
 
-// Handle a version 2 request initiated by a unit test. We otherwise do not want to accept the
-// endpoint configuration as a parameter.
-function handleRequestForUnitTesting(f, unitName = TENANT_OWNER, endpointConfig) {
-  // As this allows the caller to specify which endpoint configuration to use and is only
-  // intended to be called when running a unit test, restrict it.
+// Handle a request initiated by a unit test. Only intended to be called when running a unit test.
+function handleRequestForUnitTesting(f) {
   const user = new User();
   if (
     UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
@@ -108,7 +89,7 @@ function handleRequestForUnitTesting(f, unitName = TENANT_OWNER, endpointConfig)
     throw new AccessDeniedError(`This function is reserved for unit testing.`);
   }
 
-  return _handleRequest(f, unitName, endpointConfig);
+  return _handleRequest(f);
 }
 
 function mayScaleEnvironment() {

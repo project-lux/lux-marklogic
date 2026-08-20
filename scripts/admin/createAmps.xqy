@@ -20,15 +20,7 @@ let $source-tenant-name := "lux-dev-data"
 let $target-tenant-name := "lux-dev-data-optic"
 
 (: Additional amps that don't exist in the source tenant :)
-let $additional-amps := (
-  map:new((
-    map:entry("name", "_execute_with_admin"),
-    map:entry("lib", "/lib/libWrapper.mjs"),
-    (: using source tenant and optic is a sub-tenant of lux-dev-data :)
-    map:entry("roles", ("admin", $source-tenant-name || "-invoke"))
-  )),
-  ()
-)
+let $additional-amps := ()
 (: END: Configuration :)
 
 let $database-suffixes := ("-modules", "-test-modules")

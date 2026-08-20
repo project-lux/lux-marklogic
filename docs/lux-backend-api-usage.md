@@ -68,7 +68,7 @@ It is possible that LUX backend consumers also consume MarkLogic native endpoint
 
 Every LUX backend endpoint request must be authenticated, using MarkLogic's internal security and an application server configured with the basic (HTTPS) or digest (HTTP) authentication scheme.
 
-The service account must be associated to one of the endpoint consumer roles. These provide sufficient privileges to consume all of LUX's backend endpoints. Document permissions may restrict the endpoint consumer to a subset of data. The tenant's endpoint consumer service account has access to all documents. Individual unit endpoint service accounts may have access to overlapping subsets of data. Applicable endpoints offer the `unitName` parameter to specify which unit's documents to make accessible to the request and which configuration files to apply. For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
+The service account must be associated to one of the endpoint consumer roles. These provide sufficient privileges to consume all of LUX's backend endpoints. Document permissions may restrict the endpoint consumer to a subset of data. The tenant's endpoint consumer service account has access to all documents. Individual unit endpoint service accounts may have access to overlapping subsets of data, restricted via the permissions on those documents. For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
 
 Shared environments require HTTPS.
 
@@ -113,7 +113,6 @@ The `advancedSearchConfig` endpoint enables consumers to get a typescript-format
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 
 ### Successful Request / Response Example
 
@@ -194,7 +193,6 @@ In the context of servicing a single user typing in a field, endpoint consumers 
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `text` | `kra` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported. |
 | `context` | `item.material` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
 | `fullyHonorContext` | `false` | **OPTIONAL** - Each auto complete context is configured with two constraints: a list of names and a relationship.  For example, the `itemProductionAgentId` context is configured to agent names and requires the agent have produced something.  When this parameter value is `true`, both constraints are applied.  When `false`, the relationship constraint is not applied --faster but will include false positives.  Some of the other parameters only apply when this parameter value is `true`.  Defaults to `true`. |
@@ -340,7 +338,6 @@ The Read Document endpoint enables consumers to retrieve a single document's JSO
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `uri` | *See example below* | **REQUIRED** - The URI of the requested document. |
 | `profile` | "relationship" | **OPTIONAL** - The name of a profile that informs which subset of the JSON-LD to return. The default is to serve up the entire JSON-LD block, which is also the behavior when an invalid profile name is specified or an exception is encountered. Available profiles: "name", "location", "relationship", "results"\*, and "rights"; one may double check in the `applyProfile()` function within [/src/main/ml-modules/root/lib/profileDocLib.mjs](/src/main/ml-modules/root/lib/profileDocLib.mjs). |
 | `lang` | "en" | **OPTIONAL** - The language to serve up when there are multiple to choose from. Default is `en`. |
@@ -434,7 +431,6 @@ Only the first 100 values of a semantic facet's values are accessible.
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `name` | `agentStartDate` | **REQUIRED** - The name of the facet to calculate.  The [Search Info endpoint's](#search-info) `facetBy` response body property lists all of the available facets. |
 | `q` | *See [Search's example](#successful-request--response-example-7)* | **REQUIRED** - The query to constrain the facet's values by.  This parameter's support is nearly identical to the [Search endpoint's](#search) `q` parameter: the `multi` search scope is not supported by this endpoint. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of search scopes supported by this endpoint, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
@@ -552,7 +548,6 @@ To retrieve the full list of related documents, switch to the [Search endpoint](
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `scope` | `concept` | **REQUIRED** - The related list's search scope. For instance, when one is looking for concepts associated with an agent, the scope should be "concept". |
 | `name` | `relatedToAgent` | **REQUIRED** - The name of the related list. Using the same concepts-from-agent example, the name should be "relatedToAgent". For a complete list of available related lists, please search for "relatedTo" in the return of the [Search Info endpoint](#search-info). Note the scope you find the related list in as that will also be needed. |
 | `uri` | `https://lux.collections.yale.edu/...` | **REQUIRED** - The URI of the document to get the related documents of. For the concepts-from-agent example, this should be the agent's URI. The URI is one in the same as the document's IRI and ID. |
@@ -750,7 +745,6 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a near complete list of available search scopes, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example).
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
@@ -930,7 +924,6 @@ The `searchEstimate` endpoint may be used to calculate the estimated number of r
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `q` | *See example below* | **REQUIRED** - Unlike the [Facets](#facets) and [Search](#search) endpoints, this endpoint only supports the LUX JSON Search Grammar. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when the `_scope` property is not set in the `q` parameter value.  For a near complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example). |
 
@@ -1022,7 +1015,6 @@ Differences between the [Advanced Search Configuration endpoint](#advanced-searc
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 
 ### Successful Request / Response Example
 
@@ -1162,7 +1154,6 @@ The `searchWillMatch` endpoint may be used to determine if a search or collectio
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 | `q` | *See example below* | **REQUIRED** - The criteria for one or more searches. Unlike the [Facets](#facets) and [Search](#search) endpoints, this endpoint only supports the LUX JSON Search Grammar. Set the top-level property names to the name of the search and the values to the search criteria. When only wanting a single estimate, just the search criteria may be provided; the response will use `unnamed` as the search's name. All search scopes are supported, including `multi`. |
 
 **Response Body**
@@ -1321,7 +1312,6 @@ The `stats` endpoint enables consumers to get document estimates by context. The
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - Use this parameter to specify which unit's configuration and documents to have access to. The default is the tenant owner, which has access to everything. In most environments, the tenant owner's name is simply `lux`. |
 
 ### Successful Request / Response Example
 

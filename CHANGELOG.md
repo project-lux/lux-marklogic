@@ -5,6 +5,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## v4.2.0 - Unreleased
 ### Removed
 - Removed My Collections functionality. Including OAuth authorization, tenant status, CRUD operations other than read, related tests, and related documentation ([#735](https://github.com/project-lux/lux-marklogic/issues/735))
+- Removed the `ampAsAdmin` performance optimization and the `unitName` request parameter it depended on (across `search`, `facets`, `relatedList`, `searchEstimate`, `searchWillMatch`, `advancedSearchConfig`, `autoComplete`, `document/read`, `searchInfo`, and `stats`), along with the now-unused `libWrapper.mjs`/`EndpointConfig` build and security scaffolding that only existed to support it. This is a breaking API change for any caller currently passing `unitName`. ([#736](https://github.com/project-lux/lux-marklogic/issues/736))
 
 ## v4.1.0 - 2026-08-17
 ### Removed

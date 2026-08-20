@@ -32,11 +32,6 @@
 									],
 									"query": [
 										{
-											"key": "unitName",
-											"value": "ypm",
-											"disabled": true
-										},
-										{
 											"key": "uri",
 											"value": "https://lux.collections.yale.edu/data/concept/8e0c245b-b98c-4f66-b8dc-6951bd7ce264"
 										},
@@ -62,7 +57,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/advancedSearchConfig.mjs?unitName=ypm",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/advancedSearchConfig.mjs",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -72,12 +67,6 @@
 								"ds",
 								"lux",
 								"advancedSearchConfig.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								}
 							]
 						}
 					},
@@ -89,7 +78,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/autoComplete.mjs?unitName=ypm&text=smith&context=item.producedBy&fullyHonorContext=true&onlyMatchOnPrimaryNames=false&onlyReturnPrimaryNames=false&page=1&pageLength=10&filterIndex=0&previouslyFiltered=0&timeoutInMilliseconds=500",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/autoComplete.mjs?text=smith&context=item.producedBy&fullyHonorContext=true&onlyMatchOnPrimaryNames=false&onlyReturnPrimaryNames=false&page=1&pageLength=10&filterIndex=0&previouslyFiltered=0&timeoutInMilliseconds=500",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -101,10 +90,6 @@
 								"autoComplete.mjs"
 							],
 							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								},
 								{
 									"key": "text",
 									"value": "smith"
@@ -159,11 +144,6 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "unitName",
-									"value": "lux",
-									"type": "text"
-								},
-								{
 									"key": "name",
 									"value": "workAboutConceptId",
 									"type": "text"
@@ -214,11 +194,6 @@
 						"body": {
 							"mode": "formdata",
 							"formdata": [
-								{
-									"key": "unitName",
-									"value": "lux",
-									"type": "text"
-								},
 								{
 									"key": "scope",
 									"value": "agent",
@@ -334,11 +309,6 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "unitName",
-									"value": "ypm",
-									"type": "text"
-								},
-								{
 									"key": "q",
 									"value": "{ \"memberOf\": { \"name\": \"England\" } }",
 									"type": "text"
@@ -402,11 +372,6 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "unitName",
-									"value": "ypm",
-									"type": "text"
-								},
-								{
 									"key": "q",
 									"value": "{\n  \"AND\":[\n      {\n        \"startDate\":\"1700\",\n        \"_comp\":\">\"\n      },\n      {\n        \"endDate\":\"1750\",\n        \"_comp\":\"<\"\n      }\n  ]\n}",
 									"type": "text"
@@ -440,7 +405,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchInfo.mjs?unitName=ypm",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchInfo.mjs",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -450,12 +415,6 @@
 								"ds",
 								"lux",
 								"searchInfo.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								}
 							]
 						}
 					},
@@ -469,11 +428,6 @@
 						"body": {
 							"mode": "formdata",
 							"formdata": [
-								{
-									"key": "unitName",
-									"value": "ypm",
-									"type": "text"
-								},
 								{
 									"key": "q",
 									"value": "{\n  \"lux:conceptAboutAgentFromRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptInfluencedConcepts\": {\n    \"_scope\": \"concept\",\n    \"influenced\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:conceptItemEncounteredTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemMadeTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemTypes\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedAgents\": {\n    \"_scope\": \"agent\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedConcepts\": {\n    \"_scope\": \"concept\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedItems\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedPlaces\": {\n    \"_scope\": \"place\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkCreatedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkPublishedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkTypes\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:genderForAgent\": {\n    \"_scope\": \"agent\",\n    \"gender\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:nationalityForAgent\": {\n    \"_scope\": \"agent\",\n    \"nationality\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:occupationForAgent\": {\n    \"_scope\": \"agent\",\n    \"occupation\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:typeForAgent\": {\n    \"_scope\": \"agent\",\n    \"classification\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  }\n}\n",
@@ -513,13 +467,6 @@
 								"ds",
 								"lux",
 								"stats.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm",
-									"disabled": true
-								}
 							]
 						}
 					},

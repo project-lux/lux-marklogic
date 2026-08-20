@@ -14,7 +14,6 @@ This document describes Gradle tasks written for this project, which may be foun
 
 | Task | Description | More Info |
 | ---- | ----------- | --------- |
-| `addSupportForExecutingWithServiceAccounts` | **Deployment task** that generates amps and libWrapper.mjs in support of restricting requests to a unit portal's data. The `endpointAccessUnitNames` build property determines which units this support is added for.  For unit test-enabled environments, the amps are also generated for the test modules database. |  |
 | `deleteTestModulesFromMain` | **Deployment task** that automatically runs after `resetTestModulesDatabase` in order to delete test modules from the main modules database. This allows us not to break from the ML Gradle convention (`mlModulesPaths`) but not leave test modules in the main modules database. This task runs for production environments too as the marklogic-unit-test-modules bundle adds files. |  |
 | `determineCodeVersion` | Executes a script to derive the code version from `git`. |  |
 | `disableSSL` | Manual **deployment task** that disables SSL which then requires non-SSL connections on app serves. |  |

@@ -5,7 +5,6 @@ import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
 import { SearchCriteriaProcessor as SCP } from '../../lib/SearchCriteriaProcessor.mjs';
 import { SearchTermConfig } from '../../lib/search/SearchTermConfig.mjs';
 
-const unitName = external.unitName;
 const response = handleRequest(function () {
   const searchTermsConfig = getSearchTermsConfig();
   const searchBy = {};
@@ -67,7 +66,7 @@ const response = handleRequest(function () {
     facetBy,
     sortBy,
   };
-}, unitName);
+});
 
 response;
 export default response;

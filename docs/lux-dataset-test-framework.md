@@ -633,7 +633,6 @@ Incremental updates — partial dataset changes applied as frequently as once a 
 
 # TODOs
 
-- [x] Register endpoint in [endpointsConfig.mjs](/src/main/ml-modules/root/config/endpointsConfig.mjs) (`ampAsAdmin: false`)
 - [x] Define an execute privilege for this endpoint and include an assert to require the requesting user have it
 - [x] Document endpoint in [lux-backend-api-usage.md](/docs/lux-backend-api-usage.md)
 - [ ] Review all scripts in [/scripts](/scripts) for additional test candidates

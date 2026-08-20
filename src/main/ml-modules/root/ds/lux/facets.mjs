@@ -1,7 +1,6 @@
 import { handleRequest } from '../../lib/securityLib.mjs';
 import { getFacet } from '../../lib/facetsLib.mjs';
 
-const unitName = external.unitName;
 const name = external.name;
 const searchCriteria = external.q;
 const searchScope = external.scope;
@@ -18,7 +17,7 @@ const response = handleRequest(function () {
     pageLength,
     sort,
   });
-}, unitName);
+});
 
 response;
 export default response;

@@ -1,12 +1,9 @@
-import { getCurrentEndpointPath } from '../config/endpointsConfig.mjs';
 import { User } from './User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   ENDPOINT_CONSUMER_ROLES_END_WITH,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
-  ROLE_NAME_MAY_RUN_UNIT_TESTS,
-  UNIT_TEST_ENDPOINT,
   TRACE_NAME_ERROR,
 } from './appConstants.mjs';
 import {
@@ -15,11 +12,7 @@ import {
   removeItemByValueFromArray,
   split,
 } from '../utils/utils.mjs';
-import {
-  AccessDeniedError,
-  BadRequestError,
-  InvalidHostError,
-} from './errorClasses.mjs';
+import { BadRequestError, InvalidHostError } from './errorClasses.mjs';
 
 const TENANT_OWNER = ML_APP_NAME;
 
@@ -42,7 +35,7 @@ const PROPERTY_NAME_EXCLUDED_UNITS = 'excludedUnits';
  */
 function handleRequest(f) {
   try {
-    return _handleRequest(f);
+    return f();
   } catch (e) {
     if (xdmp.traceEnabled(TRACE_NAME_ERROR)) {
       xdmp.trace(
@@ -72,24 +65,6 @@ function handleRequest(f) {
       throw e;
     }
   }
-}
-
-function __handleRequest(f) {
-  return f();
-}
-const _handleRequest = import.meta.amp(__handleRequest);
-
-// Handle a request initiated by a unit test. Only intended to be called when running a unit test.
-function handleRequestForUnitTesting(f) {
-  const user = new User();
-  if (
-    UNIT_TEST_ENDPOINT != getCurrentEndpointPath() ||
-    user.hasRole(ROLE_NAME_MAY_RUN_UNIT_TESTS) === false
-  ) {
-    throw new AccessDeniedError(`This function is reserved for unit testing.`);
-  }
-
-  return _handleRequest(f);
 }
 
 function mayScaleEnvironment() {
@@ -213,7 +188,6 @@ export {
   getCurrentUserUnitName,
   getEndpointAccessUnitNames,
   handleRequest,
-  handleRequestForUnitTesting,
   isConfiguredForUnit,
   mayScaleEnvironment,
   mayValidateDataset,

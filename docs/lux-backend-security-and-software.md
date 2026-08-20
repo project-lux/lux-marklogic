@@ -145,7 +145,6 @@ In support of having a dedicated modules database for unit testing, each amp is 
 | Amp | Role(s) | Function(s) | Library | Purpose |
 | --- | ------- | ----------- | ------- | ------- |
 | [get-forest-info-by-host-amp.json](/src/main/ml-config/base/security/amps/get-forest-info-by-host-amp.json) | [%%mlAppName%%-status-builtins](/src/main/ml-config/base/security/roles/6a-status-builtins-role.json) | `__getForestInfoByHost`| [environmentLib.mjs](/src/main/ml-modules/root/lib/environmentLib.mjs) | Enable the [Storage Info endpoint](/docs/lux-backend-api-usage.md#storage-info) to report out volume usage. |
-| [handle-request-v2-amp.json](/src/main/ml-config/base/security/amps/handle-request-v2-amp.json) | [%%mlAppName%%-invoke-as-user](/src/main/ml-config/base/security/roles/6d-invoke-as-user-role.json), which inherits [%%mlAppName%%-invoke](/src/main/ml-config/base/security/roles/6b-invoke-role.json) | `__handleRequestV2` | [securityLib.mjs](/src/main/ml-modules/root/lib/securityLib.mjs) | Invoke the function provided by the data service, conditionally inclusive of a unit's reader role. |
 | [scale-environment-amp.json](/src/main/ml-config/base/security/amps/scale-environment-amp.json) | `admin` | `__scaleOutAsAdmin` | [scalingLib.mjs](/src/main/ml-modules/root/lib/scalingLib.mjs) | Scale out by adding a dynamic host. |
 
 # Software

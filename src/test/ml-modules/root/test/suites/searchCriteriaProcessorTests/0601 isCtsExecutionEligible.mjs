@@ -22,7 +22,7 @@ const scenarios = [
     input: {
       includeSearchResults: true,
       pageWith: null,
-      facetRequests: [{ name: 'responsibleUnits' }],
+      facetRequests: [{ name: 'itemResponsibleUnits' }],
       scopedCtsQuery: MOCK_ESTIMATE_QUERY,
     },
     expected: true,

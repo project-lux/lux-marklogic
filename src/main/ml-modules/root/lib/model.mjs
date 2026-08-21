@@ -22,21 +22,8 @@ import {
   getLanguageIdentifier,
   hasLanguageIdentifier,
 } from './identifierConstants.mjs';
-import {
-  BadRequestError,
-  DataMergeError,
-  InternalServerError,
-} from './errorClasses.mjs';
-import {
-  isDefined,
-  isNonEmptyString,
-  isUndefined,
-  toArray,
-} from '../utils/utils.mjs';
-import {
-  convertPartialDateTimeToSeconds,
-  toISOStringThroughSeconds,
-} from '../utils/dateUtils.mjs';
+import { DataMergeError, InternalServerError } from './errorClasses.mjs';
+import { toArray } from '../utils/utils.mjs';
 
 const LANGUAGE_EN = 'en';
 
@@ -50,54 +37,6 @@ const TYPE_SET = 'Set';
 const TYPE_MATERIAL = 'Material';
 
 const UI_TYPE_CONCEPT = 'Concept';
-
-const PROP_NAME_BEGIN_OF_THE_BEGIN_STR = 'begin_of_the_begin';
-const PROP_NAME_END_OF_THE_END_STR = 'end_of_the_end';
-const PROP_NAME_BEGIN_OF_THE_BEGIN_LONG =
-  '_seconds_since_epoch_begin_of_the_begin';
-const PROP_NAME_END_OF_THE_END_LONG = '_seconds_since_epoch_end_of_the_end';
-const PROP_NAME_DEFAULT_COLLECTION = '_lux_default_collection';
-
-// To be used when a Set is modified.
-function addAddedToByEntry(docObj, userIri) {
-  if (isNonEmptyString(userIri)) {
-    if (isUndefined(docObj.json.added_to_by)) {
-      docObj.json.added_to_by = [];
-    }
-
-    // Only add an entry when it will not be a duplicate.
-    const timespanProps = _getNewTimespanProperties(
-      toISOStringThroughSeconds(new Date()),
-    );
-    const addedToByArr = docObj.json.added_to_by;
-    const previousEntry =
-      addedToByArr.length > 0 ? addedToByArr[addedToByArr.length - 1] : null;
-    const previousStartLong = isDefined(previousEntry)
-      ? previousEntry.timespan[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
-      : null;
-    const previousUserIri = isDefined(previousEntry)
-      ? previousEntry.carried_out_by[0].id
-      : null;
-    if (
-      previousUserIri != userIri ||
-      previousStartLong != timespanProps[PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]
-    ) {
-      addedToByArr.push({
-        type: 'Addition',
-        carried_out_by: [{ id: userIri, type: 'Person' }],
-        timespan: timespanProps,
-      });
-    }
-  } else {
-    throw new InternalServerError(
-      'model.addAddedToByEntry requires a non-empty string for the user IRI.',
-    );
-  }
-}
-
-function getAddedToBy(docNode) {
-  return _upTo('added_to_by', docNode.xpath('json/added_to_by'));
-}
 
 function getBorn(docNode) {
   return _upTo('born', docNode.xpath('json/born'));
@@ -157,14 +96,6 @@ function getCreatedByCarriedOutBy(docNode) {
 
 function getCreatedByTimespan(docNode) {
   return _upTo('created_by', docNode.xpath(`json/created_by/timespan`));
-}
-
-function getDefaultCollection(docNode) {
-  return _getFirstStringValueUpTo(
-    docNode,
-    `json/${PROP_NAME_DEFAULT_COLLECTION}`,
-    PROP_NAME_DEFAULT_COLLECTION,
-  );
 }
 
 function getDefinedBy(docNode) {
@@ -256,10 +187,6 @@ function getRepresentationImage(docNode) {
   );
 }
 
-function getSetMembers(docNode) {
-  return _upTo('member', docNode.xpath('/json/member'));
-}
-
 function getSubjectTo(docNode) {
   return _upTo('subject_to', docNode.xpath('/json/subject_to'));
 }
@@ -291,129 +218,6 @@ function getUiType(docNode) {
     'indexedProperties/uiType',
     'uiType',
   );
-}
-
-function isMyCollection(docNode) {
-  return fn.exists(
-    docNode.xpath(`json/classified_as[id = "${IDENTIFIERS.myCollection}"]`),
-  );
-}
-
-function isUserProfile(docNode) {
-  return fn.exists(
-    docNode.xpath(
-      `json/classified_as[equivalent/id = "${IDENTIFIERS.userProfile}"]`,
-    ),
-  );
-}
-
-function removeAddedToBy(docObj) {
-  if (isDefined(docObj.json.added_to_by)) {
-    delete docObj.json.added_to_by;
-  }
-}
-
-function setAddedToBy(docObj, addedToBy) {
-  if (isDefined(addedToBy)) {
-    docObj.json.added_to_by = addedToBy.xpath
-      ? addedToBy.toObject()
-      : addedToBy;
-  }
-}
-
-// @param createdBy - submit null to have a new entry created.
-// User IRI only used when createdBy is null.
-function setCreatedBy(docObj, userIri, createdBy = null) {
-  if (createdBy) {
-    docObj.json.created_by = createdBy.xpath ? createdBy.toObject() : createdBy;
-  } else if (isNonEmptyString(userIri)) {
-    docObj.json.created_by = {
-      type: 'Creation',
-      carried_out_by: [{ id: userIri, type: 'Person' }],
-      timespan: _getNewTimespanProperties(
-        toISOStringThroughSeconds(new Date()),
-      ),
-    };
-    // Practically duplicate the creation entry as a modification entry in support of last modified
-    // by/on falling back on the created by/on info, as that is considered a modification too.
-    addAddedToByEntry(docObj, userIri);
-  } else {
-    throw new InternalServerError(
-      'model.setCreatedBy requires a non-empty string for the user IRI',
-    );
-  }
-}
-
-function setDefaultCollection(docObj, collectionIri) {
-  if (isNonEmptyString(collectionIri)) {
-    if (docObj.json) {
-      docObj.json[PROP_NAME_DEFAULT_COLLECTION] = collectionIri;
-    } else {
-      // When initially creating a user's profile, the json property will not exist.
-      docObj[PROP_NAME_DEFAULT_COLLECTION] = collectionIri;
-    }
-  } else {
-    throw new BadRequestError('The default collection is required.');
-  }
-}
-
-function setId(docObj, id) {
-  docObj.json.id = id;
-}
-
-function setIndexedProperties(docObj, indexedProperties) {
-  docObj.indexedProperties = indexedProperties;
-}
-
-function setSetMembers(docObj, members) {
-  docObj.json.member = members;
-}
-
-// Sets the username in a (presumed) user profile.
-function setUsername(docObj, username) {
-  if (isUndefined(docObj.json.identified_by)) {
-    docObj.json.identified_by = [];
-  }
-
-  // If there's already a username entry, update it.
-  let add = true;
-  outerLoop: for (const idObj of docObj.json.identified_by) {
-    if (idObj.type === 'Identifier') {
-      for (const classObj of idObj.classified_as) {
-        if (classObj.id === IDENTIFIERS.username) {
-          idObj.content = username;
-          add = false;
-          break outerLoop;
-        }
-      }
-    }
-  }
-
-  // Else, add a new entry.
-  if (add) {
-    // Add a new entry.
-    docObj.json.identified_by.push({
-      type: 'Identifier',
-      content: username,
-      classified_as: [
-        {
-          id: IDENTIFIERS.username,
-          type: 'Type',
-          _label: 'username',
-        },
-      ],
-    });
-  }
-}
-
-function _getNewTimespanProperties(dateStr) {
-  const dateLong = convertPartialDateTimeToSeconds(dateStr);
-  return {
-    [PROP_NAME_BEGIN_OF_THE_BEGIN_STR]: dateStr,
-    [PROP_NAME_END_OF_THE_END_STR]: dateStr,
-    [PROP_NAME_BEGIN_OF_THE_BEGIN_LONG]: dateLong,
-    [PROP_NAME_END_OF_THE_END_LONG]: dateLong,
-  };
 }
 
 /**
@@ -598,8 +402,6 @@ function _getPrimaryNameByLanguage(lang) {
 }
 
 export {
-  addAddedToByEntry,
-  getAddedToBy,
   getBorn,
   getCarriedOutBy,
   getClassifiedAs,
@@ -609,7 +411,6 @@ export {
   getCreatedBy,
   getCreatedByCarriedOutBy,
   getCreatedByTimespan,
-  getDefaultCollection,
   getDefinedBy,
   getDied,
   getId,
@@ -624,7 +425,6 @@ export {
   getReferredToBy,
   getRepresentation,
   getRepresentationImage,
-  getSetMembers,
   getSubjectTo,
   getSupertypes,
   getTimespan,
@@ -632,19 +432,6 @@ export {
   getType,
   getUiType,
   merge,
-  isMyCollection,
-  isUserProfile,
-  removeAddedToBy,
-  setAddedToBy,
-  setCreatedBy,
-  setDefaultCollection,
-  setId,
-  setIndexedProperties,
-  setSetMembers,
-  setUsername,
-  PROP_NAME_BEGIN_OF_THE_BEGIN_STR,
-  PROP_NAME_DEFAULT_COLLECTION,
-  PROP_NAME_END_OF_THE_END_STR,
   TYPE_ACTIVITY,
   TYPE_DIGITAL_OBJECT,
   TYPE_HUMAN_MADE_OBJECT,

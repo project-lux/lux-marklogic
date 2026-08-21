@@ -39,11 +39,6 @@
       "kind": "execute"
     },
     {
-      "privilege-name": "%%mlAppName%%-update-tenant-status",
-      "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-update-tenant-status",
-      "kind": "execute"
-    },
-    {
       "privilege-name": "%%mlAppName%%-validate-dataset",
       "action": "https://lux.collections.yale.edu/privileges/%%mlAppName%%-validate-dataset",
       "kind": "execute"

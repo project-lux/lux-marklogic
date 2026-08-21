@@ -13,90 +13,6 @@
 					"name": "Document",
 					"item": [
 						{
-							"name": "Create My Collection",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "unitName",
-											"value": "ypm",
-											"type": "text"
-										},
-										{
-											"key": "doc",
-											"value": "{\n  \"type\": \"Set\",\n  \"about\": {\n    \"created_by\": {\n      \"influenced_by\": {\n        \"id\": \"https://lux.collections.yale.edu/data/person/OMEGA\",\n        \"type\": \"Person\"\n      }\n    },\n    \"id\": \"clyde\",\n    \"type\": \"Person\"\n  },\n  \"containing\": { \"id\": \"https://some.awesome.thing\" },\n  \"identified_by\": [\n    {\n      \"type\": \"Name\",\n      \"content\": \"The My Collection's name, which may be up to 200 characters\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300404670\",\n              \"type\": \"Type\",\n              \"_label\": \"Primary Name\"\n            }\n          ]\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"classified_as\": [\n    {\n      \"id\": \"https://todo.concept.my.collection\"\n    }\n  ],\n  \"referred_to_by\": [\n    {\n      \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n      \"classified_as\": [\n        {\n          \"id\": \"https://not.checked\",\n          \"equivalent\": [\n            {\n              \"id\": \"https://todo.concept.note\"\n            }\n          ]\n        }\n      ],\n      \"identified_by\": [\n        {\n          \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n          \"classified_as\": [\n            {\n              \"id\": \"https://not.checked\",\n              \"equivalent\": [\n                {\n                  \"id\": \"https://todo.concept.display.name\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n",
-											"type": "text"
-										},
-										{
-											"key": "lang",
-											"value": "en",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/create.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"document",
-										"create.mjs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Create User Profile",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "unitName",
-											"value": "ypm",
-											"type": "text"
-										},
-										{
-											"key": "doc",
-											"value": "{\n  \"type\": \"Person\",\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.user.profile\"\n        }\n      ]\n    }\n  ]\n}\n",
-											"type": "text"
-										},
-										{
-											"key": "lang",
-											"value": "en",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/create.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"document",
-										"create.mjs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Read",
 							"request": {
 								"method": "GET",
@@ -116,11 +32,6 @@
 									],
 									"query": [
 										{
-											"key": "unitName",
-											"value": "ypm",
-											"disabled": true
-										},
-										{
 											"key": "uri",
 											"value": "https://lux.collections.yale.edu/data/concept/8e0c245b-b98c-4f66-b8dc-6951bd7ce264"
 										},
@@ -137,275 +48,6 @@
 								}
 							},
 							"response": []
-						},
-						{
-							"name": "Update My Collection",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "unitName",
-											"value": "ypm",
-											"type": "text"
-										},
-										{
-											"key": "doc",
-											"value": "{\n    \"type\": \"Set\",\n    \"about\": {\n        \"created_by\": {\n            \"influenced_by\": {\n                \"id\": \"https://lux.collections.yale.edu/data/person/OMEGA\",\n                \"type\": \"Person\"\n            }\n        },\n        \"id\": \"clyde\",\n        \"type\": \"Person\"\n    },\n    \"containing\": {\n        \"id\": \"https://some.awesome.thing\"\n    },\n    \"identified_by\": [\n        {\n            \"type\": \"Name\",\n            \"content\": \"The My Collection's name, which may be up to 200 characters\",\n            \"language\": [\n                {\n                    \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n                    \"type\": \"Language\",\n                    \"_label\": \"English\",\n                    \"equivalent\": [\n                        {\n                            \"id\": \"http://vocab.getty.edu/aat/300388277\",\n                            \"type\": \"Language\",\n                            \"_label\": \"English\"\n                        }\n                    ]\n                }\n            ],\n            \"classified_as\": [\n                {\n                    \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n                    \"type\": \"Type\",\n                    \"_label\": \"Primary Name\",\n                    \"equivalent\": [\n                        {\n                            \"id\": \"http://vocab.getty.edu/aat/300404670\",\n                            \"type\": \"Type\",\n                            \"_label\": \"Primary Name\"\n                        }\n                    ]\n                },\n                {\n                    \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n                    \"type\": \"Type\",\n                    \"_label\": \"Sort Name\"\n                }\n            ]\n        }\n    ],\n    \"classified_as\": [\n        {\n            \"id\": \"https://todo.concept.my.collection\"\n        }\n    ],\n    \"referred_to_by\": [\n        {\n            \"content\": \"This is one of 30 allowed notes; each note may be 500 characters long.\",\n            \"classified_as\": [\n                {\n                    \"id\": \"https://not.checked\",\n                    \"equivalent\": [\n                        {\n                            \"id\": \"https://todo.concept.note\"\n                        }\n                    ]\n                }\n            ],\n            \"identified_by\": [\n                {\n                    \"content\": \"This is the label to the note, which supports up to 200 characters.\",\n                    \"classified_as\": [\n                        {\n                            \"id\": \"https://not.checked\",\n                            \"equivalent\": [\n                                {\n                                    \"id\": \"https://todo.concept.display.name\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }\n    ],\n    \"id\": \"https://lux.collections.yale.edu/data/set/554447a3-a82d-4c5c-8e59-e92340045a8d\",\n    \"created_by\": {\n        \"type\": \"Creation\",\n        \"carried_out_by\": [\n            {\n                \"id\": \"https://lux.collections.yale.edu/data/person/8576c7c5-1fcf-4d8c-a7ef-d0ce0ea929a9\",\n                \"type\": \"Person\"\n            }\n        ],\n        \"timespan\": {\n            \"begin_of_the_begin\": \"2025-07-25T12:36:42\",\n            \"end_of_the_end\": \"2025-07-25T12:36:42\"\n        }\n    }\n}",
-											"type": "text"
-										},
-										{
-											"key": "lang",
-											"value": "en",
-											"type": "text"
-										},
-										{
-											"key": "uri",
-											"value": "https://lux.collections.yale.edu/data/set/554447a3-a82d-4c5c-8e59-e92340045a8d",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/update.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"document",
-										"update.mjs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Update User Profile",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "unitName",
-											"value": "ypm",
-											"type": "text"
-										},
-										{
-											"key": "uri",
-											"value": "https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73",
-											"type": "text"
-										},
-										{
-											"key": "doc",
-											"value": "{\n  \"type\": \"Person\",\n  \"classified_as\": [\n    {\n      \"id\": \"https://not.checked\",\n      \"equivalent\": [\n        {\n          \"id\": \"https://todo.concept.user.profile\"\n        }\n      ]\n    }\n  ],\n  \"identified_by\": [\n    {\n      \"type\": \"Identifier\",\n      \"content\": \"katrina\",\n      \"classified_as\": [\n        {\n          \"id\": \"http://www.wikidata.org/entity/Q15901043\",\n          \"type\": \"Type\",\n          \"_label\": \"username\"\n        }\n      ]\n    },\n    {\n      \"type\": \"Name\",\n      \"content\": \"Katrina Bilokur\",\n      \"language\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449\",\n          \"type\": \"Language\",\n          \"_label\": \"English\",\n          \"equivalent\": [\n            {\n              \"id\": \"http://vocab.getty.edu/aat/300388277\",\n              \"type\": \"Language\",\n              \"_label\": \"English\"\n            }\n          ]\n        }\n      ],\n      \"classified_as\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec\",\n          \"type\": \"Type\",\n          \"_label\": \"Primary Name\"\n        },\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a\",\n          \"type\": \"Type\",\n          \"_label\": \"Sort Name\"\n        }\n      ]\n    }\n  ],\n  \"id\": \"https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73\",\n  \"created_by\": {\n    \"type\": \"Creation\",\n    \"carried_out_by\": [\n      {\n        \"id\": \"https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73\",\n        \"type\": \"Person\"\n      }\n    ],\n    \"timespan\": {\n      \"begin_of_the_begin\": \"2025-07-23T16:53:55\",\n      \"end_of_the_end\": \"2025-07-23T16:53:55\"\n    }\n  },\n  \"_lux_default_collection\": \"https://lux.collections.yale.edu/data/set/4bff8962-7179-4d9c-8ba4-9eab71d1b675\",\n  \"added_to_by\": [\n    {\n      \"type\": \"Addition\",\n      \"carried_out_by\": [\n        {\n          \"id\": \"https://lux.collections.yale.edu/data/person/c5421847-daf2-48fb-b653-c052eddeef73\",\n          \"type\": \"Person\"\n        }\n      ],\n      \"timespan\": {\n        \"begin_of_the_begin\": \"2025-07-23T16:53:55\",\n        \"end_of_the_end\": \"2025-07-23T16:53:55\"\n      }\n    }\n  ]\n}\n",
-											"type": "text"
-										},
-										{
-											"key": "lang",
-											"value": "en",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/update.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"document",
-										"update.mjs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Delete",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "uri",
-											"value": "https://lux.collections.yale.edu/set/2cacc07f-81d2-4684-b748-802979cf6339",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/document/delete.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"document",
-										"delete.mjs"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Tenant Status",
-					"item": [
-						{
-							"name": "Get",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/tenantStatus/get.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"tenantStatus",
-										"get.mjs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Set",
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "{{mlDeployerPassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{mlDeployerUsername}}",
-											"type": "string"
-										},
-										{
-											"key": "algorithm",
-											"value": "MD5",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "prod",
-											"value": "false",
-											"type": "text"
-										},
-										{
-											"key": "readOnly",
-											"value": "true",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/tenantStatus/set.mjs",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"tenantStatus",
-										"set.mjs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Set",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "{{mlDeployerPassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{mlDeployerUsername}}",
-											"type": "string"
-										},
-										{
-											"key": "algorithm",
-											"value": "MD5",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": []
-								},
-								"url": {
-									"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/tenantStatus/set.mjs?prod=yes&readOnly=false",
-									"protocol": "{{mlProtocol}}",
-									"host": [
-										"{{mlHost}}"
-									],
-									"port": "{{mlAppPort}}",
-									"path": [
-										"ds",
-										"lux",
-										"tenantStatus",
-										"set.mjs"
-									],
-									"query": [
-										{
-											"key": "prod",
-											"value": "yes"
-										},
-										{
-											"key": "readOnly",
-											"value": "false"
-										}
-									]
-								}
-							},
-							"response": []
 						}
 					]
 				},
@@ -415,7 +57,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/advancedSearchConfig.mjs?unitName=ypm",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/advancedSearchConfig.mjs",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -425,12 +67,6 @@
 								"ds",
 								"lux",
 								"advancedSearchConfig.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								}
 							]
 						}
 					},
@@ -442,7 +78,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/autoComplete.mjs?unitName=ypm&text=smith&context=item.producedBy&fullyHonorContext=true&onlyMatchOnPrimaryNames=false&onlyReturnPrimaryNames=false&page=1&pageLength=10&filterIndex=0&previouslyFiltered=0&timeoutInMilliseconds=500",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/autoComplete.mjs?text=smith&context=item.producedBy&fullyHonorContext=true&onlyMatchOnPrimaryNames=false&onlyReturnPrimaryNames=false&page=1&pageLength=10&filterIndex=0&previouslyFiltered=0&timeoutInMilliseconds=500",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -454,10 +90,6 @@
 								"autoComplete.mjs"
 							],
 							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								},
 								{
 									"key": "text",
 									"value": "smith"
@@ -512,11 +144,6 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "unitName",
-									"value": "lux",
-									"type": "text"
-								},
-								{
 									"key": "name",
 									"value": "workAboutConceptId",
 									"type": "text"
@@ -567,11 +194,6 @@
 						"body": {
 							"mode": "formdata",
 							"formdata": [
-								{
-									"key": "unitName",
-									"value": "lux",
-									"type": "text"
-								},
 								{
 									"key": "scope",
 									"value": "agent",
@@ -626,58 +248,58 @@
 					},
 					"response": []
 				},
-        {
-          "name": "Scale Out",
-          "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                {
-                  "key": "password",
-                  "value": "{{mlDeployerPassword}}",
-                  "type": "string"
-                },
-                {
-                  "key": "username",
-                  "value": "{{mlDeployerUsername}}",
-                  "type": "string"
-                },
-                {
-                  "key": "algorithm",
-                  "value": "MD5",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "dynamicHost",
-                  "value": "x.x.x.x",
-                  "type": "text",
-                  "uuid": "6bec3278-3ec9-4ab3-9133-49c7a8dd6a1c"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlDeployPort}}/ds/lux/scaleOut.mjs",
-              "protocol": "{{mlProtocol}}",
-              "host": [
-                "{{mlHost}}"
-              ],
-              "port": "{{mlDeployPort}}",
-              "path": [
-                "ds",
-                "lux",
-                "scaleOut.mjs"
-              ]
-            }
-          },
-          "response": []
-        },
+				{
+					"name": "Scale Out",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{mlDeployerPassword}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{mlDeployerUsername}}",
+									"type": "string"
+								},
+								{
+									"key": "algorithm",
+									"value": "MD5",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "dynamicHost",
+									"value": "x.x.x.x",
+									"type": "text",
+									"uuid": "6bec3278-3ec9-4ab3-9133-49c7a8dd6a1c"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlDeployPort}}/ds/lux/scaleOut.mjs",
+							"protocol": "{{mlProtocol}}",
+							"host": [
+								"{{mlHost}}"
+							],
+							"port": "{{mlDeployPort}}",
+							"path": [
+								"ds",
+								"lux",
+								"scaleOut.mjs"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "Search",
 					"request": {
@@ -686,11 +308,6 @@
 						"body": {
 							"mode": "formdata",
 							"formdata": [
-								{
-									"key": "unitName",
-									"value": "ypm",
-									"type": "text"
-								},
 								{
 									"key": "q",
 									"value": "{ \"memberOf\": { \"name\": \"England\" } }",
@@ -755,11 +372,6 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "unitName",
-									"value": "ypm",
-									"type": "text"
-								},
-								{
 									"key": "q",
 									"value": "{\n  \"AND\":[\n      {\n        \"startDate\":\"1700\",\n        \"_comp\":\">\"\n      },\n      {\n        \"endDate\":\"1750\",\n        \"_comp\":\"<\"\n      }\n  ]\n}",
 									"type": "text"
@@ -793,7 +405,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchInfo.mjs?unitName=ypm",
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/searchInfo.mjs",
 							"protocol": "{{mlProtocol}}",
 							"host": [
 								"{{mlHost}}"
@@ -803,12 +415,6 @@
 								"ds",
 								"lux",
 								"searchInfo.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm"
-								}
 							]
 						}
 					},
@@ -822,11 +428,6 @@
 						"body": {
 							"mode": "formdata",
 							"formdata": [
-								{
-									"key": "unitName",
-									"value": "ypm",
-									"type": "text"
-								},
 								{
 									"key": "q",
 									"value": "{\n  \"lux:conceptAboutAgentFromRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptInfluencedConcepts\": {\n    \"_scope\": \"concept\",\n    \"influenced\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:conceptItemEncounteredTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemMadeTime\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptItemTypes\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedAgents\": {\n    \"_scope\": \"agent\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedConcepts\": {\n    \"_scope\": \"concept\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedItems\": {\n    \"_scope\": \"item\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"material\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptRelatedPlaces\": {\n    \"_scope\": \"place\",\n    \"relatedToConcept\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n  },\n  \"lux:conceptRelatedWorks\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkCreatedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkPublishedTime\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:conceptWorkTypes\": {\n    \"_scope\": \"work\",\n    \"OR\": [\n      {\n        \"classification\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"language\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      },\n      {\n        \"aboutConcept\": {\n          \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n        }\n      }\n    ]\n  },\n  \"lux:genderForAgent\": {\n    \"_scope\": \"agent\",\n    \"gender\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:nationalityForAgent\": {\n    \"_scope\": \"agent\",\n    \"nationality\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:occupationForAgent\": {\n    \"_scope\": \"agent\",\n    \"occupation\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  },\n  \"lux:typeForAgent\": {\n    \"_scope\": \"agent\",\n    \"classification\": {\n      \"id\": \"https://lux.collections.yale.edu/data/concept/4a172143-a50e-4d91-a88b-a9931bceecf1\"\n    }\n  }\n}\n",
@@ -866,13 +467,6 @@
 								"ds",
 								"lux",
 								"stats.mjs"
-							],
-							"query": [
-								{
-									"key": "unitName",
-									"value": "ypm",
-									"disabled": true
-								}
 							]
 						}
 					},
@@ -930,88 +524,88 @@
 					},
 					"response": []
 				},
-        {
-          "name": "Validate Dataset",
-          "request": {
-            "auth": {
-              "type": "digest",
-              "digest": [
-                {
-                  "key": "password",
-                  "value": "{{mlDeployerPassword}}",
-                  "type": "string"
-                },
-                {
-                  "key": "username",
-                  "value": "{{mlDeployerUsername}}",
-                  "type": "string"
-                },
-                {
-                  "key": "algorithm",
-                  "value": "MD5",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "unitNames",
-                  "value": "ypm2",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "categories",
-                  "value": "relational",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "format",
-                  "value": "json",
-                  "type": "text",
-                  "uuid": "4a1aa564-6e2c-48e8-9cf9-92a31b05869e"
-                },
-                {
-                  "key": "testConfig",
-                  "value": "",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "baselineId",
-                  "value": "",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "baseline",
-                  "type": "file",
-                  "uuid": "d0b62678-3c4d-4b08-8dc6-651f11ad8ee3",
-                  "src": "/C:/workspaces/yale/clones/lux-marklogic-optic/scratch/response-step-2-take-2.json"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/validateDataset.mjs",
-              "protocol": "{{mlProtocol}}",
-              "host": [
-                "{{mlHost}}"
-              ],
-              "port": "{{mlAppPort}}",
-              "path": [
-                "ds",
-                "lux",
-                "validateDataset.mjs"
-              ]
-            }
-          },
-          "response": []
-        },
+				{
+					"name": "Validate Dataset",
+					"request": {
+						"auth": {
+							"type": "digest",
+							"digest": [
+								{
+									"key": "password",
+									"value": "{{mlDeployerPassword}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{mlDeployerUsername}}",
+									"type": "string"
+								},
+								{
+									"key": "algorithm",
+									"value": "MD5",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "unitNames",
+									"value": "ypm2",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "categories",
+									"value": "relational",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "format",
+									"value": "json",
+									"type": "text",
+									"uuid": "4a1aa564-6e2c-48e8-9cf9-92a31b05869e"
+								},
+								{
+									"key": "testConfig",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "baselineId",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "baseline",
+									"type": "file",
+									"uuid": "d0b62678-3c4d-4b08-8dc6-651f11ad8ee3",
+									"src": "/C:/workspaces/yale/clones/lux-marklogic-optic/scratch/response-step-2-take-2.json"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlAppPort}}/ds/lux/validateDataset.mjs",
+							"protocol": "{{mlProtocol}}",
+							"host": [
+								"{{mlHost}}"
+							],
+							"port": "{{mlAppPort}}",
+							"path": [
+								"ds",
+								"lux",
+								"validateDataset.mjs"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "Version Info",
 					"request": {
@@ -1324,35 +918,6 @@
 									"key": "view",
 									"value": "describe-indexes"
 								},
-								{
-									"key": "format",
-									"value": "json"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get External Security",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{mlProtocol}}://{{mlHost}}:{{mlManagePort}}/manage/v2/external-security/lux-cognito/properties?format=json",
-							"protocol": "{{mlProtocol}}",
-							"host": [
-								"{{mlHost}}"
-							],
-							"port": "{{mlManagePort}}",
-							"path": [
-								"manage",
-								"v2",
-								"external-security",
-								"lux-cognito",
-								"properties"
-							],
-							"query": [
 								{
 									"key": "format",
 									"value": "json"

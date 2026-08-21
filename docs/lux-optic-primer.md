@@ -1217,7 +1217,7 @@ Performance opportunities that could be implemented above the backend (mostly).
 | 1 | [Opt 3](#optimization-3-reduce-or-eliminate-redundant-datatype-constraints) | Empty-groups: skip redundant dataType constraint on same-scope sub-plans. **More may be possible:** we may be able to remove additional data type constraints but, at present, when nested criteria changes the scope, we need to apply a data type constraint at that level. | 2026-05-31 |
 | 2 | [Opt 15](#optimization-15-cts-fold) | CTS Fold: fold CTS-only sub-plans into parent instead of building a join | 2026-05-31 |
 | 3 | [Opt 14](#optimization-14-page-slice-hydration-abandoned) | Page-Slice Hydration: **Abandoned.** Produced incorrect total counts for many searches and did not demonstrate sufficient performance improvement to justify investigating the functional differences. | 2026-06-02 |
-| 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests | 2026-06-03 |
+| 4 | [Opt 13](#optimization-13-amp-as-admin) | Amp as Admin: bypass per-document permission checks for tenant-owner requests. **Removed** 2026-08-20 along with the unused `unitName` request parameter and `libWrapper.mjs` scaffolding it depended on. | 2026-06-03 |
 | 5 | [Opt 16](#optimization-16-hopwithfield-cts) | HopWithField CTS: emit `cts.tripleRangeQuery` instead of Optic `fromTriples` join when inner criteria is pure CTS | 2026-06-04 |
 | 6 | [Opt 1](#optimization-1-planwhere-when-scores-are-not-needed) | Score gate: use `plan.where()` instead of `op.fromSearch` when scores are not needed (3-condition gate) | 2026-06-24 |
 | 7 | [Opt 17](#optimization-17-select-barrier-on-nested-sub-plans) | Select barrier: `.select([iriCol, fragCol])` on nested sub-plans prevents optimizer from fusing join trees across nesting levels (764× warm improvement on 3-level hops) | 2026-06-24 |
@@ -1462,11 +1462,13 @@ cts.tripleRangeQuery([], predicate, null, '=', [], weight, { objectQuery: fieldW
 
 ## Optimization 13: Amp as Admin
 
-**Status:** Implemented (My Collections feature disabled path only). Design for My Collections support documented in [amp-as-admin-design.md](./amp-as-admin-design.md).
+**Status:** Removed 2026-08-20. The design for extending this to support the (never-shipped) My Collections feature was documented in `amp-as-admin-design.md`, deleted along with the rest of the My Collections code in commit `422d0508`.
 
 MarkLogic evaluates document permissions for every candidate document when the requesting user is not an admin. For read-only endpoints where the user already has access to every matching document, this overhead is avoidable.
 
-The implementation configures per-endpoint eligibility via `ampAsAdmin` in `endpointsConfig.mjs` (exposed as `endpointConfig.mayAmpAsAdmin()`). The enforcement point is `__handleRequest` in `securityLib.mjs` — the single function all endpoint requests pass through. When the My Collections feature is disabled and the requesting unit is the tenant owner, the request is executed via `libWrapper['execute_with_admin']`, an amp'd function that grants the `admin` role for the duration of the call. This bypasses per-document permission evaluation.
+The implementation configured per-endpoint eligibility via `ampAsAdmin` in `endpointsConfig.mjs` (exposed as `endpointConfig.mayAmpAsAdmin()`). The enforcement point was `__handleRequest` in `securityLib.mjs` — the single function all endpoint requests pass through. When the requesting unit was the tenant owner, the request was executed via `libWrapper['execute_with_admin']`, an amp'd function that granted the `admin` role for the duration of the call, bypassing per-document permission evaluation.
+
+It was removed because the `unitName` request parameter it depended on (to distinguish the tenant owner from other units) turned out to have no other live use anywhere in the runtime request path, and the `libWrapper.mjs`/Gradle scaffolding that generated `execute_with_admin` existed solely to support it. The benchmark results below are retained for historical reference.
 
 **Why tenant-owner only:** Individual units (service accounts) are restricted to a subset of documents via their permissions. Amping them to admin would expose documents outside their unit's scope.
 

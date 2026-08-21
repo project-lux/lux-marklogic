@@ -2,11 +2,6 @@
   "functionName": "search",
   "params": [
     {
-      "name": "unitName",
-      "datatype": "string",
-      "nullable": true
-    },
-    {
       "name": "q",
       "datatype": "string"
     },

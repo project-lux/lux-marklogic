@@ -16,18 +16,6 @@ assertions.push(
   'User.getUsername() should return the current user'
 );
 assertions.push(
-  testHelperProxy.assertNotExists(
-    user.getUserIri(),
-    `Unit tester is not expected to have a user IRI yet.`
-  )
-);
-assertions.push(
-  testHelperProxy.assertFalse(
-    user.hasUserProfile(),
-    `Unit tester is not expected to have a user profile yet.`
-  )
-);
-assertions.push(
   testHelperProxy.assertTrue(
     user.hasRole(ROLE_NAME_UNIT_TESTER),
     `Unit tester is expected to have the ${ROLE_NAME_UNIT_TESTER} role`

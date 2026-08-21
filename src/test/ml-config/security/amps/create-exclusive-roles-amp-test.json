@@ -1,6 +1,0 @@
-{
-  "local-name": "__createExclusiveRoles",
-  "document-uri": "/lib/securityLib.mjs",
-  "modules-database": "%%tenantTestModulesDatabase%%",
-  "role": ["%%mlAppName%%-user-management"]
-}

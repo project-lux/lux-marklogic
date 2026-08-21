@@ -1,21 +1,3 @@
-import org.apache.hc.client5.http.auth.AuthScope
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
-import org.apache.hc.client5.http.classic.methods.HttpGet
-import org.apache.hc.client5.http.classic.methods.HttpPost
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
-import org.apache.hc.client5.http.impl.classic.HttpClients
-import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory
-import org.apache.hc.client5.http.ssl.TrustAllStrategy
-import org.apache.hc.core5.http.config.Registry
-import org.apache.hc.core5.http.config.RegistryBuilder
-import org.apache.hc.core5.http.io.entity.EntityUtils
-import org.apache.hc.core5.http.io.entity.StringEntity
-import org.apache.hc.core5.ssl.SSLContexts
-
 buildscript {
   repositories {
     mavenCentral()
@@ -24,7 +6,6 @@ buildscript {
     classpath "com.marklogic:ml-gradle:${mlGradleVersion}"
     classpath "com.marklogic:marklogic-unit-test-client:${mlUnitTestVersion}"
     classpath "org.json:json:${orgJsonVersion}"
-    classpath "org.apache.httpcomponents.client5:httpclient5:${httpClientVersion}"
   }
 }
 
@@ -47,15 +28,6 @@ dependencies {
 tasks.withType(JavaExec) {
     jvmArgs = ['-Xmx1g']
 }
-
-ext.sourceTemplatePath = "${project.projectDir}/src/main/templates"
-ext.publicKeysPath = "${project.projectDir}/src/main/public-keys"
-ext.buildAmpPath = "${project.projectDir}/build/main/ml-config/base/security/amps"
-ext.buildAmpTestPath = "${project.projectDir}/build/test/ml-config/security/amps"
-ext.buildModulesPath = "${project.projectDir}/build/main/ml-modules/root"
-ext.buildExternalSecurityPath = "${project.projectDir}/build/main/ml-config/oauth/security/external-security"
-
-ext.lineSep = System.getProperty("line.separator")
 
 // Helper function to determine if unit testing deployment is allowed
 ext.getUnitTestingDeploymentStatus = {
@@ -143,40 +115,6 @@ task restrictUnitTestingDeployment {
   println "Deployment to '${testingStatus.environmentName}' ${testingStatus.requested ? 'includes' : 'excludes'} unit testing artifacts."
 }
 
-// Resolve JSP style <% %> script and <%= %> expression syntax found within the specified template.
-// Introduced to avoid embedding JavaScript within this file.  To continue supporting the template
-// literal syntax ${ } in JavaScript, such references are temporarily escaped by this function, meaning
-// one should not expect this function to resolve those references.  Use the JSP like syntax instead.
-ext.applyTemplate = { sourceTemplatePath, templateBindings ->
-  // Read template file into memory
-  def text = file(sourceTemplatePath).text
-
-  // Temporarily, change all dollar sign symbols as we want the template engine to ignore the likes of
-  // '$1' and '${paramName}'.
-  text = text.replaceAll(/\$/, 'DOLLAR_SIGN')
-
-  // When a template variable reference immediately follows a JavaScript single line comment marker, remove the comment marker,
-  // thereby allowing the template's variable value to be uncommented code.
-  text = text.replaceAll(/\/\/\s*(?<templateVarRef><%[^>]*>)/, '${templateVarRef}')
-
-  // Resolve all template variable references: <%...%>
-  def engine = new groovy.text.SimpleTemplateEngine()
-  text = engine.createTemplate(text).make(templateBindings).toString()
-
-  // Change DOLLAR_SIGN back to the actual dollar sign symbol, such that JavaScript recognizes them.
-  text = text.replaceAll(/DOLLAR_SIGN/, '\\$')
-
-  return text
-}
-
-ext.writeToFile = { outputPath, content ->
-  def file = new File("$outputPath")
-  file.getParentFile().mkdirs() // Create parent directories if they don't exist
-  file.withWriter { out ->
-    out.println content
-  }
-}
-
 // Helper function to create token replacement filter
 ext.createTokenFilter = { names, texts ->
   return { line ->
@@ -184,29 +122,6 @@ ext.createTokenFilter = { names, texts ->
       line = line.replaceAll('@@' + names[i] + '@@', texts[i])
     }
     return line
-  }
-}
-
-// More info in /docs/lux-backend-build-tool-and-tasks.md
-task addOAuthPublicKeys() {
-  doLast {
-    if (project.getProperty("mlConfigPaths").contains("oauth")) {
-      def environmentName = project.getProperty("environmentName").toLowerCase()
-      def publicKeysFilePath = "${publicKeysPath}/oauth-${environmentName}.xml"
-      if (!file(publicKeysFilePath).exists()) {
-        throw new GradleException("OAuth is enabled yet the public keys file '${publicKeysFilePath}' does not exist.")
-      }
-
-      def externalSecurityFilename = "lux-cognito-external-security.xml"
-      def templateBindings = [
-          oauthPublicKeys: file(publicKeysFilePath).text
-      ]
-      def content = applyTemplate("${sourceTemplatePath}/${externalSecurityFilename}", templateBindings)
-      writeToFile("${buildExternalSecurityPath}/${externalSecurityFilename}", content)
-      println "Added OAuth public keys to a copy of '${externalSecurityFilename}', within the build directory."
-    } else {
-      println "Skipping OAuth public keys addition as mlConfigPaths does not include 'oauth'."
-    }
   }
 }
 
@@ -275,8 +190,6 @@ task preprocessRuntimeConfigAndModules() {
     filter createTokenFilter(names, texts)
   }
 }
-preprocessRuntimeConfigAndModules.finalizedBy addOAuthPublicKeys
-
 // Code herein automatically executes.
 task preprocessBuildSupportScripts() {
   // Resolve property references while copying into the build dir.
@@ -294,237 +207,6 @@ task preprocessBuildSupportScripts() {
     }
   }
 }
-
-// Defines amps and populates the libWrapper.mjs template.
-task addSupportForExecutingWithServiceAccounts() {
-  doLast {
-    def timestamp = new Date().toString()
-
-    // Generate amp configuration files, while collecting the wrapper function names.
-    def tenantName = project.getProperty("mlAppName")
-    def moduleFilename = "libWrapper.mjs"
-    // Exclude leading underscore here; must add where needed below.
-    // _execute_with* are the amp'd functions.
-    // execute_with* are the exported functions.
-    def functionNamePrefix = "execute_with"
-    def functionNames = [];
-    def count = 0
-    def endpointAccessUnitNames = project.getProperty("endpointAccessUnitNames")
-      .replaceAll("\\s", "")
-      .tokenize(",")
-    endpointAccessUnitNames.add('admin') // in support of amp-as-admin
-    endpointAccessUnitNames.add(tenantName)
-    endpointAccessUnitNames.each{ unit -> 
-      count += 1
-
-      // Javascript function and variable names cannot contain dashes, so we replace them with underscores
-      def functionName = "${functionNamePrefix}_${unit}".replaceAll("-", "_")
-      functionNames.push(functionName)
-
-      // Amp configuration files.
-      // 1. The modules database name provides multi-tenancy support.
-      // 2. When the unit is the tenant owner, we only need one represented.
-      def includeUnit = unit != tenantName
-      def roleName = unit == 'admin'
-        ? 'admin'
-        : "${tenantName}${includeUnit ? "-${unit}" : ""}-endpoint-consumer"
-     
-      // Generate amp for main modules database
-      def templateBindings = [
-          roleName: roleName, 
-          functionName: "_${functionName}", // underscore needed
-          moduleFilename: moduleFilename,
-          modulesDatabase: project.getProperty("tenantModulesDatabase")
-      ]
-      def content = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
-      writeToFile("${buildAmpPath}/execute-with-${unit}-amp.json", content)
-      println "Generated amp for the '${unit}' unit."
-      
-      // Generate amp for test modules database if unit testing deployment is allowed
-      if (getUnitTestingDeploymentStatus().allowed) {
-        templateBindings.modulesDatabase = project.getProperty("tenantTestModulesDatabase")
-        def testContent = applyTemplate("${sourceTemplatePath}/execute-with-service-account-amp.json", templateBindings)
-        writeToFile("${buildAmpTestPath}/execute-with-${unit}-test-amp.json", testContent)
-        println "Generated test amp for the '${unit}' unit."
-      }
-    }
-
-    // Populate the wrapper function library.
-    def functionLines = []
-    def exportLines = ["export {"]
-    functionNames.each{ functionName ->
-      functionLines.push("const _${functionName} = (f) => { try { return xdmp.invokeFunction(f) } catch (e) { const {errorName, errorMessage} = extractCustomErrorNameAndMessage(e); if (errorName && errorMessage) {  const customError = createCustomError(errorName, errorMessage); const errorToThrow = customError || e; throw errorToThrow; } throw e; } };")
-      functionLines.push("const  ${functionName} = import.meta.amp(_${functionName});")
-      exportLines.push("  ${functionName},")
-    }
-    exportLines.push("};")
-
-    def templateBindings = [
-        timestamp: timestamp,
-        functionLines: functionLines.reverse().join(lineSep),
-        exportLines: exportLines.reverse().join(lineSep)
-    ]
-    def content = applyTemplate("${sourceTemplatePath}/${moduleFilename}", templateBindings)
-    writeToFile("${buildModulesPath}/lib/${moduleFilename}", content)
-    println "Generated ${moduleFilename}"
-  }
-}
-mlDeploySecurity.dependsOn addSupportForExecutingWithServiceAccounts, addOAuthPublicKeys
-mlLoadModules.dependsOn addSupportForExecutingWithServiceAccounts
-
-// Implementation supports both the basic and digest auth schemes.
-task ensureTenantStatusDocumentExists() {
-  doFirst {
-    println ""
-    println "Ensuring tenant status document exists..."
-    println ""
-
-    // Only used if the tenant status document does not exist.
-    def isProd = project.getProperty("environmentProd").toBoolean()
-    def isReadOnly = project.getProperty("environmentReadOnly").toBoolean()
-
-    def protocol = project.getProperty("mlAppServicesScheme")
-    def host = project.getProperty("mlHost") 
-    def port = project.getProperty("mlDeployPort")
-    def username = project.getProperty("mlUsername")
-    def password = credentials.forKey('mlPassword')
-    def getUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/get.mjs"
-    def postUrl = "${protocol}://${host}:${port}/ds/lux/tenantStatus/set.mjs"
-
-    try {
-      def httpClientBuilder = HttpClients.custom()
-        .disableConnectionState()  // Force new connections
-        .disableAutomaticRetries() // Prevent connection reuse issues
-      
-      def credentialsProvider = new BasicCredentialsProvider()
-      credentialsProvider.setCredentials(
-        new AuthScope(null, -1),
-        new UsernamePasswordCredentials(username, password.toCharArray())
-      )
-      httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-      
-      // Configure SSL if needed
-      if (protocol == "https") {
-        def sslContext = SSLContexts.custom()
-          .loadTrustMaterial(new TrustAllStrategy())
-          .build()
-        
-        // Create socket factory registry for HttpClient 5.x
-        def socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-          .register("http", PlainConnectionSocketFactory.getSocketFactory())
-          .register("https", new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
-          .build()
-        
-        // Use a completely fresh connection manager that doesn't pool
-        def connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry)
-        httpClientBuilder.setConnectionManager(connectionManager)
-      }
-      
-      def httpClient = httpClientBuilder.build()
-      
-      try {
-        // Check if tenant status document exists
-        def getRequest = new HttpGet(getUrl)
-        def getResponse = httpClient.execute(getRequest)
-        
-        try {
-          // Consume entity to ensure connection is released
-          if (getResponse.getEntity()) {
-            EntityUtils.consume(getResponse.getEntity())
-          }
-          
-          if (getResponse.getCode() >= 200 && getResponse.getCode() < 300) {
-            println "Tenant status document was found; no action taken."
-          } else {
-            println "The tenant status document was not found; creating..."
-            
-            // Create the tenant status document
-            def postRequest = new HttpPost(postUrl)
-            postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded")
-            
-            def formData = "prod=${isProd}&readOnly=${isReadOnly}"
-            postRequest.setEntity(new StringEntity(formData))
-            
-            def postResponse = httpClient.execute(postRequest)
-            
-            try {
-              def postStatusCode = postResponse.getCode()
-
-              if (postStatusCode >= 200 && postStatusCode < 300) {
-                println "Tenant status document created successfully"
-                // Consume entity to ensure connection is released
-                if (postResponse.getEntity()) {
-                  EntityUtils.consume(postResponse.getEntity())
-                }
-              } else {
-                def errorContent = EntityUtils.toString(postResponse.getEntity())
-                throw new GradleException("Failed to create tenant status document with response code ${postStatusCode}: ${errorContent}")
-              }
-            } finally {
-              postResponse.close()
-            }
-          }
-        } finally {
-          getResponse.close()
-        }
-      } finally {
-        httpClient.close()
-      }
-      
-    } catch (Exception e) {
-      println "DEBUG: Exception occurred: ${e.getClass().getName()} - ${e.message}"
-      if (e.getCause()) {
-        println "DEBUG: Caused by: ${e.getCause()}"
-      }
-      throw new GradleException("Failed to ensure tenant status document exists: ${e.message}", e)
-    }
-  }
-}
-mlDeploy.finalizedBy ensureTenantStatusDocumentExists
-mlLoadModules.finalizedBy ensureTenantStatusDocumentExists
-
-// Resets the test modules database with all documents from the main modules database,
-// maintaining permissions.  This should be run after all other changes have been made
-// to the modules database.
-task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
-  onlyIf {
-    getUnitTestingDeploymentStatus().allowed
-  }
-  doFirst {
-    println ""
-    println "Resetting test modules database..."
-    println ""
-
-    def client = mlAppConfig.newDatabaseClient()
-    def script = new File('./build/buildSupport/resetTestModulesDatabase.sjs').getText('UTF-8')
-    def result = client.newServerEval().javascript(script).evalAs(String.class)
-
-    println ""
-    println result
-    println ""
-  }
-}
-ensureTenantStatusDocumentExists.finalizedBy resetTestModulesDatabase
-
-// Delete test modules from main modules database after they've been copied to test
-// This one should run regardless of whether unit testing deployment is allowed, 
-// because the marklogic-unit-test-modules bundle adds some.
-task deleteTestModulesFromMain (type: com.marklogic.gradle.task.MarkLogicTask) {
-  doFirst {
-    println ""
-    println "Deleting test modules from main modules database..."
-    println ""
-
-    def client = mlAppConfig.newDatabaseClient()
-    def cleanupScript = new File('./build/buildSupport/deleteTestModulesFromMain.sjs').getText('UTF-8')
-    def cleanupResult = client.newServerEval().javascript(cleanupScript).evalAs(String.class)
-    
-    println ""
-    println cleanupResult
-    println ""
-  }
-}
-resetTestModulesDatabase.finalizedBy deleteTestModulesFromMain
 
 // Runs the remaining search terms generator
 // More info in /docs/lux-backend-build-tool-and-tasks.md
@@ -583,6 +265,49 @@ task generateAdvancedSearchConfig (type: com.marklogic.gradle.task.MarkLogicTask
   }
 }
 generateRelatedListsConfig.finalizedBy generateAdvancedSearchConfig
+
+// Resets the test modules database with all documents from the main modules database,
+// maintaining permissions.  This should be run after all other changes have been made
+// to the modules database.
+task resetTestModulesDatabase (type: com.marklogic.gradle.task.MarkLogicTask) {
+  onlyIf {
+    getUnitTestingDeploymentStatus().allowed
+  }
+  doFirst {
+    println ""
+    println "Resetting test modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def script = new File('./build/buildSupport/resetTestModulesDatabase.sjs').getText('UTF-8')
+    def result = client.newServerEval().javascript(script).evalAs(String.class)
+
+    println ""
+    println result
+    println ""
+  }
+}
+generateAdvancedSearchConfig.finalizedBy resetTestModulesDatabase
+
+// Delete test modules from main modules database after they've been copied to test
+// This one should run regardless of whether unit testing deployment is allowed, 
+// because the marklogic-unit-test-modules bundle adds some.
+task deleteTestModulesFromMain (type: com.marklogic.gradle.task.MarkLogicTask) {
+  doFirst {
+    println ""
+    println "Deleting test modules from main modules database..."
+    println ""
+
+    def client = mlAppConfig.newDatabaseClient()
+    def cleanupScript = new File('./build/buildSupport/deleteTestModulesFromMain.sjs').getText('UTF-8')
+    def cleanupResult = client.newServerEval().javascript(cleanupScript).evalAs(String.class)
+    
+    println ""
+    println cleanupResult
+    println ""
+  }
+}
+resetTestModulesDatabase.finalizedBy deleteTestModulesFromMain
 
 task removeOfflineDynamicHosts (type: com.marklogic.gradle.task.MarkLogicTask) {
   doFirst {

@@ -28,12 +28,6 @@ class DataMergeError extends LuxBaseError {
   }
 }
 
-class InternalConfigurationError extends LuxBaseError {
-  constructor(message) {
-    super(message, 500);
-  }
-}
-
 class InternalServerError extends LuxBaseError {
   constructor(message) {
     super(message, 500);
@@ -91,7 +85,6 @@ export {
   AccessDeniedError,
   BadRequestError,
   DataMergeError,
-  InternalConfigurationError,
   InternalServerError,
   InvalidHostError,
   InvalidSearchRequestError,

@@ -1,207 +1,17 @@
 import {
   CODE_VERSION,
-  COLLECTION_NAME_MY_COLLECTION,
-  COLLECTION_NAME_MY_COLLECTIONS_FEATURE,
-  COLLECTION_NAME_NON_PRODUCTION,
-  COLLECTION_NAME_PRODUCTION,
-  COLLECTION_NAME_USER_PROFILE,
   HIGH_STORAGE_WARNING_THRESHOLD,
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
-  ML_APP_NAME,
-  TENANT_NAME,
 } from './appConstants.mjs';
 import * as utils from '../utils/utils.mjs';
-import {
-  CAPABILITY_READ,
-  CAPABILITY_UPDATE,
-  ROLE_NAME_DEPLOYER,
-  ROLE_NAME_ENDPOINT_CONSUMER_BASE,
-  mayUpdateTenantStatus,
-  requireUserMayUpdateTenantStatus,
-} from './securityLib.mjs';
-import {
-  BadRequestError,
-  InternalConfigurationError,
-} from './errorClasses.mjs';
-import { User } from './User.mjs';
 import { getSearchScope, getSearchScopeNames } from './searchScope.mjs';
-
-const TENANT_STATUS_URI = 'https://lux.collections.yale.edu/status/tenant';
 
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;
 const perVolumeOtherReserveMb = 2048; // logs, for example.
 const reportInGb = true; // false = Mb
 const MbToGbDivisor = 1024;
-
-// Presumes the user has the deployment role, which inherits the xdmp:invoke-in privilege.
-// This function purposely does not log using a trace event as trace events can be disabled.
-function setTenantStatus(prod, readOnly) {
-  const username = new User().getUsername();
-  console.log(
-    `User '${username}' is attempting to set the tenant's production mode to '${prod}' and read-only state to '${readOnly}'.`,
-  );
-
-  requireUserMayUpdateTenantStatus();
-
-  // Validate parameter values.
-  if (prod !== true && prod !== false) {
-    throw new BadRequestError(`Invalid prod: '${prod}'. Must be a boolean.`);
-  }
-  if (readOnly !== true && readOnly !== false) {
-    throw new BadRequestError(
-      `Invalid readOnly: '${readOnly}'. Must be a boolean.`,
-    );
-  }
-
-  const isTenantStatusDocAvailable = () => {
-    return fn.head(
-      xdmp.invokeFunction(
-        () => {
-          return fn.docAvailable(TENANT_STATUS_URI);
-        },
-        { database: xdmp.modulesDatabase() },
-      ),
-    );
-  };
-  if (isTenantStatusDocAvailable()) {
-    if (isProduction() === prod && inReadOnlyMode() === readOnly) {
-      console.log(
-        'The current tenant status matches the requested values; no action taken.',
-      );
-      return;
-    }
-    console.log(
-      `The current tenant's production mode is '${isProduction()}' and read-only state is '${inReadOnlyMode()}'`,
-    );
-  } else {
-    console.log('The tenant status document does not yet exist.');
-  }
-
-  const doc = {
-    appName: ML_APP_NAME,
-    tenantName: TENANT_NAME,
-    prod,
-    readOnly,
-    lastSetBy: username,
-    lastSetOn: fn.currentDateTime(),
-  };
-
-  const options = {
-    permissions: [
-      xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_READ),
-      xdmp.permission(ROLE_NAME_DEPLOYER, CAPABILITY_UPDATE),
-      xdmp.permission(ROLE_NAME_ENDPOINT_CONSUMER_BASE, CAPABILITY_READ),
-    ],
-    // Do *not* include in collections backed up and restored during a blue/green switch.
-    collections: [],
-  };
-
-  const zeroArityFun = () => {
-    declareUpdate();
-    xdmp.documentInsert(TENANT_STATUS_URI, doc, options);
-    console.log('Changes accepted to the tenant status document.');
-  };
-  xdmp.invokeFunction(zeroArityFun, { database: xdmp.modulesDatabase() });
-}
-
-// Returns a portion of the tenant status document, plus additional information.
-function getTenantStatus() {
-  // We're reusing the update permission to decide whether to include these document counts.
-  const documentCounts = {};
-  if (mayUpdateTenantStatus()) {
-    const restrictByProductionMode = true;
-    documentCounts.myCollection = getMyCollectionDocumentCount(
-      restrictByProductionMode,
-    );
-    documentCounts.userProfile = getUserProfileDocumentCount(
-      restrictByProductionMode,
-    );
-  }
-
-  // TODO: this approach calls _getTenantStatusDocObj twice.
-  return {
-    prod: isProduction(),
-    readOnly: inReadOnlyMode(),
-    ...documentCounts,
-    ...getVersionInfo(),
-  };
-}
-
-function isProduction() {
-  const prod = _getTenantStatusDocObj().prod;
-  if (typeof prod !== 'boolean') {
-    throw new InternalConfigurationError(
-      `Tenant status is corrupt: the prod property must be a boolean, but has type '${typeof prod}'`,
-    );
-  }
-  return prod;
-}
-
-function inReadOnlyMode() {
-  const isReadOnly = _getTenantStatusDocObj().readOnly;
-  if (typeof isReadOnly !== 'boolean') {
-    throw new InternalConfigurationError(
-      `Tenant status is corrupt: the readOnly property must be a boolean, but has type '${typeof isReadOnly}'`,
-    );
-  }
-  return isReadOnly;
-}
-
-function __getTenantStatusDocObj() {
-  const zeroArityFun = () => {
-    if (fn.docAvailable(TENANT_STATUS_URI)) {
-      return cts.doc(TENANT_STATUS_URI).toObject();
-    }
-    throw new InternalConfigurationError(
-      `Tenant status document does not exist but is required.`,
-    );
-  };
-  return fn.head(
-    xdmp.invokeFunction(zeroArityFun, {
-      database: xdmp.modulesDatabase(),
-    }),
-  );
-}
-const _getTenantStatusDocObj = import.meta.amp(__getTenantStatusDocObj);
-
-function _getMyCollectionDocumentCount(restrictByProductionMode = true) {
-  return cts.estimate(
-    _getCollectionQuery(
-      COLLECTION_NAME_MY_COLLECTION,
-      restrictByProductionMode,
-    ),
-  );
-}
-const getMyCollectionDocumentCount = import.meta.amp(
-  _getMyCollectionDocumentCount,
-);
-
-function _getUserProfileDocumentCount(restrictByProductionMode = true) {
-  return cts.estimate(
-    _getCollectionQuery(COLLECTION_NAME_USER_PROFILE, restrictByProductionMode),
-  );
-}
-const getUserProfileDocumentCount = import.meta.amp(
-  _getUserProfileDocumentCount,
-);
-
-// Collections can be a single collection name or an array of them.
-// When restrictByProductionMode is true, an additional collection constraint is included.
-function _getCollectionQuery(collections, restrictByProductionMode = true) {
-  collections = utils.toArray(collections);
-  if (restrictByProductionMode) {
-    collections.push(
-      isProduction()
-        ? COLLECTION_NAME_PRODUCTION
-        : COLLECTION_NAME_NON_PRODUCTION,
-    );
-  }
-  return cts.andQuery(
-    collections.map((collection) => cts.collectionQuery(collection)),
-  );
-}
 
 /*
  * Collect the forest information of every database, and organize by node and volume.
@@ -425,12 +235,9 @@ function getScopeEstimates() {
   getSearchScopeNames(statsOnly).forEach((name) => {
     estimates[name] = Number(
       cts.estimate(
-        cts.andNotQuery(
-          cts.jsonPropertyValueQuery('dataType', getSearchScope(name).types, [
-            'exact',
-          ]),
-          cts.collectionQuery(COLLECTION_NAME_MY_COLLECTIONS_FEATURE),
-        ),
+        cts.jsonPropertyValueQuery('dataType', getSearchScope(name).types, [
+          'exact',
+        ]),
       ),
     );
   });
@@ -461,15 +268,4 @@ function getVersionInfo() {
   };
 }
 
-export {
-  TENANT_STATUS_URI, // for unit tests
-  getMyCollectionDocumentCount,
-  getScopeEstimates,
-  getStorageInfo,
-  getTenantStatus,
-  getUserProfileDocumentCount,
-  getVersionInfo, // subset of getTenantStatus
-  inReadOnlyMode,
-  isProduction,
-  setTenantStatus,
-};
+export { getScopeEstimates, getStorageInfo, getVersionInfo };

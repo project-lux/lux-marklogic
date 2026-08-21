@@ -2,11 +2,6 @@
   "functionName": "facets",
   "params": [
     {
-      "name": "unitName",
-      "datatype": "string",
-      "nullable": true
-    },
-    {
       "name": "name",
       "datatype": "string"
     },

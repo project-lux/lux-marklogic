@@ -1,7 +1,6 @@
 import { handleRequest } from '../../lib/securityLib.mjs';
 import { search } from '../../lib/searchLib.mjs';
 
-const unitName = external.unitName;
 const searchCriteria = external.q;
 const searchScope = external.scope;
 const page = external.page;
@@ -21,7 +20,7 @@ const response = handleRequest(function () {
     sortDelimitedStr,
     filterResults,
   });
-}, unitName);
+});
 
 response;
 export default response;

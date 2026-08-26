@@ -2,6 +2,10 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v4.1.1 - Unreleased
+### Changed
+- Changed the relative paths to absolute paths for instances of environmentLib.mjs
+
 ## v4.1.0 - 2026-08-17
 ### Removed
 - Removed unused indexes, this frees up some memory and disk space ([#652](https://github.com/project-lux/lux-marklogic/issues/652))

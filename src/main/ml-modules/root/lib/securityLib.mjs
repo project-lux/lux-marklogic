@@ -1,4 +1,4 @@
-import { inReadOnlyMode } from './environmentLib.mjs';
+import { inReadOnlyMode } from '/lib/environmentLib.mjs';
 import {
   getCurrentEndpointConfig,
   getCurrentEndpointPath,

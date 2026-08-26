@@ -39,7 +39,7 @@ import {
   setUsername,
 } from './model.mjs';
 import { applyProfile } from './profileDocLib.mjs';
-import { isProduction } from './environmentLib.mjs';
+import { isProduction } from '/lib/environmentLib.mjs';
 import {
   BadRequestError,
   LoopDetectedError,

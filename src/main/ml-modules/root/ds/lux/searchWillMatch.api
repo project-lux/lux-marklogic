@@ -2,11 +2,6 @@
   "functionName": "searchWillMatch",
   "params": [
     {
-      "name": "unitName",
-      "datatype": "string",
-      "nullable": true
-    },
-    {
       "name": "q",
       "datatype": "jsonDocument",
       "$javaClass": "com.fasterxml.jackson.databind.JsonNode"

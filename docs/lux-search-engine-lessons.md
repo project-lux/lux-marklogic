@@ -102,8 +102,8 @@ This is a copy of an LLM memory file, which augments optic-lessons.md
 
 ## Function naming conventions
 - Exported functions: no underscore prefix (e.g., `invokeAsUnit`)
-- Private functions: single underscore prefix (e.g., `_handleRequestV2`)
-- Amp'd private functions: double underscore prefix (e.g., `__handleRequestV2`)
+- Private functions: single underscore prefix (e.g., `_getForestInfoByHost`)
+- Amp'd private functions: double underscore prefix (e.g., `__getForestInfoByHost`)
 - Class private methods: use `#` (e.g., `#myMethod`)
 
 

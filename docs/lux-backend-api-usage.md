@@ -11,68 +11,50 @@
     - [Implementation Notes](#implementation-notes)
     - [Successful Request / Response Example](#successful-request--response-example-1)
     - [Failed Request / Response Example](#failed-request--response-example-1)
-  - [Document](#document)
-    - [Create Document](#create-document)
-      - [Create My Collection Successful Request / Response Example](#create-my-collection-successful-request--response-example)
-      - [Create User Profile Successful Request / Response Example](#create-user-profile-successful-request--response-example)
-      - [Failed Request / Response Example](#failed-request--response-example-2)
-    - [Delete Document](#delete-document)
-      - [Successful Request / Response Example](#successful-request--response-example-2)
-      - [Failed Request / Response Example](#failed-request--response-example-3)
-    - [Read Document](#read-document)
-      - [Successful Request / Response Example](#successful-request--response-example-3)
-      - [Failed Request / Response Example](#failed-request--response-example-4)
-    - [Update Document](#update-document)
-      - [Successful Request / Response Example](#successful-request--response-example-4)
-      - [Failed Request / Response Example](#failed-request--response-example-5)
+  - [Read Document](#read-document)
+    - [Successful Request / Response Example](#successful-request--response-example-2)
+    - [Failed Request / Response Example](#failed-request--response-example-2)
   - [Facets](#facets)
-    - [Successful Request / Response Example](#successful-request--response-example-5)
-    - [Failed Request / Response Example](#failed-request--response-example-6)
+    - [Successful Request / Response Example](#successful-request--response-example-3)
+    - [Failed Request / Response Example](#failed-request--response-example-3)
   - [Related List](#related-list)
-    - [Successful Request / Response Example](#successful-request--response-example-6)
-    - [Failed Request / Response Example](#failed-request--response-example-7)
+    - [Successful Request / Response Example](#successful-request--response-example-4)
+    - [Failed Request / Response Example](#failed-request--response-example-4)
   - [Scale Out](#scale-out)
     - [Dynamic Host Requirements](#dynamic-host-requirements)
     - [Monitoring](#monitoring)
-    - [Successful Request / Response Example](#successful-request--response-example-7)
-    - [Failed Request / Response Example](#failed-request--response-example-8)
+    - [Successful Request / Response Example](#successful-request--response-example-5)
+    - [Failed Request / Response Example](#failed-request--response-example-5)
   - [Search](#search)
     - [Successful Single Scope Request / Response Example](#successful-single-scope-request--response-example)
     - [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example)
-    - [Failed Request / Response Example](#failed-request--response-example-9)
+    - [Failed Request / Response Example](#failed-request--response-example-6)
   - [Search Estimate](#search-estimate)
-    - [Successful Request / Response Example](#successful-request--response-example-8)
-    - [Failed Request / Response Example](#failed-request--response-example-10)
+    - [Successful Request / Response Example](#successful-request--response-example-6)
+    - [Failed Request / Response Example](#failed-request--response-example-7)
   - [Search Info](#search-info)
-    - [Successful Request / Response Example](#successful-request--response-example-9)
-    - [Failed Request / Response Example](#failed-request--response-example-11)
+    - [Successful Request / Response Example](#successful-request--response-example-7)
+    - [Failed Request / Response Example](#failed-request--response-example-8)
   - [Search Will Match](#search-will-match)
-    - [Successful Request / Response Example](#successful-request--response-example-10)
-    - [Failed Request / Response Example](#failed-request--response-example-12)
+    - [Successful Request / Response Example](#successful-request--response-example-8)
+    - [Failed Request / Response Example](#failed-request--response-example-9)
   - [Stats](#stats)
-    - [Successful Request / Response Example](#successful-request--response-example-11)
-    - [Failed Request / Response Example](#failed-request--response-example-13)
+    - [Successful Request / Response Example](#successful-request--response-example-9)
+    - [Failed Request / Response Example](#failed-request--response-example-10)
   - [Storage Info](#storage-info)
-    - [Successful Request / Response Example](#successful-request--response-example-12)
-    - [Failed Request / Response Example](#failed-request--response-example-14)
-  - [Tenant Status](#tenant-status)
-    - [Get](#get)
-      - [Successful Request / Response Example](#successful-request--response-example-13)
-      - [Failed Request / Response Example](#failed-request--response-example-15)
-    - [Set](#set)
-      - [Successful Request / Response Example](#successful-request--response-example-14)
-      - [Failed Request / Response Example](#failed-request--response-example-16)
+    - [Successful Request / Response Example](#successful-request--response-example-10)
+    - [Failed Request / Response Example](#failed-request--response-example-11)
   - [Translate](#translate)
-    - [Successful Request / Response Example](#successful-request--response-example-15)
-    - [Failed Request / Response Example](#failed-request--response-example-17)
+    - [Successful Request / Response Example](#successful-request--response-example-11)
+    - [Failed Request / Response Example](#failed-request--response-example-12)
   - [Validate Dataset](#validate-dataset)
     - [Successful Default Parameters Request / Response Example](#successful-default-parameters-request--response-example)
     - [Successful With Baseline Request / Response Example](#successful-with-baseline-request--response-example)
     - [Successful With Test Config Request / Response Example](#successful-with-test-config-request--response-example)
-    - [Failed Request / Response Example](#failed-request--response-example-18)
+    - [Failed Request / Response Example](#failed-request--response-example-13)
   - [Version Info](#version-info)
-    - [Successful Request / Response Example](#successful-request--response-example-16)
-    - [Failed Request / Response Example](#failed-request--response-example-19)
+    - [Successful Request / Response Example](#successful-request--response-example-12)
+    - [Failed Request / Response Example](#failed-request--response-example-14)
 
 # Introduction
 
@@ -84,11 +66,9 @@ It is possible that LUX backend consumers also consume MarkLogic native endpoint
 
 # Authentication
 
-Every LUX backend endpoint request must be authenticated.  Originally, there was a single way: use MarkLogic's internal security and an application server configured with the basic (HTTPS) or digest (HTTP) authentication scheme.  The My Collections feature has us switching to OAuth, enabling both service accounts and *individual users* the ability to consume the endpoints.  There will be a period when both means are available in some pre-production environments.  The production environment will continue to use internal security until we're ready to switch all environments to external security.
+Every LUX backend endpoint request must be authenticated, using MarkLogic's internal security and an application server configured with the basic (HTTPS) or digest (HTTP) authentication scheme.
 
-In both cases, the user account must be associated to one of the endpoint consumer roles. These provide sufficient privileges to consume all of LUX's backend endpoints. Document permissions may restrict the endpoint consumer to a subset of data. The tenant's endpoint consumer service account has access to all documents. Individual unit endpoint service accounts may have access to overlapping subsets of data. Applicable endpoints offer the `unitName` parameter to specify the unit when the requesting user is a user, as opposed to a service account; in this context, the unit name determines which unit's documents to make accessible to the request and which configuration files to apply. For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
-
-There is a condition unique to the first time a *user* logs into an environment: the receiving endpoint will get as far as it can and will then throw a `ServerConfigurationChangedError` with a status response code of 503, indicating the endpoint consumer may immediately retry the request. When the [Generated Data Service Interfaces](#generated-data-service-interfaces) are part of the stack, the retry will be automatic. Those that do not use the [Generated Data Service Interfaces](#generated-data-service-interfaces) will need to account for this condition on their own. The retry is necessary to grant the user all the roles they require; they cannot be granted during the original request. This does *not* apply to a user that does not log in as they are then using a service account.
+The service account must be associated to one of the endpoint consumer roles. These provide sufficient privileges to consume all of LUX's backend endpoints. Document permissions may restrict the endpoint consumer to a subset of data. The tenant's endpoint consumer service account has access to all documents. Individual unit endpoint service accounts may have access to overlapping subsets of data, restricted via the permissions on those documents. For more information on tenants, unit portals, and roles, see [LUX Backend Security and Software](/docs/lux-backend-security-and-software.md).
 
 Shared environments require HTTPS.
 
@@ -133,7 +113,6 @@ The `advancedSearchConfig` endpoint enables consumers to get a typescript-format
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 
 ### Successful Request / Response Example
 
@@ -214,7 +193,6 @@ In the context of servicing a single user typing in a field, endpoint consumers 
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `text` | `kra` | **REQUIRED** - The text to match on.  May be one or more words.  Matches are **in**sensitive to case, diacritics, punctuation, and whitespace; further non-wildcarded words may be stemmed.  An asterisk is automatically added to the end of the text (last word).  Additional wildcards may be included.  Use an asterisk for zero or more of any character.  Use *one* question mark for *each* single character that can be any character.  Start the text with an asterisk to indicate it may be anywhere in the name, as opposed to having to start with it.  Duplicate wildcard characters are automatically consolidated.  Contiguous question marks are not consider duplicate, and thus not consolidated.  As an example, the system would change `hamp?* hea?? loo` to `hamp* hea?? loo*`, which could return `Hampstead Heath Looking Towards Harrow`.  The `metadata.matchOn` response body property value is the cleaned up value.  An error is thrown when a wildcarded word does not include three contiguous non-wildcard characters; i.e., one- and two-character wildcard matches are not supported. |
 | `context` | `item.material` | **REQUIRED** - The context to resolve the `text` parameter value in. The context is the search scope and search term names combined as "`[scopeName].[termName]`".  For example, the context parameter value for search scope "agent" and search term "activeAt" would be "agent.activeAt".  For a list of available contexts, please see [/src/main/ml-modules/root/config/autoCompleteConfig.mjs](/src/main/ml-modules/root/config/autoCompleteConfig.mjs).  The advanced search configuration also offers `getAutoCompleteContext(scopeName: string, termName: string)`.  An error is thrown if an unsupported value is specified. |
 | `fullyHonorContext` | `false` | **OPTIONAL** - Each auto complete context is configured with two constraints: a list of names and a relationship.  For example, the `itemProductionAgentId` context is configured to agent names and requires the agent have produced something.  When this parameter value is `true`, both constraints are applied.  When `false`, the relationship constraint is not applied --faster but will include false positives.  Some of the other parameters only apply when this parameter value is `true`.  Defaults to `true`. |
@@ -348,276 +326,7 @@ Response Status Message: "Wildcarded strings must have at least three non-wildca
 }
 ```
 
-## Document
-
-### Create Document
-
-The Create Document endpoint enables users to select documents, specifically My Collection and User Profile documents.  Requests by service accounts are rejected.
-
-**URL** : `/ds/lux/document/create.mjs`
-
-**Method(s)** : `POST`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
-| `doc` | *See example below* | **REQUIRED** - The document to insert. Only send the contents of /json; example top-level property names include `type` and `member`. If the document already has an ID, it will be replaced with a unique ID, facilitating copying one document as another. |
-| `lang` | "es" | **OPTIONAL** - Reserved for future use. |
-
-#### Create My Collection Successful Request / Response Example
-
-Scenario: A user (not service account) submits a valid My Collection (i.e., a Set classified as a My Collection).
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `doc` | { "type": "Set", "identified_by": [ ... ], ... } |
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body is the given document plus any modifications made by the backend, specifically the addition of /id and /created_by (bottom):
-
-*Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
-
-```
-{
-  "type":"Set",
-  "identified_by":[
-    {
-      "type":"Name",
-      "content":"The My Collection's name, which may be up to 200 characters",
-      "language":[
-        {
-          "id":"https://lux.collections.yale.edu/data/concept/1fda962d-1edc-4fd7-bfa9-0c10e3153449",
-          "type":"Language",
-          "_label":"English",
-          "equivalent":[
-            {
-              "id":"http://vocab.getty.edu/aat/300388277",
-              "type":"Language",
-              "_label":"English"
-            }
-          ]
-        }
-      ],
-      "classified_as":[
-        {
-          "id":"https://lux.collections.yale.edu/data/concept/f7ef5bb4-e7fb-443d-9c6b-371a23e717ec",
-          "type":"Type",
-          "_label":"Primary Name",
-          "equivalent":[
-            {
-              "id":"http://vocab.getty.edu/aat/300404670",
-              "type":"Type",
-              "_label":"Primary Name"
-            }
-          ]
-        },
-        {
-          "id":"https://lux.collections.yale.edu/data/concept/31497b4e-24ad-47fe-88ad-af2007d7fb5a",
-          "type":"Type",
-          "_label":"Sort Name"
-        }
-      ]
-    }
-  ],
-  "classified_as":[
-    {
-      "id":"https://todo.concept.my.collection"
-    }
-  ],
-  "referred_to_by":[
-    {
-      "content":"This is one of 30 allowed notes; each note may be 500 characters long.",
-      "classified_as":[
-        {
-          "id":"https://not.checked",
-          "equivalent":[
-            {
-              "id":"https://todo.concept.note"
-            }
-          ]
-        }
-      ],
-      "identified_by":[
-        {
-          "content":"This is the label to the note, which supports up to 200 characters.",
-          "classified_as":[
-            {
-              "id":"https://not.checked",
-              "equivalent":[
-                {
-                  "id":"https://todo.concept.display.name"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "id":"https://lux.collections.yale.edu/set/21c5550d-7cd5-4a75-8343-8e56335e3957",
-  "created_by":{
-    "type":"Creation",
-    "carried_out_by":[
-      {
-        "id":"https://lux.collections.yale.edu/data/person/joe",
-        "type":"Person"
-      }
-    ],
-    "timespan":{
-      "begin_of_the_begin":"2025-04-17T16:04:58",
-      "end_of_the_end":"2025-04-17T16:04:58"
-    }
-  }
-}
-```
-
-#### Create User Profile Successful Request / Response Example
-
-Scenario: A user (not service account) submits a valid user profile, and their user profile does not already exist.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `doc` | { "type": "Person", "classified_as": [ ... ], ... } |
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body is the given document plus any modifications made by the backend, specifically the addition of /id and /created_by (bottom):
-
-*Note Some of the following LUX IDs may change between datasets, but the equivalent AAT IDs are constant.*
-
-```
-{
-  "type":"Person",
-  "classified_as":[
-    {
-      "id":"https://not.checked",
-      "equivalent":[
-        {
-          "id":"https://todo.concept.user.profile"
-        }
-      ]
-    }
-  ],
-  "identified_by":[
-    {
-      "type":"Identifier",
-      "content":"joe",
-      "classified_as":[
-        {
-          "id":"http://www.wikidata.org/entity/Q15901043",
-          "type":"Type",
-          "_label":"username"
-        }
-      ]
-    }
-  ],
-  "id":"https://lux.collections.yale.edu/person/b45bd251-9d46-4257-ae37-513ad5068c16",
-  "created_by":{
-    "type":"Creation",
-    "carried_out_by":[
-      {
-        "id":"https://lux.collections.yale.edu/person/b45bd251-9d46-4257-ae37-513ad5068c16",
-        "type":"Person"
-      }
-    ],
-    "timespan":{
-      "begin_of_the_begin":"2025-04-29T16:29:01",
-      "end_of_the_end":"2025-04-29T16:29:01"
-    }
-  }
-}
-```
-
-#### Failed Request / Response Example
-
-Scenario: A user (not service account) submits the same My Collection as above, but without a primary name.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `doc` | { "type": "Set", "classified_as": [ ... ], ... } |
-
-Response Status Code: 400
-
-Response Status Message: "Bad Request"
-
-Response Body:
-```
-{
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"BadRequestError",
-    "message":"2 validation error(s) found: 1: XDMP-JSVALIDATEMISSING: Missing property: Required identified_by property not found at json:ObjectNode({\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}) using schema \"/json-schema/editable-set.schema.json\"; 2: XDMP-JSVALIDATEINVNODE: Invalid node: Node ObjectNode({\"json\":{\"type\":\"Set\", \"classified_as\":[{\"id\":\"some-id-that-may-change-between-datasets\", \"equivalent\":[{\"id\":\"http://todo.concept.my.collection\"}]}], \"referred_to_by\":[{\"content\":\"A short note.\", \"classified_as\":[{\"id\":\"http://todo.concept.note\"}], \"identified_by\":[{\"classified_as\":[{\"id\":\"http://todo.concept.display.name\"}], \"content\":\"A short label\"}]}]}}) not valid against property 'properties' expected {type: object, properties: {json:{...}}, required: [json]} using schema \"/json-schema/editable-set.schema.json\""
-  }
-}
-```
-
-### Delete Document
-
-The Delete Document endpoint enables users to delete select documents, specifically My Collection documents.  Requests by service accounts are rejected.
-
-**URL** : `/ds/lux/document/delete.mjs`
-
-**Method(s)** : `POST`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `uri` | "https://lux.collections.yale.edu/set/9c198a56-f1d3-45b8-8475-59d8bc4484e1" | **REQUIRED** - The URI of the document to delete. |
-
-#### Successful Request / Response Example
-
-Scenario: User deletes one of their My Collection documents.
-
-| Parameter | Value |
-|-----------|-------|
-| `uri` | "https://lux.collections.yale.edu/set/9c198a56-f1d3-45b8-8475-59d8bc4484e1" |
-
-Response Status Code: 200
-
-Response Status Message: "OK"
-
-Response Body: Empty
-
-#### Failed Request / Response Example
-
-Scenario: User attempts to delete a My Collection document they do not have sufficient permission to.
-
-| Parameter | Value |
-|-----------|-------|
-| `uri` | "https://lux.collections.yale.edu/set/9c198a56-f1d3-45b8-8475-59d8bc4484e1" |
-
-Response Status Code: 500
-
-Response Status Message: "Internal Server Error"
-
-Response Body:
-```
-{
-  "errorResponse":{
-    "statusCode":500,
-    "status":"Internal Server Error",
-    "messageCode":"SEC-PERMDENIED",
-    "message":"Permission denied"
-  }
-}
-```
-
-### Read Document
+## Read Document
 
 The Read Document endpoint enables consumers to retrieve a single document's JSON-LD, or subset thereof upon specifying a named profile.
 
@@ -629,14 +338,13 @@ The Read Document endpoint enables consumers to retrieve a single document's JSO
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `uri` | *See example below* | **REQUIRED** - The URI of the requested document. |
 | `profile` | "relationship" | **OPTIONAL** - The name of a profile that informs which subset of the JSON-LD to return. The default is to serve up the entire JSON-LD block, which is also the behavior when an invalid profile name is specified or an exception is encountered. Available profiles: "name", "location", "relationship", "results"\*, and "rights"; one may double check in the `applyProfile()` function within [/src/main/ml-modules/root/lib/profileDocLib.mjs](/src/main/ml-modules/root/lib/profileDocLib.mjs). |
 | `lang` | "en" | **OPTIONAL** - The language to serve up when there are multiple to choose from. Default is `en`. |
 
 \* _Until the "results" profile's implementation is updated, the profile will return the entire JSON-LD block.  Nonetheless, present-day use of this profile within a search results context is encouraged._
 
-#### Successful Request / Response Example
+### Successful Request / Response Example
 
 Scenario: The name profile is requested of an existing document.
 
@@ -681,7 +389,7 @@ Response Body:
 }
 ```
 
-#### Failed Request / Response Example
+### Failed Request / Response Example
 
 Scenario: Requested document does not exist.
 
@@ -707,28 +415,6 @@ Response Body:
 }
 ```
 
-### Update Document
-
-The Update Document endpoint enables users to update select documents, specifically My Collection and User Profile documents.  Requests by service accounts are rejected.
-
-The Update Document endpoint varies from [Create Document](#create-document) in that this one requires the `uri` parameter and that the value match the top-level `id` property within the provided document.  An error is thrown if the document does not exist in the database or the user is not allowed to modify it.
-
-**URL** : `/ds/lux/document/update.mjs`
-
-**Method(s)** : `POST`
-
-**Endpoint Parameters**
-
-See [Create Document](#create-document) and specify the `uri` parameter.
-
-#### Successful Request / Response Example
-
-See [Create Document](#create-document).
-
-#### Failed Request / Response Example
-
-See [Create Document](#create-document).
-
 ## Facets
 
 The `facets` endpoint enables consumers to request a facet's values constrained by search criteria.
@@ -745,7 +431,6 @@ Only the first 100 values of a semantic facet's values are accessible.
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `name` | `agentStartDate` | **REQUIRED** - The name of the facet to calculate.  The [Search Info endpoint's](#search-info) `facetBy` response body property lists all of the available facets. |
 | `q` | *See [Search's example](#successful-request--response-example-7)* | **REQUIRED** - The query to constrain the facet's values by.  This parameter's support is nearly identical to the [Search endpoint's](#search) `q` parameter: the `multi` search scope is not supported by this endpoint. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a complete list of search scopes supported by this endpoint, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. |
@@ -863,7 +548,6 @@ To retrieve the full list of related documents, switch to the [Search endpoint](
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `scope` | `concept` | **REQUIRED** - The related list's search scope. For instance, when one is looking for concepts associated with an agent, the scope should be "concept". |
 | `name` | `relatedToAgent` | **REQUIRED** - The name of the related list. Using the same concepts-from-agent example, the name should be "relatedToAgent". For a complete list of available related lists, please search for "relatedTo" in the return of the [Search Info endpoint](#search-info). Note the scope you find the related list in as that will also be needed. |
 | `uri` | `https://lux.collections.yale.edu/...` | **REQUIRED** - The URI of the document to get the related documents of. For the concepts-from-agent example, this should be the agent's URI. The URI is one in the same as the document's IRI and ID. |
@@ -1061,7 +745,6 @@ The `search` endpoint is the primary means to search LUX's backend.  A variety o
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - The search criteria that is either stringified LUX JSON Search Grammar or LUX String Search Grammar   When using **LUX JSON Search Grammar**, either specify the search scope via the `_scope` *property* or the `scope` parameter.  Also include at least one search term.  Available search terms vary by search scope.  For a complete list of available search terms, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property.  Some search terms accept --if not require-- term options.  For example, search terms configured to the `indexedRange` pattern must also specify the comparator operator using the `_comp` property.  Search terms may be grouped using the `AND` and `OR` properties; the property value needs to be an array of search terms and, optionally, additional group properties.  The `NOT` property value may be set to a term or group to require the results not to have the specified criteria. The **LUX String Search Grammar** supports a subset of what the LUX JSON Search Grammar does; for additional information, see the [Translate endpoint](#translate).|
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when a) using the LUX String Search Grammar or b) using the LUX JSON Search Grammar but not setting the `_scope` property. The value of the `scope` parameter is given precedence over the LUX JSON Search Grammar `_scope` property value. For a near complete list of available search scopes, review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example).
 | `page` | 1 | **OPTIONAL** - The starting page. Defaults to 1. An error will be thrown if this value is less than 1.|
@@ -1241,7 +924,6 @@ The `searchEstimate` endpoint may be used to calculate the estimated number of r
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - Unlike the [Facets](#facets) and [Search](#search) endpoints, this endpoint only supports the LUX JSON Search Grammar. |
 | `scope` | `agent` | **CONDITIONALLY REQUIRED** - The scope to apply to the query.  Only required when the `_scope` property is not set in the `q` parameter value.  For a near complete list of available search scopes, please review the return of the [Search Info endpoint](#search-info), specifically the `searchBy` response body property. In addition to those scopes, one can use the `multi` scope with an `OR` array to search across multiple scopes. For an example, see [Search endpoint](#search-info)'s [Successful Multiple Scope Request / Response Example](#successful-multiple-scope-request--response-example). |
 
@@ -1333,7 +1015,6 @@ Differences between the [Advanced Search Configuration endpoint](#advanced-searc
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 
 ### Successful Request / Response Example
 
@@ -1473,7 +1154,6 @@ The `searchWillMatch` endpoint may be used to determine if a search or collectio
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. My Collection data is restricted to individual users. |
 | `q` | *See example below* | **REQUIRED** - The criteria for one or more searches. Unlike the [Facets](#facets) and [Search](#search) endpoints, this endpoint only supports the LUX JSON Search Grammar. Set the top-level property names to the name of the search and the values to the search criteria. When only wanting a single estimate, just the search criteria may be provided; the response will use `unnamed` as the search's name. All search scopes are supported, including `multi`. |
 
 **Response Body**
@@ -1622,7 +1302,7 @@ Response Body:
 
 ## Stats
 
-The `stats` endpoint enables consumers to get document estimates by context. The context mostly aligns with search scopes, such as Item and Work.  There are also estimates for My Collection and User Profile documents.  Despite those documents belonging to the Set and Agent search scopes, they are excluded from those estimates.  Further, while the other estimates can vary based on the specified unit, these estimates will not.
+The `stats` endpoint enables consumers to get document estimates by context. The context mostly aligns with search scopes, such as Item and Work.
 
 **URL** : `/ds/lux/stats.mjs`
 
@@ -1632,7 +1312,6 @@ The `stats` endpoint enables consumers to get document estimates by context. The
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `unitName` | `ypm` | **OPTIONAL** - When the My Collections feature is enabled and the authenticated user is not a service account, use this parameter to specify which unit's configuration and documents the user is to have access to. The default is the tenant owner, which has access to everything except My Collection data. In most environments, the tenant owner's name is simply `lux`. The My Collection and User Profile estimates are not subject to the unit restriction. |
 
 ### Successful Request / Response Example
 
@@ -1757,104 +1436,6 @@ Response Body:
 ### Failed Request / Response Example
 
 *Only known scenarios would be an authentication error and internal server error.*
-
-## Tenant Status
-
-### Get
-
-The Get Tenant Status endpoint may be used to get information on a tenant, including its current role and whether it is accepting updates. User and service accounts may consume this endpoint.  Users with the [`%%mlAppName%%-update-tenant-status`](/src/main/ml-config/base/security/privileges/app-update-tenant-status.json) execute privilege will also receive estimates for the numbers of My Collection and user profile documents.
-
-**URL** : `/ds/lux/tenantStatus/get.mjs`
-
-**Method(s)** : `GET`
-
-**Endpoint Parameters** : None
-
-#### Successful Request / Response Example
-
-Scenario: endpoint returns the tenant's status.
-
-Parameters: None
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body:
-
-```
-{
-  "prod":false,
-  "readOnly":false,
-  "codeVersion":"v1.42.0-6-g89577f6",
-  "dataVersion":"2025-06-21T04:19:28.635285",
-  "mlVersion":"11.3.1",
-  "databaseName":"lux-content"
-}
-```
-
-#### Failed Request / Response Example
-
-*Only known scenarios would be an authentication error or when the tenant status document does not exist yet.*
-
-### Set
-
-The Set Tenant Status endpoint enables one to change the tenant's role and read-only state. Users must have the `https://lux.collections.yale.edu/%%mlAppName%%-update-tenant-status` execute privilege.
-
-**URL** : `/ds/lux/tenantStatus/set.mjs`
-
-**Method(s)** : `GET`, `POST`, `PUT`
-
-**Endpoint Parameters**
-
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `prod` | `false` | **REQUIRED** - Specify whether the tenant is in production (`true`) or non-production (`false`) mode. Of all the environments and tenants, only one tenant should ever be in production mode. During a blue/green switch, the roles of each are to change. |
-| `readOnly` | `false` | **REQUIRED** - Specify whether the instance should accept updates (`false`) or not (`true`). When in read-only mode, the tenant is to still service read-only requests. The only write exception is this endpoint. |
-
-#### Successful Request / Response Example
-
-Scenario: The blue/green switch changes an instance to read only.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `prod` | `prod` |
-| `readOnly` | `true` |
-
-Response Status Code: 200
-
-Response Status Message: OK
-
-Response Body: Empty
-
-#### Failed Request / Response Example
-
-Scenario: A value that cannot be interpreted as a boolean is given.
-
-Parameters:
-
-| Parameter | Value |
-|-----------|-------|
-| `prod` | `yes` |
-| `readOnly` | `no` |
-
-Response Status Code: 400
-
-Response Status Message: "Bad Request"
-
-Response Body:
-```
-{
-  "errorResponse":{
-    "statusCode":400,
-    "status":"Bad Request",
-    "messageCode":"XDMP-LEXVAL",
-    "message":"Invalid lexical value"
-  }
-}
-```
 
 ## Translate
 
@@ -2334,8 +1915,6 @@ Response Body:
 ```
 
 ## Version Info
-
-_**DEPRECATED:** use the [Get Tenant Status](#get) endpoint instead. The `versionInfo` endpoint will be removed in a future release._
 
 The `versionInfo` endpoint enables consumers to get the current versions of the code, data, and ML server. It also returns the name of the content database being used by this tenant.
 

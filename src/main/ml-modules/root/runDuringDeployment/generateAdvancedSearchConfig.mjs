@@ -4,7 +4,6 @@ import {
   SearchPatternBase,
 } from '../lib/search/patterns/loadPatterns.mjs';
 import {
-  FEATURE_MY_COLLECTIONS_ENABLED,
   getAllowedSearchOptionsByOptionsName,
   getDefaultSearchOptionsByOptionsName,
 } from '../lib/appConstants.mjs';
@@ -158,11 +157,6 @@ const advancedSearchConfigs = {};
           } else if (termName.endsWith('Id')) {
             add = false;
           } else if (patternName === 'relatedList') {
-            add = false;
-          } else if (
-            termConfig.isMyCollectionTerm() &&
-            !FEATURE_MY_COLLECTIONS_ENABLED
-          ) {
             add = false;
           }
 

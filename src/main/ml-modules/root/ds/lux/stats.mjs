@@ -1,5 +1,5 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { getScopeEstimates } from '../../lib/environmentLib.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { getScopeEstimates } from '/lib/environmentLib.mjs';
 
 const response = handleRequest(function () {
   const start = new Date();

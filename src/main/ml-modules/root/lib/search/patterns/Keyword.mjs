@@ -2,14 +2,17 @@ import {
   FULL_TEXT_SEARCH_RELATED_FIELD_NAME,
   IRI_DOES_NOT_EXIST,
   SEARCH_OPTIONS_NAME_KEYWORD,
-} from '../../appConstants.mjs';
+} from '/lib/appConstants.mjs';
 import {
   getSearchScopeFields,
   getSearchScopePredicates,
-} from '../../searchScope.mjs';
-import { expandPredicates } from '../prefixUtils.mjs';
-import * as utils from '../../../utils/utils.mjs';
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+} from '/lib/searchScope.mjs';
+import { expandPredicates } from '/lib/search/prefixUtils.mjs';
+import * as utils from '/utils/utils.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 class Keyword extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {

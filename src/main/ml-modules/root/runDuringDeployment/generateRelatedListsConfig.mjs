@@ -1,15 +1,15 @@
-import * as utils from '../utils/utils.mjs';
-import { TOKEN_RUNTIME_PARAM } from '../lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
+import { TOKEN_RUNTIME_PARAM } from '/lib/appConstants.mjs';
 import {
   SEARCH_TERMS_CONFIG,
   getInverseSearchTermInfo,
-} from '../config/searchTermsConfig.mjs';
-import { PATTERN_NAME_HOP_WITH_FIELD } from '../lib/search/patterns/loadPatterns.mjs';
-import { RELATION_NAMES } from '../config/relationNames.mjs';
+} from '/config/searchTermsConfig.mjs';
+import { PATTERN_NAME_HOP_WITH_FIELD } from '/lib/search/patterns/loadPatterns.mjs';
+import { RELATION_NAMES } from '/config/relationNames.mjs';
 import {
   TENANT_OWNER,
   getEndpointAccessUnitNames,
-} from '../lib/securityLib.mjs';
+} from '/lib/securityLib.mjs';
 
 const uri = '/config/relatedListsConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -302,9 +302,9 @@ function constructModuleNode(relatedListsConfig) {
  *
  * Generated timestamp: ${new Date()}
  */
-import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
-import { BadRequestError } from '../lib/errorClasses.mjs';
-import { deepFreeze } from '../utils/utils.mjs';
+import { getCurrentUserUnitName } from '/lib/securityLib.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
+import { deepFreeze } from '/utils/utils.mjs';
 
 const RELATED_LISTS_CONFIG = deepFreeze(${JSON.stringify(relatedListsConfig)});
 

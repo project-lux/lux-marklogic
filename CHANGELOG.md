@@ -11,6 +11,7 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## v4.1.1 - Unreleased
 ### Changed
 - Changed the relative paths to absolute paths for instances of environmentLib.mjs
+- Changed every remaining relative module import specifier to an absolute path (rooted at the modules database root), throughout `src/main/ml-modules/root` and `scripts/generateIndexConf/indexComparisonChecks.js`.  Relative specifiers fail intermittently on the new server-side JavaScript engine, which does not retain the importing module's directory.
 
 ## v4.1.0 - 2026-08-17
 ### Removed

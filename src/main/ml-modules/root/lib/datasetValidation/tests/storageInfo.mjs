@@ -1,5 +1,5 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
-import { getStorageInfo } from '../../environmentLib.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
+import { getStorageInfo } from '/lib/environmentLib.mjs';
 
 const TEST_ID = 'storage-info';
 

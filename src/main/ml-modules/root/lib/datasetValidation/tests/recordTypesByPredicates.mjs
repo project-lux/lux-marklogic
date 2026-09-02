@@ -1,8 +1,8 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
-import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
-import { expandPredicate } from '../../search/prefixUtils.mjs';
-import { getSearchScopeTypes } from '../../searchScope.mjs';
-import { sortObj } from '../../../utils/utils.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { expandPredicate } from '/lib/search/prefixUtils.mjs';
+import { getSearchScopeTypes } from '/lib/searchScope.mjs';
+import { sortObj } from '/utils/utils.mjs';
 
 const TEST_ID = 'record-types-by-predicates';
 

@@ -1,5 +1,5 @@
-import * as utils from '../../utils/utils.mjs';
-import { SearchPatternBase } from './patterns/loadPatterns.mjs';
+import * as utils from '/utils/utils.mjs';
+import { SearchPatternBase } from '/lib/search/patterns/loadPatterns.mjs';
 
 const SearchTermConfig = class {
   constructor(rawConfig) {

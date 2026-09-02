@@ -1,7 +1,7 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
-import { TENANT_OWNER } from '../../securityLib.mjs';
-import { getScopeEstimates } from '../../environmentLib.mjs';
-import { invokeAsUnit, sortObj } from '../../../utils/utils.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
+import { TENANT_OWNER } from '/lib/securityLib.mjs';
+import { getScopeEstimates } from '/lib/environmentLib.mjs';
+import { invokeAsUnit, sortObj } from '/utils/utils.mjs';
 
 const TEST_ID = 'scope-estimates';
 const DEFAULT_DELTA_THRESHOLD_PERCENT = 10;

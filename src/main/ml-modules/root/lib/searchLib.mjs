@@ -1,18 +1,18 @@
-import { StopWatch } from '../utils/stopWatch.mjs';
+import { StopWatch } from '/utils/stopWatch.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   DEFAULT_FILTER_SEARCH_RESULTS,
   LUX_CONTEXT,
   TRACE_NAME_SEARCH as traceName,
-} from './appConstants.mjs';
-import * as utils from '../utils/utils.mjs';
-import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
-import { InvalidSearchRequestError } from './errorClasses.mjs';
+} from '/lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+import { InvalidSearchRequestError } from '/lib/errorClasses.mjs';
 import {
   getRelatedList,
   getRelatedListSearchInfo,
-} from './relatedListsLib.mjs';
+} from '/lib/relatedListsLib.mjs';
 
 const EMPTY_STRING = '';
 const DEFAULT_PAGE = 1;

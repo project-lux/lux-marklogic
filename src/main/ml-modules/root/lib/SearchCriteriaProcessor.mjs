@@ -1,29 +1,32 @@
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
-import * as engine from './search/engine.mjs';
+import * as engine from '/lib/search/engine.mjs';
 import {
   getChildId,
   getFirstNonOptionPropertyName,
   hasNonOptionPropertyName,
   sanitizeAndValidateWildcardedStrings,
-} from './search/analyzeCriteria.mjs';
-import { PatternOptions } from './search/PatternOptions.mjs';
-import { SORT_TYPE_NON_SEMANTIC, SORT_TYPE_SEMANTIC } from './SortCriteria.mjs';
+} from '/lib/search/analyzeCriteria.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+import {
+  SORT_TYPE_NON_SEMANTIC,
+  SORT_TYPE_SEMANTIC,
+} from '/lib/SortCriteria.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
-} from './errorClasses.mjs';
-import { SearchExecutionResult } from './search/SearchExecutionResult.mjs';
-import * as utils from '../utils/utils.mjs';
+} from '/lib/errorClasses.mjs';
+import { SearchExecutionResult } from '/lib/search/SearchExecutionResult.mjs';
+import * as utils from '/utils/utils.mjs';
 
 import {
   adjustSearchString,
   translateStringGrammarToJSON,
   walkParsedQuery,
-} from './search/stringGrammar.mjs';
-import { isSearchScopeName } from './searchScope.mjs';
-import { SortCriteria } from './SortCriteria.mjs';
-import { getSearchTermConfig } from '../config/searchTermsConfig.mjs';
+} from '/lib/search/stringGrammar.mjs';
+import { isSearchScopeName } from '/lib/searchScope.mjs';
+import { SortCriteria } from '/lib/SortCriteria.mjs';
+import { getSearchTermConfig } from '/config/searchTermsConfig.mjs';
 //#endregion
 
 //#region Constants

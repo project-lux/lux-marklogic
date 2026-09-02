@@ -1,6 +1,6 @@
-import { getObjectFromNode } from '../../utils/utils.mjs';
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { getSearchEstimate } from '../../lib/searchLib.mjs';
+import { getObjectFromNode } from '/utils/utils.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { getSearchEstimate } from '/lib/searchLib.mjs';
 
 const searchCriteria = getObjectFromNode(external.q);
 const scope = external.scope;

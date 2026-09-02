@@ -1,14 +1,14 @@
-import { DatasetTestBase } from './loadTests.mjs';
-import { getVersionInfo } from '../environmentLib.mjs';
-import { VALIDATE_DATASET_TIMEOUT } from '../appConstants.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/loadTests.mjs';
+import { getVersionInfo } from '/lib/environmentLib.mjs';
+import { VALIDATE_DATASET_TIMEOUT } from '/lib/appConstants.mjs';
 import {
   getEndpointAccessUnitNames,
   mayValidateDataset,
   TENANT_OWNER,
-} from '../securityLib.mjs';
-import { AccessDeniedError, BadRequestError } from '../errorClasses.mjs';
-import { User } from '../User.mjs';
-import { split, getArrayDiff } from '../../utils/utils.mjs';
+} from '/lib/securityLib.mjs';
+import { AccessDeniedError, BadRequestError } from '/lib/errorClasses.mjs';
+import { User } from '/lib/User.mjs';
+import { split, getArrayDiff } from '/utils/utils.mjs';
 
 const SEVERITY_CRITICAL = 'critical';
 const SEVERITY_WARNING = 'warning';

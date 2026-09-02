@@ -1,21 +1,21 @@
-import { SEARCH_TERMS_CONFIG } from '../../config/searchTermsConfig.mjs';
-import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
+import { SEARCH_TERMS_CONFIG } from '/config/searchTermsConfig.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
 import {
   PATTERN_NAME_DATE_RANGE,
   PATTERN_NAME_HOP_INVERSE,
   PATTERN_NAME_INDEXED_RANGE,
   PATTERN_NAME_INDEXED_VALUE,
   PATTERN_NAME_IRI,
-} from '../lib/search/patterns/loadPatterns.mjs';
-import { searchTermText } from '../config/userFacingConfig.mjs';
-import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
-import * as utils from '../utils/utils.mjs';
+} from '/lib/search/patterns/loadPatterns.mjs';
+import { searchTermText } from '/config/userFacingConfig.mjs';
+import { facetToScopeAndTermName } from '/utils/searchTermUtils.mjs';
+import * as utils from '/utils/utils.mjs';
 import {
   TENANT_OWNER,
   getEndpointAccessUnitNames,
   isConfiguredForUnit,
   removeUnitConfigProperties,
-} from '../lib/securityLib.mjs';
+} from '/lib/securityLib.mjs';
 
 const uri = '/config/searchTermsConfig.mjs';
 console.log(`Adding remaining search terms within ${uri}`);
@@ -336,8 +336,8 @@ function constructModuleNode(searchTermsConfig) {
  *
  * Generated timestamp: ${new Date()}
  */
-import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
-import { BadRequestError } from '../lib/errorClasses.mjs';
+import { getCurrentUserUnitName } from '/lib/securityLib.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
 
 const SEARCH_TERMS_CONFIG = ${JSON.stringify(searchTermsConfig)};
 

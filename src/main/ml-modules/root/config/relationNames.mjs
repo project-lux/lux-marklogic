@@ -1,5 +1,5 @@
-import * as utils from '../utils/utils.mjs';
-import { TRACE_NAME_RELATED_LIST as traceName } from '../lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
+import { TRACE_NAME_RELATED_LIST as traceName } from '/lib/appConstants.mjs';
 
 const RELATION_NAMES = {
   'classificationOfItem-classification':

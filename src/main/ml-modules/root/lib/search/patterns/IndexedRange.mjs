@@ -1,4 +1,7 @@
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 // Used by search terms generated from facetsConfig (depth, height, width,
 // dimension) via generateRemainingSearchTerms.

@@ -1,5 +1,5 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { getRelatedList } from '../../lib/relatedListsLib.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { getRelatedList } from '/lib/relatedListsLib.mjs';
 
 const searchScopeName = external.scope;
 const relatedListName = external.name;

@@ -1,10 +1,10 @@
-import * as utils from '../utils/utils.mjs';
+import * as utils from '/utils/utils.mjs';
 import {
   getConfigurationByContext,
   getContextParameterValues,
-} from '../config/autoCompleteConfig.mjs';
-import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
-import { BadRequestError } from './errorClasses.mjs';
+} from '/config/autoCompleteConfig.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
 
 const MAXIMUM_RESULT_COUNT = 10;
 

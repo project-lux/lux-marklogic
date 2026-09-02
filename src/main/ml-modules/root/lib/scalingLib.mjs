@@ -1,8 +1,8 @@
-import { mayScaleEnvironment, validateAndTrimHost } from './securityLib.mjs';
-import { User } from './User.mjs';
-import { ML_ADMIN_PORT, SCALE_OUT_TIMEOUT } from './appConstants.mjs';
-import { ScaleEnvironmentError } from './errorClasses.mjs';
-import { getExceptionObjectElseMessage } from '../utils/utils.mjs';
+import { mayScaleEnvironment, validateAndTrimHost } from '/lib/securityLib.mjs';
+import { User } from '/lib/User.mjs';
+import { ML_ADMIN_PORT, SCALE_OUT_TIMEOUT } from '/lib/appConstants.mjs';
+import { ScaleEnvironmentError } from '/lib/errorClasses.mjs';
+import { getExceptionObjectElseMessage } from '/utils/utils.mjs';
 
 // Non-amp'd function that all scale out requests are to go through.
 function scaleOut(dynamicHost) {

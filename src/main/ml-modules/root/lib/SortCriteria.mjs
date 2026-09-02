@@ -1,5 +1,5 @@
-import { SORT_BINDINGS } from '../config/searchResultsSortConfig.mjs';
-import * as utils from '../utils/utils.mjs';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
+import * as utils from '/utils/utils.mjs';
 
 const SORT_TYPE_SEMANTIC = 'semantic';
 const SORT_TYPE_NON_SEMANTIC = 'nonSemantic';

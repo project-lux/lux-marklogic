@@ -2,18 +2,18 @@
 
 //#region Imports
 import op from '/MarkLogic/optic.mjs';
-import { getSearchScopeTypes } from '../searchScope.mjs';
-import * as utils from '../../utils/utils.mjs';
-import { SEMANTIC_SORT_TIMEOUT } from '../appConstants.mjs';
+import { getSearchScopeTypes } from '/lib/searchScope.mjs';
+import * as utils from '/utils/utils.mjs';
+import { SEMANTIC_SORT_TIMEOUT } from '/lib/appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
-} from '../errorClasses.mjs';
-import { SearchExecutionResult } from './SearchExecutionResult.mjs';
-import { expandPredicate } from './prefixUtils.mjs';
-import { NODE_TYPE_GROUP } from './criteriaNodes.mjs';
-import { analyzeCriteria } from './analyzeCriteria.mjs';
-import { calculateFacets } from './calculateFacets.mjs';
+} from '/lib/errorClasses.mjs';
+import { SearchExecutionResult } from '/lib/search/SearchExecutionResult.mjs';
+import { expandPredicate } from '/lib/search/prefixUtils.mjs';
+import { NODE_TYPE_GROUP } from '/lib/search/criteriaNodes.mjs';
+import { analyzeCriteria } from '/lib/search/analyzeCriteria.mjs';
+import { calculateFacets } from '/lib/search/calculateFacets.mjs';
 //#endregion
 
 //#region Constants

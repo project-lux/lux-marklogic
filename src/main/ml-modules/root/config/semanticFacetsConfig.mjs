@@ -1,9 +1,9 @@
-import { IDENTIFIERS } from '../lib/identifierConstants.mjs';
+import { IDENTIFIERS } from '/lib/identifierConstants.mjs';
 import op from '/MarkLogic/optic';
 import {
   expandPredicate,
   getPrefixesForSPARQL,
-} from '../lib/search/prefixUtils.mjs';
+} from '/lib/search/prefixUtils.mjs';
 
 const crm = op.prefixer('http://www.cidoc-crm.org/cidoc-crm/');
 const la = op.prefixer('https://linked.art/ns/terms/');

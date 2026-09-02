@@ -1,5 +1,5 @@
-import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
-import { InternalServerError } from '../lib/errorClasses.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
+import { InternalServerError } from '/lib/errorClasses.mjs';
 
 function facetToScopeAndTermName(facetName) {
   const matchArr = facetName.match('([a-z]+)([^a-z])(.*)');

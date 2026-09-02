@@ -9,17 +9,17 @@
 //   3. No CTS (non-foldable) → op.fromSearch(cts.documentQuery(uriList)) + Optic join/groupBy
 
 import op from '/MarkLogic/optic.mjs';
-import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
-import { isSemanticFacet } from '../facetsLib.mjs';
-import { convertSecondsToDateStr } from '../../utils/dateUtils.mjs';
-import * as utils from '../../utils/utils.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
+import { SEMANTIC_FACETS_CONFIG } from '/config/semanticFacetsConfig.mjs';
+import { isSemanticFacet } from '/lib/facetsLib.mjs';
+import { convertSecondsToDateStr } from '/utils/dateUtils.mjs';
+import * as utils from '/utils/utils.mjs';
 import {
   BadRequestError,
   InternalServerError,
   InvalidSearchRequestError,
-} from '../errorClasses.mjs';
-import { FacetResponses } from './FacetResponses.mjs';
+} from '/lib/errorClasses.mjs';
+import { FacetResponses } from '/lib/search/FacetResponses.mjs';
 
 const SEMANTIC_VALUE_LIMIT = 100;
 

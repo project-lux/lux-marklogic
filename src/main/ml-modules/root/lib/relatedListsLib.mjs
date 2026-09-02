@@ -10,17 +10,17 @@ import {
   RELATED_LIST_TIMEOUT,
   TOKEN_RUNTIME_PARAM,
   TRACE_NAME_RELATED_LIST as traceName,
-} from './appConstants.mjs';
-import * as utils from '../utils/utils.mjs';
-import { BadRequestError } from './errorClasses.mjs';
-import { PatternOptions } from './search/PatternOptions.mjs';
-import { getRelatedListConfig } from '../config/relatedListsConfig.mjs';
-import { getRelationName } from '../config/relationNames.mjs';
+} from '/lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
+import { PatternOptions } from '/lib/search/PatternOptions.mjs';
+import { getRelatedListConfig } from '/config/relatedListsConfig.mjs';
+import { getRelationName } from '/config/relationNames.mjs';
 import {
   getInverseSearchTermInfo,
   getSearchTermConfig,
-} from '../config/searchTermsConfig.mjs';
-import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
+} from '/config/searchTermsConfig.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 // Testing of a highly reference concept revealed page lengths between 25 and 15,000 returned within one second
 // of each and that secondary page requests take just as long as primary page requests.  Thus, this maximum is

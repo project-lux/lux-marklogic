@@ -1,4 +1,4 @@
-import * as utils from '../utils/utils.mjs';
+import * as utils from '/utils/utils.mjs';
 
 const AUTO_COMPLETE_CONFIG = {
   agent: {

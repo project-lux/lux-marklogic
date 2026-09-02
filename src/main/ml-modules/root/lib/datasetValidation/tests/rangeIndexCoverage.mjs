@@ -1,6 +1,6 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
-import { TENANT_OWNER } from '../../securityLib.mjs';
-import { invokeAsUnit, sortObj } from '../../../utils/utils.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
+import { TENANT_OWNER } from '/lib/securityLib.mjs';
+import { invokeAsUnit, sortObj } from '/utils/utils.mjs';
 
 const TEST_ID = 'range-index-coverage';
 const DEFAULT_DELTA_THRESHOLD_PERCENT = 10;

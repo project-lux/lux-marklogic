@@ -18,36 +18,36 @@
 import {
   getSearchTermNames,
   getSearchTermConfig,
-} from '../../config/searchTermsConfig.mjs';
-import { isSearchScopeName } from '../searchScope.mjs';
-import * as utils from '../../utils/utils.mjs';
+} from '/config/searchTermsConfig.mjs';
+import { isSearchScopeName } from '/lib/searchScope.mjs';
+import * as utils from '/utils/utils.mjs';
 import {
   DEFAULT_SEARCH_OPTIONS_EXACT,
   DEFAULT_SEARCH_OPTIONS_KEYWORD,
   SEARCH_OPTIONS_INVERSE_MAP,
   SEARCH_OPTIONS_NAME_EXACT,
   SEARCH_OPTIONS_NAME_KEYWORD,
-} from '../appConstants.mjs';
+} from '/lib/appConstants.mjs';
 import {
   InternalServerError,
   InvalidSearchRequestError,
   NotImplementedError,
-} from '../errorClasses.mjs';
-import { SearchTerm } from './SearchTerm.mjs';
-import { SearchTermConfig } from './SearchTermConfig.mjs';
+} from '/lib/errorClasses.mjs';
+import { SearchTerm } from '/lib/search/SearchTerm.mjs';
+import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
 import {
   CHILD_TYPE_ATOMIC,
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
   PATTERN_NAME_INDEXED_VALUE,
   SearchPatternBase,
-} from './patterns/loadPatterns.mjs';
-import { STOP_WORDS } from '../../data/stopWords.mjs';
+} from '/lib/search/patterns/loadPatterns.mjs';
+import { STOP_WORDS } from '/data/stopWords.mjs';
 import {
   createAnalysisResult,
   createGroupNode,
   createLeafNode,
-} from './criteriaNodes.mjs';
+} from '/lib/search/criteriaNodes.mjs';
 //#endregion
 
 //#region Constants

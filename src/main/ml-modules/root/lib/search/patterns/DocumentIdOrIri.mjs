@@ -1,4 +1,7 @@
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 class DocumentIdOrIri extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {

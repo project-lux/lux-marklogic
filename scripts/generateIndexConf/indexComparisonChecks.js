@@ -55,10 +55,10 @@ import * as utils from '/utils/utils.mjs';
 import {
   getConfigurationByContext,
   getContextParameterValues,
-} from '../config/autoCompleteConfig.mjs';
-import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
-import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
+} from '/config/autoCompleteConfig.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
 
 const searchTermsConfig = getSearchTermsConfig();
 

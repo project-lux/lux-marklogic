@@ -1,5 +1,5 @@
-import { convertPartialDateTimeToSeconds } from './dateUtils.mjs';
-import { BadRequestError, NotImplementedError } from '../lib/errorClasses.mjs';
+import { convertPartialDateTimeToSeconds } from '/utils/dateUtils.mjs';
+import { BadRequestError, NotImplementedError } from '/lib/errorClasses.mjs';
 import {
   ENDPOINT_CONSUMER_ROLES_END_WITH,
   FACETS_PREFIX,
@@ -9,7 +9,7 @@ import {
   SEARCH_ESTIMATE_PREFIX,
   RELATED_LIST_PAGE_LENGTH_DEFAULT,
   RELATED_LIST_PER_RELATION_DEFAULT,
-} from '../lib/appConstants.mjs';
+} from '/lib/appConstants.mjs';
 
 function isDefined(value) {
   return value !== undefined && value !== null;

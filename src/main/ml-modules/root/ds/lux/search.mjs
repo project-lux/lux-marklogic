@@ -1,5 +1,5 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { search } from '../../lib/searchLib.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { search } from '/lib/searchLib.mjs';
 
 const searchCriteria = external.q;
 const searchScope = external.scope;

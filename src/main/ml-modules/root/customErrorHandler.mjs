@@ -1,4 +1,4 @@
-import { TRACE_NAME_ERROR } from './lib/appConstants.mjs';
+import { TRACE_NAME_ERROR } from '/lib/appConstants.mjs';
 
 let errorObj =
   external.error != undefined && external.error != null

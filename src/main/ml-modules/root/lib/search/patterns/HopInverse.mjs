@@ -1,16 +1,16 @@
 import op from '/MarkLogic/optic.mjs';
-import { expandPredicates } from '../prefixUtils.mjs';
+import { expandPredicates } from '/lib/search/prefixUtils.mjs';
 import {
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
   SearchPatternBase,
-} from './SearchPatternBase.mjs';
-import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
-import { InternalServerError } from '../../errorClasses.mjs';
-import { SearchTermConfig } from '../SearchTermConfig.mjs';
-import { getSearchTermConfig } from '../../../config/searchTermsConfig.mjs';
-import { getSearchScopeTypes } from '../../searchScope.mjs';
-import { HopBase } from './HopBase.mjs';
+} from '/lib/search/patterns/SearchPatternBase.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+import { InternalServerError } from '/lib/errorClasses.mjs';
+import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
+import { getSearchTermConfig } from '/config/searchTermsConfig.mjs';
+import { getSearchScopeTypes } from '/lib/searchScope.mjs';
+import { HopBase } from '/lib/search/patterns/HopBase.mjs';
 
 class HopInverse extends HopBase {
   apply(scp, searchTerm, logicType, patternOptions) {

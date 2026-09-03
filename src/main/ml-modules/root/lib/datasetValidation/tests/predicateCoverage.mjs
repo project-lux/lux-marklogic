@@ -1,18 +1,18 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
-import { TENANT_OWNER } from '../../securityLib.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
+import { TENANT_OWNER } from '/lib/securityLib.mjs';
 import {
   getSearchScopeNames,
   getSearchScopePredicates,
-} from '../../searchScope.mjs';
-import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
-import { SORT_BINDINGS } from '../../../config/searchResultsSortConfig.mjs';
-import { expandPredicate } from '../../search/prefixUtils.mjs';
+} from '/lib/searchScope.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
+import { expandPredicate } from '/lib/search/prefixUtils.mjs';
 import {
   invokeAsUnit,
   isNonEmptyArray,
   sortObj,
   upToFirstUpperCaseCharacter,
-} from '../../../utils/utils.mjs';
+} from '/utils/utils.mjs';
 
 const TEST_ID = 'predicate-coverage';
 const DEFAULT_DELTA_THRESHOLD_PERCENT = 10;

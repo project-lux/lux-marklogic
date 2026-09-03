@@ -1,5 +1,5 @@
-import { getMatches } from '../../lib/autoComple.mjs';
-import { handleRequest } from '../../lib/securityLib.mjs';
+import { getMatches } from '/lib/autoComple.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
 
 const text = external.text;
 const context = external.context;

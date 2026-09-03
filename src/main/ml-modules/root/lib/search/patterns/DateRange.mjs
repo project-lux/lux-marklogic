@@ -1,7 +1,10 @@
-import { isArray } from '../../../utils/utils.mjs';
-import { convertPartialDateTimeToSeconds } from '../../../utils/dateUtils.mjs';
-import { InternalServerError } from '../../errorClasses.mjs';
-import { SearchPatternBase, CHILD_TYPE_ATOMIC } from './SearchPatternBase.mjs';
+import { isArray } from '/utils/utils.mjs';
+import { convertPartialDateTimeToSeconds } from '/utils/dateUtils.mjs';
+import { InternalServerError } from '/lib/errorClasses.mjs';
+import {
+  SearchPatternBase,
+  CHILD_TYPE_ATOMIC,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 class DateRange extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {

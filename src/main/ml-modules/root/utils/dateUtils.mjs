@@ -1,4 +1,4 @@
-import { BadRequestError } from '../lib/errorClasses.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
 
 const MIN_SUPPORTED_FULL_DATE_IN_SECONDS =
   new Date('-009999-01-01T00:00:00.000Z').getTime() / 1000;

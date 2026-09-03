@@ -1,5 +1,5 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { SearchCriteriaProcessor as SCP } from '../../lib/SearchCriteriaProcessor.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 
 const searchCriteria = external.q;
 const searchScope = external.scope;

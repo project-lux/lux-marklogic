@@ -1,8 +1,11 @@
 import {
   InvalidSearchRequestError,
   InternalServerError,
-} from '../../errorClasses.mjs';
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+} from '/lib/errorClasses.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 // Operators supported by cts.geospatialRegionQuery.
 const REGION_OPERATORS = Object.freeze([

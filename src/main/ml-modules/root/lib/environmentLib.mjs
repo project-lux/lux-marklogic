@@ -3,9 +3,9 @@ import {
   HIGH_STORAGE_WARNING_THRESHOLD,
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
-} from './appConstants.mjs';
-import * as utils from '../utils/utils.mjs';
-import { getSearchScope, getSearchScopeNames } from './searchScope.mjs';
+} from '/lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
+import { getSearchScope, getSearchScopeNames } from '/lib/searchScope.mjs';
 
 const journalSizeThresholdForReserveMb = 10;
 const perJournalReserveMb = 4096;

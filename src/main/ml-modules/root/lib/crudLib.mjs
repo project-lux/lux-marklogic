@@ -1,5 +1,5 @@
-import { applyProfile } from './profileDocLib.mjs';
-import { NotFoundError } from './errorClasses.mjs';
+import { applyProfile } from '/lib/profileDocLib.mjs';
+import { NotFoundError } from '/lib/errorClasses.mjs';
 
 const DEFAULT_LANG = 'en';
 

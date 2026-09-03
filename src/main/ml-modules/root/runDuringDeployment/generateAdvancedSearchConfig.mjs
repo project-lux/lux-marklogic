@@ -1,21 +1,21 @@
-import { SEARCH_TERMS_CONFIG } from '../config/searchTermsConfig.mjs';
+import { SEARCH_TERMS_CONFIG } from '/config/searchTermsConfig.mjs';
 import {
   PATTERN_NAME_KEYWORD,
   SearchPatternBase,
-} from '../lib/search/patterns/loadPatterns.mjs';
+} from '/lib/search/patterns/loadPatterns.mjs';
 import {
   getAllowedSearchOptionsByOptionsName,
   getDefaultSearchOptionsByOptionsName,
-} from '../lib/appConstants.mjs';
-import * as utils from '../utils/utils.mjs';
-import { getOrderedUserInterfaceSearchScopeNames } from '../lib/searchScope.mjs';
-import { SearchTermConfig } from '../lib/search/SearchTermConfig.mjs';
-import { getContextParameterValue } from '../config/autoCompleteConfig.mjs';
+} from '/lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
+import { getOrderedUserInterfaceSearchScopeNames } from '/lib/searchScope.mjs';
+import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
+import { getContextParameterValue } from '/config/autoCompleteConfig.mjs';
 import {
   TENANT_OWNER,
   getEndpointAccessUnitNames,
-} from '../lib/securityLib.mjs';
-import { STOP_WORDS } from '../data/stopWords.mjs';
+} from '/lib/securityLib.mjs';
+import { STOP_WORDS } from '/data/stopWords.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
 console.log(`Generating ${uri}`);
@@ -227,8 +227,8 @@ function constructModuleNode(advancedSearchConfigs) {
  *
  * Generated timestamp: ${new Date()}
  */
-import { getCurrentUserUnitName } from '../lib/securityLib.mjs';
-import { BadRequestError } from '../lib/errorClasses.mjs';
+import { getCurrentUserUnitName } from '/lib/securityLib.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
 
 const ADVANCED_SEARCH_CONFIG = ${JSON.stringify(advancedSearchConfigs)};
 

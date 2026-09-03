@@ -1,5 +1,5 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { scaleOut } from '../../lib/scalingLib.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { scaleOut } from '/lib/scalingLib.mjs';
 
 const dynamicHost = external.dynamicHost;
 

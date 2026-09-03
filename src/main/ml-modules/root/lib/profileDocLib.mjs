@@ -11,8 +11,8 @@
  */
 'use strict';
 
-import * as model from './model.mjs';
-import { TRACE_NAME_PROFILES as traceName } from './appConstants.mjs';
+import * as model from '/lib/model.mjs';
+import { TRACE_NAME_PROFILES as traceName } from '/lib/appConstants.mjs';
 
 /**
  * Pair down a document by the specified profile.  Profiles are predefined and are to serve up a subset of the

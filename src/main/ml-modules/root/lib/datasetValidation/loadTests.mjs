@@ -5,13 +5,13 @@
  */
 
 // Side-effect imports: each test self-registers with DatasetTestBase.
-import './tests/predicateCoverage.mjs';
-import './tests/predicateAlignment.mjs';
-import './tests/rangeIndexCoverage.mjs';
-import './tests/recordTypesByPredicates.mjs';
-import './tests/indexComparison.mjs';
-import './tests/scopeEstimates.mjs';
-import './tests/storageInfo.mjs';
+import '/lib/datasetValidation/tests/predicateCoverage.mjs';
+import '/lib/datasetValidation/tests/predicateAlignment.mjs';
+import '/lib/datasetValidation/tests/rangeIndexCoverage.mjs';
+import '/lib/datasetValidation/tests/recordTypesByPredicates.mjs';
+import '/lib/datasetValidation/tests/indexComparison.mjs';
+import '/lib/datasetValidation/tests/scopeEstimates.mjs';
+import '/lib/datasetValidation/tests/storageInfo.mjs';
 
 // Re-export DatasetTestBase so consumers need only one import.
-export { DatasetTestBase } from './DatasetTestBase.mjs';
+export { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';

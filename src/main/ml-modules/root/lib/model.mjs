@@ -21,9 +21,9 @@ import {
   IDENTIFIERS,
   getLanguageIdentifier,
   hasLanguageIdentifier,
-} from './identifierConstants.mjs';
-import { DataMergeError, InternalServerError } from './errorClasses.mjs';
-import { toArray } from '../utils/utils.mjs';
+} from '/lib/identifierConstants.mjs';
+import { DataMergeError, InternalServerError } from '/lib/errorClasses.mjs';
+import { toArray } from '/utils/utils.mjs';
 
 const LANGUAGE_EN = 'en';
 

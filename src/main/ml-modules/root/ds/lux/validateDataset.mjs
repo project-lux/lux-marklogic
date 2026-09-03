@@ -1,6 +1,6 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { validateDataset } from '../../lib/datasetValidation/datasetValidationLib.mjs';
-import { getObjectFromNode } from '../../utils/utils.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { validateDataset } from '/lib/datasetValidation/datasetValidationLib.mjs';
+import { getObjectFromNode } from '/utils/utils.mjs';
 
 const response = handleRequest(function () {
   return validateDataset({

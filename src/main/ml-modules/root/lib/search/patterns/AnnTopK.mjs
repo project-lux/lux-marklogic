@@ -1,11 +1,14 @@
 import op from '/MarkLogic/optic.mjs';
-import { InvalidSearchRequestError } from '../../errorClasses.mjs';
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
-import { getSearchScopeTypes } from '../../searchScope.mjs';
+import { InvalidSearchRequestError } from '/lib/errorClasses.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
+import { getSearchScopeTypes } from '/lib/searchScope.mjs';
 import {
   ANN_CANDIDATE_K_BUFFER,
   ANN_CANDIDATE_K_MULTIPLIER,
-} from '../../appConstants.mjs';
+} from '/lib/appConstants.mjs';
 
 // Match with src/main/ml-schemas/tde/vectors.json
 const SCHEMA_NAME = 'lux';

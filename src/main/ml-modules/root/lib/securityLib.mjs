@@ -1,18 +1,18 @@
-import { User } from './User.mjs';
+import { User } from '/lib/User.mjs';
 import {
   ENDPOINT_ACCESS_UNIT_NAMES,
   ENDPOINT_CONSUMER_ROLES_END_WITH,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,
   TRACE_NAME_ERROR,
-} from './appConstants.mjs';
+} from '/lib/appConstants.mjs';
 import {
   includesOrEquals,
   isObject,
   removeItemByValueFromArray,
   split,
-} from '../utils/utils.mjs';
-import { BadRequestError, InvalidHostError } from './errorClasses.mjs';
+} from '/utils/utils.mjs';
+import { BadRequestError, InvalidHostError } from '/lib/errorClasses.mjs';
 
 const TENANT_OWNER = ML_APP_NAME;
 

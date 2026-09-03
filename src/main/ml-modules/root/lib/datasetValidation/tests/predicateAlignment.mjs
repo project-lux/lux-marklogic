@@ -1,12 +1,12 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
 import {
   getSearchScopeNames,
   getSearchScopePredicates,
-} from '../../searchScope.mjs';
-import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
-import { SORT_BINDINGS } from '../../../config/searchResultsSortConfig.mjs';
-import { shortenPredicate } from '../../search/prefixUtils.mjs';
-import { isNonEmptyArray } from '../../../utils/utils.mjs';
+} from '/lib/searchScope.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
+import { shortenPredicate } from '/lib/search/prefixUtils.mjs';
+import { isNonEmptyArray } from '/utils/utils.mjs';
 
 const op = require('/MarkLogic/optic');
 

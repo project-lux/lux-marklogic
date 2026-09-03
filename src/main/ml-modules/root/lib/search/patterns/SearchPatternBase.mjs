@@ -1,5 +1,5 @@
-import { InvalidSearchRequestError } from '../../errorClasses.mjs';
-import { SearchPatternInterface } from './SearchPatternInterface.mjs';
+import { InvalidSearchRequestError } from '/lib/errorClasses.mjs';
+import { SearchPatternInterface } from '/lib/search/patterns/SearchPatternInterface.mjs';
 
 const CHILD_TYPE_GROUP = 4;
 const CHILD_TYPE_TERM = 2;

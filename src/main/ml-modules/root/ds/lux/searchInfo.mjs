@@ -1,9 +1,9 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
-import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { SORT_BINDINGS } from '../../config/searchResultsSortConfig.mjs';
-import { SearchCriteriaProcessor as SCP } from '../../lib/SearchCriteriaProcessor.mjs';
-import { SearchTermConfig } from '../../lib/search/SearchTermConfig.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
 
 const response = handleRequest(function () {
   const searchTermsConfig = getSearchTermsConfig();

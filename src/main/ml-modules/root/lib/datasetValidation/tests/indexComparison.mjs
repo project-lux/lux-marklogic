@@ -1,15 +1,15 @@
-import { DatasetTestBase } from '../DatasetTestBase.mjs';
+import { DatasetTestBase } from '/lib/datasetValidation/DatasetTestBase.mjs';
 import {
   getConfigurationByContext,
   getContextParameterValues,
-} from '../../../config/autoCompleteConfig.mjs';
-import { getSearchTermsConfig } from '../../../config/searchTermsConfig.mjs';
-import { SORT_BINDINGS } from '../../../config/searchResultsSortConfig.mjs';
+} from '/config/autoCompleteConfig.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { SORT_BINDINGS } from '/config/searchResultsSortConfig.mjs';
 import {
   getArrayDiff,
   isNonEmptyArray,
   sortObj,
-} from '../../../utils/utils.mjs';
+} from '/utils/utils.mjs';
 
 const TEST_ID = 'index-comparison';
 

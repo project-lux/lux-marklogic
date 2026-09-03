@@ -1,13 +1,13 @@
 import op from '/MarkLogic/optic.mjs';
-import { expandPredicates } from '../prefixUtils.mjs';
-import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
-import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
+import { expandPredicates } from '/lib/search/prefixUtils.mjs';
+import { SEARCH_OPTIONS_NAME_KEYWORD } from '/lib/appConstants.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import {
   CHILD_TYPE_GROUP,
   CHILD_TYPE_TERM,
   SearchPatternBase,
-} from './SearchPatternBase.mjs';
-import { HopBase } from './HopBase.mjs';
+} from '/lib/search/patterns/SearchPatternBase.mjs';
+import { HopBase } from '/lib/search/patterns/HopBase.mjs';
 
 class HopWithField extends HopBase {
   //#region Pattern implementation methods.

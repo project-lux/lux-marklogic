@@ -1,4 +1,4 @@
-import { DatasetTestInterface } from './DatasetTestInterface.mjs';
+import { DatasetTestInterface } from '/lib/datasetValidation/DatasetTestInterface.mjs';
 
 // Test instance registry, populated by each test file's self-registration.
 const REGISTRY = {};

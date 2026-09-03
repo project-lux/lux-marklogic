@@ -1,5 +1,8 @@
-import { SEARCH_OPTIONS_NAME_KEYWORD } from '../../appConstants.mjs';
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+import { SEARCH_OPTIONS_NAME_KEYWORD } from '/lib/appConstants.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 class IndexedWord extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {

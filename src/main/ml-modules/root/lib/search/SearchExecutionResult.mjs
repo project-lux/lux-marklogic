@@ -1,4 +1,4 @@
-import { FacetResponses } from './FacetResponses.mjs';
+import { FacetResponses } from '/lib/search/FacetResponses.mjs';
 
 const SearchExecutionResult = class {
   #searchResults;

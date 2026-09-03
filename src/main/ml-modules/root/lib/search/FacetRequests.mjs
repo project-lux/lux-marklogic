@@ -1,7 +1,7 @@
-import { isDefined } from '../../utils/utils.mjs';
-import { FACETS_CONFIG } from '../../config/facetsConfig.mjs';
-import { SEMANTIC_FACETS_CONFIG } from '../../config/semanticFacetsConfig.mjs';
-import { BadRequestError } from '../../lib/errorClasses.mjs';
+import { isDefined } from '/utils/utils.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
+import { SEMANTIC_FACETS_CONFIG } from '/config/semanticFacetsConfig.mjs';
+import { BadRequestError } from '/lib/errorClasses.mjs';
 
 const FacetRequests = class {
   #page;

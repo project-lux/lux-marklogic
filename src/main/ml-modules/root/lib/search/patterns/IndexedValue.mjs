@@ -1,5 +1,8 @@
-import { SEARCH_OPTIONS_NAME_EXACT } from '../../appConstants.mjs';
-import { CHILD_TYPE_ATOMIC, SearchPatternBase } from './SearchPatternBase.mjs';
+import { SEARCH_OPTIONS_NAME_EXACT } from '/lib/appConstants.mjs';
+import {
+  CHILD_TYPE_ATOMIC,
+  SearchPatternBase,
+} from '/lib/search/patterns/SearchPatternBase.mjs';
 
 class IndexedValue extends SearchPatternBase {
   apply(scp, searchTerm, logicType, patternOptions) {

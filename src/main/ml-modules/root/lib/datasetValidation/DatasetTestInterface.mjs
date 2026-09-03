@@ -1,4 +1,4 @@
-import { NotImplementedError } from '../errorClasses.mjs';
+import { NotImplementedError } from '/lib/errorClasses.mjs';
 
 class DatasetTestInterface {
   getId() {

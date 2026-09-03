@@ -1,21 +1,21 @@
-import { SearchCriteriaProcessor as SCP } from './SearchCriteriaProcessor.mjs';
-import { FacetRequests } from './search/FacetRequests.mjs';
-import { getSearchTermsConfig } from '../../config/searchTermsConfig.mjs';
-import { facetToScopeAndTermName } from '../utils/searchTermUtils.mjs';
-import { FACETS_CONFIG } from '../config/facetsConfig.mjs';
-import { SEMANTIC_FACETS_CONFIG } from '../config/semanticFacetsConfig.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
+import { FacetRequests } from '/lib/search/FacetRequests.mjs';
+import { getSearchTermsConfig } from '/config/searchTermsConfig.mjs';
+import { facetToScopeAndTermName } from '/utils/searchTermUtils.mjs';
+import { FACETS_CONFIG } from '/config/facetsConfig.mjs';
+import { SEMANTIC_FACETS_CONFIG } from '/config/semanticFacetsConfig.mjs';
 import {
   AS_TYPE_ORDERED_COLLECTION,
   AS_TYPE_ORDERED_COLLECTION_PAGE,
   LUX_CONTEXT,
   TRACE_NAME_FACETS as traceName,
-} from './appConstants.mjs';
-import * as utils from '../utils/utils.mjs';
+} from '/lib/appConstants.mjs';
+import * as utils from '/utils/utils.mjs';
 import {
   BadRequestError,
   InternalServerError,
   InvalidSearchRequestError,
-} from './errorClasses.mjs';
+} from '/lib/errorClasses.mjs';
 
 //#region Exported functions
 function getFacet({

@@ -1,10 +1,10 @@
 import op from '/MarkLogic/optic.mjs';
-import { SearchCriteriaProcessor as SCP } from '../../SearchCriteriaProcessor.mjs';
+import { SearchCriteriaProcessor as SCP } from '/lib/SearchCriteriaProcessor.mjs';
 import {
   formatPredicatesForSPARQL,
   getPrefixesForSPARQL,
-} from '../prefixUtils.mjs';
-import { SearchPatternBase } from './SearchPatternBase.mjs';
+} from '/lib/search/prefixUtils.mjs';
+import { SearchPatternBase } from '/lib/search/patterns/SearchPatternBase.mjs';
 
 class HopBase extends SearchPatternBase {
   // Approach: embeds field plan's results into SPARQL.  Proven over 3x faster in 12.0.1 than

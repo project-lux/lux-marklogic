@@ -1,6 +1,6 @@
-import { getObjectFromNode } from '../../utils/utils.mjs';
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { determineIfSearchWillMatch } from '../../lib/searchLib.mjs';
+import { getObjectFromNode } from '/utils/utils.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { determineIfSearchWillMatch } from '/lib/searchLib.mjs';
 
 const multipleSearchCriteria = getObjectFromNode(external.q);
 

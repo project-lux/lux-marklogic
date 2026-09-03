@@ -1,5 +1,5 @@
-import { handleRequest } from '../../lib/securityLib.mjs';
-import { getFacet } from '../../lib/facetsLib.mjs';
+import { handleRequest } from '/lib/securityLib.mjs';
+import { getFacet } from '/lib/facetsLib.mjs';
 
 const name = external.name;
 const searchCriteria = external.q;

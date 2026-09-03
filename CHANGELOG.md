@@ -2,7 +2,11 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
-## v4.2.0 - Unreleased
+## v4.2.1 - 2026-9-3
+### Changed
+- Changed every remaining relative module import specifier to an absolute path (rooted at the modules database root), throughout `src/main/ml-modules/root` and `scripts/generateIndexConf/indexComparisonChecks.js`.  Relative specifiers fail intermittently on the new server-side JavaScript engine, which does not retain the importing module's directory.
+
+## v4.2.0 - 2026-8-27
 ### Removed
 - Removed My Collections functionality. Including OAuth authorization, tenant status, CRUD operations other than read, related tests, and related documentation ([#735](https://github.com/project-lux/lux-marklogic/issues/735))
 - Removed the `ampAsAdmin` performance optimization and the `unitName` request parameter it depended on (across `search`, `facets`, `relatedList`, `searchEstimate`, `searchWillMatch`, `advancedSearchConfig`, `autoComplete`, `document/read`, `searchInfo`, and `stats`), along with the now-unused `libWrapper.mjs`/`EndpointConfig` build and security scaffolding that only existed to support it. This is a breaking API change for any caller currently passing `unitName`. ([#736](https://github.com/project-lux/lux-marklogic/issues/736))
@@ -11,7 +15,6 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## v4.1.1 - Unreleased
 ### Changed
 - Changed the relative paths to absolute paths for instances of environmentLib.mjs
-- Changed every remaining relative module import specifier to an absolute path (rooted at the modules database root), throughout `src/main/ml-modules/root` and `scripts/generateIndexConf/indexComparisonChecks.js`.  Relative specifiers fail intermittently on the new server-side JavaScript engine, which does not retain the importing module's directory.
 
 ## v4.1.0 - 2026-08-17
 ### Removed

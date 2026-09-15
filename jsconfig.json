@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "/*": ["./src/main/ml-modules/root/*", "./src/test/ml-modules/root/*"]
+    },
+    "allowJs": true,
+    "checkJs": false
+  }
+}

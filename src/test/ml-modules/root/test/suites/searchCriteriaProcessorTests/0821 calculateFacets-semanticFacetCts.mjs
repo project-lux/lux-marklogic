@@ -34,9 +34,9 @@ if (!seedItemExists || !seedSetExists) {
 
   const scenarios = [
     {
-      name: 'responsibleCollections via CTS path returns set URI as facet value',
+      name: 'itemResponsibleCollections via CTS path returns set URI as facet value',
       input: {
-        facetName: 'responsibleCollections',
+        facetName: 'itemResponsibleCollections',
         scopedCtsQuery,
       },
       expected: {

@@ -37,10 +37,10 @@ const scenarios = [
     name: 'Path 1: semantic facet with scopedCtsQuery uses semanticFacetViaCts',
     input: {
       rows: [{ id: '/test/doc/1' }],
-      facetName: 'responsibleCollections',
+      facetName: 'itemResponsibleCollections',
       facetRequests: new FacetRequests(1, 20).addFacetRequest(
         'item',
-        'responsibleCollections',
+        'itemResponsibleCollections',
       ),
       scopedCtsQuery: cts.trueQuery(),
     },
@@ -117,10 +117,10 @@ const scenarios = [
     name: 'Single request with mixed facets yields semantic=2 and nonSemantic=2',
     input: {
       rows: [{ id: '/test/doc/1' }],
-      facetName: 'responsibleCollections',
+      facetName: 'itemResponsibleCollections',
       facetRequests: new FacetRequests(1, 20)
-        .addFacetRequest('item', 'responsibleCollections')
-        .addFacetRequest('item', 'responsibleUnits')
+        .addFacetRequest('item', 'itemResponsibleCollections')
+        .addFacetRequest('item', 'itemResponsibleUnits')
         .addFacetRequest('item', 'itemRecordType')
         .addFacetRequest('item', 'itemHasDigitalImage'),
       scopedCtsQuery: cts.trueQuery(),
@@ -138,10 +138,10 @@ const scenarios = [
     name: 'Semantic counter is 2 for multi-facet CTS semantic request',
     input: {
       rows: [{ id: '/test/doc/1' }],
-      facetName: 'responsibleCollections',
+      facetName: 'itemResponsibleCollections',
       facetRequests: new FacetRequests(1, 20)
-        .addFacetRequest('item', 'responsibleCollections')
-        .addFacetRequest('item', 'responsibleUnits'),
+        .addFacetRequest('item', 'itemResponsibleCollections')
+        .addFacetRequest('item', 'itemResponsibleUnits'),
       scopedCtsQuery: cts.trueQuery(),
     },
     expected: {

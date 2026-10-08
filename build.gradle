@@ -401,12 +401,23 @@ task enableSSL(type: com.marklogic.gradle.task.MarkLogicTask) {
     certManager.save(builtInAppCert())
     certManager.save(luxAppCert())
 
+    // Certificate identity, e.g.:
+    //   ./gradlew enableSSL -PcertIp=10.5.157.68 -PcertHostname=ip-10-5-157-68.its.yale.edu
+    // CN = certIp (falls back to certHostname, then localhost); SANs = DNS:localhost + IP:certIp (if given)
+    def certIp = project.findProperty("certIp")
+    def certHostname = project.findProperty("certHostname")
+    def certCommonName = certIp ?: certHostname ?: "localhost"
+    println "Generating temporary certificates: CN=${certCommonName}, DNS SAN=localhost, IP SAN=${certIp ?: '(none)'}"
+
     def gtcc = new com.marklogic.appdeployer.command.security.GenerateTemporaryCertificateCommand();
+    gtcc.setCommonName(certCommonName);
+    gtcc.setDnsName("localhost");
+    if (certIp) {
+      gtcc.setIpAddress(certIp);
+    }
     gtcc.setTemplateIdOrName("built-in-app-cert");
-    gtcc.setCommonName("localhost");
     gtcc.execute(new com.marklogic.appdeployer.command.CommandContext(getAppConfig(), manageClient, adminManager));
     gtcc.setTemplateIdOrName("lux-app-cert");
-    gtcc.setCommonName("localhost");
     gtcc.execute(new com.marklogic.appdeployer.command.CommandContext(getAppConfig(), manageClient, adminManager));
 
     adminConfig = getProject().property("mlAdminConfig")

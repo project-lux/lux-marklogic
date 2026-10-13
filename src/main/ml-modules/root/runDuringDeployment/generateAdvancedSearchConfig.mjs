@@ -11,10 +11,7 @@ import * as utils from '/utils/utils.mjs';
 import { getOrderedUserInterfaceSearchScopeNames } from '/lib/searchScope.mjs';
 import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
 import { getContextParameterValue } from '/config/autoCompleteConfig.mjs';
-import {
-  TENANT_OWNER,
-  getEndpointAccessUnitNames,
-} from '/lib/securityLib.mjs';
+import { TENANT_OWNER, getEndpointAccessUnitNames } from '/lib/securityLib.mjs';
 import { STOP_WORDS } from '/data/stopWords.mjs';
 
 const uri = '/config/advancedSearchConfig.mjs';
@@ -135,12 +132,9 @@ const advancedSearchConfigs = {};
           const hasLabel = termConfig.hasLabel();
           const hasHelpText = termConfig.hasHelpText();
           if (
-            [
-              'classificationOfReference',
-              'iri',
-              'recordType',
-              'subject',
-            ].includes(termName) &&
+            ['classificationOfReference', 'iri', 'subject'].includes(
+              termName,
+            ) &&
             (!hasLabel || !hasHelpText)
           ) {
             add = false;

@@ -3,6 +3,8 @@
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
 ## v4.4.0 - Unreleased
+### Added
+- Added transitive search terms to the advanced search configuration ([#744](https://github.com/project-lux/lux-marklogic/issues/744))
 
 ## v4.2.1 - 2026-9-3
 ### Changed

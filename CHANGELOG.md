@@ -6,6 +6,9 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ### Added
 - Added transitive search terms to the advanced search configuration ([#744](https://github.com/project-lux/lux-marklogic/issues/744))
 
+### Changed
+- Changed the transitive query functionality ([#743](https://github.com/project-lux/lux-marklogic/issues/743))
+
 ### Removed
 - Removed "similar to" advanced search term ([#751](https://github.com/project-lux/lux-marklogic/issues/751))
 

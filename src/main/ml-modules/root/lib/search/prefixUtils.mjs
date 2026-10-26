@@ -1,4 +1,5 @@
 const sem = require('/MarkLogic/semantics.xqy');
+const { MAX_HOPS } = require('../appConstants.mjs');
 
 const PREFIX_MAPPINGS = {
   crm: 'http://www.cidoc-crm.org/cidoc-crm/',
@@ -29,7 +30,7 @@ function formatPredicatesForSPARQL(predicates, transitive = true) {
   const individuals = transitive
     ? predicates.map((predicate) => {
         // Omit + only if we decide to optimize the single-predicate case later.
-        return predicate.concat('+');
+        return predicate.concat(`{1,${MAX_HOPS}}`);
       })
     : predicates;
   return `(${individuals.join(' | ')})`;

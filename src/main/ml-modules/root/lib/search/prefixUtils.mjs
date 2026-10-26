@@ -1,5 +1,5 @@
 const sem = require('/MarkLogic/semantics.xqy');
-const { MAX_HOPS } = require('../appConstants.mjs');
+import { MAX_HOPS } from '/lib/appConstants.mjs';
 
 const PREFIX_MAPPINGS = {
   crm: 'http://www.cidoc-crm.org/cidoc-crm/',

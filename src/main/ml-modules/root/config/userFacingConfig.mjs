@@ -158,11 +158,11 @@ const searchTermText = {
       helpText:
         'Search People & Groups by the date on which they were born or formed.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText:
-        'Search for People & Groups that are similar to the specified People & Groups.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText:
+    //     'Search for People & Groups that are similar to the specified People & Groups.',
+    // },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -181,9 +181,14 @@ const searchTermText = {
   },
   concept: {
     broader: {
-      label: 'are narrower in scope than',
+      label: 'are children of',
       helpText:
-        'Search for Concept terms that are hierarchically narrower than the specified broader term.',
+        'Search for Concept terms that are children of the specified broader term.',
+    },
+    'broader+': {
+      label: 'are descendants of',
+      helpText:
+        'Search for all Concept terms that are descendants of the specified broader term.',
     },
     classification: {
       label: 'are categorized as',
@@ -285,9 +290,14 @@ const searchTermText = {
         'Enter term(s) to be found within the title or name of the Concept or Type. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
     },
     narrower: {
-      label: 'are broader in scope than',
+      label: 'are parents of',
       helpText:
-        'Search for Concept terms that are hierarchically broader than the specified narrower term.',
+        'Search for Concept terms that are parents of the specified narrower term.',
+    },
+    'narrower+': {
+      label: 'are ancestors of',
+      helpText:
+        'Search for all Concept terms that are ancestors of the specified narrower term.',
     },
     nationalityOf: {
       label: 'are the nationality of',
@@ -309,11 +319,11 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Measurement Unit", "Language", "Material", "Currency" or a "General Concept". Measurement Units are Concepts that are used as the unit of a measurement, such as inches, seconds, kilograms or bytes. Languages are Concepts that represent human-spoken languages, such as English, Spanish or Latin. Materials are Concepts that represent a class of physical material, such as bronze, paper, or agate. Currencies are Concepts that represent monetary currencies, such as dollars, euros, or francs. General Concepts are Concepts that represent more general ideas or subjects, which excludes the more specific classes of Measurement Unit, Language, Material, and Currency.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText:
-        'Search for Concept & Type that are similar to the specified Concept & Type.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText:
+    //     'Search for Concept & Type that are similar to the specified Concept & Type.',
+    // },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -383,10 +393,10 @@ const searchTermText = {
       label: 'started on',
       helpText: 'Search for Events by the date on which they started.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText: 'Search for Events that are similar to the specified Events.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText: 'Search for Events that are similar to the specified Events.',
+    // },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -513,10 +523,10 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Physical Object" or a "Digital Object". Physical Objects are physical items, such as paintings, sculptures, fossils and other specimens, and archival objects. Individual physical copies of books are included in this class. Digital Object are digital items, such as internet resources (datasets, e-books, and other digital files). Digitized images of collection items that are physical objects can be found with the “Is Online” facet on Physical Objects.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText: 'Search for Objects that are similar to the specified Objects.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText: 'Search for Objects that are similar to the specified Objects.',
+    // },
     subjectOfWork: {
       label: 'are the subject of',
       helpText:
@@ -550,7 +560,11 @@ const searchTermText = {
         'Search for Places that are categorized with the specified Concept or Type terms.',
     },
     contains: {
-      label: 'contain',
+      label: 'directly contain',
+      helpText: 'Search for Places that directly contain the specified Places',
+    },
+    'contains+': {
+      label: 'contain anywhere',
       helpText: 'Search for Places that contain the specified Places.',
     },
     createdHere: {
@@ -591,8 +605,14 @@ const searchTermText = {
         'Enter term(s) to be found within the title or name of the Place. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
     },
     partOf: {
-      label: 'are within',
-      helpText: 'Search for Places that are within the specified Place.',
+      label: 'are directly within',
+      helpText:
+        'Search for Places that are directly within the specified Place.',
+    },
+    'partOf+': {
+      label: 'are anywhere within',
+      helpText:
+        'Search for Places that are anywhere within the specified Place.',
     },
     placeOfEvent: {
       label: 'are the location of',
@@ -611,10 +631,10 @@ const searchTermText = {
       helpText:
         'Search for Places where the specified Collections were published.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText: 'Search for Places that are similar to the specified Places.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText: 'Search for Places that are similar to the specified Places.',
+    // },
     startPlaceOfAgent: {
       label: 'are the location of birth or formation of',
       helpText: 'Search for Places where People & Groups were born or formed.',
@@ -697,9 +717,14 @@ const searchTermText = {
       helpText: 'Search for Collections that contain the specified Objects.',
     },
     containingSet: {
-      label: 'contain',
+      label: 'directly contain',
       helpText:
-        'Search for Collections that contain the specified Collections.',
+        'Search for Collections that contain the specified Collections within one level.',
+    },
+    'containingSet+': {
+      label: 'contain anywhere',
+      helpText:
+        'Search for all Collections that contain the specified Collections.',
     },
     curatedBy: {
       label: 'are curated by',
@@ -722,9 +747,14 @@ const searchTermText = {
         'Search for Collections by a string identifier or an external authority URI, such as VIAF or wikidata.',
     },
     memberOf: {
-      label: 'are a member of',
+      label: 'are directly within',
       helpText:
-        'Search for Collections that are hierarchically within the specified Collection.',
+        'Search for Collections that are directly within the specified Collection.',
+    },
+    'memberOf+': {
+      label: 'are anywhere within',
+      helpText:
+        'Search for all Collections that are anywhere within the specified Collection.',
     },
     name: {
       label: 'are named',
@@ -746,11 +776,11 @@ const searchTermText = {
       helpText:
         'Search for Collections by the date on which they were published. Note the difference with Creation Date, which is when the collection was originally conceived by its creator.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText:
-        'Search for Collections that are similar to the specified Collections.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText:
+    //     'Search for Collections that are similar to the specified Collections.',
+    // },
     text: {
       label: 'contain, anywhere in the record',
       helpText:
@@ -883,10 +913,10 @@ const searchTermText = {
       helpText:
         'Search for records categorized as either a "Visual Work" or a "Textual Work. Visual Works are Works that are primarily visual, such as the images shown by paintings or photographs, sculptures, or other non language oriented creative expressions. Textual Works are Works that are primarily textual or otherwise convey information via human language. An Object may include both visual and textual works, such as a poster with graphics and text. In addition, Textual Works encompasses most items from the Library collections, including posters, artworks, musical scores, video and sound recordings.',
     },
-    similar: {
-      label: 'are similar to',
-      helpText: 'Search for Works that are similar to the specified Works.',
-    },
+    // similar: {
+    //   label: 'are similar to',
+    //   helpText: 'Search for Works that are similar to the specified Works.',
+    // },
     subjectOfWork: {
       label: 'are the subject of',
       helpText: 'Search for Works that are the subject of the specified Works.',

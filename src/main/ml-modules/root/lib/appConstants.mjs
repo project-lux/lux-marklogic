@@ -6,6 +6,8 @@ const ML_ADMIN_PORT = parseInt('%%mlAdminPort%%'.trim());
 const ENDPOINT_ACCESS_UNIT_NAMES = '%%endpointAccessUnitNames%%'.trim();
 const ENDPOINT_CONSUMER_ROLES_END_WITH = '-endpoint-consumer';
 
+const MAX_HOPS = 20;
+
 // Unit test-related constants are primarily used to prevent use of a function
 // that allows the caller to specify the endpoint configuration to apply.
 const UNIT_TEST_ENDPOINT = '/test/default.xqy';
@@ -207,6 +209,7 @@ export {
   LOW_STORAGE_CRITICAL_THRESHOLD,
   LOW_STORAGE_WARNING_THRESHOLD,
   LUX_CONTEXT,
+  MAX_HOPS,
   ML_ADMIN_PORT,
   ML_APP_NAME,
   PRIVILEGES_PREFIX,

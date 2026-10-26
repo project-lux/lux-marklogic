@@ -2,6 +2,16 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v4.4.0 - 2026-10-26
+### Added
+- Added transitive search terms to the advanced search configuration ([#744](https://github.com/project-lux/lux-marklogic/issues/744))
+
+### Changed
+- Changed the transitive query functionality ([#743](https://github.com/project-lux/lux-marklogic/issues/743))
+
+### Removed
+- Removed "similar to" advanced search term ([#751](https://github.com/project-lux/lux-marklogic/issues/751))
+
 ## v4.2.1 - 2026-9-3
 ### Changed
 - Changed every remaining relative module import specifier to an absolute path (rooted at the modules database root), throughout `src/main/ml-modules/root` and `scripts/generateIndexConf/indexComparisonChecks.js`.  Relative specifiers fail intermittently on the new server-side JavaScript engine, which does not retain the importing module's directory.

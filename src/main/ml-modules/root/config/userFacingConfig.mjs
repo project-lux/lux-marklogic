@@ -181,14 +181,14 @@ const searchTermText = {
   },
   concept: {
     broader: {
-      label: 'are parents of',
+      label: 'are children of',
       helpText:
-        'Search for Concept terms that are parents of the specified narrower term.',
+        'Search for Concept terms that are children of the specified broader term.',
     },
-    "broader+": {
-      label: 'are ancestors',
+    'broader+': {
+      label: 'are descendants of',
       helpText:
-        'Search for all Concept terms that are ancestors of the specified narrower term.',
+        'Search for all Concept terms that are descendants of the specified broader term.',
     },
     classification: {
       label: 'are categorized as',
@@ -229,16 +229,6 @@ const searchTermText = {
       label: 'are the category of',
       helpText:
         'Search for Concept and Type terms that are the category of the specified Works.',
-    },
-    contains: {
-      label: 'are children of',
-      helpText:
-        'Search for Concept terms that are children of the specified broader term.',
-    },
-    "contains+": {
-      label: 'are descendants of',
-      helpText:
-        'Search for all Concept terms that are descendents of the specified broader term.',
     },
     genderOf: {
       label: 'are the gender of',
@@ -300,9 +290,14 @@ const searchTermText = {
         'Enter term(s) to be found within the title or name of the Concept or Type. "AND", "OR", and "-" do not have special meaning in Advanced Search as they do in Simple Search. Instead use multiple fields connected with "have All of", "have Any of", and "have None of" respectively.',
     },
     narrower: {
-      label: 'are broader in scope than',
+      label: 'are parents of',
       helpText:
-        'Search for Concept terms that are hierarchically broader than the specified narrower term.',
+        'Search for Concept terms that are parents of the specified narrower term.',
+    },
+    'narrower+': {
+      label: 'are ancestors of',
+      helpText:
+        'Search for all Concept terms that are ancestors of the specified narrower term.',
     },
     nationalityOf: {
       label: 'are the nationality of',
@@ -568,7 +563,7 @@ const searchTermText = {
       label: 'directly contain',
       helpText: 'Search for Places that directly contain the specified Places',
     },
-    "contains+": {
+    'contains+': {
       label: 'contain anywhere',
       helpText: 'Search for Places that contain the specified Places.',
     },
@@ -611,11 +606,13 @@ const searchTermText = {
     },
     partOf: {
       label: 'are directly within',
-      helpText: 'Search for Places that are directly within the specified Place.',
+      helpText:
+        'Search for Places that are directly within the specified Place.',
     },
-    "partOf+": {
+    'partOf+': {
       label: 'are anywhere within',
-      helpText: 'Search for Places that are anywhere within the specified Place.',
+      helpText:
+        'Search for Places that are anywhere within the specified Place.',
     },
     placeOfEvent: {
       label: 'are the location of',
@@ -724,7 +721,7 @@ const searchTermText = {
       helpText:
         'Search for Collections that contain the specified Collections within one level.',
     },
-    "containingSet+": {
+    'containingSet+': {
       label: 'contain anywhere',
       helpText:
         'Search for all Collections that contain the specified Collections.',
@@ -754,7 +751,7 @@ const searchTermText = {
       helpText:
         'Search for Collections that are directly within the specified Collection.',
     },
-    "memberOf+": {
+    'memberOf+': {
       label: 'are anywhere within',
       helpText:
         'Search for all Collections that are anywhere within the specified Collection.',

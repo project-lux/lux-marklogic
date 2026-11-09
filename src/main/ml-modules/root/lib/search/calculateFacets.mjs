@@ -21,7 +21,7 @@ import {
 } from '/lib/errorClasses.mjs';
 import { FacetResponses } from '/lib/search/FacetResponses.mjs';
 
-const SEMANTIC_VALUE_LIMIT = 100;
+const SEMANTIC_VALUE_LIMIT = 500;
 
 // Main entry point. Called by performSearch in engine.mjs.
 //

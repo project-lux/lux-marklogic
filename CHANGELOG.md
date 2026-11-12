@@ -3,6 +3,8 @@
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
 ## v4.6.0 - Unreleased
+### Added
+- Added collection and unit facets to sets ([#461](https://github.com/project-lux/lux-marklogic/issues/461))
 
 ## v4.5.0 - 2026-11-09
 ### Fixed
@@ -31,6 +33,12 @@ All changes to the MarkLogic (backend) portion of LUX capable of impacting the r
 ## v4.1.1 - Unreleased
 ### Changed
 - Changed the relative paths to absolute paths for instances of environmentLib.mjs
+
+### Added
+- Added Collection and Responsible Unit facets for Collection results ([#461](https://github.com/project-lux/lux-marklogic/issues/461))
+
+### Removed
+- Removed the Part Of facet for Collection results ([#461](https://github.com/project-lux/lux-marklogic/issues/461))
 
 ## v4.1.0 - 2026-08-17
 ### Removed

@@ -22,10 +22,10 @@ if (!seedExists) {
 } else {
   const scenarios = [
     {
-      name: 'responsibleUnits returns unit IRI as facet value',
+      name: 'itemResponsibleUnits returns unit IRI as facet value',
       input: {
         rows: [{ id: FACET_ITEM_URI }],
-        facetName: 'responsibleUnits',
+        facetName: 'itemResponsibleUnits',
       },
       expected: {
         error: false,

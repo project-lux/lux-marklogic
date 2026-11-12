@@ -2,6 +2,8 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v4.6.0 - Unreleased
+
 ## v4.5.0 - 2026-11-09
 ### Fixed
 - Fixed missing semantic facet values because the limit of potential semantic facet values was set too low. Increased from 100 to 500. ([#760](https://github.com/project-lux/lux-marklogic/issues/760))

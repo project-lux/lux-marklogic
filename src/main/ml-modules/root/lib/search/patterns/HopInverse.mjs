@@ -11,6 +11,7 @@ import { SearchTermConfig } from '/lib/search/SearchTermConfig.mjs';
 import { getSearchTermConfig } from '/config/searchTermsConfig.mjs';
 import { getSearchScopeTypes } from '/lib/searchScope.mjs';
 import { HopBase } from '/lib/search/patterns/HopBase.mjs';
+import { IRI_DOES_NOT_EXIST } from '/lib/appConstants.mjs';
 
 class HopInverse extends HopBase {
   apply(scp, searchTerm, logicType, patternOptions) {
@@ -40,6 +41,37 @@ class HopInverse extends HopBase {
       return this.#processValuesOnly(scp, searchTerm, patternOptions);
     }
 
+    // When inner criteria resolves to pure CTS, resolve the hop entirely in
+    // CTS: collect the objects of matching triples from documents satisfying
+    // the inner query, then constrain this scope's documents to those IRIs
+    // (document URIs are IRIs). Contributing a ctsConstraint (rather than a
+    // patternJoin) keeps the accumulator join-free so ancestors can fold to
+    // CTS and the search can take the cts.search execution path. Mirrors the
+    // v2.5.0 CTS implementation of this pattern.
+    const innerCts = scp.processNestedCriteriaAsCts({
+      planCriteria: searchTerm.getCriteria(),
+      planScope: termConfig.getTargetScopeName(),
+      patternOptions: SCP.initializePatternOptions(),
+      parentId: id,
+    });
+    if (innerCts) {
+      const eagerEvaluation = patternOptions.getEagerEvaluation(true);
+      const objectIris = new Set();
+      for (const t of cts.triples(
+        [],
+        predicates,
+        [],
+        '=',
+        [eagerEvaluation ? 'eager' : 'lazy', 'concurrent'],
+        innerCts,
+      )) {
+        objectIris.add(fn.string(sem.tripleObject(t)));
+      }
+      // Never pass an empty list to cts.documentQuery.
+      objectIris.add(IRI_DOES_NOT_EXIST);
+      return { ctsConstraints: [cts.documentQuery([...objectIris])] };
+    }
+
     const tri = op.fromTriples([
       op.pattern(
         op.col(id + '_s'),
@@ -48,28 +80,6 @@ class HopInverse extends HopBase {
         op.fragmentIdCol(triFragCol),
       ),
     ]);
-
-    // Opt 24: when inner criteria resolves to pure CTS, apply it as .where()
-    // directly on fromTriples instead of building a fromLexicons plan and
-    // joining on fragment. Eliminates the intermediate IRI lexicon scan
-    // (~43.9M rows) that dominates multi-hop query cost.
-    const innerCts = scp.processNestedCriteriaAsCts({
-      planCriteria: searchTerm.getCriteria(),
-      planScope: termConfig.getTargetScopeName(),
-      patternOptions: SCP.initializePatternOptions(),
-      parentId: id,
-    });
-    if (innerCts) {
-      return {
-        patternJoins: [
-          {
-            right: tri.where(innerCts),
-            on: op.on(op.col(parentIriCol), op.col(id + '_o')),
-            extraCols: [],
-          },
-        ],
-      };
-    }
 
     // Fallback: Optic join path (when inner criteria requires joins).
     const right = tri.joinInner(

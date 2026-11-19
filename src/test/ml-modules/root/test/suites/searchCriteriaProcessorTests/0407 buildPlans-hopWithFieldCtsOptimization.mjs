@@ -102,20 +102,39 @@ const scenarios = [
     },
   },
 
-  // --- Optimization does NOT fire ---
-  // Note: HopWithField rejects atomic values (getAllowedChildren excludes
-  // CHILD_TYPE_ATOMIC), so there is no atomic-value fallback to test.
   {
-    name: 'Inner criteria with HopInverse term falls back to Optic join',
+    name: 'Inner criteria with pure-CTS HopInverse term emits tripleRangeQuery',
     input: {
       scopeName: 'work',
       searchCriteria: {
         _scope: 'work',
         // narrower is a HopInverse pattern in concept scope (inverse of
-        // broader). HopInverse always returns patternJoins, so the inner
-        // accumulator is not pure CTS → processNestedCriteriaAsCts returns
-        // null → Optic fallback fires.
+        // broader). Its inner criteria is pure CTS, so HopInverse emits a
+        // cts.documentQuery ctsConstraint → the inner accumulator is pure
+        // CTS → HopWithField's CTS optimization fires.
         classification: { narrower: { name: 'painting' } },
+      },
+    },
+    expected: {
+      error: false,
+      planContains: ['cts.tripleRangeQuery', 'workClassifiedAs'],
+      planExcludes: ['op.fromTriples'],
+    },
+  },
+
+  // --- Optimization does NOT fire ---
+  // Note: HopWithField rejects atomic values (getAllowedChildren excludes
+  // CHILD_TYPE_ATOMIC), so there is no atomic-value fallback to test.
+  {
+    name: 'Inner criteria with Optic-only HopInverse term falls back to Optic join',
+    input: {
+      scopeName: 'work',
+      searchCriteria: {
+        _scope: 'work',
+        // narrower's inner criteria uses a transitive term (broader+), which
+        // returns patternJoins → narrower cannot resolve to CTS and falls back
+        // to its Optic join → classification falls back to Optic too.
+        classification: { narrower: { 'broader+': { name: 'painting' } } },
       },
     },
     expected: {

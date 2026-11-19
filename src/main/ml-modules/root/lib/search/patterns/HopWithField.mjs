@@ -66,10 +66,8 @@ class HopWithField extends HopBase {
     // When criteria is nested, attempt to resolve the inner criteria as a pure
     // CTS query. If successful, emit cts.tripleRangeQuery with cts.values to
     // resolve object IRIs — avoiding the Optic fromTriples join entirely.
-    // When the inner criteria matches too many documents, the materialized IRIs
-    // bloat the plan AST and cause expensive optimizer traversal on cold start.
-    // In that case, fall through to the Optic join path which keeps the plan
-    // AST small at the cost of a runtime join.
+    // The Optic join below is used only when the inner criteria cannot be
+    // expressed as pure CTS (processNestedCriteriaAsCts returns null).
     if (!termValue) {
       const innerCts = scp.processNestedCriteriaAsCts({
         planCriteria: searchTerm.getCriteria(),

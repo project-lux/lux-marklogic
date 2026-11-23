@@ -2,6 +2,10 @@
 
 All changes to the MarkLogic (backend) portion of LUX capable of impacting the runtime experience will be documented in this file.  These are to include software, configuration, and environment changes.
 
+## v4.6.0 - 2026-11-23
+### Fixed
+- Added a CTS-first implementation for Hop Inverse terms. Without it, this hindered performance and caused timeouts on queries that were expected to return successfully. ([#765](https://github.com/project-lux/lux-marklogic/issues/765))
+
 ## v4.5.0 - 2026-11-09
 ### Fixed
 - Fixed missing semantic facet values because the limit of potential semantic facet values was set too low. Increased from 100 to 500. ([#760](https://github.com/project-lux/lux-marklogic/issues/760))

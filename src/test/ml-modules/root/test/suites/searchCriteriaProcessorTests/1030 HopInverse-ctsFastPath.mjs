@@ -1,11 +1,13 @@
 /**
- * Tests HopInverse.apply() Opt 24 CTS fast path.
+ * Tests HopInverse.apply() CTS fast path.
  *
  * When inner criteria resolves to pure CTS (processNestedCriteriaAsCts
- * returns non-null), HopInverse applies .where(innerCts) directly on
- * fromTriples instead of building a fromLexicons plan and fragment-joining.
+ * returns non-null), HopInverse resolves the hop with cts.triples and
+ * contributes a cts.documentQuery ctsConstraint (no Optic join). Otherwise
+ * it falls back to an Optic fromTriples + fromLexicons fragment join.
  *
- * Does not execute searches against the content database.
+ * The CTS fast path calls cts.triples against the content database; the mock
+ * inner query matches no triples, so only the sentinel IRI is expected.
  */
 
 import { testHelperProxy } from '/test/test-helper.mjs';
@@ -14,6 +16,7 @@ import { SearchPatternBase } from '/lib/search/patterns/SearchPatternBase.mjs';
 import { PatternOptions } from '/lib/search/PatternOptions.mjs';
 import '/lib/search/patterns/HopInverse.mjs';
 import op from '/MarkLogic/optic.mjs';
+import { IRI_DOES_NOT_EXIST } from '/lib/appConstants.mjs';
 
 const LIB = '1030 HopInverse-ctsFastPath.mjs';
 console.log(`${LIB}: starting.`);
@@ -78,35 +81,14 @@ function mockScpFallback() {
 }
 
 const scenarios = [
-  // --- CTS fast path (Opt 24) ---
+  // --- CTS fast path ---
   {
-    name: 'CTS fast path: plan uses fromTriples with .where(), no fromLexicons',
+    name: 'CTS fast path: returns a documentQuery ctsConstraint, no patternJoins',
     input: { scp: mockScpWithCts() },
     expected: {
       error: false,
-      hasPatternJoins: true,
-      planContains: ['fromTriples', 'member_of', 'documentQuery'],
-      planExcludes: ['fromLexicons'],
-    },
-  },
-  {
-    name: 'CTS fast path: no fragment join columns in the plan',
-    input: { scp: mockScpWithCts() },
-    expected: {
-      error: false,
-      hasPatternJoins: true,
-      // Fragment join uses on(triFrag, refFrag) — with CTS fast path,
-      // neither column name pattern should appear in a join context.
-      planExcludes: ['fromLexicons', MOCK_ID + '_frag'],
-    },
-  },
-  {
-    name: 'CTS fast path: outer join key uses parent IRI and triple object',
-    input: { scp: mockScpWithCts() },
-    expected: {
-      error: false,
-      hasPatternJoins: true,
-      joinOnContains: [MOCK_PARENT_IRI_COL, MOCK_ID + '_o'],
+      hasCtsConstraints: true,
+      ctsContains: ['cts.documentQuery', IRI_DOES_NOT_EXIST],
     },
   },
 
@@ -157,6 +139,34 @@ for (const scenario of scenarios) {
     const result = scenarioResults.actualValue;
     const e = scenario.expected;
     const p = scenario.name;
+
+    if (e.hasCtsConstraints) {
+      assertions.push(
+        testHelperProxy.assertTrue(
+          result &&
+            Array.isArray(result.ctsConstraints) &&
+            result.ctsConstraints.length === 1,
+          `${p}: should return exactly one ctsConstraint`,
+        ),
+      );
+      assertions.push(
+        testHelperProxy.assertFalse(
+          !!(result && result.patternJoins && result.patternJoins.length),
+          `${p}: should NOT return patternJoins`,
+        ),
+      );
+      if (result && result.ctsConstraints && e.ctsContains) {
+        const ctsSource = String(result.ctsConstraints[0]);
+        for (const text of e.ctsContains) {
+          assertions.push(
+            testHelperProxy.assertTrue(
+              ctsSource.includes(text),
+              `${p}: cts query should contain '${text}'`,
+            ),
+          );
+        }
+      }
+    }
 
     if (e.hasPatternJoins) {
       assertions.push(
